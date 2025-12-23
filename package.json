@@ -9,18 +9,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/genai": "^1.33.0",
     "@modelcontextprotocol/sdk": "latest",
+    "firebase": "^12.7.0",
+    "idb": "8.0.0",
+    "jspdf": "2.5.1",
+    "jspdf-autotable": "3.8.2",
+    "jszip": "3.10.1",
+    "lucide-react": "0.344.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "recharts": "2.12.3",
-    "@google/genai": "^1.33.0",
-    "lucide-react": "0.344.0",
-    "jspdf": "2.5.1",
     "react-router-dom": "6.22.3",
-    "jspdf-autotable": "3.8.2",
-    "idb": "8.0.0",
-    "jszip": "3.10.1",
-    "firebase": "^12.6.0"
+    "recharts": "2.12.3"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

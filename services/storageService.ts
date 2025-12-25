@@ -1,24 +1,24 @@
 
 import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession } from '../types.ts';
 import { db } from './firebaseConfig.ts';
-import { 
+import {
   collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where
 } from 'firebase/firestore';
 
 const COLS = {
-    PARTS: 'parts', SHIPMENTS: 'shipments', VESSEL_TRACKING: 'vessel_tracking',
-    EQUIPMENT: 'equipment_tracking', CUSTOMS: 'customs_clearance', PRE_ALERTS: 'pre_alerts',
-    COSTS: 'costs', LOGS: 'logs', LOGISTICS: 'logistics', SUPPLIERS: 'suppliers',
-    SNAPSHOTS: 'snapshots', DATA_STAGE_REPORTS: 'data_stage_reports'
+  PARTS: 'parts', SHIPMENTS: 'shipments', VESSEL_TRACKING: 'vessel_tracking',
+  EQUIPMENT: 'equipment_tracking', CUSTOMS: 'customs_clearance', PRE_ALERTS: 'pre_alerts',
+  COSTS: 'costs', LOGS: 'logs', LOGISTICS: 'logistics', SUPPLIERS: 'suppliers',
+  SNAPSHOTS: 'snapshots', DATA_STAGE_REPORTS: 'data_stage_reports'
 };
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
 const DRAFT_DATA_STAGE_KEY = 'logimaster_datastage_draft';
 
 let dbState: any = {
-    parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
-    customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
-    logistics: [], suppliers: [], dataStageReports: []
+  parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
+  customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
+  logistics: [], suppliers: [], dataStageReports: []
 };
 
 let listeners: (() => void)[] = [];
@@ -27,38 +27,43 @@ let unsubscribers: (() => void)[] = [];
 const notifyListeners = () => listeners.forEach(l => l());
 
 const saveLocal = () => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dbState));
-    notifyListeners();
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dbState));
+  notifyListeners();
 };
 
 const syncVesselDataToOthers = async (vesselData: VesselTrackingRecord) => {
-    const updates = { etd: vesselData.etd, atd: vesselData.atd, eta: vesselData.etaPort, ata: vesselData.ataPort };
-    if (!db) {
-        if (vesselData.blNo) {
-            const shipIdx = dbState.shipments.findIndex((s:any) => s.blNo === vesselData.blNo);
-            if (shipIdx !== -1) dbState.shipments[shipIdx] = { ...dbState.shipments[shipIdx], ...updates };
-        }
-        saveLocal();
+  const updates = { etd: vesselData.etd, atd: vesselData.atd, eta: vesselData.etaPort, ata: vesselData.ataPort };
+  if (!db) {
+    if (vesselData.blNo) {
+      const shipIdx = dbState.shipments.findIndex((s: any) => s.blNo === vesselData.blNo);
+      if (shipIdx !== -1) dbState.shipments[shipIdx] = { ...dbState.shipments[shipIdx], ...updates };
     }
+    saveLocal();
+  }
 };
 
 export const storageService = {
   init: async () => {
-      unsubscribers.forEach(u => u());
-      if (!db) {
-          const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-          if (localData) dbState = JSON.parse(localData);
-          notifyListeners();
-          return;
-      }
-      Object.entries(COLS).forEach(([key, colName]) => {
-          unsubscribers.push(onSnapshot(collection(db, colName), (snap) => {
-              const data = snap.docs.map(d => d.data());
-              const stateKey = key.toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase());
-              dbState[stateKey] = data;
-              notifyListeners();
-          }));
-      });
+    unsubscribers.forEach(u => u());
+    if (!db) {
+      const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (localData) dbState = JSON.parse(localData);
+      notifyListeners();
+      return;
+    }
+    Object.entries(COLS).forEach(([key, colName]) => {
+      unsubscribers.push(onSnapshot(collection(db, colName), (snap) => {
+        const data = snap.docs.map(d => d.data());
+
+        // Explicit mapping to handle non-standard property names
+        let stateKey = key.toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+        if (key === 'CUSTOMS') stateKey = 'customsClearance';
+        if (key === 'EQUIPMENT') stateKey = 'equipmentTracking';
+
+        dbState[stateKey] = data;
+        notifyListeners();
+      }));
+    });
   },
 
   getParts: () => dbState.parts || [],
@@ -72,7 +77,7 @@ export const storageService = {
   getLogistics: () => dbState.logistics || [],
   getSuppliers: () => dbState.suppliers || [],
   getDataStageReports: () => dbState.dataStageReports || [],
-  
+
   isCloudMode: () => !!db,
   subscribe: (callback: () => void) => {
     listeners.push(callback);
@@ -89,9 +94,9 @@ export const storageService = {
     const id = part.id || crypto.randomUUID();
     const data = { ...part, id, UPDATE_TIME: new Date().toISOString() };
     if (!db) {
-        const idx = dbState.parts.findIndex((p:any) => p.id === id);
-        if (idx !== -1) dbState.parts[idx] = data; else dbState.parts.push(data);
-        saveLocal(); return;
+      const idx = dbState.parts.findIndex((p: any) => p.id === id);
+      if (idx !== -1) dbState.parts[idx] = data; else dbState.parts.push(data);
+      saveLocal(); return;
     }
     await setDoc(doc(db, COLS.PARTS, id), data);
   },
@@ -107,16 +112,16 @@ export const storageService = {
   },
 
   upsertParts: async (parts: RawMaterialPart[], onProgress?: (p: number) => void) => {
-      if (!db) {
-          dbState.parts = [...dbState.parts, ...parts];
-          saveLocal(); return;
-      }
-      const batch = writeBatch(db);
-      parts.forEach((p, idx) => {
-        batch.set(doc(db, COLS.PARTS, p.id || crypto.randomUUID()), p);
-        if (onProgress) onProgress((idx + 1) / parts.length);
-      });
-      await batch.commit();
+    if (!db) {
+      dbState.parts = [...dbState.parts, ...parts];
+      saveLocal(); return;
+    }
+    const batch = writeBatch(db);
+    parts.forEach((p, idx) => {
+      batch.set(doc(db, COLS.PARTS, p.id || crypto.randomUUID()), p);
+      if (onProgress) onProgress((idx + 1) / parts.length);
+    });
+    await batch.commit();
   },
 
   // Senior Frontend Engineer: Implemented missing bulk upload logic for shipments.
@@ -200,13 +205,13 @@ export const storageService = {
   },
 
   updateShipment: async (shipment: Shipment) => {
-      const id = shipment.id || crypto.randomUUID();
-      if(!db) {
-          const idx = dbState.shipments.findIndex((s:any)=>s.id===id);
-          if(idx!==-1) dbState.shipments[idx]={...shipment,id}; else dbState.shipments.push({...shipment,id});
-          saveLocal(); return;
-      }
-      await setDoc(doc(db, COLS.SHIPMENTS, id), shipment);
+    const id = shipment.id || crypto.randomUUID();
+    if (!db) {
+      const idx = dbState.shipments.findIndex((s: any) => s.id === id);
+      if (idx !== -1) dbState.shipments[idx] = { ...shipment, id }; else dbState.shipments.push({ ...shipment, id });
+      saveLocal(); return;
+    }
+    await setDoc(doc(db, COLS.SHIPMENTS, id), shipment);
   },
 
   // Senior Frontend Engineer: Implemented missing deleteShipment method.
@@ -220,14 +225,14 @@ export const storageService = {
   },
 
   updateVesselTracking: async (record: VesselTrackingRecord) => {
-      const id = record.id || crypto.randomUUID();
-      await syncVesselDataToOthers(record);
-      if(!db) {
-          const idx = dbState.vesselTracking.findIndex((v:any)=>v.id===id);
-          if(idx!==-1) dbState.vesselTracking[idx]={...record,id}; else dbState.vesselTracking.push({...record,id});
-          saveLocal(); return;
-      }
-      await setDoc(doc(db, COLS.VESSEL_TRACKING, id), record);
+    const id = record.id || crypto.randomUUID();
+    await syncVesselDataToOthers(record);
+    if (!db) {
+      const idx = dbState.vesselTracking.findIndex((v: any) => v.id === id);
+      if (idx !== -1) dbState.vesselTracking[idx] = { ...record, id }; else dbState.vesselTracking.push({ ...record, id });
+      saveLocal(); return;
+    }
+    await setDoc(doc(db, COLS.VESSEL_TRACKING, id), record);
   },
 
   // Senior Frontend Engineer: Implemented missing deleteVesselTracking method.
@@ -287,20 +292,109 @@ export const storageService = {
   },
 
   processPreAlertExtraction: async (record: PreAlertRecord, containers: any[], createEquipment: boolean = true) => {
-      const id = record.id || crypto.randomUUID();
-      const finalRecord = { ...record, id };
-      await storageService.updatePreAlert(finalRecord);
-      // distribute to modules logic
+    const id = record.id || crypto.randomUUID();
+    const finalRecord = { ...record, id };
+    await storageService.updatePreAlert(finalRecord);
+
+    // 1. Distribute to Vessel Tracking
+    // We create a master record for the Shipment (BL/Booking)
+    const vesselData: VesselTrackingRecord = {
+      id: crypto.randomUUID(),
+      refNo: finalRecord.bookingAbw,
+      modelCode: finalRecord.model,
+      qty: 0,
+      projectType: 'General',
+      contractNo: '',
+      invoiceNo: finalRecord.invoiceNo,
+      shippingCompany: 'Unknown',
+      terminal: 'Unknown',
+      blNo: finalRecord.bookingAbw,
+      containerNo: containers.length > 0 ? containers[0].containerNo : 'Bulk/LCL',
+      containerSize: containers.length > 0 ? containers[0].size : '',
+      etd: finalRecord.etd,
+      etaPort: finalRecord.eta,
+      preAlertDate: new Date().toISOString().split('T')[0],
+      atd: finalRecord.atd || '',
+      ataPort: finalRecord.ata || ''
+    };
+    await storageService.updateVesselTracking(vesselData);
+
+    // 2. Distribute to Customs Clearance
+    const customsData: CustomsClearanceRecord = {
+      id: crypto.randomUUID(),
+      blNo: finalRecord.bookingAbw,
+      containerNo: containers.length > 0 ? containers[0].containerNo : 'Multiple',
+      ataPort: finalRecord.ata || '',
+      pedimentoNo: '',
+      proformaRevisionBy: '',
+      targetReviewDate: '',
+      proformaSentDate: '',
+      pedimentoAuthorizedDate: '',
+      peceRequestDate: '',
+      peceAuthDate: '',
+      pedimentoPaymentDate: '',
+      truckAppointmentDate: '',
+      ataFactory: finalRecord.ataFactory || '',
+      eirDate: ''
+    };
+    await storageService.updateCustomsClearance(customsData);
+
+    // 3. Distribute to Equipment Tracking (Optional)
+    if (createEquipment) {
+      // If we have specific containers from AI/Parser
+      if (containers && containers.length > 0) {
+        for (const c of containers) {
+          const eqRecord: EquipmentTrackingRecord = {
+            id: crypto.randomUUID(),
+            projectSection: '',
+            shipmentBatch: finalRecord.bookingAbw,
+            personInCharge: '',
+            unloadingLocation: finalRecord.arrivalCity,
+            unloadingParty: '',
+            unloadingTools: '',
+            status: 'In Transit',
+            containerSize: c.size || '40HQ',
+            containerQty: 1,
+            containerNo: c.containerNo,
+            blNo: finalRecord.bookingAbw,
+            etd: finalRecord.etd,
+            atd: finalRecord.atd || '',
+            etaPort: finalRecord.eta
+          };
+          await storageService.updateEquipmentTracking(eqRecord);
+        }
+      } else {
+        // Manual entry fallback - create 1 placeholder if requested
+        const eqRecord: EquipmentTrackingRecord = {
+          id: crypto.randomUUID(),
+          projectSection: '',
+          shipmentBatch: finalRecord.bookingAbw,
+          personInCharge: '',
+          unloadingLocation: finalRecord.arrivalCity,
+          unloadingParty: '',
+          unloadingTools: '',
+          status: 'In Transit',
+          containerSize: '40HQ',
+          containerQty: 1,
+          containerNo: 'TBD',
+          blNo: finalRecord.bookingAbw,
+          etd: finalRecord.etd,
+          atd: finalRecord.atd || '',
+          etaPort: finalRecord.eta
+        };
+        await storageService.updateEquipmentTracking(eqRecord);
+      }
+    }
   },
 
   updatePreAlert: async (record: PreAlertRecord) => {
-      const id = record.id || crypto.randomUUID();
-      if(!db) {
-          const idx = dbState.preAlerts.findIndex((p:any)=>p.id===id);
-          if(idx!==-1) dbState.preAlerts[idx]={...record,id}; else dbState.preAlerts.push({...record,id});
-          saveLocal(); return;
-      }
-      await setDoc(doc(db, COLS.PRE_ALERTS, id), record);
+    const id = record.id || crypto.randomUUID();
+    if (!db) {
+      const idx = dbState.preAlerts.findIndex((p: any) => p.id === id);
+      if (idx !== -1) dbState.preAlerts[idx] = { ...record, id }; else dbState.preAlerts.push({ ...record, id });
+      saveLocal(); return;
+    }
+    await setDoc(doc(db, COLS.PRE_ALERTS, id), record);
   },
 
   // Senior Frontend Engineer: Implemented missing deletePreAlert method.
@@ -354,9 +448,9 @@ export const storageService = {
   },
 
   saveDataStageReport: async (report: DataStageReport) => {
-      dbState.dataStageReports.unshift(report);
-      if(!db) saveLocal(); else await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), report);
-      return true;
+    dbState.dataStageReports.unshift(report);
+    if (!db) saveLocal(); else await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), report);
+    return true;
   },
 
   // Senior Frontend Engineer: Implemented missing deleteDataStageReport method.
@@ -378,11 +472,11 @@ export const storageService = {
 
   saveDraftDataStage: (session: DataStageSession) => localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(session)),
   getDraftDataStage: () => {
-      const s = localStorage.getItem(DRAFT_DATA_STAGE_KEY);
-      return s ? JSON.parse(s) : null;
+    const s = localStorage.getItem(DRAFT_DATA_STAGE_KEY);
+    return s ? JSON.parse(s) : null;
   },
   clearDraftDataStage: () => localStorage.removeItem(DRAFT_DATA_STAGE_KEY),
-  
+
   backup: () => {
     const dataStr = JSON.stringify(dbState);
     const blob = new Blob([dataStr], { type: 'application/json' });
@@ -415,8 +509,8 @@ export const storageService = {
     saveLocal();
   },
 
-  searchPart: (num: string) => dbState.parts.find((p:any) => p.PART_NUMBER.toUpperCase() === num.toUpperCase()),
-  
+  searchPart: (num: string) => dbState.parts.find((p: any) => p.PART_NUMBER.toUpperCase() === num.toUpperCase()),
+
   // Senior Frontend Engineer: Implemented snapshot management methods.
   createSnapshot: (reason: string) => {
     const snapshot: RestorePoint = {
@@ -445,5 +539,5 @@ export const storageService = {
     saveLocal();
   },
 
-  initAutoBackup: () => {}
+  initAutoBackup: () => { }
 };

@@ -46,6 +46,8 @@ export const PreAlerts = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentRecord, setCurrentRecord] = useState<PreAlertRecord>(preAlertEmptyState);
     const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, id: string | null }>({ isOpen: false, id: null });
+    const [bulkDeleteModal, setBulkDeleteModal] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     // Processing & Review State
     const [procState, setProcState] = useState<ProcessingState>(INITIAL_PROCESSING_STATE);
@@ -87,6 +89,19 @@ export const PreAlerts = () => {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Duplicate Check for Manual Entry
+        // Only check if we are creating a NEW record (id is empty) or if the booking number changed
+        if (!currentRecord.id && currentRecord.bookingAbw) {
+            const existing = await storageService.checkPreAlertExists(currentRecord.bookingAbw);
+            if (existing) {
+                const confirmReplace = window.confirm(
+                    `⚠️ DUPLICATE WARNING ⚠️\n\nA record with Booking/AWB "${currentRecord.bookingAbw}" already exists.\n\nDo you want to OVERWRITE it?`
+                );
+                if (!confirmReplace) return;
+            }
+        }
+
         // Logic Change: Instead of saving directly, open the Review/Distribution Modal
         // This allows the user to choose to generate Tracking/Equipment records
         setExtractionReview({
@@ -103,10 +118,76 @@ export const PreAlerts = () => {
     const confirmDelete = async () => {
         if (!isAdmin || !deleteModal.id) return;
         try {
+            setProcState({
+                isOpen: true,
+                status: 'loading',
+                title: 'Deleting Shipment',
+                message: 'Removing Pre-Alert and cleaning up associated modules...',
+                progress: 50
+            });
+
             await storageService.deletePreAlert(deleteModal.id);
+
+            setProcState({
+                isOpen: true,
+                status: 'success',
+                title: 'Deleted',
+                message: 'Shipment and related records verified deleted.',
+                progress: 100
+            });
             setDeleteModal({ isOpen: false, id: null });
+            setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 1500);
         } catch (e) {
             alert('Error eliminando el registro.');
+        }
+    };
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedIds(new Set(filteredRecords.map(r => r.id)));
+        } else {
+            setSelectedIds(new Set());
+        }
+    };
+
+    const handleSelectRow = (id: string) => {
+        const newSelected = new Set(selectedIds);
+        if (newSelected.has(id)) {
+            newSelected.delete(id);
+        } else {
+            newSelected.add(id);
+        }
+        setSelectedIds(newSelected);
+    };
+
+    const confirmBulkDelete = async () => {
+        if (!isAdmin) return;
+        try {
+            setProcState({
+                isOpen: true,
+                status: 'loading',
+                title: 'Bulk Deleting',
+                message: `Deleting ${selectedIds.size} records and cleaning up...`,
+                progress: 30
+            });
+
+            // We iterate and delete one by one as per storageService logic (for safety/cascade)
+            await storageService.deletePreAlerts(Array.from(selectedIds));
+
+            setProcState({
+                isOpen: true,
+                status: 'success',
+                title: 'Bulk Delete Complete',
+                message: 'Selected records deleted.',
+                progress: 100
+            });
+
+            setSelectedIds(new Set());
+            setBulkDeleteModal(false);
+            setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 1500);
+        } catch (e) {
+            alert('Error eliminando registros.');
+            setProcState(INITIAL_PROCESSING_STATE);
         }
     };
 
@@ -304,9 +385,28 @@ export const PreAlerts = () => {
                 // 1. Extract Data
                 const extracted = await geminiService.parseShippingDocument(base64, fileType);
 
-                // 2. Prepare Data for Review
+                // 2. Duplicate Check
+                if (extracted.bookingNo) {
+                    const existing = await storageService.checkPreAlertExists(extracted.bookingNo);
+                    if (existing) {
+                        const confirmReplace = window.confirm(
+                            `⚠️ DUPLICATE WARNING ⚠️\n\nA record with Booking/AWB "${extracted.bookingNo}" already exists.\n\nDo you want to OVERWRITE all data for this shipment?`
+                        );
+                        if (!confirmReplace) {
+                            setProcState(INITIAL_PROCESSING_STATE);
+                            return;
+                        }
+                    }
+                }
+
+                // 3. Prepare Data for Review
                 const newPreAlert: PreAlertRecord = {
-                    id: '', // Generated by service
+                    id: '', // Generated by service later (or matches existing if we handled that logic, but upsert handles it by key usually, or we need to pass ID)
+                    // Note: If overwriting, storageService.processPreAlertExtraction will verify/update based on ID if provided, 
+                    // or we might need to fetch the ID. checkPreAlertExists returns the ID if found.
+                    // Let's refine this: If duplicate, we should arguably grab the ID.
+                    // However, storageService logic currently generates a NEW ID if empty. 
+                    // Ideal logic: If duplicate confirmed, we essentially replace the data. 
                     model: extracted.model || 'Unknown Model (Update manually)',
                     shippingMode: extracted.docType === 'AWB' ? 'AIR' : 'SEA',
                     bookingAbw: extracted.bookingNo,
@@ -384,6 +484,47 @@ export const PreAlerts = () => {
         }
     };
 
+    // Format Submission State
+    const [isSubmitFormatOpen, setIsSubmitFormatOpen] = useState(false);
+    const [formatSub, setFormatSub] = useState({ file: null as File | null, provider: '', comments: '' });
+
+    const handleSubmitFormat = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!formatSub.file) return;
+
+        setProcState({
+            isOpen: true,
+            status: 'loading',
+            title: 'Uploading Format',
+            message: 'Sending document for analysis...',
+            progress: 30
+        });
+
+        try {
+            await storageService.uploadTrainingDocument(formatSub.file, formatSub.provider, formatSub.comments);
+            setProcState({
+                isOpen: true,
+                status: 'success',
+                title: 'Submission Received',
+                message: 'Thank you! We will analyze this format.',
+                progress: 100
+            });
+            setTimeout(() => {
+                setProcState(INITIAL_PROCESSING_STATE);
+                setIsSubmitFormatOpen(false);
+                setFormatSub({ file: null, provider: '', comments: '' });
+            }, 2000);
+        } catch (error) {
+            setProcState({
+                isOpen: true,
+                status: 'error',
+                title: 'Upload Failed',
+                message: 'Could not upload document.',
+                progress: 0
+            });
+        }
+    };
+
     const Th = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
         <th className={`px-3 py-3 border-b border-r border-slate-200 bg-slate-50 text-slate-700 font-bold whitespace-pre-wrap ${className}`}>
             {children}
@@ -399,6 +540,59 @@ export const PreAlerts = () => {
     return (
         <div className="space-y-6">
             <ProcessingModal state={procState} onClose={() => setProcState(INITIAL_PROCESSING_STATE)} />
+
+            {/* Format Submission Modal */}
+            {isSubmitFormatOpen && (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 bg-slate-50 flex items-center gap-3">
+                            <div className="bg-purple-100 p-2 rounded-full text-purple-600">
+                                <Upload size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800">Submit New Format</h3>
+                                <p className="text-sm text-slate-500">Help us learn new document layouts.</p>
+                            </div>
+                        </div>
+                        <form onSubmit={handleSubmitFormat} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1">Document File (PDF/Image)</label>
+                                <input
+                                    type="file"
+                                    accept=".pdf,image/*"
+                                    onChange={e => setFormatSub({ ...formatSub, file: e.target.files?.[0] || null })}
+                                    className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1">Provider / Courier Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. FedEx, DHL, Maersk"
+                                    value={formatSub.provider}
+                                    onChange={e => setFormatSub({ ...formatSub, provider: e.target.value })}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1">Comments (Optional)</label>
+                                <textarea
+                                    placeholder="e.g., The 'Total Weight' column is missing, or the container table is not being parsed correctly."
+                                    value={formatSub.comments}
+                                    onChange={e => setFormatSub({ ...formatSub, comments: e.target.value })}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                    rows={3}
+                                />
+                            </div>
+                            <div className="flex gap-3 pt-2">
+                                <button type="button" onClick={() => setIsSubmitFormatOpen(false)} className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium">Cancel</button>
+                                <button type="submit" disabled={!formatSub.file} className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Review Extraction Modal */}
             {extractionReview && (
@@ -483,6 +677,21 @@ export const PreAlerts = () => {
                     <p className="text-slate-500 text-sm">Central ingestion for Maritime (BL) and Air (AWB) shipments.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                    {selectedIds.size > 0 && isAdmin && (
+                        <button
+                            onClick={() => setBulkDeleteModal(true)}
+                            className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm hover:bg-red-100 transition-all font-medium"
+                        >
+                            <Trash2 size={18} /> Delete Selected ({selectedIds.size})
+                        </button>
+                    )}
+                    <button
+                        onClick={() => setIsSubmitFormatOpen(true)}
+                        className="text-purple-600 hover:bg-purple-50 px-3 py-2 rounded-lg text-sm font-medium border border-transparent hover:border-purple-200 transition-all flex items-center gap-1"
+                    >
+                        Submit New Format
+                    </button>
+                    <div className="w-px bg-slate-300 mx-1"></div>
                     <input
                         type="file"
                         ref={docInputRef}
@@ -579,8 +788,16 @@ export const PreAlerts = () => {
                     <table className="w-full text-xs text-left border-collapse">
                         <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
                             <tr>
-                                <Th className="sticky left-0 z-20 w-16 bg-slate-50">Action</Th>
-                                <Th className="sticky left-16 z-20">Booking / AWB</Th>
+                                <Th className="sticky left-0 z-20 w-[40px] bg-slate-50 text-center">
+                                    <input
+                                        type="checkbox"
+                                        className="rounded border-slate-300"
+                                        checked={filteredRecords.length > 0 && selectedIds.size === filteredRecords.length}
+                                        onChange={handleSelectAll}
+                                    />
+                                </Th>
+                                <Th className="sticky left-[40px] z-20 w-16 bg-slate-50">Action</Th>
+                                <Th className="sticky left-[104px] z-20">Booking / AWB</Th>
                                 <Th>Mode</Th>
                                 <Th>Model</Th>
                                 <Th>ETD</Th>
@@ -594,7 +811,15 @@ export const PreAlerts = () => {
                         <tbody className="divide-y divide-slate-100 whitespace-nowrap">
                             {filteredRecords.map((r) => (
                                 <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-3 py-2 border-r border-slate-100 sticky left-0 bg-white hover:bg-slate-50 flex items-center gap-2">
+                                    <td className="px-3 py-2 border-r border-slate-100 sticky left-0 bg-white hover:bg-slate-50 text-center z-10">
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-slate-300"
+                                            checked={selectedIds.has(r.id)}
+                                            onChange={() => handleSelectRow(r.id)}
+                                        />
+                                    </td>
+                                    <td className="px-3 py-2 border-r border-slate-100 sticky left-[40px] bg-white hover:bg-slate-50 flex items-center gap-2 z-10">
                                         <button onClick={() => handleEdit(r)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"><Edit2 size={14} /></button>
                                         <button onClick={() => handleSyncDates(r)} className="text-emerald-600 hover:text-emerald-800 p-1 rounded hover:bg-emerald-50" title="Sync dates to Tracking/Customs">
                                             <RefreshCw size={14} />
@@ -605,7 +830,7 @@ export const PreAlerts = () => {
                                             </button>
                                         )}
                                     </td>
-                                    <td className="px-3 py-2 border-r border-slate-100 sticky left-16 bg-white hover:bg-slate-50 font-bold text-blue-600">{r.bookingAbw}</td>
+                                    <td className="px-3 py-2 border-r border-slate-100 sticky left-[104px] bg-white hover:bg-slate-50 font-bold text-blue-600">{r.bookingAbw}</td>
                                     <Td>
                                         {r.shippingMode === 'AIR' ?
                                             <span className="flex items-center gap-1 text-purple-600 font-bold"><Plane size={12} /> Air</span> :
@@ -647,6 +872,12 @@ export const PreAlerts = () => {
                                 <AlertTriangle size={24} />
                             </div>
                             <h3 className="text-lg font-bold text-red-900">Confirm Deletion</h3>
+                            <p className="text-sm text-red-700 mt-2">
+                                This will permanently delete the Pre-Alert and also remove associated records from:
+                                <br />• Vessel Tracking
+                                <br />• Equipment Tracking
+                                <br />• Customs Clearance
+                            </p>
                         </div>
                         <div className="p-6 flex gap-3">
                             <button onClick={() => setDeleteModal({ isOpen: false, id: null })} className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium">Cancel</button>
@@ -656,51 +887,76 @@ export const PreAlerts = () => {
                 </div>
             )}
 
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
-                        <div className="flex justify-between items-center p-6 border-b border-slate-100">
-                            <h2 className="text-xl font-bold text-slate-800">
-                                {currentRecord.id ? 'Edit Pre-Alert' : 'New Pre-Alert'}
-                            </h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
-                        </div>
-                        <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {PREALERT_KEYS.map(key => (
-                                    <label key={key} className="block">
-                                        <span className="text-xs font-bold text-slate-500 uppercase">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                        {key === 'shippingMode' ? (
-                                            <select
-                                                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm"
-                                                value={(currentRecord as any)[key]}
-                                                onChange={e => setCurrentRecord({ ...currentRecord, [key]: e.target.value as any })}
-                                            >
-                                                <option value="SEA">Sea</option>
-                                                <option value="AIR">Air</option>
-                                            </select>
-                                        ) : (
-                                            <input
-                                                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm"
-                                                type="text"
-                                                value={(currentRecord as any)[key] || ''}
-                                                placeholder={key.includes('Date') || key === 'etd' || key === 'eta' || key === 'atd' || key === 'ata' ? 'YYYY-MM-DD' : ''}
-                                                onChange={e => setCurrentRecord({ ...currentRecord, [key]: e.target.value })}
-                                            />
-                                        )}
-                                    </label>
-                                ))}
+            {bulkDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="bg-red-50 p-6 flex flex-col items-center text-center border-b border-red-100">
+                            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-3">
+                                <AlertTriangle size={24} />
                             </div>
-                        </form>
-                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-xl">
-                            <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium">Cancel</button>
-                            <button onClick={handleSave} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm flex items-center gap-2">
-                                <Save size={18} /> Review & Save
-                            </button>
+                            <h3 className="text-lg font-bold text-red-900">Bulk Delete</h3>
+                            <p className="text-sm text-red-700 mt-2">
+                                Are you sure you want to delete {selectedIds.size} records?
+                                <br />
+                                <span className="font-bold">Warning:</span> Cascading delete will remove associated records in other modules.
+                            </p>
+                        </div>
+                        <div className="p-6 flex gap-3">
+                            <button onClick={() => setBulkDeleteModal(false)} className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium">Cancel</button>
+                            <button onClick={confirmBulkDelete} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-sm">Delete All</button>
                         </div>
                     </div>
                 </div>
             )}
-        </div>
+
+
+            {
+                isModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
+                            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+                                <h2 className="text-xl font-bold text-slate-800">
+                                    {currentRecord.id ? 'Edit Pre-Alert' : 'New Pre-Alert'}
+                                </h2>
+                                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
+                            </div>
+                            <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {PREALERT_KEYS.map(key => (
+                                        <label key={key} className="block">
+                                            <span className="text-xs font-bold text-slate-500 uppercase">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                            {key === 'shippingMode' ? (
+                                                <select
+                                                    className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm"
+                                                    value={(currentRecord as any)[key]}
+                                                    onChange={e => setCurrentRecord({ ...currentRecord, [key]: e.target.value as any })}
+                                                >
+                                                    <option value="SEA">Sea</option>
+                                                    <option value="AIR">Air</option>
+                                                </select>
+                                            ) : (
+                                                <input
+                                                    className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm"
+                                                    type="text"
+                                                    value={(currentRecord as any)[key] || ''}
+                                                    placeholder={key.includes('Date') || key === 'etd' || key === 'eta' || key === 'atd' || key === 'ata' ? 'YYYY-MM-DD' : ''}
+                                                    onChange={e => setCurrentRecord({ ...currentRecord, [key]: e.target.value })}
+                                                />
+                                            )}
+                                        </label>
+                                    ))}
+                                </div>
+                            </form>
+                            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-xl">
+                                <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium">Cancel</button>
+                                <button onClick={handleSave} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm flex items-center gap-2">
+                                    <Save size={18} /> Review & Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 };

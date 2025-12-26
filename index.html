@@ -1,23 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LogiMaster CFMoto</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <style>
-      @import url(https://fonts.googleapis.com/css?family=Google+Sans+Text);
-      html {
-        font-family: 'Google Sans Text', 'Google Sans';
-        font-size: 14px;
-        color-scheme: light dark;
-        background: light-dark(white, black);
-        color: light-dark(black, white);
-      }
-    </style>
 
-    <script type="importmap">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LogiMaster CFMoto</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    @import url(https://fonts.googleapis.com/css?family=Google+Sans+Text);
+
+    html {
+      font-family: 'Google Sans Text', 'Google Sans';
+      font-size: 14px;
+      color-scheme: light dark;
+      background: light-dark(white, black);
+      color: light-dark(black, white);
+    }
+  </style>
+
+  <script type="importmap">
 {
   "imports": {
     "@modelcontextprotocol/sdk/": "https://esm.sh/@modelcontextprotocol/sdk/dist/esm/",
@@ -41,23 +43,22 @@
 }
 </script>
 
-    <script type="module">
-      const geminiUrl = window.location.origin + '/api-proxy';
+  <script type="module">
+    const geminiUrl = window.location.origin + '/api-proxy';
 
-      window.API_KEY = 'UNUSED_PLACEHOLDER_FOR_API_KEY';
-      window.GEMINI_API_KEY = 'UNUSED_PLACEHOLDER_FOR_API_KEY';
-      window.process = window.process || {};
-      window.process.env = window.process.env || {};
-      window.process.env.API_KEY = window.API_KEY;
-      window.process.env.GEMINI_API_KEY = window.GEMINI_API_KEY;
-    </script>
-
-    <script src="/public/websocket-interceptor.js" defer></script>
+    window.API_KEY = 'UNUSED_PLACEHOLDER_FOR_API_KEY';
+    window.GEMINI_API_KEY = 'UNUSED_PLACEHOLDER_FOR_API_KEY';
+    window.process = window.process || {};
+    window.process.env = window.process.env || {};
+    window.process.env.API_KEY = window.API_KEY;
+    window.process.env.GEMINI_API_KEY = window.GEMINI_API_KEY;
+  </script>
   <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-slate-50 text-slate-900">
-    <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
-  <script type="module" src="/index.tsx"></script>
+
+<body class="bg-slate-50 text-slate-900">
+  <div id="root"></div>
+  <script type="module" src="./index.tsx"></script>
 </body>
+
 </html>

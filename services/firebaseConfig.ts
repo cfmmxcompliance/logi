@@ -20,15 +20,18 @@ let firestoreDb = null;
 let firebaseAuth = null;
 
 try {
-    console.log("🔥 Firebase: Initializing...");
-    app = initializeApp(firebaseConfig);
-    firestoreDb = getFirestore(app);
-    firebaseAuth = getAuth(app);
-    console.log("✅ Firebase: Connected to Cloud Database & Auth");
+  console.log("🔥 Firebase: Initializing...");
+  app = initializeApp(firebaseConfig);
+  firestoreDb = getFirestore(app);
+  firebaseAuth = getAuth(app);
+  console.log("✅ Firebase: Connected to Cloud Database & Auth");
 } catch (e) {
-    console.error("❌ Firebase Error:", e);
+  console.error("❌ Firebase Error:", e);
 }
 
 // Named export 'db' is required for live binding in other modules
 export { firestoreDb as db };
 export { firebaseAuth as auth };
+// @ts-ignore
+import { getStorage } from 'firebase/storage';
+export const storage = app ? getStorage(app) : null;

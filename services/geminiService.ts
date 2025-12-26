@@ -3,8 +3,14 @@ import { GoogleGenAI } from "@google/genai";
 import { PedimentoRecord } from '../types.ts';
 
 // Senior Frontend Engineer: Use GoogleGenAI with the recommended direct API key access.
+// Senior Frontend Engineer: Use GoogleGenAI with the recommended direct API key access.
 const getClient = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
+  if (!apiKey) {
+    console.error("CRITICAL: Gemini API Key is missing! Check .env.local and VITE_GEMINI_API_KEY");
+    throw new Error("API Key not found");
+  }
+  return new GoogleGenAI({ apiKey });
 };
 
 export interface ExtractedInvoiceItem {
@@ -30,7 +36,15 @@ export interface ExtractedShippingDoc {
   departurePort: string;
   arrivalPort: string;
   shippingCompany: string;
-  containers: { containerNo: string; size: string; seal: string }[];
+  containers: {
+    containerNo: string;
+    size: string;
+    seal: string;
+    pkgCount?: number;
+    pkgType?: string;
+    weightKg?: number;
+    volumeCbm?: number;
+  }[];
   invoiceNo?: string;
   poNumber?: string;
   model?: string;
@@ -102,24 +116,45 @@ export const geminiService = {
     try {
       const ai = getClient();
       const prompt = `
-        Analyze this shipping document (Bill of Lading / AWB).
-        Extract key logistics data.
-        
-        CRITICAL INSTRUCTIONS:
-        - docType: "BL" or "AWB".
-        - bookingNo: For EVERGREEN docs, look for numbers starting with "EGLV".
-        - vesselOrFlight: e.g., "EVER LUCENT 0759-069E".
-        - departurePort: e.g., "NINGBO".
-        - arrivalPort: e.g., "MANZANILLO, MX".
-        - containers: 
-          Look for formats like "TIIU4234064/40H/EMCWTR8274".
-          Extract: containerNo="TIIU4234064", size="40H" (or 40HQ), seal="EMCWTR8274".
-        
-        Return ONLY a JSON object.
+        Analyze this shipping document (Bill of Lading, AWB, or Arrival Notice).
+        Extract key logistics data for a Pre-Alert record.
+
+        CRITICAL EXTRACTION FIELDS:
+        1. **docType**: "BL" (Maritime) or "AWB" (Air).
+        2. **bookingNo**: The main tracking number. Look for "Booking No", "B/L No", "AWB No", or "Bill of Lading No". 
+           - For Evergreen, often starts with "EGLV".
+           - For Air, format like "XXX-XXXXXXX".
+        3. **vesselOrFlight**: Name of vessel and voyage, or flight number.
+        4. **etd**: Estimated Time of Departure (YYYY-MM-DD).
+        5. **eta**: Estimated Time of Arrival (YYYY-MM-DD).
+        6. **departurePort**: Port/Airport of Loading (e.g., "SHANGHAI", "NINGBO").
+        7. **arrivalPort**: Port/Airport of Discharge (e.g., "MANZANILLO, MX", "LAZARO CARDENAS").
+        8. **invoiceNo**: Look for "Invoice No", "Commercial Invoice", or "Ref No".
+        9. **model**: Try to identify the product model from the description (e.g., "CFORCE 600", "ZFORCE", "ATV"). If not found, return "".
+        10. **containers**: A list of ALL containers.
+            - **containerNo**: 4 letters + 6-7 digits (e.g., "TIIU4234064").
+            - **size**: e.g., "40HQ", "20GP", "40HC".
+            - **seal**: The seal number associated with the container.
+            - **pkgCount**: Number of packages (e.g., "8" from "8PACKAGES").
+            - **pkgType**: Type of package (e.g., "PACKAGES", "CTNS", "PLTS").
+            - **weightKg**: Weight in KGS (e.g., "4840.000").
+            - **volumeCbm**: Volume in CBM (e.g., "68.56").
+            *Hint: Look for strings like "8PACKAGES/4840.000KGS/68.56CBM" or standard columnar data.*
+
+          "containers": [{ 
+            "containerNo": string, 
+            "size": string, 
+            "seal": string,
+            "pkgCount": number, // e.g. 8
+            "pkgType": string, // e.g. "PACKAGES", "CARTONS", "PALLETS"
+            "weightKg": number, // e.g. 4840.0
+            "volumeCbm": number // e.g. 68.56
+          }]
+        }
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-2.0-flash-exp', // Updated to latest fast model
         contents: {
           parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
         },
@@ -137,7 +172,7 @@ export const geminiService = {
   analyzeDataStage: async (data: PedimentoRecord[], promptContext: string): Promise<string> => {
     try {
       const ai = getClient();
-      const summary = `Operations: ${data.length}, Value: $${data.reduce((a,c)=>a+c.totalValueUsd,0)}`;
+      const summary = `Operations: ${data.length}, Value: $${data.reduce((a, c) => a + c.totalValueUsd, 0)}`;
       const fullPrompt = `Analyze this Mexican Customs data summary and provide an executive summary in Spanish. ${summary}. Context: ${promptContext}`;
 
       const response = await ai.models.generateContent({

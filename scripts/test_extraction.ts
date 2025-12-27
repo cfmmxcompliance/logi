@@ -15,8 +15,9 @@ if (fs.existsSync(envPath)) {
 }
 
 // Fallback if needed
-if (!process.env.API_KEY && process.env.GEMINI_API_KEY) {
-    process.env.API_KEY = process.env.GEMINI_API_KEY;
+if (!process.env.API_KEY) {
+    if (process.env.GEMINI_API_KEY) process.env.API_KEY = process.env.GEMINI_API_KEY;
+    if (process.env.VITE_GEMINI_API_KEY) process.env.API_KEY = process.env.VITE_GEMINI_API_KEY;
 }
 
 const analyzeFile = async (filename: string) => {

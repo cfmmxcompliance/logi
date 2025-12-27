@@ -7,35 +7,35 @@ import { parseCSV } from '../utils/csvHelpers.ts';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
 
 const emptyPart: RawMaterialPart = {
-  id: '',
-  REGIMEN: 'IMD',
-  PART_NUMBER: '',
-  TypeMaterial: '',
-  DESCRIPTION_EN: '',
-  DESCRIPCION_ES: '',
-  UMC: '',
-  UMT: '',
-  HTSMX: '',
-  HTSMXBASE: '',
-  HTSMXNICO: '',
-  IGI_DUTY: 0,
-  PROSEC: '',
-  R8: '',
-  DESCRIPCION_R8: '',
-  RRYNA_NON_DUTY_REQUIREMENTS: '',
-  REMARKS: '',
-  NETWEIGHT: 0,
-  IMPORTED_OR_NOT: true,
-  SENSIBLE: false,
-  HTS_SerialNo: '',
-  CLAVESAT: '',
-  DESCRIPCION_CN: '',
-  MATERIAL_CN: '',
-  MATERIAL_EN: '',
-  FUNCTION_CN: '',
-  FUNCTION_EN: '',
-  COMPANY: 'CFMOTO',
-  UPDATE_TIME: ''
+    id: '',
+    REGIMEN: 'IMD',
+    PART_NUMBER: '',
+    TypeMaterial: '',
+    DESCRIPTION_EN: '',
+    DESCRIPCION_ES: '',
+    UMC: '',
+    UMT: '',
+    HTSMX: '',
+    HTSMXBASE: '',
+    HTSMXNICO: '',
+    IGI_DUTY: 0,
+    PROSEC: '',
+    R8: '',
+    DESCRIPCION_R8: '',
+    RRYNA_NON_DUTY_REQUIREMENTS: '',
+    REMARKS: '',
+    NETWEIGHT: 0,
+    IMPORTED_OR_NOT: true,
+    SENSIBLE: false,
+    HTS_SerialNo: '',
+    CLAVESAT: '',
+    DESCRIPCION_CN: '',
+    MATERIAL_CN: '',
+    MATERIAL_EN: '',
+    FUNCTION_CN: '',
+    FUNCTION_EN: '',
+    COMPANY: 'CFMOTO',
+    UPDATE_TIME: ''
 };
 
 // EXACT ORDER FROM CSV FILE
@@ -70,568 +70,646 @@ const CSV_ORDER_KEYS: (keyof RawMaterialPart)[] = [
 ];
 
 export const DatabaseView = () => {
-  const { hasRole } = useAuth();
-  const canEdit = hasRole([UserRole.ADMIN, UserRole.EDITOR]);
-  const canDelete = hasRole([UserRole.ADMIN]);
+    const { hasRole } = useAuth();
+    const canEdit = hasRole([UserRole.ADMIN, UserRole.EDITOR]);
+    const canDelete = hasRole([UserRole.ADMIN]);
 
-  const [parts, setParts] = useState<RawMaterialPart[]>(storageService.getParts());
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  const [procState, setProcState] = useState<ProcessingState>(INITIAL_PROCESSING_STATE);
+    const [parts, setParts] = useState<RawMaterialPart[]>(storageService.getParts());
+    const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    setParts([...storageService.getParts()]);
-    const unsub = storageService.subscribe(() => {
+    const [procState, setProcState] = useState<ProcessingState>(INITIAL_PROCESSING_STATE);
+
+    useEffect(() => {
         setParts([...storageService.getParts()]);
-    });
-    return unsub;
-  }, []);
+        const unsub = storageService.subscribe(() => {
+            setParts([...storageService.getParts()]);
+        });
+        return unsub;
+    }, []);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50;
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 50;
 
-  const [isPartModalOpen, setIsPartModalOpen] = useState(false);
-  const [currentPart, setCurrentPart] = useState<RawMaterialPart>(emptyPart);
-  const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, id: string | null}>({isOpen: false, id: null});
+    const [isPartModalOpen, setIsPartModalOpen] = useState(false);
+    const [currentPart, setCurrentPart] = useState<RawMaterialPart>(emptyPart);
+    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, id: string | null }>({ isOpen: false, id: null });
+    const [bulkDeleteModal, setBulkDeleteModal] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const restoreInputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const restoreInputRef = useRef<HTMLInputElement>(null);
 
-  const handleBackup = () => {
-    storageService.backup();
-  };
-
-  const handleRestoreBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setProcState({
-        isOpen: true,
-        status: 'loading',
-        title: 'Restoring Database',
-        message: 'Reading backup file...',
-        progress: 10
-    });
-
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-        setTimeout(async () => {
-            try {
-                const jsonStr = evt.target?.result as string;
-                if (!jsonStr) throw new Error("Empty file");
-
-                if (window.confirm("⚠️ ¿Restaurar base de datos?\nSe reemplazarán todos los datos actuales.")) {
-                    setProcState(prev => ({ ...prev, progress: 50, message: 'Importing data structure...' }));
-                    // @ts-ignore
-                    const success = await storageService.importDatabase(jsonStr);
-                    if (success) {
-                        setProcState({
-                            isOpen: true,
-                            status: 'success',
-                            title: 'Restore Complete',
-                            message: 'Database restored.',
-                            progress: 100
-                        });
-                        setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 2000);
-                    } else {
-                         throw new Error("Invalid backup format.");
-                    }
-                } else {
-                    setProcState(INITIAL_PROCESSING_STATE);
-                }
-            } catch (err: any) {
-                setProcState({
-                    isOpen: true,
-                    status: 'error',
-                    title: 'Restore Failed',
-                    message: err.message,
-                    progress: 0
-                });
-            }
-            if (restoreInputRef.current) restoreInputRef.current.value = '';
-        }, 500);
+    const handleBackup = () => {
+        storageService.backup();
     };
-    reader.readAsText(file);
-  };
 
-  const handleEditPart = (part: RawMaterialPart) => {
-    setCurrentPart(part);
-    setIsPartModalOpen(true);
-  };
-  const handleCreatePart = () => {
-    setCurrentPart(emptyPart);
-    setIsPartModalOpen(true);
-  };
-  const handleSavePart = (e: React.FormEvent) => {
-    e.preventDefault();
-    storageService.updatePart(currentPart);
-    setIsPartModalOpen(false);
-  };
+    const handleRestoreBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
 
-  const initiateDelete = (id: string) => {
-      setDeleteModal({ isOpen: true, id });
-  };
+        setProcState({
+            isOpen: true,
+            status: 'loading',
+            title: 'Restoring Database',
+            message: 'Reading backup file...',
+            progress: 10
+        });
 
-  const confirmDelete = async () => {
-      if (!canDelete || !deleteModal.id) return;
-      try {
-          await storageService.deletePart(deleteModal.id);
-          setDeleteModal({ isOpen: false, id: null });
-      } catch (e) {
-          alert('Error eliminando el registro.');
-      }
-  };
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            setTimeout(async () => {
+                try {
+                    const jsonStr = evt.target?.result as string;
+                    if (!jsonStr) throw new Error("Empty file");
 
-  const handlePartInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    setCurrentPart(prev => ({
-      ...prev,
-      [name]: type === 'number' ? parseFloat(value) : value
-    }));
-  };
-
-  const handleDownloadTemplate = () => {
-    // Generate Template based EXACTLY on CSV_ORDER_KEYS
-    const headerRow = CSV_ORDER_KEYS.join(',');
-    // Sample data matching types
-    const exampleRow = CSV_ORDER_KEYS.map(key => {
-        if(key === 'IGI_DUTY' || key === 'NETWEIGHT') return '0';
-        if(key === 'IMPORTED_OR_NOT' || key === 'SENSIBLE') return 'Y';
-        return `Sample ${key}`;
-    }).join(',');
-
-    const csvContent = headerRow + '\n' + exampleRow;
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'plantilla_exacta.csv');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-  };
-
-  const handleBulkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setProcState({
-        isOpen: true,
-        status: 'loading',
-        title: 'Reading File',
-        message: 'Scanning for PART_NUMBER column...',
-        progress: 10
-    });
-
-    const reader = new FileReader();
-    
-    reader.onload = async (evt) => {
-        setTimeout(async () => {
-            try {
-                const text = evt.target?.result as string;
-                if (!text || text.trim().length === 0) throw new Error("File is empty");
-
-                const rows = parseCSV(text);
-                
-                // 1. FIND HEADER ROW EXACTLY
-                let headerIndex = -1;
-                for(let i=0; i<rows.length; i++) {
-                    const rowStr = rows[i].join(',').toUpperCase();
-                    // Robust check: must contain PART_NUMBER and REGIMEN
-                    if (rowStr.includes('PART_NUMBER') && rowStr.includes('REGIMEN')) {
-                        headerIndex = i;
-                        break;
-                    }
-                }
-
-                if (headerIndex === -1) {
-                    throw new Error("Formato inválido: No se encontró la fila con 'PART_NUMBER' y 'REGIMEN'.");
-                }
-
-                // 2. MAP COLUMNS BY INDEX
-                // We trust the user's file matches the CSV_ORDER_KEYS mostly, but we'll map by name to be safe
-                const fileHeaders = rows[headerIndex].map(h => h.trim());
-                const mapIndices: Record<string, number> = {};
-                
-                // Map the CSV_ORDER_KEYS to the indices in the file
-                CSV_ORDER_KEYS.forEach(key => {
-                    const idx = fileHeaders.findIndex(h => h.toUpperCase().replace(/[^A-Z0-9]/g, '') === key.toUpperCase().replace(/[^A-Z0-9]/g, ''));
-                    if (idx !== -1) mapIndices[key] = idx;
-                });
-
-                if (mapIndices['PART_NUMBER'] === undefined) {
-                     throw new Error("Columna PART_NUMBER no encontrada.");
-                }
-
-                setProcState(prev => ({ ...prev, progress: 30, message: 'Processing rows...' }));
-
-                const parsedParts: RawMaterialPart[] = [];
-                
-                // 3. PARSE DATA
-                for(let i = headerIndex + 1; i < rows.length; i++) {
-                    const row = rows[i];
-                    if (row.length < 2) continue; // Skip empty rows
-
-                    const newPart: any = { ...emptyPart };
-                    let hasData = false;
-
-                    CSV_ORDER_KEYS.forEach(key => {
-                        const idx = mapIndices[key];
-                        if (idx !== undefined && row[idx] !== undefined) {
-                            const rawVal = row[idx].trim();
-                            
-                            // Specific conversions based on user requirements
-                            if (key === 'NETWEIGHT') {
-                                newPart[key] = parseFloat(rawVal) || 0;
-                            } 
-                            else if (key === 'IGI_DUTY') {
-                                if (rawVal.toUpperCase().includes('EX')) newPart[key] = 0;
-                                else {
-                                    const num = parseFloat(rawVal.replace(/[^0-9.]/g, ''));
-                                    newPart[key] = isNaN(num) ? 0 : num;
-                                }
-                            }
-                            else if (key === 'IMPORTED_OR_NOT' || key === 'SENSIBLE') {
-                                newPart[key] = ['Y', 'YES', 'SI', 'S', 'TRUE', '1'].includes(rawVal.toUpperCase());
-                            } 
-                            else {
-                                newPart[key] = rawVal;
-                            }
-                            
-                            if (rawVal) hasData = true;
+                    if (window.confirm("⚠️ ¿Restaurar base de datos?\nSe reemplazarán todos los datos actuales.")) {
+                        setProcState(prev => ({ ...prev, progress: 50, message: 'Importing data structure...' }));
+                        // @ts-ignore
+                        const success = await storageService.importDatabase(jsonStr);
+                        if (success) {
+                            setProcState({
+                                isOpen: true,
+                                status: 'success',
+                                title: 'Restore Complete',
+                                message: 'Database restored.',
+                                progress: 100
+                            });
+                            setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 2000);
+                        } else {
+                            throw new Error("Invalid backup format.");
                         }
+                    } else {
+                        setProcState(INITIAL_PROCESSING_STATE);
+                    }
+                } catch (err: any) {
+                    setProcState({
+                        isOpen: true,
+                        status: 'error',
+                        title: 'Restore Failed',
+                        message: err.message,
+                        progress: 0
+                    });
+                }
+                if (restoreInputRef.current) restoreInputRef.current.value = '';
+            }, 500);
+        };
+        reader.readAsText(file);
+    };
+
+    const handleEditPart = (part: RawMaterialPart) => {
+        setCurrentPart(part);
+        setIsPartModalOpen(true);
+    };
+    const handleCreatePart = () => {
+        setCurrentPart(emptyPart);
+        setIsPartModalOpen(true);
+    };
+    const handleSavePart = (e: React.FormEvent) => {
+        e.preventDefault();
+        storageService.updatePart(currentPart);
+        setIsPartModalOpen(false);
+    };
+
+    const initiateDelete = (id: string) => {
+        setDeleteModal({ isOpen: true, id });
+    };
+
+    const confirmDelete = async () => {
+        if (!canDelete || !deleteModal.id) return;
+        try {
+            await storageService.deletePart(deleteModal.id);
+            setDeleteModal({ isOpen: false, id: null });
+        } catch (e) {
+            alert('Error eliminando el registro.');
+        }
+    };
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedIds(new Set(filteredParts.map(p => p.id)));
+        } else {
+            setSelectedIds(new Set());
+        }
+    };
+
+    const handleSelectRow = (id: string) => {
+        const newSelected = new Set(selectedIds);
+        if (newSelected.has(id)) {
+            newSelected.delete(id);
+        } else {
+            newSelected.add(id);
+        }
+        setSelectedIds(newSelected);
+    };
+
+    const confirmBulkDelete = async () => {
+        if (!canDelete) return;
+        try {
+            await storageService.deleteParts(Array.from(selectedIds));
+            setSelectedIds(new Set());
+            setBulkDeleteModal(false);
+        } catch (e) {
+            alert('Error eliminando registros.');
+        }
+    };
+
+    const handlePartInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value, type } = e.target;
+        setCurrentPart(prev => ({
+            ...prev,
+            [name]: type === 'number' ? parseFloat(value) : value
+        }));
+    };
+
+    const handleDownloadTemplate = () => {
+        // Generate Template based EXACTLY on CSV_ORDER_KEYS
+        const headerRow = CSV_ORDER_KEYS.join(',');
+        // Sample data matching types
+        const exampleRow = CSV_ORDER_KEYS.map(key => {
+            if (key === 'IGI_DUTY' || key === 'NETWEIGHT') return '0';
+            if (key === 'IMPORTED_OR_NOT' || key === 'SENSIBLE') return 'Y';
+            return `Sample ${key}`;
+        }).join(',');
+
+        const csvContent = headerRow + '\n' + exampleRow;
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'plantilla_exacta.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
+    const handleBulkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setProcState({
+            isOpen: true,
+            status: 'loading',
+            title: 'Reading File',
+            message: 'Scanning for PART_NUMBER column...',
+            progress: 10
+        });
+
+        const reader = new FileReader();
+
+        reader.onload = async (evt) => {
+            setTimeout(async () => {
+                try {
+                    const text = evt.target?.result as string;
+                    if (!text || text.trim().length === 0) throw new Error("File is empty");
+
+                    const rows = parseCSV(text);
+
+                    // 1. FIND HEADER ROW EXACTLY
+                    let headerIndex = -1;
+                    for (let i = 0; i < rows.length; i++) {
+                        const rowStr = rows[i].join(',').toUpperCase();
+                        // Robust check: must contain PART_NUMBER and REGIMEN
+                        if (rowStr.includes('PART_NUMBER') && rowStr.includes('REGIMEN')) {
+                            headerIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (headerIndex === -1) {
+                        throw new Error("Formato inválido: No se encontró la fila con 'PART_NUMBER' y 'REGIMEN'.");
+                    }
+
+                    // 2. MAP COLUMNS BY INDEX
+                    // We trust the user's file matches the CSV_ORDER_KEYS mostly, but we'll map by name to be safe
+                    const fileHeaders = rows[headerIndex].map(h => h.trim());
+                    const mapIndices: Record<string, number> = {};
+
+                    // Map the CSV_ORDER_KEYS to the indices in the file
+                    CSV_ORDER_KEYS.forEach(key => {
+                        const idx = fileHeaders.findIndex(h => h.toUpperCase().replace(/[^A-Z0-9]/g, '') === key.toUpperCase().replace(/[^A-Z0-9]/g, ''));
+                        if (idx !== -1) mapIndices[key] = idx;
                     });
 
-                    if (hasData && newPart.PART_NUMBER) {
-                        parsedParts.push(newPart);
+                    if (mapIndices['PART_NUMBER'] === undefined) {
+                        throw new Error("Columna PART_NUMBER no encontrada.");
                     }
+
+                    setProcState(prev => ({ ...prev, progress: 30, message: 'Processing rows...' }));
+
+                    const parsedParts: RawMaterialPart[] = [];
+
+                    // 3. PARSE DATA
+                    for (let i = headerIndex + 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (row.length < 2) continue; // Skip empty rows
+
+                        const newPart: any = { ...emptyPart };
+                        let hasData = false;
+
+                        CSV_ORDER_KEYS.forEach(key => {
+                            const idx = mapIndices[key];
+                            if (idx !== undefined && row[idx] !== undefined) {
+                                const rawVal = row[idx].trim();
+
+                                // Specific conversions based on user requirements
+                                if (key === 'NETWEIGHT') {
+                                    newPart[key] = parseFloat(rawVal) || 0;
+                                }
+                                else if (key === 'IGI_DUTY') {
+                                    if (rawVal.toUpperCase().includes('EX')) newPart[key] = 0;
+                                    else {
+                                        const num = parseFloat(rawVal.replace(/[^0-9.]/g, ''));
+                                        newPart[key] = isNaN(num) ? 0 : num;
+                                    }
+                                }
+                                else if (key === 'IMPORTED_OR_NOT' || key === 'SENSIBLE') {
+                                    newPart[key] = ['Y', 'YES', 'SI', 'S', 'TRUE', '1'].includes(rawVal.toUpperCase());
+                                }
+                                else {
+                                    newPart[key] = rawVal;
+                                }
+
+                                if (rawVal) hasData = true;
+                            }
+                        });
+
+                        if (hasData && newPart.PART_NUMBER) {
+                            parsedParts.push(newPart);
+                        }
+                    }
+
+                    if (parsedParts.length === 0) throw new Error("No data found to import.");
+
+                    setProcState(prev => ({ ...prev, progress: 60, message: 'Saving...' }));
+
+                    // @ts-ignore
+                    await storageService.upsertParts(parsedParts, (p) => {
+                        setProcState(prev => ({ ...prev, progress: 60 + (p * 0.4) }));
+                    });
+
+                    setProcState({
+                        isOpen: true,
+                        status: 'success',
+                        title: 'Import Successful',
+                        message: `Imported ${parsedParts.length} parts.`,
+                        progress: 100
+                    });
+
+                    setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 2000);
+
+                } catch (err: any) {
+                    console.error(err);
+                    setProcState({
+                        isOpen: true,
+                        status: 'error',
+                        title: 'Error',
+                        message: err.message,
+                        progress: 0
+                    });
+                } finally {
+                    if (fileInputRef.current) fileInputRef.current.value = '';
                 }
-
-                if (parsedParts.length === 0) throw new Error("No data found to import.");
-
-                setProcState(prev => ({ ...prev, progress: 60, message: 'Saving...' }));
-                
-                // @ts-ignore
-                await storageService.upsertParts(parsedParts, (p) => {
-                     setProcState(prev => ({ ...prev, progress: 60 + (p * 0.4) }));
-                });
-                
-                setProcState({
-                    isOpen: true,
-                    status: 'success',
-                    title: 'Import Successful',
-                    message: `Imported ${parsedParts.length} parts.`,
-                    progress: 100
-                });
-                
-                setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 2000);
-
-            } catch (err: any) {
-                console.error(err);
-                setProcState({
-                    isOpen: true,
-                    status: 'error',
-                    title: 'Error',
-                    message: err.message,
-                    progress: 0
-                });
-            } finally {
-                 if (fileInputRef.current) fileInputRef.current.value = '';
-            }
-        }, 500); 
+            }, 500);
+        };
+        reader.readAsText(file);
     };
-    reader.readAsText(file);
-  };
 
-  const filteredParts = useMemo(() => {
-    if (!searchTerm) return parts;
-    const lower = searchTerm.toLowerCase();
-    return parts.filter(p => 
-      (p.PART_NUMBER && String(p.PART_NUMBER).toLowerCase().includes(lower)) || 
-      (p.DESCRIPTION_EN && String(p.DESCRIPTION_EN).toLowerCase().includes(lower)) ||
-      (p.DESCRIPCION_ES && String(p.DESCRIPCION_ES).toLowerCase().includes(lower))
-    );
-  }, [parts, searchTerm]);
+    const filteredParts = useMemo(() => {
+        if (!searchTerm) return parts;
+        const lower = searchTerm.toLowerCase();
+        return parts.filter(p =>
+            (p.PART_NUMBER && String(p.PART_NUMBER).toLowerCase().includes(lower)) ||
+            (p.DESCRIPTION_EN && String(p.DESCRIPTION_EN).toLowerCase().includes(lower)) ||
+            (p.DESCRIPCION_ES && String(p.DESCRIPCION_ES).toLowerCase().includes(lower))
+        );
+    }, [parts, searchTerm]);
 
-  // --- NEW EXPORT FUNCTIONALITY ---
-  const handleExportFiltered = () => {
-    if (filteredParts.length === 0) {
-        alert("No hay datos para exportar con los filtros actuales.");
-        return;
-    }
+    // --- NEW EXPORT FUNCTIONALITY ---
+    const handleExportFiltered = () => {
+        if (filteredParts.length === 0) {
+            alert("No hay datos para exportar con los filtros actuales.");
+            return;
+        }
 
-    // 1. Headers
-    const headerRow = CSV_ORDER_KEYS.join(',');
+        // 1. Headers
+        const headerRow = CSV_ORDER_KEYS.join(',');
 
-    // 2. Data Rows
-    const dataRows = filteredParts.map(part => {
-        return CSV_ORDER_KEYS.map(key => {
-            let val = (part as any)[key];
-            
-            // Handle specific types
-            if (val === null || val === undefined) return '';
-            if (typeof val === 'boolean') return val ? 'Y' : 'N';
-            
-            // Escape CSV special characters
-            const strVal = String(val);
-            if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
-                return `"${strVal.replace(/"/g, '""')}"`;
-            }
-            return strVal;
-        }).join(',');
-    });
+        // 2. Data Rows
+        const dataRows = filteredParts.map(part => {
+            return CSV_ORDER_KEYS.map(key => {
+                let val = (part as any)[key];
 
-    const csvContent = '\uFEFF' + [headerRow, ...dataRows].join('\n'); // Add BOM for Excel support
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    
-    const timestamp = new Date().toISOString().slice(0,10);
-    const filename = `master_data_export_${searchTerm ? 'filtered_' : 'all_'}${timestamp}.csv`;
+                // Handle specific types
+                if (val === null || val === undefined) return '';
+                if (typeof val === 'boolean') return val ? 'Y' : 'N';
 
-    const link = document.createElement('a');
-    if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-  };
+                // Escape CSV special characters
+                const strVal = String(val);
+                if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
+                    return `"${strVal.replace(/"/g, '""')}"`;
+                }
+                return strVal;
+            }).join(',');
+        });
 
-  const totalPages = Math.ceil(filteredParts.length / itemsPerPage);
-  const currentItems = useMemo(() => {
-    const idxFirst = (currentPage - 1) * itemsPerPage;
-    return filteredParts.slice(idxFirst, idxFirst + itemsPerPage);
-  }, [filteredParts, currentPage, itemsPerPage]);
+        const csvContent = '\uFEFF' + [headerRow, ...dataRows].join('\n'); // Add BOM for Excel support
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) setCurrentPage(newPage);
-  };
+        const timestamp = new Date().toISOString().slice(0, 10);
+        const filename = `master_data_export_${searchTerm ? 'filtered_' : 'all_'}${timestamp}.csv`;
 
-  return (
-    <div className="space-y-6">
-      <ProcessingModal state={procState} onClose={() => setProcState(INITIAL_PROCESSING_STATE)} />
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
 
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-800">Master Data Management</h1>
-        <div className="flex gap-2">
-            <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleBulkUpload} 
-                onClick={(e) => (e.currentTarget.value = '')}
-                accept=".csv, text/csv, .txt" 
-                className="hidden" 
-            />
-             <input 
-                type="file" 
-                ref={restoreInputRef} 
-                onChange={handleRestoreBackup} 
-                onClick={(e) => (e.currentTarget.value = '')}
-                accept=".json" 
-                className="hidden" 
-            />
-            
-            {/* Export Filtered Results Button */}
-            <button 
-                onClick={handleExportFiltered}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 shadow-sm transition-colors"
-                title="Export current table results to CSV"
-            >
-                <FileDown size={16} /> Export CSV
-            </button>
+    const totalPages = Math.ceil(filteredParts.length / itemsPerPage);
+    const currentItems = useMemo(() => {
+        const idxFirst = (currentPage - 1) * itemsPerPage;
+        return filteredParts.slice(idxFirst, idxFirst + itemsPerPage);
+    }, [filteredParts, currentPage, itemsPerPage]);
 
-             <button 
-                onClick={handleDownloadTemplate}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"
-                title="Download Exact Template"
-            >
-                <FileSpreadsheet size={16} /> Template
-            </button>
-            
-            {canEdit && (
-                <>
-                    <button 
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={procState.isOpen}
-                        className={`flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-colors ${procState.isOpen ? 'opacity-50 cursor-wait' : ''}`}
-                    >
-                        <FileSpreadsheet size={16} /> Bulk Upload
-                    </button>
-                    <button 
-                        onClick={handleCreatePart}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm transition-colors"
-                    >
-                        <Plus size={16} /> Add Item
-                    </button>
-                    <div className="w-px h-8 bg-slate-300 mx-1"></div>
-                    {!storageService.isCloudMode() && (
-                        <button onClick={() => restoreInputRef.current?.click()} disabled={procState.isOpen} className="flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-200 shadow-sm transition-colors" title="Restore DB">
-                            <RefreshCcw size={16} /> Restore
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 1 && newPage <= totalPages) setCurrentPage(newPage);
+    };
+
+    return (
+        <div className="space-y-6">
+            <ProcessingModal state={procState} onClose={() => setProcState(INITIAL_PROCESSING_STATE)} />
+
+            <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold text-slate-800">Master Data Management</h1>
+                <div className="flex gap-2">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleBulkUpload}
+                        onClick={(e) => (e.currentTarget.value = '')}
+                        accept=".csv, text/csv, .txt"
+                        className="hidden"
+                    />
+
+                    {/* Bulk Delete Button */}
+                    {selectedIds.size > 0 && canDelete && (
+                        <button
+                            onClick={() => setBulkDeleteModal(true)}
+                            className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm hover:bg-red-100 transition-all font-medium"
+                        >
+                            <Trash2 size={16} /> Delete Selected ({selectedIds.size})
                         </button>
                     )}
-                </>
-            )}
-            
-            <button onClick={handleBackup} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-colors" title="Full Backup">
-                <Download size={16} /> Backup
-            </button>
-        </div>
-      </div>
 
-      <div className="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden flex flex-col h-[700px]">
-            <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-4">
-                <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-                    <input 
-                        type="text"
-                        placeholder="Search PART_NUMBER, DESCRIPTION (EN/ES)..."
-                        value={searchTerm}
-                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                        className="pl-9 pr-4 py-2 w-full border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    <input
+                        type="file"
+                        ref={restoreInputRef}
+                        onChange={handleRestoreBackup}
+                        onClick={(e) => (e.currentTarget.value = '')}
+                        accept=".json"
+                        className="hidden"
                     />
-                </div>
-                <div className="text-sm text-slate-500 flex items-center gap-2">
-                    <Database size={14} className="text-slate-400" />
-                    Count: <span className="font-bold text-slate-700">{filteredParts.length.toLocaleString()}</span>
-                </div>
-            </div>
 
-            <div className="overflow-auto flex-1">
-                <table className="w-full text-xs text-left whitespace-nowrap">
-                    <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 z-10 shadow-sm">
-                        <tr>
-                            <th className="px-3 py-3 bg-slate-50 border-b border-slate-200">Actions</th>
-                            {CSV_ORDER_KEYS.map(key => (
-                                <th key={key} className="px-3 py-3 bg-slate-50 border-b border-slate-200 font-bold text-slate-700">
-                                    {key}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {currentItems.map(part => (
-                            <tr key={part.id || Math.random()} className="hover:bg-slate-50">
-                                <td className="px-3 py-2 flex items-center gap-2 sticky left-0 bg-white hover:bg-slate-50 border-r border-slate-100 z-10">
-                                    {canEdit ? (
-                                        <button onClick={() => handleEditPart(part as RawMaterialPart)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50">
-                                            <Edit2 size={14} />
-                                        </button>
-                                    ) : (
-                                        <span className="text-slate-300 p-1"><Edit2 size={14} /></span>
-                                    )}
-                                    {canDelete && (
-                                        <button onClick={() => initiateDelete(part.id)} className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50">
-                                            <Trash2 size={14} />
-                                        </button>
-                                    )}
-                                </td>
-                                
-                                {/* DYNAMIC ROW RENDERING IN EXACT ORDER */}
-                                {CSV_ORDER_KEYS.map(key => {
-                                    let displayVal = (part as any)[key];
-                                    if (typeof displayVal === 'boolean') displayVal = displayVal ? 'Y' : 'N';
-                                    return (
-                                        <td key={key} className="px-3 py-2 border-r border-slate-50 last:border-0 max-w-[200px] truncate" title={String(displayVal)}>
-                                            {displayVal}
-                                        </td>
-                                    );
-                                })}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        
-      <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center rounded-b-xl border">
-          <span className="text-xs text-slate-500">
-              {filteredParts.length > 0 ? 
-                  `Showing ${(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredParts.length)} of ${filteredParts.length}` : 
-                  'No records'}
-          </span>
-          <div className="flex items-center gap-2">
-              <button 
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="p-2 rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                  <ChevronLeft size={16} />
-              </button>
-              <span className="text-sm font-medium text-slate-700 px-2 min-w-[80px] text-center">
-                  Page {currentPage} of {totalPages || 1}
-              </span>
-              <button 
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  className="p-2 rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                  <ChevronRight size={16} />
-              </button>
-          </div>
-      </div>
+                    {/* Export Filtered Results Button */}
+                    <button
+                        onClick={handleExportFiltered}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 shadow-sm transition-colors"
+                        title="Export current table results to CSV"
+                    >
+                        <FileDown size={16} /> Export CSV
+                    </button>
 
-      {deleteModal.isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
-                  <div className="bg-red-50 p-6 flex flex-col items-center text-center border-b border-red-100">
-                      <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-3">
-                          <AlertTriangle size={24} />
-                      </div>
-                      <h3 className="text-lg font-bold text-red-900">Confirm Deletion</h3>
-                  </div>
-                  <div className="p-6 flex gap-3">
-                      <button onClick={() => setDeleteModal({isOpen: false, id: null})} className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium">Cancel</button>
-                      <button onClick={confirmDelete} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-sm">Confirm</button>
-                  </div>
-              </div>
-          </div>
-      )}
+                    <button
+                        onClick={handleDownloadTemplate}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"
+                        title="Download Exact Template"
+                    >
+                        <FileSpreadsheet size={16} /> Template
+                    </button>
 
-      {isPartModalOpen && canEdit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
-                <div className="flex justify-between items-center p-6 border-b border-slate-100">
-                    <h2 className="text-xl font-bold text-slate-800">
-                        {currentPart.id ? 'Edit Item' : 'Add New Item'}
-                    </h2>
-                    <button onClick={() => setIsPartModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                        <X size={24} />
+                    {canEdit && (
+                        <>
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={procState.isOpen}
+                                className={`flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-colors ${procState.isOpen ? 'opacity-50 cursor-wait' : ''}`}
+                            >
+                                <FileSpreadsheet size={16} /> Bulk Upload
+                            </button>
+                            <button
+                                onClick={handleCreatePart}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm transition-colors"
+                            >
+                                <Plus size={16} /> Add Item
+                            </button>
+                            <div className="w-px h-8 bg-slate-300 mx-1"></div>
+                            {!storageService.isCloudMode() && (
+                                <button onClick={() => restoreInputRef.current?.click()} disabled={procState.isOpen} className="flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-200 shadow-sm transition-colors" title="Restore DB">
+                                    <RefreshCcw size={16} /> Restore
+                                </button>
+                            )}
+                        </>
+                    )}
+
+                    <button onClick={handleBackup} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-colors" title="Full Backup">
+                        <Download size={16} /> Backup
                     </button>
                 </div>
-                
-                <form onSubmit={handleSavePart} className="flex-1 overflow-y-auto p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                         {/* GENERATE FORM FIELDS DYNAMICALLY based on CSV_ORDER_KEYS */}
-                         {CSV_ORDER_KEYS.map(key => (
-                             <div key={key} className={key.includes('DESCRIPTION') || key.includes('DESCRIPCION') ? 'col-span-2' : ''}>
-                                 <label className="block">
-                                     <span className="text-xs font-bold text-slate-500 uppercase">{key.replace(/_/g, ' ')}</span>
-                                     <input 
-                                        name={key}
-                                        value={(currentPart as any)[key]} 
-                                        onChange={handlePartInputChange}
-                                        type={['IGI_DUTY', 'NETWEIGHT'].includes(key) ? 'number' : 'text'}
-                                        step={['IGI_DUTY', 'NETWEIGHT'].includes(key) ? '0.001' : undefined}
-                                        className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm" 
-                                     />
-                                 </label>
-                             </div>
-                         ))}
+            </div>
+
+            <div className="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden flex flex-col h-[700px]">
+                <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-4">
+                    <div className="relative flex-1 max-w-md">
+                        <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Search PART_NUMBER, DESCRIPTION (EN/ES)..."
+                            value={searchTerm}
+                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                            className="pl-9 pr-4 py-2 w-full border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
                     </div>
-                </form>
-                
-                <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-xl">
-                    <button onClick={() => setIsPartModalOpen(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium">Cancel</button>
-                    <button onClick={handleSavePart} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm flex items-center gap-2">
-                        <Save size={18} /> Save
-                    </button>
+                    <div className="text-sm text-slate-500 flex items-center gap-2">
+                        <Database size={14} className="text-slate-400" />
+                        Count: <span className="font-bold text-slate-700">{filteredParts.length.toLocaleString()}</span>
+                    </div>
                 </div>
+
+                <div className="overflow-auto flex-1">
+                    <table className="w-full text-xs text-left whitespace-nowrap">
+                        <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 z-10 shadow-sm">
+                            <tr>
+                                <th className="px-3 py-3 bg-slate-50 border-b border-slate-200 text-center w-[40px] sticky left-0 z-20">
+                                    <input
+                                        type="checkbox"
+                                        className="rounded border-slate-300"
+                                        checked={filteredParts.length > 0 && selectedIds.size === filteredParts.length}
+                                        onChange={handleSelectAll}
+                                    />
+                                </th>
+                                <th className="px-3 py-3 bg-slate-50 border-b border-slate-200 sticky left-[40px] z-20">Actions</th>
+                                {CSV_ORDER_KEYS.map(key => (
+                                    <th key={key} className="px-3 py-3 bg-slate-50 border-b border-slate-200 font-bold text-slate-700">
+                                        {key}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {currentItems.map(part => (
+                                <tr key={part.id || Math.random()} className="hover:bg-slate-50">
+                                    <td className="px-3 py-2 border-r border-slate-100 sticky left-0 bg-white hover:bg-slate-50 text-center z-10">
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-slate-300"
+                                            checked={selectedIds.has(part.id)}
+                                            onChange={() => handleSelectRow(part.id)}
+                                        />
+                                    </td>
+                                    <td className="px-3 py-2 flex items-center gap-2 sticky left-[40px] bg-white hover:bg-slate-50 border-r border-slate-100 z-10">
+                                        {canEdit ? (
+                                            <button onClick={() => handleEditPart(part as RawMaterialPart)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50">
+                                                <Edit2 size={14} />
+                                            </button>
+                                        ) : (
+                                            <span className="text-slate-300 p-1"><Edit2 size={14} /></span>
+                                        )}
+                                        {canDelete && (
+                                            <button onClick={() => initiateDelete(part.id)} className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50">
+                                                <Trash2 size={14} />
+                                            </button>
+                                        )}
+                                    </td>
+
+                                    {/* DYNAMIC ROW RENDERING IN EXACT ORDER */}
+                                    {CSV_ORDER_KEYS.map(key => {
+                                        let displayVal = (part as any)[key];
+                                        if (typeof displayVal === 'boolean') displayVal = displayVal ? 'Y' : 'N';
+                                        return (
+                                            <td key={key} className="px-3 py-2 border-r border-slate-50 last:border-0 max-w-[200px] truncate" title={String(displayVal)}>
+                                                {displayVal}
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center rounded-b-xl border">
+                    <span className="text-xs text-slate-500">
+                        {filteredParts.length > 0 ?
+                            `Showing ${(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredParts.length)} of ${filteredParts.length}` :
+                            'No records'}
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="p-2 rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+                        <span className="text-sm font-medium text-slate-700 px-2 min-w-[80px] text-center">
+                            Page {currentPage} of {totalPages || 1}
+                        </span>
+                        <button
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages || totalPages === 0}
+                            className="p-2 rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                </div>
+
+                {deleteModal.isOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+                            <div className="bg-red-50 p-6 flex flex-col items-center text-center border-b border-red-100">
+                                <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-3">
+                                    <AlertTriangle size={24} />
+                                </div>
+                                <h3 className="text-lg font-bold text-red-900">Confirm Deletion</h3>
+                            </div>
+                            <div className="p-6 flex gap-3">
+                                <button onClick={() => setDeleteModal({ isOpen: false, id: null })} className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium">Cancel</button>
+                                <button onClick={confirmDelete} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-sm">Confirm</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {bulkDeleteModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+                            <div className="bg-red-50 p-6 flex flex-col items-center text-center border-b border-red-100">
+                                <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-3">
+                                    <AlertTriangle size={24} />
+                                </div>
+                                <h3 className="text-lg font-bold text-red-900">Bulk Delete</h3>
+                                <p className="text-sm text-red-700 mt-2">
+                                    Are you sure you want to delete {selectedIds.size} records? This action cannot be undone.
+                                </p>
+                            </div>
+                            <div className="p-6 flex gap-3">
+                                <button onClick={() => setBulkDeleteModal(false)} className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium">Cancel</button>
+                                <button onClick={confirmBulkDelete} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-sm">Delete All</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {isPartModalOpen && canEdit && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
+                            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+                                <h2 className="text-xl font-bold text-slate-800">
+                                    {currentPart.id ? 'Edit Item' : 'Add New Item'}
+                                </h2>
+                                <button onClick={() => setIsPartModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleSavePart} className="flex-1 overflow-y-auto p-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {/* GENERATE FORM FIELDS DYNAMICALLY based on CSV_ORDER_KEYS */}
+                                    {CSV_ORDER_KEYS.map(key => (
+                                        <div key={key} className={key.includes('DESCRIPTION') || key.includes('DESCRIPCION') ? 'col-span-2' : ''}>
+                                            <label className="block">
+                                                <span className="text-xs font-bold text-slate-500 uppercase">{key.replace(/_/g, ' ')}</span>
+                                                <input
+                                                    name={key}
+                                                    value={(currentPart as any)[key]}
+                                                    onChange={handlePartInputChange}
+                                                    type={['IGI_DUTY', 'NETWEIGHT'].includes(key) ? 'number' : 'text'}
+                                                    step={['IGI_DUTY', 'NETWEIGHT'].includes(key) ? '0.001' : undefined}
+                                                    className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm"
+                                                />
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </form>
+
+                            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-xl">
+                                <button onClick={() => setIsPartModalOpen(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium">Cancel</button>
+                                <button onClick={handleSavePart} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm flex items-center gap-2">
+                                    <Save size={18} /> Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
-      )}
-      </div>
-    </div>
-  );
+    );
 };

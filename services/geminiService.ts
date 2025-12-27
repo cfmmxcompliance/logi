@@ -5,7 +5,7 @@ import { PedimentoRecord } from '../types.ts';
 // Senior Frontend Engineer: Use GoogleGenAI with the recommended direct API key access.
 // Senior Frontend Engineer: Use GoogleGenAI with the recommended direct API key access.
 const getClient = () => {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
+  const apiKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || process.env.API_KEY;
   if (!apiKey) {
     console.error("CRITICAL: Gemini API Key is missing! Check .env.local and VITE_GEMINI_API_KEY");
     throw new Error("API Key not found");

@@ -75,9 +75,9 @@ export interface RawMaterialPart {
 export interface Shipment {
   id: string;
   status: ShipmentStatus;
-  costs: number; 
-  origin: string; 
-  destination: string; 
+  costs: number;
+  origin: string;
+  destination: string;
   projectSection: string;
   shipmentBatch: string;
   personInCharge: string;
@@ -285,7 +285,28 @@ export interface DataStageReport {
 
 export interface DataStageSession {
   records: PedimentoRecord[];
-  rawFiles: RawFileParsed[];
   fileName: string;
   timestamp: string;
+}
+
+export interface CommercialInvoiceItem {
+  id: string;
+  invoiceNo: string;
+  date: string;
+  item: string;
+  model: string;
+  partNo: string;
+  englishName: string;
+  spanishDescription: string;
+  hts: string;
+  prosec: string;
+  rb: string;
+  qty: number;
+  um: string;
+  netWeight: number;
+  unitPrice: number;
+  totalAmount: number;
+  regimen: string;
+  containerNo?: string;
+  incoterm?: string;
 }

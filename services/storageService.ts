@@ -1,25 +1,27 @@
 
-import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession } from '../types.ts';
+import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
   collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc
 } from 'firebase/firestore';
+import { downloadFile } from '../utils/fileHelpers.ts';
 
 const COLS = {
   PARTS: 'parts', SHIPMENTS: 'shipments', VESSEL_TRACKING: 'vessel_tracking',
   EQUIPMENT: 'equipment_tracking', CUSTOMS: 'customs_clearance', PRE_ALERTS: 'pre_alerts',
   COSTS: 'costs', LOGS: 'logs', LOGISTICS: 'logistics', SUPPLIERS: 'suppliers',
   SNAPSHOTS: 'snapshots', DATA_STAGE_REPORTS: 'data_stage_reports',
-  TRAINING: 'training_submissions'
+  TRAINING: 'training_submissions', INVOICES: 'commercial_invoices'
 };
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
+const INVOICES_BACKUP_KEY = 'logimaster_commercial_invoices_backup';
 const DRAFT_DATA_STAGE_KEY = 'logimaster_datastage_draft';
 
 let dbState: any = {
   parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
   customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
-  logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: []
+  logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: []
 };
 
 let listeners: (() => void)[] = [];
@@ -29,6 +31,10 @@ const notifyListeners = () => listeners.forEach(l => l());
 
 const saveLocal = () => {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dbState));
+  // Robust backup for Commercial Invoices
+  if (dbState.commercialInvoices && dbState.commercialInvoices.length > 0) {
+    localStorage.setItem(INVOICES_BACKUP_KEY, JSON.stringify(dbState.commercialInvoices));
+  }
   notifyListeners();
 };
 
@@ -53,10 +59,12 @@ export const storageService = {
       return;
     }
     Object.entries(COLS).forEach(([key, colName]) => {
+      // FORCE LOCAL MODE FOR COMMERCIAL INVOICES
+      if (key === 'INVOICES') return;
+
       unsubscribers.push(onSnapshot(collection(db, colName), (snap) => {
         const data = snap.docs.map(d => d.data());
 
-        // Explicit mapping to handle non-standard property names
         let stateKey = key.toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase());
         if (key === 'CUSTOMS') stateKey = 'customsClearance';
         if (key === 'EQUIPMENT') stateKey = 'equipmentTracking';
@@ -66,6 +74,41 @@ export const storageService = {
         notifyListeners();
       }));
     });
+
+    // Always load local data for Commercial Invoices (Hybrid Mode)
+    // 1. Try Main DB blob
+    const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    let invoicesLoaded = false;
+
+    if (localData) {
+      try {
+        const parsed = JSON.parse(localData);
+        if (parsed.commercialInvoices && Array.isArray(parsed.commercialInvoices) && parsed.commercialInvoices.length > 0) {
+          dbState.commercialInvoices = parsed.commercialInvoices;
+          invoicesLoaded = true;
+          notifyListeners();
+        }
+      } catch (e) {
+        console.warn("Error parsing local DB", e);
+      }
+    }
+
+    // 2. Fallback to Dedicated Backup if main failed or was empty
+    if (!invoicesLoaded) {
+      const backupData = localStorage.getItem(INVOICES_BACKUP_KEY);
+      if (backupData) {
+        try {
+          const parsedBackup = JSON.parse(backupData);
+          if (Array.isArray(parsedBackup)) {
+            console.log("Restored Commercial Invoices from Backup", parsedBackup.length);
+            dbState.commercialInvoices = parsedBackup;
+            notifyListeners();
+          }
+        } catch (e) {
+          console.error("Failed to restore backup", e);
+        }
+      }
+    }
   },
 
   getParts: () => dbState.parts || [],
@@ -79,6 +122,53 @@ export const storageService = {
   getLogistics: () => dbState.logistics || [],
   getSuppliers: () => dbState.suppliers || [],
   getDataStageReports: () => dbState.dataStageReports || [],
+  getInvoiceItems: () => dbState.commercialInvoices || [],
+
+  // Commercial Invoices CRUD con Protección de Duplicados
+  addInvoiceItems: async (newItems: CommercialInvoiceItem[]) => {
+    // 1. Crear un set de "llaves únicas" de lo que ya existe
+    // Usamos Factura + No. Parte + Cantidad + HTS como identificador único lógico
+    const existingKeys = new Set(
+      (dbState.commercialInvoices || []).map(
+        (i: any) => `${i.invoiceNo}-${i.partNo}-${i.qty}-${i.hts || ''}`
+      )
+    );
+
+    // 2. Filtrar solo los items que no existen previamente
+    const uniqueNewItems = newItems.filter(item => {
+      const key = `${item.invoiceNo}-${item.partNo}-${item.qty}-${item.hts || ''}`;
+      return !existingKeys.has(key);
+    });
+
+    if (uniqueNewItems.length === 0) {
+      console.log("No hay items nuevos (duplicados omitidos)");
+      return;
+    }
+
+    dbState.commercialInvoices = [...(dbState.commercialInvoices || []), ...uniqueNewItems];
+    saveLocal();
+  },
+
+  updateInvoiceItem: async (item: CommercialInvoiceItem) => {
+    // FORCE LOCAL
+    const idx = dbState.commercialInvoices.findIndex((i: any) => i.id === item.id);
+    if (idx !== -1) {
+      dbState.commercialInvoices[idx] = item;
+      saveLocal();
+    }
+  },
+
+  deleteInvoiceItem: async (id: string) => {
+    // FORCE LOCAL
+    dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => i.id !== id);
+    saveLocal();
+  },
+
+  deleteInvoiceItems: async (ids: string[]) => {
+    // FORCE LOCAL
+    dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => !ids.includes(i.id));
+    saveLocal();
+  },
 
   isCloudMode: () => !!db,
   subscribe: (callback: () => void) => {
@@ -111,6 +201,19 @@ export const storageService = {
       return;
     }
     await deleteDoc(doc(db, COLS.PARTS, id));
+  },
+
+  deleteParts: async (ids: string[]) => {
+    if (!db) {
+      dbState.parts = dbState.parts.filter((p: any) => !ids.includes(p.id));
+      saveLocal();
+      return;
+    }
+    const batch = writeBatch(db);
+    ids.forEach(id => {
+      batch.delete(doc(db, COLS.PARTS, id));
+    });
+    await batch.commit();
   },
 
   upsertParts: async (parts: RawMaterialPart[], onProgress?: (p: number) => void) => {
@@ -745,24 +848,78 @@ export const storageService = {
   },
   clearDraftDataStage: () => localStorage.removeItem(DRAFT_DATA_STAGE_KEY),
 
+  // 2. Método de Descarga Universal (Solución al error de Chrome)
+  // Reemplaza tu método backup por este más robusto
   backup: () => {
-    const dataStr = JSON.stringify(dbState);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `backup_${new Date().toISOString()}.json`;
-    link.click();
+    try {
+      const dataStr = JSON.stringify(dbState, null, 2); // Formateado para legibilidad
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const fileName = `logimaster_full_backup_${new Date().toISOString().split('T')[0]}.json`;
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+
+      // Chrome requiere que el link esté en el DOM para evitar el error de UUID
+      document.body.appendChild(link);
+      link.click();
+
+      // Limpieza con retraso para que el SO procese el archivo antes de que el navegador lo borre de RAM
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        if (document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+      }, 3000);
+    } catch (e) {
+      console.error("Error crítico en backup:", e);
+    }
   },
 
-  // Senior Frontend Engineer: Implemented missing importDatabase method.
+  importLocalData: async (jsonFile: File) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target?.result as string);
+
+          // Merge Inteligente: Mantenemos lo que tenemos y sumamos lo nuevo
+          // basándonos en la lógica de duplicados para Facturas
+          if (imported.commercialInvoices) {
+            const existingKeys = new Set(dbState.commercialInvoices.map((i: any) => `${i.invoiceNo}-${i.partNo}-${i.qty}`));
+            const uniqueNew = imported.commercialInvoices.filter((i: any) =>
+              !existingKeys.has(`${i.invoiceNo}-${i.partNo}-${i.qty}`)
+            );
+            dbState.commercialInvoices = [...dbState.commercialInvoices, ...uniqueNew];
+          }
+
+          // Para otros módulos que SI están en nube, el sync de Firebase se encargará,
+          // pero para LocalStorage, sobrescribimos el estado actual:
+          saveLocal();
+          resolve(true);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.readAsText(jsonFile);
+    });
+  },
+
+  // 3. Importación Reforzada
   importDatabase: async (jsonStr: string) => {
     try {
       const imported = JSON.parse(jsonStr);
-      dbState = { ...dbState, ...imported };
+      // Mergeo inteligente para no perder facturas locales si el backup no las tiene
+      dbState = {
+        ...dbState,
+        ...imported,
+        commercialInvoices: imported.commercialInvoices || dbState.commercialInvoices
+      };
       saveLocal();
       return true;
     } catch (e) {
+      console.error("Error al importar base de datos:", e);
       return false;
     }
   },

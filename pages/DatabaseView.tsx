@@ -4,6 +4,7 @@ import { RawMaterialPart, UserRole } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { Download, Plus, Save, X, Trash2, Edit2, FileSpreadsheet, FileDown, ChevronLeft, ChevronRight, Search, RefreshCcw, Database, AlertTriangle } from 'lucide-react';
 import { parseCSV } from '../utils/csvHelpers.ts';
+import * as XLSX from 'xlsx';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
 
 const emptyPart: RawMaterialPart = {
@@ -95,6 +96,13 @@ export const DatabaseView = () => {
     const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, id: string | null }>({ isOpen: false, id: null });
     const [bulkDeleteModal, setBulkDeleteModal] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    const [duplicateModal, setDuplicateModal] = useState<{
+        isOpen: boolean;
+        newItems: RawMaterialPart[];
+        conflictingItems: RawMaterialPart[];
+        existingMap: Record<string, string>; // PartNo -> ID
+    }>({ isOpen: false, newItems: [], conflictingItems: [], existingMap: {} });
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const restoreInputRef = useRef<HTMLInputElement>(null);
@@ -244,6 +252,53 @@ export const DatabaseView = () => {
         }
     };
 
+    const handleWipeDatabase = async () => {
+        if (!hasRole([UserRole.ADMIN])) return;
+
+        const confirmCode = Math.floor(1000 + Math.random() * 9000).toString();
+        const userInput = window.prompt(`⚠️ DANGER: This will delete ALL ${parts.length} records.\nType "${confirmCode}" to confirm:`);
+
+        if (userInput !== confirmCode) {
+            if (userInput) alert("Incorrect confirmation code.");
+            return;
+        }
+
+        setProcState({
+            isOpen: true,
+            status: 'loading',
+            title: 'Wiping Database',
+            message: 'Deleting all records...',
+            progress: 0
+        });
+
+        try {
+            // Get all IDs
+            const allIds = parts.map(p => p.id);
+            // Batch delete in chunks of 450
+            // @ts-ignore
+            await storageService.deleteParts(allIds);
+
+            setProcState({
+                isOpen: true,
+                status: 'success',
+                title: 'Data Cleared',
+                message: 'All records have been deleted.',
+                progress: 100
+            });
+            setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 2000);
+            setSelectedIds(new Set());
+        } catch (err: any) {
+            console.error(err);
+            setProcState({
+                isOpen: true,
+                status: 'error',
+                title: 'Error',
+                message: err.message,
+                progress: 0
+            });
+        }
+    };
+
     const handleBulkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -252,7 +307,7 @@ export const DatabaseView = () => {
             isOpen: true,
             status: 'loading',
             title: 'Reading File',
-            message: 'Scanning for PART_NUMBER column...',
+            message: 'Scanning file...',
             progress: 10
         });
 
@@ -261,34 +316,43 @@ export const DatabaseView = () => {
         reader.onload = async (evt) => {
             setTimeout(async () => {
                 try {
-                    const text = evt.target?.result as string;
-                    if (!text || text.trim().length === 0) throw new Error("File is empty");
+                    const data = evt.target?.result;
+                    if (!data) throw new Error("File is empty");
 
-                    const rows = parseCSV(text);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) as string[][];
 
                     // 1. FIND HEADER ROW EXACTLY
                     let headerIndex = -1;
-                    for (let i = 0; i < rows.length; i++) {
+                    for (let i = 0; i < Math.min(rows.length, 50); i++) {
                         const rowStr = rows[i].join(',').toUpperCase();
-                        // Robust check: must contain PART_NUMBER and REGIMEN
-                        if (rowStr.includes('PART_NUMBER') && rowStr.includes('REGIMEN')) {
+                        // Robust check
+                        if (rowStr.includes('PART_NUMBER') || rowStr.replace(/[^A-Z]/g, '').includes('PARTNUMBER')) {
                             headerIndex = i;
                             break;
                         }
                     }
 
                     if (headerIndex === -1) {
-                        throw new Error("Formato inválido: No se encontró la fila con 'PART_NUMBER' y 'REGIMEN'.");
+                        throw new Error("Formato inválido: No se encontró la columna 'PART_NUMBER'.");
                     }
 
                     // 2. MAP COLUMNS BY INDEX
-                    // We trust the user's file matches the CSV_ORDER_KEYS mostly, but we'll map by name to be safe
-                    const fileHeaders = rows[headerIndex].map(h => h.trim());
+                    const fileHeaders = rows[headerIndex].map(h => (h || '').toString().trim());
                     const mapIndices: Record<string, number> = {};
 
-                    // Map the CSV_ORDER_KEYS to the indices in the file
                     CSV_ORDER_KEYS.forEach(key => {
-                        const idx = fileHeaders.findIndex(h => h.toUpperCase().replace(/[^A-Z0-9]/g, '') === key.toUpperCase().replace(/[^A-Z0-9]/g, ''));
+                        const target = key.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        // 1. Exact Name Match
+                        let idx = fileHeaders.findIndex(h => h.toUpperCase().replace(/[^A-Z0-9]/g, '') === target);
+
+                        // 2. Fuzzy Contain Match
+                        if (idx === -1) {
+                            idx = fileHeaders.findIndex(h => h.toUpperCase().replace(/[^A-Z0-9]/g, '').includes(target));
+                        }
+
                         if (idx !== -1) mapIndices[key] = idx;
                     });
 
@@ -303,7 +367,7 @@ export const DatabaseView = () => {
                     // 3. PARSE DATA
                     for (let i = headerIndex + 1; i < rows.length; i++) {
                         const row = rows[i];
-                        if (row.length < 2) continue; // Skip empty rows
+                        if (!row || row.length === 0) continue;
 
                         const newPart: any = { ...emptyPart };
                         let hasData = false;
@@ -311,9 +375,9 @@ export const DatabaseView = () => {
                         CSV_ORDER_KEYS.forEach(key => {
                             const idx = mapIndices[key];
                             if (idx !== undefined && row[idx] !== undefined) {
-                                const rawVal = row[idx].trim();
+                                const rawVal = (row[idx] || '').toString().trim();
 
-                                // Specific conversions based on user requirements
+                                // Specific conversions
                                 if (key === 'NETWEIGHT') {
                                     newPart[key] = parseFloat(rawVal) || 0;
                                 }
@@ -342,22 +406,38 @@ export const DatabaseView = () => {
 
                     if (parsedParts.length === 0) throw new Error("No data found to import.");
 
-                    setProcState(prev => ({ ...prev, progress: 60, message: 'Saving...' }));
-
-                    // @ts-ignore
-                    await storageService.upsertParts(parsedParts, (p) => {
-                        setProcState(prev => ({ ...prev, progress: 60 + (p * 0.4) }));
+                    // 4. DUPLICATE CHECK logic
+                    // Fetch latest parts to be sure
+                    const currentParts = storageService.getParts();
+                    const existingMap: Record<string, string> = {};
+                    currentParts.forEach(p => {
+                        if (p.PART_NUMBER) existingMap[p.PART_NUMBER] = p.id;
                     });
 
-                    setProcState({
-                        isOpen: true,
-                        status: 'success',
-                        title: 'Import Successful',
-                        message: `Imported ${parsedParts.length} parts.`,
-                        progress: 100
+                    const newItems: RawMaterialPart[] = [];
+                    const conflictingItems: RawMaterialPart[] = [];
+
+                    parsedParts.forEach(p => {
+                        if (existingMap[p.PART_NUMBER]) {
+                            conflictingItems.push(p);
+                        } else {
+                            newItems.push(p);
+                        }
                     });
 
-                    setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 2000);
+                    if (conflictingItems.length > 0) {
+                        // Open Resolution Modal
+                        setDuplicateModal({
+                            isOpen: true,
+                            newItems,
+                            conflictingItems,
+                            existingMap
+                        });
+                        setProcState(INITIAL_PROCESSING_STATE); // Close loading modal
+                    } else {
+                        // No duplicates, proceed directly
+                        proceedWithUpload(newItems);
+                    }
 
                 } catch (err: any) {
                     console.error(err);
@@ -373,7 +453,54 @@ export const DatabaseView = () => {
                 }
             }, 500);
         };
-        reader.readAsText(file);
+        reader.readAsArrayBuffer(file);
+    };
+
+
+
+    const proceedWithUpload = async (itemsToUpload: RawMaterialPart[]) => {
+        if (itemsToUpload.length === 0) return;
+
+        setProcState({
+            isOpen: true,
+            status: 'loading',
+            title: 'Saving Data',
+            message: `Saving ${itemsToUpload.length} records...`,
+            progress: 0
+        });
+
+        // @ts-ignore
+        await storageService.upsertParts(itemsToUpload, (p) => {
+            setProcState(prev => ({ ...prev, progress: p * 100 }));
+        });
+
+        setProcState({
+            isOpen: true,
+            status: 'success',
+            title: 'Import Successful',
+            message: `Successfully imported items.`,
+            progress: 100
+        });
+
+        setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 2000);
+        setDuplicateModal({ isOpen: false, newItems: [], conflictingItems: [], existingMap: {} });
+    };
+
+    const handleResolveDuplicates = (action: 'replace' | 'skip') => {
+        const { newItems, conflictingItems, existingMap } = duplicateModal;
+        let finalUploadList = [...newItems];
+
+        if (action === 'replace') {
+            // Check: map duplicate items to their EXISTING IDs so we overwrite them
+            const updates = conflictingItems.map(p => ({
+                ...p,
+                id: existingMap[p.PART_NUMBER] // CRITICAL: Use existing ID to force update
+            }));
+            finalUploadList = [...finalUploadList, ...updates];
+        }
+        // If 'skip', we just upload 'newItems' and ignore 'conflictingItems'
+
+        proceedWithUpload(finalUploadList);
     };
 
     const filteredParts = useMemo(() => {
@@ -453,7 +580,7 @@ export const DatabaseView = () => {
                         ref={fileInputRef}
                         onChange={handleBulkUpload}
                         onClick={(e) => (e.currentTarget.value = '')}
-                        accept=".csv, text/csv, .txt"
+                        accept=".csv, .xlsx, .xls, .txt"
                         className="hidden"
                     />
 
@@ -520,6 +647,16 @@ export const DatabaseView = () => {
                     <button onClick={handleBackup} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-colors" title="Full Backup">
                         <Download size={16} /> Backup
                     </button>
+
+                    {canDelete && (
+                        <button
+                            onClick={handleWipeDatabase}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-100 border border-red-300 text-red-800 rounded-lg hover:bg-red-200 shadow-sm transition-colors font-bold"
+                            title="Delete ALL Records"
+                        >
+                            <Trash2 size={16} /> WIPE DB
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -704,6 +841,45 @@ export const DatabaseView = () => {
                                 <button onClick={() => setIsPartModalOpen(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium">Cancel</button>
                                 <button onClick={handleSavePart} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm flex items-center gap-2">
                                     <Save size={18} /> Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {/* DUPLICATE RESOLUTION MODAL */}
+                {duplicateModal.isOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                            <div className="bg-amber-50 p-6 flex flex-col items-center text-center border-b border-amber-100">
+                                <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-3">
+                                    <AlertTriangle size={24} />
+                                </div>
+                                <h3 className="text-lg font-bold text-amber-900">Duplicates Detected</h3>
+                                <p className="text-sm text-amber-800 mt-2">
+                                    We found <span className="font-bold">{duplicateModal.conflictingItems.length}</span> items that already exist in the database (matching PART_NUMBER).
+                                </p>
+                                <p className="text-xs text-amber-600 mt-1">
+                                    Also found {duplicateModal.newItems.length} new items.
+                                </p>
+                            </div>
+                            <div className="p-6 flex flex-col gap-3">
+                                <button
+                                    onClick={() => handleResolveDuplicates('replace')}
+                                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm"
+                                >
+                                    Overwrite Existing & Add New
+                                </button>
+                                <button
+                                    onClick={() => handleResolveDuplicates('skip')}
+                                    className="w-full px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium"
+                                >
+                                    Skip Duplicates (Add New Only)
+                                </button>
+                                <button
+                                    onClick={() => setDuplicateModal({ isOpen: false, newItems: [], conflictingItems: [], existingMap: {} })}
+                                    className="w-full px-4 py-2 text-slate-400 hover:text-slate-600 text-sm font-medium"
+                                >
+                                    Cancel Import
                                 </button>
                             </div>
                         </div>

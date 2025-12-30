@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Database, Ship, FileText, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale } from 'lucide-react';
+import { LayoutDashboard, Database, Ship, FileText, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 
 const SidebarItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => {
@@ -10,8 +10,8 @@ const SidebarItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: 
     <NavLink
       to={to}
       className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${isActive
-          ? 'bg-blue-600 text-white shadow-md'
-          : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+        ? 'bg-blue-600 text-white shadow-md'
+        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
         }`}
     >
       <Icon size={20} />
@@ -44,7 +44,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <SidebarItem to="/vessel-tracking" icon={Anchor} label={sidebarOpen ? "Tracking" : ""} />
           <SidebarItem to="/equipment-tracking" icon={Container} label={sidebarOpen ? "Equipment" : ""} />
           <SidebarItem to="/customs-clearance" icon={ClipboardCheck} label={sidebarOpen ? "Customs Clearance" : ""} />
-          <SidebarItem to="/commercial-invoices" icon={FileText} label={sidebarOpen ? "Commercial Invoices" : ""} />
+          <SidebarItem to="/commercial-invoices" icon={FileText} label={sidebarOpen ? "CI Extractor" : ""} />
+          <SidebarItem to="/ccp-builder" icon={Truck} label={sidebarOpen ? "CCP Builder" : ""} />
           <SidebarItem to="/data-stage" icon={Scale} label={sidebarOpen ? "Data Stage (SAT)" : ""} />
           <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
           <SidebarItem to="/suppliers" icon={Users} label={sidebarOpen ? "Partners" : ""} />
@@ -86,8 +87,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <h2 className="text-lg font-semibold text-slate-700">CFMoto Import/Export Control</h2>
           <div className="flex items-center space-x-4">
             <div className={`px-3 py-1 rounded-full text-xs font-bold border ${user?.role === 'Admin' ? 'bg-red-50 text-red-600 border-red-200' :
-                user?.role === 'Editor' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                  'bg-slate-50 text-slate-600 border-slate-200'
+              user?.role === 'Editor' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                'bg-slate-50 text-slate-600 border-slate-200'
               }`}>
               {user?.role.toUpperCase()} ACCESS
             </div>

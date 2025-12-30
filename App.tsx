@@ -14,7 +14,8 @@ import { Reports } from './pages/Reports.tsx';
 import { Settings } from './pages/Settings.tsx';
 import { Login } from './pages/Login.tsx';
 import { DataStage } from './pages/DataStage.tsx';
-import { CommercialInvoices } from './pages/CommercialInvoices.tsx';
+import { CIExtractor } from './pages/CIExtractor.tsx';
+import CCPBuilder from './pages/CCPBuilder.tsx';
 import { storageService } from './services/storageService.ts';
 import { trackingService } from './services/trackingService.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
@@ -76,7 +77,8 @@ const AppContent = () => {
       <Route path="/vessel-tracking" element={<ProtectedRoute><VesselTracking /></ProtectedRoute>} />
       <Route path="/equipment-tracking" element={<ProtectedRoute><EquipmentTracking /></ProtectedRoute>} />
       <Route path="/customs-clearance" element={<ProtectedRoute><CustomsClearance /></ProtectedRoute>} />
-      <Route path="/commercial-invoices" element={<ProtectedRoute><CommercialInvoices /></ProtectedRoute>} />
+      <Route path="/commercial-invoices" element={<ProtectedRoute><CIExtractor /></ProtectedRoute>} />
+      <Route path="/ccp-builder" element={<ProtectedRoute><CCPBuilder /></ProtectedRoute>} />
       <Route path="/data-stage" element={<ProtectedRoute><DataStage /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><SmartDocs /></ProtectedRoute>} />
       <Route path="/database" element={<ProtectedRoute><DatabaseView /></ProtectedRoute>} />

@@ -1,6 +1,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { PedimentoRecord } from '../types.ts';
+import { PDFDocument } from 'pdf-lib';
 
 // Senior Frontend Engineer: Use GoogleGenAI with the recommended direct API key access.
 // Senior Frontend Engineer: Use GoogleGenAI with the recommended direct API key access.
@@ -183,6 +184,245 @@ export const geminiService = {
       return response.text || "No analysis available.";
     } catch (error) {
       return "Error generating analysis.";
+    }
+  },
+
+  // Senior Frontend Engineer: Robust Extractor for Mexican Pedimentos (Handles Large Files via Pagination)
+  extractPedimento: async (base64Data: string, mimeType: string = 'application/pdf'): Promise<Partial<PedimentoRecord>> => {
+    try {
+      // 1. Load PDF to check size
+      // Note: base64Data comes from FileReader (data:application/pdf;base64,...) or pure base64.
+      const cleanBase64 = base64Data.replace(/^data:.*,/, '');
+      const pdfDoc = await PDFDocument.load(cleanBase64);
+      const pageCount = pdfDoc.getPageCount();
+
+      console.log(`Extracting Pedimento (${pageCount} pages)...`);
+
+      // 2. Extraction Strategy (Robust / Chunked)
+      // A. Extract Header (Page 1)
+      const headerDoc = await PDFDocument.create();
+      const [page1] = await headerDoc.copyPages(pdfDoc, [0]);
+      headerDoc.addPage(page1);
+      const headerBase64 = await headerDoc.saveAsBase64();
+
+      const headerPrompt = `
+          Analyze this Pedimento Page 1. Extract ONLY the Header information matching this structure.
+          Return JSON: {
+          "patente": string, "pedimento": string, "seccion": string, "tipoOperacion": string, "claveDocumento": string,
+            "rfc": string, "tipoCambio": number, "fechaPago": string, "pesoBruto": number,
+              "fletes": number, "seguros": number, "embalajes": number, "otrosIncrementables": number,
+                "totalTaxes": number, "valorAduanaTotal": number,
+                "dtaTotal": number, "prevalidacionTotal": number, "cntTotal": number, 
+                  "invoices": [{
+                    "numeroFactura": string, "fechaFacturacion": string, "proveedor": string,
+                    "valorDolares": number, "moneda": string, "termFacturacion": string, "valorMonedaExtranjera": number
+                  }]
+        }
+        HINT:
+        - PATENTE is CRITICAL.Look for "PATENTE" followed by 4 digits(e.g. "1614").It is usually next to "PEDIMENTO".If ambiguous, look for "1614".
+          - Pedimento is the long 15 - digit code. 
+          - Look for "Fletes", "Seguros", "Embalajes", "Otros Incrementables" in the value section.
+        `;
+      const headerData = await geminiService.extractGeneric(headerBase64, headerPrompt);
+
+      // B. Extract Items (Chunks of 1 page)
+      // Start from Page 1 (Index 1) to avoid re-feeding the Header (Page 0) which might confuse the Item extraction.
+      let allItems: any[] = [];
+      const CHUNK_SIZE = 1;
+
+      // Start loop at 1
+      for (let i = 1; i < pageCount; i += CHUNK_SIZE) {
+        const chunkDoc = await PDFDocument.create();
+        const endPage = Math.min(i + CHUNK_SIZE, pageCount);
+        const pageIndices = Array.from({ length: endPage - i }, (_, k) => i + k);
+        const copiedPages = await chunkDoc.copyPages(pdfDoc, pageIndices);
+        copiedPages.forEach(p => chunkDoc.addPage(p));
+
+        const chunkBase64 = await chunkDoc.saveAsBase64();
+        const itemPrompt = `
+          Analyze these Pedimento pages (Chunks). Extract the list of "Partidas" (Items).
+          Return JSON: {
+            "items": [
+              { 
+                "secuencia": "1", 
+                "fraccion": "12345678", 
+                "nico": "00", 
+                "vinculacion": "1", 
+                "metodoValoracion": "6", 
+                "unidadMedidaComercial": "6", 
+                "cantidadComercial": 56.000, 
+                "unidadMedidaTarifa": "1", 
+                "cantidadTarifa": 56.000, 
+                "paisVendedor": "CHN", 
+                "paisOrigen": "CHN", 
+                "descripcion": "DESC...", 
+                "valorAduana": 100, 
+                "valorComercial": 100, 
+                "precioUnitario": 10.00, 
+                "valorAgregado": 0, 
+                "valorDolares": 5.50,
+                "contribuciones": [
+                  { "clave": "6", "tasa": 0, "tipoTasa": "0", "formaPago": "0", "importe": 0 },
+                  { "clave": "15", "tasa": 0.008, "tipoTasa": "1", "formaPago": "0", "importe": 100 }
+                ],
+                "observaciones": "PART NO 12345 FACTURA ABC",
+                "partNumber": "12345",
+                "invoiceNo": "ABC"
+              }
+            ]
+          }
+          IMPORTANT:
+          - **EXTRACT EVERY SINGLE ITEM**. Do NOT summarize. Do NOT skip any rows.
+          - **STRICT STRUCTURE**: You MUST return ALL fields in the EXACT order shown above.
+          - **MANDATORY FIELDS**: 
+             - "nico" (2 digits), "vinculacion" (1 digit), "metodoValoracion" (1 digit) are REQUIRED. 
+             - If missing in text, look at the column headers "SUBD", "VINC", "MET VAL".
+          - **VALOR AGREGADO**:
+             - For Imports (Type IMP), "Valor Agregado" does NOT exist.
+             - **ALWAYS RETURN 0** for "valorAgregado".
+             - DO NOT map "Cantidad Tarifa" (e.g. 6.72) to "Valor Agregado".
+          
+          LAYOUT RULES (OFFICIAL PEDIMENTO COLUMNS):
+          1. **TOP ROW** (Header row of the item):
+             - [FRACCION] [SUBD/NICO] [VINC] [MET VAL] [UMC] [CANTIDAD UMC] [UMT] [CANTIDAD UMT] [P.V] [P.O]
+             - Extraction Logic:
+               - "Cantidad UMC" (Commercial Qty): Large number.
+               - "UMT" (Tariff Unit): 1 digit code (e.g. 1, 6).
+               - "Cantidad UMT" (Tariff Qty): The number strictly TO THE RIGHT of UMT.
+               - **CRITICAL**: Do NOT confuse the "UMT" code (e.g. "1") with the "Cantidad UMT". 
+               - Example: If text is "... 6 5.0 1 133 ...", then UMC=6, CantCom=5.0, UMT=1, CantTar=133.
+               - "Cantidad UMT" (Tariff Qty): Decimal number(e.g. 6.72).
+          
+          2. **VALUE ROW** (Bottom row):
+             - [Valor Aduana] [Valor Comercial] [Precio Unitario] [Valor Agregado]
+             - Note: Valor Agregado column is empty or 0.
+          
+          3. **CONTRIBUTIONS SECTION** (Below value row):
+             - Look for a list of taxes/fees associated with this item.
+             - Columns: [CON] [TASA] [T.T.] [F.P.] [IMPORTE]
+             - Extract ALL rows found (e.g. 6 (IGI), 15 (DTA), 3 (IVA), 50 (IEPS)).
+             
+          4. **OBSERVACIONES SECTION** (Bottom of the item):
+             - Look for text like "OBS.", "OBSERVACIONES", or descriptive text at the end of the item block.
+             - Extract the FULL Text into "observaciones".
+             - **AUDIT PARSING**:
+               - Look for "NO. DE PARTE" or "PARTE" -> Extract to "partNumber".
+               - Look for "FACTURA" or "FAC" -> Extract to "invoiceNo".
+               - **HEURISTIC**: If no labels found:
+                 - "invoiceNo": Look for strings matching header invoice format (e.g. "25CFTT...").
+                 - "partNumber": Look for alphanumeric strings, potentially with dashes (e.g. "TBQ381", "0010-080013-0010", "30006-060012810").
+                 - If text is ONLY "0010-080013-0010", that IS the part number.
+             
+             **FORMATTING RULES**:
+             - **ESCAPE NEWLINES**: If 'observaciones' has multiple lines, use "\\n". Do NOT use literal line breaks.
+             - Valid: "Line 1\\nLine 2"
+             - Invalid: "Line 1\nLine 2"
+
+          ** CRITICAL NULL HANDLING **:
+          - ** NO FIELDS CAN BE NULL ** (except 'valorAgregado' if necessary, but prefer 0).
+          - If a ** Numeric ** field is empty, return 0.
+  - If a ** String ** field is empty, return ""(empty string).
+
+        `;
+        const chunkResult = await geminiService.extractGeneric(chunkBase64, itemPrompt);
+        if (chunkResult.items) {
+          console.log(`Chunk ${i}: Extracted ${chunkResult.items.length} items.`);
+          allItems = allItems.concat(chunkResult.items);
+        } else {
+          console.warn(`Chunk ${i}: No items found.`);
+        }
+      }
+
+      // 4. Post-Process: DataStage Compliance Calculations
+      // Rule: ValorDolares = ValorAduana / TipoCambio
+      if (headerData.tipoCambio && headerData.tipoCambio > 0) {
+        allItems = allItems.map(item => {
+          // A. Fix 'ValorComercial' alias (Must be MXN)
+          // If ValCom is missing, default to ValAduana (MXN).
+          if (!item.valorComercial && item.valorAduana) {
+            item.valorComercial = item.valorAduana;
+          }
+
+          // B. Bi-directional Calculation & Incrementables Logic
+          const totalIncrementables = (headerData.fletes || 0) + (headerData.seguros || 0) + (headerData.embalajes || 0) + (headerData.otrosIncrementables || 0);
+
+          // Rule: If No Incrementables, ValorAduana MUST equal ValorComercial (in MXN).
+          // Priority: Trust ValorAduana (the fiscal result) over ValorComercial if they differ.
+          if (totalIncrementables < 1) {
+            if (item.valorAduana && item.valorAduana > 0) {
+              item.valorComercial = item.valorAduana; // Correct: Sync Com to Aduana (60)
+            } else if (item.valorComercial && item.valorComercial > 0) {
+              item.valorAduana = item.valorComercial; // Fallback: Sync Aduana to Com
+            }
+          }
+
+          // Rule 1: ValAduana fallback (REMOVED for Audit)
+          // We want to know if ValAduana is missing. Do not copy from ValComercial.
+
+          // Rule 2: ValorDolares
+          // AUDIT REQUIREMENT: Do NOT auto-correct. If the PDF has a value, keep it (even if wrong) to catch Broker mistakes.
+          // Only calculate as fallback if missing.
+          if ((!item.valorDolares || item.valorDolares === 0) && (item.valorAduana && item.valorAduana > 0 && headerData.tipoCambio > 0)) {
+            item.valorDolares = Number((item.valorAduana / headerData.tipoCambio).toFixed(2));
+          }
+
+
+          // Rule 3: UMT Heuristic
+          // If CantidadTarifa has decimals, Unit cannot be "6" (Pieces). It must be "1" (KGM) or similar.
+          if (item.cantidadTarifa && item.cantidadTarifa % 1 !== 0 && item.unidadMedidaTarifa === '6') {
+            item.unidadMedidaTarifa = '1';
+          }
+
+          // Rule 4: Fix 'ValorAgregado' <-> 'CantidadTarifa' Shift (User Reported Issue)
+          // Diagnosis: The AI regularly puts the 'Cantidad Tarifa' (e.g. 6.72, 12.88) into the 'Valor Agregado' column because it's the last number.
+          // Fix: If ValAgregado has a value and CantTarifa is 0, MOVE it back.
+          if ((item.valorAgregado && item.valorAgregado > 0) && (!item.cantidadTarifa || item.cantidadTarifa === 0)) {
+            item.cantidadTarifa = item.valorAgregado;
+          }
+
+          // Rule 5: STRICTLY FORCE ValorAgregado to 0 for Imports
+          // The user explicitly forbade generating data here.
+          item.valorAgregado = 0;
+
+          return item;
+        });
+      }
+
+      return { ...headerData, items: allItems };
+
+    } catch (error) {
+      console.error("Gemini Pedimento Extraction Error", error);
+      throw new Error("Failed to extract pedimento");
+    }
+  },
+
+  // Senior Frontend Engineer: Generic extractor for custom prompts (used by batch processor)
+  extractGeneric: async (base64Data: string, prompt: string, mimeType: string = 'application/pdf'): Promise<any> => {
+    const ai = getClient();
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.0-flash-exp',
+          contents: {
+            parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
+          },
+          config: { responseMimeType: 'application/json' }
+        });
+
+        return JSON.parse(cleanJson(response.text || '{}'));
+      } catch (error) {
+        attempts++;
+        console.warn(`Gemini Extraction Attempt ${attempts} failed. Retrying...`, error);
+        if (attempts >= maxAttempts) {
+          console.error("Gemini Generic Extraction Fatal Error", error);
+          throw new Error("Failed to extract generic data after multiple attempts");
+        }
+        // Exponential backoff: 2s, 4s, 8s
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 1000));
+      }
     }
   }
 };

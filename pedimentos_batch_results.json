@@ -1,0 +1,1181 @@
+{
+  "results": [
+    {
+      "fileName": "5005237 A1.pdf",
+      "patente": "1614",
+      "pedimento": "5005237",
+      "seccion": "160",
+      "tipoOperacion": "IMP",
+      "claveDocumento": "A1",
+      "rfc": "CMP220712ND9",
+      "tipoCambio": 18.0065,
+      "fechaPago": "2025-12-23",
+      "pesoBruto": 442,
+      "totalTaxes": 1093,
+      "invoices": [
+        {
+          "numeroFactura": "25CFTT176707-14-A1",
+          "fechaFacturacion": "2025-02-12",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 41.68
+        }
+      ],
+      "items": [
+        {
+          "secuencia": "1",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 8,
+          "cantidadComercial": 1,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "2",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 8,
+          "cantidadComercial": 1,
+          "unidadMedidaComercial": "CHN"
+        }
+      ]
+    },
+    {
+      "fileName": "5005238 A1.pdf",
+      "patente": null,
+      "pedimento": "5005238",
+      "seccion": "160",
+      "tipoOperacion": "IMP",
+      "claveDocumento": "A1",
+      "rfc": "CMP220712ND9",
+      "tipoCambio": 18.0065,
+      "fechaPago": "2025-12-23",
+      "pesoBruto": 436,
+      "totalTaxes": 2324,
+      "invoices": [
+        {
+          "numeroFactura": "25CFTT176707-10 A1",
+          "fechaFacturacion": "2025-12-02",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 41.68
+        },
+        {
+          "numeroFactura": "25CFTT176707-3-A1",
+          "fechaFacturacion": "2025-12-02",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 166.68
+        }
+      ],
+      "items": [
+        {
+          "secuencia": "1",
+          "fraccion": "63079099",
+          "descripcion": "CORREA PARA BATERIA",
+          "precioUnitario": 100,
+          "cantidadComercial": 1,
+          "unidadMedidaComercial": null
+        },
+        {
+          "secuencia": "2",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 93.875,
+          "cantidadComercial": 8,
+          "unidadMedidaComercial": null
+        },
+        {
+          "secuencia": "3",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 93.875,
+          "cantidadComercial": 8,
+          "unidadMedidaComercial": null
+        }
+      ]
+    },
+    {
+      "fileName": "5005239 A1.pdf",
+      "patente": null,
+      "pedimento": "5005239",
+      "seccion": "160",
+      "tipoOperacion": "IMP",
+      "claveDocumento": "A1",
+      "rfc": "CMP220712ND9",
+      "tipoCambio": 18.0065,
+      "fechaPago": "2025-12-23",
+      "pesoBruto": 430,
+      "totalTaxes": 1703,
+      "invoices": [
+        {
+          "numeroFactura": "25CFTT176707-13-A1",
+          "fechaFacturacion": "2025-12-02",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 41.68
+        },
+        {
+          "numeroFactura": "25CFTT176707-7 A1",
+          "fechaFacturacion": "2025-12-02",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 41.68
+        }
+      ],
+      "items": [
+        {
+          "secuencia": "1",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 8,
+          "cantidadComercial": 205,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "2",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 8,
+          "cantidadComercial": 205,
+          "unidadMedidaComercial": "CHN"
+        }
+      ]
+    },
+    {
+      "fileName": "5005240 A1.pdf",
+      "patente": "1614",
+      "pedimento": "5005240",
+      "seccion": "160",
+      "tipoOperacion": "IMP",
+      "claveDocumento": "A1",
+      "rfc": "CMP220712ND9",
+      "tipoCambio": 18.0065,
+      "fechaPago": "2025-12-23",
+      "pesoBruto": 440,
+      "totalTaxes": 1758,
+      "invoices": [
+        {
+          "numeroFactura": "25CFTT176707-11 A1",
+          "fechaFacturacion": "2025-12-02",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 37.5
+        },
+        {
+          "numeroFactura": "25CFTT176707-9-A1",
+          "fechaFacturacion": "2025-12-02",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 36.47
+        }
+      ],
+      "items": [
+        {
+          "secuencia": "1",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 93.85714,
+          "cantidadComercial": 7,
+          "unidadMedidaComercial": "1"
+        },
+        {
+          "secuencia": "2",
+          "fraccion": "73269099",
+          "descripcion": "ACCESORIO PARA TUBERIA",
+          "precioUnitario": 13.5,
+          "cantidadComercial": 50,
+          "unidadMedidaComercial": "1"
+        },
+        {
+          "secuencia": "3",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 93.875,
+          "cantidadComercial": 8,
+          "unidadMedidaComercial": "1"
+        }
+      ]
+    },
+    {
+      "fileName": "5005241 A1.pdf",
+      "patente": "1614",
+      "pedimento": "5005241",
+      "seccion": "160",
+      "tipoOperacion": "IMP",
+      "claveDocumento": "A1",
+      "rfc": "CMP220712ND9",
+      "tipoCambio": 18.0065,
+      "fechaPago": "2025-12-23",
+      "pesoBruto": 530,
+      "totalTaxes": 1847,
+      "invoices": [
+        {
+          "numeroFactura": "25CFTT176707-12 A1",
+          "fechaFacturacion": "2025-02-12",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 91.68
+        },
+        {
+          "numeroFactura": "25CFTT176707-5-A1",
+          "fechaFacturacion": "2025-02-12",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 41.68
+        }
+      ],
+      "items": [
+        {
+          "secuencia": "1",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 8,
+          "cantidadComercial": 1,
+          "unidadMedidaComercial": "6"
+        },
+        {
+          "secuencia": "2",
+          "fraccion": "39239099",
+          "descripcion": "ALMOHADILLA PROTECTORA PARA EL TRANSPORTE",
+          "precioUnitario": 1000,
+          "cantidadComercial": 1,
+          "unidadMedidaComercial": "6"
+        },
+        {
+          "secuencia": "3",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 8,
+          "cantidadComercial": 1,
+          "unidadMedidaComercial": "6"
+        }
+      ]
+    },
+    {
+      "fileName": "5005242 A1.pdf",
+      "patente": null,
+      "pedimento": "5005242",
+      "seccion": "160",
+      "tipoOperacion": "IMP",
+      "claveDocumento": "A1",
+      "rfc": "CMP220712ND9",
+      "tipoCambio": 18.0065,
+      "fechaPago": "2025-12-23",
+      "pesoBruto": 430,
+      "totalTaxes": 1703,
+      "invoices": [
+        {
+          "numeroFactura": "25CFTT176707-1 A1",
+          "fechaFacturacion": "2025-12-02",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 41.68
+        },
+        {
+          "numeroFactura": "25CFTT176707-4 A1",
+          "fechaFacturacion": "2025-12-02",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 41.68
+        }
+      ],
+      "items": [
+        {
+          "secuencia": "1",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 93.875,
+          "cantidadComercial": 8,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "2",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 93.875,
+          "cantidadComercial": 8,
+          "unidadMedidaComercial": "CHN"
+        }
+      ]
+    },
+    {
+      "fileName": "5005244 A1.pdf",
+      "patente": "1614",
+      "pedimento": "5005244",
+      "seccion": "160",
+      "tipoOperacion": "IMP",
+      "claveDocumento": "A1",
+      "rfc": "CMP220712ND9",
+      "tipoCambio": 18.0065,
+      "fechaPago": "2025-12-23",
+      "pesoBruto": 160,
+      "totalTaxes": 1294,
+      "invoices": [
+        {
+          "numeroFactura": "25CFTT176707-2-A1",
+          "fechaFacturacion": "2025-12-02",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 43.25
+        },
+        {
+          "numeroFactura": "25CFTT176707-2-A1",
+          "fechaFacturacion": null,
+          "proveedor": null,
+          "valorDolares": null
+        }
+      ],
+      "items": [
+        {
+          "secuencia": "1",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 93.8,
+          "cantidadComercial": 133,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "2",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 155,
+          "cantidadComercial": 51,
+          "unidadMedidaComercial": "CHN"
+        }
+      ]
+    },
+    {
+      "fileName": "5005541 IN.pdf",
+      "patente": "1614",
+      "pedimento": "5005541",
+      "seccion": "160",
+      "tipoOperacion": "IMP",
+      "claveDocumento": "IN",
+      "rfc": "CMP220712ND9",
+      "tipoCambio": 18.0065,
+      "fechaPago": "2025-12-23",
+      "pesoBruto": 9155,
+      "totalTaxes": 102500,
+      "invoices": [
+        {
+          "numeroFactura": "25CFTT176707-14-IN",
+          "fechaFacturacion": "2025-02-12",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 15765.15
+        },
+        {
+          "numeroFactura": "25CFTT176707-IN",
+          "fechaFacturacion": "2025-02-12",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 19261.19
+        }
+      ],
+      "items": [
+        {
+          "secuencia": "1",
+          "fraccion": "87089907",
+          "descripcion": "CHASIS",
+          "precioUnitario": 8,
+          "cantidadComercial": 42513,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "2",
+          "fraccion": "39263002",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 8,
+          "cantidadComercial": 246,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "3",
+          "fraccion": "98020019",
+          "descripcion": "TORNILLO DE ACERO DE USO AUTOMOTRIZ",
+          "precioUnitario": 8,
+          "cantidadComercial": 697,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "4",
+          "fraccion": "39263002",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 8,
+          "cantidadComercial": 467,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "5",
+          "fraccion": "87082999",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 4,
+          "cantidadComercial": 1008,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "6",
+          "fraccion": "87082999",
+          "descripcion": "CUBIERTA DE SERVICIO FRONTAL",
+          "precioUnitario": 4,
+          "cantidadComercial": 1008,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "7",
+          "fraccion": "87082999",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 8,
+          "cantidadComercial": 353,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "8",
+          "fraccion": "87082999",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 8,
+          "cantidadComercial": 349,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "9",
+          "fraccion": "39263002",
+          "descripcion": "GUARNICION PARA CARROCERIA DE PLASTICO",
+          "precioUnitario": 8,
+          "cantidadComercial": 514,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "10",
+          "fraccion": "87082999",
+          "descripcion": "PANEL LATERAL",
+          "precioUnitario": 8,
+          "cantidadComercial": 533,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "11",
+          "fraccion": "87082999",
+          "descripcion": "CUBIERTA INTERMEDIA",
+          "precioUnitario": 8,
+          "cantidadComercial": 494,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "12",
+          "fraccion": "39263002",
+          "descripcion": "GUARNICION PARA CARROCERIA DE PLASTICO",
+          "precioUnitario": 8,
+          "cantidadComercial": 864,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "13",
+          "fraccion": "87082999",
+          "descripcion": "PLACA PROTECTORA",
+          "precioUnitario": 8,
+          "cantidadComercial": 379,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "14",
+          "fraccion": "87082999",
+          "descripcion": "PLACA PROTECTORA",
+          "precioUnitario": 8,
+          "cantidadComercial": 514,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "15",
+          "fraccion": "87082999",
+          "descripcion": "PLACA PROTECTORA",
+          "precioUnitario": 8,
+          "cantidadComercial": 1549,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "16",
+          "fraccion": "87082999",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 8,
+          "cantidadComercial": 124,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "17",
+          "fraccion": "39263002",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 8,
+          "cantidadComercial": 1157,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "18",
+          "fraccion": "39263002",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 8,
+          "cantidadComercial": 375,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "19",
+          "fraccion": "39263002",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 8,
+          "cantidadComercial": 1641,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "20",
+          "fraccion": "87082999",
+          "descripcion": "PEDAL",
+          "precioUnitario": 8,
+          "cantidadComercial": 913,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "21",
+          "fraccion": "87082999",
+          "descripcion": "PROTECTOR PARA TANQUE DE COMBUSTIBLE",
+          "precioUnitario": 8,
+          "cantidadComercial": 1037,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "22",
+          "fraccion": "87089904",
+          "descripcion": "TANQUE DE COMBUSTIBLE",
+          "precioUnitario": 8,
+          "cantidadComercial": 5921,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "23",
+          "fraccion": "94012001",
+          "descripcion": "ASIENTO DEL CONDUCTOR",
+          "precioUnitario": 8,
+          "cantidadComercial": 8153,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "24",
+          "fraccion": "94012001",
+          "descripcion": "ASIENTO DEL CONDUCTOR",
+          "precioUnitario": 6,
+          "cantidadComercial": 6117,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "25",
+          "fraccion": "94012001",
+          "descripcion": "ASIENTO DEL CONDUCTOR",
+          "precioUnitario": 4,
+          "cantidadComercial": 2719,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "26",
+          "fraccion": "94012001",
+          "descripcion": "ASIENTO DEL CONDUCTOR",
+          "precioUnitario": 4,
+          "cantidadComercial": 2718,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "27",
+          "fraccion": "87089999",
+          "descripcion": "CAJA DE CARGA TRASERA DE PLASTICO",
+          "precioUnitario": 8,
+          "cantidadComercial": 3305,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "28",
+          "fraccion": "87089999",
+          "descripcion": "PLACA LATERAL IZQUIERDA",
+          "precioUnitario": 8,
+          "cantidadComercial": 462,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "29",
+          "fraccion": "87082904",
+          "descripcion": "PANEL DE PUERTA TRASERA",
+          "precioUnitario": 8,
+          "cantidadComercial": 504,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "30",
+          "fraccion": "85122002",
+          "descripcion": "PANEL DE LUCES TRASERAS",
+          "precioUnitario": 8,
+          "cantidadComercial": 912,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "31",
+          "fraccion": "87082916",
+          "descripcion": "TECHO SUPERIOR",
+          "precioUnitario": 8,
+          "cantidadComercial": 2158,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "32",
+          "fraccion": "87082999",
+          "descripcion": "SOPORTE PARA TECHO SUPERIOR DE PLASTICO",
+          "precioUnitario": 8,
+          "cantidadComercial": 354,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "33",
+          "fraccion": "87089203",
+          "descripcion": "TUBO DE ESCAPE",
+          "precioUnitario": 46,
+          "cantidadComercial": 12060,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "34",
+          "fraccion": "87082901",
+          "descripcion": "GUARDAFANGOS DELANTERO",
+          "precioUnitario": 80,
+          "cantidadComercial": 4538,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "35",
+          "fraccion": "87082999",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 45,
+          "cantidadComercial": 2317,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "36",
+          "fraccion": "87082901",
+          "descripcion": "GUARDAFANGOS TRASERO",
+          "precioUnitario": 30,
+          "cantidadComercial": 1572,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "37",
+          "fraccion": "87088005",
+          "descripcion": "MONTAJE DE SUSPENSION",
+          "precioUnitario": 100,
+          "cantidadComercial": 8931,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "38",
+          "fraccion": "87088005",
+          "descripcion": "MONTAJE DE SUSPENSION",
+          "precioUnitario": 12,
+          "cantidadComercial": 508,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "39",
+          "fraccion": "98020019",
+          "descripcion": "MANGUERAS DE FRENOS HIDRAULICO",
+          "precioUnitario": 8,
+          "cantidadComercial": 17796,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "40",
+          "fraccion": "85122099",
+          "descripcion": "FARO IZQUIERDO",
+          "precioUnitario": 12,
+          "cantidadComercial": 39434,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "41",
+          "fraccion": "85122099",
+          "descripcion": "FARO DERECHO",
+          "precioUnitario": 30,
+          "cantidadComercial": 98586,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "42",
+          "fraccion": "85122099",
+          "descripcion": "LUZ PARA PANEL DE INSTRUMENTOS LARGO",
+          "precioUnitario": 30,
+          "cantidadComercial": 14729,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "43",
+          "fraccion": "85122099",
+          "descripcion": "LUZ PARA PANEL DE INSTRUMENTOS CORTO",
+          "precioUnitario": 30,
+          "cantidadComercial": 3691,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "44",
+          "fraccion": "98020019",
+          "descripcion": "EJE DE TRANSMISION",
+          "precioUnitario": 1,
+          "cantidadComercial": 34153,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "45",
+          "fraccion": "87082904",
+          "descripcion": "PANEL DE PUERTA",
+          "precioUnitario": 9,
+          "cantidadComercial": 11676,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "46",
+          "fraccion": "87082919",
+          "descripcion": "PUERTA",
+          "precioUnitario": 2,
+          "cantidadComercial": 2595,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "47",
+          "fraccion": "87082999",
+          "descripcion": "CUBIERTA DE CAJA DE CARGA",
+          "precioUnitario": 8,
+          "cantidadComercial": 4182,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "48",
+          "fraccion": "87089907",
+          "descripcion": "CHASIS",
+          "precioUnitario": 8,
+          "cantidadComercial": 42513,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "49",
+          "fraccion": "39263002",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 1,
+          "cantidadComercial": 246,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "50",
+          "fraccion": "98020019",
+          "descripcion": "TORNILLO DE ACERO DE USO AUTOMOTRIZ",
+          "precioUnitario": 1,
+          "cantidadComercial": 697,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "51",
+          "fraccion": "39263002",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 1,
+          "cantidadComercial": 467,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "52",
+          "fraccion": "87082999",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 1,
+          "cantidadComercial": 252,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "53",
+          "fraccion": "87082999",
+          "descripcion": "CUBIERTA DE SERVICIO FRONTAL",
+          "precioUnitario": 1,
+          "cantidadComercial": 1765,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "54",
+          "fraccion": "87082999",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 8,
+          "cantidadComercial": 353,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "55",
+          "fraccion": "87082999",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 8,
+          "cantidadComercial": 349,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "56",
+          "fraccion": "39263002",
+          "descripcion": "GUARNICION PARA CARROCERIA DE PLASTICO",
+          "precioUnitario": 1,
+          "cantidadComercial": 514,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "57",
+          "fraccion": "87082999",
+          "descripcion": "PANEL LATERAL",
+          "precioUnitario": 8,
+          "cantidadComercial": 533,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "58",
+          "fraccion": "87082999",
+          "descripcion": "CUBIERTA INTERMEDIA",
+          "precioUnitario": 8,
+          "cantidadComercial": 494,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "59",
+          "fraccion": "39263002",
+          "descripcion": "GUARNICION PARA CARROCERIA DE PLASTICO",
+          "precioUnitario": 1,
+          "cantidadComercial": 864,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "60",
+          "fraccion": "87082999",
+          "descripcion": "PLACA PROTECTORA",
+          "precioUnitario": 8,
+          "cantidadComercial": 379,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "61",
+          "fraccion": "87082999",
+          "descripcion": "PLACA PROTECTORA",
+          "precioUnitario": 8,
+          "cantidadComercial": 514,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "62",
+          "fraccion": "87082999",
+          "descripcion": "PLACA PROTECTORA",
+          "precioUnitario": 8,
+          "cantidadComercial": 1549,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "63",
+          "fraccion": "87082999",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 8,
+          "cantidadComercial": 124,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "64",
+          "fraccion": "39263002",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 1,
+          "cantidadComercial": 1157,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "65",
+          "fraccion": "39263002",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 8,
+          "cantidadComercial": 375,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "66",
+          "fraccion": "39263002",
+          "descripcion": "PARTE PARA CARROCERIA",
+          "precioUnitario": 1,
+          "cantidadComercial": 1641,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "67",
+          "fraccion": "87082999",
+          "descripcion": "PEDAL",
+          "precioUnitario": 8,
+          "cantidadComercial": 913,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "68",
+          "fraccion": "87082999",
+          "descripcion": "PROTECTOR PARA TANQUE DE COMBUSTIBLE",
+          "precioUnitario": 8,
+          "cantidadComercial": 1037,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "69",
+          "fraccion": "87089904",
+          "descripcion": "TANQUE DE COMBUSTIBLE",
+          "precioUnitario": 8,
+          "cantidadComercial": 5921,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "70",
+          "fraccion": "94012001",
+          "descripcion": "ASIENTO DEL CONDUCTOR",
+          "precioUnitario": 4,
+          "cantidadComercial": 4078,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "71",
+          "fraccion": "87089999",
+          "descripcion": "CAJA DE CARGA TRASERA DE PLASTICO",
+          "precioUnitario": 5,
+          "cantidadComercial": 3305,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "72",
+          "fraccion": "87089999",
+          "descripcion": "PLACA LATERAL IZQUIERDA",
+          "precioUnitario": 8,
+          "cantidadComercial": 462,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "73",
+          "fraccion": "87082904",
+          "descripcion": "PANEL DE PUERTA TRASERA",
+          "precioUnitario": 8,
+          "cantidadComercial": 504,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "74",
+          "fraccion": "85122002",
+          "descripcion": "PANEL DE LUCES TRASERAS",
+          "precioUnitario": 1,
+          "cantidadComercial": 912,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "75",
+          "fraccion": "87082916",
+          "descripcion": "TECHO SUPERIOR",
+          "precioUnitario": 6,
+          "cantidadComercial": 2158,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "76",
+          "fraccion": "87082999",
+          "descripcion": "SOPORTE PARA TECHO SUPERIOR DE PLASTICO",
+          "precioUnitario": 8,
+          "cantidadComercial": 354,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "77",
+          "fraccion": "87089203",
+          "descripcion": "SILENCIADOR",
+          "precioUnitario": 6,
+          "cantidadComercial": 61501,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "78",
+          "fraccion": "87082901",
+          "descripcion": "GUARDAFANGOS DELANTERO",
+          "precioUnitario": 6,
+          "cantidadComercial": 1134,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "79",
+          "fraccion": "87088005",
+          "descripcion": "MONTAJE DE SUSPENSION",
+          "precioUnitario": 6,
+          "cantidadComercial": 4178,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "80",
+          "fraccion": "98020019",
+          "descripcion": "MANGUERAS DE FRENOS HIDRAULICO",
+          "precioUnitario": 1,
+          "cantidadComercial": 17796,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "81",
+          "fraccion": "87082904",
+          "descripcion": "PANEL DE PUERTA",
+          "precioUnitario": 6,
+          "cantidadComercial": 29839,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "82",
+          "fraccion": "87082904",
+          "descripcion": "PANEL DE PUERTA",
+          "precioUnitario": 6,
+          "cantidadComercial": 25947,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "83",
+          "fraccion": "87082904",
+          "descripcion": "PANEL DE PUERTA",
+          "precioUnitario": 6,
+          "cantidadComercial": 38921,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "84",
+          "fraccion": "87082904",
+          "descripcion": "PANEL DE PUERTA",
+          "precioUnitario": 6,
+          "cantidadComercial": 25947,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "85",
+          "fraccion": "87082999",
+          "descripcion": "CUBIERTA DE CAJA DE CARGA",
+          "precioUnitario": 8,
+          "cantidadComercial": 4182,
+          "unidadMedidaComercial": "CHN"
+        }
+      ]
+    },
+    {
+      "fileName": "5005547 A1.pdf",
+      "patente": "1614",
+      "pedimento": "5005547",
+      "seccion": "160",
+      "tipoOperacion": "IMP",
+      "claveDocumento": "A1",
+      "rfc": "CMP220712ND9",
+      "tipoCambio": 18.0065,
+      "fechaPago": "2025-12-23",
+      "pesoBruto": 1248,
+      "totalTaxes": 11324,
+      "invoices": [
+        {
+          "numeroFactura": "25CFTT176707-6-A1",
+          "fechaFacturacion": "2025-12-02",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 608.2
+        },
+        {
+          "numeroFactura": "25CFTT176707-8 A1",
+          "fechaFacturacion": "2025-12-02",
+          "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+          "valorDolares": 451.35
+        }
+      ],
+      "items": [
+        {
+          "secuencia": "1",
+          "fraccion": "73072999",
+          "descripcion": "ACCESORIO PARA TUBERIA",
+          "precioUnitario": 50,
+          "cantidadComercial": 36,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "2",
+          "fraccion": "87082999",
+          "descripcion": "SOPORTE DE MONTAJE DE LA BARRA SUPERIOR DELANTERA I",
+          "precioUnitario": 100,
+          "cantidadComercial": 90,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "3",
+          "fraccion": "87082999",
+          "descripcion": "SOPORTE DE MONTAJE DE LA BARRA SUPERIOR DELANTERA II",
+          "precioUnitario": 200,
+          "cantidadComercial": 82,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "4",
+          "fraccion": "87082999",
+          "descripcion": "SOPORTE DE MONTAJE DE LA BARRA SUPERIOR TRASERA",
+          "precioUnitario": 200,
+          "cantidadComercial": 98,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "5",
+          "fraccion": "87082999",
+          "descripcion": "SOPORTE DE FIJACION DEL PARACHOQUES DELANTERO",
+          "precioUnitario": 200,
+          "cantidadComercial": 104,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "6",
+          "fraccion": "73269099",
+          "descripcion": "SOPORTE PRINCIPAL",
+          "precioUnitario": 100,
+          "cantidadComercial": 90,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "7",
+          "fraccion": "73269099",
+          "descripcion": "SOPORTE DE SUJECION PRINCIPAL",
+          "precioUnitario": 100,
+          "cantidadComercial": 32,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "8",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 10,
+          "cantidadComercial": 258,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "9",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 7,
+          "cantidadComercial": 180,
+          "unidadMedidaComercial": "CHN"
+        },
+        {
+          "secuencia": "10",
+          "fraccion": "73269099",
+          "descripcion": "EMBALAJE METALICO",
+          "precioUnitario": 9,
+          "cantidadComercial": 230,
+          "unidadMedidaComercial": "CHN"
+        }
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "file": "5005243 IN.pdf",
+      "error": "Failed to extract pedimento"
+    },
+    {
+      "file": "5005524 IN.pdf",
+      "error": "Failed to extract pedimento"
+    },
+    {
+      "file": "5005542 IN.pdf",
+      "error": "Failed to extract pedimento"
+    },
+    {
+      "file": "5005543 IN.pdf",
+      "error": "Failed to extract pedimento"
+    },
+    {
+      "file": "5005545 IN.pdf",
+      "error": "Failed to extract pedimento"
+    },
+    {
+      "file": "5005546 IN.pdf",
+      "error": "Failed to extract pedimento"
+    }
+  ]
+}

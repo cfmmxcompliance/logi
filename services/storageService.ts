@@ -16,6 +16,7 @@ const COLS = {
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
 const INVOICES_BACKUP_KEY = 'logimaster_commercial_invoices_backup';
+const RESTORE_POINTS_KEY = 'logimaster_restore_points';
 const DRAFT_DATA_STAGE_KEY = 'logimaster_datastage_draft';
 
 let dbState: any = {
@@ -49,6 +50,8 @@ const syncVesselDataToOthers = async (vesselData: VesselTrackingRecord) => {
   }
 };
 
+
+
 export const storageService = {
   init: async () => {
     unsubscribers.forEach(u => u());
@@ -59,18 +62,23 @@ export const storageService = {
       return;
     }
     Object.entries(COLS).forEach(([key, colName]) => {
-      // FORCE LOCAL MODE FOR COMMERCIAL INVOICES
-      if (key === 'INVOICES') return;
+      // Sync all collections including INVOICES
 
       unsubscribers.push(onSnapshot(collection(db, colName), (snap) => {
-        const data = snap.docs.map(d => d.data());
+        // CRITICAL: Always include the Firestore Document ID as 'id'
+        // This fixes issues where the stored data might have missing/empty 'id' fields
+        const data = snap.docs.map(d => ({ ...d.data(), id: d.id }));
 
         let stateKey = key.toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase());
         if (key === 'CUSTOMS') stateKey = 'customsClearance';
         if (key === 'EQUIPMENT') stateKey = 'equipmentTracking';
         if (key === 'TRAINING') stateKey = 'trainingSubmissions';
+        if (key === 'INVOICES') stateKey = 'commercialInvoices';
 
         dbState[stateKey] = data;
+        if (stateKey === 'commercialInvoices') {
+          console.log("Firestore Update (Commercial Invoices):", data.length, "items");
+        }
         notifyListeners();
       }));
     });
@@ -125,49 +133,92 @@ export const storageService = {
   getInvoiceItems: () => dbState.commercialInvoices || [],
 
   // Commercial Invoices CRUD con Protección de Duplicados
+  // Commercial Invoices CRUD (Cloud-Enabled)
   addInvoiceItems: async (newItems: CommercialInvoiceItem[]) => {
-    // 1. Crear un set de "llaves únicas" de lo que ya existe
-    // Usamos Factura + No. Parte + Cantidad + HTS como identificador único lógico
+    // 1. Deduplication (using local state as cache)
     const existingKeys = new Set(
       (dbState.commercialInvoices || []).map(
         (i: any) => `${i.invoiceNo}-${i.partNo}-${i.qty}-${i.hts || ''}`
       )
     );
 
-    // 2. Filtrar solo los items que no existen previamente
     const uniqueNewItems = newItems.filter(item => {
       const key = `${item.invoiceNo}-${item.partNo}-${item.qty}-${item.hts || ''}`;
       return !existingKeys.has(key);
     });
 
     if (uniqueNewItems.length === 0) {
-      console.log("No hay items nuevos (duplicados omitidos)");
+      console.log("No unique items to add.");
       return;
     }
 
-    dbState.commercialInvoices = [...(dbState.commercialInvoices || []), ...uniqueNewItems];
-    saveLocal();
-  },
-
-  updateInvoiceItem: async (item: CommercialInvoiceItem) => {
-    // FORCE LOCAL
-    const idx = dbState.commercialInvoices.findIndex((i: any) => i.id === item.id);
-    if (idx !== -1) {
-      dbState.commercialInvoices[idx] = item;
+    if (!db) {
+      dbState.commercialInvoices = [...(dbState.commercialInvoices || []), ...uniqueNewItems];
       saveLocal();
+      return;
+    }
+
+    // Cloud Write (Batch)
+    // Batch limit is 500. Split if necessary.
+    const chunks = [];
+    for (let i = 0; i < uniqueNewItems.length; i += 500) {
+      chunks.push(uniqueNewItems.slice(i, i + 500));
+    }
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach(item => {
+        const ref = doc(db, COLS.INVOICES, item.id);
+        batch.set(ref, item);
+      });
+      await batch.commit();
     }
   },
 
+  updateInvoiceItem: async (item: CommercialInvoiceItem) => {
+    if (!db) {
+      const idx = dbState.commercialInvoices.findIndex((i: any) => i.id === item.id);
+      if (idx !== -1) {
+        dbState.commercialInvoices[idx] = item;
+        saveLocal();
+      }
+      return;
+    }
+    await setDoc(doc(db, COLS.INVOICES, item.id), item);
+  },
+
   deleteInvoiceItem: async (id: string) => {
-    // FORCE LOCAL
-    dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => i.id !== id);
-    saveLocal();
+    storageService.createSnapshot(`Delete Item ${id}`);
+    if (!db) {
+      dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => i.id !== id);
+      saveLocal();
+      return;
+    }
+    await deleteDoc(doc(db, COLS.INVOICES, id));
   },
 
   deleteInvoiceItems: async (ids: string[]) => {
-    // FORCE LOCAL
-    dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => !ids.includes(i.id));
-    saveLocal();
+    storageService.createSnapshot(`Bulk Delete ${ids.length} items`);
+    if (!db) {
+      dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => !ids.includes(i.id));
+      saveLocal();
+      return;
+    }
+
+    // Batch delete
+    const chunks = [];
+    for (let i = 0; i < ids.length; i += 500) {
+      chunks.push(ids.slice(i, i + 500));
+    }
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach(id => {
+        const ref = doc(db, COLS.INVOICES, id);
+        batch.delete(ref);
+      });
+      await batch.commit();
+    }
   },
 
   isCloudMode: () => !!db,
@@ -209,11 +260,23 @@ export const storageService = {
       saveLocal();
       return;
     }
-    const batch = writeBatch(db);
-    ids.forEach(id => {
-      batch.delete(doc(db, COLS.PARTS, id));
-    });
-    await batch.commit();
+
+    // Filter out invalid IDs to prevent "Invalid document reference" errors
+    const validIds = ids.filter(id => id && id.trim() !== '');
+    if (validIds.length === 0) return;
+
+    // Batch limit is 500. Split into chunks of 450.
+    const CHUNK_SIZE = 450;
+    const total = validIds.length;
+
+    for (let i = 0; i < total; i += CHUNK_SIZE) {
+      const chunk = validIds.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(db);
+      chunk.forEach(id => {
+        batch.delete(doc(db, COLS.PARTS, id));
+      });
+      await batch.commit();
+    }
   },
 
   upsertParts: async (parts: RawMaterialPart[], onProgress?: (p: number) => void) => {
@@ -221,12 +284,27 @@ export const storageService = {
       dbState.parts = [...dbState.parts, ...parts];
       saveLocal(); return;
     }
-    const batch = writeBatch(db);
-    parts.forEach((p, idx) => {
-      batch.set(doc(db, COLS.PARTS, p.id || crypto.randomUUID()), p);
-      if (onProgress) onProgress((idx + 1) / parts.length);
-    });
-    await batch.commit();
+
+    // Batch limit is 500. Split into chunks of 450 to be safe.
+    const CHUNK_SIZE = 450;
+    const total = parts.length;
+
+    // Helper to process chunks sequentially
+    for (let i = 0; i < total; i += CHUNK_SIZE) {
+      const chunk = parts.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(db);
+
+      chunk.forEach((p) => {
+        batch.set(doc(db, COLS.PARTS, p.id || crypto.randomUUID()), p);
+      });
+
+      await batch.commit();
+
+      if (onProgress) {
+        // Report progress based on completed chunks
+        onProgress(Math.min((i + CHUNK_SIZE) / total * 100, 100) / 100);
+      }
+    }
   },
 
   // Senior Frontend Engineer: Implemented missing bulk upload logic for shipments.
@@ -937,32 +1015,72 @@ export const storageService = {
   searchPart: (num: string) => dbState.parts.find((p: any) => p.PART_NUMBER.toUpperCase() === num.toUpperCase()),
 
   // Senior Frontend Engineer: Implemented snapshot management methods.
-  createSnapshot: (reason: string) => {
-    const snapshot: RestorePoint = {
-      id: crypto.randomUUID(),
-      timestamp: new Date().toISOString(),
-      reason,
-      data: { ...dbState },
-      sizeKB: Math.round(JSON.stringify(dbState).length / 1024)
-    };
-    dbState.snapshots.unshift(snapshot);
-    if (dbState.snapshots.length > 5) dbState.snapshots.pop();
-    saveLocal();
-    return true;
+  // Senior Frontend Engineer: Implemented snapshot management methods (Isolated Storage)
+  getSnapshots: () => {
+    try {
+      const stored = localStorage.getItem(RESTORE_POINTS_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) { return []; }
+  },
+
+  createSnapshot: (action: string) => {
+    try {
+      // 1. Get current snapshots from separate storage
+      const stored = localStorage.getItem(RESTORE_POINTS_KEY);
+      const output = stored ? JSON.parse(stored) : [];
+
+      // 2. Create new snapshot (Only Commercial Invoices for now to save space, or full dbState but carefully)
+      // Safety Net is specifically for Commercial Invoices loss.
+      const newSnapshot: RestorePoint = {
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        reason: action,
+        data: dbState.commercialInvoices || [], // Only backing up Invoices to avoid huge size
+        sizeKB: 0
+      };
+      newSnapshot.sizeKB = Math.round(JSON.stringify(newSnapshot.data).length / 1024);
+
+      // 3. Prepend and Limit to 5
+      const updated = [newSnapshot, ...output].slice(0, 5);
+
+      // 4. Save to separate key
+      localStorage.setItem(RESTORE_POINTS_KEY, JSON.stringify(updated));
+      console.log(`Snapshot created: ${action}`);
+    } catch (e) {
+      console.warn("Safety Net: Snapshot creation failed", e);
+      // Non-blocking
+    }
   },
 
   restoreSnapshot: (id: string) => {
-    const snap = dbState.snapshots.find((s: any) => s.id === id);
-    if (!snap) return false;
-    dbState = { ...dbState, ...snap.data };
-    saveLocal();
-    return true;
+    try {
+      const stored = localStorage.getItem(RESTORE_POINTS_KEY);
+      const points = stored ? JSON.parse(stored) : [];
+      const snap = points.find((s: any) => s.id === id);
+      if (!snap) return false;
+
+      console.log(`Restoring snapshot: ${snap.reason}`);
+      dbState.commercialInvoices = snap.data;
+      saveLocal(); // Persist restored state
+      notifyListeners();
+      return true;
+    } catch (e) {
+      console.error("Restore failed", e);
+      return false;
+    }
   },
 
   deleteSnapshot: (id: string) => {
-    dbState.snapshots = dbState.snapshots.filter((s: any) => s.id !== id);
-    saveLocal();
+    try {
+      const stored = localStorage.getItem(RESTORE_POINTS_KEY);
+      const points = stored ? JSON.parse(stored) : [];
+      const updated = points.filter((s: any) => s.id !== id);
+      localStorage.setItem(RESTORE_POINTS_KEY, JSON.stringify(updated));
+      notifyListeners(); // Optional, if we want UI to update instantly (might need a new listener for snapshots though)
+    } catch (e) { console.error(e); }
   },
+
+
 
   initAutoBackup: () => { },
 

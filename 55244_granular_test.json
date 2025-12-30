@@ -1,0 +1,109 @@
+{
+  "patente": "1614",
+  "pedimento": "25 16 1614 5005244",
+  "seccion": "160",
+  "tipoOperacion": "IMP",
+  "claveDocumento": "A1",
+  "rfc": "CMP220712ND9",
+  "tipoCambio": 18.0065,
+  "fechaPago": "23/12/2025",
+  "pesoBruto": 205,
+  "fletes": 0,
+  "seguros": 0,
+  "embalajes": 0,
+  "otrosIncrementables": 0,
+  "totalTaxes": 1294,
+  "valorAduanaTotal": 779,
+  "dtaTotal": 445,
+  "prevalidacionTotal": 290,
+  "cntTotal": 16,
+  "invoices": [
+    {
+      "numeroFactura": "25CFTT176707-2-A1",
+      "fechaFacturacion": "02/12/2025",
+      "proveedor": "ZHEJIANG CFMOTO POWER CO., LTD",
+      "valorDolares": 43.25,
+      "moneda": "USD",
+      "termFacturacion": "FOB",
+      "valorMonedaExtranjera": 43.25
+    }
+  ],
+  "items": [
+    {
+      "secuencia": "1",
+      "fraccion": "73269099",
+      "nico": "99",
+      "vinculacion": "1",
+      "metodoValoracion": "1",
+      "unidadMedidaComercial": "6",
+      "cantidadComercial": 5,
+      "unidadMedidaTarifa": "1",
+      "cantidadTarifa": 133,
+      "paisVendedor": "CHN",
+      "paisOrigen": "CHN",
+      "descripcion": "EMBALAJE METALICO",
+      "valorAduana": 469,
+      "valorComercial": 469,
+      "precioUnitario": 93.8,
+      "valorAgregado": 0,
+      "valorDolares": 26.05,
+      "contribuciones": [
+        {
+          "clave": "IGI",
+          "tasa": 35.000001,
+          "tipoTasa": "1",
+          "formaPago": "0",
+          "importe": 164
+        },
+        {
+          "clave": "IVA",
+          "tasa": 16.000001,
+          "tipoTasa": "1",
+          "formaPago": "0",
+          "importe": 137
+        }
+      ],
+      "observaciones": "OBSERVACIONES A NIVEL PARTIDA\n25CFTT176707-2-A1",
+      "partNumber": "TBQ381",
+      "invoiceNo": "25CFTT176707-2-A1"
+    },
+    {
+      "secuencia": "2",
+      "fraccion": "73269099",
+      "nico": "99",
+      "vinculacion": "1",
+      "metodoValoracion": "1",
+      "unidadMedidaComercial": "6",
+      "cantidadComercial": 2,
+      "unidadMedidaTarifa": "1",
+      "cantidadTarifa": 51,
+      "paisVendedor": "CHN",
+      "paisOrigen": "CHN",
+      "descripcion": "EMBALAJE METALICO",
+      "valorAduana": 310,
+      "valorComercial": 310,
+      "precioUnitario": 155,
+      "valorAgregado": 0,
+      "valorDolares": 17.22,
+      "contribuciones": [
+        {
+          "clave": "IGI",
+          "tasa": 35.000001,
+          "tipoTasa": "1",
+          "formaPago": "0",
+          "importe": 109
+        },
+        {
+          "clave": "IVA",
+          "tasa": 16.000001,
+          "tipoTasa": "1",
+          "formaPago": "0",
+          "importe": 103
+        }
+      ],
+      "observaciones": "OBSERVACIONES A NIVEL PARTIDA\nTBT070\n25CFTT176707-2-A1",
+      "partNumber": "TBT070",
+      "invoiceNo": "25CFTT176707-2-A1"
+    }
+  ]
+}

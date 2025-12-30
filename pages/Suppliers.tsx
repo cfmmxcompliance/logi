@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storageService.ts';
 import { Supplier, UserRole } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
-import { Plus, Search, Edit2, Trash2, X, Save, Truck, Anchor, Briefcase, Globe } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, Save, Truck, Anchor, Briefcase, Globe, Shield, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { cffService } from '../services/cffService.ts';
 
 const emptySupplier: Supplier = {
     id: '',
@@ -12,13 +13,15 @@ const emptySupplier: Supplier = {
     email: '',
     phone: '',
     country: '',
+    rfc: '',
+    validationStatus: 'unchecked',
     status: 'Active'
 };
 
 export const Suppliers = () => {
     const { hasRole } = useAuth();
     const canEdit = hasRole([UserRole.ADMIN, UserRole.EDITOR]);
-    
+
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [filter, setFilter] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,15 +35,31 @@ export const Suppliers = () => {
         return unsub;
     }, []);
 
-    const filteredSuppliers = suppliers.filter(s => 
-        s.name.toLowerCase().includes(filter.toLowerCase()) || 
+    const filteredSuppliers = suppliers.filter(s =>
+        s.name.toLowerCase().includes(filter.toLowerCase()) ||
         s.contactName.toLowerCase().includes(filter.toLowerCase()) ||
         s.email.toLowerCase().includes(filter.toLowerCase())
     );
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        await storageService.updateSupplier(currentSupplier);
+
+        // Auto-validate before saving
+        const validation = cffService.validatePartner(currentSupplier);
+        const updatedSupplier = {
+            ...currentSupplier,
+            validationStatus: validation.status
+        };
+
+        if (validation.status === 'blacklisted') {
+            if (!window.confirm(`WARNING: This partner is blacklisted by SAT (Art 69-B).\nStatus: ${validation.message}\n\nDo you still want to save?`)) {
+                return;
+            }
+        } else if (validation.status === 'warning') {
+            alert(`Attention: ${validation.message}`);
+        }
+
+        await storageService.updateSupplier(updatedSupplier);
         setIsModalOpen(false);
     };
 
@@ -61,11 +80,20 @@ export const Suppliers = () => {
     };
 
     const getTypeIcon = (type: string) => {
-        switch(type) {
-            case 'Forwarder': return <Anchor size={16} className="text-blue-500"/>;
-            case 'Carrier': return <Truck size={16} className="text-amber-500"/>;
-            case 'Broker': return <Briefcase size={16} className="text-emerald-500"/>;
-            default: return <Globe size={16} className="text-slate-500"/>;
+        switch (type) {
+            case 'Forwarder': return <Anchor size={16} className="text-blue-500" />;
+            case 'Carrier': return <Truck size={16} className="text-amber-500" />;
+            case 'Broker': return <Briefcase size={16} className="text-emerald-500" />;
+            default: return <Globe size={16} className="text-slate-500" />;
+        }
+    };
+
+    const getValidationIcon = (status?: string) => {
+        switch (status) {
+            case 'compliant': return <ShieldCheck size={16} className="text-green-500" />;
+            case 'blacklisted': return <ShieldAlert size={16} className="text-red-600 animate-pulse" />;
+            case 'warning': return <ShieldAlert size={16} className="text-amber-500" />;
+            default: return null; // Unchecked or non-mexico
         }
     };
 
@@ -83,9 +111,9 @@ export const Suppliers = () => {
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                 <div className="relative">
                     <Search className="absolute left-3 top-3 text-slate-400" size={18} />
-                    <input 
-                        type="text" 
-                        placeholder="Search partners by name, contact or email..." 
+                    <input
+                        type="text"
+                        placeholder="Search partners by name, contact or email..."
                         className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={filter}
                         onChange={(e) => setFilter(e.target.value)}
@@ -106,9 +134,12 @@ export const Suppliers = () => {
                                     <span className="text-xs font-medium px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">{s.type}</span>
                                 </div>
                             </div>
-                            <span className={`w-2 h-2 rounded-full ${s.status === 'Active' ? 'bg-green-500' : 'bg-red-300'}`}></span>
+                            <div className="flex gap-2">
+                                {getValidationIcon(s.validationStatus)}
+                                <span className={`w-2 h-2 rounded-full mt-2 ${s.status === 'Active' ? 'bg-green-500' : 'bg-red-300'}`}></span>
+                            </div>
                         </div>
-                        
+
                         <div className="space-y-2 text-sm text-slate-600">
                             <div className="flex items-center gap-2">
                                 <span className="text-slate-400 w-20">Contact:</span>
@@ -126,6 +157,12 @@ export const Suppliers = () => {
                                 <span className="text-slate-400 w-20">Country:</span>
                                 <span>{s.country}</span>
                             </div>
+                            {s.rfc && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-slate-400 w-20">RFC:</span>
+                                    <span className="font-mono text-xs bg-slate-50 px-1 rounded">{s.rfc}</span>
+                                </div>
+                            )}
                         </div>
 
                         {canEdit && (
@@ -156,12 +193,12 @@ export const Suppliers = () => {
                         <form onSubmit={handleSave} className="p-6 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Company Name</label>
-                                <input required className="w-full border border-slate-300 rounded-lg px-3 py-2" value={currentSupplier.name} onChange={e => setCurrentSupplier({...currentSupplier, name: e.target.value})} />
+                                <input required className="w-full border border-slate-300 rounded-lg px-3 py-2" value={currentSupplier.name} onChange={e => setCurrentSupplier({ ...currentSupplier, name: e.target.value })} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
-                                    <select className="w-full border border-slate-300 rounded-lg px-3 py-2" value={currentSupplier.type} onChange={e => setCurrentSupplier({...currentSupplier, type: e.target.value as any})}>
+                                    <select className="w-full border border-slate-300 rounded-lg px-3 py-2" value={currentSupplier.type} onChange={e => setCurrentSupplier({ ...currentSupplier, type: e.target.value as any })}>
                                         <option value="Forwarder">Forwarder</option>
                                         <option value="Carrier">Carrier</option>
                                         <option value="Broker">Broker</option>
@@ -171,7 +208,7 @@ export const Suppliers = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-                                    <select className="w-full border border-slate-300 rounded-lg px-3 py-2" value={currentSupplier.status} onChange={e => setCurrentSupplier({...currentSupplier, status: e.target.value as any})}>
+                                    <select className="w-full border border-slate-300 rounded-lg px-3 py-2" value={currentSupplier.status} onChange={e => setCurrentSupplier({ ...currentSupplier, status: e.target.value as any })}>
                                         <option value="Active">Active</option>
                                         <option value="Inactive">Inactive</option>
                                     </select>
@@ -179,21 +216,34 @@ export const Suppliers = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Contact Person</label>
-                                <input className="w-full border border-slate-300 rounded-lg px-3 py-2" value={currentSupplier.contactName} onChange={e => setCurrentSupplier({...currentSupplier, contactName: e.target.value})} />
+                                <input className="w-full border border-slate-300 rounded-lg px-3 py-2" value={currentSupplier.contactName} onChange={e => setCurrentSupplier({ ...currentSupplier, contactName: e.target.value })} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                                    <input type="email" className="w-full border border-slate-300 rounded-lg px-3 py-2" value={currentSupplier.email} onChange={e => setCurrentSupplier({...currentSupplier, email: e.target.value})} />
+                                    <input type="email" className="w-full border border-slate-300 rounded-lg px-3 py-2" value={currentSupplier.email} onChange={e => setCurrentSupplier({ ...currentSupplier, email: e.target.value })} />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
-                                    <input className="w-full border border-slate-300 rounded-lg px-3 py-2" value={currentSupplier.phone} onChange={e => setCurrentSupplier({...currentSupplier, phone: e.target.value})} />
+                                    <input className="w-full border border-slate-300 rounded-lg px-3 py-2" value={currentSupplier.phone} onChange={e => setCurrentSupplier({ ...currentSupplier, phone: e.target.value })} />
                                 </div>
                             </div>
-                             <div>
+                            <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Country / Region</label>
-                                <input className="w-full border border-slate-300 rounded-lg px-3 py-2" value={currentSupplier.country} onChange={e => setCurrentSupplier({...currentSupplier, country: e.target.value})} />
+                                <input className="w-full border border-slate-300 rounded-lg px-3 py-2" value={currentSupplier.country} onChange={e => setCurrentSupplier({ ...currentSupplier, country: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">RFC (Mexico Only)</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono uppercase"
+                                        placeholder="XAXX010101000"
+                                        value={currentSupplier.rfc || ''}
+                                        onChange={e => setCurrentSupplier({ ...currentSupplier, rfc: e.target.value.toUpperCase() })}
+                                    />
+                                    {currentSupplier.rfc && getValidationIcon(cffService.validatePartner(currentSupplier).status)}
+                                </div>
+                                <p className="text-xs text-slate-400 mt-1">Required for Art 69-B Validation if Country is Mexico.</p>
                             </div>
                             <div className="pt-4 flex justify-end gap-3">
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg">Cancel</button>

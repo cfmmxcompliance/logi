@@ -36,7 +36,9 @@ export interface Supplier {
   email: string;
   phone: string;
   country: string;
-  taxId?: string; // RFC / Tax ID
+  rfc?: string; // Mexican Tax ID
+  taxId?: string; // Other Tax ID
+  validationStatus?: 'compliant' | 'warning' | 'blacklisted' | 'unchecked';
   status: 'Active' | 'Inactive';
 }
 
@@ -251,6 +253,24 @@ export interface DSItemData {
   valorDolares: number;
   cantidadComercial: number;
   unidadMedidaComercial: string;
+  cantidadTarifa: number;
+  unidadMedidaTarifa: string;
+  paisVendedor: string;
+  paisOrigen: string;
+  nico: string;
+  vinculacion: string;
+  metodoValoracion: string;
+  valorAgregado?: number;
+  contribuciones?: {
+    clave: string;
+    tasa: number;
+    tipoTasa: string;
+    formaPago: string;
+    importe: number;
+  }[];
+  observaciones?: string;
+  partNumber?: string;
+  invoiceNo?: string;
 }
 
 export interface PedimentoRecord extends GeneralData {
@@ -258,7 +278,24 @@ export interface PedimentoRecord extends GeneralData {
   items: DSItemData[];
   invoices: DSInvoiceData[];
   totalTaxes?: number;
+  valorAduanaTotal?: number;
+  dtaTotal?: number;
+  prevalidacionTotal?: number;
+  cntTotal?: number;
   totalValueUsd: number;
+}
+
+export interface CCPItem {
+  id: string;
+  containerNo: string;
+  satCode: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  hazardousMaterial: string;
+  weight: number;
+  value: number;
+  currency: string;
 }
 
 export interface RawFileParsed {
@@ -287,6 +324,7 @@ export interface DataStageSession {
   records: PedimentoRecord[];
   fileName: string;
   timestamp: string;
+  timestamp: string;
 }
 
 export interface CommercialInvoiceItem {
@@ -309,4 +347,33 @@ export interface CommercialInvoiceItem {
   regimen: string;
   containerNo?: string;
   incoterm?: string;
+}
+
+// Audit Module Interfaces
+export interface AuditDiscrepancy {
+  id: string;
+  pedimentoId: string;
+  itemSecuencia: string;
+  invoiceNo: string;
+  partNumber: string;
+  description: string;
+  type: 'QUANTITY' | 'VALUE_USD' | 'UNIT_PRICE' | 'PART_NUMBER' | 'MISSING_IN_PEDIMENTO' | 'MISSING_IN_INVOICE';
+  pedimentoValue: string | number;
+  invoiceValue: string | number;
+  difference: number;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  status: 'OPEN' | 'RESOLVED' | 'IGNORED';
+}
+
+export interface AuditReport {
+  id: string;
+  date: string;
+  pedimentoId: string;
+  totalDiscrepancies: number;
+  totalValueStats: {
+    pedimentoTotal: number;
+    invoiceTotal: number;
+    difference: number;
+  };
+  discrepancies: AuditDiscrepancy[];
 }

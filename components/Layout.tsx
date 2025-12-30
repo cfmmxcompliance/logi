@@ -2,6 +2,8 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Database, Ship, FileText, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
+import { ConnectionStatus } from './ConnectionStatus.tsx';
+import { UserRole } from '../types.ts';
 
 const SidebarItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => {
   const location = useLocation();
@@ -38,7 +40,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-6 px-2 space-y-2">
-          <SidebarItem to="/" icon={LayoutDashboard} label={sidebarOpen ? "Dashboard" : ""} />
+          {user?.role === 'Admin' && (
+            <SidebarItem to="/" icon={LayoutDashboard} label={sidebarOpen ? "Dashboard" : ""} />
+          )}
           <SidebarItem to="/operations" icon={Ship} label={sidebarOpen ? "Shipment Plan" : ""} />
           <SidebarItem to="/pre-alerts" icon={Bell} label={sidebarOpen ? "Pre-Alerts" : ""} />
           <SidebarItem to="/vessel-tracking" icon={Anchor} label={sidebarOpen ? "Tracking" : ""} />
@@ -46,12 +50,23 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <SidebarItem to="/customs-clearance" icon={ClipboardCheck} label={sidebarOpen ? "Customs Clearance" : ""} />
           <SidebarItem to="/commercial-invoices" icon={FileText} label={sidebarOpen ? "CI Extractor" : ""} />
           <SidebarItem to="/ccp-builder" icon={Truck} label={sidebarOpen ? "CCP Builder" : ""} />
-          <SidebarItem to="/data-stage" icon={Scale} label={sidebarOpen ? "Data Stage (SAT)" : ""} />
-          <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
-          <SidebarItem to="/suppliers" icon={Users} label={sidebarOpen ? "Partners" : ""} />
-          <SidebarItem to="/documents" icon={FileText} label={sidebarOpen ? "Smart Docs (AI)" : ""} />
-          <SidebarItem to="/reports" icon={BarChart3} label={sidebarOpen ? "Reports & KPIs" : ""} />
-          <SidebarItem to="/settings" icon={Settings} label={sidebarOpen ? "Settings" : ""} />
+
+          {/* RBAC: Restricted Areas */}
+          {(user?.role === 'Admin' || user?.role === 'Editor') && (
+            <>
+              <SidebarItem to="/data-stage" icon={Scale} label={sidebarOpen ? "Data Stage (SAT)" : ""} />
+              <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
+            </>
+          )}
+
+          {user?.role === 'Admin' && (
+            <>
+              <SidebarItem to="/documents" icon={FileText} label={sidebarOpen ? "Smart Docs (AI)" : ""} />
+              <SidebarItem to="/suppliers" icon={Users} label={sidebarOpen ? "Partners" : ""} />
+              <SidebarItem to="/reports" icon={BarChart3} label={sidebarOpen ? "Reports & KPIs" : ""} />
+              <SidebarItem to="/settings" icon={Settings} label={sidebarOpen ? "Settings" : ""} />
+            </>
+          )}
         </nav>
 
         <div className="p-4 border-t border-slate-800">
@@ -86,6 +101,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         <header className="bg-white shadow-sm h-16 flex items-center justify-between px-8 sticky top-0 z-10">
           <h2 className="text-lg font-semibold text-slate-700">CFMoto Import/Export Control</h2>
           <div className="flex items-center space-x-4">
+            <ConnectionStatus />
             <div className={`px-3 py-1 rounded-full text-xs font-bold border ${user?.role === 'Admin' ? 'bg-red-50 text-red-600 border-red-200' :
               user?.role === 'Editor' ? 'bg-blue-50 text-blue-600 border-blue-200' :
                 'bg-slate-50 text-slate-600 border-slate-200'

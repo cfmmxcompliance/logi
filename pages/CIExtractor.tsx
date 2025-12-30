@@ -10,11 +10,23 @@ import { downloadFile } from '../utils/fileHelpers.ts';
 import { LOGO_BASE64 } from '../src/constants/logo.ts';
 
 
+
+
+
 export const CIExtractor: React.FC = () => {
     const { user } = useAuth();
     const isAdmin = user?.role === 'Admin';
     const { showNotification } = useNotification();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const searchTimerRef = useRef<NodeJS.Timeout>();
+
+    const handleSearch = (val: string) => {
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = setTimeout(() => {
+            setSearchTerm(val);
+        }, 300);
+    };
 
     const [items, setItems] = useState<CommercialInvoiceItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -22,7 +34,19 @@ export const CIExtractor: React.FC = () => {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [bulkDeleteModal, setBulkDeleteModal] = useState(false);
     const [editingItem, setEditingItem] = useState<CommercialInvoiceItem | null>(null);
-    const [incotermLabel, setIncotermLabel] = useState<string>(''); // Capture footer label
+    const [incotermLabel, setIncotermLabel] = useState<string>('');
+
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 50;
+
+    // Sync Reset
+    useEffect(() => {
+        if (searchTerm === '' && searchInputRef.current) {
+            searchInputRef.current.value = '';
+        }
+        setCurrentPage(1); // Reset page on search
+    }, [searchTerm]);
 
     // Container Logic
     const [showContainerModal, setShowContainerModal] = useState(false);
@@ -363,7 +387,7 @@ export const CIExtractor: React.FC = () => {
                         const partsMap = new Map(allParts.map(p => [p.PART_NUMBER, p.NETWEIGHT]));
 
                         // Parse Rows
-                        const newItems: CommercialInvoiceItem[] = [];
+                        const consolidationMap = new Map<string, CommercialInvoiceItem>();
                         let parsedIncoterm = '';
 
                         // @ts-ignore
@@ -383,41 +407,65 @@ export const CIExtractor: React.FC = () => {
                             }
                             if (firstCell.includes('SAY TOTAL') || firstCell.includes('TOTAL US DOLLAR')) break;
 
-                            const partNoCode = row[colMap['PART NO']];
+                            const partNo = row[colMap['PART NO']] || '';
                             const itemCode = row[colMap['ITEM']];
-                            if (!partNoCode && !itemCode) continue;
+                            if (!partNo && !itemCode) continue;
                             if (String(itemCode).toUpperCase().includes('TOTAL')) continue;
 
-                            // Net Weight Logic: Database View (Master Data) takes precedence over Excel
-                            const masterWeight = partsMap.get(partNoCode);
-                            const excelWeight = Number(row[colMap['NETWEIGHT']]);
-                            const finalNetWeight = (masterWeight !== undefined && masterWeight !== null) ? Number(masterWeight) : (excelWeight || 0);
+                            // Consolidation Logic
+                            const unitPrice = parseCurrency(row[colMap['UNIT PRICE']]);
+                            const regime = row[colMap['REGIMEN']]?.toString().toUpperCase() || '';
+                            const invoice = invoiceNo || 'UNKNOWN';
 
-                            newItems.push({
-                                id: crypto.randomUUID(),
-                                invoiceNo: invoiceNo || 'UNKNOWN',
-                                date: invoiceDate || new Date().toISOString().slice(0, 10),
-                                item: row[colMap['ITEM']] || '',
-                                model: row[colMap['MODEL']] || '',
-                                partNo: row[colMap['PART NO']] || '',
-                                englishName: row[colMap['ENGLISH NAME']] || '',
-                                spanishDescription: row[colMap['SPANISH DESCRIPTION']] || '',
-                                hts: row[colMap['HTS']] || '',
-                                prosec: row[colMap['PROSEC']] || '',
-                                rb: row[colMap['RB']] || '',
-                                qty: Number(row[colMap['QTY']]) || 0,
-                                um: row[colMap['UM']] || '',
-                                netWeight: finalNetWeight,
-                                unitPrice: parseCurrency(row[colMap['UNIT PRICE']]),
-                                totalAmount: parseCurrency(row[colMap['TOTAL AMOUNT']]),
-                                regimen: row[colMap['REGIMEN']]?.toString().toUpperCase() || '',
-                                incoterm: ''
-                            });
+                            const key = `${partNo}|${unitPrice}|${invoice}|${regime}`;
+
+                            const excelNetWeight = Number(row[colMap['NETWEIGHT']]);
+                            const masterWeight = partsMap.get(partNo);
+                            const finalNetWeight = (masterWeight !== undefined && masterWeight !== null) ? Number(masterWeight) : (excelNetWeight || 0);
+
+                            const qty = Number(row[colMap['QTY']]) || 0;
+                            // const totalAmount = parseCurrency(row[colMap['TOTAL AMOUNT']]);
+
+                            if (consolidationMap.has(key)) {
+                                const existing = consolidationMap.get(key)!;
+                                existing.qty += qty;
+
+                                // Sum Excel Weight if not Master Data
+                                if (masterWeight === undefined || masterWeight === null) {
+                                    existing.netWeight += (excelNetWeight || 0);
+                                }
+
+                                // Recalculate Total Amount based on new Qty
+                                existing.totalAmount = existing.qty * existing.unitPrice;
+                            } else {
+                                consolidationMap.set(key, {
+                                    id: crypto.randomUUID(),
+                                    invoiceNo: invoice,
+                                    date: invoiceDate || new Date().toISOString().slice(0, 10),
+                                    item: row[colMap['ITEM']] || '',
+                                    model: row[colMap['MODEL']] || '',
+                                    partNo: partNo,
+                                    englishName: row[colMap['ENGLISH NAME']] || '',
+                                    spanishDescription: row[colMap['SPANISH DESCRIPTION']] || '',
+                                    hts: row[colMap['HTS']] || '',
+                                    prosec: row[colMap['PROSEC']] || '',
+                                    rb: row[colMap['RB']] || '',
+                                    qty: qty,
+                                    um: row[colMap['UM']] || '',
+                                    netWeight: finalNetWeight,
+                                    unitPrice: unitPrice,
+                                    totalAmount: qty * unitPrice,
+                                    regimen: regime,
+                                    incoterm: ''
+                                });
+                            }
                         }
 
                         if (parsedIncoterm) {
-                            newItems.forEach(i => i.incoterm = parsedIncoterm);
+                            consolidationMap.forEach(i => i.incoterm = parsedIncoterm);
                         }
+
+                        const newItems = Array.from(consolidationMap.values());
 
                         if (newItems.length > 0) {
                             const containerRegex = /[A-Z]{4}\d{7}/;
@@ -689,17 +737,19 @@ export const CIExtractor: React.FC = () => {
         fRow.getCell(1).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
         // Total Qty (Col 9 / I)
-        const totalQty = data.reduce((sum, item) => sum + (item.qty || 0), 0);
+        // Total Qty (Col 9 / I)
+        const sumStartRow = tableHeaderRowIdx + 1;
+        const sumEndRow = currentRowIdx - 1;
+
         const qtyCell = fRow.getCell(9);
-        qtyCell.value = totalQty;
+        qtyCell.value = { formula: `SUM(I${sumStartRow}:I${sumEndRow})` };
         qtyCell.font = { bold: true };
         qtyCell.alignment = { horizontal: 'center' };
         qtyCell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
         // Total Amount (Col 14 / N)
-        const totalAmount = data.reduce((sum, item) => sum + (item.totalAmount || 0), 0);
         const amtCell = fRow.getCell(14);
-        amtCell.value = totalAmount; // ExcelJS handles number type
+        amtCell.value = { formula: `SUM(N${sumStartRow}:N${sumEndRow})` };
         amtCell.numFmt = '0.00';
         amtCell.font = { bold: true };
         amtCell.alignment = { horizontal: 'center' };
@@ -712,11 +762,11 @@ export const CIExtractor: React.FC = () => {
     };
 
     const handleSplitAndExport = () => {
-        if (items.length === 0) return;
+        const sourceItems = filteredItems;
+        if (sourceItems.length === 0) return;
 
-        // Split logic
         // Split logic - Re-indexing items for each group
-        const a1Items = items
+        const a1Items = sourceItems
             .filter(i => i.regimen === 'A1')
             .map((i, index) => ({
                 ...i,
@@ -724,7 +774,7 @@ export const CIExtractor: React.FC = () => {
                 invoiceNo: i.invoiceNo.endsWith('-A1') ? i.invoiceNo : `${i.invoiceNo}-A1`
             }));
 
-        const standardItems = items
+        const standardItems = sourceItems
             .filter(i => i.regimen !== 'A1')
             .map((i, index) => ({
                 ...i,
@@ -737,8 +787,10 @@ export const CIExtractor: React.FC = () => {
         }
 
         if (standardItems.length > 0) {
-            const suffix = standardItems[0]?.containerNo || new Date().toISOString().split('T')[0];
-            exportToExcelStamped(standardItems, `Commercial_Invoice_IN_${suffix}.xlsx`);
+            setTimeout(() => {
+                const suffix = standardItems[0]?.containerNo || new Date().toISOString().split('T')[0];
+                exportToExcelStamped(standardItems, `Commercial_Invoice_IN_${suffix}.xlsx`);
+            }, 800);
         }
     };
 
@@ -902,15 +954,18 @@ export const CIExtractor: React.FC = () => {
             if (terms.length === 0) return true;
 
             return terms.every(term =>
-                i.invoiceNo.toLowerCase().includes(term) ||
-                i.partNo.toLowerCase().includes(term) ||
-                i.model.toLowerCase().includes(term) ||
-                i.englishName.toLowerCase().includes(term) ||
-                i.regimen.toLowerCase().includes(term) ||
-                (i.containerNo || '').toLowerCase().includes(term)
+                String(i.invoiceNo || '').toLowerCase().includes(term) ||
+                String(i.partNo || '').toLowerCase().includes(term) ||
+                String(i.model || '').toLowerCase().includes(term) ||
+                String(i.englishName || '').toLowerCase().includes(term) ||
+                String(i.regimen || '').toLowerCase().includes(term) ||
+                String(i.containerNo || '').toLowerCase().includes(term)
             );
         });
     }, [items, searchTerm, showMissingOnly, showErrorsOnly]);
+
+    const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+    const displayedItems = filteredItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     return (
         <div className="space-y-6">
@@ -945,11 +1000,12 @@ export const CIExtractor: React.FC = () => {
                 <div className="relative w-full">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
                     <input
+                        ref={searchInputRef}
                         type="text"
                         placeholder="Search by Invoice, Part No, or Model..."
                         className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        defaultValue=""
                     />
                 </div>
 
@@ -1096,7 +1152,7 @@ export const CIExtractor: React.FC = () => {
                             ) : filteredItems.length === 0 ? (
                                 <tr><td colSpan={15} className="p-8 text-center text-slate-400">No invoice items found. Import an Excel file to get started.</td></tr>
                             ) : (
-                                filteredItems.map((item, index) => (
+                                displayedItems.map((item, index) => (
                                     <tr key={item.id} className={`hover:bg-slate-50 transition-colors group ${editingId === item.id ? 'bg-blue-50' : ''}`}>
                                         <td className="p-4">
                                             <input

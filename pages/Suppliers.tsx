@@ -20,7 +20,7 @@ const emptySupplier: Supplier = {
 
 export const Suppliers = () => {
     const { hasRole } = useAuth();
-    const canEdit = hasRole([UserRole.ADMIN, UserRole.EDITOR]);
+    const canEdit = hasRole([UserRole.ADMIN, UserRole.EDITOR, UserRole.OPERATOR]);
 
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [filter, setFilter] = useState('');

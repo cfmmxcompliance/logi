@@ -18,11 +18,13 @@ export enum DocType {
 export enum UserRole {
   ADMIN = 'Admin',       // Full access: Delete, Manage Users, Edit
   EDITOR = 'Editor',     // Write access: Create, Edit, No Delete
+  OPERATOR = 'Operator', // Same as Editor (User requested alias)
   VIEWER = 'Viewer'      // Read only
 }
 
 export interface User {
   username: string;
+  email?: string; // Essential for DB updates
   name: string;
   role: UserRole;
   avatarInitials: string;
@@ -324,7 +326,6 @@ export interface DataStageSession {
   records: PedimentoRecord[];
   fileName: string;
   timestamp: string;
-  timestamp: string;
 }
 
 export interface CommercialInvoiceItem {
@@ -347,6 +348,7 @@ export interface CommercialInvoiceItem {
   regimen: string;
   containerNo?: string;
   incoterm?: string;
+  currency?: string;
 }
 
 // Audit Module Interfaces

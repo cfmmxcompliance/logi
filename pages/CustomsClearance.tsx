@@ -390,7 +390,7 @@ export const CustomsClearance = () => {
                     <table className="w-full text-xs text-left border-collapse">
                         <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
                             <tr>
-                                <Th className="sticky left-0 z-20 w-[40px] bg-slate-50 text-center">
+                                <Th className="w-[40px] bg-slate-50 text-center">
                                     <input
                                         type="checkbox"
                                         className="rounded border-slate-300"
@@ -398,8 +398,11 @@ export const CustomsClearance = () => {
                                         onChange={handleSelectAll}
                                     />
                                 </Th>
-                                <Th className="sticky left-[40px] z-20 w-16 bg-slate-50">Action</Th>
-                                <Th className="sticky left-[104px] z-20 w-32">
+                                <Th className="w-[80px] bg-slate-50">
+                                    Action<br />
+                                    <span className="text-[10px] text-slate-500 font-normal">操作</span>
+                                </Th>
+                                <Th className="min-w-[200px]">
                                     Número de BL / AWB<br />
                                     <span className="text-[10px] text-slate-500 font-normal">提单号</span>
                                 </Th>
@@ -458,7 +461,7 @@ export const CustomsClearance = () => {
                         <tbody className="divide-y divide-slate-100 whitespace-nowrap">
                             {filteredRecords.map((r) => (
                                 <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-3 py-2 border-r border-slate-100 sticky left-0 bg-white hover:bg-slate-50 text-center z-10">
+                                    <td className="px-3 py-2 border-r border-slate-100 bg-white hover:bg-slate-50 text-center">
                                         <input
                                             type="checkbox"
                                             className="rounded border-slate-300"
@@ -466,17 +469,21 @@ export const CustomsClearance = () => {
                                             onChange={() => handleSelectRow(r.id)}
                                         />
                                     </td>
-                                    <td className="px-3 py-2 border-r border-slate-100 sticky left-[40px] bg-white hover:bg-slate-50 flex items-center gap-2 z-10">
-                                        <button onClick={() => handleEdit(r)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"><Edit2 size={14} /></button>
-                                        {isAdmin && (
-                                            <button onClick={() => initiateDelete(r.id)} className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50">
-                                                <Trash2 size={14} />
-                                            </button>
-                                        )}
+                                    <td className="px-3 py-2 border-r border-slate-100 bg-white hover:bg-slate-50 w-[80px]">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <button onClick={() => handleEdit(r)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"><Edit2 size={14} /></button>
+                                            {isAdmin && (
+                                                <button onClick={() => initiateDelete(r.id)} className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50">
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
-                                    <td className="px-3 py-2 border-r border-slate-100 sticky left-[104px] bg-white hover:bg-slate-50 font-bold text-blue-600 flex items-center gap-2">
-                                        {isAirMode(r) ? <Plane size={14} className="text-purple-600" /> : <Anchor size={14} className="text-blue-400" />}
-                                        {r.blNo}
+                                    <td className="px-3 py-2 border-r border-slate-100 min-w-[200px]">
+                                        <div className="flex items-center gap-2 font-bold text-blue-600">
+                                            {isAirMode(r) ? <Plane size={14} className="text-purple-600" /> : <Anchor size={14} className="text-blue-400" />}
+                                            {r.blNo}
+                                        </div>
                                     </td>
                                     <Td className={isAirMode(r) ? "text-purple-600 font-bold text-[10px]" : "font-mono"}>
                                         {r.containerNo || (isAirMode(r) ? "AIR CARGO" : "-")}

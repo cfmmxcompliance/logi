@@ -49,6 +49,7 @@ export interface ExtractedShippingDoc {
   invoiceNo?: string;
   poNumber?: string;
   model?: string;
+  expectedContainerCount?: number;
 }
 
 // Senior Frontend Engineer: Helper to clean JSON from markdown blocks.
@@ -123,7 +124,9 @@ export const geminiService = {
         CRITICAL EXTRACTION FIELDS:
         1. **docType**: "BL" (Maritime) or "AWB" (Air).
         2. **bookingNo**: The main tracking number. Look for "Booking No", "B/L No", "AWB No", or "Bill of Lading No". 
-           - For Evergreen, often starts with "EGLV".
+           - **CRITICAL PRIORITY**: If you find a code starting with "EGLV" (e.g. "EGLV143574069349"), you **MUST** use it as the 'bookingNo'.
+             - Ignore any "SEC" or internal forwarder codes if an "EGLV" code is present.
+             - "EGLV" code is the Master BL and takes precedence over House BLs.
            - For Air, format like "XXX-XXXXXXX".
         3. **vesselOrFlight**: Name of vessel and voyage, or flight number.
         4. **etd**: Estimated Time of Departure (YYYY-MM-DD).
@@ -132,25 +135,34 @@ export const geminiService = {
         7. **arrivalPort**: Port/Airport of Discharge (e.g., "MANZANILLO, MX", "LAZARO CARDENAS").
         8. **invoiceNo**: Look for "Invoice No", "Commercial Invoice", or "Ref No".
         9. **model**: Try to identify the product model from the description (e.g., "CFORCE 600", "ZFORCE", "ATV"). If not found, return "".
-        10. **containers**: A list of ALL containers.
-            - **containerNo**: 4 letters + 6-7 digits (e.g., "TIIU4234064").
+        10. **expectedContainerCount**: Look for a summary line like "Total Containers: 5", "Say: FIVE (5) CONTAINERS ONLY", or count the rows described in the "No. of Pkgs" column if it refers to containers.
+            - If you see "1 x 40HC", the count is 1. 
+            - If you see "5 x 40HC", the count is 5.
+            - This is crucial for validation.
+
+        11. **containers**: A COMPLETE LIST of ALL containers found in the document.
+            - **CRITICAL**: Do NOT stop after the first result. Scan the entire document for every container number.
+            - **Pattern**: 4 uppercase letters + 7 digits (e.g., "TRHU7133410", "TXGU5599902", "CAAU6010089", "EGSU1206707").
+            - **Layout**: Often listed in a vertical column under "Container No", "Marks & Nos", or "Description of Goods".
+            - **containerNo**: The container number (e.g. "TIIU4234064").
             - **size**: e.g., "40HQ", "20GP", "40HC".
             - **seal**: The seal number associated with the container.
-            - **pkgCount**: Number of packages (e.g., "8" from "8PACKAGES").
-            - **pkgType**: Type of package (e.g., "PACKAGES", "CTNS", "PLTS").
-            - **weightKg**: Weight in KGS (e.g., "4840.000").
-            - **volumeCbm**: Volume in CBM (e.g., "68.56").
-            *Hint: Look for strings like "8PACKAGES/4840.000KGS/68.56CBM" or standard columnar data.*
+            - **pkgCount**: Number of packages (e.g., "8").
+            - **pkgType**: Type of package (e.g., "PACKAGES", "CTNS").
+            - **weightKg**: Weight in KGS for THIS container (e.g., "4840.000").
+            - **volumeCbm**: Volume in CBM for THIS container (e.g., "68.56").
+            *Hint: Look for repeated lines like "8PACKAGES/4840.000KGS/68.56CBM". Each line usually corresponds to one container above it.*
 
           "containers": [{ 
             "containerNo": string, 
             "size": string, 
             "seal": string,
-            "pkgCount": number, // e.g. 8
-            "pkgType": string, // e.g. "PACKAGES", "CARTONS", "PALLETS"
-            "weightKg": number, // e.g. 4840.0
-            "volumeCbm": number // e.g. 68.56
-          }]
+            "pkgCount": number, 
+            "pkgType": string, 
+            "weightKg": number, 
+            "volumeCbm": number 
+          }],
+          "expectedContainerCount": number
         }
       `;
 

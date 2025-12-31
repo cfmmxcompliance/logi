@@ -72,7 +72,7 @@ const CSV_ORDER_KEYS: (keyof RawMaterialPart)[] = [
 
 export const DatabaseView = () => {
     const { hasRole } = useAuth();
-    const canEdit = hasRole([UserRole.ADMIN, UserRole.EDITOR]);
+    const canEdit = hasRole([UserRole.ADMIN, UserRole.EDITOR, UserRole.OPERATOR]);
     const canDelete = hasRole([UserRole.ADMIN]);
 
     const [parts, setParts] = useState<RawMaterialPart[]>(storageService.getParts());

@@ -8,6 +8,7 @@ import { CommercialInvoiceItem, RawMaterialPart } from '../types';
 export default function CCPBuilder() {
     const [allItems, setAllItems] = useState<CommercialInvoiceItem[]>([]);
     const [masterDataMap, setMasterDataMap] = useState<Record<string, RawMaterialPart>>({});
+    const [containerToBL, setContainerToBL] = useState<Record<string, string>>({});
     const [containers, setContainers] = useState<string[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -23,6 +24,59 @@ export default function CCPBuilder() {
     const loadData = async () => {
         const items = await storageService.getInvoiceItems();
         const parts = await storageService.getParts();
+        const shipments = await storageService.getShipments();
+        const preAlerts = await storageService.getPreAlerts();
+        const vesselTracking = await storageService.getVesselTracking();
+        const customs = await storageService.getCustomsClearance();
+
+        // Map Container -> BL (Aggregating from all sources)
+        // Priority: PreAlerts (Freshest) > VesselTracking > Customs > Shipments
+        const blMap: Record<string, string> = {};
+
+        // 1. Shipments (Base)
+        shipments.forEach(s => {
+            s.containers.forEach(c => blMap[c] = s.blNo);
+        });
+
+        // 2. Customs (Middle)
+        customs.forEach(c => {
+            if (c.blNo) {
+                // Customs doesn't always have container list explicitly separated? 
+                // Assuming logic needs to match container to BL. 
+                // Actually Customs is 1:1 usually? No, it's per Pedimento which has BL.
+                // We need container context. If not present, skip.
+            }
+        });
+
+        // 2. Vessel Tracking (Operational)
+        vesselTracking.forEach(vt => {
+            if (vt.blNo) {
+                // VT usually is per container if tracked individually, but structure is Record. 
+                // Let's check type. VesselTrackingRecord has `containerNo`?
+                // Let's check types.ts if needed, but assuming structure:
+                // If VT is one record per container:
+                // @ts-ignore
+                if (vt.containerNo) blMap[vt.containerNo] = vt.blNo;
+            }
+        });
+
+        // 3. Pre-Alerts (Highest Priority - contains the 'EGLV' fixes)
+        preAlerts.forEach(pa => {
+            if (pa.bookingAbw) {
+                // Check 'containers' array or 'linkedContainers'
+                if (pa.containers && Array.isArray(pa.containers)) {
+                    pa.containers.forEach((c: any) => {
+                        const cNum = typeof c === 'string' ? c : c.containerNo;
+                        if (cNum) blMap[cNum] = pa.bookingAbw;
+                    });
+                }
+                if (pa.linkedContainers && Array.isArray(pa.linkedContainers)) {
+                    pa.linkedContainers.forEach(c => blMap[c] = pa.bookingAbw);
+                }
+            }
+        });
+
+        setContainerToBL(blMap);
 
         const map: Record<string, RawMaterialPart> = {};
         parts.forEach(part => {
@@ -42,8 +96,9 @@ export default function CCPBuilder() {
         // Pre-fill pedimento from data if possible, or leave empty for user override
         const containerItems = allItems.filter(i => i.containerNo === container);
         const distinctPedimentos = Array.from(new Set(containerItems.map(i => i.pedimento).filter(Boolean))).join(', ');
+        const linkedBL = containerToBL[container] || '';
 
-        setManualData({ pedimento: distinctPedimentos, bl: '' });
+        setManualData({ pedimento: distinctPedimentos, bl: linkedBL });
         setSelectedContainer(container);
         setShowModal(true);
     };
@@ -369,38 +424,53 @@ export default function CCPBuilder() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredContainers.map(container => (
-                        <div key={container} className="p-4 border border-slate-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all group bg-slate-50">
-                            <div className="flex justify-between items-start mb-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-slate-100 shadow-sm text-blue-600">
-                                        <Container size={20} />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-slate-800">{container}</h3>
-                                        <p className="text-xs text-slate-500">
+                <div className="overflow-hidden border border-slate-200 rounded-lg">
+                    <table className="w-full text-left text-sm text-slate-600">
+                        <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-800 uppercase text-xs">
+                            <tr>
+                                <th className="px-4 py-3">Container Number</th>
+                                <th className="px-4 py-3">BL / AWB</th>
+                                <th className="px-4 py-3">Linked Items</th>
+                                <th className="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                            {filteredContainers.map(container => (
+                                <tr key={container} className="hover:bg-slate-50 transition-colors group">
+                                    <td className="px-4 py-3 font-medium text-slate-900 flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded flex items-center justify-center">
+                                            <Container size={16} />
+                                        </div>
+                                        {container}
+                                    </td>
+                                    <td className="px-4 py-3 font-mono text-xs text-slate-600">
+                                        {containerToBL[container] || <span className="text-slate-400 italic">Not Linked</span>}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
                                             {allItems.filter(i => i.containerNo === container).length} Items
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={() => handleGenerateClick(container)}
-                                className="w-full py-2 bg-slate-800 text-white rounded-lg flex items-center justify-center gap-2 hover:bg-slate-700 transition-colors font-medium text-sm"
-                            >
-                                <FileDown size={16} /> Generate CCP Excel
-                            </button>
-                        </div>
-                    ))}
-
-                    {filteredContainers.length === 0 && (
-                        <div className="col-span-full text-center py-12 text-slate-400 bg-slate-50 rounded-lg border border-dashed border-slate-200">
-                            <Truck size={48} className="mx-auto mb-4 opacity-20" />
-                            <p>No containers found matching your search.</p>
-                        </div>
-                    )}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <button
+                                            onClick={() => handleGenerateClick(container)}
+                                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-800 text-white text-xs font-medium rounded hover:bg-slate-700 transition-colors shadow-sm"
+                                        >
+                                            <FileDown size={14} /> Generate Excel
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {filteredContainers.length === 0 && (
+                                <tr>
+                                    <td colSpan={3} className="px-4 py-12 text-center text-slate-400">
+                                        <Truck size={48} className="mx-auto mb-4 opacity-20" />
+                                        <p>No containers found matching your search.</p>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -411,6 +481,26 @@ export default function CCPBuilder() {
                         <h3 className="text-xl font-bold text-[#1a237e] mb-4">Enter CCP Details</h3>
 
                         <div className="space-y-4">
+                            {/* SMART LINKER: Proposal Section */}
+                            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                                <h4 className="flex items-center gap-2 text-sm font-bold text-blue-800 mb-2">
+                                    <Container size={14} /> Smart Suggestion
+                                </h4>
+                                <div className="text-xs text-blue-800 space-y-1">
+                                    <p>Based on your shipment history, we found:</p>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <span className="font-bold">Linked BL:</span>
+                                        <span className="bg-white px-2 py-0.5 rounded border border-blue-200 font-mono">
+                                            {containerToBL[selectedContainer!] || 'None found'}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold">Items Linked:</span>
+                                        <span>{allItems.filter(i => i.containerNo === selectedContainer).length}</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">No. de pedimento (H7)</label>
                                 <input

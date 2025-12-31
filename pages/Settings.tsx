@@ -8,30 +8,31 @@ import { authService } from '../services/authService.ts';
 export const Settings = () => {
     const { hasRole, user } = useAuth();
     const isAdmin = hasRole([UserRole.ADMIN]);
-    
+
     const [snapshots, setSnapshots] = useState<RestorePoint[]>([]);
     const [systemUsers, setSystemUsers] = useState<User[]>([]);
 
     useEffect(() => {
         // Initial load
         setSnapshots(storageService.getSnapshots());
-        
+
         // Only fetch users if Admin
         if (isAdmin) {
-            setSystemUsers(authService.getUsers());
+            // @ts-ignore
+            authService.getUsers().then(users => setSystemUsers(users));
         }
-        
+
         // Subscribe to changes (e.g. if auto-backup runs)
         const unsub = storageService.subscribe(() => {
             setSnapshots(storageService.getSnapshots());
         });
         return unsub;
     }, [isAdmin]);
-    
+
     const handleReset = () => {
         if (!isAdmin) return;
-        
-        if(window.confirm("⚠️ DANGER ZONE\n\nAre you sure you want to delete ALL data and reset to the default mock data? This action cannot be undone.")) {
+
+        if (window.confirm("⚠️ DANGER ZONE\n\nAre you sure you want to delete ALL data and reset to the default mock data? This action cannot be undone.")) {
             // @ts-ignore
             if (storageService.resetDatabase) {
                 // @ts-ignore
@@ -42,21 +43,21 @@ export const Settings = () => {
             }
         }
     };
-    
+
     const handleSeed = async () => {
         if (!isAdmin) return;
-        if(window.confirm("¿Crear estructura inicial en Firebase?\nEsto creará datos de ejemplo para Envíos, Partes y Proveedores.")) {
+        if (window.confirm("¿Crear estructura inicial en Firebase?\nEsto creará datos de ejemplo para Envíos, Partes y Proveedores.")) {
             try {
                 // @ts-ignore
                 await storageService.seedDatabase();
                 alert("✅ ¡Éxito! La base de datos ha sido poblada.\n\nAhora puedes ver las colecciones en tu consola de Firebase.");
                 window.location.reload();
-            } catch(e: any) {
+            } catch (e: any) {
                 console.error(e);
                 if (e.code === 'permission-denied' || e.message?.includes('permission')) {
-                     alert("⛔ PERMISO DENEGADO\n\nFirebase ha bloqueado la escritura. Por favor:\n1. Ve a la consola de Firebase.\n2. Entra en la pestaña 'Reglas'.\n3. Cambia 'allow read, write: if false;' a 'if true;'.\n4. Publica los cambios e intenta de nuevo.");
+                    alert("⛔ PERMISO DENEGADO\n\nFirebase ha bloqueado la escritura. Por favor:\n1. Ve a la consola de Firebase.\n2. Entra en la pestaña 'Reglas'.\n3. Cambia 'allow read, write: if false;' a 'if true;'.\n4. Publica los cambios e intenta de nuevo.");
                 } else {
-                     alert("Error al inicializar: " + (e.message || "Revisa la consola para más detalles."));
+                    alert("Error al inicializar: " + (e.message || "Revisa la consola para más detalles."));
                 }
             }
         }
@@ -76,8 +77,8 @@ export const Settings = () => {
 
     const handleRestore = (id: string) => {
         if (!isAdmin) {
-             alert("Only Admins can restore database backups.");
-             return;
+            alert("Only Admins can restore database backups.");
+            return;
         }
         if (window.confirm("⚠️ Restore this version?\n\nCurrent data will be overwritten (a safety snapshot of current data will be created first).")) {
             const success = storageService.restoreSnapshot(id);
@@ -87,7 +88,7 @@ export const Settings = () => {
     };
 
     const handleDeleteSnapshot = (id: string) => {
-        if(window.confirm("Delete this restore point?")) {
+        if (window.confirm("Delete this restore point?")) {
             storageService.deleteSnapshot(id);
         }
     };
@@ -125,17 +126,34 @@ export const Settings = () => {
                                         <td className="px-6 py-3 font-mono text-slate-600">{u.username}</td>
                                         <td className="px-6 py-3 font-medium text-slate-800">{u.name}</td>
                                         <td className="px-6 py-3">
-                                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border ${
-                                                u.role === UserRole.ADMIN ? 'bg-red-50 text-red-700 border-red-200' :
-                                                u.role === UserRole.EDITOR ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                                'bg-slate-50 text-slate-600 border-slate-200'
-                                            }`}>
-                                                {u.role === UserRole.ADMIN && <Shield size={10} />}
-                                                {u.role}
-                                            </span>
+                                            <select
+                                                value={u.role}
+                                                onChange={async (e) => {
+                                                    const newRole = e.target.value as UserRole;
+                                                    if (window.confirm(`Change role of ${u.username} to ${newRole}?`)) {
+                                                        // @ts-ignore
+                                                        const success = await authService.updateUserRole(u.email || u.username, newRole); // Use email (doc ID) if available
+                                                        if (success) {
+                                                            alert("Role updated!");
+                                                            // Refresh list
+                                                            // @ts-ignore
+                                                            const updated = await authService.getUsers();
+                                                            setSystemUsers(updated);
+                                                        } else {
+                                                            alert("Failed to update role.");
+                                                        }
+                                                    }
+                                                }}
+                                                className="border-slate-200 rounded text-xs font-medium py-1 px-2 bg-white"
+                                            >
+                                                <option value={UserRole.ADMIN}>Admin</option>
+                                                <option value={UserRole.EDITOR}>Editor</option>
+                                                <option value={UserRole.OPERATOR}>Operator</option>
+                                                <option value={UserRole.VIEWER}>Viewer</option>
+                                            </select>
                                         </td>
                                         <td className="px-6 py-3 text-right">
-                                            <button className="text-blue-600 hover:text-blue-800 font-medium text-xs disabled:opacity-50" disabled>Edit</button>
+                                            <span className="text-xs text-slate-400">Saved automatically</span>
                                         </td>
                                     </tr>
                                 ))}
@@ -159,7 +177,7 @@ export const Settings = () => {
                         <p className="text-slate-500 text-sm mt-1">Manage internal versions of your data. Automatically created before risky operations.</p>
                     </div>
                     {isAdmin && (
-                        <button 
+                        <button
                             onClick={handleCreateSnapshot}
                             className="flex items-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200 px-4 py-2 rounded-lg hover:bg-emerald-100 font-medium transition-colors"
                         >
@@ -167,7 +185,7 @@ export const Settings = () => {
                         </button>
                     )}
                 </div>
-                
+
                 <div className="p-0">
                     {snapshots.length === 0 ? (
                         <div className="p-8 text-center text-slate-400">No restore points available. Create one to get started.</div>
@@ -186,14 +204,14 @@ export const Settings = () => {
                                     <div className="flex items-center gap-2">
                                         {isAdmin && (
                                             <>
-                                                <button 
+                                                <button
                                                     onClick={() => handleRestore(snap.id)}
                                                     className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
                                                     title="Restore this version"
                                                 >
                                                     <RotateCcw size={18} />
                                                 </button>
-                                                <button 
+                                                <button
                                                     onClick={() => handleDeleteSnapshot(snap.id)}
                                                     className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
                                                     title="Delete snapshot"
@@ -232,7 +250,7 @@ export const Settings = () => {
                             <div>
                                 <h3 className="font-medium text-amber-900">Storage Mode Active</h3>
                                 <p className="text-sm text-amber-800 mt-1">
-                                    This application is using {storageService.isCloudMode() ? 'Firebase Cloud Storage' : 'Browser Local Storage'}. 
+                                    This application is using {storageService.isCloudMode() ? 'Firebase Cloud Storage' : 'Browser Local Storage'}.
                                     {!storageService.isCloudMode() && " Clearing your browser cache may delete your data. Please use the 'Backup' button in the Database view regularly."}
                                 </p>
                             </div>
@@ -251,8 +269,8 @@ export const Settings = () => {
                                             Create initial collections (Shipments, Parts, Suppliers) in Firebase. Use this if your dashboard is empty.
                                         </p>
                                     </div>
-                                    <button 
-                                        onClick={handleSeed} 
+                                    <button
+                                        onClick={handleSeed}
                                         className="shrink-0 flex items-center gap-2 bg-white border border-blue-200 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white font-medium shadow-sm transition-all"
                                     >
                                         <Play size={18} />
@@ -267,8 +285,8 @@ export const Settings = () => {
                                             Deletes all Shipments, Parts, and Logs. Resets the application to its initial state.
                                         </p>
                                     </div>
-                                    <button 
-                                        onClick={handleReset} 
+                                    <button
+                                        onClick={handleReset}
                                         className="shrink-0 flex items-center gap-2 bg-white border border-red-200 text-red-600 px-4 py-2 rounded-lg hover:bg-red-600 hover:text-white font-medium shadow-sm transition-all"
                                     >
                                         <Trash2 size={18} />

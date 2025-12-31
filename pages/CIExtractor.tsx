@@ -737,19 +737,22 @@ export const CIExtractor: React.FC = () => {
         fRow.getCell(1).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
         // Total Qty (Col 9 / I)
-        // Total Qty (Col 9 / I)
         const sumStartRow = tableHeaderRowIdx + 1;
         const sumEndRow = currentRowIdx - 1;
 
+        // JS Calculation for robustness
+        const totalQty = data.reduce((sum, item) => sum + (item.qty || 0), 0);
+        const totalAmount = data.reduce((sum, item) => sum + ((item.qty || 0) * (item.unitPrice || 0)), 0);
+
         const qtyCell = fRow.getCell(9);
-        qtyCell.value = { formula: `SUM(I${sumStartRow}:I${sumEndRow})` };
+        qtyCell.value = { formula: `SUM(I${sumStartRow}:I${sumEndRow})`, result: totalQty };
         qtyCell.font = { bold: true };
         qtyCell.alignment = { horizontal: 'center' };
         qtyCell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
         // Total Amount (Col 14 / N)
         const amtCell = fRow.getCell(14);
-        amtCell.value = { formula: `SUM(N${sumStartRow}:N${sumEndRow})` };
+        amtCell.value = { formula: `SUM(N${sumStartRow}:N${sumEndRow})`, result: parseFloat(totalAmount.toFixed(2)) };
         amtCell.numFmt = '0.00';
         amtCell.font = { bold: true };
         amtCell.alignment = { horizontal: 'center' };

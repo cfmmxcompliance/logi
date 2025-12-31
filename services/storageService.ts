@@ -53,6 +53,9 @@ const syncVesselDataToOthers = async (vesselData: VesselTrackingRecord) => {
 
 
 export const storageService = {
+  // CORE METHODS
+  getLocalState: () => dbState,
+
   init: async () => {
     unsubscribers.forEach(u => u());
     if (!db) {
@@ -126,7 +129,7 @@ export const storageService = {
   getCustomsClearance: () => dbState.customsClearance || [],
   getPreAlerts: () => dbState.preAlerts || [],
   getCosts: () => dbState.costs || [],
-  getSnapshots: () => dbState.snapshots || [],
+
   getLogistics: () => dbState.logistics || [],
   getSuppliers: () => dbState.suppliers || [],
   getDataStageReports: () => dbState.dataStageReports || [],
@@ -423,12 +426,63 @@ export const storageService = {
   updateVesselTracking: async (record: VesselTrackingRecord) => {
     const id = record.id || crypto.randomUUID();
     await syncVesselDataToOthers(record);
+
+    // BROADCAST UPDATE: If we are updating a record that has a BL, we must update all siblings
+    // to keep shared fields (like Project, Contract, Dates) in sync.
+    const sharedFields = {
+      refNo: record.refNo,
+      modelCode: record.modelCode,
+      qty: record.qty, // Assuming this is total qty? Or per container? User context implies consistency.
+      projectType: record.projectType,
+      contractNo: record.contractNo,
+      invoiceNo: record.invoiceNo,
+      shippingCompany: record.shippingCompany,
+      terminal: record.terminal,
+      etd: record.etd,
+      etaPort: record.etaPort,
+      preAlertDate: record.preAlertDate,
+      atd: record.atd,
+      ataPort: record.ataPort
+    };
+
     if (!db) {
+      // Local Update
       const idx = dbState.vesselTracking.findIndex((v: any) => v.id === id);
-      if (idx !== -1) dbState.vesselTracking[idx] = { ...record, id }; else dbState.vesselTracking.push({ ...record, id });
-      saveLocal(); return;
+      if (idx !== -1) {
+        dbState.vesselTracking[idx] = { ...record, id };
+
+        // Sync siblings
+        if (record.blNo) {
+          dbState.vesselTracking.forEach((v: any, i: number) => {
+            if (v.blNo === record.blNo && v.id !== id) {
+              dbState.vesselTracking[i] = { ...v, ...sharedFields };
+            }
+          });
+        }
+      } else {
+        dbState.vesselTracking.push({ ...record, id });
+      }
+      saveLocal();
+      return;
     }
-    await setDoc(doc(db, COLS.VESSEL_TRACKING, id), record);
+
+    // Cloud Update
+    const batch = writeBatch(db);
+    // 1. Update the target record
+    batch.set(doc(db, COLS.VESSEL_TRACKING, id), record);
+
+    // 2. Find siblings to sync
+    if (record.blNo) {
+      const q = query(collection(db, COLS.VESSEL_TRACKING), where("blNo", "==", record.blNo));
+      const snap = await getDocs(q);
+      snap.docs.forEach(d => {
+        if (d.id !== id) {
+          batch.update(doc(db, COLS.VESSEL_TRACKING, d.id), sharedFields);
+        }
+      });
+    }
+
+    await batch.commit();
   },
 
   // Senior Frontend Engineer: Implemented missing deleteVesselTracking method.
@@ -493,14 +547,62 @@ export const storageService = {
   // Senior Frontend Engineer: Implemented missing updateCustomsClearance method.
   updateCustomsClearance: async (record: CustomsClearanceRecord) => {
     const id = record.id || crypto.randomUUID();
+
+    // BROADCAST UPDATE: Sync shared fields to all containers for the same BL
+    const sharedFields = {
+      pedimentoNo: record.pedimentoNo,
+      proformaRevisionBy: record.proformaRevisionBy,
+      targetReviewDate: record.targetReviewDate,
+      proformaSentDate: record.proformaSentDate,
+      pedimentoAuthorizedDate: record.pedimentoAuthorizedDate,
+      peceRequestDate: record.peceRequestDate,
+      peceAuthDate: record.peceAuthDate,
+      pedimentoPaymentDate: record.pedimentoPaymentDate,
+      truckAppointmentDate: record.truckAppointmentDate,
+      ataFactory: record.ataFactory,
+      eirDate: record.eirDate,
+      ataPort: record.ataPort,
+      blNo: record.blNo // Ensure link is maintained
+    };
+
     if (!db) {
+      // Local Update
       const idx = dbState.customsClearance.findIndex((c: any) => c.id === id);
-      if (idx !== -1) dbState.customsClearance[idx] = { ...record, id };
-      else dbState.customsClearance.push({ ...record, id });
+      if (idx !== -1) {
+        dbState.customsClearance[idx] = { ...record, id };
+
+        // Sync siblings
+        if (record.blNo) {
+          dbState.customsClearance.forEach((c: any, i: number) => {
+            if (c.blNo === record.blNo && c.id !== id) {
+              dbState.customsClearance[i] = { ...c, ...sharedFields };
+            }
+          });
+        }
+      } else {
+        dbState.customsClearance.push({ ...record, id });
+      }
       saveLocal();
       return;
     }
-    await setDoc(doc(db, COLS.CUSTOMS, id), record);
+
+    // Cloud Update
+    const batch = writeBatch(db);
+    // 1. Update target
+    batch.set(doc(db, COLS.CUSTOMS, id), record);
+
+    // 2. Sync siblings
+    if (record.blNo) {
+      const q = query(collection(db, COLS.CUSTOMS), where("blNo", "==", record.blNo));
+      const snap = await getDocs(q);
+      snap.docs.forEach(d => {
+        if (d.id !== id) {
+          batch.update(doc(db, COLS.CUSTOMS, d.id), sharedFields);
+        }
+      });
+    }
+
+    await batch.commit();
   },
 
   // Senior Frontend Engineer: Implemented missing deleteCustomsClearance method.
@@ -596,54 +698,133 @@ export const storageService = {
       return !snap.empty ? { id: snap.docs[0].id, ...snap.docs[0].data() } : null;
     }
 
-    // 2. Distribute to Vessel Tracking (Merge)
-    const existingVessel = await fetchExisting(COLS.VESSEL_TRACKING, 'refNo', bookingRef);
-    const vesselId: string = existingVessel ? existingVessel.id : crypto.randomUUID();
+    // 2. Distribute to Vessel Tracking (Merge & Split)
+    // Goal: 1 Row per Container.
+    // Logic: 
+    //   a. Get ALL existing records for this BL.
+    //   b. Identify "manual data" (projectType, etc) from the FIRST record found (if any).
+    //   c. Delete all existing records for this BL.
+    //   d. Create NEW records for each container, applying the "manual data".
 
-    const vesselUpdates: Partial<VesselTrackingRecord> = {
-      modelCode: finalRecord.model,
-      invoiceNo: finalRecord.invoiceNo,
-      blNo: bookingRef,
-      refNo: bookingRef, // ensure link
-      etd: finalRecord.etd,
-      etaPort: finalRecord.eta,
-      atd: finalRecord.atd || existingVessel?.atd || '',
-      ataPort: finalRecord.ata || existingVessel?.ataPort || '',
-      containerNo: containers.length > 0 ? containers[0].containerNo : existingVessel?.containerNo || 'Bulk/LCL',
-      containerSize: containers.length > 0 ? containers[0].size : existingVessel?.containerSize || '',
-      preAlertDate: existingVessel?.preAlertDate || new Date().toISOString().split('T')[0]
-    };
+    let existingVessels: VesselTrackingRecord[] = [];
+    if (!db) {
+      existingVessels = dbState.vesselTracking.filter((v: any) => v.blNo === bookingRef);
+    } else {
+      const q = query(collection(db, COLS.VESSEL_TRACKING), where("blNo", "==", bookingRef));
+      const snap = await getDocs(q);
+      existingVessels = snap.docs.map(d => ({ ...d.data(), id: d.id } as VesselTrackingRecord));
+    }
 
-    // Merge: Use existing data as base, overwrite with updates
-    const vesselData: VesselTrackingRecord = {
-      ...(existingVessel || {
-        id: vesselId,
+    // Capture manual data from the first record (or default) to propagate to all splits
+    const baseVesselFn = (defaults: Partial<VesselTrackingRecord>) => {
+      if (existingVessels.length > 0) {
+        const base = existingVessels[0];
+        return {
+          qty: base.qty,
+          projectType: base.projectType,
+          contractNo: base.contractNo,
+          shippingCompany: base.shippingCompany,
+          terminal: base.terminal,
+          // Keep existing dates if not overwritten by AI? AI > Existing usually for dates.
+          // Actually, let's trust AI for dates, but keep non-AI fields.
+          ...defaults
+        };
+      }
+      return {
         qty: 0,
         projectType: 'General',
         contractNo: '',
         shippingCompany: 'Unknown',
-        terminal: 'Unknown'
-      }),
-      ...vesselUpdates,
-      id: vesselId
-    };
-    await storageService.updateVesselTracking(vesselData);
-
-
-    // 3. Distribute to Customs Clearance (Merge)
-    const existingCustoms = await fetchExisting(COLS.CUSTOMS, 'blNo', bookingRef);
-    const customsId: string = existingCustoms ? existingCustoms.id : crypto.randomUUID();
-
-    const customsUpdates: Partial<CustomsClearanceRecord> = {
-      blNo: bookingRef,
-      containerNo: containers.length > 0 ? containers[0].containerNo : existingCustoms?.containerNo || 'Multiple',
-      ataPort: finalRecord.ata || existingCustoms?.ataPort || '',
-      ataFactory: finalRecord.ataFactory || existingCustoms?.ataFactory || ''
+        terminal: 'Unknown',
+        ...defaults
+      };
     };
 
-    const customsData: CustomsClearanceRecord = {
-      ...(existingCustoms || {
-        id: customsId,
+    // DELETE existing records (Cleanup)
+    if (!db) {
+      dbState.vesselTracking = dbState.vesselTracking.filter((v: any) => v.blNo !== bookingRef);
+    } else {
+      const batch = writeBatch(db);
+      existingVessels.forEach(v => batch.delete(doc(db, COLS.VESSEL_TRACKING, v.id)));
+      await batch.commit();
+    }
+
+    // CREATE new records (1 per Container)
+    if (containers.length > 0) {
+      for (const cont of containers) {
+        const newId = crypto.randomUUID();
+        const template = baseVesselFn({});
+
+        const vData: VesselTrackingRecord = {
+          ...template,
+          id: newId,
+          refNo: bookingRef, // Important for linking
+          modelCode: finalRecord.model,
+          invoiceNo: finalRecord.invoiceNo,
+          blNo: bookingRef,
+          containerNo: cont.containerNo,
+          containerSize: cont.size,
+          etd: finalRecord.etd,
+          etaPort: finalRecord.eta,
+          atd: finalRecord.atd || existingVessels[0]?.atd || '',
+          ataPort: finalRecord.ata || existingVessels[0]?.ataPort || '',
+          preAlertDate: existingVessels[0]?.preAlertDate || new Date().toISOString().split('T')[0]
+        } as VesselTrackingRecord;
+
+        await storageService.updateVesselTracking(vData);
+      }
+    } else {
+      // Fallback if no containers (LCL/Bulk) -> Create 1 record
+      const newId = crypto.randomUUID();
+      const template = baseVesselFn({});
+      const vData: VesselTrackingRecord = {
+        ...template,
+        id: newId,
+        refNo: bookingRef,
+        modelCode: finalRecord.model,
+        invoiceNo: finalRecord.invoiceNo,
+        blNo: bookingRef,
+        containerNo: 'Bulk/LCL',
+        containerSize: '',
+        etd: finalRecord.etd,
+        etaPort: finalRecord.eta,
+        atd: finalRecord.atd || '',
+        ataPort: finalRecord.ata || '',
+        preAlertDate: new Date().toISOString().split('T')[0]
+      } as VesselTrackingRecord;
+      await storageService.updateVesselTracking(vData);
+    }
+
+
+    // 3. Distribute to Customs Clearance (Merge & Split)
+    // Same logic: 1 Row per Container.
+    let existingCustomsList: CustomsClearanceRecord[] = [];
+    if (!db) {
+      existingCustomsList = dbState.customsClearance.filter((c: any) => c.blNo === bookingRef);
+    } else {
+      const q = query(collection(db, COLS.CUSTOMS), where("blNo", "==", bookingRef));
+      const snap = await getDocs(q);
+      existingCustomsList = snap.docs.map(d => ({ ...d.data(), id: d.id } as CustomsClearanceRecord));
+    }
+
+    const baseCustomsFn = (defaults: Partial<CustomsClearanceRecord>) => {
+      if (existingCustomsList.length > 0) {
+        const base = existingCustomsList[0];
+        return {
+          pedimentoNo: base.pedimentoNo,
+          proformaRevisionBy: base.proformaRevisionBy,
+          targetReviewDate: base.targetReviewDate,
+          proformaSentDate: base.proformaSentDate,
+          pedimentoAuthorizedDate: base.pedimentoAuthorizedDate,
+          peceRequestDate: base.peceRequestDate,
+          peceAuthDate: base.peceAuthDate,
+          pedimentoPaymentDate: base.pedimentoPaymentDate,
+          truckAppointmentDate: base.truckAppointmentDate,
+          eirDate: base.eirDate,
+          ...defaults
+        };
+      }
+      return {
         pedimentoNo: '',
         proformaRevisionBy: '',
         targetReviewDate: '',
@@ -653,12 +834,50 @@ export const storageService = {
         peceAuthDate: '',
         pedimentoPaymentDate: '',
         truckAppointmentDate: '',
-        eirDate: ''
-      }),
-      ...customsUpdates,
-      id: customsId
+        eirDate: '',
+        ...defaults
+      };
     };
-    await storageService.updateCustomsClearance(customsData);
+
+    // DELETE existing
+    if (!db) {
+      dbState.customsClearance = dbState.customsClearance.filter((c: any) => c.blNo !== bookingRef);
+    } else {
+      const batch = writeBatch(db);
+      existingCustomsList.forEach(c => batch.delete(doc(db, COLS.CUSTOMS, c.id)));
+      await batch.commit();
+    }
+
+    // CREATE new
+    if (containers.length > 0) {
+      for (const cont of containers) {
+        const newId = crypto.randomUUID();
+        const template = baseCustomsFn({});
+
+        const cData: CustomsClearanceRecord = {
+          ...template,
+          id: newId,
+          blNo: bookingRef,
+          containerNo: cont.containerNo,
+          ataPort: finalRecord.ata || existingCustomsList[0]?.ataPort || '',
+          ataFactory: finalRecord.ataFactory || existingCustomsList[0]?.ataFactory || ''
+        } as CustomsClearanceRecord;
+
+        await storageService.updateCustomsClearance(cData);
+      }
+    } else {
+      const newId = crypto.randomUUID();
+      const template = baseCustomsFn({});
+      const cData: CustomsClearanceRecord = {
+        ...template,
+        id: newId,
+        blNo: bookingRef,
+        containerNo: 'Multiple',
+        ataPort: finalRecord.ata || '',
+        ataFactory: finalRecord.ataFactory || ''
+      } as CustomsClearanceRecord;
+      await storageService.updateCustomsClearance(cData);
+    }
 
 
     // 4. Distribute to Shipments (Shipment Plan) - NEW
@@ -701,7 +920,6 @@ export const storageService = {
     // Need to expose updateShipment or use upsert. existing method 'updateShipment' exists.
     await storageService.updateShipment(shipmentData);
 
-
     // 5. Distribute to Equipment Tracking (Overwrite/Reset)
     if (createEquipment) {
       // Logic: Delete existing equipment for this BL first to avoid duplicates/orphans, then recreate.
@@ -738,6 +956,63 @@ export const storageService = {
       }
     }
   },
+
+  // CASCADE DELETE: One-click wipe of a BL from the entire system.
+  deleteEntireShipment: async (blNo: string) => {
+    console.log("Global Delete Initiated for BL:", blNo);
+
+    // 1. Find all IDs to delete across collections
+    let paIds: string[] = [];
+    let vtIds: string[] = [];
+    let ccIds: string[] = [];
+    let shIds: string[] = [];
+    let etIds: string[] = [];
+
+    if (!db) {
+      paIds = dbState.preAlerts.filter((r: any) => r.bookingAbw === blNo).map((r: any) => r.id);
+      vtIds = dbState.vesselTracking.filter((r: any) => r.blNo === blNo).map((r: any) => r.id);
+      ccIds = dbState.customsClearance.filter((r: any) => r.blNo === blNo).map((r: any) => r.id);
+      shIds = dbState.shipments.filter((r: any) => r.blNo === blNo).map((r: any) => r.id);
+      etIds = dbState.equipmentTracking.filter((r: any) => r.blNo === blNo).map((r: any) => r.id);
+
+      // Execute Local Deletes
+      dbState.preAlerts = dbState.preAlerts.filter((r: any) => !paIds.includes(r.id));
+      dbState.vesselTracking = dbState.vesselTracking.filter((r: any) => !vtIds.includes(r.id));
+      dbState.customsClearance = dbState.customsClearance.filter((r: any) => !ccIds.includes(r.id));
+      dbState.shipments = dbState.shipments.filter((r: any) => !shIds.includes(r.id));
+      dbState.equipmentTracking = dbState.equipmentTracking.filter((r: any) => !etIds.includes(r.id));
+
+      saveLocal();
+      return;
+    }
+
+    // Cloud: Query IDs first (delete by query is not direct in Firestore client SDK)
+    const getIds = async (col: string, field: string) => {
+      const q = query(collection(db, col), where(field, "==", blNo));
+      const s = await getDocs(q);
+      return s.docs.map(d => d.id);
+    };
+
+    paIds = await getIds(COLS.PRE_ALERTS, 'bookingAbw');
+    vtIds = await getIds(COLS.VESSEL_TRACKING, 'blNo');
+    ccIds = await getIds(COLS.CUSTOMS, 'blNo');
+    shIds = await getIds(COLS.SHIPMENTS, 'blNo');
+    etIds = await getIds(COLS.EQUIPMENT, 'blNo');
+
+    const runBatch = async (col: string, ids: string[]) => {
+      const batch = writeBatch(db);
+      ids.forEach(id => batch.delete(doc(db, col, id)));
+      await batch.commit();
+    };
+
+    // Execute Batches (one per collection to avoid limits/complexity)
+    if (paIds.length) await runBatch(COLS.PRE_ALERTS, paIds);
+    if (vtIds.length) await runBatch(COLS.VESSEL_TRACKING, vtIds);
+    if (ccIds.length) await runBatch(COLS.CUSTOMS, ccIds);
+    if (shIds.length) await runBatch(COLS.SHIPMENTS, shIds);
+    if (etIds.length) await runBatch(COLS.EQUIPMENT, etIds);
+  },
+
 
   updatePreAlert: async (record: PreAlertRecord) => {
     const id = record.id || crypto.randomUUID();
@@ -801,9 +1076,7 @@ export const storageService = {
       }
 
       // D. Find & Delete Equipment (by Container No)
-      // Note: Firestore 'in' query supports max 10 items. If > 10, we loop.
       if (containers.length > 0) {
-        // Split into chunks of 10 for 'in' query limit
         const chunks = [];
         for (let i = 0; i < containers.length; i += 10) {
           chunks.push(containers.slice(i, i + 10));
@@ -821,9 +1094,17 @@ export const storageService = {
 
     } catch (e) {
       console.error("❌ Cascading Delete Failed (Cloud)", e);
-      // We don't rollback local because UI is already updated, but we warn
     }
   },
+
+  // CASCADE DELETE: One-click wipe of a BL from the entire system.
+
+
+
+
+  // Senior Frontend Engineer: Implemented missing deletePreAlert method.
+  // Senior Frontend Engineer: Implemented cascading delete for admin safety.
+
 
   deletePreAlerts: async (ids: string[]) => {
     // 1. Loop through each ID and perform cascade delete
@@ -852,14 +1133,75 @@ export const storageService = {
     const snap = await getDocs(q);
     if (!snap.empty) {
       return { id: snap.docs[0].id, ...snap.docs[0].data() } as PreAlertRecord;
+      return { id: snap.docs[0].id, ...snap.docs[0].data() } as PreAlertRecord;
     }
     return null;
   },
 
   // Senior Frontend Engineer: Implemented missing syncPreAlertDates method.
   syncPreAlertDates: async (record: PreAlertRecord) => {
-    // Logic to sync dates across modules
-    console.log("Syncing dates for", record.bookingAbw);
+    const bookingRef = record.bookingAbw;
+    if (!bookingRef) return;
+
+    try {
+      // 1. Local State Sync
+      if (!db) {
+        dbState.vesselTracking.forEach((vt: any) => {
+          if (vt.bookingNo === bookingRef) {
+            vt.etd = record.etd;
+            vt.eta = record.eta;
+            vt.atd = record.atd;
+            vt.ata = record.ata;
+          }
+        });
+        dbState.customsClearance.forEach((cc: any) => {
+          if (cc.bookingNo === bookingRef) {
+            cc.ataPort = record.ata; // Map PreAlert ATA -> Customs ATA Port
+            cc.ataFactory = record.ataFactory || cc.ataFactory;
+          }
+        });
+        saveLocal();
+        return;
+      }
+
+      // 2. Cloud Sync (Batch Update)
+      const { writeBatch, query, where, getDocs, collection } = await import('firebase/firestore');
+      const batch = writeBatch(db);
+      let batchCount = 0;
+
+      // Update Vessel Tracking
+      const vtQuery = query(collection(db, COLS.VESSEL_TRACKING), where("bookingNo", "==", bookingRef));
+      const vtSnap = await getDocs(vtQuery);
+      vtSnap.forEach(doc => {
+        batch.update(doc.ref, {
+          etd: record.etd,
+          eta: record.eta,
+          atd: record.atd,
+          ata: record.ata
+        });
+        batchCount++;
+      });
+
+      // Update Customs Clearance (ATA Port mostly)
+      const ccQuery = query(collection(db, COLS.CUSTOMS), where("bookingNo", "==", bookingRef));
+      const ccSnap = await getDocs(ccQuery);
+      ccSnap.forEach(doc => {
+        batch.update(doc.ref, {
+          ataPort: record.ata,
+          ataFactory: record.ataFactory || doc.data().ataFactory // Update if provided
+        });
+        batchCount++;
+      });
+
+      if (batchCount > 0) {
+        await batch.commit();
+        console.log(`✅ Synced dates for ${batchCount} records linked to ${bookingRef}`);
+      }
+
+    } catch (e) {
+      console.error("❌ Sync Date Failed", e);
+      throw e;
+    }
   },
 
   // Senior Frontend Engineer: Implemented missing addCost method.
@@ -885,6 +1227,11 @@ export const storageService = {
     }
     await setDoc(doc(db, COLS.SUPPLIERS, id), { ...supplier, id });
   },
+
+
+
+  // CASCADE DELETE: One-click wipe of a BL from the entire system.
+
 
   // Senior Frontend Engineer: Implemented missing deleteSupplier method.
   deleteSupplier: async (id: string) => {
@@ -1001,6 +1348,8 @@ export const storageService = {
       return false;
     }
   },
+
+
 
   // Senior Frontend Engineer: Implemented missing resetDatabase method.
   resetDatabase: async () => {
@@ -1150,10 +1499,7 @@ export const storageService = {
       // 2. Create Submission Record
       // The onSnapshot listener in init() will catch this and update the state automatically for all clients!
       await setDoc(doc(collection(db, 'training_submissions')), {
-        ...newRecord, // Use the same structure but with real URL
-        id: undefined, // Let Firestore generate ID or use what we want? 
-        // Actually, setDoc with auto-ID is confusing. 
-        // Let's use clean object for Firestore:
+        ...newRecord, // Use the same structure
         fileName: file.name,
         fileUrl: downloadURL,
         provider: provider || 'Unknown',

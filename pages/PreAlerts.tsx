@@ -29,9 +29,18 @@ const PREALERT_KEYS: (keyof PreAlertRecord)[] = [
     'model', 'shippingMode', 'bookingAbw', 'etd', 'atd', 'departureCity', 'eta', 'ata', 'ataFactory', 'arrivalCity', 'invoiceNo'
 ];
 
-interface ExtractionReview {
+// Batch Review Interface
+interface BatchExtractionResult {
+    file: File;
     preAlert: PreAlertRecord;
     containers: { containerNo: string, size: string }[];
+    expectedCount?: number;
+    status: 'success' | 'warning' | 'error';
+    message?: string;
+}
+
+interface ExtractionReview {
+    results: BatchExtractionResult[];
 }
 
 export const PreAlerts = () => {
@@ -102,13 +111,23 @@ export const PreAlerts = () => {
             }
         }
 
-        // Logic Change: Instead of saving directly, open the Review/Distribution Modal
-        // This allows the user to choose to generate Tracking/Equipment records
-        setExtractionReview({
-            preAlert: currentRecord,
-            containers: [] // Manual entry usually doesn't have container details yet
-        });
+        if (currentRecord.id) {
+            await storageService.updatePreAlert(currentRecord);
+        } else {
+            // Logic Change: Instead of saving directly, open the Review/Distribution Modal
+            setExtractionReview({
+                results: [{
+                    file: new File([], 'Manual Entry'),
+                    preAlert: currentRecord,
+                    containers: currentRecord.linkedContainers?.map(c => ({ containerNo: c, size: '40HC' })) || [],
+                    expectedCount: currentRecord.linkedContainers?.length || 0,
+                    status: 'success',
+                    message: 'Manual Entry'
+                }]
+            });
+        }
         setIsModalOpen(false);
+        setRecords(storageService.getPreAlerts());
     };
 
     const initiateDelete = (id: string) => {
@@ -117,28 +136,48 @@ export const PreAlerts = () => {
 
     const confirmDelete = async () => {
         if (!isAdmin || !deleteModal.id) return;
+
+        const record = records.find(r => r.id === deleteModal.id);
+        if (!record) return;
+
+        // Upgrade: Always perform specific cascade delete if BL exists
+        // Or confirm with user? User asked for "not nightmare", so assume "Delete Everywhere" is the new default for Pre-Alerts.
+        // Actually, let's make the modal text clearer, but use the new powerful function.
+
         try {
             setProcState({
                 isOpen: true,
                 status: 'loading',
-                title: 'Deleting Shipment',
-                message: 'Removing Pre-Alert and cleaning up associated modules...',
-                progress: 50
+                title: 'GLOBAL DELETE',
+                message: `Wiping BL ${record.bookingAbw} from ENTIRE system (Tracking, Customs, Equipment)...`,
+                progress: 20
             });
 
-            await storageService.deletePreAlert(deleteModal.id);
+            if (record.bookingAbw) {
+                // New Power Delete
+                await storageService.deleteEntireShipment(record.bookingAbw);
+            } else {
+                // Fallback for manual records without BL
+                await storageService.deletePreAlert(deleteModal.id);
+            }
 
             setProcState({
                 isOpen: true,
                 status: 'success',
-                title: 'Deleted',
-                message: 'Shipment and related records verified deleted.',
+                title: 'Deleted Everywhere',
+                message: 'All linked records have been removed.',
                 progress: 100
             });
             setDeleteModal({ isOpen: false, id: null });
             setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 1500);
+
+            // Force refresh list
+            setRecords(storageService.getPreAlerts());
+
         } catch (e) {
+            console.error(e);
             alert('Error eliminando el registro.');
+            setProcState(INITIAL_PROCESSING_STATE);
         }
     };
 
@@ -357,56 +396,51 @@ export const PreAlerts = () => {
         reader.readAsText(file);
     };
 
-    // AI Document Upload Logic (BL / AWB) - STEP 1: Analysis
-    const handleDocUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        // 4MB limit
-        if (file.size > 4 * 1024 * 1024) {
-            alert("File is too large. Please upload an image or PDF smaller than 4MB.");
-            return;
-        }
-
-        const fileType = file.type || 'image/jpeg';
+    // AI Document Upload Logic (BL / AWB) - STEP 1: Analysis (Batch Support)
+    const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
 
         setProcState({
             isOpen: true,
             status: 'loading',
-            title: 'Analyzing Document',
+            title: `Analyzing ${files.length} Documents`,
             message: 'Extracting data with AI (Gemini)...',
-            progress: 10
+            progress: 0
         });
 
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-            const base64 = (reader.result as string).split(',')[1];
+        const batchResults: BatchExtractionResult[] = [];
+        let completed = 0;
+
+        for (const file of files) {
+            // 4MB limit check
+            if (file.size > 4 * 1024 * 1024) {
+                batchResults.push({
+                    file,
+                    preAlert: {} as any,
+                    containers: [],
+                    status: 'error',
+                    message: 'File too large (>4MB)'
+                });
+                completed++;
+                continue;
+            }
+
             try {
-                // 1. Extract Data
-                const extracted = await geminiService.parseShippingDocument(base64, fileType);
+                // Read File
+                const base64 = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
 
-                // 2. Duplicate Check
-                if (extracted.bookingNo) {
-                    const existing = await storageService.checkPreAlertExists(extracted.bookingNo);
-                    if (existing) {
-                        const confirmReplace = window.confirm(
-                            `⚠️ DUPLICATE WARNING ⚠️\n\nA record with Booking/AWB "${extracted.bookingNo}" already exists.\n\nDo you want to OVERWRITE all data for this shipment?`
-                        );
-                        if (!confirmReplace) {
-                            setProcState(INITIAL_PROCESSING_STATE);
-                            return;
-                        }
-                    }
-                }
+                // Extract
+                const extracted = await geminiService.parseShippingDocument(base64, file.type || 'image/jpeg');
 
-                // 3. Prepare Data for Review
+                // Prepare Data
                 const newPreAlert: PreAlertRecord = {
-                    id: '', // Generated by service later (or matches existing if we handled that logic, but upsert handles it by key usually, or we need to pass ID)
-                    // Note: If overwriting, storageService.processPreAlertExtraction will verify/update based on ID if provided, 
-                    // or we might need to fetch the ID. checkPreAlertExists returns the ID if found.
-                    // Let's refine this: If duplicate, we should arguably grab the ID.
-                    // However, storageService logic currently generates a NEW ID if empty. 
-                    // Ideal logic: If duplicate confirmed, we essentially replace the data. 
+                    id: '',
                     model: extracted.model || 'Unknown Model (Update manually)',
                     shippingMode: extracted.docType === 'AWB' ? 'AIR' : 'SEA',
                     bookingAbw: extracted.bookingNo,
@@ -419,55 +453,112 @@ export const PreAlerts = () => {
                     linkedContainers: extracted.containers.map(c => c.containerNo)
                 };
 
-                // Close Processing Modal and Open Review Modal
-                setProcState(INITIAL_PROCESSING_STATE);
-                setExtractionReview({
+                // Validate Count
+                const containerCount = extracted.containers.length;
+                const expected = extracted.expectedContainerCount;
+                let status: 'success' | 'warning' = 'success';
+                let message = 'Extraction Successful';
+
+                if (expected && containerCount !== expected) {
+                    status = 'warning';
+                    message = `Mismatch: Found ${containerCount}, Expected ${expected}`;
+                }
+
+                batchResults.push({
+                    file,
                     preAlert: newPreAlert,
-                    containers: extracted.containers
+                    containers: extracted.containers,
+                    expectedCount: expected,
+                    status,
+                    message
                 });
-                setIncludeEquipment(true); // Default to true
 
             } catch (err: any) {
-                console.error(err);
-                setProcState({
-                    isOpen: true,
+                batchResults.push({
+                    file,
+                    preAlert: {} as any,
+                    containers: [],
                     status: 'error',
-                    title: 'AI Processing Failed',
-                    message: err.message || "Unknown error occurred",
-                    progress: 0
+                    message: err.message || "Extraction Failed"
                 });
-            } finally {
-                if (docInputRef.current) docInputRef.current.value = '';
             }
-        };
-        reader.readAsDataURL(file);
+
+            completed++;
+            setProcState(prev => ({
+                ...prev,
+                progress: (completed / files.length) * 100,
+                message: `Processed ${completed} of ${files.length} documents...`
+            }));
+        }
+
+        // Finish
+        setProcState(INITIAL_PROCESSING_STATE);
+
+        // Open Batch Notification if there are valid results or warnings
+        setExtractionReview({ results: batchResults });
+        setIncludeEquipment(true);
+
+        if (docInputRef.current) docInputRef.current.value = '';
     };
 
-    // Step 2: Confirmation & Save
+    // Edit Extraction State
+    const [editingExtraction, setEditingExtraction] = useState<{ index: number, text: string } | null>(null);
+
+    const handleUpdateContainers = () => {
+        if (!editingExtraction || !extractionReview) return;
+
+        // Parse text (comma or newline separated)
+        const containers = editingExtraction.text
+            .split(/[\n,]/)
+            .map(s => s.trim())
+            .filter(s => s.length > 0)
+            .map(s => ({ containerNo: s, size: '40HC' })); // Default size
+
+        const newResults = [...extractionReview.results];
+        newResults[editingExtraction.index].containers = containers;
+        newResults[editingExtraction.index].status = containers.length > 0 ? 'success' : 'warning';
+        newResults[editingExtraction.index].message = 'Manually updated';
+
+        setExtractionReview({ ...extractionReview, results: newResults });
+        setEditingExtraction(null);
+    };
+
+    // Step 2: Confirmation & Save (Batch)
     const handleConfirmExtraction = async () => {
-        if (!extractionReview) return;
+        if (!extractionReview || extractionReview.results.length === 0) return;
+
+        const validResults = extractionReview.results.filter(r => r.status !== 'error');
+        if (validResults.length === 0) {
+            setExtractionReview(null);
+            return;
+        }
 
         setExtractionReview(null);
         setProcState({
             isOpen: true,
             status: 'loading',
             title: 'Saving Records',
-            message: 'Distributing data to modules...',
-            progress: 60
+            message: `Saving ${validResults.length} documents...`,
+            progress: 20
         });
 
         try {
-            await storageService.processPreAlertExtraction(
-                extractionReview.preAlert,
-                extractionReview.containers,
-                includeEquipment // Pass user choice
-            );
+            let processed = 0;
+            for (const res of validResults) {
+                await storageService.processPreAlertExtraction(
+                    res.preAlert,
+                    res.containers,
+                    includeEquipment
+                );
+                processed++;
+                setProcState(prev => ({ ...prev, progress: 20 + (processed / validResults.length) * 80 }));
+            }
 
             setProcState({
                 isOpen: true,
                 status: 'success',
-                title: 'Processing Complete',
-                message: `Processed ${extractionReview.preAlert.shippingMode} shipment. ${!includeEquipment ? '(Equipment skipped)' : ''}`,
+                title: 'Batch Complete',
+                message: `Successfully processed ${processed} shipments.`,
                 progress: 100
             });
 
@@ -594,74 +685,143 @@ export const PreAlerts = () => {
                 </div>
             )}
 
-            {/* Review Extraction Modal */}
+            {/* Review Extraction Modal (Batch) */}
             {extractionReview && (
                 <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
-                        <div className="p-6 border-b border-slate-100 bg-slate-50 flex items-center gap-3">
-                            <div className="bg-blue-100 p-2 rounded-full text-blue-600">
-                                <CheckCircle size={24} />
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="p-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-blue-100 p-2 rounded-full text-blue-600">
+                                    <CheckCircle size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-800">Review Batch Extraction</h3>
+                                    <p className="text-sm text-slate-500">
+                                        Found {extractionReview.results.length} documents. Please review warnings.
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-800">Review Extraction</h3>
-                                <p className="text-sm text-slate-500">Confirm data before generating records.</p>
+                            <div className="text-right">
+                                <span className="block text-2xl font-bold text-slate-800">
+                                    {extractionReview.results.filter(r => r.status !== 'error').length}
+                                </span>
+                                <span className="text-xs text-slate-500 uppercase font-bold">Valid Files</span>
                             </div>
                         </div>
 
-                        <div className="p-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <span className="block text-slate-400 text-xs uppercase font-bold">Booking / AWB</span>
-                                    <span className="font-mono font-medium text-slate-800">{extractionReview.preAlert.bookingAbw}</span>
-                                </div>
-                                <div>
-                                    <span className="block text-slate-400 text-xs uppercase font-bold">Mode</span>
-                                    <span className="font-medium text-blue-600 flex items-center gap-1">
-                                        {extractionReview.preAlert.shippingMode === 'AIR' ? <Plane size={14} /> : <Anchor size={14} />}
-                                        {extractionReview.preAlert.shippingMode}
-                                    </span>
-                                </div>
-                                <div>
-                                    <span className="block text-slate-400 text-xs uppercase font-bold">Containers Detected</span>
-                                    <span className="font-medium text-slate-800">{extractionReview.containers.length > 0 ? extractionReview.containers.length : 'None (Bulk/Air)'}</span>
-                                </div>
-                                <div>
-                                    <span className="block text-slate-400 text-xs uppercase font-bold">ETA</span>
-                                    <span className="font-medium text-slate-800">{extractionReview.preAlert.eta || 'N/A'}</span>
-                                </div>
-                            </div>
+                        <div className="flex-1 overflow-auto p-0">
+                            <table className="w-full text-left text-sm border-collapse">
+                                <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm text-xs uppercase text-slate-500 font-bold">
+                                    <tr>
+                                        <th className="px-4 py-3 border-b">Status</th>
+                                        <th className="px-4 py-3 border-b">File</th>
+                                        <th className="px-4 py-3 border-b">Booking / AWB</th>
+                                        <th className="px-4 py-3 border-b text-center">Containers (Found/Expected)</th>
+                                        <th className="px-4 py-3 border-b">Message</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {extractionReview.results.map((res, idx) => (
+                                        <tr key={idx} className={res.status === 'error' ? 'bg-red-50' : res.status === 'warning' ? 'bg-yellow-50' : 'hover:bg-slate-50'}>
+                                            <td className="px-4 py-3">
+                                                {res.status === 'success' && <CheckCircle size={18} className="text-green-500" />}
+                                                {res.status === 'warning' && <AlertTriangle size={18} className="text-yellow-600" />}
+                                                {res.status === 'error' && <X size={18} className="text-red-500" />}
+                                            </td>
+                                            <td className="px-4 py-3 font-medium text-slate-700 truncate max-w-[150px]" title={res.file.name}>
+                                                {res.file.name}
+                                            </td>
+                                            <td className="px-4 py-3 font-mono text-slate-600">
+                                                {res.preAlert.bookingAbw || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <span className={`font-bold ${res.status === 'warning' ? 'text-red-600' : 'text-slate-700'}`}>
+                                                        {res.containers.length}
+                                                    </span>
+                                                    <span className="text-slate-400">/</span>
+                                                    <span className="text-slate-500">{res.expectedCount || '?'}</span>
+                                                    <button
+                                                        onClick={() => setEditingExtraction({
+                                                            index: idx,
+                                                            text: res.containers.map(c => c.containerNo).join('\n')
+                                                        })}
+                                                        className="p-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                                                        title="Edit Container List"
+                                                    >
+                                                        <Edit2 size={12} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-600 text-xs">
+                                                {res.message}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
 
-                            <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-100">
-                                <label className="flex items-start gap-3 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-                                        checked={includeEquipment}
-                                        onChange={(e) => setIncludeEquipment(e.target.checked)}
-                                    />
-                                    <div>
-                                        <span className="font-bold text-slate-800 text-sm">Generar Equipment Tracking?</span>
-                                        <p className="text-xs text-slate-600 mt-1">
-                                            Si se marca, se crearán registros en la tabla de <strong>Equipment Tracking</strong> automáticamente.
-                                            Si no, solo se llenará <strong>Vessel Tracking</strong> y <strong>Customs</strong>.
-                                        </p>
+                        {/* Edit Extraction Modal */}
+                        {editingExtraction && (
+                            <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+                                    <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                                        <h3 className="font-bold text-slate-800">Edit Containers</h3>
+                                        <button onClick={() => setEditingExtraction(null)}><X size={20} className="text-slate-400" /></button>
                                     </div>
-                                </label>
+                                    <div className="p-4">
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                                            Paste Container Numbers (One per line)
+                                        </label>
+                                        <textarea
+                                            className="w-full h-48 rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500 font-mono text-sm p-3"
+                                            value={editingExtraction.text}
+                                            onChange={(e) => setEditingExtraction({ ...editingExtraction, text: e.target.value })}
+                                            placeholder="CONT1234567&#10;CONT7654321..."
+                                        />
+                                    </div>
+                                    <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                                        <button onClick={() => setEditingExtraction(null)} className="px-3 py-2 text-slate-600 hover:text-slate-800 font-medium">Cancel</button>
+                                        <button onClick={handleUpdateContainers} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm">
+                                            Applies {editingExtraction.text.split(/[\n,]/).filter(s => s.trim().length > 0).length} Containers
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
+                        )}
+
+                        <div className="p-4 bg-yellow-50 border-t border-yellow-100 mx-6 mt-4 rounded-lg">
+                            <label className="flex items-start gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                    checked={includeEquipment}
+                                    onChange={(e) => setIncludeEquipment(e.target.checked)}
+                                />
+                                <div>
+                                    <span className="font-bold text-slate-800 text-sm">Generar Equipment Tracking?</span>
+                                    <p className="text-xs text-slate-600 mt-1">
+                                        Si se marca, se crearán registros en Equipment Tracking para TODOS los archivos válidos.
+                                    </p>
+                                </div>
+                            </label>
                         </div>
 
-                        <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+                        <div className="p-6 bg-white border-t border-slate-100 flex gap-3 mt-auto">
                             <button
                                 onClick={() => setExtractionReview(null)}
-                                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-white font-medium transition-colors"
+                                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
                             >
-                                Cancel
+                                Discard All
                             </button>
                             <button
                                 onClick={handleConfirmExtraction}
-                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm transition-colors flex items-center justify-center gap-2"
+                                disabled={extractionReview.results.filter(r => r.status !== 'error').length === 0}
+                                className="flex-[2] px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <Save size={18} /> Confirm & Save
+                                <Save size={18} />
+                                Save {extractionReview.results.filter(r => r.status !== 'error').length} Valid Records
                             </button>
                         </div>
                     </div>
@@ -685,6 +845,7 @@ export const PreAlerts = () => {
                             <Trash2 size={18} /> Delete Selected ({selectedIds.size})
                         </button>
                     )}
+
                     <button
                         onClick={() => setIsSubmitFormatOpen(true)}
                         className="text-purple-600 hover:bg-purple-50 px-3 py-2 rounded-lg text-sm font-medium border border-transparent hover:border-purple-200 transition-all flex items-center gap-1"
@@ -698,6 +859,7 @@ export const PreAlerts = () => {
                         onChange={handleDocUpload}
                         onClick={(e) => (e.currentTarget.value = '')}
                         accept="image/*,.pdf"
+                        multiple // ENABLE BATCH
                         className="hidden"
                     />
                     <button
@@ -863,25 +1025,38 @@ export const PreAlerts = () => {
                     </table>
                 </div>
             </div>
-
+            {/* Delete Modal                */}
             {deleteModal.isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="bg-red-50 p-6 flex flex-col items-center text-center border-b border-red-100">
-                            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-3">
-                                <AlertTriangle size={24} />
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
+                        <div className="p-6 text-center">
+                            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <AlertTriangle size={32} />
                             </div>
-                            <h3 className="text-lg font-bold text-red-900">Confirm Deletion</h3>
-                            <p className="text-sm text-red-700 mt-2">
-                                This will permanently delete the Pre-Alert and also remove associated records from:
-                                <br />• Vessel Tracking
-                                <br />• Equipment Tracking
-                                <br />• Customs Clearance
+                            <h3 className="text-xl font-bold text-slate-800 mb-2">Delete Entire Shipment?</h3>
+                            <p className="text-slate-600 mb-6">
+                                Warning: This will delete the Pre-Alert <strong>AND ALL linked records</strong> in:
+                                <br />
+                                <span className="text-xs font-mono bg-red-50 text-red-700 px-1 rounded block mt-2">
+                                    • Vessel Tracking<br />
+                                    • Customs Clearance<br />
+                                    • Equipment Tracking
+                                </span>
                             </p>
-                        </div>
-                        <div className="p-6 flex gap-3">
-                            <button onClick={() => setDeleteModal({ isOpen: false, id: null })} className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium">Cancel</button>
-                            <button onClick={confirmDelete} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-sm">Confirm</button>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setDeleteModal({ isOpen: false, id: null })}
+                                    className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 font-medium hover:bg-slate-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-sm transition-colors"
+                                >
+                                    Yes, Delete All
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -910,53 +1085,53 @@ export const PreAlerts = () => {
             )}
 
 
-            {
-                isModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
-                            <div className="flex justify-between items-center p-6 border-b border-slate-100">
-                                <h2 className="text-xl font-bold text-slate-800">
-                                    {currentRecord.id ? 'Edit Pre-Alert' : 'New Pre-Alert'}
-                                </h2>
-                                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
+                        <div className="flex justify-between items-center p-6 border-b border-slate-100">
+                            <h2 className="text-xl font-bold text-slate-800">
+                                {currentRecord.id ? 'Edit Pre-Alert' : 'New Pre-Alert'}
+                            </h2>
+                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
+                        </div>
+                        <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {PREALERT_KEYS.map(key => (
+                                    <label key={key} className="block">
+                                        <span className="text-xs font-bold text-slate-500 uppercase">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                        {key === 'shippingMode' ? (
+                                            <select
+                                                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm"
+                                                value={(currentRecord as any)[key]}
+                                                onChange={e => setCurrentRecord({ ...currentRecord, [key]: e.target.value as any })}
+                                            >
+                                                <option value="SEA">Sea</option>
+                                                <option value="AIR">Air</option>
+                                            </select>
+                                        ) : (
+                                            <input
+                                                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm"
+                                                type="text"
+                                                value={(currentRecord as any)[key] || ''}
+                                                placeholder={key.includes('Date') || key === 'etd' || key === 'eta' || key === 'atd' || key === 'ata' ? 'YYYY-MM-DD' : ''}
+                                                onChange={e => setCurrentRecord({ ...currentRecord, [key]: e.target.value })}
+                                            />
+                                        )}
+                                    </label>
+                                ))}
                             </div>
-                            <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {PREALERT_KEYS.map(key => (
-                                        <label key={key} className="block">
-                                            <span className="text-xs font-bold text-slate-500 uppercase">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                            {key === 'shippingMode' ? (
-                                                <select
-                                                    className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm"
-                                                    value={(currentRecord as any)[key]}
-                                                    onChange={e => setCurrentRecord({ ...currentRecord, [key]: e.target.value as any })}
-                                                >
-                                                    <option value="SEA">Sea</option>
-                                                    <option value="AIR">Air</option>
-                                                </select>
-                                            ) : (
-                                                <input
-                                                    className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm"
-                                                    type="text"
-                                                    value={(currentRecord as any)[key] || ''}
-                                                    placeholder={key.includes('Date') || key === 'etd' || key === 'eta' || key === 'atd' || key === 'ata' ? 'YYYY-MM-DD' : ''}
-                                                    onChange={e => setCurrentRecord({ ...currentRecord, [key]: e.target.value })}
-                                                />
-                                            )}
-                                        </label>
-                                    ))}
-                                </div>
-                            </form>
-                            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-xl">
-                                <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium">Cancel</button>
-                                <button onClick={handleSave} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm flex items-center gap-2">
-                                    <Save size={18} /> Review & Save
-                                </button>
-                            </div>
+
+
+                        </form>
+                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-xl">
+                            <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium">Cancel</button>
+                            <button onClick={handleSave} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm flex items-center gap-2">
+                                <Save size={18} /> Review & Save
+                            </button>
                         </div>
                     </div>
-                )
-            }
+                </div >
+            )}
         </div >
     );
 };

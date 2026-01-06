@@ -13,6 +13,58 @@ import { LOGO_BASE64 } from '../src/constants/logo.ts';
 
 
 
+
+// Helper for Consolidation
+const consolidateItems = (
+    rawItems: any[],
+    masterPartsMap: Map<string, number>
+): CommercialInvoiceItem[] => {
+    const map = new Map<string, CommercialInvoiceItem>();
+
+    rawItems.forEach(row => {
+        // Key includes Description now
+        const descKey = (row.spanishDescription || '').trim();
+        const key = `${row.partNo}|${row.unitPrice}|${row.invoiceNo}|${row.regimen}|${descKey}`;
+
+        const masterWeight = masterPartsMap.get(row.partNo);
+        const hasMasterWeight = masterWeight !== undefined && masterWeight !== null;
+
+        const existing = map.get(key);
+        if (existing) {
+            existing.qty += row.qty;
+            // Accumulate weight only if not from Master Data
+            if (!hasMasterWeight) {
+                existing.netWeight += (row.netWeight || 0);
+            }
+            existing.totalAmount = existing.qty * existing.unitPrice;
+        } else {
+            const initialWeight = hasMasterWeight ? Number(masterWeight) : (row.netWeight || 0);
+            map.set(key, {
+                id: crypto.randomUUID(),
+                invoiceNo: row.invoiceNo,
+                date: row.date,
+                item: row.item,
+                model: row.model,
+                partNo: row.partNo,
+                englishName: row.englishName,
+                spanishDescription: row.spanishDescription,
+                hts: row.hts,
+                prosec: row.prosec,
+                rb: row.rb,
+                qty: row.qty,
+                um: row.um,
+                netWeight: initialWeight,
+                unitPrice: row.unitPrice,
+                totalAmount: row.qty * row.unitPrice,
+                regimen: row.regimen,
+                incoterm: row.incoterm || ''
+            });
+        }
+    });
+
+    return Array.from(map.values());
+};
+
 export const CIExtractor: React.FC = () => {
     const { user } = useAuth();
     const isAdmin = user?.role === 'Admin';
@@ -55,6 +107,9 @@ export const CIExtractor: React.FC = () => {
     const [showRegimenModal, setShowRegimenModal] = useState(false);
     const [bulkRegimenValue, setBulkRegimenValue] = useState<'IN' | 'A1'>('IN');
     const [showMissingOnly, setShowMissingOnly] = useState(false);
+    const [showSensibleOnly, setShowSensibleOnly] = useState(false);
+    const [showNoDBOnly, setShowNoDBOnly] = useState(false);
+    const [showPricesOnly, setShowPricesOnly] = useState(false);
     const [amendmentMatches, setAmendmentMatches] = useState<Record<string, RawMaterialPart>>({});
     const [masterDataMap, setMasterDataMap] = useState<Record<string, RawMaterialPart>>({});
 
@@ -62,7 +117,11 @@ export const CIExtractor: React.FC = () => {
         const parts = storageService.getParts();
         const map: Record<string, RawMaterialPart> = {};
         parts.forEach(p => {
-            if (p.PART_NUMBER) map[p.PART_NUMBER] = p;
+            // Normalization: Key must be trimmed string to match lookup logic
+            if (p.PART_NUMBER) {
+                const normalizedKey = String(p.PART_NUMBER).trim();
+                map[normalizedKey] = p;
+            }
         });
         setMasterDataMap(map);
     }, []);
@@ -384,10 +443,10 @@ export const CIExtractor: React.FC = () => {
 
                         // Pre-fetch Master Data for NetWeight correction
                         const allParts = storageService.getParts();
-                        const partsMap = new Map(allParts.map(p => [p.PART_NUMBER, p.NETWEIGHT]));
+                        const partsMap = new Map<string, number>(allParts.map(p => [p.PART_NUMBER, p.NETWEIGHT]));
 
-                        // Parse Rows
-                        const consolidationMap = new Map<string, CommercialInvoiceItem>();
+                        // Parse to Raw Items first
+                        const rawItems: any[] = [];
                         let parsedIncoterm = '';
 
                         // @ts-ignore
@@ -412,60 +471,39 @@ export const CIExtractor: React.FC = () => {
                             if (!partNo && !itemCode) continue;
                             if (String(itemCode).toUpperCase().includes('TOTAL')) continue;
 
-                            // Consolidation Logic
                             const unitPrice = parseCurrency(row[colMap['UNIT PRICE']]);
                             const regime = row[colMap['REGIMEN']]?.toString().toUpperCase() || '';
                             const invoice = invoiceNo || 'UNKNOWN';
-
-                            const key = `${partNo}|${unitPrice}|${invoice}|${regime}`;
-
-                            const excelNetWeight = Number(row[colMap['NETWEIGHT']]);
-                            const masterWeight = partsMap.get(partNo);
-                            const finalNetWeight = (masterWeight !== undefined && masterWeight !== null) ? Number(masterWeight) : (excelNetWeight || 0);
-
                             const qty = Number(row[colMap['QTY']]) || 0;
-                            // const totalAmount = parseCurrency(row[colMap['TOTAL AMOUNT']]);
+                            const excelNetWeight = Number(row[colMap['NETWEIGHT']]);
 
-                            if (consolidationMap.has(key)) {
-                                const existing = consolidationMap.get(key)!;
-                                existing.qty += qty;
-
-                                // Sum Excel Weight if not Master Data
-                                if (masterWeight === undefined || masterWeight === null) {
-                                    existing.netWeight += (excelNetWeight || 0);
-                                }
-
-                                // Recalculate Total Amount based on new Qty
-                                existing.totalAmount = existing.qty * existing.unitPrice;
-                            } else {
-                                consolidationMap.set(key, {
-                                    id: crypto.randomUUID(),
-                                    invoiceNo: invoice,
-                                    date: invoiceDate || new Date().toISOString().slice(0, 10),
-                                    item: row[colMap['ITEM']] || '',
-                                    model: row[colMap['MODEL']] || '',
-                                    partNo: partNo,
-                                    englishName: row[colMap['ENGLISH NAME']] || '',
-                                    spanishDescription: row[colMap['SPANISH DESCRIPTION']] || '',
-                                    hts: row[colMap['HTS']] || '',
-                                    prosec: row[colMap['PROSEC']] || '',
-                                    rb: row[colMap['RB']] || '',
-                                    qty: qty,
-                                    um: row[colMap['UM']] || '',
-                                    netWeight: finalNetWeight,
-                                    unitPrice: unitPrice,
-                                    totalAmount: qty * unitPrice,
-                                    regimen: regime,
-                                    incoterm: ''
-                                });
-                            }
+                            rawItems.push({
+                                invoiceNo: invoice,
+                                date: invoiceDate || new Date().toISOString().slice(0, 10),
+                                item: row[colMap['ITEM']] || '',
+                                model: row[colMap['MODEL']] || '',
+                                partNo: partNo,
+                                englishName: row[colMap['ENGLISH NAME']] || '',
+                                spanishDescription: row[colMap['SPANISH DESCRIPTION']] || '',
+                                hts: row[colMap['HTS']] || '',
+                                prosec: row[colMap['PROSEC']] || '',
+                                rb: row[colMap['RB']] || '',
+                                qty: qty,
+                                um: row[colMap['UM']] || '',
+                                netWeight: excelNetWeight,
+                                unitPrice: unitPrice,
+                                regimen: regime,
+                                incoterm: '' // Set later
+                            });
                         }
 
+                        // Consolidate
+                        const newItems = consolidateItems(rawItems, partsMap);
+
+                        // Apply Incoterm
                         if (parsedIncoterm) {
-                            consolidationMap.forEach(i => i.incoterm = parsedIncoterm);
+                            newItems.forEach(i => i.incoterm = parsedIncoterm);
                         }
-
-                        const newItems = Array.from(consolidationMap.values());
 
                         if (newItems.length > 0) {
                             const containerRegex = /[A-Z]{4}\d{7}/;
@@ -950,13 +988,54 @@ export const CIExtractor: React.FC = () => {
                 if (!checkR8Mismatch(i)) return false;
             }
 
+            if (showSensibleOnly) {
+                const partNo = String(i.partNo || '').trim();
+                const masterPart = masterDataMap[partNo];
+                const val = masterPart?.SENSIBLE;
+
+                const strVal = masterPart?.SENSIBLE ? String(masterPart.SENSIBLE).trim().toUpperCase() : '';
+                // Valid Non-Sensible value is "N" OR Empty
+                const isNotSensible = strVal === 'N' || strVal === '';
+
+                // We want to show items that ARE Sensible (i.e. NOT "N" and NOT Empty)
+                if (isNotSensible) return false;
+            }
+
+            if (showNoDBOnly) {
+                // Show ONLY if it does NOT exist in Master Data
+                const partNo = String(i.partNo || '').trim();
+                if (masterDataMap[partNo]) return false;
+            }
+
+            if (showPricesOnly) {
+                const partNo = String(i.partNo || '').trim();
+                const masterPart = masterDataMap[partNo];
+
+                // PURE "PRICES" FILTER Logic (Visual Match):
+                // The "Estimated" column shows a Red X if:
+                // 1. Part is Missing (!masterPart)
+                // 2. Part Exists BUT has "estimate_price" remark
+
+                if (!masterPart) {
+                    // Column has Red X -> Filter must SHOW it.
+                } else {
+                    const remarks = masterPart.REMARKS?.toString().toLowerCase() || '';
+                    const hasEstimatePrice = remarks.includes('price');
+
+                    // If "price" warning -> Red X -> Keep.
+                    // If NO "price" warning -> Green Check -> Hide.
+                    if (!hasEstimatePrice) return false;
+                }
+            }
+
             if (!searchTerm) return true;
 
             // Split search logic for better user experience
             const terms = searchTerm.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
             if (terms.length === 0) return true;
 
-            return terms.every(term =>
+            // Senior Frontend Engineer: Updated to OR logic (some) so users can search multiple IDs.
+            return terms.some(term =>
                 String(i.invoiceNo || '').toLowerCase().includes(term) ||
                 String(i.partNo || '').toLowerCase().includes(term) ||
                 String(i.model || '').toLowerCase().includes(term) ||
@@ -965,15 +1044,14 @@ export const CIExtractor: React.FC = () => {
                 String(i.containerNo || '').toLowerCase().includes(term)
             );
         });
-    }, [items, searchTerm, showMissingOnly, showErrorsOnly]);
+    }, [items, searchTerm, showMissingOnly, showErrorsOnly, showSensibleOnly, showNoDBOnly, showPricesOnly, masterDataMap]);
 
     const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
     const displayedItems = filteredItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     return (
-        <div className="space-y-6">
-
-
+        <div className="flex flex-col h-[calc(100vh-140px)] gap-4">
+            {/* Rigid Layout Container */}
             {/* Header and Stats */}
             <div className="flex justify-between items-start">
                 <div>
@@ -995,12 +1073,12 @@ export const CIExtractor: React.FC = () => {
                         <p className="text-xl font-bold text-purple-600">{stats.a1Count}</p>
                     </div>
                 </div>
-            </div>
+            </div >
 
             {/* Actions Toolbar */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4">
+            < div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4" >
                 {/* Row 1: Search Bar */}
-                <div className="relative w-full">
+                < div className="relative w-full" >
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
                     <input
                         ref={searchInputRef}
@@ -1010,10 +1088,10 @@ export const CIExtractor: React.FC = () => {
                         onChange={(e) => handleSearch(e.target.value)}
                         defaultValue=""
                     />
-                </div>
+                </div >
 
                 {/* Row 2: Actions & Filters */}
-                <div className="flex flex-wrap gap-3 items-center justify-between">
+                < div className="flex flex-wrap gap-3 items-center justify-between" >
                     <div className="flex items-center gap-3 flex-wrap">
                         {/* Filters */}
                         <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
@@ -1039,6 +1117,42 @@ export const CIExtractor: React.FC = () => {
                             >
                                 <AlertCircle size={16} />
                                 Missing Info
+                            </button>
+                            <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                            <button
+                                onClick={() => setShowPricesOnly(!showPricesOnly)}
+                                className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showPricesOnly
+                                    ? 'bg-rose-500 text-white shadow-sm'
+                                    : 'text-slate-600 hover:bg-white hover:shadow-sm'
+                                    }`}
+                                title="Show Items with Estimate Price"
+                            >
+                                <AlertCircle size={16} />
+                                Prices
+                            </button>
+                            <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                            <button
+                                onClick={() => setShowSensibleOnly(!showSensibleOnly)}
+                                className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showSensibleOnly
+                                    ? 'bg-rose-500 text-white shadow-sm'
+                                    : 'text-slate-600 hover:bg-white hover:shadow-sm'
+                                    }`}
+                                title="Show Items marked as Sensible (!= N)"
+                            >
+                                <AlertCircle size={16} />
+                                Sens
+                            </button>
+                            <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                            <button
+                                onClick={() => setShowNoDBOnly(!showNoDBOnly)}
+                                className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showNoDBOnly
+                                    ? 'bg-rose-500 text-white shadow-sm'
+                                    : 'text-slate-600 hover:bg-white hover:shadow-sm'
+                                    }`}
+                                title="Show Items missing from DB"
+                            >
+                                <AlertCircle size={16} />
+                                DB
                             </button>
                         </div>
 
@@ -1109,14 +1223,14 @@ export const CIExtractor: React.FC = () => {
                             <FileSpreadsheet size={18} /> Split & Export
                         </button>
                     </div>
-                </div>
-            </div>
+                </div >
+            </div >
 
-            {/* Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="overflow-x-auto">
+            {/* Table Area - Flex Grow to take remaining space, forcing scroll ONLY here */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col min-h-0">
+                <div className="overflow-auto flex-1">
                     <table className="w-full text-sm text-left">
-                        <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
+                        <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200 sticky top-0 z-10">
                             <tr>
                                 <th className="p-4 w-10">
                                     <input
@@ -1129,7 +1243,9 @@ export const CIExtractor: React.FC = () => {
                                 <th className="p-4 text-center">Actions</th>
                                 <th className="p-4">Item</th>
                                 <th className="p-4 text-center">R8Diff</th>
-                                <th className="p-4 text-center">EstPrices</th>
+                                <th className="p-4 text-center">Estimated</th>
+                                <th className="p-4 text-center">Sensible</th>
+                                <th className="p-4 text-center">NDB</th>
                                 <th className="p-4">Invoice No</th>
                                 <th className="p-4">Container/Guide</th>
                                 <th className="p-4">Date</th>
@@ -1191,7 +1307,20 @@ export const CIExtractor: React.FC = () => {
                                         </td>
                                         <td className="p-4 text-center">
                                             {(() => {
-                                                const masterPart = masterDataMap[item.partNo];
+                                                const partNo = String(item.partNo || '').trim();
+                                                const masterPart = masterDataMap[partNo];
+                                                // If Part not in DB -> Red X
+                                                if (!masterPart) {
+                                                    return (
+                                                        <button
+                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
+                                                            title="Part not in Master Data"
+                                                        >
+                                                            <X size={20} strokeWidth={3} />
+                                                        </button>
+                                                    );
+                                                }
+
                                                 const r8Desc = masterPart?.DESCRIPCION_R8?.toString().trim().toUpperCase() || '';
                                                 const itemDesc = item.spanishDescription?.toString().trim().toUpperCase() || '';
                                                 const itemRb = item.rb?.toString().trim() || '';
@@ -1219,16 +1348,50 @@ export const CIExtractor: React.FC = () => {
                                         </td>
                                         <td className="p-4 text-center">
                                             {(() => {
-                                                const masterPart = masterDataMap[item.partNo];
-                                                const remarks = masterPart?.REMARKS?.toString().toLowerCase() || '';
-                                                const hasEstimatePrice = remarks.includes('estimate_price');
+                                                const partNo = String(item.partNo || '').trim();
+                                                const masterPart = masterDataMap[partNo];
+                                                // If Part not in DB -> Red X
+                                                if (!masterPart) return <X size={20} className="text-red-500 mx-auto" strokeWidth={3} />;
 
-                                                // If "estimate_price" is found -> Bad (Red X)
+                                                const remarks = masterPart?.REMARKS?.toString().toLowerCase() || '';
+                                                const hasEstimatePrice = remarks.includes('price');
+
+                                                // If "price" is found (e.g. "The price cannot be...") -> Bad (Red X)
                                                 // Otherwise -> Good (Green Check)
                                                 return hasEstimatePrice ? (
                                                     <X size={20} className="text-red-500 mx-auto" strokeWidth={3} />
                                                 ) : (
                                                     <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
+                                                );
+                                            })()}
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            {(() => {
+                                                const masterPart = masterDataMap[String(item.partNo || '').trim()];
+                                                const val = masterPart?.SENSIBLE;
+
+                                                const strVal = masterPart?.SENSIBLE ? String(masterPart.SENSIBLE).trim().toUpperCase() : '';
+                                                // If "N" OR Empty -> Green Check
+                                                // Else (e.g. "Y") -> Red X
+                                                const isNotSensible = strVal === 'N' || strVal === '';
+
+                                                // If "N" (Not Sensible) -> Green Check
+                                                // Else -> Red X
+                                                return isNotSensible ? (
+                                                    <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
+                                                ) : (
+                                                    <X size={20} className="text-red-500 mx-auto" strokeWidth={3} />
+                                                );
+                                            })()}
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            {(() => {
+                                                const partNo = String(item.partNo || '').trim();
+                                                const exists = !!masterDataMap[partNo];
+                                                return exists ? (
+                                                    <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
+                                                ) : (
+                                                    <X size={20} className="text-red-500 mx-auto" strokeWidth={3} />
                                                 );
                                             })()}
                                         </td>
@@ -1378,311 +1541,321 @@ export const CIExtractor: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </div >
 
             {/* Bulk Delete Modal */}
-            {bulkDeleteModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
-                        <h3 className="text-lg font-bold text-slate-800 mb-2">Confirm Deletion</h3>
-                        <p className="text-slate-600 mb-6">
-                            Are you sure you want to delete {selectedIds.size} selected items? This action cannot be undone.
-                        </p>
-                        <div className="flex justify-end gap-3">
-                            <button
-                                onClick={() => setBulkDeleteModal(false)}
-                                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmBulkDelete}
-                                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg"
-                            >
-                                Delete {selectedIds.size} Items
-                            </button>
+            {
+                bulkDeleteModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+                            <h3 className="text-lg font-bold text-slate-800 mb-2">Confirm Deletion</h3>
+                            <p className="text-slate-600 mb-6">
+                                Are you sure you want to delete {selectedIds.size} selected items? This action cannot be undone.
+                            </p>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => setBulkDeleteModal(false)}
+                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmBulkDelete}
+                                    className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg"
+                                >
+                                    Delete {selectedIds.size} Items
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Container Input Modal */}
-            {showContainerModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl animate-in fade-in zoom-in duration-200">
-                        <div className="flex items-center gap-3 mb-4 text-blue-600">
-                            <Search size={24} />
-                            <h3 className="text-xl font-bold text-slate-800">Container Not Found</h3>
-                        </div>
+            {
+                showContainerModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl animate-in fade-in zoom-in duration-200">
+                            <div className="flex items-center gap-3 mb-4 text-blue-600">
+                                <Search size={24} />
+                                <h3 className="text-xl font-bold text-slate-800">Container Not Found</h3>
+                            </div>
 
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
-                            <p className="text-blue-800 text-sm">
-                                Could not find a Container Number in the filename (Pattern: 4 Letters + 7 Digits).
-                                <br />
-                                Please enter it manually to assign it to <b>{pendingFileItems.length} items</b>.
-                            </p>
-                        </div>
+                            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
+                                <p className="text-blue-800 text-sm">
+                                    Could not find a Container Number in the filename (Pattern: 4 Letters + 7 Digits).
+                                    <br />
+                                    Please enter it manually to assign it to <b>{pendingFileItems.length} items</b>.
+                                </p>
+                            </div>
 
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Container / Guide Number
-                            </label>
-                            <input
-                                type="text"
-                                autoFocus
-                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase font-mono"
-                                placeholder="e.g. MSKU1234567"
-                                value={tempContainerNo}
-                                onChange={(e) => setTempContainerNo(e.target.value.toUpperCase())}
-                                onKeyDown={(e) => e.key === 'Enter' && confirmContainerInput()}
-                            />
-                        </div>
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Container / Guide Number
+                                </label>
+                                <input
+                                    type="text"
+                                    autoFocus
+                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase font-mono"
+                                    placeholder="e.g. MSKU1234567"
+                                    value={tempContainerNo}
+                                    onChange={(e) => setTempContainerNo(e.target.value.toUpperCase())}
+                                    onKeyDown={(e) => e.key === 'Enter' && confirmContainerInput()}
+                                />
+                            </div>
 
-                        <div className="flex justify-end gap-3">
-                            <button
-                                onClick={() => {
-                                    setShowContainerModal(false);
-                                    setPendingFileItems([]);
-                                    if (fileInputRef.current) fileInputRef.current.value = '';
-                                }}
-                                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-                            >
-                                Cancel Import
-                            </button>
-                            <button
-                                onClick={confirmContainerInput}
-                                disabled={!tempContainerNo}
-                                className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                            >
-                                <Save size={18} /> Save & Import
-                            </button>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowContainerModal(false);
+                                        setPendingFileItems([]);
+                                        if (fileInputRef.current) fileInputRef.current.value = '';
+                                    }}
+                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                                >
+                                    Cancel Import
+                                </button>
+                                <button
+                                    onClick={confirmContainerInput}
+                                    disabled={!tempContainerNo}
+                                    className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    <Save size={18} /> Save & Import
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Amendments Modal */}
-            {showRegimenModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-bold text-slate-800">Amendments & Corrections</h3>
-                            <button onClick={() => setShowRegimenModal(false)} className="text-slate-400 hover:text-slate-600">
-                                <X size={24} />
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {/* Left: Regimen Update */}
-                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                                <h4 className="font-bold text-slate-700 mb-2 flex items-center gap-2">
-                                    <Repeat size={16} /> Bulk Regimen Update
-                                </h4>
-                                <p className="text-sm text-slate-500 mb-4">
-                                    Force update <b>{selectedIds.size} items</b> to a specific regimen.
-                                </p>
-                                <div className="flex gap-2 mb-4">
-                                    <button
-                                        onClick={() => setBulkRegimenValue('IN')}
-                                        className={`flex-1 py-2 px-3 rounded border font-bold text-sm transition-all ${bulkRegimenValue === 'IN'
-                                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                                            : 'border-slate-300 bg-white text-slate-400'
-                                            }`}
-                                    >
-                                        IN (Standard)
-                                    </button>
-                                    <button
-                                        onClick={() => setBulkRegimenValue('A1')}
-                                        className={`flex-1 py-2 px-3 rounded border font-bold text-sm transition-all ${bulkRegimenValue === 'A1'
-                                            ? 'border-purple-500 bg-purple-50 text-purple-700'
-                                            : 'border-slate-300 bg-white text-slate-400'
-                                            }`}
-                                    >
-                                        A1 (Regimen)
-                                    </button>
-                                </div>
-                                <button
-                                    onClick={handleBulkRegimenUpdate}
-                                    className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-bold"
-                                >
-                                    Apply Regimen
+            {
+                showRegimenModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-bold text-slate-800">Amendments & Corrections</h3>
+                                <button onClick={() => setShowRegimenModal(false)} className="text-slate-400 hover:text-slate-600">
+                                    <X size={24} />
                                 </button>
                             </div>
 
-                            {/* Right: Master Data Auto-Fill */}
-                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                <h4 className="font-bold text-blue-800 mb-2 flex items-center gap-2">
-                                    <CheckCircle size={16} /> Master Data Auto-Fill
-                                </h4>
-                                <p className="text-sm text-blue-600 mb-4">
-                                    Found Matches: <b>{Object.keys(amendmentMatches).length}</b> / {selectedIds.size} items.
-                                </p>
-
-                                <div className="space-y-2 mb-4 max-h-40 overflow-y-auto text-xs bg-white p-2 rounded border border-blue-100">
-                                    {Object.keys(amendmentMatches).map(id => {
-                                        const match = amendmentMatches[id];
-                                        return (
-                                            <div key={id} className="grid grid-cols-12 gap-2 border-b border-gray-100 last:border-0 py-1 items-center">
-                                                <span className="col-span-4 font-mono text-slate-600 truncate" title={match.PART_NUMBER}>{match.PART_NUMBER}</span>
-                                                <span className="col-span-6 text-emerald-600 font-bold truncate text-[10px]" title={match.DESCRIPCION_ES}>{match.DESCRIPCION_ES}</span>
-                                                <span className="col-span-2 text-slate-500 font-mono text-right">{match.UMC}</span>
-                                            </div>
-                                        );
-                                    })}
-                                    {Object.keys(amendmentMatches).length === 0 && (
-                                        <p className="text-center text-slate-400 py-2">No matching parts found in Master Data.</p>
-                                    )}
-                                </div>
-
-                                <button
-                                    onClick={handleApplyMasterData}
-                                    disabled={Object.keys(amendmentMatches).length === 0}
-                                    className="w-full py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
-                                >
-                                    <Save size={16} /> Apply Master Data
-                                </button>
-                                <p className="text-[10px] text-blue-400 mt-2 text-center">
-                                    Updates: Desc(ES), HTS, UMC, NetWeight
-                                </p>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            )}
-            {/* Restore Modal */}
-            {showRestoreModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-lg w-full shadow-xl animate-in fade-in zoom-in duration-200">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                                <History size={24} className="text-blue-600" /> Restore Points
-                            </h3>
-                            <button onClick={() => setShowRestoreModal(false)} className="text-slate-400 hover:text-slate-600">
-                                <X size={24} />
-                            </button>
-                        </div>
-                        <p className="text-sm text-slate-500 mb-4">
-                            Select a snapshot to restore. <b>Warning:</b> Unsaved changes made after the snapshot will be lost.
-                        </p>
-                        <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-                            {restorePoints.length === 0 ? (
-                                <p className="text-center text-slate-400 py-8">No restore points available.</p>
-                            ) : (
-                                restorePoints.map((point: any) => (
-                                    <div key={point.id} className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors flex justify-between items-center group">
-                                        <div>
-                                            <p className="font-bold text-slate-700">{point.reason}</p>
-                                            <p className="text-xs text-slate-400">
-                                                {new Date(point.timestamp).toLocaleString()} • {point.sizeKB} KB
-                                            </p>
-                                        </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* Left: Regimen Update */}
+                                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                    <h4 className="font-bold text-slate-700 mb-2 flex items-center gap-2">
+                                        <Repeat size={16} /> Bulk Regimen Update
+                                    </h4>
+                                    <p className="text-sm text-slate-500 mb-4">
+                                        Force update <b>{selectedIds.size} items</b> to a specific regimen.
+                                    </p>
+                                    <div className="flex gap-2 mb-4">
                                         <button
-                                            onClick={() => confirmRestore(point.id)}
-                                            className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-sm font-medium hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-1 opacity-0 group-hover:opacity-100"
+                                            onClick={() => setBulkRegimenValue('IN')}
+                                            className={`flex-1 py-2 px-3 rounded border font-bold text-sm transition-all ${bulkRegimenValue === 'IN'
+                                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                                                : 'border-slate-300 bg-white text-slate-400'
+                                                }`}
                                         >
-                                            <RotateCcw size={14} /> Restore
+                                            IN (Standard)
+                                        </button>
+                                        <button
+                                            onClick={() => setBulkRegimenValue('A1')}
+                                            className={`flex-1 py-2 px-3 rounded border font-bold text-sm transition-all ${bulkRegimenValue === 'A1'
+                                                ? 'border-purple-500 bg-purple-50 text-purple-700'
+                                                : 'border-slate-300 bg-white text-slate-400'
+                                                }`}
+                                        >
+                                            A1 (Regimen)
                                         </button>
                                     </div>
-                                ))
-                            )}
+                                    <button
+                                        onClick={handleBulkRegimenUpdate}
+                                        className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-bold"
+                                    >
+                                        Apply Regimen
+                                    </button>
+                                </div>
+
+                                {/* Right: Master Data Auto-Fill */}
+                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                    <h4 className="font-bold text-blue-800 mb-2 flex items-center gap-2">
+                                        <CheckCircle size={16} /> Master Data Auto-Fill
+                                    </h4>
+                                    <p className="text-sm text-blue-600 mb-4">
+                                        Found Matches: <b>{Object.keys(amendmentMatches).length}</b> / {selectedIds.size} items.
+                                    </p>
+
+                                    <div className="space-y-2 mb-4 max-h-40 overflow-y-auto text-xs bg-white p-2 rounded border border-blue-100">
+                                        {Object.keys(amendmentMatches).map(id => {
+                                            const match = amendmentMatches[id];
+                                            return (
+                                                <div key={id} className="grid grid-cols-12 gap-2 border-b border-gray-100 last:border-0 py-1 items-center">
+                                                    <span className="col-span-4 font-mono text-slate-600 truncate" title={match.PART_NUMBER}>{match.PART_NUMBER}</span>
+                                                    <span className="col-span-6 text-emerald-600 font-bold truncate text-[10px]" title={match.DESCRIPCION_ES}>{match.DESCRIPCION_ES}</span>
+                                                    <span className="col-span-2 text-slate-500 font-mono text-right">{match.UMC}</span>
+                                                </div>
+                                            );
+                                        })}
+                                        {Object.keys(amendmentMatches).length === 0 && (
+                                            <p className="text-center text-slate-400 py-2">No matching parts found in Master Data.</p>
+                                        )}
+                                    </div>
+
+                                    <button
+                                        onClick={handleApplyMasterData}
+                                        disabled={Object.keys(amendmentMatches).length === 0}
+                                        className="w-full py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                                    >
+                                        <Save size={16} /> Apply Master Data
+                                    </button>
+                                    <p className="text-[10px] text-blue-400 mt-2 text-center">
+                                        Updates: Desc(ES), HTS, UMC, NetWeight
+                                    </p>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-                </div>
-            )}
-            {/* R8 Diff Resolution Modal */}
-            {showDiffModal && diffItem && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl animate-in fade-in zoom-in duration-200">
-                        <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-                            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                                <AlertCircle className="text-amber-500" />
-                                Resolve R8 Mismatch
-                            </h3>
-                            <button onClick={handleCloseDiffModal} className="text-slate-400 hover:text-slate-600">
-                                <X size={24} />
-                            </button>
+                )
+            }
+            {/* Restore Modal */}
+            {
+                showRestoreModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-6 max-w-lg w-full shadow-xl animate-in fade-in zoom-in duration-200">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                    <History size={24} className="text-blue-600" /> Restore Points
+                                </h3>
+                                <button onClick={() => setShowRestoreModal(false)} className="text-slate-400 hover:text-slate-600">
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            <p className="text-sm text-slate-500 mb-4">
+                                Select a snapshot to restore. <b>Warning:</b> Unsaved changes made after the snapshot will be lost.
+                            </p>
+                            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                                {restorePoints.length === 0 ? (
+                                    <p className="text-center text-slate-400 py-8">No restore points available.</p>
+                                ) : (
+                                    restorePoints.map((point: any) => (
+                                        <div key={point.id} className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors flex justify-between items-center group">
+                                            <div>
+                                                <p className="font-bold text-slate-700">{point.reason}</p>
+                                                <p className="text-xs text-slate-400">
+                                                    {new Date(point.timestamp).toLocaleString()} • {point.sizeKB} KB
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => confirmRestore(point.id)}
+                                                className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-sm font-medium hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-1 opacity-0 group-hover:opacity-100"
+                                            >
+                                                <RotateCcw size={14} /> Restore
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
+                    </div>
+                )
+            }
+            {/* R8 Diff Resolution Modal */}
+            {
+                showDiffModal && diffItem && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl animate-in fade-in zoom-in duration-200">
+                            <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                    <AlertCircle className="text-amber-500" />
+                                    Resolve R8 Mismatch
+                                </h3>
+                                <button onClick={handleCloseDiffModal} className="text-slate-400 hover:text-slate-600">
+                                    <X size={24} />
+                                </button>
+                            </div>
 
-                        <div className="space-y-6 mb-6">
-                            {/* Comparison Grid - Optimized for Large Text */}
-                            <div className="grid grid-cols-2 gap-4">
-                                {/* Row 1: Master Data Content (Full Width) */}
-                                <div className="col-span-2 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                                    <p className="text-xs font-bold text-slate-500 uppercase mb-2">Master Data R8 Description (Reference)</p>
-                                    <div className="text-sm font-medium text-slate-800 bg-white p-3 rounded border border-slate-100 max-h-32 overflow-y-auto font-mono whitespace-pre-wrap">
-                                        {diffMasterPart?.DESCRIPCION_R8 || <span className="text-slate-400 italic">Not Found in Master Data</span>}
+                            <div className="space-y-6 mb-6">
+                                {/* Comparison Grid - Optimized for Large Text */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    {/* Row 1: Master Data Content (Full Width) */}
+                                    <div className="col-span-2 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                        <p className="text-xs font-bold text-slate-500 uppercase mb-2">Master Data R8 Description (Reference)</p>
+                                        <div className="text-sm font-medium text-slate-800 bg-white p-3 rounded border border-slate-100 max-h-32 overflow-y-auto font-mono whitespace-pre-wrap">
+                                            {diffMasterPart?.DESCRIPCION_R8 || <span className="text-slate-400 italic">Not Found in Master Data</span>}
+                                        </div>
+                                    </div>
+
+                                    {/* Row 2: Comparison Side-by-Side */}
+                                    <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                        <p className="text-xs font-bold text-slate-500 uppercase mb-2">File R8 (RB)</p>
+                                        <p className="text-sm font-medium text-slate-800 break-words">
+                                            {diffItem.rb || <span className="text-slate-400 italic">Empty</span>}
+                                        </p>
+                                    </div>
+                                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                        <p className="text-xs font-bold text-blue-600 uppercase mb-2">Factura (Desc ES)</p>
+                                        <p className="text-sm font-medium text-blue-900 break-words">
+                                            {diffItem.spanishDescription || <span className="text-blue-300 italic">Empty</span>}
+                                        </p>
                                     </div>
                                 </div>
 
-                                {/* Row 2: Comparison Side-by-Side */}
-                                <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                                    <p className="text-xs font-bold text-slate-500 uppercase mb-2">File R8 (RB)</p>
-                                    <p className="text-sm font-medium text-slate-800 break-words">
-                                        {diffItem.rb || <span className="text-slate-400 italic">Empty</span>}
-                                    </p>
+                                {/* Edit Section - Dual Fields */}
+                                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                                            Corrected Description (Factura)
+                                        </label>
+                                        <textarea
+                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                                            rows={4}
+                                            value={resolvedDescription}
+                                            onChange={(e) => setResolvedDescription(e.target.value)}
+                                            placeholder="Edit Invoice Description..."
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center justify-between">
+                                            <span>Master Data R8</span>
+                                            <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Edits Database</span>
+                                        </label>
+                                        <textarea
+                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 font-mono text-sm"
+                                            rows={4}
+                                            value={resolvedR8Description}
+                                            onChange={(e) => setResolvedR8Description(e.target.value)}
+                                            placeholder="Edit Master Data R8..."
+                                            disabled={!diffMasterPart}
+                                        />
+                                        {!diffMasterPart && <p className="text-xs text-red-400 mt-1">Part not found in DB</p>}
+                                    </div>
                                 </div>
-                                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                    <p className="text-xs font-bold text-blue-600 uppercase mb-2">Factura (Desc ES)</p>
-                                    <p className="text-sm font-medium text-blue-900 break-words">
-                                        {diffItem.spanishDescription || <span className="text-blue-300 italic">Empty</span>}
-                                    </p>
-                                </div>
+
+                                <p className="text-xs text-slate-500 italic">
+                                    * Saving will update the item in the list AND the Master Data record if changed.
+                                </p>
                             </div>
 
-                            {/* Edit Section - Dual Fields */}
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                                        Corrected Description (Factura)
-                                    </label>
-                                    <textarea
-                                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-                                        rows={4}
-                                        value={resolvedDescription}
-                                        onChange={(e) => setResolvedDescription(e.target.value)}
-                                        placeholder="Edit Invoice Description..."
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center justify-between">
-                                        <span>Master Data R8</span>
-                                        <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Edits Database</span>
-                                    </label>
-                                    <textarea
-                                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 font-mono text-sm"
-                                        rows={4}
-                                        value={resolvedR8Description}
-                                        onChange={(e) => setResolvedR8Description(e.target.value)}
-                                        placeholder="Edit Master Data R8..."
-                                        disabled={!diffMasterPart}
-                                    />
-                                    {!diffMasterPart && <p className="text-xs text-red-400 mt-1">Part not found in DB</p>}
-                                </div>
+                            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                                <button
+                                    onClick={handleCloseDiffModal}
+                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSaveDiff}
+                                    className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg flex items-center gap-2 font-bold shadow-sm"
+                                >
+                                    <Check size={18} /> Apply Correction
+                                </button>
                             </div>
-
-                            <p className="text-xs text-slate-500 italic">
-                                * Saving will update the item in the list AND the Master Data record if changed.
-                            </p>
-                        </div>
-
-                        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                            <button
-                                onClick={handleCloseDiffModal}
-                                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleSaveDiff}
-                                className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg flex items-center gap-2 font-bold shadow-sm"
-                            >
-                                <Check size={18} /> Apply Correction
-                            </button>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };

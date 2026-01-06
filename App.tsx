@@ -16,6 +16,7 @@ import { Login } from './pages/Login.tsx';
 import { DataStage } from './pages/DataStage.tsx';
 import { CIExtractor } from './pages/CIExtractor.tsx';
 import CCPBuilder from './pages/CCPBuilder.tsx';
+import { Controller } from './pages/Controller.tsx';
 import { storageService } from './services/storageService.ts';
 import { trackingService } from './services/trackingService.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
@@ -80,6 +81,7 @@ const AppContent = () => {
       <Route path="/commercial-invoices" element={<ProtectedRoute><CIExtractor /></ProtectedRoute>} />
       <Route path="/ccp-builder" element={<ProtectedRoute><CCPBuilder /></ProtectedRoute>} />
       <Route path="/data-stage" element={<ProtectedRoute><DataStage /></ProtectedRoute>} />
+      <Route path="/controller" element={<ProtectedRoute><Controller /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><SmartDocs /></ProtectedRoute>} />
       <Route path="/database" element={<ProtectedRoute><DatabaseView /></ProtectedRoute>} />
       <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />

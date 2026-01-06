@@ -19,6 +19,7 @@ export enum UserRole {
   ADMIN = 'Admin',       // Full access: Delete, Manage Users, Edit
   EDITOR = 'Editor',     // Write access: Create, Edit, No Delete
   OPERATOR = 'Operator', // Same as Editor (User requested alias)
+  CONTROLLER = 'Controller', // Finance & Expense Control
   VIEWER = 'Viewer'      // Read only
 }
 
@@ -28,6 +29,14 @@ export interface User {
   name: string;
   role: UserRole;
   avatarInitials: string;
+}
+
+export interface Quotation {
+  id: string;
+  concept: string; // Service name (must match CostRecord.comments for validation)
+  price: number;   // Unit Price or Total (User defined)
+  currency: 'USD' | 'MXN';
+  lastUpdated: string;
 }
 
 export interface Supplier {
@@ -42,31 +51,32 @@ export interface Supplier {
   taxId?: string; // Other Tax ID
   validationStatus?: 'compliant' | 'warning' | 'blacklisted' | 'unchecked';
   status: 'Active' | 'Inactive';
+  quotations?: Quotation[]; // New Field for Cost Validation
 }
 
 export interface RawMaterialPart {
   id: string;
   REGIMEN: string;
   PART_NUMBER: string;
-  TypeMaterial: string;
+  TypeMaterial: string | number;
   DESCRIPTION_EN: string;
   DESCRIPCION_ES: string;
   UMC: string;
   UMT: string;
-  HTSMX: string;
-  HTSMXBASE: string;
-  HTSMXNICO: string;
-  IGI_DUTY: number;
-  PROSEC: string;
+  HTSMX: string; // Fraccion
+  HTSMXBASE: string | number; // HTS
+  HTSMXNICO: string; // Nico
+  IGI_DUTY: string | number;
+  PROSEC: string | number;
   R8: string;
   DESCRIPCION_R8: string;
   RRYNA_NON_DUTY_REQUIREMENTS: string;
-  REMARKS: string;
+  REMARKS: string | number;
   NETWEIGHT: number;
-  IMPORTED_OR_NOT: boolean;
-  SENSIBLE: boolean;
-  HTS_SerialNo: string;
-  CLAVESAT: string;
+  IMPORTED_OR_NOT: string; // "Y" or "N"
+  SENSIBLE: string; // "NO" or "YES"
+  HTS_SerialNo: string | number;
+  CLAVESAT: string | number;
   DESCRIPCION_CN: string;
   MATERIAL_CN: string;
   MATERIAL_EN: string;
@@ -180,12 +190,30 @@ export interface PreAlertRecord {
 export interface CostRecord {
   id: string;
   shipmentId: string;
-  type: 'Freight' | 'Customs' | 'Transport' | 'Handling' | 'Other';
+  type: 'Freight' | 'Customs' | 'Transport' | 'Handling' | 'Other' | 'PREPAYMENTS' | 'INLAND' | 'BROKER' | 'AIR';
   amount: number;
   currency: 'USD' | 'MXN' | 'CNY';
   provider: string;
   description: string;
   date: string;
+  status: 'Pending' | 'Paid' | 'Scheduled';
+  paymentDate?: string;
+  invoiceNo?: string; // New: For Controller View
+  uuid?: string;      // New: SAT UUID
+  comments?: string;  // New: Remarks
+  linkedContainer?: string; // New: Specific container for this cost
+  xmlFile?: string;   // File name for XML
+  pdfFile?: string;   // File name for PDF
+  xmlUrl?: string;    // Storage URL (or Base64 for now if small)
+  pdfUrl?: string;    // Storage URL (Omit for now if too large, use mock)
+  xmlDriveId?: string; // Google Drive File ID for deletion
+  pdfDriveId?: string; // Google Drive File ID for deletion
+  isVirtual?: boolean; // For transient UI rows
+  extractedBl?: string; // Validated BL found in file
+  extractedContainer?: string; // Validated Container found in file
+  bpm?: string; // Optional BPM Number (Manual or Linked)
+  aaRef?: string; // New: AA Reference (Only for BROKER)
+  submitDate?: string; // New: Date when BPM was assigned
 }
 
 export interface AuditLog {
@@ -320,10 +348,12 @@ export interface DataStageReport {
   records: PedimentoRecord[];
   rawFiles: RawFileParsed[];
   stats: DSProcessingStats;
+  storageUrl?: string;
 }
 
 export interface DataStageSession {
   records: PedimentoRecord[];
+  rawFiles: RawFileParsed[];
   fileName: string;
   timestamp: string;
 }

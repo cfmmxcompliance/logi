@@ -7,29 +7,36 @@ const parseFloatSafe = (val: string): number => {
   return parseFloat(val) || 0;
 };
 
-// Helper to extract the code from filename (e.g. M12345.501 -> 501, or 501.txt -> 501)
 const extractCode = (filename: string): string => {
-  let cleanName = filename.replace('.txt', '');
-  const match = cleanName.match(/(\d{3})$/);
+  // Removes standard extensions
+  let cleanName = filename.replace(/\.(txt|asc|csv)$/i, '');
+
+  // Try to find 3 digits at the end or after an underscore/dot
+  const match = cleanName.match(/[_.](\d{3})$/) || cleanName.match(/^(\d{3})$/);
+
   if (match) return match[1];
+
+  // Adjusted fallback: if filename is just "501" (without extension logic above)
+  if (/^\d{3}$/.test(cleanName)) return cleanName;
+
   return cleanName;
 };
 
 export const processZipFile = async (file: File): Promise<{ records: PedimentoRecord[], rawFiles: RawFileParsed[], stats: DSProcessingStats }> => {
   const zip = new JSZip();
   const loadedZip = await zip.loadAsync(file);
-  
+
   const tempGeneral: GeneralData[] = [];
   const tempInvoices: DSInvoiceData[] = [];
   const tempItems: DSItemData[] = [];
-  
+
   const rawFiles: RawFileParsed[] = [];
 
   let filesProcessed = 0;
 
   // Iterate over files in ZIP
   const filePromises: Promise<void>[] = [];
-  
+
   loadedZip.forEach((relativePath, zipEntry) => {
     if (zipEntry.dir) return;
 
@@ -51,11 +58,11 @@ export const processZipFile = async (file: File): Promise<{ records: PedimentoRe
       }
 
       // --- 2. Business Logic Parsing ---
-      
+
       if (fileCode === DataStageRecordType.HEADER) {
         lines.forEach(line => {
           const cols = line.split('|');
-          if (cols.length < 10) return; 
+          if (cols.length < 10) return;
           tempGeneral.push({
             patente: cols[0],
             pedimento: cols[1],
@@ -107,6 +114,13 @@ export const processZipFile = async (file: File): Promise<{ records: PedimentoRe
             valorDolares: parseFloatSafe(cols[10]),
             cantidadComercial: parseFloatSafe(cols[11]),
             unidadMedidaComercial: cols[12],
+            cantidadTarifa: parseFloatSafe(cols[13]) || 0,
+            unidadMedidaTarifa: cols[14] || '',
+            paisVendedor: '', // Not in basic columns?
+            paisOrigen: '',
+            nico: '',
+            vinculacion: '',
+            metodoValoracion: ''
           });
         });
       }

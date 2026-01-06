@@ -26,8 +26,8 @@ const emptyPart: RawMaterialPart = {
     RRYNA_NON_DUTY_REQUIREMENTS: '',
     REMARKS: '',
     NETWEIGHT: 0,
-    IMPORTED_OR_NOT: true,
-    SENSIBLE: false,
+    IMPORTED_OR_NOT: 'N',
+    SENSIBLE: 'NO',
     HTS_SerialNo: '',
     CLAVESAT: '',
     DESCRIPCION_CN: '',
@@ -105,6 +105,7 @@ export const DatabaseView = () => {
     }>({ isOpen: false, newItems: [], conflictingItems: [], existingMap: {} });
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const cfmdbInputRef = useRef<HTMLInputElement>(null);
     const restoreInputRef = useRef<HTMLInputElement>(null);
 
     const handleBackup = () => {
@@ -252,6 +253,159 @@ export const DatabaseView = () => {
         }
     };
 
+
+    const handleCFMDBImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setProcState({
+            isOpen: true,
+            status: 'loading',
+            title: 'Syncing Master Data',
+            message: 'Reading CFMDB file...',
+            progress: 10
+        });
+
+        const reader = new FileReader();
+
+        reader.onload = async (evt) => {
+            setTimeout(async () => {
+                try {
+                    const data = evt.target?.result;
+                    if (!data) throw new Error("File is empty");
+
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    // Try to find the specific sheet, otherwise default to first
+                    let sheetName = workbook.SheetNames.find(s => s.includes('sheet1') || s.includes('Sheet1')) || workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) as string[][];
+
+                    // Identify Header Row (Look for "Part Number" or "PART_NUMBER")
+                    let headerIndex = -1;
+                    for (let i = 0; i < Math.min(rows.length, 50); i++) {
+                        const rowStr = rows[i].join(',').toUpperCase();
+                        if (rowStr.includes('PART NUMBER') || rowStr.includes('PART_NUMBER')) {
+                            headerIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (headerIndex === -1) throw new Error("Could not find 'Part Number' column in header.");
+
+                    const headers = rows[headerIndex].map(h => (h || '').toString().trim());
+
+                    // Mapping: Excel Header -> RawMaterialPart Field
+                    const mapping: Record<string, keyof RawMaterialPart> = {
+                        'REGIMEN': 'REGIMEN',
+                        'PART NUMBER': 'PART_NUMBER',
+                        'TYPE OF MATERIAL': 'TypeMaterial',
+                        'ENGLISH DESCRIPTION': 'DESCRIPTION_EN',
+                        'DESCRIPCION(ES)': 'DESCRIPCION_ES',
+                        'U.M': 'UMC',
+                        'HTS': 'HTSMXBASE',
+                        'FRACCION': 'HTSMX',
+                        'NICO': 'HTSMXNICO',
+                        'IGI（DUTIES）': 'IGI_DUTY', // Note: Special char in parentheses from Profile
+                        'PROSEC': 'PROSEC',
+                        'R8': 'R8',
+                        'DESCRIPCION R8': 'DESCRIPCION_R8',
+                        'RRYNAS（NON-DUTY REQUIREMENTS）': 'RRYNA_NON_DUTY_REQUIREMENTS',
+                        'REMARKS': 'REMARKS',
+                        'NETWEIGHT': 'NETWEIGHT',
+                        'IMPORTED OR NOT': 'IMPORTED_OR_NOT',
+                        'SENSIBLE': 'SENSIBLE',
+                        'HTS  SERIAL NO.': 'HTS_SerialNo', // Double space in profile?
+                        'CLAVE SAT': 'CLAVESAT',
+                        'COMPANY': 'COMPANY'
+                        // UpdateTime Ignored per request
+                    };
+
+                    const colMap: Record<keyof RawMaterialPart | string, number> = {};
+
+                    headers.forEach((h, idx) => {
+                        const upperH = h.toUpperCase();
+                        // 1. Direct Match against Mapping Keys
+                        const foundKey = Object.keys(mapping).find(mKey => {
+                            // Normalize spacing for comparison
+                            return mKey.toUpperCase().replace(/\s+/g, ' ') === upperH.replace(/\s+/g, ' ');
+                        });
+
+                        if (foundKey) {
+                            colMap[mapping[foundKey]] = idx;
+                        } else {
+                            // Fallback: Check if header matches direct TS Key (e.g. REGIMEN)
+                            if (CSV_ORDER_KEYS.includes(upperH as any)) {
+                                colMap[upperH] = idx;
+                            }
+                        }
+                    });
+
+                    if (colMap['PART_NUMBER'] === undefined) throw new Error("'Part Number' column mapped incorrectly.");
+
+                    setProcState(prev => ({ ...prev, progress: 30, message: 'Processing rows...' }));
+
+                    const parsedParts: RawMaterialPart[] = [];
+                    for (let i = headerIndex + 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (!row || row.length === 0) continue;
+
+                        const newPart: any = { ...emptyPart };
+                        let hasData = false;
+
+                        Object.entries(colMap).forEach(([field, colIdx]) => {
+                            let val = row[colIdx];
+                            if (val !== undefined && val !== '') {
+                                // Type Conversions
+                                if (field === 'NETWEIGHT') {
+                                    newPart[field] = typeof val === 'number' ? val : parseFloat(val.toString()) || 0;
+                                    // Store EXACT string value (e.g. "N", "Y") without boolean conversion
+                                    newPart[field] = val.toString().trim();
+                                } else {
+                                    newPart[field] = val;
+                                }
+                                hasData = true;
+                            }
+                        });
+
+                        // Default Fallbacks
+                        if (!newPart.COMPANY) newPart.COMPANY = 'CFMOTO';
+                        if (!newPart.REGIMEN) newPart.REGIMEN = 'IN';
+
+                        if (hasData && newPart.PART_NUMBER) {
+                            parsedParts.push(newPart);
+                        }
+                    }
+
+                    if (parsedParts.length === 0) throw new Error("No valid data found.");
+
+                    // Logic: Sync means UPSERT. We trust this file.
+                    // We will upsert all found parts.
+
+                    // Batch limit is handled by storageService.upsertParts
+
+                    if (window.confirm(`Found ${parsedParts.length} parts. Proceed to Sync? (Existing parts with same Part Number will be updated)`)) {
+                        proceedWithUpload(parsedParts);
+                    } else {
+                        setProcState(INITIAL_PROCESSING_STATE);
+                    }
+
+                } catch (err: any) {
+                    console.error(err);
+                    setProcState({
+                        isOpen: true,
+                        status: 'error',
+                        title: 'Sync Error',
+                        message: err.message,
+                        progress: 0
+                    });
+                } finally {
+                    if (cfmdbInputRef.current) cfmdbInputRef.current.value = '';
+                }
+            }, 500);
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
     const handleWipeDatabase = async () => {
         if (!hasRole([UserRole.ADMIN])) return;
 
@@ -389,7 +543,7 @@ export const DatabaseView = () => {
                                     }
                                 }
                                 else if (key === 'IMPORTED_OR_NOT' || key === 'SENSIBLE') {
-                                    newPart[key] = ['Y', 'YES', 'SI', 'S', 'TRUE', '1'].includes(rawVal.toUpperCase());
+                                    newPart[key] = rawVal; // Store exact string (e.g. "N", "NO", "Y")
                                 }
                                 else {
                                     newPart[key] = rawVal;
@@ -505,12 +659,23 @@ export const DatabaseView = () => {
 
     const filteredParts = useMemo(() => {
         if (!searchTerm) return parts;
-        const lower = searchTerm.toLowerCase();
-        return parts.filter(p =>
-            (p.PART_NUMBER && String(p.PART_NUMBER).toLowerCase().includes(lower)) ||
-            (p.DESCRIPTION_EN && String(p.DESCRIPTION_EN).toLowerCase().includes(lower)) ||
-            (p.DESCRIPCION_ES && String(p.DESCRIPCION_ES).toLowerCase().includes(lower))
-        );
+
+        // 1. Split by comma for multi-search (OR logic)
+        // Example: "Bolt, Screw" -> Show items matching "Bolt" OR "Screw" in ANY column
+        const tokens = searchTerm.split(',').map(t => t.trim().toLowerCase()).filter(t => t.length > 0);
+
+        if (tokens.length === 0) return parts;
+
+        return parts.filter(p => {
+            // Match if ANY token is found in ANY column
+            return tokens.some(token => {
+                return CSV_ORDER_KEYS.some(key => {
+                    const val = (p as any)[key];
+                    if (val === null || val === undefined) return false;
+                    return String(val).toLowerCase().includes(token);
+                });
+            });
+        });
     }, [parts, searchTerm]);
 
     // --- NEW EXPORT FUNCTIONALITY ---
@@ -603,6 +768,16 @@ export const DatabaseView = () => {
                         className="hidden"
                     />
 
+                    {/* Hidden Input for CFMDB Import */}
+                    <input
+                        type="file"
+                        ref={cfmdbInputRef}
+                        onChange={(e) => handleCFMDBImport(e)}
+                        onClick={(e) => (e.currentTarget.value = '')}
+                        accept=".xlsx, .xls"
+                        className="hidden"
+                    />
+
                     {/* Export Filtered Results Button */}
                     <button
                         onClick={handleExportFiltered}
@@ -635,6 +810,15 @@ export const DatabaseView = () => {
                             >
                                 <Plus size={16} /> Add Item
                             </button>
+                            {/* CFMDB Sync Button */}
+                            <button
+                                onClick={() => cfmdbInputRef.current?.click()}
+                                disabled={procState.isOpen}
+                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-sm transition-colors"
+                                title="Sync with CFMDB-01.02.xlsx"
+                            >
+                                <Database size={16} /> Sync Master DB
+                            </button>
                             <div className="w-px h-8 bg-slate-300 mx-1"></div>
                             {!storageService.isCloudMode() && (
                                 <button onClick={() => restoreInputRef.current?.click()} disabled={procState.isOpen} className="flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-200 shadow-sm transition-colors" title="Restore DB">
@@ -666,7 +850,7 @@ export const DatabaseView = () => {
                         <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
                         <input
                             type="text"
-                            placeholder="Search PART_NUMBER, DESCRIPTION (EN/ES)..."
+                            placeholder="Search any column (comma separate for multiple)..."
                             value={searchTerm}
                             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                             className="pl-9 pr-4 py-2 w-full border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -727,7 +911,7 @@ export const DatabaseView = () => {
                                     {/* DYNAMIC ROW RENDERING IN EXACT ORDER */}
                                     {CSV_ORDER_KEYS.map(key => {
                                         let displayVal = (part as any)[key];
-                                        if (typeof displayVal === 'boolean') displayVal = displayVal ? 'Y' : 'N';
+                                        // Removed boolean coercion to show raw data
                                         return (
                                             <td key={key} className="px-3 py-2 border-r border-slate-50 last:border-0 max-w-[200px] truncate" title={String(displayVal)}>
                                                 {displayVal}

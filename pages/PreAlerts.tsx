@@ -398,8 +398,10 @@ export const PreAlerts = () => {
 
     // AI Document Upload Logic (BL / AWB) - STEP 1: Analysis (Batch Support)
     const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
-        if (files.length === 0) return;
+        const fileList = e.target.files;
+        if (!fileList || fileList.length === 0) return;
+
+        const files = Array.from(fileList) as File[];
 
         setProcState({
             isOpen: true,
@@ -414,6 +416,7 @@ export const PreAlerts = () => {
 
         for (const file of files) {
             // 4MB limit check
+            // @ts-ignore
             if (file.size > 4 * 1024 * 1024) {
                 batchResults.push({
                     file,
@@ -432,7 +435,7 @@ export const PreAlerts = () => {
                     const reader = new FileReader();
                     reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
                     reader.onerror = reject;
-                    reader.readAsDataURL(file);
+                    reader.readAsDataURL(file as File);
                 });
 
                 // Extract
@@ -586,31 +589,47 @@ export const PreAlerts = () => {
         setProcState({
             isOpen: true,
             status: 'loading',
-            title: 'Uploading Format',
-            message: 'Sending document for analysis...',
+            title: 'Analyzing Structure',
+            message: 'Asking AI to identify all visible fields...',
             progress: 30
         });
 
         try {
-            await storageService.uploadTrainingDocument(formatSub.file, formatSub.provider, formatSub.comments);
+            // 1. Upload for record (Silent)
+            // await storageService.uploadTrainingDocument(formatSub.file, formatSub.provider, formatSub.comments);
+
+            // 2. Perform Analysis
+            const base64 = await new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+                reader.readAsDataURL(formatSub.file!);
+            });
+
+            const result = await geminiService.analyzeDocumentStructure(base64, formatSub.file.type || 'application/pdf');
+
             setProcState({
                 isOpen: true,
                 status: 'success',
-                title: 'Submission Received',
-                message: 'Thank you! We will analyze this format.',
+                title: 'Structure Learned',
+                message: 'Here is what we found:',
                 progress: 100
             });
-            setTimeout(() => {
-                setProcState(INITIAL_PROCESSING_STATE);
-                setIsSubmitFormatOpen(false);
-                setFormatSub({ file: null, provider: '', comments: '' });
-            }, 2000);
+
+            // Show Result (Reuse Editing Extraction modal or create simpel alert for now)
+            alert("AI Analysis Result:\n\n" + JSON.stringify(result, null, 2));
+            console.log("Learned Structure:", result);
+
+            setIsSubmitFormatOpen(false);
+            setFormatSub({ file: null, provider: '', comments: '' });
+            setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 1000);
+
         } catch (error) {
+            console.error(error);
             setProcState({
                 isOpen: true,
                 status: 'error',
-                title: 'Upload Failed',
-                message: 'Could not upload document.',
+                title: 'Analysis Failed',
+                message: 'Could not learn document structure.',
                 progress: 0
             });
         }

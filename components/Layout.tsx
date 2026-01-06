@@ -51,6 +51,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <SidebarItem to="/commercial-invoices" icon={FileText} label={sidebarOpen ? "CI Extractor" : ""} />
           <SidebarItem to="/ccp-builder" icon={Truck} label={sidebarOpen ? "CCP Builder" : ""} />
 
+          {(user?.role === 'Admin' || user?.role === 'Controller') && (
+            <SidebarItem to="/controller" icon={Settings} label={sidebarOpen ? "Inland Freight" : ""} />
+          )}
+
           {/* RBAC: Restricted Areas */}
           {(user?.role === 'Admin' || user?.role === 'Editor') && (
             <>

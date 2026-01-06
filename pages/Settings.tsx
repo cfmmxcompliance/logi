@@ -122,9 +122,13 @@ export const Settings = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {systemUsers.map((u, i) => (
-                                    <tr key={i} className="hover:bg-slate-50">
-                                        <td className="px-6 py-3 font-mono text-slate-600">{u.username}</td>
-                                        <td className="px-6 py-3 font-medium text-slate-800">{u.name}</td>
+                                    <tr key={u.email || u.username} className="hover:bg-slate-50">
+                                        <td className="px-6 py-3 font-mono text-slate-600">
+                                            <span>{u.username}</span>
+                                        </td>
+                                        <td className="px-6 py-3 font-medium text-slate-800">
+                                            <span>{u.name}</span>
+                                        </td>
                                         <td className="px-6 py-3">
                                             <select
                                                 value={u.role}

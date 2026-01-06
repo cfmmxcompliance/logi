@@ -7,311 +7,468 @@ import { RefreshCcw, Save, Archive, Trash2, Calendar, FileText, ChevronRight, Lo
 import { storageService } from '../services/storageService.ts';
 
 export const DataStage = () => {
-  const [data, setData] = useState<PedimentoRecord[] | null>(null);
-  const [rawFiles, setRawFiles] = useState<RawFileParsed[]>([]);
-  const [currentFileName, setCurrentFileName] = useState<string>('');
-  
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const [savedReports, setSavedReports] = useState<DataStageReport[]>([]);
-  const hiddenInputRef = useRef<HTMLInputElement>(null);
+    const [data, setData] = useState<PedimentoRecord[] | null>(null);
+    const [rawFiles, setRawFiles] = useState<RawFileParsed[]>([]);
+    const [currentFileName, setCurrentFileName] = useState<string>('');
 
-  useEffect(() => {
-      // 1. Load Saved Reports (History)
-      setSavedReports(storageService.getDataStageReports());
-      const unsub = storageService.subscribe(() => {
-          setSavedReports(storageService.getDataStageReports());
-      });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-      // 2. Load Draft Session (Persistence active view)
-      const draft = storageService.getDraftDataStage();
-      if (draft && draft.records.length > 0) {
-          setData(draft.records);
-          setRawFiles(draft.rawFiles);
-          setCurrentFileName(draft.fileName);
-      }
+    const [savedReports, setSavedReports] = useState<DataStageReport[]>([]);
+    const hiddenInputRef = useRef<HTMLInputElement>(null);
+    const [saving, setSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<string>(""); // Granular status message
 
-      return unsub;
-  }, []);
-
-  const handleFileSelect = async (file: File) => {
-    const potentialName = file.name.replace(/\.zip$/i, '').trim();
-    
-    // 1. Validation: Check if it matches the CURRENTLY LOADED file
-    if (currentFileName && currentFileName === file.name) {
-        const confirmReload = window.confirm(
-            `⚠️ ARCHIVO EN USO\n\n` +
-            `El archivo "${file.name}" es el que estás visualizando actualmente.\n` +
-            `¿Deseas recargarlo y reiniciar la visualización?`
-        );
-        if (!confirmReload) return;
-    }
-
-    // 2. Validation: Check if file matches HISTORY records (Case Insensitive)
-    const existsInHistory = savedReports.some(r => r.name.toLowerCase() === potentialName.toLowerCase());
-
-    if (existsInHistory) {
-        const shouldProceed = window.confirm(
-            `⚠️ ARCHIVO DUPLICADO DETECTADO\n\n` +
-            `El archivo "${file.name}" ya existe en tu historial de reportes guardados.\n\n` +
-            `¿Deseas volver a cargarlo para visualizarlo? (Esto no sobrescribirá el historial automáticamente).`
-        );
-        if (!shouldProceed) return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setCurrentFileName(file.name);
-    try {
-      const result = await processZipFile(file);
-      if (result.records.length === 0 && result.rawFiles.length === 0) {
-        setError("No se encontraron registros válidos ni archivos de texto en el ZIP.");
-      } else {
-        setData(result.records);
-        setRawFiles(result.rawFiles);
-        
-        // Auto-save draft for persistence
-        storageService.saveDraftDataStage({
-            records: result.records,
-            rawFiles: result.rawFiles,
-            fileName: file.name,
-            timestamp: new Date().toISOString()
+    useEffect(() => {
+        // 1. Load Saved Reports (History)
+        setSavedReports(storageService.getDataStageReports());
+        const unsub = storageService.subscribe(() => {
+            setSavedReports(storageService.getDataStageReports());
         });
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Error al procesar el archivo. Asegúrate de que sea un ZIP válido de Data Stage.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleReset = () => {
-    if(window.confirm("¿Estás seguro de cerrar la vista actual? Esto borrará la sesión activa (pero no los reportes guardados en el historial).")) {
-        setData(null);
-        setRawFiles([]);
-        setCurrentFileName('');
+        // 2. Load Draft Session (Persistence active view) - ASYNC NOW
+        const loadDraft = async () => {
+            try {
+                const draft = await storageService.getDraftDataStage();
+                if (draft && draft.records.length > 0) {
+                    setData(draft.records);
+                    setRawFiles(draft.rawFiles);
+                    setCurrentFileName(draft.fileName);
+                }
+            } catch (e) {
+                console.error("Error loading draft", e);
+            }
+        };
+        loadDraft();
+
+        return unsub;
+    }, []);
+
+    const handleFileSelect = async (files: FileList | File[]) => {
+        if (!files || files.length === 0) return;
+
+        const fileArray = Array.from(files);
+        const fileName = fileArray.length === 1 ? fileArray[0].name : `Lote de ${fileArray.length} Archivos`;
+
+        // Validation for single file overwrite (only if we have 1 file and context is set)
+        if (fileArray.length === 1 && currentFileName && currentFileName === fileArray[0].name) {
+            const confirmReload = window.confirm(
+                `⚠️ ARCHIVO EN USO\n\n` +
+                `El archivo "${fileArray[0].name}" es el que estás visualizando actualmente.\n` +
+                `¿Deseas recargarlo y reiniciar la visualización?`
+            );
+            if (!confirmReload) return;
+        }
+
+        // New Feature: Duplicate Check against History
+        const duplicates = fileArray.filter(f =>
+            savedReports.some(r => r.name === f.name) // Checks if report name matches file name
+        );
+
+        if (duplicates.length > 0) {
+            const duplicateNames = duplicates.map(d => d.name).join(', ');
+            if (!window.confirm(`⚠️ ARCHIVO EXISTENTE\n\nLos siguientes archivos ya existen en el historial:\n${duplicateNames}\n\n¿Deseas SOBRESCRIBIRLOS?\n(Se eliminará la versión anterior y se guardará la nueva)`)) {
+                setLoading(false);
+                if (hiddenInputRef.current) hiddenInputRef.current.value = '';
+                return; // "Se para la ejecución"
+            }
+
+            // "Se rescribe" -> Delete old reports before processing new ones
+            console.log("Overwriting duplicates...");
+            const duplicateIds = savedReports
+                .filter(r => duplicates.some(d => d.name === r.name))
+                .map(r => r.id);
+
+            for (const id of duplicateIds) {
+                await storageService.deleteDataStageReport(id);
+            }
+        }
+
+        setLoading(true);
         setError(null);
-        storageService.clearDraftDataStage();
-    }
-  };
 
-  const handleSync = () => {
-      // Simulation of syncing data to other modules
-      alert(`Sincronización Completada:\n- ${data?.length} operaciones registradas.\n- Datos de proveedores actualizados en el sistema central.`);
-  };
+        try {
+            const allRecords: PedimentoRecord[] = [];
+            const allRawFiles: RawFileParsed[] = [];
+            const processedFilesStats = { count: 0 };
 
-  const handleSaveReport = async () => {
-      if (!data || !currentFileName) return;
-      
-      const defaultName = currentFileName.replace(/\.zip$/i, '');
-      const reportName = prompt("Nombre para este reporte:", defaultName);
-      
-      if (!reportName) return;
+            // Process sequentially to be safe
+            for (const file of fileArray) {
+                try {
+                    const result = await processZipFile(file);
+                    if (result.records.length > 0 || result.rawFiles.length > 0) {
+                        allRecords.push(...result.records);
+                        allRawFiles.push(...result.rawFiles);
+                        processedFilesStats.count++;
+                    }
+                } catch (err) {
+                    console.error(`Error processing file ${file.name}:`, err);
+                    // Continue with other files
+                }
+            }
 
-      // Check if we are overwriting based on chosen name
-      const existingReport = savedReports.find(r => r.name.toLowerCase() === reportName.toLowerCase());
-      let reportId = crypto.randomUUID();
+            if (allRecords.length === 0 && allRawFiles.length === 0) {
+                setError("No se encontraron registros válidos ni archivos de texto en los ZIPs seleccionados.");
+            } else {
+                // Merge Records (deduplicate by ID if necessary, for now simple concat is likely fine but map is safer)
+                const recordMap = new Map<string, PedimentoRecord>();
+                // Existing data? If user wants to APPEND, we should check. But usually "Upload" means "New Session".
+                // User said "Cargar 1 o varios", usually implies a new load.
+                // Assuming replace current view with this batch.
 
-      if (existingReport) {
-          const confirmOverwrite = window.confirm(
-              `⚠️ YA EXISTE UN REPORTE LLAMADO "${reportName}"\n\n` + 
-              `¿Deseas SOBRESCRIBIR la información anterior con estos nuevos datos?`
-          );
-          if (!confirmOverwrite) return;
-          
-          reportId = existingReport.id; // Reuse ID to overwrite
-      }
+                allRecords.forEach(r => recordMap.set(r.id, r));
+                const uniqueRecords = Array.from(recordMap.values());
 
-      const report: DataStageReport = {
-          id: reportId,
-          name: reportName,
-          timestamp: new Date().toISOString(),
-          records: data,
-          rawFiles: rawFiles,
-          stats: {
-              filesProcessed: rawFiles.length,
-              pedimentosCount: data.length,
-              itemsCount: data.reduce((acc, curr) => acc + curr.items.length, 0),
-              invoicesCount: data.reduce((acc, curr) => acc + curr.invoices.length, 0)
-          }
-      };
+                // Merge Raw Files (deduplicate by code/filename)
+                const uniqueRawFiles = allRawFiles; // Raw files usually distinct by zip content
 
-      const success = await storageService.saveDataStageReport(report);
-      if (success) {
-          alert(existingReport ? "✅ Reporte actualizado correctamente." : "✅ Reporte guardado en el historial.");
-      }
-  };
+                setData(uniqueRecords);
+                setRawFiles(uniqueRawFiles);
+                setCurrentFileName(fileName);
 
-  const loadReport = (report: DataStageReport) => {
-      if (window.confirm(`¿Cargar visualización del reporte "${report.name}"?`)) {
-          setData(report.records);
-          setRawFiles(report.rawFiles);
-          setCurrentFileName(report.name);
-          
-          // Also update current session draft so it persists if page reloads
-          storageService.saveDraftDataStage({
-              records: report.records,
-              rawFiles: report.rawFiles,
-              fileName: report.name,
-              timestamp: new Date().toISOString()
-          });
-      }
-  };
+                // Auto-save draft (Async)
+                setSaving(true);
+                await storageService.saveDraftDataStage({
+                    records: uniqueRecords,
+                    rawFiles: uniqueRawFiles,
+                    fileName: fileName,
+                    timestamp: new Date().toISOString()
+                });
 
-  const deleteReport = async (id: string, e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (window.confirm("¿Estás seguro de eliminar este reporte del historial permanentemente?")) {
-          await storageService.deleteDataStageReport(id);
-      }
-  };
+                // Auto-save Report to History
+                try {
+                    const reportId = crypto.randomUUID();
+                    const report: DataStageReport = {
+                        id: reportId,
+                        name: fileName, // Auto-name using file name
+                        timestamp: new Date().toISOString(),
+                        records: uniqueRecords,
+                        rawFiles: uniqueRawFiles,
+                        stats: {
+                            filesProcessed: uniqueRawFiles.length,
+                            pedimentosCount: uniqueRecords.length,
+                            itemsCount: uniqueRecords.reduce((acc, curr) => acc + curr.items.length, 0),
+                            invoicesCount: uniqueRecords.reduce((acc, curr) => acc + curr.invoices.length, 0)
+                        }
+                    };
+                    const reportSaved = await storageService.saveDataStageReport(report);
 
-  return (
-      <div className="space-y-6 relative">
-          <div className="flex justify-between items-start">
-             <div>
+                    if (reportSaved) {
+                        if (uniqueRecords.length > 0) {
+                            alert(`✅ ÉXITO\n\nArchivo(s) procesado(s) y guardado(s) correctamente.\n\n- ${uniqueRecords.length} Pedimentos encontrados.\n- Reporte guardado en historial.`);
+                        } else {
+                            alert(`⚠️ PROCESO INCOMPLETO\n\nSe leyeron los archivos pero NO se encontraron pedimentos válidos.\n\n- Verifica que el archivo ZIP contenga los TXT/M3 correctos.\n- Se guardó el registro de la lectura en el historial.`);
+                        }
+                    } else {
+                        alert(`⚠️ AVISO\n\nLos archivos se procesaron pero hubo un problema al guardar en el historial (posiblemente por tamaño).\n\nLos datos están visibles en pantalla, pero verifica tu conexión.`);
+                    }
+                } catch (autoSaveErr) {
+                    console.error("Auto-save report failed", autoSaveErr);
+                    alert(`⚠️ AVISO DE GUARDADO\n\nNo se pudo guardar automáticamente en el historial: ${autoSaveErr instanceof Error ? autoSaveErr.message : 'Error desconocido'}`);
+                }
+
+                setSaving(false);
+            }
+        } catch (err) {
+            console.error(err);
+            const errorMsg = err instanceof Error ? err.message : "Error desconocido al procesar archivos.";
+            setError(errorMsg);
+            alert(`❌ ERROR\n\nNo se pudieron procesar los archivos:\n${errorMsg}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleReset = async () => {
+        if (window.confirm("¿Estás seguro de cerrar la vista actual? Esto borrará la sesión activa (pero no los reportes guardados en el historial).")) {
+            setLoading(true);
+            try {
+                await storageService.clearDraftDataStage();
+                setData(null);
+                setRawFiles([]);
+                setCurrentFileName('');
+                setError(null);
+            } catch (e) {
+                console.error("Error clearing draft", e);
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    const handleSync = async () => {
+        if (!data || data.length === 0) return;
+
+        if (!window.confirm(`¿Estás seguro de sincronizar ${data.length} operaciones con la base de datos central? Esto actualizará o creará registros de Aduanas y Proveedores.`)) {
+            return;
+        }
+
+        setLoading(true);
+        try {
+            let supplierCount = 0;
+            let customsCount = 0;
+
+            // 1. Sync Suppliers (Client-side Deduplication)
+            const uniqueSuppliers = new Map<string, string>(); // Name -> Address
+            data.forEach(p => {
+                p.invoices.forEach(inv => {
+                    if (inv.proveedor && !uniqueSuppliers.has(inv.proveedor)) {
+                        uniqueSuppliers.set(inv.proveedor, inv.proveedorCalle || '');
+                    }
+                });
+            });
+
+            // Get existing suppliers from Local State to avoid duplicates
+            const existingSuppliers = storageService.getLocalState().suppliers || [];
+            const existingMap = new Map(existingSuppliers.map((s: any) => [s.name.toLowerCase().trim(), s]));
+
+            for (const [name, address] of uniqueSuppliers.entries()) {
+                const normalizedKey = name.toLowerCase().trim();
+
+                if (existingMap.has(normalizedKey)) {
+                    // Already exists. Optional: Update address if missing?
+                    // For now, we skip to prevent "Duplicate ID" or overwriting with less data.
+                    console.log(`Supplier '${name}' already exists. Skipping.`);
+                    continue;
+                }
+
+                await storageService.updateSupplier({
+                    id: crypto.randomUUID(),
+                    name: name,
+                    type: 'Other',
+                    contactName: 'Imported from DataStage',
+                    email: '',
+                    phone: '',
+                    country: 'MX',
+                    status: 'Active',
+                    // TODO: Add address if model supports it
+                });
+                supplierCount++;
+            }
+
+            // Re-evaluating Supplier Sync: It's risky without deduplication by Name.
+            // Implemented a safer "Check existence by Name" loop would be slow.
+            // Let's stick to the high-value target: CUSTOMS OPERATIONS (Pedimentos).
+
+            // 2. Sync Customs Records
+            for (const record of data) {
+                // Check if exists by Pedimento? 
+                // storageService doesn't have "getByPedimento".
+                // We'll create new records or update if we can find them.
+                // For now, let's create new records with a specific ID strategy or random?
+                // Use Pedimento Number as ID? No, IDs are UUIDs.
+                // Let's just create them. User can dedupe or we assume they are new/updates.
+
+                // Map PedimentoRecord -> CustomsClearanceRecord
+                const newRec = {
+                    id: crypto.randomUUID(),
+                    blNo: '', // Not linked to BL yet? Or try to find BL?
+                    // If we have "consignee" or "ref" in file?
+                    containerNo: 'Multiple',
+                    ataPort: '',
+                    pedimentoNo: record.pedimento,
+                    proformaRevisionBy: 'DataStage',
+                    targetReviewDate: '',
+                    proformaSentDate: '',
+                    pedimentoAuthorizedDate: record.fechaPago, // Fecha Pago -> Authorized
+                    peceRequestDate: '',
+                    peceAuthDate: '',
+                    pedimentoPaymentDate: record.fechaPago,
+                    truckAppointmentDate: '',
+                    ataFactory: '',
+                    eirDate: ''
+                };
+
+                // Try to find matching BL from "Referencias" if available? 
+                // data-stage logic doesn't currently extract BLs reliably from M3 logic unless "Referencia" field is mapped.
+                // Let's just save valid Pedimento records.
+                await storageService.updateCustomsClearance(newRec);
+                customsCount++;
+            }
+
+            alert(`✅ Sincronización Completada:\n- ${customsCount} operaciones de aduanas registradas/actualizadas.`);
+        } catch (e) {
+            console.error(e);
+            alert("❌ Error al sincronizar con la base de datos.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSaveReport = async () => {
+        if (!data || !currentFileName) return;
+
+        const defaultName = currentFileName.replace(/\.zip$/i, '');
+        const reportName = prompt("Nombre para este reporte:", defaultName);
+
+        if (!reportName) return;
+
+        // Check if we are overwriting based on chosen name
+        const existingReport = savedReports.find(r => r.name.toLowerCase() === reportName.toLowerCase());
+        let reportId = crypto.randomUUID();
+
+        if (existingReport) {
+            const confirmOverwrite = window.confirm(
+                `⚠️ YA EXISTE UN REPORTE LLAMADO "${reportName}"\n\n` +
+                `¿Deseas SOBRESCRIBIR la información anterior con estos nuevos datos?`
+            );
+            if (!confirmOverwrite) return;
+
+            reportId = existingReport.id; // Reuse ID to overwrite
+        }
+
+        const report: DataStageReport = {
+            id: reportId,
+            name: reportName,
+            timestamp: new Date().toISOString(),
+            records: data,
+            rawFiles: rawFiles,
+            stats: {
+                filesProcessed: rawFiles.length,
+                pedimentosCount: data.length,
+                itemsCount: data.reduce((acc, curr) => acc + curr.items.length, 0),
+                invoicesCount: data.reduce((acc, curr) => acc + curr.invoices.length, 0)
+            }
+        };
+
+        try {
+            setLoading(true);
+            setSaveStatus("Preparando datos...");
+
+            // Artificial delay for UX "dynamics" so user sees the step
+            await new Promise(r => setTimeout(r, 500));
+
+            setSaveStatus("Sincronizando con la Nube...");
+            const success = await storageService.saveDataStageReport(report);
+
+            setSaveStatus("Finalizando...");
+            setLoading(false);
+            setSaveStatus("");
+
+            if (success) {
+                alert(existingReport ? "✅ Reporte actualizado correctamente." : "✅ Reporte guardado en el historial.");
+            } else {
+                throw new Error("La operación de guardado retornó falso.");
+            }
+        } catch (e) {
+            setLoading(false);
+            setSaveStatus("");
+            console.error("Save Error:", e);
+            alert("❌ Error al guardar el reporte: " + (e instanceof Error ? e.message : "Error desconocido o límite de tamaño excedido. Intenta con menos archivos."));
+        }
+    };
+
+    const loadReport = async (report: DataStageReport) => {
+        if (window.confirm(`¿Cargar visualización del reporte "${report.name}"?`)) {
+            setLoading(true);
+            try {
+                let finalRecords = report.records;
+                let finalRawFiles = report.rawFiles;
+
+                // Check if it's a "Pointer" report (Big Data in Storage)
+                if (report.records.length === 0 && report.storageUrl) {
+                    try {
+                        const response = await fetch(report.storageUrl);
+                        if (!response.ok) throw new Error("Error fetching storage file");
+                        const fullReport = await response.json() as DataStageReport;
+                        finalRecords = fullReport.records;
+                        finalRawFiles = fullReport.rawFiles;
+                    } catch (fetchErr) {
+                        console.error("Error fetching full report from storage", fetchErr);
+                        alert("Error al descargar el reporte completo del servidor.");
+                        setLoading(false);
+                        return;
+                    }
+                }
+
+                setData(finalRecords);
+                setRawFiles(finalRawFiles);
+                setCurrentFileName(report.name);
+
+                // Also update current session draft so it persists if page reloads
+                await storageService.saveDraftDataStage({
+                    records: finalRecords,
+                    rawFiles: finalRawFiles,
+                    fileName: report.name,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (e) {
+                console.error(e);
+                alert("Error cargando reporte.");
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    const deleteReport = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (window.confirm("¿Estás seguro de eliminar este reporte del historial permanentemente?")) {
+            await storageService.deleteDataStageReport(id);
+        }
+    };
+
+    return (
+        <div className="space-y-6 relative">
+            <div>
                 <h1 className="text-2xl font-bold text-slate-800">Data Stage (Aduanas)</h1>
                 <p className="text-slate-500">Procesamiento y análisis de archivos M3 del SAT/VUCEM.</p>
-             </div>
-             {data && (
-                <div className="flex gap-2">
-                    <input 
-                        type="file" 
-                        ref={hiddenInputRef} 
-                        className="hidden" 
-                        accept=".zip" 
-                        onChange={(e) => {
-                            if (e.target.files && e.target.files[0]) {
-                                handleFileSelect(e.target.files[0]);
-                            }
-                            e.target.value = ''; // Reset input to allow selecting same file
-                        }}
-                    />
-                    <button 
-                        onClick={handleSaveReport}
-                        className="text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors font-medium"
-                    >
-                        <Save className="w-4 h-4" />
-                        Guardar en Historial
-                    </button>
-                    <button 
-                        onClick={() => hiddenInputRef.current?.click()}
-                        className="text-sm text-slate-500 hover:text-blue-600 bg-white border border-slate-200 hover:bg-blue-50 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"
-                        title="Cargar un nuevo archivo reemplazando los datos actuales"
-                    >
-                        <RefreshCcw className="w-4 h-4" />
-                        Cargar Otro Archivo
-                    </button>
-                    <button 
+            </div>
+            <div className="flex gap-2">
+                <input
+                    type="file"
+                    ref={hiddenInputRef}
+                    className="hidden"
+                    accept=".zip"
+                    multiple
+                    onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                            handleFileSelect(e.target.files);
+                        }
+                        e.target.value = ''; // Reset input to allow selecting same file
+                    }}
+                />
+                <button
+                    onClick={handleSaveReport}
+                    disabled={!data || data.length === 0}
+                    className={`text-sm border px-3 py-2 rounded-lg flex items-center gap-2 transition-colors font-medium ${(!data || data.length === 0)
+                        ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                        : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                        }`}
+                >
+                    <Save className="w-4 h-4" />
+                    Guardar en Historial
+                </button>
+                <button
+                    onClick={() => hiddenInputRef.current?.click()}
+                    className="text-sm text-slate-500 hover:text-blue-600 bg-white border border-slate-200 hover:bg-blue-50 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                    title="Cargar un nuevo archivo"
+                >
+                    <RefreshCcw className="w-4 h-4" />
+                    {data && data.length > 0 ? 'Cargar Otro Archivo' : 'Cargar Archivo'}
+                </button>
+                {(data && data.length > 0) && (
+                    <button
                         onClick={handleReset}
                         className="text-sm text-red-500 hover:text-red-700 bg-white border border-red-200 hover:bg-red-50 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"
-                        title="Cerrar vista actual"
+                        title="Limpiar vista"
                     >
                         <Trash2 className="w-4 h-4" />
                     </button>
-                </div>
-              )}
-          </div>
-
-        {!data ? (
-          <div className="max-w-4xl mx-auto mt-8 space-y-12">
-            
-            {/* Upload Section */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-              <FileUpload onFileSelect={handleFileSelect} isProcessing={loading} />
-              {error && (
-                <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg text-sm text-center font-medium border border-red-100">
-                  {error}
-                </div>
-              )}
+                )}
             </div>
 
-            {/* History Section */}
-            {savedReports.length > 0 && (
-                <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-slate-700 flex items-center gap-2">
-                        <Archive size={20} className="text-blue-500" />
-                        Historial de Reportes Guardados
-                    </h3>
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100 overflow-hidden">
-                        {savedReports.map((report) => (
-                            <div 
-                                key={report.id} 
-                                onClick={() => loadReport(report)}
-                                className="p-4 flex items-center justify-between hover:bg-slate-50 cursor-pointer transition-colors group"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
-                                        <FileText size={20} />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-medium text-slate-800">{report.name}</h4>
-                                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                                            <span className="flex items-center gap-1">
-                                                <Calendar size={12} />
-                                                {new Date(report.timestamp).toLocaleDateString()}
-                                            </span>
-                                            <span>•</span>
-                                            <span>{report.stats.pedimentosCount} Pedimentos</span>
-                                            <span>•</span>
-                                            <span>{report.stats.filesProcessed} Archivos</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <button 
-                                        onClick={(e) => deleteReport(report.id, e)}
-                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                                        title="Eliminar reporte"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                    <ChevronRight className="text-slate-300 group-hover:text-blue-500 transition-colors" size={20} />
-                                </div>
-                            </div>
-                        ))}
+            <div className="relative">
+                {loading && (
+                    <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-xl">
+                        <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
+                        <h3 className="text-xl font-bold text-slate-800">Procesando Nuevo Archivo...</h3>
+                        <p className="text-slate-500">Actualizando dashboard y resumen</p>
                     </div>
-                </div>
-            )}
-
-            {/* Features Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center pt-4">
-                <div className="p-6 bg-white rounded-xl border border-slate-100 shadow-sm">
-                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-                        <span className="font-bold text-lg">501</span>
-                    </div>
-                    <h3 className="font-semibold text-slate-900">Datos Generales</h3>
-                    <p className="text-sm text-slate-500 mt-2">Procesamiento automático de fechas, tipos de cambio y claves de pedimento.</p>
-                </div>
-                <div className="p-6 bg-white rounded-xl border border-slate-100 shadow-sm">
-                    <div className="w-12 h-12 bg-green-100 text-green-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-                        <span className="font-bold text-lg">551</span>
-                    </div>
-                    <h3 className="font-semibold text-slate-900">Partidas y Mercancías</h3>
-                    <p className="text-sm text-slate-500 mt-2">Desglose detallado por fracción arancelaria y valores comerciales.</p>
-                </div>
-                <div className="p-6 bg-white rounded-xl border border-slate-100 shadow-sm">
-                    <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-                        <span className="font-bold text-lg">AI</span>
-                    </div>
-                    <h3 className="font-semibold text-slate-900">Análisis Inteligente</h3>
-                    <p className="text-sm text-slate-500 mt-2">Integramos Gemini para detectar tendencias y resumir tus operaciones.</p>
-                </div>
+                )}
+                {/* Always Show Dashboard, even if empty */}
+                <DataStageDashboard data={data || []} rawFiles={rawFiles} onSync={handleSync} />
             </div>
-          </div>
-        ) : (
-          <div className="relative">
-              {loading && (
-                  <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-xl">
-                      <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-                      <h3 className="text-xl font-bold text-slate-800">Procesando Nuevo Archivo...</h3>
-                      <p className="text-slate-500">Actualizando dashboard y resumen</p>
-                  </div>
-              )}
-              <DataStageDashboard data={data} rawFiles={rawFiles} onSync={handleSync} />
-          </div>
-        )}
-      </div>
-  );
+        </div >
+    );
 };

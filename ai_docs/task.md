@@ -22,6 +22,16 @@
 - [x] Debug Data Visibility (Customs/Equipment not showing data) <!-- id: 15 -->
 - [x] Verify data propagation (Pre-Alert -> Tracking/Customs/Equipment) <!-- id: 14 -->
 
+# Task: Inland Freight & Invoice Control Enhancements
+- [x] Implement Extraction Review Modal (Edit BL/Container before save) <!-- id: 20 -->
+- [x] Add 'Currency' column to Invoice Table and Review Modal <!-- id: 21 -->
+- [x] Update Date Logic to use 'FechaTimbrado' (Robust Regex) <!-- id: 22 -->
+- [x] Map XML Description to Comments field (Robust Regex + Display) <!-- id: 23 -->
+- [x] Fix persistence logic to prevent Comments overwrite <!-- id: 24 -->
+- [x] Implement 'Type' Column (Review Modal, Table, Edit Modal) <!-- id: 25 -->
+- [x] Fix 'Type' persistence by adding legacy options to legacy data <!-- id: 26 -->
+- [x] Implement 'Type' Filter with Legacy Support <!-- id: 27 -->
+
 # Task: Deployment & Verification
 
 - [x] Build application for production (`npm run build`) <!-- id: 16 -->

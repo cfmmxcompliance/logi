@@ -6,7 +6,7 @@ import { PDFDocument } from 'pdf-lib';
 // Senior Frontend Engineer: Use GoogleGenAI with the recommended direct API key access.
 // Senior Frontend Engineer: Use GoogleGenAI with the recommended direct API key access.
 const getClient = () => {
-  const apiKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || process.env.API_KEY;
+  const apiKey = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GEMINI_API_KEY) || process.env.API_KEY;
   if (!apiKey) {
     console.error("CRITICAL: Gemini API Key is missing! Check .env.local and VITE_GEMINI_API_KEY");
     throw new Error("API Key not found");
@@ -405,6 +405,38 @@ export const geminiService = {
     } catch (error) {
       console.error("Gemini Pedimento Extraction Error", error);
       throw new Error("Failed to extract pedimento");
+    }
+  },
+
+  // Senior Frontend Engineer: Generic "Learning" Mode - Extracts any/all K-V pairs found.
+  analyzeDocumentStructure: async (base64Data: string, mimeType: string = 'application/pdf'): Promise<Record<string, any>> => {
+    try {
+      const ai = getClient();
+      const prompt = `
+        Analyze this document (image or PDF).
+        I want to "learn" the structure of this document.
+        Extract ALL visible fields as key-value pairs.
+        
+        Rules:
+        1. Identify labels and their corresponding values.
+        2. If you see a table, extract it as an array of objects.
+        3. Return a FLAT JSON object where possible, but use nested objects for distinct sections (e.g. "shipper", "consignee", "lineItems").
+        4. Do NOT try to force it into a specific schema. Just tell me what you see.
+        5. Return ONLY JSON.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash-exp',
+        contents: {
+          parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
+        },
+        config: { responseMimeType: 'application/json' }
+      });
+
+      return JSON.parse(cleanJson(response.text || '{}'));
+    } catch (error) {
+      console.error("Gemini Structure Analysis Error", error);
+      throw new Error("Failed to analyze document structure");
     }
   },
 

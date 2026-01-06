@@ -11,13 +11,14 @@ const COLS = {
   EQUIPMENT: 'equipment_tracking', CUSTOMS: 'customs_clearance', PRE_ALERTS: 'pre_alerts',
   COSTS: 'costs', LOGS: 'logs', LOGISTICS: 'logistics', SUPPLIERS: 'suppliers',
   SNAPSHOTS: 'snapshots', DATA_STAGE_REPORTS: 'data_stage_reports',
-  TRAINING: 'training_submissions', INVOICES: 'commercial_invoices'
+  TRAINING: 'training_submissions', INVOICES: 'commercial_invoices', DRAFTS: 'data_stage_drafts'
 };
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
 const INVOICES_BACKUP_KEY = 'logimaster_commercial_invoices_backup';
 const RESTORE_POINTS_KEY = 'logimaster_restore_points';
 const DRAFT_DATA_STAGE_KEY = 'logimaster_datastage_draft';
+
 
 let dbState: any = {
   parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
@@ -134,6 +135,24 @@ export const storageService = {
   getSuppliers: () => dbState.suppliers || [],
   getDataStageReports: () => dbState.dataStageReports || [],
   getInvoiceItems: () => dbState.commercialInvoices || [],
+
+  updateCost: async (cost: CostRecord) => {
+    const id = cost.id || crypto.randomUUID();
+    if (!db) {
+      const idx = dbState.costs.findIndex((c: any) => c.id === id);
+      if (idx !== -1) dbState.costs[idx] = { ...cost, id }; else dbState.costs.push({ ...cost, id });
+      saveLocal(); return;
+    }
+    await setDoc(doc(db, COLS.COSTS, id), cost);
+  },
+
+  deleteCost: async (id: string) => {
+    if (!db) {
+      dbState.costs = dbState.costs.filter((c: any) => c.id !== id);
+      saveLocal(); return;
+    }
+    await deleteDoc(doc(db, COLS.COSTS, id));
+  },
 
   // Commercial Invoices CRUD con Protección de Duplicados
   // Commercial Invoices CRUD (Cloud-Enabled)
@@ -1244,12 +1263,117 @@ export const storageService = {
   },
 
   saveDataStageReport: async (report: DataStageReport) => {
+    // 1. Memory Update
     dbState.dataStageReports.unshift(report);
-    if (!db) saveLocal(); else await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), report);
+
+    // 2. Cloud Persistence with Fallback
+    if (db) {
+      try {
+        await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), report);
+      } catch (e) {
+        console.warn("Failed to save full report to cloud (likely size limit). Retrying without raw files.", e);
+        try {
+          const leanReport = {
+            ...report,
+            rawFiles: report.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
+          }; // Strip heavy content but keep metadata
+          await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), leanReport);
+        } catch (e2) {
+          console.warn("Lean report also failed. Attempting Storage Upload (Unlimited Size)...", e2);
+
+          try {
+            // 3. STORAGE FALLBACK
+            const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+            const { storage } = await import('./firebaseConfig');
+
+            if (!storage) throw new Error("Storage not initialized");
+
+            const jsonString = JSON.stringify(report);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const storagePath = `reports/${report.id}_${Date.now()}.json`;
+            const storageRef = ref(storage, storagePath);
+
+            // Add Timeout (120s) for slower connections
+            const uploadPromise = uploadBytes(storageRef, blob);
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("Timeout: La subida tardó más de 2 minutos.")), 120000)
+            );
+
+            await Promise.race([uploadPromise, timeoutPromise]);
+            const downloadURL = await getDownloadURL(storageRef);
+
+            // Save "Pointer" to Firestore
+            const pointerReport: DataStageReport = {
+              ...report,
+              records: [],
+              rawFiles: [],
+              storageUrl: downloadURL
+            };
+
+            await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), pointerReport);
+            console.log("Saved large report via Storage Link:", downloadURL);
+
+          } catch (e3) {
+            console.error("Critical: Failed to save via Storage fallback.", e3);
+
+            // 4. FINAL FALLBACK: LOCAL STORAGE
+            // 4. FINAL FALLBACK: LOCAL STORAGE
+            try {
+              console.log("Attempting Emergency Local Save...");
+              let localReports = JSON.parse(localStorage.getItem(COLS.DATA_STAGE_REPORTS) || '[]');
+              localReports.unshift(report);
+
+              try {
+                localStorage.setItem(COLS.DATA_STAGE_REPORTS, JSON.stringify(localReports));
+              } catch (quotaEx) {
+                console.warn("LocalStorage Full. Attempting to clear old reports...");
+                // LRU Eviction: Remove oldest reports until it fits
+                while (localReports.length > 1) { // Always keep at least the current one we are trying to save
+                  localReports.pop(); // Remove the last (oldest) item
+                  try {
+                    localStorage.setItem(COLS.DATA_STAGE_REPORTS, JSON.stringify(localReports));
+                    console.log("Space cleared. Saved successfully.");
+                    return true;
+                  } catch (e) {
+                    // Still full, loop again
+                  }
+                }
+
+
+                // If we are here, we have only 1 item (the new report) and it's still too big.
+                // FINAL ATTEMPT: LEAN SAVE (Drop Raw Content)
+                console.warn("Report too big for LocalStorage. Attempting LEAN SAVE (Metadata only)...");
+                try {
+                  const leanReport = {
+                    ...report,
+                    rawFiles: report.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
+                  };
+                  localReports[0] = leanReport; // Replace the full report with the lean version
+                  localStorage.setItem(COLS.DATA_STAGE_REPORTS, JSON.stringify(localReports));
+                  console.log("Saved LEAN report to LocalStorage.");
+                  return true;
+                } catch (leanErr) {
+                  throw quotaEx; // Even lean is too big? Then really fail.
+                }
+              } // Close catch (quotaEx) logic
+
+
+              console.log("Saved to LocalStorage as emergency fallback.");
+              return true; // Consider it a success (locally)
+            } catch (e4) {
+              console.error("Local Storage also full/failed", e4);
+              throw new Error(`Fallo total: No se pudo subir a la nube (Timeout/Red) ni guardar localmente (Espacio lleno). Intenta con menos archivos.`);
+            }
+          } // Close catch (e3) - Storage Fallback Fail
+        } // Close try - Cloud Upload
+
+      } // Close catch (e) - Lean Cloud Fail
+    } else {
+      saveLocal();
+    }
     return true;
   },
 
-  // Senior Frontend Engineer: Implemented missing deleteDataStageReport method.
   deleteDataStageReport: async (id: string) => {
     if (!db) {
       dbState.dataStageReports = dbState.dataStageReports.filter((r: any) => r.id !== id);
@@ -1259,19 +1383,171 @@ export const storageService = {
     await deleteDoc(doc(db, COLS.DATA_STAGE_REPORTS, id));
   },
 
-  // Senior Frontend Engineer: Implemented missing saveLogisticsData method.
   saveLogisticsData: async (data: any[], onProgress?: (p: number) => void) => {
     dbState.logistics = data;
     if (onProgress) onProgress(1);
     saveLocal();
   },
 
-  saveDraftDataStage: (session: DataStageSession) => localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(session)),
-  getDraftDataStage: () => {
-    const s = localStorage.getItem(DRAFT_DATA_STAGE_KEY);
-    return s ? JSON.parse(s) : null;
+  saveDraftDataStage: async (session: DataStageSession) => {
+    // 1. Try LocalStorage (Speed)
+    try {
+      localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(session));
+    } catch (e) {
+      console.warn("Draft LocalStorage Full. Clearing old Reports to make space...");
+      try {
+        // Try to free space from Reports to save the Draft (Priority: Current Work > Old History)
+        let localReports = JSON.parse(localStorage.getItem(COLS.DATA_STAGE_REPORTS) || '[]');
+        while (localReports.length > 0) {
+          localReports.pop(); // Remove oldest
+          localStorage.setItem(COLS.DATA_STAGE_REPORTS, JSON.stringify(localReports));
+          try {
+            localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(session));
+            console.log("Draft saved after clearing history.");
+            return; // Success
+          } catch (retryErr) {
+            // Continue loop
+          }
+        }
+        // If reports empty and still fails, try lean draft
+        throw e;
+      } catch (e2) {
+        console.warn("Still full even after clearing history. Attempting lean save...");
+        try {
+          const leanSession = {
+            ...session,
+            rawFiles: session.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
+          };
+          localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(leanSession));
+        } catch (e3) {
+          console.error("Local persistence failed completely", e3);
+        }
+      }
+    }
+
+    // 2. Sync to Cloud (Unlimited* Storage)
+    if (db) {
+      try {
+        // Firestore has 1MB limit per document too!
+        // We might need to be careful here. If rawFiles are huge, Firestore will also fail.
+        // For now, let's try.
+        await setDoc(doc(db, COLS.DRAFTS, 'current_session'), session);
+      } catch (e) {
+        console.warn("Failed to sync draft to cloud", e);
+        // If Document too large, try saving without rawFiles
+        try {
+          const leanSession = {
+            ...session,
+            rawFiles: session.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
+          };
+          await setDoc(doc(db, COLS.DRAFTS, 'current_session'), leanSession);
+        } catch (e2) {
+          console.warn("Lean draft also failed. Attempting Storage Upload (Unlimited Size)...", e2);
+
+          try {
+            // 3. STORAGE FALLBACK FOR DRAFTS
+            const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+            const { storage } = await import('./firebaseConfig');
+
+            if (!storage) throw new Error("Storage not initialized");
+
+            const jsonString = JSON.stringify(session);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            // Use a fixed path for current_session to overwrite properly
+            const storagePath = `drafts/current_session_${Date.now()}.json`;
+            const storageRef = ref(storage, storagePath);
+
+            // Timeout 120s
+            const uploadPromise = uploadBytes(storageRef, blob);
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("Timeout: La subida del borrador tardó demasiado.")), 120000)
+            );
+
+            await Promise.race([uploadPromise, timeoutPromise]);
+            const downloadURL = await getDownloadURL(storageRef);
+
+            // Save "Pointer" to Firestore
+            const pointerSession: DataStageSession = {
+              ...session,
+              records: [],
+              rawFiles: [],
+              storageUrl: downloadURL
+            } as any; // Cast safely if type check strictness varies
+
+            await setDoc(doc(db, COLS.DRAFTS, 'current_session'), pointerSession);
+            console.log("Saved large draft via Storage Link:", downloadURL);
+
+          } catch (e3) {
+            console.error("Critical: Failed to save draft via Storage fallback.", e3);
+            // Silent fail for drafts to not block UI, but log it.
+          }
+        }
+      }
+    }
   },
-  clearDraftDataStage: () => localStorage.removeItem(DRAFT_DATA_STAGE_KEY),
+
+  getDraftDataStage: async (): Promise<DataStageSession | null> => {
+    // 1. Get Local Data (Fast/Offline)
+    const localStr = localStorage.getItem(DRAFT_DATA_STAGE_KEY);
+    const localDraft: DataStageSession | null = localStr ? JSON.parse(localStr) : null;
+
+    // 2. Try Cloud (If available)
+    if (db) {
+      try {
+        const snap = await getDoc(doc(db, COLS.DRAFTS, 'current_session'));
+        if (snap.exists()) {
+          const cloudDraft = snap.data() as DataStageSession;
+
+          // Conflict Resolution: Use the latest
+          const localTime = localDraft?.timestamp ? new Date(localDraft.timestamp).getTime() : 0;
+          const cloudTime = cloudDraft.timestamp ? new Date(cloudDraft.timestamp).getTime() : 0;
+
+          if (cloudTime > localTime) {
+            console.log("Using Cloud Draft (Newer)");
+
+            // HYDRATE IF POINTER
+            let finalDraft = cloudDraft;
+            if ((cloudDraft as any).storageUrl && cloudDraft.records.length === 0) {
+              try {
+                console.log("Hydrating draft from storage...", (cloudDraft as any).storageUrl);
+                const res = await fetch((cloudDraft as any).storageUrl);
+                if (res.ok) {
+                  finalDraft = await res.json();
+                }
+              } catch (err) {
+                console.error("Failed to hydrate draft from storage", err);
+                // Fallback to local if hydration fails but local exists? 
+                // Or return empty to avoid inconsistency.
+                // If hydration fails, we probably shouldn't return a broken empty draft.
+                if (localDraft) return localDraft;
+              }
+            }
+
+            localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(finalDraft));
+            return finalDraft;
+          } else {
+            console.log("Using Local Draft (Newer or Equal)");
+            // Determine if we should push local to cloud? 
+            // Maybe, but let's just return local for speed and safety.
+            return localDraft;
+          }
+        }
+      } catch (e) {
+        console.warn("Cloud draft fetch failed", e);
+      }
+    }
+
+    return localDraft;
+  },
+
+  clearDraftDataStage: async () => {
+    localStorage.removeItem(DRAFT_DATA_STAGE_KEY);
+    if (db) {
+      try {
+        await deleteDoc(doc(db, COLS.DRAFTS, 'current_session'));
+      } catch (e) { console.error(e); }
+    }
+  },
 
   // 2. Método de Descarga Universal (Solución al error de Chrome)
   // Reemplaza tu método backup por este más robusto
@@ -1395,9 +1671,10 @@ export const storageService = {
       // 4. Save to separate key
       localStorage.setItem(RESTORE_POINTS_KEY, JSON.stringify(updated));
       console.log(`Snapshot created: ${action}`);
+      return true;
     } catch (e) {
       console.warn("Safety Net: Snapshot creation failed", e);
-      // Non-blocking
+      return false;
     }
   },
 
@@ -1518,5 +1795,7 @@ export const storageService = {
       }
       throw error;
     }
-  }
+  },
+
+
 };

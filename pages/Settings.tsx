@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { storageService } from '../services/storageService.ts';
-import { Database, Trash2, AlertTriangle, History, RotateCcw, Save, Users, Shield, Play } from 'lucide-react';
+import { Database, Trash2, AlertTriangle, History, RotateCcw, Save, Users, Shield, Play, Key } from 'lucide-react';
 import { RestorePoint, UserRole, User } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { authService } from '../services/authService.ts';
@@ -130,34 +130,84 @@ export const Settings = () => {
                                             <span>{u.name}</span>
                                         </td>
                                         <td className="px-6 py-3">
-                                            <select
-                                                value={u.role}
-                                                onChange={async (e) => {
-                                                    const newRole = e.target.value as UserRole;
-                                                    if (window.confirm(`Change role of ${u.username} to ${newRole}?`)) {
-                                                        // @ts-ignore
-                                                        const success = await authService.updateUserRole(u.email || u.username, newRole); // Use email (doc ID) if available
-                                                        if (success) {
-                                                            alert("Role updated!");
-                                                            // Refresh list
+                                            <div className="flex items-center gap-2">
+                                                <select
+                                                    value={u.role}
+                                                    onChange={async (e) => {
+                                                        const newRole = e.target.value as UserRole;
+                                                        if (window.confirm(`Change role of ${u.username} to ${newRole}?`)) {
                                                             // @ts-ignore
-                                                            const updated = await authService.getUsers();
-                                                            setSystemUsers(updated);
-                                                        } else {
-                                                            alert("Failed to update role.");
+                                                            const success = await authService.updateUserRole(u.email || u.username, newRole); // Use email (doc ID) if available
+                                                            if (success) {
+                                                                alert("Role updated!");
+                                                                // Refresh list
+                                                                // @ts-ignore
+                                                                const updated = await authService.getUsers();
+                                                                setSystemUsers(updated);
+                                                            } else {
+                                                                alert("Failed to update role.");
+                                                            }
                                                         }
-                                                    }
-                                                }}
-                                                className="border-slate-200 rounded text-xs font-medium py-1 px-2 bg-white"
-                                            >
-                                                <option value={UserRole.ADMIN}>Admin</option>
-                                                <option value={UserRole.EDITOR}>Editor</option>
-                                                <option value={UserRole.OPERATOR}>Operator</option>
-                                                <option value={UserRole.VIEWER}>Viewer</option>
-                                            </select>
+                                                    }}
+                                                    className={`border-slate-200 rounded text-xs font-medium py-1 px-2 bg-white ${u.role === UserRole.PENDING ? 'border-amber-300 text-amber-700 bg-amber-50' : ''}`}
+                                                >
+                                                    <option value={UserRole.ADMIN}>Admin</option>
+                                                    <option value={UserRole.EDITOR}>Editor</option>
+                                                    <option value={UserRole.OPERATOR}>Operator</option>
+                                                    <option value={UserRole.VIEWER}>Viewer</option>
+                                                    <option value={UserRole.PENDING}>Pending</option>
+                                                </select>
+                                                {u.role === UserRole.PENDING && (
+                                                    <span className="animate-pulse w-2 h-2 rounded-full bg-amber-500" title="Waiting for Approval"></span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-3 text-right">
-                                            <span className="text-xs text-slate-400">Saved automatically</span>
+                                            <div className="flex items-center justify-end gap-3">
+                                                {u.role === UserRole.PENDING ? (
+                                                    <span className="text-xs text-amber-600 font-bold">Needs Approval</span>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400">Active</span>
+                                                )}
+
+                                                <button
+                                                    onClick={async () => {
+                                                        if (window.confirm(`Force password reset for ${u.email || u.username}?\n\nThey will be required to set a new password on their next login.`)) {
+                                                            try {
+                                                                // @ts-ignore
+                                                                await authService.requestPasswordReset(u.email || u.username);
+                                                                alert("Reset requested. User must set a new password on next login.");
+                                                            } catch (e) {
+                                                                alert("Failed to request reset.");
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="text-slate-400 hover:text-blue-600 transition-colors p-1"
+                                                    title="Force Password Reset"
+                                                >
+                                                    <Key size={16} />
+                                                </button>
+
+                                                <button
+                                                    onClick={async () => {
+                                                        if (window.confirm(`Are you sure you want to DELETE user '${u.username}'? This cannot be undone.`)) {
+                                                            // @ts-ignore
+                                                            const success = await authService.deleteUser(u.email || u.username);
+                                                            if (success) {
+                                                                // @ts-ignore
+                                                                const updated = await authService.getUsers();
+                                                                setSystemUsers(updated);
+                                                            } else {
+                                                                alert("Failed to delete user.");
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="text-slate-400 hover:text-red-600 transition-colors p-1"
+                                                    title="Delete User"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

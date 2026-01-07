@@ -11,6 +11,19 @@ export interface CFDIResult {
     description: string;
     extractedBl?: string;
     extractedContainer?: string;
+    items?: {
+        description: string;
+        quantity: number;
+        unit: string;
+        unitValue: number;
+        amount: number;
+        claveProdServ: string;
+        claveUnidad: string;
+    }[];
+    taxDetails?: {
+        totalTransferred: number;
+        totalRetained: number;
+    };
 }
 
 export const parseCFDI = async (file: File): Promise<CFDIResult> => {
@@ -95,20 +108,54 @@ export const parseCFDI = async (file: File): Promise<CFDIResult> => {
     const invoiceNo = (serie + folio) || uuid.split('-')[0]; // Fallback to partial UUID if no folio
 
     // 6. Get Description (Concepto)
-    // 6. Get Description (Concepto) - Robust Loop
+    // 6. Get Description (Concepto) & Detailed Items
     let description = "";
     const conceptosList = xmlDoc.getElementsByTagName("cfdi:Concepto");
     const conceptosFallback = xmlDoc.getElementsByTagName("Concepto");
-
-    // Merge lists or pick best
     const concepts = conceptosList.length > 0 ? conceptosList : conceptosFallback;
 
+    const items: { description: string; quantity: number; unit: string; unitValue: number; amount: number; claveProdServ: string; claveUnidad: string; }[] = [];
+
     if (concepts.length > 0) {
-        // Try to get "Descripcion" or "descripcion"
+        // Primary Description (First Item)
         description = concepts[0].getAttribute("Descripcion") || concepts[0].getAttribute("descripcion") || "";
+
+        // Extract All Items
+        for (let i = 0; i < concepts.length; i++) {
+            const c = concepts[i];
+            items.push({
+                description: c.getAttribute("Descripcion") || c.getAttribute("descripcion") || "",
+                quantity: parseFloat(c.getAttribute("Cantidad") || "0"),
+                unit: c.getAttribute("Unidad") || "", // Often "Unidad" is human readable, ClaveUnidad is code
+                unitValue: parseFloat(c.getAttribute("ValorUnitario") || "0"),
+                amount: parseFloat(c.getAttribute("Importe") || "0"),
+                claveProdServ: c.getAttribute("ClaveProdServ") || "",
+                claveUnidad: c.getAttribute("ClaveUnidad") || ""
+            });
+        }
     }
 
-    console.log("CFDI Parser Debug (Desc):", { description, conceptsCount: concepts.length });
+    // 7. Extract Taxes (Global Summary)
+    // Try to find global 'Impuestos' node (usually at end of Comprobante)
+    let totalTransferred = 0;
+    let totalRetained = 0;
+
+    // Note: There might be multiple "Impuestos" nodes (one per Concepto, one Global).
+    // We strictly want the Global one which usually has "TotalImpuestos..." attributes.
+    // Iterating to find the one with totals.
+    const impuestosNodes = xmlDoc.getElementsByTagName("cfdi:Impuestos");
+    const impuestosFallbackNodes = xmlDoc.getElementsByTagName("Impuestos");
+    const allImpuestos = [...Array.from(impuestosNodes), ...Array.from(impuestosFallbackNodes)];
+
+    for (const imp of allImpuestos) {
+        if (imp.hasAttribute("TotalImpuestosTrasladados") || imp.hasAttribute("TotalImpuestosRetenidos")) {
+            totalTransferred = parseFloat(imp.getAttribute("TotalImpuestosTrasladados") || "0");
+            totalRetained = parseFloat(imp.getAttribute("TotalImpuestosRetenidos") || "0");
+            break; // Found the global summary
+        }
+    }
+
+    console.log("CFDI Parser Debug (Desc & Items):", { description, itemsCount: items.length, taxes: { totalTransferred, totalRetained } });
 
     // Fallback: Regex on Raw Text (User Request: "Same as Date")
     if (!description || description.includes("No Desc")) {
@@ -178,6 +225,8 @@ export const parseCFDI = async (file: File): Promise<CFDIResult> => {
         receiverName,
         description,
         extractedBl: extractedBl.toUpperCase(),
-        extractedContainer: extractedContainer.toUpperCase()
+        extractedContainer: extractedContainer.toUpperCase(),
+        items,
+        taxDetails: { totalTransferred, totalRetained }
     };
 };

@@ -1,24 +1,21 @@
-
+import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import { User, UserRole } from '../types.ts';
 // @ts-ignore
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, orderBy, deleteField } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 
 export const authService = {
-    // Hybrid Login: Still mocks password check (accepts any), but fetches ROLE from Real Database
+    // Hybrid Login with forced local password check capability
     login: async (email: string, password: string): Promise<User | null> => {
         // Simulate network delay
         await new Promise(r => setTimeout(r, 500));
 
-        // 1. Construct User Object Base
         const username = email.split('@')[0];
-        let role = UserRole.VIEWER; // Default safety role
+        let role: UserRole | null = null;
 
         if (!db) {
-            console.warn("⚠️ Firestore not available. Falling back to Mock Logic.");
-            if (email.includes('admin')) role = UserRole.ADMIN;
-            else if (email.includes('ops') || email.includes('operator')) role = UserRole.OPERATOR;
-            else if (email.includes('edit')) role = UserRole.EDITOR;
+            console.warn("⚠️ Firestore not available. Login Restricted.");
+            throw { code: 'auth/network-request-failed', message: 'Database unavailable.' };
         } else {
             try {
                 // 2. Check if user exists in Firestore
@@ -26,44 +23,44 @@ export const authService = {
                 const userSnap = await getDoc(userRef);
 
                 if (userSnap.exists()) {
-                    // User exists: Load their Assigned Role
                     const data = userSnap.data();
                     role = data.role as UserRole;
 
-                    // FAILSAFE: If it's an 'admin' email but has wrong role (e.g. accidentally created as Viewer), fix it.
+                    // 1. Check for Forced Password Reset Flag
+                    // This takes precedence over password check (so they can reset even if they don't know the old one)
+                    if (data.requireReset) {
+                        console.warn(`⚠️ User ${email} requires password reset.`);
+                        throw { code: 'auth/new-password-required', message: 'Admin requested password reset.' };
+                    }
+
+                    // 2. Password Check (If password exists in DB)
+                    // If DB has no password field, we allow access (Legacy/Mock Compatibility)
+                    if (data.password && data.password !== password) {
+                        console.warn(`⛔ Access Denied: User ${email} entered wrong password.`);
+                        throw { code: 'auth/wrong-password', message: 'Invalid password.' };
+                    }
+
+                    // FAILSAFE: Admin Elevation logic
                     if (email.toLowerCase().includes('admin') && role !== UserRole.ADMIN) {
                         console.warn(`⚠️ Detected Admin Email '${email}' with '${role}' role. Elevating to ADMIN.`);
                         await updateDoc(userRef, { role: UserRole.ADMIN });
                         role = UserRole.ADMIN;
                     }
 
-                    console.log(`✅ Logged in as ${email} [${role}] (Loaded from DB)`);
+                    console.log(`✅ Logged in as ${email} [${role}]`);
                 } else {
-                    // New User: Auto-Register
-                    // If email contains 'admin', make them Admin immediately.
-                    // If 'ops', make them Editor.
-                    // Otherwise VIEWER.
-                    let initialRole = UserRole.VIEWER;
-                    if (email.toLowerCase().includes('admin')) initialRole = UserRole.ADMIN;
-                    if (email.toLowerCase().includes('admin')) initialRole = UserRole.ADMIN;
-                    else if (email.toLowerCase().includes('ops') || email.toLowerCase().includes('operator')) initialRole = UserRole.OPERATOR;
-                    else if (email.toLowerCase().includes('edit')) initialRole = UserRole.EDITOR;
-
-                    console.log(`🆕 New User ${email}. Registering as ${initialRole}.`);
-                    await setDoc(userRef, {
-                        email,
-                        username,
-                        role: initialRole,
-                        createdAt: new Date().toISOString(),
-                        lastLogin: new Date().toISOString()
-                    });
-                    role = initialRole;
+                    console.warn(`⛔ Access Denied: User ${email} not found.`);
+                    throw { code: 'auth/user-not-found', message: 'User not registered.' };
                 }
             } catch (e) {
                 console.error("Auth Error (Firestore):", e);
-                // Fallback if DB fails
-                role = UserRole.VIEWER;
+                throw e;
             }
+        }
+
+        if (!role || role === UserRole.PENDING) {
+            console.error("⛔ Security Alert: Role not assigned or Pending.");
+            throw { code: 'auth/role-pending', message: 'Role verification failed. Pending Approval.' };
         }
 
         const user: User = {
@@ -78,28 +75,96 @@ export const authService = {
     },
 
     register: async (email: string, password: string): Promise<User | null> => {
-        return authService.login(email, password);
+        const username = email.split('@')[0];
+        let role = UserRole.PENDING;
+
+        if (!db) {
+            throw { code: 'auth/network-request-failed', message: 'Database unavailable.' };
+        }
+
+        try {
+            const userRef = doc(db, 'users', email);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+                throw { code: 'auth/email-already-in-use', message: 'User already registered.' };
+            }
+
+            if (email.toLowerCase().includes('admin')) role = UserRole.ADMIN;
+
+            console.log(`🆕 Creating New User ${email}. Registering as ${role}.`);
+            await setDoc(userRef, {
+                email,
+                username,
+                role,
+                password, // SAVE PASSWORD LOCALLY
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString()
+            });
+
+            if (role === UserRole.PENDING) {
+                throw { code: 'auth/signup-success-pending', message: 'Account created. Waiting for approval.' };
+            }
+
+            const user: User = {
+                username,
+                name: username,
+                role,
+                avatarInitials: email.substring(0, 2).toUpperCase()
+            };
+
+            localStorage.setItem('logimaster_user', JSON.stringify(user));
+            return user;
+
+        } catch (e: any) {
+            console.error("Registration Error:", e);
+            throw e;
+        }
     },
 
     logout: async () => localStorage.removeItem('logimaster_user'),
 
     // Admin Features: Read/Write Real Users
     getUsers: async (): Promise<User[]> => {
-        if (!db) return []; // Mock fallback currently in Settings.tsx, this is for real mode
+        if (!db) return [];
 
         try {
             const q = query(collection(db, 'users'));
             const querySnapshot = await getDocs(q);
-            return querySnapshot.docs.map(doc => {
+
+            const uniqueUsers = new Map<string, User>();
+
+            querySnapshot.docs.forEach(doc => {
                 const data = doc.data();
-                return {
-                    username: data.username || data.email,
-                    email: doc.id, // THE KEY IS THE EMAIL (DOC ID)
+                // Normalize username for dedup
+                const rawUsername = data.username || data.email || doc.id;
+                const usernameKey = rawUsername.toLowerCase().trim();
+                const docId = doc.id;
+
+                const userObj: User = {
+                    username: rawUsername,
+                    email: docId, // THE KEY IS THE EMAIL (DOC ID)
                     name: data.username || data.email,
                     role: data.role as UserRole,
                     avatarInitials: (data.email || '??').substring(0, 2).toUpperCase()
                 };
+
+                // Deduplication Logic
+                if (uniqueUsers.has(usernameKey)) {
+                    // Conflict: We have a duplicate.
+                    // Prefer the one with actual EMAIL as ID (contains '@')
+                    const existing = uniqueUsers.get(usernameKey);
+                    if (existing && !existing.email?.includes('@') && docId.includes('@')) {
+                        // Replace legacy ID with Email ID
+                        uniqueUsers.set(usernameKey, userObj);
+                    }
+                } else {
+                    uniqueUsers.set(usernameKey, userObj);
+                }
             });
+
+            return Array.from(uniqueUsers.values());
+
         } catch (e) {
             console.error("Error fetching users:", e);
             return [];
@@ -115,6 +180,69 @@ export const authService = {
         } catch (e) {
             console.error("Error updating role:", e);
             return false;
+        }
+    },
+
+
+    deleteUser: async (email: string) => {
+        if (!db) return false;
+        try {
+            await deleteDoc(doc(db, 'users', email));
+            return true;
+        } catch (e) {
+            console.error("Error deleting user:", e);
+            return false;
+        }
+    },
+
+    // Admin sets flag: User MUST change password next login
+    requestPasswordReset: async (email: string) => {
+        if (!db) return false;
+        try {
+            // We set 'requireReset' to true. 
+            // We DO NOT delete the password, so old credentials ostensibly work until triggered, 
+            // BUT login() logic sees flag and intercepts BEFORE checking password.
+            // Actually, to let them in with ANY password to set a new one, we might want to let the flag override password check.
+            const userRef = doc(db, 'users', email);
+            await updateDoc(userRef, {
+                requireReset: true
+            });
+            return true;
+        } catch (e) {
+            console.error("Error requesting reset:", e);
+            return false;
+        }
+    },
+
+    // User confirms new password
+    confirmPasswordReset: async (email: string, newPassword: string) => {
+        if (!db) return false;
+        try {
+            const userRef = doc(db, 'users', email);
+            await updateDoc(userRef, {
+                password: newPassword,
+                requireReset: false // Clear flag
+            });
+            console.log(`✅ Password updated for ${email}`);
+            return true;
+        } catch (e) {
+            console.error("Error confirming reset:", e);
+            return false;
+        }
+    },
+
+    resetPassword: async (email: string) => {
+        try {
+            const auth = getAuth();
+            await sendPasswordResetEmail(auth, email);
+            console.log(`📧 Password reset email sent to ${email}`);
+            return true;
+        } catch (e: any) {
+            console.error("Error sending reset email:", e);
+            if (e.code === 'auth/user-not-found') {
+                console.warn("User has entry in Firestore but not in Auth. This is expected in Hybrid mode for some users.");
+            }
+            throw e;
         }
     }
 };

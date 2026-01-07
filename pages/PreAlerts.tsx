@@ -80,9 +80,11 @@ export const PreAlerts = () => {
 
         // 2. Filter by Search Text
         if (!filter) return true;
-        const lowerFilter = filter.toLowerCase();
-        return Object.values(r).some(val =>
-            val && typeof val !== 'object' && String(val).toLowerCase().includes(lowerFilter)
+        const searchTerms = filter.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
+        return searchTerms.some(term =>
+            Object.values(r).some(val =>
+                val && typeof val !== 'object' && String(val).toLowerCase().includes(term)
+            )
         );
     });
 

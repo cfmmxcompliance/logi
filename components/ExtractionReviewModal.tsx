@@ -1,30 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, AlertCircle } from 'lucide-react';
-import { CostRecord } from '../types';
+import { CostRecord, Shipment } from '../types';
 
 interface ExtractionReviewModalProps {
     isOpen: boolean;
     items: CostRecord[];
+    shipments: Shipment[];
     onSave: (trimmedItems: CostRecord[]) => void;
     onCancel: () => void;
 }
 
 export const ExtractionReviewModal: React.FC<ExtractionReviewModalProps> = ({
-    isOpen, items, onSave, onCancel
+    isOpen, items, shipments, onSave, onCancel
 }) => {
     const [reviewedItems, setReviewedItems] = useState<CostRecord[]>([]);
 
     useEffect(() => {
         if (isOpen) {
-            // Mantenemos el objeto íntegro (...i)
-            // Force type to empty string to ensure manual selection
-            setReviewedItems(items.map(i => ({
-                ...i,
-                type: i.type || '',
-                aaRef: i.aaRef || '' // Inicializamos aaRef para que el input sea controlado desde el inicio 
-            })));
+            // Initialize items and attempt auto-fill if containers are missing
+            const initialized = items.map(i => {
+                let containers = i.linkedContainer;
+                const cleanBl = (i.extractedBl || '').replace(/[^A-Z0-9]/gi, '');
+
+                // If we have a BL but no containers (or if we want to ensure sync? User said "prerellena")
+                // Typically we only pre-fill if empty to avoid overwriting manual edits, 
+                // but for fresh extractions (isOpen=true), we can be aggressive.
+                if (cleanBl && (!containers || containers.trim() === '')) {
+                    const match = shipments.find(s => s.blNo && s.blNo.replace(/[^A-Z0-9]/gi, '').includes(cleanBl));
+                    if (match && match.containers && match.containers.length > 0) {
+                        containers = match.containers.join(', ');
+                    }
+                }
+
+                return {
+                    ...i,
+                    type: i.type || '',
+                    aaRef: i.aaRef || '',
+                    linkedContainer: containers || ''
+                };
+            });
+            setReviewedItems(initialized);
         }
-    }, [isOpen, items]);
+    }, [isOpen, items, shipments]);
 
     const handleConfirm = () => {
         const missingType = reviewedItems.some(item => !item.type);
@@ -38,14 +55,28 @@ export const ExtractionReviewModal: React.FC<ExtractionReviewModalProps> = ({
     if (!isOpen) return null;
 
     const handleChange = (id: string, field: 'extractedBl' | 'linkedContainer' | 'currency' | 'comments' | 'type' | 'aaRef', value: string) => {
-        setReviewedItems(prev => prev.map(item =>
-            item.id === id ? { ...item, [field]: value } : item
-        ));
+        setReviewedItems(prev => prev.map(item => {
+            if (item.id !== id) return item;
+
+            const updated = { ...item, [field]: value };
+
+            // Auto-lookup if BL changes
+            if (field === 'extractedBl') {
+                const cleanBl = value.replace(/[^A-Z0-9]/gi, '');
+                if (cleanBl.length > 4) { // Only search if meaningful length
+                    const match = shipments.find(s => s.blNo && s.blNo.replace(/[^A-Z0-9]/gi, '').includes(cleanBl));
+                    if (match && match.containers && match.containers.length > 0) {
+                        updated.linkedContainer = match.containers.join(', ');
+                    }
+                }
+            }
+            return updated;
+        }));
     };
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full flex flex-col max-h-[90vh]">
+            <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-full flex flex-col max-h-[90vh]">
 
                 {/* Header */}
                 <div className="bg-white border-b border-slate-100 p-6 flex justify-between items-center bg-gradient-to-r from-blue-50 to-white">
@@ -175,6 +206,65 @@ export const ExtractionReviewModal: React.FC<ExtractionReviewModalProps> = ({
                                     />
                                 </div>
                             </div>
+
+                            {/* XML Detailed Breakdown Table */}
+                            {item.xmlItems && item.xmlItems.length > 0 && (
+                                <div className="mt-6 border rounded-lg overflow-hidden border-slate-200">
+                                    <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
+                                        <h4 className="font-bold text-xs text-slate-600 uppercase">Details from XML</h4>
+                                        <span className="text-xs text-slate-500">{item.xmlItems.length} concepts found</span>
+                                    </div>
+                                    <table className="w-full text-xs text-left">
+                                        <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+                                            <tr>
+                                                <th className="px-3 py-2 w-16 text-center">Qty</th>
+                                                <th className="px-3 py-2 w-24">Unit (SAT)</th>
+                                                <th className="px-3 py-2 w-24">Prod/Serv</th>
+                                                <th className="px-3 py-2">Description</th>
+                                                <th className="px-3 py-2 text-right">Unit Value</th>
+                                                {/* <th className="px-3 py-2 text-center">Taxes</th> */}
+                                                <th className="px-3 py-2 text-right">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 bg-white">
+                                            {item.xmlItems.map((xi, idx) => (
+                                                <tr key={idx} className="hover:bg-slate-50">
+                                                    <td className="px-3 py-2 text-center text-slate-500">{xi.quantity}</td>
+                                                    <td className="px-3 py-2 text-slate-500 truncate max-w-[100px]" title={xi.claveUnidad}>{xi.claveUnidad} - {xi.unit}</td>
+                                                    <td className="px-3 py-2 text-slate-500 font-mono">{xi.claveProdServ}</td>
+                                                    <td className="px-3 py-2 text-slate-700 font-medium">{xi.description}</td>
+                                                    <td className="px-3 py-2 text-right font-mono text-slate-600">${xi.unitValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                    {/* Tax Column could be complex per item, omitting for global summary preference unless specified */}
+                                                    <td className="px-3 py-2 text-right font-mono font-bold text-slate-800">${xi.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        {/* Tax Summary Footer within Table */}
+                                        {item.taxDetails && (
+                                            <tfoot className="bg-slate-50 border-t border-slate-200 font-mono text-xs">
+                                                {item.taxDetails.totalTransferred > 0 && (
+                                                    <tr>
+                                                        <td colSpan={5} className="px-3 py-1 text-right text-slate-500">Total Transferred Taxes (IVA/IEPS):</td>
+                                                        <td className="px-3 py-1 text-right text-slate-700">+${item.taxDetails.totalTransferred.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                    </tr>
+                                                )}
+                                                {item.taxDetails.totalRetained > 0 && (
+                                                    <tr>
+                                                        <td colSpan={5} className="px-3 py-1 text-right text-slate-500">Total Retained Taxes:</td>
+                                                        <td className="px-3 py-1 text-right text-red-600">-${item.taxDetails.totalRetained.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                    </tr>
+                                                )}
+                                                <tr>
+                                                    <td colSpan={5} className="px-3 py-2 text-right font-bold text-slate-700">Total Invoice:</td>
+                                                    <td className="px-3 py-2 text-right font-bold text-emerald-700 border-t border-slate-300">
+                                                        ${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} {item.currency}
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
+                                        )}
+                                    </table>
+                                </div>
+                            )}
 
                             {(!item.extractedBl && !item.linkedContainer) && (
                                 <div className="mt-2 text-xs text-amber-600 flex items-center gap-1">

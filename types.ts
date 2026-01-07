@@ -20,7 +20,8 @@ export enum UserRole {
   EDITOR = 'Editor',     // Write access: Create, Edit, No Delete
   OPERATOR = 'Operator', // Same as Editor (User requested alias)
   CONTROLLER = 'Controller', // Finance & Expense Control
-  VIEWER = 'Viewer'      // Read only
+  VIEWER = 'Viewer',      // Read only
+  PENDING = 'Pending'     // Default for new signups
 }
 
 export interface User {
@@ -37,6 +38,7 @@ export interface Quotation {
   price: number;   // Unit Price or Total (User defined)
   currency: 'USD' | 'MXN';
   lastUpdated: string;
+  validForContainerCount?: number; // Optional: Restrict quote to specific container count (e.g. 1 vs 2)
 }
 
 export interface Supplier {
@@ -52,6 +54,7 @@ export interface Supplier {
   validationStatus?: 'compliant' | 'warning' | 'blacklisted' | 'unchecked';
   status: 'Active' | 'Inactive';
   quotations?: Quotation[]; // New Field for Cost Validation
+  updatedAt?: string;
 }
 
 export interface RawMaterialPart {
@@ -112,6 +115,7 @@ export interface Shipment {
   ataCfm?: string;
   reference: string;
   containers: string[];
+  updatedAt?: string;
 }
 
 export interface VesselTrackingRecord {
@@ -132,6 +136,7 @@ export interface VesselTrackingRecord {
   preAlertDate: string;
   atd: string;
   ataPort: string;
+  updatedAt?: string;
 }
 
 export interface EquipmentTrackingRecord {
@@ -150,6 +155,7 @@ export interface EquipmentTrackingRecord {
   etd: string;
   atd: string;
   etaPort: string;
+  updatedAt?: string;
 }
 
 export interface CustomsClearanceRecord {
@@ -168,6 +174,7 @@ export interface CustomsClearanceRecord {
   truckAppointmentDate: string;
   ataFactory: string;
   eirDate: string;
+  updatedAt?: string;
 }
 
 export interface PreAlertRecord {
@@ -185,6 +192,7 @@ export interface PreAlertRecord {
   invoiceNo: string;
   processed: boolean;
   linkedContainers?: string[];
+  updatedAt?: string;
 }
 
 export interface CostRecord {
@@ -214,6 +222,20 @@ export interface CostRecord {
   bpm?: string; // Optional BPM Number (Manual or Linked)
   aaRef?: string; // New: AA Reference (Only for BROKER)
   submitDate?: string; // New: Date when BPM was assigned
+  updatedAt?: string;
+  xmlItems?: {
+    description: string;
+    quantity: number;
+    unit: string;
+    unitValue: number;
+    amount: number;
+    claveProdServ: string;
+    claveUnidad: string;
+  }[];
+  taxDetails?: {
+    totalTransferred: number;
+    totalRetained: number;
+  };
 }
 
 export interface AuditLog {
@@ -408,4 +430,22 @@ export interface AuditReport {
     difference: number;
   };
   discrepancies: AuditDiscrepancy[];
+}
+
+export interface StorageState {
+  parts: RawMaterialPart[];
+  shipments: Shipment[];
+  vesselTracking: VesselTrackingRecord[];
+  equipmentTracking: EquipmentTrackingRecord[];
+  customsClearance: CustomsClearanceRecord[];
+  preAlerts: PreAlertRecord[];
+  costs: CostRecord[];
+  logs: AuditLog[];
+  snapshots: RestorePoint[];
+  logistics: any[]; // Legacy/Undefined
+  suppliers: Supplier[];
+  dataStageReports: DataStageReport[];
+  trainingSubmissions: any[];
+  commercialInvoices: CommercialInvoiceItem[];
+  dataStageDrafts?: DataStageSession[]; // Optional as it might be lazy loaded
 }

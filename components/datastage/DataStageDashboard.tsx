@@ -21,21 +21,25 @@ const DataStageDashboard: React.FC<DashboardProps> = ({ data, rawFiles, onSync }
     const [selectedFileCode, setSelectedFileCode] = useState<string>(rawFiles[0]?.code || '');
 
     // KPIs
-    const totalValue = data.reduce((acc, curr) => acc + curr.totalValueUsd, 0);
-    const totalWeight = data.reduce((acc, curr) => acc + curr.pesoBruto, 0);
+    // KPIs - Memoized for Performance
+    const totalValue = React.useMemo(() => data.reduce((acc, curr) => acc + curr.totalValueUsd, 0), [data]);
+    const totalWeight = React.useMemo(() => data.reduce((acc, curr) => acc + curr.pesoBruto, 0), [data]);
 
     // KPI Calculation: Count Unique Pedimentos
-    // We use a Set to ensure we are counting distinct Pedimento Numbers declared, not just rows.
-    const uniqueImportPedimentos = new Set(data.filter(r => r.tipoOperacion === '1').map(r => r.pedimento));
-    const totalImports = uniqueImportPedimentos.size;
+    const totalImports = React.useMemo(() => {
+        const unique = new Set(data.filter(r => r.tipoOperacion === '1').map(r => r.pedimento));
+        return unique.size;
+    }, [data]);
 
-    const uniqueExportPedimentos = new Set(data.filter(r => r.tipoOperacion === '2').map(r => r.pedimento));
-    const totalExports = uniqueExportPedimentos.size;
+    const totalExports = React.useMemo(() => {
+        const unique = new Set(data.filter(r => r.tipoOperacion === '2').map(r => r.pedimento));
+        return unique.size;
+    }, [data]);
 
-    const filteredData = data.filter(r =>
+    const filteredData = React.useMemo(() => data.filter(r =>
         r.pedimento.includes(searchTerm) ||
         r.invoices.some(i => i.proveedor.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    ), [data, searchTerm]);
 
     const selectedRawFile = rawFiles.find(f => f.code === selectedFileCode);
     const currentSchema = selectedRawFile ? DATA_STAGE_SCHEMAS[selectedRawFile.code] : null;

@@ -51,12 +51,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <SidebarItem to="/commercial-invoices" icon={FileText} label={sidebarOpen ? "CI Extractor" : ""} />
           <SidebarItem to="/ccp-builder" icon={Truck} label={sidebarOpen ? "CCP Builder" : ""} />
 
-          {(user?.role === 'Admin' || user?.role === 'Controller') && (
-            <SidebarItem to="/controller" icon={Settings} label={sidebarOpen ? "Inland Freight" : ""} />
+          {(user?.role === 'Admin' || user?.role === 'Controller' || user?.role === 'Editor') && (
+            <SidebarItem to="/controller" icon={Settings} label={sidebarOpen ? "Payments" : ""} />
           )}
 
           {/* RBAC: Restricted Areas */}
-          {(user?.role === 'Admin' || user?.role === 'Editor') && (
+          {/* RBAC: Restricted Areas */}
+          {user?.role === 'Admin' && (
             <>
               <SidebarItem to="/data-stage" icon={Scale} label={sidebarOpen ? "Data Stage (SAT)" : ""} />
               <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
@@ -64,9 +65,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           )}
 
           {user?.role === 'Admin' && (
+            <SidebarItem to="/documents" icon={FileText} label={sidebarOpen ? "Smart Docs (AI)" : ""} />
+          )}
+
+          {(user?.role === 'Admin' || user?.role === 'Editor') && (
+            <SidebarItem to="/suppliers" icon={Users} label={sidebarOpen ? "Partners" : ""} />
+          )}
+          {user?.role === 'Admin' && (
             <>
-              <SidebarItem to="/documents" icon={FileText} label={sidebarOpen ? "Smart Docs (AI)" : ""} />
-              <SidebarItem to="/suppliers" icon={Users} label={sidebarOpen ? "Partners" : ""} />
               <SidebarItem to="/reports" icon={BarChart3} label={sidebarOpen ? "Reports & KPIs" : ""} />
               <SidebarItem to="/settings" icon={Settings} label={sidebarOpen ? "Settings" : ""} />
             </>

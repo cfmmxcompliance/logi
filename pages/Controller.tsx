@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { storageService } from '../services/storageService.ts';
 import { CostRecord, Supplier, Shipment } from '../types.ts';
-import { Search, DollarSign, Calendar, CheckCircle, AlertCircle, XCircle, Filter, Download, ArrowUpRight, ArrowDownLeft, Upload, FileText, Trash2, Plus, Database, RefreshCw } from 'lucide-react';
+import { Search, DollarSign, Calendar, CheckCircle, AlertCircle, XCircle, Filter, Download, ArrowUpRight, ArrowDownLeft, Upload, FileText, Trash2, Plus, Database, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ValidationResultModal } from '../components/ValidationResultModal';
 import { parseCFDI } from '../utils/cfdiParser';
@@ -126,6 +126,40 @@ export const Controller = () => {
         const unlinkedrows: any[] = [];
         const supplierMap = new Map(suppliers.map(s => [s.rfc, s.name]));
 
+        // Map Container -> Shipment(s) for multi-BL lookup
+        // We use a Map where key is normalized container, value is array of Shipments (just in case duplicates, though unlikely)
+        const containerToShipments = new Map<string, typeof shipments[0]>();
+        shipments.forEach(s => {
+            s.containers?.forEach(c => {
+                const norm = c.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+                if (norm) containerToShipments.set(norm, s);
+            });
+        });
+
+        // Helper to resolve shipments from container string
+        const resolveShipmentInfo = (containerStr?: string, defaultShipment?: typeof shipments[0]) => {
+            const detectedShipments = new Set<typeof shipments[0]>();
+
+            if (defaultShipment) detectedShipments.add(defaultShipment);
+
+            if (containerStr) {
+                const parts = containerStr.split(',').map(c => c.trim().replace(/[^A-Z0-9]/gi, '').toUpperCase()).filter(c => c);
+                parts.forEach(c => {
+                    const s = containerToShipments.get(c);
+                    if (s) detectedShipments.add(s);
+                });
+            }
+
+            const uniqueShipments = Array.from(detectedShipments);
+            if (uniqueShipments.length === 0) return { blNo: undefined, containers: [] };
+
+            const blNo = uniqueShipments.map(s => s.blNo).join(', ');
+            // Combine all containers from all matched shipments to allow validation of any container in the set
+            const containers = Array.from(new Set(uniqueShipments.flatMap(s => s.containers || [])));
+
+            return { blNo, containers };
+        };
+
         // 2. Group Costs efficiently
         costs.forEach(cost => {
             if (cost.shipmentId && shipments.some(s => s.id === cost.shipmentId)) {
@@ -134,10 +168,14 @@ export const Controller = () => {
             } else {
                 // Map unlinked rows immediately with provider resolution
                 const providerName = supplierMap.get(cost.provider) || cost.provider || 'Unknown';
+                const { blNo: detectedBl, containers: detectedContainers } = resolveShipmentInfo(cost.linkedContainer);
+
                 unlinkedrows.push({
                     id: cost.id,
                     shipmentId: '',
-                    blNo: cost.extractedBl ? `${cost.extractedBl} (Unlinked)` : 'Unlinked',
+                    blNo: detectedBl || cost.extractedBl ? `${cost.extractedBl || ''} (Unlinked)` : 'Unlinked',
+                    shipmentBl: detectedBl, // For Validation/Display
+                    shipmentContainers: detectedContainers, // For Validation
                     container: cost.linkedContainer || '-',
                     invoiceNo: cost.invoiceNo || '-',
                     invoiceDate: cost.date,
@@ -170,11 +208,13 @@ export const Controller = () => {
             if (shipmentCosts.length > 0) {
                 return shipmentCosts.map(cost => {
                     const providerName = supplierMap.get(cost.provider) || cost.provider;
+                    const { blNo: multiBl, containers: multiContainers } = resolveShipmentInfo(cost.linkedContainer, shipment);
+
                     return {
                         ...cost,
                         id: cost.id,
                         shipmentId: shipment.id,
-                        blNo: shipment.blNo,
+                        blNo: multiBl || shipment.blNo, // Use Multi-BL if detected
                         invoiceDate: cost.date,
                         comments: cost.comments, // Explicit Mapping
                         container: cost.linkedContainer || shipment.containers?.join(', ') || '',
@@ -186,8 +226,8 @@ export const Controller = () => {
                         // Preserve original fields for matching logic
                         extractedBl: cost.extractedBl,
                         extractedContainer: cost.linkedContainer,
-                        shipmentBl: shipment.blNo,
-                        shipmentContainers: shipment.containers
+                        shipmentBl: multiBl || shipment.blNo,
+                        shipmentContainers: multiContainers
                     } as any;
                 });
             } else {
@@ -222,17 +262,19 @@ export const Controller = () => {
         const filtered = allRows.filter(item => {
             if (filterPartner) {
                 const searchTerms = filterPartner.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
-                const searchableText = `
-                    ${item.provider} 
-                    ${item.invoiceNo} 
-                    ${item.uuid} 
-                    ${item.blNo} 
-                    ${item.container} 
-                    ${item.bpm} 
-                    ${item.amount}
-                    ${item.comments}
-                `.toLowerCase();
-                if (!searchTerms.some(term => searchableText.includes(term))) return false;
+
+                // Dynamic search across all fields (AND logic for drill-down)
+                if (searchTerms.length > 0) {
+                    const matches = searchTerms.every(term =>
+                        Object.values(item).some(val => {
+                            if (!val) return false;
+                            if (typeof val === 'string') return val.toLowerCase().includes(term);
+                            if (typeof val === 'number') return val.toString().includes(term);
+                            return false;
+                        })
+                    );
+                    if (!matches) return false;
+                }
             }
 
 
@@ -594,7 +636,11 @@ export const Controller = () => {
                     xmlUrl: xmlUrlRaw || existingCost?.xmlUrl || '',
                     pdfUrl: pdfUrlRaw || existingCost?.pdfUrl || '',
                     xmlDriveId: existingCost?.xmlDriveId || '',
-                    pdfDriveId: existingCost?.pdfDriveId || ''
+                    pdfDriveId: existingCost?.pdfDriveId || '',
+
+                    // Detailed XML Data
+                    xmlItems: xmlResult.items,
+                    taxDetails: xmlResult.taxDetails
                 };
 
                 // 6. Persistence
@@ -857,6 +903,7 @@ export const Controller = () => {
             <ExtractionReviewModal
                 isOpen={reviewModalState.isOpen}
                 items={reviewModalState.items}
+                shipments={shipments}
                 onSave={handleReviewSave}
                 onCancel={() => setReviewModalState({ isOpen: false, items: [] })}
             />
@@ -871,7 +918,7 @@ export const Controller = () => {
             />
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Inland Freight Control</h1>
+                    <h1 className="text-2xl font-bold text-slate-800">Payments Control</h1>
                     <p className="text-slate-500 text-sm">Manage partner payments and track expenses.</p>
                 </div>
                 <div className="flex gap-2">
@@ -1067,23 +1114,49 @@ export const Controller = () => {
 
                                     {/* Container Validation */}
                                     <td className="px-4 py-3 text-center">
-                                        {row.extractedContainer && row.shipmentContainers && row.shipmentContainers.some((c: string) => {
-                                            const cleanC = c.replace(/[^A-Z0-9]/gi, '');
-                                            const cleanExt = row.extractedContainer.replace(/[^A-Z0-9]/gi, '');
-                                            return cleanC === cleanExt;
-                                        }) ? (
-                                            <div title={`Matched: ${row.extractedContainer}`} className="inline-flex justify-center items-center text-emerald-500 bg-emerald-50 rounded-full p-1"><CheckCircle size={14} /></div>
-                                        ) : !row.isVirtual ? (
-                                            <div title={row.extractedContainer ? `Mismatch: ${row.extractedContainer} not in tracking` : "Container Not Found in Invoice"} className="inline-flex justify-center items-center text-red-500 bg-red-50 rounded-full p-1"><XCircle size={14} /></div>
-                                        ) : (
-                                            <span className="text-slate-300 text-[10px]">-</span>
-                                        )}
+                                        {(() => {
+                                            const shipmentContainers = row.shipmentContainers ? row.shipmentContainers.map((c: string) => c.replace(/[^A-Z0-9]/gi, '').toUpperCase()) : [];
+                                            const invoiceContainers = row.extractedContainer ? row.extractedContainer.split(',').map((c: string) => c.trim().replace(/[^A-Z0-9]/gi, '').toUpperCase()).filter((c: string) => c) : [];
+
+                                            const allMatch = invoiceContainers.length > 0 && shipmentContainers.length > 0 &&
+                                                invoiceContainers.every((c: string) => shipmentContainers.includes(c));
+
+                                            if (allMatch) {
+                                                return <div title={`Matched: ${row.extractedContainer}`} className="inline-flex justify-center items-center text-emerald-500 bg-emerald-50 rounded-full p-1"><CheckCircle size={14} /></div>;
+                                            } else if (!row.isVirtual) {
+                                                return <div title={invoiceContainers.length > 0 ? `Mismatch: Invoice lists ${row.extractedContainer}, Tracking has [${row.shipmentContainers?.join(', ')}]` : "No Containers in Invoice"} className="inline-flex justify-center items-center text-red-500 bg-red-50 rounded-full p-1"><XCircle size={14} /></div>;
+                                            } else {
+                                                return <span className="text-slate-300 text-[10px]">-</span>;
+                                            }
+                                        })()}
                                     </td>
 
                                     {/* ValCot & Variación */}
                                     {(() => {
                                         const supplier = suppliers.find(s => s.name === row.provider);
-                                        const quote = supplier?.quotations?.find(q => q.concept === (row.description || row.comments || ''));
+
+                                        // Count containers in the invoice (extracted from XML or manually linked)
+                                        // Handle comma, semicolon, space, newline
+                                        const invoiceContainerCount = row.extractedContainer ? row.extractedContainer.split(/[,;\s\n]+/).filter(c => c.trim().length > 3).length : 0;
+
+                                        // Find best matching quote
+                                        let quote = undefined;
+                                        if (supplier?.quotations) {
+                                            const conceptMatches = supplier.quotations.filter(q => q.concept === (row.description || row.comments || ''));
+
+                                            // Priority 1: Exact Container Count Match
+                                            quote = conceptMatches.find(q => q.validForContainerCount == invoiceContainerCount);
+
+                                            // Priority 2: Generic (No count specified)
+                                            if (!quote) {
+                                                quote = conceptMatches.find(q => !q.validForContainerCount);
+                                            }
+
+                                            // Priority 3: First match (Fallback)
+                                            if (!quote && conceptMatches.length > 0) {
+                                                quote = conceptMatches[0];
+                                            }
+                                        }
 
                                         const hasQuote = !!quote;
                                         const isMatch = quote && Math.abs(quote.price - row.amount) < 0.1;
@@ -1097,7 +1170,7 @@ export const Controller = () => {
                                                     {isMatch ? (
                                                         <div className="flex justify-center text-emerald-500"><CheckCircle size={16} /></div>
                                                     ) : (
-                                                        <div className="flex justify-center text-red-500" title={hasQuote ? `Expected: ${quote?.price.toLocaleString()}` : "No Quote Found for this Concept/Provider"}>
+                                                        <div className="flex justify-center text-red-500" title={hasQuote ? `Expected: ${quote?.price.toLocaleString()} (Count: ${invoiceContainerCount})` : "No Quote Found for this Concept/Provider"}>
                                                             <XCircle size={16} />
                                                         </div>
                                                     )}
@@ -1129,14 +1202,22 @@ export const Controller = () => {
                                             )}
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 text-slate-600 max-w-[150px] truncate" title={row.extractedContainer || ''}>{row.extractedContainer || '-'}</td>
+                                    <td className="px-4 py-3 text-slate-600 max-w-[150px] truncate" title={row.extractedContainer || ''}>
+                                        <div className="flex items-center gap-1">
+                                            <span className="truncate">{row.extractedContainer || '-'}</span>
+                                            {row.extractedContainer && (() => {
+                                                const count = row.extractedContainer.split(/[,;\s\n]+/).filter((c: string) => c.trim().length > 3).length;
+                                                return count > 1 ? <span className="text-[9px] font-bold bg-slate-200 text-slate-600 px-1 rounded-sm">({count})</span> : null;
+                                            })()}
+                                        </div>
+                                    </td>
                                     <td className="px-4 py-3 text-slate-600 font-mono font-medium text-emerald-700">
                                         {row.invoiceNo !== '-' ? row.invoiceNo : <span className="text-slate-300">-</span>}
                                     </td>
                                     <td className="px-4 py-3 text-slate-600 font-mono text-center">{row.currency}</td>
                                     <td className="px-4 py-3 text-slate-600">{row.invoiceDate}</td>
                                     <td className="px-4 py-3 text-right font-mono font-medium">
-                                        {row.amount.toLocaleString()} <span className="text-[10px] text-slate-400">USD</span>
+                                        {row.amount.toLocaleString()}
                                     </td>
                                     <td className="px-4 py-3 text-slate-400 font-mono text-[10px] max-w-[100px] truncate" title={row.uuid}>{row.uuid}</td>
                                     <td className="px-4 py-3 text-slate-500 italic max-w-[150px] truncate">{row.comments}</td>
@@ -1493,6 +1574,84 @@ export const Controller = () => {
                                 </div>
 
                                 <div className="col-span-1">
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">BL (Invoice)</label>
+                                    <input
+                                        type="text"
+                                        className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono text-xs focus:ring-2 focus:ring-blue-500 outline-none text-blue-600"
+                                        value={editingCost.extractedBl || ''}
+                                        onChange={e => {
+                                            const newVal = e.target.value;
+                                            const cleanBl = newVal.replace(/[^A-Z0-9]/gi, '');
+                                            let newContainer = editingCost.linkedContainer;
+
+                                            // Auto-Fill Logic
+                                            if (cleanBl.length > 4) {
+                                                const match = shipments.find(s => s.blNo && s.blNo.replace(/[^A-Z0-9]/gi, '').includes(cleanBl));
+                                                if (match && match.containers && match.containers.length > 0) {
+                                                    newContainer = match.containers.join(', ');
+                                                }
+                                            }
+
+                                            setEditingCost({
+                                                ...editingCost,
+                                                extractedBl: newVal,
+                                                linkedContainer: newContainer
+                                            });
+                                        }}
+                                        placeholder="Auto-match Tracking"
+                                    />
+                                    {/* Link Detection Helper */}
+                                    {(() => {
+                                        if (!editingCost.linkedContainer) return null;
+                                        const parts = editingCost.linkedContainer.split(',').map(c => c.trim().replace(/[^A-Z0-9]/gi, '').toUpperCase()).filter(c => c);
+                                        const foundBls = new Set<string>();
+
+                                        parts.forEach(c => {
+                                            const s = shipments.find(s => s.containers?.some(sc => sc.replace(/[^A-Z0-9]/gi, '').toUpperCase() === c));
+                                            if (s && s.blNo) foundBls.add(s.blNo);
+                                        });
+
+                                        if (foundBls.size > 0) {
+                                            const detectedStr = Array.from(foundBls).join(', ');
+                                            return (
+                                                <div
+                                                    className="mt-1 flex items-start gap-1 cursor-pointer hover:bg-emerald-50 p-1 rounded transition-colors group"
+                                                    onClick={() => {
+                                                        const current = editingCost.extractedBl ? editingCost.extractedBl.split(',').map(s => s.trim()).filter(s => s) : [];
+                                                        const newBls = detectedStr.split(',').map(s => s.trim());
+                                                        const unique = Array.from(new Set([...current, ...newBls])).join(', ');
+                                                        setEditingCost({ ...editingCost, extractedBl: unique });
+                                                    }}
+                                                    title="Click to use these BLs"
+                                                >
+                                                    <div className="text-emerald-500 mt-0.5"><CheckCircle size={10} /></div>
+                                                    <div className="text-[10px] text-slate-500 leading-tight">
+                                                        <span className="font-bold text-emerald-600">Active Links:</span> {detectedStr}
+                                                        <span className="opacity-0 group-hover:opacity-100 text-blue-500 ml-1 text-[9px] font-bold">CLICK TO APPLY</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return (
+                                            <div className="mt-1 flex items-center gap-1 text-[10px] text-amber-500">
+                                                <AlertTriangle size={10} /> No tracking match found for containers.
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+
+                                <div className="col-span-1">
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Container (Invoice)</label>
+                                    <input
+                                        type="text"
+                                        className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                                        value={editingCost.linkedContainer || ''}
+                                        onChange={e => setEditingCost({ ...editingCost, linkedContainer: e.target.value })}
+                                        placeholder="Linked Containers"
+                                    />
+                                </div>
+
+                                <div className="col-span-1">
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">UUID</label>
                                     <input
                                         type="text"
@@ -1527,6 +1686,145 @@ export const Controller = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Detailed XML Breakdown - Editable View */}
+                            {editingCost.xmlItems && editingCost.xmlItems.length > 0 && (
+                                <div className="px-6 pb-6 animate-in fade-in duration-300">
+                                    <div className="border rounded-lg overflow-hidden border-slate-200">
+                                        <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
+                                            <h4 className="font-bold text-xs text-slate-600 uppercase">XML Breakdown (Editable)</h4>
+                                            <span className="text-xs text-slate-500">{editingCost.xmlItems.length} concepts</span>
+                                        </div>
+                                        <table className="w-full text-xs text-left">
+                                            <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+                                                <tr>
+                                                    <th className="px-3 py-2 w-16 text-center">Qty</th>
+                                                    <th className="px-3 py-2 w-20">Unit</th>
+                                                    <th className="px-3 py-2 w-20">Key</th>
+                                                    <th className="px-3 py-2">Description</th>
+                                                    <th className="px-3 py-2 text-right w-24">Unit Val</th>
+                                                    <th className="px-3 py-2 text-right w-24">Amount</th>
+                                                    <th className="w-8"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 bg-white">
+                                                {editingCost.xmlItems.map((xi, idx) => (
+                                                    <tr key={idx} className="hover:bg-slate-50 group">
+                                                        <td className="px-1 py-1 text-center">
+                                                            <input
+                                                                type="text"
+                                                                className="w-full text-center bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
+                                                                value={xi.quantity}
+                                                                onChange={(e) => {
+                                                                    const newItems = [...editingCost.xmlItems!];
+                                                                    newItems[idx] = { ...newItems[idx], quantity: parseFloat(e.target.value) || 0 };
+                                                                    setEditingCost({ ...editingCost, xmlItems: newItems });
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td className="px-1 py-1">
+                                                            <input type="text" className="w-full bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1" value={xi.unit || ''} onChange={(e) => { const newItems = [...editingCost.xmlItems!]; newItems[idx].unit = e.target.value; setEditingCost({ ...editingCost, xmlItems: newItems }); }} />
+                                                        </td>
+                                                        <td className="px-1 py-1 font-mono text-slate-500">
+                                                            <input type="text" className="w-full bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1" value={xi.claveProdServ || ''} onChange={(e) => { const newItems = [...editingCost.xmlItems!]; newItems[idx].claveProdServ = e.target.value; setEditingCost({ ...editingCost, xmlItems: newItems }); }} />
+                                                        </td>
+                                                        <td className="px-1 py-1">
+                                                            <input
+                                                                type="text"
+                                                                className="w-full font-medium text-slate-700 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
+                                                                value={xi.description}
+                                                                onChange={(e) => {
+                                                                    const newItems = [...editingCost.xmlItems!];
+                                                                    newItems[idx] = { ...newItems[idx], description: e.target.value };
+                                                                    setEditingCost({ ...editingCost, xmlItems: newItems });
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td className="px-1 py-1 text-right font-mono">
+                                                            <input
+                                                                type="number"
+                                                                className="w-full text-right text-slate-600 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
+                                                                value={xi.unitValue}
+                                                                onChange={(e) => {
+                                                                    const newItems = [...editingCost.xmlItems!];
+                                                                    newItems[idx] = { ...newItems[idx], unitValue: parseFloat(e.target.value) || 0 };
+                                                                    setEditingCost({ ...editingCost, xmlItems: newItems });
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td className="px-1 py-1 text-right font-mono font-bold">
+                                                            <input
+                                                                type="number"
+                                                                className="w-full text-right text-slate-800 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
+                                                                value={xi.amount}
+                                                                onChange={(e) => {
+                                                                    const newItems = [...editingCost.xmlItems!];
+                                                                    newItems[idx] = { ...newItems[idx], amount: parseFloat(e.target.value) || 0 };
+                                                                    setEditingCost({ ...editingCost, xmlItems: newItems });
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td className="px-1 py-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button
+                                                                onClick={() => {
+                                                                    const newItems = editingCost.xmlItems!.filter((_, i) => i !== idx);
+                                                                    setEditingCost({ ...editingCost, xmlItems: newItems });
+                                                                }}
+                                                                className="text-slate-400 hover:text-red-500"
+                                                                title="Remove Item"
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                            {editingCost.taxDetails && (
+                                                <tfoot className="bg-slate-50 border-t border-slate-200 font-mono text-xs">
+                                                    <tr>
+                                                        <td colSpan={6} className="px-3 py-1 text-right text-slate-500">Transferred Taxes (IVA/IEPS):</td>
+                                                        <td className="px-1 py-1 text-right">
+                                                            <input
+                                                                type="number"
+                                                                className="w-full text-right text-slate-700 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
+                                                                value={editingCost.taxDetails.totalTransferred}
+                                                                onChange={(e) => {
+                                                                    setEditingCost({
+                                                                        ...editingCost,
+                                                                        taxDetails: {
+                                                                            ...editingCost.taxDetails!,
+                                                                            totalTransferred: parseFloat(e.target.value) || 0
+                                                                        }
+                                                                    });
+                                                                }}
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colSpan={6} className="px-3 py-1 text-right text-slate-500">Retained Taxes (ISR/IVA):</td>
+                                                        <td className="px-1 py-1 text-right">
+                                                            <input
+                                                                type="number"
+                                                                className="w-full text-right text-red-600 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
+                                                                value={editingCost.taxDetails.totalRetained}
+                                                                onChange={(e) => {
+                                                                    setEditingCost({
+                                                                        ...editingCost,
+                                                                        taxDetails: {
+                                                                            ...editingCost.taxDetails!,
+                                                                            totalRetained: parseFloat(e.target.value) || 0
+                                                                        }
+                                                                    });
+                                                                }}
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                </tfoot>
+                                            )}
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="bg-slate-50 p-4 border-t border-slate-100 flex justify-end gap-3">
                                 <button

@@ -43,11 +43,29 @@ export const Suppliers = () => {
         return unsub;
     }, []);
 
-    const filteredSuppliers = suppliers.filter(s =>
-        s.name.toLowerCase().includes(filter.toLowerCase()) ||
-        s.contactName.toLowerCase().includes(filter.toLowerCase()) ||
-        s.email.toLowerCase().includes(filter.toLowerCase())
-    );
+    const filteredSuppliers = suppliers.filter(s => {
+        if (!filter) return true;
+        const searchTerms = filter.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
+        return searchTerms.some(term =>
+            Object.values(s).some(val =>
+                val && typeof val !== 'object' && String(val).toLowerCase().includes(term)
+            )
+        );
+    });
+
+    // Pagination Logic
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 50;
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredSuppliers.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredSuppliers.length / itemsPerPage);
+
+    // Reset page on filter change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filter]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -194,7 +212,7 @@ export const Suppliers = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {filteredSuppliers.map(s => (
+                        {currentItems.map(s => (
                             <tr key={s.id} className="hover:bg-slate-50 transition-colors">
                                 <td className="px-6 py-4">
                                     <div className="font-bold text-slate-800 flex items-center gap-2">
@@ -242,6 +260,34 @@ export const Suppliers = () => {
                         )}
                     </tbody>
                 </table>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="flex justify-between items-center p-4 border-t border-slate-100 bg-slate-50/50">
+                        <div className="text-sm text-slate-500">
+                            Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredSuppliers.length)} of {filteredSuppliers.length}
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                className="px-3 py-1 bg-white border border-slate-200 rounded text-sm disabled:opacity-50 hover:bg-slate-50"
+                            >
+                                Previous
+                            </button>
+                            <span className="px-3 py-1 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded">
+                                Page {currentPage}
+                            </span>
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                                className="px-3 py-1 bg-white border border-slate-200 rounded text-sm disabled:opacity-50 hover:bg-slate-50"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Partner Modal */}
@@ -353,6 +399,17 @@ export const Suppliers = () => {
                                         />
                                     </div>
                                     <div className="w-24">
+                                        <label className="block text-xs font-medium text-slate-500 mb-1">Cont. Count</label>
+                                        <input
+                                            type="number"
+                                            placeholder="Any"
+                                            className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
+                                            value={newQuote.validForContainerCount || ''}
+                                            onChange={e => setNewQuote({ ...newQuote, validForContainerCount: parseInt(e.target.value) || undefined })}
+                                            title="Validation Rule: Only apply this price if the invoice lists exactly this many containers."
+                                        />
+                                    </div>
+                                    <div className="w-24">
                                         <label className="block text-xs font-medium text-slate-500 mb-1">Currency</label>
                                         <select
                                             className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
@@ -399,7 +456,14 @@ export const Suppliers = () => {
                                 <tbody className="divide-y divide-slate-100">
                                     {activeQuoteSupplier.quotations?.map(q => (
                                         <tr key={q.id} className={newQuote.id === q.id ? 'bg-blue-50' : ''}>
-                                            <td className="py-3 font-medium text-slate-700">{q.concept}</td>
+                                            <td className="py-3 font-medium text-slate-700">
+                                                {q.concept}
+                                                {q.validForContainerCount && (
+                                                    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700">
+                                                        {q.validForContainerCount} Cont.
+                                                    </span>
+                                                )}
+                                            </td>
                                             <td className="py-3 text-right font-mono">{q.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                             <td className="py-3 text-center text-xs text-slate-400">{q.currency}</td>
                                             <td className="py-3 text-right text-slate-500 text-xs">{q.lastUpdated}</td>

@@ -14,9 +14,9 @@ export const DataStage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [savedReports, setSavedReports] = useState<DataStageReport[]>([]);
     const hiddenInputRef = useRef<HTMLInputElement>(null);
-    const [saving, setSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<string>(""); // Granular status message
 
     useEffect(() => {
@@ -44,140 +44,118 @@ export const DataStage = () => {
         return unsub;
     }, []);
 
-    const handleFileSelect = async (files: FileList | File[]) => {
-        if (!files || files.length === 0) return;
+    const handleFileSelect = async (files: FileList | File[] | File) => {
+        if (!files) return;
 
-        const fileArray = Array.from(files);
-        const fileName = fileArray.length === 1 ? fileArray[0].name : `Lote de ${fileArray.length} Archivos`;
-
-        // Validation for single file overwrite (only if we have 1 file and context is set)
-        if (fileArray.length === 1 && currentFileName && currentFileName === fileArray[0].name) {
-            const confirmReload = window.confirm(
-                `⚠️ ARCHIVO EN USO\n\n` +
-                `El archivo "${fileArray[0].name}" es el que estás visualizando actualmente.\n` +
-                `¿Deseas recargarlo y reiniciar la visualización?`
-            );
-            if (!confirmReload) return;
+        // CRITICAL FIX: Normalize input to File[]
+        let fileArray: File[] = [];
+        if (files instanceof FileList) {
+            fileArray = Array.from(files);
+        } else if (files instanceof File) {
+            fileArray = [files];
+        } else if (Array.isArray(files)) {
+            fileArray = files;
         }
 
-        // New Feature: Duplicate Check against History
-        const duplicates = fileArray.filter(f =>
-            savedReports.some(r => r.name === f.name) // Checks if report name matches file name
-        );
+        if (fileArray.length === 0) return;
 
-        if (duplicates.length > 0) {
-            const duplicateNames = duplicates.map(d => d.name).join(', ');
-            if (!window.confirm(`⚠️ ARCHIVO EXISTENTE\n\nLos siguientes archivos ya existen en el historial:\n${duplicateNames}\n\n¿Deseas SOBRESCRIBIRLOS?\n(Se eliminará la versión anterior y se guardará la nueva)`)) {
-                setLoading(false);
-                if (hiddenInputRef.current) hiddenInputRef.current.value = '';
-                return; // "Se para la ejecución"
-            }
-
-            // "Se rescribe" -> Delete old reports before processing new ones
-            console.log("Overwriting duplicates...");
-            const duplicateIds = savedReports
-                .filter(r => duplicates.some(d => d.name === r.name))
-                .map(r => r.id);
-
-            for (const id of duplicateIds) {
-                await storageService.deleteDataStageReport(id);
-            }
+        // Validation for single file overwrite
+        if (fileArray.length === 1 && currentFileName && currentFileName === fileArray[0].name) {
+            if (!window.confirm(`⚠️ EL ARCHIVO "${fileArray[0].name}" YA ESTÁ VISIBLE.\n\n¿Deseas recargarlo?`)) return;
         }
 
         setLoading(true);
         setError(null);
+        setSaveStatus("Cargando Vista Previa (Local)...");
 
         try {
+            // STEP 1: DECOMPRESS & VALIDATE (Sequential for Safety)
             const allRecords: PedimentoRecord[] = [];
             const allRawFiles: RawFileParsed[] = [];
-            const processedFilesStats = { count: 0 };
+            let processedCount = 0;
 
-            // Process sequentially to be safe
             for (const file of fileArray) {
+                processedCount++;
+                setSaveStatus("Validando y Descomprimiendo...");
+                await new Promise(r => setTimeout(r, 10)); // Yield
+
                 try {
-                    const result = await processZipFile(file);
-                    if (result.records.length > 0 || result.rawFiles.length > 0) {
+                    const result = await processZipFile(file, (current, total) => {
+                        // Granular UI Feedback
+                        setSaveStatus(`Validando: ${current} de ${total} archivos...`);
+                    });
+
+                    if (result && (result.records.length > 0 || result.rawFiles.length > 0)) {
                         allRecords.push(...result.records);
                         allRawFiles.push(...result.rawFiles);
-                        processedFilesStats.count++;
-                    }
-                } catch (err) {
-                    console.error(`Error processing file ${file.name}:`, err);
-                    // Continue with other files
-                }
-            }
-
-            if (allRecords.length === 0 && allRawFiles.length === 0) {
-                setError("No se encontraron registros válidos ni archivos de texto en los ZIPs seleccionados.");
-            } else {
-                // Merge Records (deduplicate by ID if necessary, for now simple concat is likely fine but map is safer)
-                const recordMap = new Map<string, PedimentoRecord>();
-                // Existing data? If user wants to APPEND, we should check. But usually "Upload" means "New Session".
-                // User said "Cargar 1 o varios", usually implies a new load.
-                // Assuming replace current view with this batch.
-
-                allRecords.forEach(r => recordMap.set(r.id, r));
-                const uniqueRecords = Array.from(recordMap.values());
-
-                // Merge Raw Files (deduplicate by code/filename)
-                const uniqueRawFiles = allRawFiles; // Raw files usually distinct by zip content
-
-                setData(uniqueRecords);
-                setRawFiles(uniqueRawFiles);
-                setCurrentFileName(fileName);
-
-                // Auto-save draft (Async)
-                setSaving(true);
-                await storageService.saveDraftDataStage({
-                    records: uniqueRecords,
-                    rawFiles: uniqueRawFiles,
-                    fileName: fileName,
-                    timestamp: new Date().toISOString()
-                });
-
-                // Auto-save Report to History
-                try {
-                    const reportId = crypto.randomUUID();
-                    const report: DataStageReport = {
-                        id: reportId,
-                        name: fileName, // Auto-name using file name
-                        timestamp: new Date().toISOString(),
-                        records: uniqueRecords,
-                        rawFiles: uniqueRawFiles,
-                        stats: {
-                            filesProcessed: uniqueRawFiles.length,
-                            pedimentosCount: uniqueRecords.length,
-                            itemsCount: uniqueRecords.reduce((acc, curr) => acc + curr.items.length, 0),
-                            invoicesCount: uniqueRecords.reduce((acc, curr) => acc + curr.invoices.length, 0)
-                        }
-                    };
-                    const reportSaved = await storageService.saveDataStageReport(report);
-
-                    if (reportSaved) {
-                        if (uniqueRecords.length > 0) {
-                            alert(`✅ ÉXITO\n\nArchivo(s) procesado(s) y guardado(s) correctamente.\n\n- ${uniqueRecords.length} Pedimentos encontrados.\n- Reporte guardado en historial.`);
-                        } else {
-                            alert(`⚠️ PROCESO INCOMPLETO\n\nSe leyeron los archivos pero NO se encontraron pedimentos válidos.\n\n- Verifica que el archivo ZIP contenga los TXT/M3 correctos.\n- Se guardó el registro de la lectura en el historial.`);
-                        }
                     } else {
-                        alert(`⚠️ AVISO\n\nLos archivos se procesaron pero hubo un problema al guardar en el historial (posiblemente por tamaño).\n\nLos datos están visibles en pantalla, pero verifica tu conexión.`);
+                        throw new Error(`El archivo ${file.name} no contiene datos válidos.`);
                     }
-                } catch (autoSaveErr) {
-                    console.error("Auto-save report failed", autoSaveErr);
-                    alert(`⚠️ AVISO DE GUARDADO\n\nNo se pudo guardar automáticamente en el historial: ${autoSaveErr instanceof Error ? autoSaveErr.message : 'Error desconocido'}`);
+                } catch (e: any) {
+                    throw new Error(`VALIDACIÓN FALLIDA en ${file.name}: ${e.message}`);
                 }
-
-                setSaving(false);
             }
-        } catch (err) {
+
+            if (allRecords.length === 0) {
+                throw new Error("No se encontraron registros válidos para procesar.");
+            }
+
+            // 1. Deduplicate New Records internally
+            const recordMap = new Map<string, PedimentoRecord>();
+            allRecords.forEach(r => recordMap.set(r.id, r));
+            const newUniqueRecords = Array.from(recordMap.values());
+
+            const fileName = fileArray.length === 1 ? fileArray[0].name : `Lote de ${fileArray.length}`;
+
+            // 2. ACCUMULATE: Merge with existing data
+            setData(prevData => {
+                const combinedMap = new Map<string, PedimentoRecord>();
+                // Add old records first
+                prevData.forEach(r => combinedMap.set(r.id, r));
+                // Overwrite/Add new records
+                newUniqueRecords.forEach(r => combinedMap.set(r.id, r));
+                return Array.from(combinedMap.values());
+            });
+
+            // Accumulate Raw Files for viewing source
+            setRawFiles(prevRaw => {
+                // Avoid duplicates by fileName+code? Simple concat for now, or check filename
+                const existingNames = new Set(prevRaw.map(f => f.fileName));
+                const newFiles = allRawFiles.filter(f => !existingNames.has(f.fileName));
+                return [...prevRaw, ...newFiles];
+            });
+
+            setCurrentFileName(prev => {
+                // If accumulating, switch to clean Summary Name immediately.
+                if (prev) {
+                    return `Auditoría Mensual - ${new Date().toLocaleDateString()} (${new Date().toLocaleTimeString()})`;
+                }
+                return fileName;
+            });
+            if (fileArray.length > 0) {
+                setPendingFile(fileArray[0]);
+            }
+
+            setSaveStatus("");
+
+            // Background draft
+            storageService.saveDraftDataStage({
+                records: newUniqueRecords,
+                rawFiles: allRawFiles,
+                fileName: fileName,
+                timestamp: new Date().toISOString()
+            }).catch(console.warn);
+
+        } catch (err: any) {
             console.error(err);
-            const errorMsg = err instanceof Error ? err.message : "Error desconocido al procesar archivos.";
-            setError(errorMsg);
-            alert(`❌ ERROR\n\nNo se pudieron procesar los archivos:\n${errorMsg}`);
+            setSaveStatus("");
+            setError(err.message);
+            alert(`⛔ ERROR:\n\n${err.message}`);
         } finally {
             setLoading(false);
         }
     };
+
 
     const handleReset = async () => {
         if (window.confirm("¿Estás seguro de cerrar la vista actual? Esto borrará la sesión activa (pero no los reportes guardados en el historial).")) {
@@ -335,21 +313,23 @@ export const DataStage = () => {
             setLoading(true);
             setSaveStatus("Preparando datos...");
 
-            // Artificial delay for UX "dynamics" so user sees the step
-            await new Promise(r => setTimeout(r, 500));
+            // 2. SAVE REPORT TO DB (Interpreted JSON Data)
+            setSaveStatus("Guardando Datos Interpretados...");
 
-            setSaveStatus("Sincronizando con la Nube...");
-            const success = await storageService.saveDataStageReport(report);
+            // Enforce 30s Timeout
+            const savePromise = storageService.saveDataStageReport(report);
+            const timeoutPromise = new Promise<boolean>((_, reject) =>
+                setTimeout(() => reject(new Error("Tiempo agotado (30s) al guardar. Verifica tu conexión.")), 30000)
+            );
+
+            const success = await Promise.race([savePromise, timeoutPromise]);
 
             setSaveStatus("Finalizando...");
             setLoading(false);
             setSaveStatus("");
 
-            if (success) {
-                alert(existingReport ? "✅ Reporte actualizado correctamente." : "✅ Reporte guardado en el historial.");
-            } else {
-                throw new Error("La operación de guardado retornó falso.");
-            }
+            setPendingFile(null);
+            alert(existingReport ? "✅ Reporte actualizado." : "✅ Datos guardados correctamente.");
         } catch (e) {
             setLoading(false);
             setSaveStatus("");
@@ -365,19 +345,42 @@ export const DataStage = () => {
                 let finalRecords = report.records;
                 let finalRawFiles = report.rawFiles;
 
-                // Check if it's a "Pointer" report (Big Data in Storage)
+                // Check if it's a "Pointer" report
+                // Case A: Storage URL (Legacy or Specific Cases)
                 if (report.records.length === 0 && report.storageUrl) {
+                    // preserving legacy for safety, but primary path is now DB
                     try {
+                        console.log("Downloading full report from Storage (Legacy)...");
                         const response = await fetch(report.storageUrl);
                         if (!response.ok) throw new Error("Error fetching storage file");
-                        const fullReport = await response.json() as DataStageReport;
+                        const blob = await response.blob();
+                        // ... simple json parse for legacy compatibility
+                        const text = await blob.text(); // Assuming legacy JSON
+                        const fullReport = JSON.parse(text);
                         finalRecords = fullReport.records;
                         finalRawFiles = fullReport.rawFiles;
-                    } catch (fetchErr) {
-                        console.error("Error fetching full report from storage", fetchErr);
-                        alert("Error al descargar el reporte completo del servidor.");
+                    } catch (err) {
+                        console.error("Legacy Storage load failed", err);
+                        alert("Error al descargar el reporte completo del servidor (legado).");
                         setLoading(false);
                         return;
+                    }
+                }
+                // Case B: Batched DB Records (New System)
+                else if (report.records.length === 0 && !report.storageUrl) {
+                    console.log("Loading batched records from Firestore Subcollection...");
+                    const { collection, getDocs } = await import('firebase/firestore');
+                    const { db } = await import('../services/firebaseConfig');
+
+                    if (db) {
+                        const itemsRef = collection(db, 'dataStageReports', report.id, 'items');
+                        const snapshot = await getDocs(itemsRef);
+                        if (!snapshot.empty) {
+                            finalRecords = snapshot.docs.map(d => d.data() as any);
+                            console.log(`Loaded ${finalRecords.length} records from DB.`);
+                        } else {
+                            console.warn("No records found in subcollection.");
+                        }
                     }
                 }
 
@@ -433,11 +436,13 @@ export const DataStage = () => {
                     disabled={!data || data.length === 0}
                     className={`text-sm border px-3 py-2 rounded-lg flex items-center gap-2 transition-colors font-medium ${(!data || data.length === 0)
                         ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
-                        : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                        : pendingFile
+                            ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 animate-pulse'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                         }`}
                 >
                     <Save className="w-4 h-4" />
-                    Guardar en Historial
+                    {pendingFile ? "☁️ Subir y Guardar (Pendiente)" : "Guardar en Historial"}
                 </button>
                 <button
                     onClick={() => hiddenInputRef.current?.click()}
@@ -462,8 +467,8 @@ export const DataStage = () => {
                 {loading && (
                     <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-xl">
                         <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-                        <h3 className="text-xl font-bold text-slate-800">Procesando Nuevo Archivo...</h3>
-                        <p className="text-slate-500">Actualizando dashboard y resumen</p>
+                        <h3 className="text-xl font-bold text-slate-800">{saveStatus || "Procesando Nuevo Archivo..."}</h3>
+                        <p className="text-slate-500">Por favor espera, no cierres la ventana.</p>
                     </div>
                 )}
                 {/* Always Show Dashboard, even if empty */}

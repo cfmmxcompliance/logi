@@ -1,5 +1,5 @@
 
-import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem } from '../types.ts';
+import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
   collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc
@@ -20,10 +20,11 @@ const RESTORE_POINTS_KEY = 'logimaster_restore_points';
 const DRAFT_DATA_STAGE_KEY = 'logimaster_datastage_draft';
 
 
-let dbState: any = {
+let dbState: StorageState = {
   parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
   customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
-  logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: []
+  logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
+  dataStageDrafts: []
 };
 
 let listeners: (() => void)[] = [];
@@ -62,6 +63,26 @@ export const storageService = {
     if (!db) {
       const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (localData) dbState = JSON.parse(localData);
+
+      // Fix: Also load separated DataStage Reports (from Lean/Fallback saves)
+      try {
+        const separateReports = localStorage.getItem(COLS.DATA_STAGE_REPORTS);
+        if (separateReports) {
+          const parsedReports = JSON.parse(separateReports);
+          if (Array.isArray(parsedReports) && parsedReports.length > 0) {
+            // Merge or Prefer separated reports (usually newer/leaner)
+            // We'll combine them, deduplicating by ID
+            const existingIds = new Set(dbState.dataStageReports.map((r: any) => r.id));
+            parsedReports.forEach((r: any) => {
+              if (!existingIds.has(r.id)) {
+                dbState.dataStageReports.push(r);
+              }
+            });
+            console.log("Merged separated DataStage Reports:", parsedReports.length);
+          }
+        }
+      } catch (e) { console.warn("Error loading separate reports", e); }
+
       notifyListeners();
       return;
     }
@@ -79,7 +100,29 @@ export const storageService = {
         if (key === 'TRAINING') stateKey = 'trainingSubmissions';
         if (key === 'INVOICES') stateKey = 'commercialInvoices';
 
-        dbState[stateKey] = data;
+        // TYPE SAFETY: Cast dbState to any for dynamic assignment or use a switch
+        // Conflict Resolution: Last Write Wins
+        const currentLocal = (dbState as any)[stateKey] || [];
+        const localMap = new Map(currentLocal.map((i: any) => [i.id, i]));
+
+        data.forEach((cloudItem: any) => {
+          const localItem = localMap.get(cloudItem.id) as any;
+          // If Local is NEWER than Cloud, keep Local
+          if (localItem && localItem.updatedAt && cloudItem.updatedAt) {
+            const localTime = new Date(localItem.updatedAt).getTime();
+            const cloudTime = new Date(cloudItem.updatedAt).getTime();
+            if (localTime > cloudTime) {
+              console.warn(`Conflict [${stateKey}]: Keeping local version of ${cloudItem.id} (Local > Cloud)`);
+              return; // Do NOT overwrite
+            }
+          }
+          // Otherwise, accept Cloud (Newer or First time seen)
+          localMap.set(cloudItem.id, cloudItem);
+        });
+
+        // Convert back to array
+        (dbState as any)[stateKey] = Array.from(localMap.values());
+
         if (stateKey === 'commercialInvoices') {
           console.log("Firestore Update (Commercial Invoices):", data.length, "items");
         }
@@ -410,13 +453,14 @@ export const storageService = {
   },
 
   updateShipment: async (shipment: Shipment) => {
-    const id = shipment.id || crypto.randomUUID();
+    const record = { ...shipment, updatedAt: new Date().toISOString() };
+    const id = record.id || crypto.randomUUID();
     if (!db) {
       const idx = dbState.shipments.findIndex((s: any) => s.id === id);
-      if (idx !== -1) dbState.shipments[idx] = { ...shipment, id }; else dbState.shipments.push({ ...shipment, id });
+      if (idx !== -1) dbState.shipments[idx] = { ...record, id }; else dbState.shipments.push({ ...record, id });
       saveLocal(); return;
     }
-    await setDoc(doc(db, COLS.SHIPMENTS, id), shipment);
+    await setDoc(doc(db, COLS.SHIPMENTS, id), { ...record, id });
   },
 
   // Senior Frontend Engineer: Implemented missing deleteShipment method.
@@ -443,43 +487,45 @@ export const storageService = {
   },
 
   updateVesselTracking: async (record: VesselTrackingRecord) => {
-    const id = record.id || crypto.randomUUID();
-    await syncVesselDataToOthers(record);
+    const updated = { ...record, updatedAt: new Date().toISOString() };
+    const id = updated.id || crypto.randomUUID();
+    await syncVesselDataToOthers(updated);
 
     // BROADCAST UPDATE: If we are updating a record that has a BL, we must update all siblings
     // to keep shared fields (like Project, Contract, Dates) in sync.
     const sharedFields = {
-      refNo: record.refNo,
-      modelCode: record.modelCode,
-      qty: record.qty, // Assuming this is total qty? Or per container? User context implies consistency.
-      projectType: record.projectType,
-      contractNo: record.contractNo,
-      invoiceNo: record.invoiceNo,
-      shippingCompany: record.shippingCompany,
-      terminal: record.terminal,
-      etd: record.etd,
-      etaPort: record.etaPort,
-      preAlertDate: record.preAlertDate,
-      atd: record.atd,
-      ataPort: record.ataPort
+      refNo: updated.refNo,
+      modelCode: updated.modelCode,
+      qty: updated.qty, // Assuming this is total qty? Or per container? User context implies consistency.
+      projectType: updated.projectType,
+      contractNo: updated.contractNo,
+      invoiceNo: updated.invoiceNo,
+      shippingCompany: updated.shippingCompany,
+      terminal: updated.terminal,
+      etd: updated.etd,
+      etaPort: updated.etaPort,
+      preAlertDate: updated.preAlertDate,
+      atd: updated.atd,
+      ataPort: updated.ataPort,
+      updatedAt: updated.updatedAt // Also sync updatedAt for siblings
     };
 
     if (!db) {
       // Local Update
       const idx = dbState.vesselTracking.findIndex((v: any) => v.id === id);
       if (idx !== -1) {
-        dbState.vesselTracking[idx] = { ...record, id };
+        dbState.vesselTracking[idx] = { ...updated, id };
 
         // Sync siblings
-        if (record.blNo) {
+        if (updated.blNo) {
           dbState.vesselTracking.forEach((v: any, i: number) => {
-            if (v.blNo === record.blNo && v.id !== id) {
+            if (v.blNo === updated.blNo && v.id !== id) {
               dbState.vesselTracking[i] = { ...v, ...sharedFields };
             }
           });
         }
       } else {
-        dbState.vesselTracking.push({ ...record, id });
+        dbState.vesselTracking.push({ ...updated, id });
       }
       saveLocal();
       return;
@@ -488,11 +534,11 @@ export const storageService = {
     // Cloud Update
     const batch = writeBatch(db);
     // 1. Update the target record
-    batch.set(doc(db, COLS.VESSEL_TRACKING, id), record);
+    batch.set(doc(db, COLS.VESSEL_TRACKING, id), updated);
 
     // 2. Find siblings to sync
-    if (record.blNo) {
-      const q = query(collection(db, COLS.VESSEL_TRACKING), where("blNo", "==", record.blNo));
+    if (updated.blNo) {
+      const q = query(collection(db, COLS.VESSEL_TRACKING), where("blNo", "==", updated.blNo));
       const snap = await getDocs(q);
       snap.docs.forEach(d => {
         if (d.id !== id) {
@@ -529,15 +575,16 @@ export const storageService = {
 
   // Senior Frontend Engineer: Implemented missing updateEquipmentTracking method.
   updateEquipmentTracking: async (record: EquipmentTrackingRecord) => {
-    const id = record.id || crypto.randomUUID();
+    const updated = { ...record, updatedAt: new Date().toISOString() };
+    const id = updated.id || crypto.randomUUID();
     if (!db) {
       const idx = dbState.equipmentTracking.findIndex((e: any) => e.id === id);
-      if (idx !== -1) dbState.equipmentTracking[idx] = { ...record, id };
-      else dbState.equipmentTracking.push({ ...record, id });
+      if (idx !== -1) dbState.equipmentTracking[idx] = { ...updated, id };
+      else dbState.equipmentTracking.push({ ...updated, id });
       saveLocal();
       return;
     }
-    await setDoc(doc(db, COLS.EQUIPMENT, id), record);
+    await setDoc(doc(db, COLS.EQUIPMENT, id), updated);
   },
 
   // Senior Frontend Engineer: Implemented missing deleteEquipmentTracking method.
@@ -565,41 +612,43 @@ export const storageService = {
 
   // Senior Frontend Engineer: Implemented missing updateCustomsClearance method.
   updateCustomsClearance: async (record: CustomsClearanceRecord) => {
-    const id = record.id || crypto.randomUUID();
+    const updated = { ...record, updatedAt: new Date().toISOString() };
+    const id = updated.id || crypto.randomUUID();
 
     // BROADCAST UPDATE: Sync shared fields to all containers for the same BL
     const sharedFields = {
-      pedimentoNo: record.pedimentoNo,
-      proformaRevisionBy: record.proformaRevisionBy,
-      targetReviewDate: record.targetReviewDate,
-      proformaSentDate: record.proformaSentDate,
-      pedimentoAuthorizedDate: record.pedimentoAuthorizedDate,
-      peceRequestDate: record.peceRequestDate,
-      peceAuthDate: record.peceAuthDate,
-      pedimentoPaymentDate: record.pedimentoPaymentDate,
-      truckAppointmentDate: record.truckAppointmentDate,
-      ataFactory: record.ataFactory,
-      eirDate: record.eirDate,
-      ataPort: record.ataPort,
-      blNo: record.blNo // Ensure link is maintained
+      pedimentoNo: updated.pedimentoNo,
+      proformaRevisionBy: updated.proformaRevisionBy,
+      targetReviewDate: updated.targetReviewDate,
+      proformaSentDate: updated.proformaSentDate,
+      pedimentoAuthorizedDate: updated.pedimentoAuthorizedDate,
+      peceRequestDate: updated.peceRequestDate,
+      peceAuthDate: updated.peceAuthDate,
+      pedimentoPaymentDate: updated.pedimentoPaymentDate,
+      truckAppointmentDate: updated.truckAppointmentDate,
+      ataFactory: updated.ataFactory,
+      eirDate: updated.eirDate,
+      ataPort: updated.ataPort,
+      blNo: updated.blNo, // Ensure link is maintained
+      updatedAt: updated.updatedAt // Also sync updatedAt for siblings
     };
 
     if (!db) {
       // Local Update
       const idx = dbState.customsClearance.findIndex((c: any) => c.id === id);
       if (idx !== -1) {
-        dbState.customsClearance[idx] = { ...record, id };
+        dbState.customsClearance[idx] = { ...updated, id };
 
         // Sync siblings
-        if (record.blNo) {
+        if (updated.blNo) {
           dbState.customsClearance.forEach((c: any, i: number) => {
-            if (c.blNo === record.blNo && c.id !== id) {
+            if (c.blNo === updated.blNo && c.id !== id) {
               dbState.customsClearance[i] = { ...c, ...sharedFields };
             }
           });
         }
       } else {
-        dbState.customsClearance.push({ ...record, id });
+        dbState.customsClearance.push({ ...updated, id });
       }
       saveLocal();
       return;
@@ -608,11 +657,11 @@ export const storageService = {
     // Cloud Update
     const batch = writeBatch(db);
     // 1. Update target
-    batch.set(doc(db, COLS.CUSTOMS, id), record);
+    batch.set(doc(db, COLS.CUSTOMS, id), updated);
 
     // 2. Sync siblings
-    if (record.blNo) {
-      const q = query(collection(db, COLS.CUSTOMS), where("blNo", "==", record.blNo));
+    if (updated.blNo) {
+      const q = query(collection(db, COLS.CUSTOMS), where("blNo", "==", updated.blNo));
       const snap = await getDocs(q);
       snap.docs.forEach(d => {
         if (d.id !== id) {
@@ -900,7 +949,7 @@ export const storageService = {
 
 
     // 4. Distribute to Shipments (Shipment Plan) - NEW
-    const existingShipment = await fetchExisting(COLS.SHIPMENTS, 'blNo', bookingRef);
+    const existingShipment = (await fetchExisting(COLS.SHIPMENTS, 'blNo', bookingRef)) as Shipment | undefined;
     const shipmentId: string = existingShipment ? existingShipment.id : crypto.randomUUID();
 
     const shipmentUpdates: Partial<Shipment> = {
@@ -932,6 +981,14 @@ export const storageService = {
         carrier: '',
         portTerminal: '',
         forwarderId: '',
+        status: ShipmentStatus.PLANNED, // Required
+        origin: 'Unknown',
+        destination: 'Unknown',
+        reference: '',
+        containers: [],
+        etd: '',
+        eta: '',
+        blNo: ''
       }),
       ...shipmentUpdates,
       id: shipmentId
@@ -1034,13 +1091,14 @@ export const storageService = {
 
 
   updatePreAlert: async (record: PreAlertRecord) => {
+    const updated = { ...record, updatedAt: new Date().toISOString() };
     const id = record.id || crypto.randomUUID();
     if (!db) {
       const idx = dbState.preAlerts.findIndex((p: any) => p.id === id);
-      if (idx !== -1) dbState.preAlerts[idx] = { ...record, id }; else dbState.preAlerts.push({ ...record, id });
+      if (idx !== -1) dbState.preAlerts[idx] = { ...updated, id }; else dbState.preAlerts.push({ ...updated, id });
       saveLocal(); return;
     }
-    await setDoc(doc(db, COLS.PRE_ALERTS, id), record);
+    await setDoc(doc(db, COLS.PRE_ALERTS, id), updated);
   },
 
   // Senior Frontend Engineer: Implemented missing deletePreAlert method.
@@ -1225,26 +1283,28 @@ export const storageService = {
 
   // Senior Frontend Engineer: Implemented missing addCost method.
   addCost: async (cost: CostRecord) => {
+    const updated = { ...cost, updatedAt: new Date().toISOString() };
     const id = cost.id || crypto.randomUUID();
     if (!db) {
-      dbState.costs.push({ ...cost, id });
+      dbState.costs.push({ ...updated, id });
       saveLocal();
       return;
     }
-    await setDoc(doc(db, COLS.COSTS, id), { ...cost, id });
+    await setDoc(doc(db, COLS.COSTS, id), { ...updated, id });
   },
 
   // Senior Frontend Engineer: Implemented missing updateSupplier method.
   updateSupplier: async (supplier: Supplier) => {
+    const updated = { ...supplier, updatedAt: new Date().toISOString() };
     const id = supplier.id || crypto.randomUUID();
     if (!db) {
       const idx = dbState.suppliers.findIndex((s: any) => s.id === id);
-      if (idx !== -1) dbState.suppliers[idx] = { ...supplier, id };
-      else dbState.suppliers.push({ ...supplier, id });
+      if (idx !== -1) dbState.suppliers[idx] = { ...updated, id };
+      else dbState.suppliers.push({ ...updated, id });
       saveLocal();
       return;
     }
-    await setDoc(doc(db, COLS.SUPPLIERS, id), { ...supplier, id });
+    await setDoc(doc(db, COLS.SUPPLIERS, id), { ...updated, id });
   },
 
 
@@ -1262,114 +1322,190 @@ export const storageService = {
     await deleteDoc(doc(db, COLS.SUPPLIERS, id));
   },
 
-  saveDataStageReport: async (report: DataStageReport) => {
+  // Standalone Upload Method for Parallel Execution
+  uploadDataStageFile: async (file: File, reportId: string, onProgress?: (percent: number) => void): Promise<string> => {
+    const { ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage');
+    const { storage } = await import('./firebaseConfig');
+    if (!storage) throw new Error("Storage not initialized");
+
+    const storagePath = `reports/${reportId}_${file.name}`;
+    const storageRef = ref(storage, storagePath);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    if (onProgress) {
+      uploadTask.on('state_changed', (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        onProgress(Math.round(progress));
+      });
+    }
+
+    try {
+      await uploadTask;
+    } catch (e) {
+      throw e;
+    }
+
+    return await getDownloadURL(storageRef);
+  },
+
+  checkConnection: async (): Promise<boolean> => {
+    if (!navigator.onLine) return false;
+    try {
+      // Real Firebase Ping: Try to fetch 1 document
+      const { getDocs, query, collection, limit } = await import('firebase/firestore');
+      // We use a query we know implies read access
+      const q = query(collection(db, COLS.DATA_STAGE_REPORTS), limit(1));
+      await getDocs(q);
+      return true;
+    } catch (e) {
+      console.error("Firebase Ping Failed:", e);
+      return false;
+    }
+  },
+
+  saveDataStageReport: async (report: DataStageReport, onProgress?: (percent: number) => void, originalFile?: File, preUploadedUrl?: string) => {
     // 1. Memory Update
     dbState.dataStageReports.unshift(report);
 
     // 2. Cloud Persistence with Fallback
     if (db) {
       try {
-        await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), report);
+        // 1. Always Try Lean Report to Firestore First (Metadata only)
+        const leanReport = {
+          ...report,
+          records: [],
+          rawFiles: report.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
+        };
+        await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), leanReport);
       } catch (e) {
-        console.warn("Failed to save full report to cloud (likely size limit). Retrying without raw files.", e);
+        console.warn("Firestore save failed (non-critical):", e);
+      }
+
+      let lastCloudError: string | null = null;
+      try {
         try {
-          const leanReport = {
+          // PURE JSON FALLBACK for Large Files
+          // User requirements: "Upload interpreted data", "No ZIP", "Latin-1 compatible (data-wise)"
+
+          console.log("Report too big for Firestore. Uploading JSON Blob...");
+          const { ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage');
+          const { storage } = await import('./firebaseConfig');
+          if (!storage) throw new Error("Storage not initialized");
+
+          // STRATEGY: BATCHED FIRESTORE WRITES (Lotes)
+          // "Datos Continuos Ligeros" -> Break payload into individual docs
+          console.log("Saving records via Batch Writes (Continuous Data)...");
+
+          const { writeBatch, collection } = await import('firebase/firestore');
+
+          // 1. Create Main "Header" Document (Metadata Only)
+          const headerReport: DataStageReport = {
             ...report,
-            rawFiles: report.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
-          }; // Strip heavy content but keep metadata
-          await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), leanReport);
-        } catch (e2) {
-          console.warn("Lean report also failed. Attempting Storage Upload (Unlimited Size)...", e2);
+            records: [], // Empty in main doc
+            rawFiles: [], // We do NOT save rawFiles to DB to keep it light
+            storageUrl: undefined // No storage fallback
+          };
+
+          await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), headerReport);
+
+          // 2. Batch Write the Records (Pedimentos) to a Subcollection
+          const recordsRef = collection(db, COLS.DATA_STAGE_REPORTS, report.id, 'items');
+          const BATCH_SIZE = 400; // Safety margin below 500
+          const chunks = [];
+
+          for (let i = 0; i < report.records.length; i += BATCH_SIZE) {
+            chunks.push(report.records.slice(i, i + BATCH_SIZE));
+          }
+
+          let totalProcessed = 0;
+          const totalRecords = report.records.length;
+
+          for (let i = 0; i < chunks.length; i++) {
+            const batch = writeBatch(db);
+            const chunk = chunks[i];
+
+            chunk.forEach(record => {
+              const recordDocRef = doc(recordsRef, record.id); // Use Pedimento ID
+              batch.set(recordDocRef, record);
+            });
+
+            await batch.commit();
+
+            totalProcessed += chunk.length;
+            if (onProgress) {
+              const progress = Math.min((totalProcessed / totalRecords) * 100, 99);
+              onProgress(progress);
+            }
+
+            // Yield slightly to prevent UI lock
+            await new Promise(r => setTimeout(r, 20));
+          }
+
+          console.log("All batches committed successfully.");
+          return true;
+
+        } catch (e3: any) {
+          console.error("Critical Batch Write Failure:", e3);
+
+          let errorMsg = "Fallo al guardar lotes de datos.";
+          if (e3.code === 'permission-denied') errorMsg = "Permisos denegados en base de datos. Verifica las reglas de Firestore (write: items/*).";
+          if (e3.code === 'resource-exhausted') errorMsg = "Cuota de base de datos excedida.";
+          if (e3.code === 'invalid-argument') errorMsg = "Datos inválidos en el reporte (posiblemente un campo undefined).";
+
+          lastCloudError = `${errorMsg} (${e3.message})`;
+
+          // CRITICAL: Do not fallback to LocalStorage for Batched/Large reports.
+          // It causes a double-error (QuotaExceeded) and hides the real cloud error.
+          throw new Error(lastCloudError);
+        }
+
+        // 4. FINAL FALLBACK: LOCAL STORAGE
+        try {
+          console.log("Attempting Emergency Local Save...");
+          let localReports = JSON.parse(localStorage.getItem(COLS.DATA_STAGE_REPORTS) || '[]');
+          localReports.unshift(report);
 
           try {
-            // 3. STORAGE FALLBACK
-            const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-            const { storage } = await import('./firebaseConfig');
-
-            if (!storage) throw new Error("Storage not initialized");
-
-            const jsonString = JSON.stringify(report);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const storagePath = `reports/${report.id}_${Date.now()}.json`;
-            const storageRef = ref(storage, storagePath);
-
-            // Add Timeout (120s) for slower connections
-            const uploadPromise = uploadBytes(storageRef, blob);
-            const timeoutPromise = new Promise((_, reject) =>
-              setTimeout(() => reject(new Error("Timeout: La subida tardó más de 2 minutos.")), 120000)
-            );
-
-            await Promise.race([uploadPromise, timeoutPromise]);
-            const downloadURL = await getDownloadURL(storageRef);
-
-            // Save "Pointer" to Firestore
-            const pointerReport: DataStageReport = {
-              ...report,
-              records: [],
-              rawFiles: [],
-              storageUrl: downloadURL
-            };
-
-            await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), pointerReport);
-            console.log("Saved large report via Storage Link:", downloadURL);
-
-          } catch (e3) {
-            console.error("Critical: Failed to save via Storage fallback.", e3);
-
-            // 4. FINAL FALLBACK: LOCAL STORAGE
-            // 4. FINAL FALLBACK: LOCAL STORAGE
-            try {
-              console.log("Attempting Emergency Local Save...");
-              let localReports = JSON.parse(localStorage.getItem(COLS.DATA_STAGE_REPORTS) || '[]');
-              localReports.unshift(report);
-
+            localStorage.setItem(COLS.DATA_STAGE_REPORTS, JSON.stringify(localReports));
+          } catch (quotaEx) {
+            console.warn("LocalStorage Full. Attempting to clear old reports...");
+            while (localReports.length > 1) {
+              localReports.pop();
               try {
                 localStorage.setItem(COLS.DATA_STAGE_REPORTS, JSON.stringify(localReports));
-              } catch (quotaEx) {
-                console.warn("LocalStorage Full. Attempting to clear old reports...");
-                // LRU Eviction: Remove oldest reports until it fits
-                while (localReports.length > 1) { // Always keep at least the current one we are trying to save
-                  localReports.pop(); // Remove the last (oldest) item
-                  try {
-                    localStorage.setItem(COLS.DATA_STAGE_REPORTS, JSON.stringify(localReports));
-                    console.log("Space cleared. Saved successfully.");
-                    return true;
-                  } catch (e) {
-                    // Still full, loop again
-                  }
-                }
-
-
-                // If we are here, we have only 1 item (the new report) and it's still too big.
-                // FINAL ATTEMPT: LEAN SAVE (Drop Raw Content)
-                console.warn("Report too big for LocalStorage. Attempting LEAN SAVE (Metadata only)...");
-                try {
-                  const leanReport = {
-                    ...report,
-                    rawFiles: report.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
-                  };
-                  localReports[0] = leanReport; // Replace the full report with the lean version
-                  localStorage.setItem(COLS.DATA_STAGE_REPORTS, JSON.stringify(localReports));
-                  console.log("Saved LEAN report to LocalStorage.");
-                  return true;
-                } catch (leanErr) {
-                  throw quotaEx; // Even lean is too big? Then really fail.
-                }
-              } // Close catch (quotaEx) logic
-
-
-              console.log("Saved to LocalStorage as emergency fallback.");
-              return true; // Consider it a success (locally)
-            } catch (e4) {
-              console.error("Local Storage also full/failed", e4);
-              throw new Error(`Fallo total: No se pudo subir a la nube (Timeout/Red) ni guardar localmente (Espacio lleno). Intenta con menos archivos.`);
+                console.log("Space cleared. Saved successfully.");
+                return true;
+              } catch (e) {
+                // Still full, loop again
+              }
             }
-          } // Close catch (e3) - Storage Fallback Fail
-        } // Close try - Cloud Upload
 
-      } // Close catch (e) - Lean Cloud Fail
-    } else {
-      saveLocal();
+            // FINAL ATTEMPT: LEAN SAVE
+            console.warn("Report too big for LocalStorage. Attempting LEAN SAVE (Metadata only)...");
+            try {
+              const leanReport = {
+                ...report,
+                rawFiles: report.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
+              };
+              localReports[0] = leanReport;
+              localStorage.setItem(COLS.DATA_STAGE_REPORTS, JSON.stringify(localReports));
+              console.log("Saved LEAN report to LocalStorage.");
+              return true;
+            } catch (leanErr) {
+              throw quotaEx;
+            }
+          }
+          console.log("Saved to LocalStorage as emergency fallback.");
+          return true;
+        } catch (e4) {
+          console.error("Local Storage also full/failed", e4);
+          const explicitErr = lastCloudError || "Error desconocido en nube";
+          throw new Error(`Fallo total: No se pudo subir a la nube [${explicitErr}] ni guardar localmente (Probable Espacio lleno).`);
+        }
+      } catch (eOuter: any) {
+        console.warn("Outer save error", eOuter);
+        return false;
+      }
     }
     return true;
   },
@@ -1391,8 +1527,14 @@ export const storageService = {
 
   saveDraftDataStage: async (session: DataStageSession) => {
     // 1. Try LocalStorage (Speed)
+    // 1. Try LocalStorage (Speed)
     try {
-      localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(session));
+      const payload = JSON.stringify(session);
+      if (payload.length > 4000000) { // 4MB Limit Safety
+        console.warn("Draft too large for LocalStorage (" + (payload.length / 1024 / 1024).toFixed(2) + " MB). Saving Lean Draft only.");
+        throw new Error("Payload too large"); // Trigger fallback to lean
+      }
+      localStorage.setItem(DRAFT_DATA_STAGE_KEY, payload);
     } catch (e) {
       console.warn("Draft LocalStorage Full. Clearing old Reports to make space...");
       try {
@@ -1632,7 +1774,8 @@ export const storageService = {
     dbState = {
       parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
       customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
-      logistics: [], suppliers: [], dataStageReports: []
+      logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
+      dataStageDrafts: []
     };
     saveLocal();
   },

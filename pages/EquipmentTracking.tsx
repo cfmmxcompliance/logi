@@ -74,10 +74,12 @@ export const EquipmentTracking = () => {
 
         // 2. Search Filter
         if (!filter) return true;
-        const lowerFilter = filter.toLowerCase();
+        const searchTerms = filter.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
         // Safe filter avoiding circular references
-        return Object.values(r).some(val =>
-            val && typeof val !== 'object' && String(val).toLowerCase().includes(lowerFilter)
+        return searchTerms.some(term =>
+            Object.values(r).some(val =>
+                val && typeof val !== 'object' && String(val).toLowerCase().includes(term)
+            )
         );
     });
 

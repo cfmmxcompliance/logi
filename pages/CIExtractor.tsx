@@ -2006,7 +2006,7 @@ export const CIExtractor: React.FC = () => {
                                             Corrected Description (Factura)
                                         </label>
                                         <textarea
-                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm bg-white text-slate-800"
                                             rows={4}
                                             value={resolvedDescription}
                                             onChange={(e) => setResolvedDescription(e.target.value)}
@@ -2019,7 +2019,7 @@ export const CIExtractor: React.FC = () => {
                                             <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Edits Database</span>
                                         </label>
                                         <textarea
-                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 font-mono text-sm"
+                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 font-mono text-sm bg-white text-slate-800"
                                             rows={4}
                                             value={resolvedR8Description}
                                             onChange={(e) => setResolvedR8Description(e.target.value)}

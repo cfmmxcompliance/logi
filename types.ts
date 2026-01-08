@@ -86,6 +86,7 @@ export interface RawMaterialPart {
   FUNCTION_CN: string;
   FUNCTION_EN: string;
   COMPANY: string;
+  ESTIMATED: number; // Value > 0 implies "Estimated Price" exists
   UPDATE_TIME: string;
 }
 
@@ -401,6 +402,7 @@ export interface CommercialInvoiceItem {
   containerNo?: string;
   incoterm?: string;
   currency?: string;
+  priceVerified?: boolean;
 }
 
 // Audit Module Interfaces

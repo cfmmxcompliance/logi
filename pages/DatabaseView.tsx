@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { storageService } from '../services/storageService.ts';
 import { RawMaterialPart, UserRole } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
-import { Download, Plus, Save, X, Trash2, Edit2, FileSpreadsheet, FileDown, ChevronLeft, ChevronRight, Search, RefreshCcw, Database, AlertTriangle } from 'lucide-react';
+import { Download, Plus, Save, X, Trash2, Edit2, FileSpreadsheet, FileDown, ChevronLeft, ChevronRight, Search, RefreshCcw, Database, AlertTriangle, Filter } from 'lucide-react';
 import { parseCSV } from '../utils/csvHelpers.ts';
 import * as XLSX from 'xlsx';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
@@ -36,6 +36,7 @@ const emptyPart: RawMaterialPart = {
     FUNCTION_CN: '',
     FUNCTION_EN: '',
     COMPANY: 'CFMOTO',
+    ESTIMATED: 0,
     UPDATE_TIME: ''
 };
 
@@ -67,7 +68,9 @@ const CSV_ORDER_KEYS: (keyof RawMaterialPart)[] = [
     'MATERIAL_EN',
     'FUNCTION_CN',
     'FUNCTION_EN',
-    'COMPANY'
+    'FUNCTION_EN',
+    'COMPANY',
+    'ESTIMATED'
 ];
 
 export const DatabaseView = () => {
@@ -96,6 +99,54 @@ export const DatabaseView = () => {
     const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, id: string | null }>({ isOpen: false, id: null });
     const [bulkDeleteModal, setBulkDeleteModal] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    // --- COLUMN FILTER STATE ---
+    // Stores SET of columns that are currently filtered to show ONLY "Has Data"
+    const [activeFilters, setActiveFilters] = useState<Set<keyof RawMaterialPart>>(new Set());
+
+    const toggleColumnFilter = (key: keyof RawMaterialPart) => {
+        const next = new Set(activeFilters);
+        if (next.has(key)) {
+            next.delete(key);
+        } else {
+            next.add(key);
+        }
+        setActiveFilters(next);
+        setCurrentPage(1); // Reset page
+    };
+
+    // --- MASS QUERY STATE ---
+    const [isMassQueryOpen, setIsMassQueryOpen] = useState(false);
+    const [massQueryInput, setMassQueryInput] = useState('');
+    const [massQuerySet, setMassQuerySet] = useState<Set<string> | null>(null);
+    const [massQueryColumn, setMassQueryColumn] = useState<keyof RawMaterialPart>('PART_NUMBER');
+
+    const handleApplyMassQuery = () => {
+        if (!massQueryInput.trim()) {
+            setMassQuerySet(null);
+            setIsMassQueryOpen(false);
+            return;
+        }
+
+        const tokens = massQueryInput
+            .split(/[\n,;]+/) // Split by newline, comma, semicolon
+            .map(t => t.trim())
+            .filter(t => t.length > 0);
+
+        if (tokens.length === 0) {
+            setMassQuerySet(null);
+        } else {
+            setMassQuerySet(new Set(tokens));
+        }
+        setIsMassQueryOpen(false);
+        setCurrentPage(1);
+    };
+
+    const handleClearMassQuery = () => {
+        setMassQuerySet(null);
+        setMassQueryInput('');
+        setMassQueryColumn('PART_NUMBER');
+    };
 
     const [duplicateModal, setDuplicateModal] = useState<{
         isOpen: boolean;
@@ -316,7 +367,8 @@ export const DatabaseView = () => {
                         'SENSIBLE': 'SENSIBLE',
                         'HTS  SERIAL NO.': 'HTS_SerialNo', // Double space in profile?
                         'CLAVE SAT': 'CLAVESAT',
-                        'COMPANY': 'COMPANY'
+                        'COMPANY': 'COMPANY',
+                        'ESTIMATED': 'ESTIMATED'
                         // UpdateTime Ignored per request
                     };
 
@@ -358,8 +410,9 @@ export const DatabaseView = () => {
                                 // Type Conversions
                                 if (field === 'NETWEIGHT') {
                                     newPart[field] = typeof val === 'number' ? val : parseFloat(val.toString()) || 0;
-                                    // Store EXACT string value (e.g. "N", "Y") without boolean conversion
-                                    newPart[field] = val.toString().trim();
+                                } else if (field === 'ESTIMATED') {
+                                    const num = typeof val === 'number' ? val : parseFloat(val.toString().replace(/[^0-9.]/g, ''));
+                                    newPart[field] = isNaN(num) ? 0 : num;
                                 } else {
                                     newPart[field] = val;
                                 }
@@ -545,6 +598,10 @@ export const DatabaseView = () => {
                                 else if (key === 'IMPORTED_OR_NOT' || key === 'SENSIBLE') {
                                     newPart[key] = rawVal; // Store exact string (e.g. "N", "NO", "Y")
                                 }
+                                else if (key === 'ESTIMATED') {
+                                    const num = parseFloat(rawVal.replace(/[^0-9.]/g, ''));
+                                    newPart[key] = isNaN(num) ? 0 : num;
+                                }
                                 else {
                                     newPart[key] = rawVal;
                                 }
@@ -658,7 +715,42 @@ export const DatabaseView = () => {
     };
 
     const filteredParts = useMemo(() => {
-        if (!searchTerm) return parts;
+        let result = parts;
+
+        // 0. Mass Query (Priority) - If active, strict filter by selected Column
+        if (massQuerySet) {
+            result = result.filter(p => {
+                // Use strict check against the selected column
+                // Ensure value is converted to string for matching
+                const val = String((p as any)[massQueryColumn] || '').trim();
+                return massQuerySet.has(val);
+            });
+            // If Mass Query is active, we usually ignore global search or column filters? 
+            // Or allow them to refine the mass list?
+            // Let's allow them to refine. (e.g. Mass Query 100 items -> Then search "Bolt" within those)
+        }
+
+        // 1. Column Filters (Has Data)
+        if (activeFilters.size > 0) {
+            result = result.filter(p => {
+                // Must have data in ALL active filtered columns (AND Logic)
+                for (const col of Array.from(activeFilters)) {
+                    const val = (p as any)[col];
+                    // "Has Data" means truthy AND not empty string. 
+                    // Special case for Numbers: 0 is value? Or "has data"?
+                    // User request: "que solo vea los que tienen datos". 
+                    // Usually implies "not empty". 
+                    // If Price 0 -> Has Data? Maybe. 
+                    // Let's assume strict "NotEmpty/NotNull" check.
+                    if (val === null || val === undefined || val === '') return false;
+                }
+                return true;
+            });
+        }
+
+        if (!searchTerm) return result;
+
+        // 2. Global Search
 
         // 1. Split by comma for multi-search (OR logic)
         // Example: "Bolt, Screw" -> Show items matching "Bolt" OR "Screw" in ANY column
@@ -666,7 +758,7 @@ export const DatabaseView = () => {
 
         if (tokens.length === 0) return parts;
 
-        return parts.filter(p => {
+        return result.filter(p => {
             // Match if ANY token is found in ANY column
             return tokens.some(token => {
                 return CSV_ORDER_KEYS.some(key => {
@@ -676,7 +768,7 @@ export const DatabaseView = () => {
                 });
             });
         });
-    }, [parts, searchTerm]);
+    }, [parts, searchTerm, activeFilters, massQuerySet, massQueryColumn]);
 
     // --- NEW EXPORT FUNCTIONALITY ---
     const handleExportFiltered = () => {
@@ -737,9 +829,81 @@ export const DatabaseView = () => {
         <div className="space-y-6">
             <ProcessingModal state={procState} onClose={() => setProcState(INITIAL_PROCESSING_STATE)} />
 
+            {/* Mass Query Modal */}
+            {isMassQueryOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[80vh]">
+                        <div className="bg-slate-50 p-6 border-b border-slate-100 flex justify-between items-center">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                    <Database size={20} className="text-indigo-600" />
+                                    Mass Query
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-1">Paste a list of values to filter by a specific column.</p>
+                            </div>
+                            <button onClick={() => setIsMassQueryOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+                        </div>
+                        <div className="p-6 flex-1 flex flex-col gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Target Column</label>
+                                <select
+                                    className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500"
+                                    value={massQueryColumn}
+                                    onChange={(e) => setMassQueryColumn(e.target.value as keyof RawMaterialPart)}
+                                >
+                                    {CSV_ORDER_KEYS.map(key => (
+                                        <option key={key} value={key}>{key}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="flex-1 flex flex-col">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Values (One per line or comma-separated)</label>
+                                <textarea
+                                    className="w-full flex-1 border border-slate-300 rounded-lg p-3 font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none min-h-[200px]"
+                                    placeholder={`Example:\nValue 1\nValue 2\nValue 3...`}
+                                    value={massQueryInput}
+                                    onChange={(e) => setMassQueryInput(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <button onClick={() => setIsMassQueryOpen(false)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-medium">Cancel</button>
+                                <button
+                                    onClick={handleApplyMassQuery}
+                                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium shadow-sm transition-colors flex items-center gap-2"
+                                >
+                                    <Search size={16} /> Apply Filter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-slate-800">Master Data Management</h1>
                 <div className="flex gap-2">
+                    {/* Mass Query Button */}
+                    <button
+                        onClick={() => setIsMassQueryOpen(true)}
+                        className={`flex items-center gap-2 px-4 py-2 border rounded-lg shadow-sm transition-colors ${massQuerySet
+                            ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold'
+                            : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                            }`}
+                        title="Paste a list of part numbers to filter"
+                    >
+                        <Database size={16} /> {massQuerySet ? `Query Active: ${massQueryColumn} (${massQuerySet.size})` : 'Mass Query'}
+                    </button>
+
+                    {massQuerySet && (
+                        <button
+                            onClick={handleClearMassQuery}
+                            className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 text-red-600 rounded-lg hover:bg-red-100 shadow-sm transition-colors"
+                            title="Clear Mass Query"
+                        >
+                            <X size={16} />
+                        </button>
+                    )}
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -874,12 +1038,27 @@ export const DatabaseView = () => {
                                         onChange={handleSelectAll}
                                     />
                                 </th>
-                                <th className="px-3 py-3 bg-slate-50 border-b border-slate-200 sticky left-[40px] z-20">Actions</th>
-                                {CSV_ORDER_KEYS.map(key => (
-                                    <th key={key} className="px-3 py-3 bg-slate-50 border-b border-slate-200 font-bold text-slate-700">
-                                        {key}
-                                    </th>
-                                ))}
+                                <th className="px-3 py-3 bg-slate-50 border-b border-slate-200">Actions</th>
+                                {CSV_ORDER_KEYS.map(key => {
+                                    const isFiltered = activeFilters.has(key as keyof RawMaterialPart);
+                                    return (
+                                        <th key={key} className="px-3 py-3 bg-slate-50 border-b border-slate-200 font-bold text-slate-700 min-w-[150px]">
+                                            <div className="flex items-center gap-2 justify-between">
+                                                <span>{key}</span>
+                                                <button
+                                                    onClick={() => toggleColumnFilter(key as keyof RawMaterialPart)}
+                                                    className={`p-1 rounded transition-colors ${isFiltered
+                                                        ? 'bg-blue-100 text-blue-600 ring-1 ring-blue-300'
+                                                        : 'text-slate-300 hover:bg-slate-200 hover:text-slate-500'
+                                                        }`}
+                                                    title={isFiltered ? "Clear Filter" : "Filter: Show Rows with Data"}
+                                                >
+                                                    <Filter size={14} fill={isFiltered ? "currentColor" : "none"} />
+                                                </button>
+                                            </div>
+                                        </th>
+                                    );
+                                })}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -893,7 +1072,7 @@ export const DatabaseView = () => {
                                             onChange={() => handleSelectRow(part.id)}
                                         />
                                     </td>
-                                    <td className="px-3 py-2 flex items-center gap-2 sticky left-[40px] bg-white hover:bg-slate-50 border-r border-slate-100 z-10">
+                                    <td className="px-3 py-2 flex items-center gap-2 border-r border-slate-100">
                                         {canEdit ? (
                                             <button onClick={() => handleEditPart(part as RawMaterialPart)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50">
                                                 <Edit2 size={14} />

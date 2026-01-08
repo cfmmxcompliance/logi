@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ExcelJS from 'exceljs';
 import * as XLSX_Basic from 'xlsx/dist/xlsx.mini.min.js';
-import { Upload, FileDown, Search, Plus, Trash2, Edit2, X, Check, FileSpreadsheet, AlertCircle, FileText, CheckCircle, Save, Repeat, History, RotateCcw } from 'lucide-react';
+import { Upload, FileDown, Search, Plus, Trash2, Edit2, X, Check, FileSpreadsheet, AlertCircle, FileText, CheckCircle, Save, Repeat, History, RotateCcw, AlertTriangle } from 'lucide-react';
 import { storageService } from '../services/storageService.ts';
 import { CommercialInvoiceItem, RawMaterialPart } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -114,16 +114,27 @@ export const CIExtractor: React.FC = () => {
     const [masterDataMap, setMasterDataMap] = useState<Record<string, RawMaterialPart>>({});
 
     useEffect(() => {
-        const parts = storageService.getParts();
-        const map: Record<string, RawMaterialPart> = {};
-        parts.forEach(p => {
-            // Normalization: Key must be trimmed string to match lookup logic
-            if (p.PART_NUMBER) {
-                const normalizedKey = String(p.PART_NUMBER).trim();
-                map[normalizedKey] = p;
-            }
-        });
-        setMasterDataMap(map);
+        const syncMasterData = () => {
+            const parts = storageService.getParts();
+            const map: Record<string, RawMaterialPart> = {};
+            parts.forEach(p => {
+                // Normalization: Key must be trimmed string to match lookup logic
+                if (p.PART_NUMBER) {
+                    const normalizedKey = String(p.PART_NUMBER).trim();
+                    map[normalizedKey] = p;
+                }
+            });
+            setMasterDataMap(map);
+        };
+
+        // Initial Load
+        syncMasterData();
+
+        // Subscribe to updates (Fixes slow load / race condition)
+        const unsubscribe = storageService.subscribe(syncMasterData);
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
     }, []);
 
     // Look up Master Data when Amendments modal opens
@@ -350,6 +361,60 @@ export const CIExtractor: React.FC = () => {
             a1Count: data.filter(i => i.regimen === 'A1').length
         });
     };
+
+    // --- ESTIMATED PRICE RESOLUTION MODAL ---
+    const [showEstModal, setShowEstModal] = useState(false);
+    const [estItem, setEstItem] = useState<CommercialInvoiceItem | null>(null);
+    const [estMasterPart, setEstMasterPart] = useState<RawMaterialPart | null>(null);
+    const [resolvedUnitPrice, setResolvedUnitPrice] = useState<string>(''); // For Invoice
+    const [resolvedMasterPrice, setResolvedMasterPrice] = useState<string>(''); // For Master Data (optional update)
+
+    const handleOpenEstModal = (item: CommercialInvoiceItem) => {
+        const masterPart = masterDataMap[item.partNo] || null;
+        setEstItem(item);
+        setEstMasterPart(masterPart);
+        // Default: display current item price
+        setResolvedUnitPrice(String(item.unitPrice || '0'));
+        // Display master estimated price
+        setResolvedMasterPrice(String(masterPart?.ESTIMATED || '0'));
+        setShowEstModal(true);
+    };
+
+    const handleCloseEstModal = () => {
+        setShowEstModal(false);
+        setEstItem(null);
+        setEstMasterPart(null);
+    };
+
+    const handleSaveEst = async () => {
+        if (!estItem) return;
+
+        const newPrice = parseFloat(resolvedUnitPrice) || 0;
+        const masterPrice = parseFloat(resolvedMasterPrice) || 0;
+
+        // 1. Update Invoice Item Price
+        const hasChanged = Math.abs(newPrice - (estItem.unitPrice || 0)) > 0.001;
+
+        const updatedItem = {
+            ...estItem,
+            unitPrice: newPrice,
+            // Update Amount too? Usually yes: Price * Qty
+            totalAmount: parseFloat((newPrice * (estItem.qty || 0)).toFixed(2)),
+            priceVerified: hasChanged ? true : (estItem.priceVerified || false) // Only verify if changed, or keep existing
+        };
+
+        // Note: Master Data is NOT updated here as it is fixed customs data.
+
+        // Optimistic Update Item
+        setItems(prevItems => prevItems.map(i => i.id === estItem.id ? updatedItem : i));
+        await storageService.updateInvoiceItem(updatedItem);
+
+        const msg = hasChanged ? 'Price Corrected & Verified.' : 'No changes made.';
+        const type = hasChanged ? 'success' : 'info';
+        showNotification('Price Update', msg, type);
+        handleCloseEstModal();
+    };
+
 
 
 
@@ -1017,14 +1082,20 @@ export const CIExtractor: React.FC = () => {
                 // 2. Part Exists BUT has "estimate_price" remark
 
                 if (!masterPart) {
-                    // Column has Red X -> Filter must SHOW it.
+                    // Column has Red X (Part Not Found) -> Filter must SHOW it.
                 } else {
                     const remarks = masterPart.REMARKS?.toString().toLowerCase() || '';
-                    const hasEstimatePrice = remarks.includes('price');
+                    const estimatedPrice = Number(masterPart.ESTIMATED || 0);
+                    const itemPrice = parseFloat(String(i.unitPrice || '0'));
 
-                    // If "price" warning -> Red X -> Keep.
-                    // If NO "price" warning -> Green Check -> Hide.
-                    if (!hasEstimatePrice) return false;
+                    // Match Render Logic: Only show if it causes a Red X
+                    const isUndervalued = estimatedPrice > 0 && itemPrice < estimatedPrice;
+                    const isLegacyError = (estimatedPrice === 0 && remarks.includes('price')) && !i.priceVerified;
+
+                    const isPriceIssue = isUndervalued || isLegacyError;
+
+                    // If NOT an issue, hide it.
+                    if (!isPriceIssue) return false;
                 }
             }
 
@@ -1351,15 +1422,37 @@ export const CIExtractor: React.FC = () => {
                                                 const partNo = String(item.partNo || '').trim();
                                                 const masterPart = masterDataMap[partNo];
                                                 // If Part not in DB -> Red X
-                                                if (!masterPart) return <X size={20} className="text-red-500 mx-auto" strokeWidth={3} />;
+                                                if (!masterPart) {
+                                                    return (
+                                                        <button
+                                                            onClick={() => handleOpenEstModal(item)}
+                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
+                                                            title="Part Not Found (Click to Edit Price)"
+                                                        >
+                                                            <X size={20} strokeWidth={3} />
+                                                        </button>
+                                                    );
+                                                }
 
                                                 const remarks = masterPart?.REMARKS?.toString().toLowerCase() || '';
-                                                const hasEstimatePrice = remarks.includes('price');
+                                                const estimatedPrice = Number(masterPart?.ESTIMATED || 0);
+                                                const itemPrice = parseFloat(String(item.unitPrice || '0'));
 
-                                                // If "price" is found (e.g. "The price cannot be...") -> Bad (Red X)
-                                                // Otherwise -> Good (Green Check)
-                                                return hasEstimatePrice ? (
-                                                    <X size={20} className="text-red-500 mx-auto" strokeWidth={3} />
+                                                // Logic:
+                                                // Strictly Numeric:
+                                                // - Bad if Estimated > 0 AND Item Price < Estimated.
+                                                // - Otherwise Good (Green).
+
+                                                const isPriceIssue = estimatedPrice > 0 && itemPrice < estimatedPrice;
+
+                                                return isPriceIssue ? (
+                                                    <button
+                                                        onClick={() => handleOpenEstModal(item)}
+                                                        className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
+                                                        title={`Undervalued! Invoice: $${itemPrice} < Est: $${estimatedPrice}`}
+                                                    >
+                                                        <X size={20} strokeWidth={3} />
+                                                    </button>
                                                 ) : (
                                                     <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
                                                 );
@@ -1368,10 +1461,12 @@ export const CIExtractor: React.FC = () => {
                                         <td className="p-4 text-center">
                                             {(() => {
                                                 const masterPart = masterDataMap[String(item.partNo || '').trim()];
-                                                const val = masterPart?.SENSIBLE;
+                                                if (!masterPart) {
+                                                    return <X size={20} className="text-red-500 mx-auto" strokeWidth={3} title="Part Not Found" />;
+                                                }
 
                                                 const strVal = masterPart?.SENSIBLE ? String(masterPart.SENSIBLE).trim().toUpperCase() : '';
-                                                // If "N" OR Empty -> Green Check
+                                                // If "N" OR Empty -> Green Check (Assuming empty means not sensible if part exists)
                                                 // Else (e.g. "Y") -> Red X
                                                 const isNotSensible = strVal === 'N' || strVal === '';
 
@@ -1761,6 +1856,108 @@ export const CIExtractor: React.FC = () => {
                     </div>
                 )
             }
+            {/* --- ESTIMATED PRICE RESOLUTION MODAL --- */}
+            {showEstModal && estItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        {/* Header */}
+                        <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <AlertTriangle className="text-orange-500" size={24} />
+                                Resolve Estimated Price
+                            </h3>
+                            <button onClick={handleCloseEstModal} className="text-slate-400 hover:text-slate-600">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-6 space-y-6">
+
+                            {/* Part Info */}
+                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">PART NUMBER</span>
+                                <div className="font-mono text-lg font-bold text-slate-800">{estItem.partNo}</div>
+                                <div className="text-sm text-slate-500 mt-1">{estItem.spanishDescription}</div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-6">
+                                {/* Left: Master Data (Reference) */}
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-sm font-bold text-slate-600">Master Data Estimated</label>
+                                        <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-medium">Reference</span>
+                                    </div>
+                                    <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg">
+                                        <div className="text-xs text-indigo-400 mb-1">RECORDED ESTIMATE</div>
+                                        <div className={`text-lg font-mono font-bold ${estMasterPart ? 'text-indigo-900' : 'text-red-500'}`}>
+                                            {estMasterPart
+                                                ? `$${parseFloat(String(estMasterPart.ESTIMATED || 0)).toFixed(2)}`
+                                                : 'PART NOT FOUND'
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right: Invoice (Target) */}
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-sm font-bold text-slate-600">Invoice Unit Price</label>
+                                        <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-medium">To Fix</span>
+                                    </div>
+
+                                    <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
+                                        <div className="text-xs text-emerald-400 mb-1">CURRENT INVOICE PRICE</div>
+                                        <div className="text-lg font-mono font-bold text-emerald-900">
+                                            ${parseFloat(String(estItem.unitPrice || 0)).toFixed(2)}
+                                        </div>
+                                    </div>
+
+                                    {/* Editable Invoice Price */}
+                                    <div className="pt-2">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="text-xs font-medium text-slate-500">Corrected Price</label>
+                                            <button
+                                                onClick={() => setResolvedUnitPrice(String(estMasterPart?.ESTIMATED || '0'))}
+                                                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                            >
+                                                Use Master Value
+                                            </button>
+                                        </div>
+                                        <textarea
+                                            className="w-full border border-emerald-300 ring-2 ring-emerald-100 rounded p-2 text-lg font-mono font-bold text-slate-800 focus:outline-none focus:ring-emerald-300"
+                                            value={resolvedUnitPrice}
+                                            onChange={(e) => setResolvedUnitPrice(e.target.value)}
+                                            placeholder="0.00"
+                                            rows={1}
+                                        />
+                                        <p className="text-xs text-slate-400 mt-1">
+                                            * Updates 'UNIT PRICE' and recalculates 'TOTAL AMOUNT'.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        {/* Footer */}
+                        <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+                            <button
+                                onClick={handleCloseEstModal}
+                                className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveEst}
+                                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm transition-colors flex items-center gap-2"
+                            >
+                                <Check size={18} /> Apply Correction
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* R8 Diff Resolution Modal */}
             {
                 showDiffModal && diffItem && (

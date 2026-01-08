@@ -1687,144 +1687,159 @@ export const Controller = () => {
                                 </div>
                             </div>
 
-                            {/* Detailed XML Breakdown - Editable View */}
-                            {editingCost.xmlItems && editingCost.xmlItems.length > 0 && (
-                                <div className="px-6 pb-6 animate-in fade-in duration-300">
-                                    <div className="border rounded-lg overflow-hidden border-slate-200">
-                                        <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
-                                            <h4 className="font-bold text-xs text-slate-600 uppercase">XML Breakdown (Editable)</h4>
-                                            <span className="text-xs text-slate-500">{editingCost.xmlItems.length} concepts</span>
+                            {/* Detailed XML Breakdown - Editable View (Always Visible) */}
+                            <div className="px-6 pb-6 animate-in fade-in duration-300">
+                                <div className="border rounded-lg overflow-hidden border-slate-200">
+                                    <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
+                                        <h4 className="font-bold text-xs text-slate-600 uppercase">XML Breakdown (Editable)</h4>
+                                        <div className="flex gap-2 items-center">
+                                            <span className="text-xs text-slate-500">{(editingCost.xmlItems || []).length} concepts</span>
+                                            <button
+                                                onClick={() => {
+                                                    setEditingCost({
+                                                        ...editingCost,
+                                                        xmlItems: [
+                                                            ...(editingCost.xmlItems || []),
+                                                            { quantity: 1, unit: 'SERV', description: 'New Concept', unitValue: 0, amount: 0, claveProdServ: '80151600', claveUnidad: 'E48' }
+                                                        ]
+                                                    });
+                                                }}
+                                                className="text-xs bg-white border border-slate-300 px-2 py-1 rounded hover:bg-slate-50 text-blue-600 font-medium"
+                                            >
+                                                + Add Line
+                                            </button>
                                         </div>
-                                        <table className="w-full text-xs text-left">
-                                            <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
-                                                <tr>
-                                                    <th className="px-3 py-2 w-16 text-center">Qty</th>
-                                                    <th className="px-3 py-2 w-20">Unit</th>
-                                                    <th className="px-3 py-2 w-20">Key</th>
-                                                    <th className="px-3 py-2">Description</th>
-                                                    <th className="px-3 py-2 text-right w-24">Unit Val</th>
-                                                    <th className="px-3 py-2 text-right w-24">Amount</th>
-                                                    <th className="w-8"></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100 bg-white">
-                                                {editingCost.xmlItems.map((xi, idx) => (
-                                                    <tr key={idx} className="hover:bg-slate-50 group">
-                                                        <td className="px-1 py-1 text-center">
-                                                            <input
-                                                                type="text"
-                                                                className="w-full text-center bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
-                                                                value={xi.quantity}
-                                                                onChange={(e) => {
-                                                                    const newItems = [...editingCost.xmlItems!];
-                                                                    newItems[idx] = { ...newItems[idx], quantity: parseFloat(e.target.value) || 0 };
-                                                                    setEditingCost({ ...editingCost, xmlItems: newItems });
-                                                                }}
-                                                            />
-                                                        </td>
-                                                        <td className="px-1 py-1">
-                                                            <input type="text" className="w-full bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1" value={xi.unit || ''} onChange={(e) => { const newItems = [...editingCost.xmlItems!]; newItems[idx].unit = e.target.value; setEditingCost({ ...editingCost, xmlItems: newItems }); }} />
-                                                        </td>
-                                                        <td className="px-1 py-1 font-mono text-slate-500">
-                                                            <input type="text" className="w-full bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1" value={xi.claveProdServ || ''} onChange={(e) => { const newItems = [...editingCost.xmlItems!]; newItems[idx].claveProdServ = e.target.value; setEditingCost({ ...editingCost, xmlItems: newItems }); }} />
-                                                        </td>
-                                                        <td className="px-1 py-1">
-                                                            <input
-                                                                type="text"
-                                                                className="w-full font-medium text-slate-700 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
-                                                                value={xi.description}
-                                                                onChange={(e) => {
-                                                                    const newItems = [...editingCost.xmlItems!];
-                                                                    newItems[idx] = { ...newItems[idx], description: e.target.value };
-                                                                    setEditingCost({ ...editingCost, xmlItems: newItems });
-                                                                }}
-                                                            />
-                                                        </td>
-                                                        <td className="px-1 py-1 text-right font-mono">
-                                                            <input
-                                                                type="number"
-                                                                className="w-full text-right text-slate-600 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
-                                                                value={xi.unitValue}
-                                                                onChange={(e) => {
-                                                                    const newItems = [...editingCost.xmlItems!];
-                                                                    newItems[idx] = { ...newItems[idx], unitValue: parseFloat(e.target.value) || 0 };
-                                                                    setEditingCost({ ...editingCost, xmlItems: newItems });
-                                                                }}
-                                                            />
-                                                        </td>
-                                                        <td className="px-1 py-1 text-right font-mono font-bold">
-                                                            <input
-                                                                type="number"
-                                                                className="w-full text-right text-slate-800 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
-                                                                value={xi.amount}
-                                                                onChange={(e) => {
-                                                                    const newItems = [...editingCost.xmlItems!];
-                                                                    newItems[idx] = { ...newItems[idx], amount: parseFloat(e.target.value) || 0 };
-                                                                    setEditingCost({ ...editingCost, xmlItems: newItems });
-                                                                }}
-                                                            />
-                                                        </td>
-                                                        <td className="px-1 py-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button
-                                                                onClick={() => {
-                                                                    const newItems = editingCost.xmlItems!.filter((_, i) => i !== idx);
-                                                                    setEditingCost({ ...editingCost, xmlItems: newItems });
-                                                                }}
-                                                                className="text-slate-400 hover:text-red-500"
-                                                                title="Remove Item"
-                                                            >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                            {editingCost.taxDetails && (
-                                                <tfoot className="bg-slate-50 border-t border-slate-200 font-mono text-xs">
-                                                    <tr>
-                                                        <td colSpan={6} className="px-3 py-1 text-right text-slate-500">Transferred Taxes (IVA/IEPS):</td>
-                                                        <td className="px-1 py-1 text-right">
-                                                            <input
-                                                                type="number"
-                                                                className="w-full text-right text-slate-700 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
-                                                                value={editingCost.taxDetails.totalTransferred}
-                                                                onChange={(e) => {
-                                                                    setEditingCost({
-                                                                        ...editingCost,
-                                                                        taxDetails: {
-                                                                            ...editingCost.taxDetails!,
-                                                                            totalTransferred: parseFloat(e.target.value) || 0
-                                                                        }
-                                                                    });
-                                                                }}
-                                                            />
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td colSpan={6} className="px-3 py-1 text-right text-slate-500">Retained Taxes (ISR/IVA):</td>
-                                                        <td className="px-1 py-1 text-right">
-                                                            <input
-                                                                type="number"
-                                                                className="w-full text-right text-red-600 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
-                                                                value={editingCost.taxDetails.totalRetained}
-                                                                onChange={(e) => {
-                                                                    setEditingCost({
-                                                                        ...editingCost,
-                                                                        taxDetails: {
-                                                                            ...editingCost.taxDetails!,
-                                                                            totalRetained: parseFloat(e.target.value) || 0
-                                                                        }
-                                                                    });
-                                                                }}
-                                                            />
-                                                        </td>
-                                                    </tr>
-                                                </tfoot>
-                                            )}
-                                        </table>
                                     </div>
+                                    <table className="w-full text-xs text-left">
+                                        <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+                                            <tr>
+                                                <th className="px-3 py-2 w-16 text-center">Qty</th>
+                                                <th className="px-3 py-2 w-20">Unit</th>
+                                                <th className="px-3 py-2 w-20">Key</th>
+                                                <th className="px-3 py-2">Description</th>
+                                                <th className="px-3 py-2 text-right w-24">Unit Val</th>
+                                                <th className="px-3 py-2 text-right w-24">Amount</th>
+                                                <th className="w-8"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 bg-white">
+                                            {(editingCost.xmlItems || []).map((xi, idx) => (
+                                                <tr key={idx} className="hover:bg-slate-50 group">
+                                                    <td className="px-1 py-1 text-center">
+                                                        <input
+                                                            type="text"
+                                                            className="w-full text-center bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
+                                                            value={xi.quantity}
+                                                            onChange={(e) => {
+                                                                const newItems = [...(editingCost.xmlItems || [])];
+                                                                newItems[idx] = { ...newItems[idx], quantity: parseFloat(e.target.value) || 0 };
+                                                                setEditingCost({ ...editingCost, xmlItems: newItems });
+                                                            }}
+                                                        />
+                                                    </td>
+                                                    <td className="px-1 py-1">
+                                                        <input type="text" className="w-full bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1" value={xi.unit || ''} onChange={(e) => { const newItems = [...(editingCost.xmlItems || [])]; newItems[idx].unit = e.target.value; setEditingCost({ ...editingCost, xmlItems: newItems }); }} />
+                                                    </td>
+                                                    <td className="px-1 py-1 font-mono text-slate-500">
+                                                        <input type="text" className="w-full bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1" value={xi.claveProdServ || ''} onChange={(e) => { const newItems = [...(editingCost.xmlItems || [])]; newItems[idx].claveProdServ = e.target.value; setEditingCost({ ...editingCost, xmlItems: newItems }); }} />
+                                                    </td>
+                                                    <td className="px-1 py-1">
+                                                        <input
+                                                            type="text"
+                                                            className="w-full font-medium text-slate-700 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
+                                                            value={xi.description}
+                                                            onChange={(e) => {
+                                                                const newItems = [...(editingCost.xmlItems || [])];
+                                                                newItems[idx] = { ...newItems[idx], description: e.target.value };
+                                                                setEditingCost({ ...editingCost, xmlItems: newItems });
+                                                            }}
+                                                        />
+                                                    </td>
+                                                    <td className="px-1 py-1 text-right font-mono">
+                                                        <input
+                                                            type="number"
+                                                            className="w-full text-right text-slate-600 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
+                                                            value={xi.unitValue}
+                                                            onChange={(e) => {
+                                                                const newItems = [...(editingCost.xmlItems || [])];
+                                                                newItems[idx] = { ...newItems[idx], unitValue: parseFloat(e.target.value) || 0 };
+                                                                setEditingCost({ ...editingCost, xmlItems: newItems });
+                                                            }}
+                                                        />
+                                                    </td>
+                                                    <td className="px-1 py-1 text-right font-mono font-bold">
+                                                        <input
+                                                            type="number"
+                                                            className="w-full text-right text-slate-800 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
+                                                            value={xi.amount}
+                                                            onChange={(e) => {
+                                                                const newItems = [...(editingCost.xmlItems || [])];
+                                                                newItems[idx] = { ...newItems[idx], amount: parseFloat(e.target.value) || 0 };
+                                                                setEditingCost({ ...editingCost, xmlItems: newItems });
+                                                            }}
+                                                        />
+                                                    </td>
+                                                    <td className="px-1 py-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => {
+                                                                const newItems = (editingCost.xmlItems || []).filter((_, i) => i !== idx);
+                                                                setEditingCost({ ...editingCost, xmlItems: newItems });
+                                                            }}
+                                                            className="text-slate-400 hover:text-red-500"
+                                                            title="Remove Item"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        {editingCost.taxDetails && (
+                                            <tfoot className="bg-slate-50 border-t border-slate-200 font-mono text-xs">
+                                                <tr>
+                                                    <td colSpan={6} className="px-3 py-1 text-right text-slate-500">Transferred Taxes (IVA/IEPS):</td>
+                                                    <td className="px-1 py-1 text-right">
+                                                        <input
+                                                            type="number"
+                                                            className="w-full text-right text-slate-700 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
+                                                            value={editingCost.taxDetails.totalTransferred}
+                                                            onChange={(e) => {
+                                                                setEditingCost({
+                                                                    ...editingCost,
+                                                                    taxDetails: {
+                                                                        ...editingCost.taxDetails!,
+                                                                        totalTransferred: parseFloat(e.target.value) || 0
+                                                                    }
+                                                                });
+                                                            }}
+                                                        />
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td colSpan={6} className="px-3 py-1 text-right text-slate-500">Retained Taxes (ISR/IVA):</td>
+                                                    <td className="px-1 py-1 text-right">
+                                                        <input
+                                                            type="number"
+                                                            className="w-full text-right text-red-600 bg-transparent focus:bg-white border border-transparent focus:border-blue-300 rounded outline-none py-1"
+                                                            value={editingCost.taxDetails.totalRetained}
+                                                            onChange={(e) => {
+                                                                setEditingCost({
+                                                                    ...editingCost,
+                                                                    taxDetails: {
+                                                                        ...editingCost.taxDetails!,
+                                                                        totalRetained: parseFloat(e.target.value) || 0
+                                                                    }
+                                                                });
+                                                            }}
+                                                        />
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
+                                        )}
+                                    </table>
                                 </div>
-                            )}
+                            </div>
+
 
                             <div className="bg-slate-50 p-4 border-t border-slate-100 flex justify-end gap-3">
                                 <button

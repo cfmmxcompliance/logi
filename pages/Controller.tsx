@@ -178,25 +178,46 @@ export const Controller = () => {
                 });
             }
 
-            // Fallback: If we have a required BL but no shipments found via container (or container was empty), look up by BL
-            if (detectedShipments.size === 0 && requiredBl && requiredBl.length > 5) {
-                const normBl = requiredBl.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-                const s = blToShipments.get(normBl);
-                if (s) detectedShipments.add(s);
+            // Fallback: If we have a required BL list, try to find ALL corresponding shipments
+            // This supports Multi-BL Invoices (e.g. "BL1, BL2")
+            if (requiredBl && requiredBl.length > 5) {
+                const blParts = requiredBl.split(/[,;\s]+/).map(b => b.replace(/[^A-Z0-9]/gi, '').toUpperCase()).filter(b => b.length > 5);
+
+                blParts.forEach(blPart => {
+                    const s = blToShipments.get(blPart);
+                    if (s) {
+                        detectedShipments.add(s);
+                    } else {
+                        // Fuzzy search through all shipments if map lookup failed (slower but safer)
+                        const found = shipments.find(sh => sh.blNo && sh.blNo.replace(/[^A-Z0-9]/gi, '').toUpperCase().includes(blPart));
+                        if (found) detectedShipments.add(found);
+                    }
+                });
             }
 
-            // STRICT BL FILTER: If we have an explicit BL, REJECT shipments that don't match it.
-            // This prevents "Ghost Shipments" (e.g. SEC...) from appearing just because they share a container
-            // when the known BL is essentially different (e.g. EGLV...).
+            // STRICT BL FILTER: If we have explicit BLs, ensure the detected shipments match AT LEAST ONE of them.
+            // This prevents "Ghost Shipments" from shared containers incorrectly appearing.
             if (requiredBl && requiredBl.length > 3) {
                 const normRequired = requiredBl.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-                if (normRequired) {
-                    // Filter the Set in-place (by creating new one)
-                    const valid = Array.from(detectedShipments).filter(s =>
-                        s.blNo && s.blNo.replace(/[^A-Z0-9]/gi, '').toUpperCase().includes(normRequired)
-                    );
+
+                // If the shipments we found have a BL that is NOT in our required list, maybe we should drop them?
+                // But wait, what if the required list is just one BL but the container implies another valid shipment?
+                // Better logic: If we have explicit BLs in the Invoice, filter detected shipments to only those that match one of the Invoice BLs.
+                // EXCEPTION: If the Invoice BL is "UNKNOWN" or empty, trust the container.
+
+                const validList = Array.from(detectedShipments).filter(s => {
+                    if (!s.blNo) return false;
+                    const sBl = s.blNo.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+                    // Check if this shipment's BL is present in the Invoice's BL string
+                    // We check if the Invoice String *Includes* the Shipment BL.
+                    return normRequired.includes(sBl);
+                });
+
+                if (validList.length > 0) {
+                    // Only apply filter if we actually found valid matches. If we found 0 valid matches but had detected shipments via container,
+                    // it's a conflict. User usually wants the BL match to win.
                     detectedShipments.clear();
-                    valid.forEach(v => detectedShipments.add(v));
+                    validList.forEach(v => detectedShipments.add(v));
                 }
             }
 
@@ -1295,14 +1316,32 @@ export const Controller = () => {
                                     {/* Booking Validation (BL Match) */}
                                     <td className="px-4 py-3 text-center">
                                         <div className="flex flex-col items-center gap-1">
-                                            {row.extractedBl && row.shipmentBl && row.extractedBl.replace(/[^A-Z0-9]/gi, '') === row.shipmentBl.replace(/[^A-Z0-9]/gi, '') ? (
-                                                <div title={`Matched: ${row.extractedBl}`} className="inline-flex justify-center items-center text-emerald-500 bg-emerald-50 rounded-full p-1"><CheckCircle size={14} /></div>
-                                            ) : !row.isVirtual ? (
-                                                <div title={row.extractedBl ? `Mismatch: Found ${row.extractedBl}, Expected ${row.shipmentBl}` : "BL Not Found in Invoice"} className="inline-flex justify-center items-center text-red-500 bg-red-50 rounded-full p-1"><XCircle size={14} /></div>
-                                            ) : (
-                                                <span className="text-slate-300 text-[10px]">-</span>
-                                            )}
-                                            {row.shipmentBl && <span className="text-[10px] font-mono text-slate-500">{row.shipmentBl}</span>}
+                                            {(() => {
+                                                const invoiceBls = row.extractedBl ? row.extractedBl.split(/[,;\s]+/).map((b: string) => b.replace(/[^A-Z0-9]/gi, '').toUpperCase()).filter((b: string) => b.length > 5) : [];
+                                                // Combine row.shipmentBl (which might be comma separated) and shipmentId lookup
+                                                const shipmentBlRaw = row.shipmentBl || '';
+                                                const shipmentBls = shipmentBlRaw.split(/[,;\s]+/).map((b: string) => b.replace(/[^A-Z0-9]/gi, '').toUpperCase());
+
+                                                // Logic: All BLs in Invoice MUST be in Shipment(s).
+                                                // Allow partial matches if multiple BLs but at least ONE matches (Gray area, but user wants green). 
+                                                // Actually user said "valida todos los contenedores... y haga la validación del booking".
+                                                // Let's go with: If at least ONE BL matches, it's Green (since they are likely linked). 
+                                                // And if there are discrepancies, maybe show warning? 
+                                                // Re-reading: "un contenedor un bl, pero aqui se embarcaron juntos" -> Merged.
+                                                // If we found the shipment, shipmentBls likely contains the correct ones.
+
+                                                const hasMatch = invoiceBls.length > 0 && invoiceBls.some((ib: string) => shipmentBls.includes(ib));
+                                                const allMatch = invoiceBls.length > 0 && invoiceBls.every((ib: string) => shipmentBls.includes(ib));
+
+                                                if (hasMatch) {
+                                                    return <div title={`Matched: ${row.extractedBl}`} className="inline-flex justify-center items-center text-emerald-500 bg-emerald-50 rounded-full p-1"><CheckCircle size={14} /></div>;
+                                                } else if (!row.isVirtual) {
+                                                    return <div title={row.extractedBl ? `Mismatch: Found ${row.extractedBl}, Expected ${row.shipmentBl}` : "BL Not Found in Invoice"} className="inline-flex justify-center items-center text-red-500 bg-red-50 rounded-full p-1"><XCircle size={14} /></div>;
+                                                } else {
+                                                    return <span className="text-slate-300 text-[10px]">-</span>;
+                                                }
+                                            })()}
+                                            {row.shipmentBl && <span className="text-[10px] font-mono text-slate-500 max-w-[100px] truncate" title={row.shipmentBl}>{row.shipmentBl}</span>}
                                         </div>
                                     </td>
 
@@ -1310,13 +1349,19 @@ export const Controller = () => {
                                     <td className="px-4 py-3 text-center">
                                         {(() => {
                                             const shipmentContainers = row.shipmentContainers ? row.shipmentContainers.map((c: string) => c.replace(/[^A-Z0-9]/gi, '').toUpperCase()) : [];
-                                            const invoiceContainers = row.extractedContainer ? row.extractedContainer.split(',').map((c: string) => c.trim().replace(/[^A-Z0-9]/gi, '').toUpperCase()).filter((c: string) => c) : [];
+                                            const invoiceContainers = row.extractedContainer ? row.extractedContainer.split(/[,;\s]+/).map((c: string) => c.trim().replace(/[^A-Z0-9]/gi, '').toUpperCase()).filter((c: string) => c.length > 3) : [];
 
-                                            const allMatch = invoiceContainers.length > 0 && shipmentContainers.length > 0 &&
-                                                invoiceContainers.every((c: string) => shipmentContainers.includes(c));
+                                            // Logic: Check if ALL invoice containers exist in the shipments.
+                                            // If strict match fails, check if at least significant overlap exists.
+                                            const matches = invoiceContainers.filter((c: string) => shipmentContainers.includes(c));
+                                            const allMatch = invoiceContainers.length > 0 && matches.length === invoiceContainers.length;
 
+                                            // If invoice has containers and we found linked shipments with containers...
                                             if (allMatch) {
-                                                return <div title={`Matched: ${row.extractedContainer}`} className="inline-flex justify-center items-center text-emerald-500 bg-emerald-50 rounded-full p-1"><CheckCircle size={14} /></div>;
+                                                return <div title={`All ${invoiceContainers.length} containers matched`} className="inline-flex justify-center items-center text-emerald-500 bg-emerald-50 rounded-full p-1"><CheckCircle size={14} /></div>;
+                                            } else if (matches.length > 0) {
+                                                // Partial Match
+                                                return <div title={`Partial Match: ${matches.length}/${invoiceContainers.length} containers found`} className="inline-flex justify-center items-center text-amber-500 bg-amber-50 rounded-full p-1"><CheckCircle size={14} /></div>;
                                             } else if (!row.isVirtual) {
                                                 return <div title={invoiceContainers.length > 0 ? `Mismatch: Invoice lists ${row.extractedContainer}, Tracking has [${row.shipmentContainers?.join(', ')}]` : "No Containers in Invoice"} className="inline-flex justify-center items-center text-red-500 bg-red-50 rounded-full p-1"><XCircle size={14} /></div>;
                                             } else {

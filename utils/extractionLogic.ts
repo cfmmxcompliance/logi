@@ -52,7 +52,8 @@ export const extractBlAndContainer = (text: string) => {
         const matches = [...targetText.matchAll(labeledRegex)];
         for (const match of matches) {
             const val = match[1].replace(/[^A-Z0-9]/g, ''); // strip hyphens for length check
-            if (val.length >= 5) return match[1].toUpperCase().trim();
+            // Fix: Enforce at least one digit to avoid capturing Ports (e.g. NINGBO, SHANGHAI) as BLs
+            if (val.length >= 5 && /\d/.test(val)) return match[1].toUpperCase().trim();
         }
         return "";
     };
@@ -84,13 +85,17 @@ export const extractBlAndContainer = (text: string) => {
 
     // 1. Try Standard (Handles "TCKU 1234567")
     const matches = [...cleanText.matchAll(contRegex)];
+    const containersFound = new Set<string>();
+
     for (const m of matches) {
         const fullCont = (m[1] + m[2]).toUpperCase();
+        // Avoid adding the BL itself if it looks like a container
         if (fullCont !== blClean) {
-            extractedContainer = fullCont;
-            break;
+            containersFound.add(fullCont);
         }
     }
+
+    extractedContainer = Array.from(containersFound).join(", ");
 
     return {
         extractedBl: extractedBl,

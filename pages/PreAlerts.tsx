@@ -63,6 +63,49 @@ export const PreAlerts = () => {
     const [extractionReview, setExtractionReview] = useState<ExtractionReview | null>(null);
     const [includeEquipment, setIncludeEquipment] = useState(true);
 
+    const handleForceNuke = async () => {
+        if (!confirm("☢️ NUCLEAR LAUNCH DETECTED ☢️\n\nThis will scan ALL records for '143559588446' and destroy them. Are you sure?")) return;
+
+        try {
+            setProcState({ ...INITIAL_PROCESSING_STATE, isOpen: true, status: 'loading', title: 'NUKING TARGET', message: 'Scanning...' });
+
+            const targetBL = "143559588446";
+            const normalize = (s: string) => s.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+            // 1. Scan Local
+            const localMatches = records.filter(r => normalize(r.bookingAbw || '').includes(targetBL));
+            console.log("Local Matches:", localMatches);
+
+            for (const r of localMatches) {
+                console.log(`Nuking Local ${r.id}`);
+                await storageService.deletePreAlert(r.id);
+            }
+
+            // 2. Scan Cloud Direct (Bypass StorageService Wrapper)
+            const { getDocs, collection, deleteDoc, doc, getFirestore } = await import('firebase/firestore');
+            const db = getFirestore();
+            const snap = await getDocs(collection(db, 'pre_alerts')); // COLS.PRE_ALERTS
+
+            snap.forEach(async (d) => {
+                const data = d.data();
+                const dRef = normalize(data.bookingAbw || '');
+                if (dRef.includes(targetBL)) {
+                    console.log(`Nuking Cloud ${d.id}`);
+                    await deleteDoc(d.ref);
+                }
+            });
+
+            setProcState({ ...INITIAL_PROCESSING_STATE, isOpen: true, status: 'success', title: 'TARGET DESTROYED', message: 'Scrub complete.', progress: 100 });
+            setTimeout(() => {
+                setProcState(INITIAL_PROCESSING_STATE);
+                setRecords(storageService.getPreAlerts()); // Refresh
+            }, 2000);
+
+        } catch (e: any) {
+            alert("Nuke Failed: " + e.message);
+        }
+    };
+
     const fileInputRef = useRef<HTMLInputElement>(null);
     const docInputRef = useRef<HTMLInputElement>(null);
 
@@ -155,11 +198,8 @@ export const PreAlerts = () => {
                 progress: 20
             });
 
-            if (record.bookingAbw) {
-                // New Power Delete
-                await storageService.deleteEntireShipment(record.bookingAbw);
-            } else {
-                // Fallback for manual records without BL
+            if (deleteModal.id) {
+                // Use robust ID-based delete which fetches record from DB if needed and cascades correctly
                 await storageService.deletePreAlert(deleteModal.id);
             }
 
@@ -416,6 +456,19 @@ export const PreAlerts = () => {
         const batchResults: BatchExtractionResult[] = [];
         let completed = 0;
 
+        // Pre-fetch Container Map for Conflict Detection
+        const existingRecords = storageService.getPreAlerts();
+        const containerMap = new Map<string, string>(); // Container -> BookingABW
+        const normalize = (s: string) => s.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+        existingRecords.forEach(r => {
+            if (r.bookingAbw && r.linkedContainers) {
+                r.linkedContainers.forEach(c => {
+                    containerMap.set(normalize(c), r.bookingAbw);
+                });
+            }
+        });
+
         for (const file of files) {
             // 4MB limit check
             // @ts-ignore
@@ -461,12 +514,31 @@ export const PreAlerts = () => {
                 // Validate Count
                 const containerCount = extracted.containers.length;
                 const expected = extracted.expectedContainerCount;
-                let status: 'success' | 'warning' = 'success';
+                let status: 'success' | 'warning' | 'error' = 'success';
                 let message = 'Extraction Successful';
 
                 if (expected && containerCount !== expected) {
                     status = 'warning';
                     message = `Mismatch: Found ${containerCount}, Expected ${expected}`;
+                }
+
+                // CONFLICT CHECK: Container belonging to DIFFERENT BL
+                const currentBLNorm = normalize(extracted.bookingNo || '');
+                for (const c of extracted.containers) {
+                    const cNorm = normalize(c.containerNo);
+                    if (containerMap.has(cNorm)) {
+                        const ownerBL = containerMap.get(cNorm) || '';
+                        const ownerBLNorm = normalize(ownerBL);
+
+                        // Check if it's the SAME BL (Fuzzy)
+                        const isSameBL = ownerBLNorm.includes(currentBLNorm) || currentBLNorm.includes(ownerBLNorm);
+
+                        if (!isSameBL) {
+                            status = 'error';
+                            message = `Conflict: Container ${c.containerNo} belongs to BL ${ownerBL}`;
+                            break; // Stop checking, error is found
+                        }
+                    }
                 }
 
                 batchResults.push({
@@ -539,6 +611,60 @@ export const PreAlerts = () => {
         }
 
         setExtractionReview(null);
+
+        // 1. Enhanced Fuzzy Duplicate Check
+        const existingRecords = storageService.getPreAlerts();
+        const normalize = (s: string) => s.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+        for (const res of validResults) {
+            const newBooking = res.preAlert.bookingAbw || '';
+            const normNew = normalize(newBooking);
+
+            if (!normNew) continue;
+
+            const exactMatch = existingRecords.find(e => normalize(e.bookingAbw || '') === normNew);
+
+            // Check for fuzzy matches (substrings) if no exact match
+            const fuzzyMatch = !exactMatch
+                ? existingRecords.find(e => {
+                    const normE = normalize(e.bookingAbw || '');
+                    return normE && (normE.includes(normNew) || normNew.includes(normE));
+                })
+                : null;
+
+            if (exactMatch) {
+                // Exact Match: Auto-merge (treat as update/replace)
+                res.preAlert.id = exactMatch.id;
+
+                if (!window.confirm(
+                    `⚠️ ACTUALIZACIÓN EXACTA DETECTADA\n\n` +
+                    `El BL '${newBooking}' ya existe exactamente.\n` +
+                    `Se actualizará el registro existente.\n\n` +
+                    `¿Continuar?`
+                )) {
+                    setExtractionReview(extractionReview);
+                    return;
+                }
+            } else if (fuzzyMatch) {
+                // Fuzzy Match: Ask User
+                const confirmMerge = window.confirm(
+                    `⚠️ POSIBLE DUPLICADO DETECTADO\n\n` +
+                    `Nuevo BL: ${newBooking}\n` +
+                    `Existente: ${fuzzyMatch.bookingAbw}\n\n` +
+                    `Parecen ser el mismo embarque.\n` +
+                    `[Acepta] para FUSIONAR (Actualizar el existente)\n` +
+                    `[Cancela] para CREAR NUEVO (Separado)`
+                );
+
+                if (confirmMerge) {
+                    // Update existing ID -> Merges in backend
+                    res.preAlert.id = fuzzyMatch.id;
+                } else {
+                    // Leave ID null -> Creates new
+                }
+            }
+        }
+
         setProcState({
             isOpen: true,
             status: 'loading',
@@ -651,6 +777,11 @@ export const PreAlerts = () => {
 
     return (
         <div className="space-y-6">
+            <div className="flex justify-end mb-2">
+                <button onClick={handleForceNuke} className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded hover:bg-red-700 animate-pulse">
+                    ☢️ NUKE 143...
+                </button>
+            </div>
             <ProcessingModal state={procState} onClose={() => setProcState(INITIAL_PROCESSING_STATE)} />
 
             {/* Format Submission Modal */}
@@ -980,7 +1111,7 @@ export const PreAlerts = () => {
                                     />
                                 </Th>
                                 <Th className="sticky left-[40px] z-20 w-16 bg-slate-50">Action</Th>
-                                <Th className="sticky left-[104px] z-20">Booking / AWB</Th>
+                                <Th>Booking / AWB</Th>
                                 <Th>Mode</Th>
                                 <Th>Model</Th>
                                 <Th>ETD</Th>
@@ -1013,7 +1144,7 @@ export const PreAlerts = () => {
                                             </button>
                                         )}
                                     </td>
-                                    <td className="px-3 py-2 border-r border-slate-100 sticky left-[104px] bg-white hover:bg-slate-50 font-bold text-blue-600">{r.bookingAbw}</td>
+                                    <td className="px-3 py-2 border-r border-slate-100 bg-white hover:bg-slate-50 font-bold text-blue-600">{r.bookingAbw}</td>
                                     <Td>
                                         {r.shippingMode === 'AIR' ?
                                             <span className="flex items-center gap-1 text-purple-600 font-bold"><Plane size={12} /> Air</span> :

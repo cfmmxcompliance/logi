@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { storageService } from '../services/storageService.ts';
-import { Database, Trash2, AlertTriangle, History, RotateCcw, Save, Users, Shield, Play, Key } from 'lucide-react';
+import { Database, Trash2, AlertTriangle, History, RotateCcw, Save, Users, Shield, Play, Key, UserPlus } from 'lucide-react';
 import { RestorePoint, UserRole, User } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { authService } from '../services/authService.ts';
@@ -108,7 +108,51 @@ export const Settings = () => {
                             </h2>
                             <p className="text-slate-500 text-sm mt-1">Manage system access and roles.</p>
                         </div>
-                        <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2 py-1 rounded border border-blue-100 uppercase">Admin Area</span>
+                        <div className="flex items-center gap-3">
+                            <div className="text-xs text-slate-400 font-mono">
+                                Count: {systemUsers.length}
+                            </div>
+                            <button
+                                onClick={async () => {
+                                    const email = prompt("Enter new user Email:");
+                                    if (!email) return;
+                                    const pwd = prompt("Enter temporary Password:");
+                                    if (!pwd) return;
+
+                                    // @ts-ignore
+                                    if (authService.adminCreateUser) {
+                                        // @ts-ignore
+                                        const success = await authService.adminCreateUser(email, pwd, UserRole.VIEWER);
+                                        if (success) {
+                                            alert("User created successfully as Viewer. You can now change their role.");
+                                            // @ts-ignore
+                                            const users = await authService.getUsers();
+                                            setSystemUsers(users);
+                                        } else {
+                                            alert("Failed to create user. Check console.");
+                                        }
+                                    }
+                                }}
+                                className="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-full transition-colors border border-emerald-200"
+                                title="Manually Add User"
+                            >
+                                <UserPlus size={18} />
+                            </button>
+
+                            <button
+                                onClick={async () => {
+                                    // @ts-ignore
+                                    const users = await authService.getUsers();
+                                    console.log("Debug Users Fetched:", users);
+                                    setSystemUsers(users);
+                                }}
+                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                title="Refresh User List"
+                            >
+                                <RotateCcw size={18} />
+                            </button>
+                            <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2 py-1 rounded border border-blue-100 uppercase">Admin Area</span>
+                        </div>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">

@@ -18,17 +18,40 @@ export const AuthProvider = ({ children }: { children?: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check local storage for persisted session
-    const storedUser = localStorage.getItem('logimaster_user');
-    if (storedUser) {
+    const initSession = async () => {
+      const storedUser = localStorage.getItem('logimaster_user');
+      if (storedUser) {
         try {
-            setUser(JSON.parse(storedUser));
+          const parsedUser = JSON.parse(storedUser);
+          // Validate against DB if possible
+          if (parsedUser.email) {
+            try {
+              const dbUser = await authService.getUser(parsedUser.email);
+              if (dbUser) {
+                setUser(dbUser); // Use fresh data (e.g. Role updates)
+              } else {
+                console.warn("⚠️ Session Expired: User deleted from database.");
+                localStorage.removeItem('logimaster_user');
+                setUser(null);
+              }
+            } catch (err) {
+              console.error("Session Validation Error:", err);
+              // Offline fallback: Keep local session if DB unreachable? 
+              // Or fail safe? For now, keep local if DB error (offline support), but verify if DB success.
+              setUser(parsedUser);
+            }
+          } else {
+            setUser(parsedUser);
+          }
         } catch (e) {
-            console.error("Failed to parse user session");
-            localStorage.removeItem('logimaster_user');
+          console.error("Failed to parse user session");
+          localStorage.removeItem('logimaster_user');
         }
-    }
-    setLoading(false);
+      }
+      setLoading(false);
+    };
+
+    initSession();
   }, []);
 
   const login = (userData: User) => {
@@ -43,8 +66,8 @@ export const AuthProvider = ({ children }: { children?: ReactNode }) => {
   };
 
   const hasRole = (roles: UserRole[]) => {
-      if (!user) return false;
-      return roles.includes(user.role);
+    if (!user) return false;
+    return roles.includes(user.role);
   };
 
   return (

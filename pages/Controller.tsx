@@ -104,10 +104,32 @@ export const Controller = () => {
     };
 
     // Load Data
+    // Load Data with Aggressive Deduplication (Fix for "Ghost/Trash" Records)
+    // Load Data
     const loadData = () => {
         setCosts(storageService.getCosts());
         setSuppliers(storageService.getSuppliers());
-        setShipments(storageService.getShipments());
+
+        // Merge Shipments and PreAlerts (treating PreAlerts as potential shipments for validation)
+        const realShipments = storageService.getShipments();
+        const preAlerts = storageService.getPreAlerts();
+
+        const shipmentBls = new Set(realShipments.map(s => s.blNo?.trim().toUpperCase()));
+
+        const virtualShipments = preAlerts
+            .filter(p => p.bookingAbw && !shipmentBls.has(p.bookingAbw.trim().toUpperCase()))
+            .map(p => ({
+                id: `pre_${p.id}`,
+                blNo: p.bookingAbw,
+                containers: p.linkedContainers || [],
+                forwarder: 'PreAlert',
+                etd: p.etd,
+                eta: p.eta,
+                status: 'PRE_ALERT',
+                // Map other necessary fields to satisfy Shipment interface if needed, or cast
+            } as any)); // Casting to any/Shipment to fit state
+
+        setShipments([...realShipments, ...virtualShipments]);
     };
 
     useEffect(() => {
@@ -127,9 +149,15 @@ export const Controller = () => {
         const supplierMap = new Map(suppliers.map(s => [s.rfc, s.name]));
 
         // Map Container -> Shipment(s) for multi-BL lookup
-        // We use a Map where key is normalized container, value is array of Shipments (just in case duplicates, though unlikely)
         const containerToShipments = new Map<string, typeof shipments[0]>();
+        // Map BL -> Shipment (NEW: For Fallback Lookup)
+        const blToShipments = new Map<string, typeof shipments[0]>();
+
         shipments.forEach(s => {
+            if (s.blNo) {
+                const normBl = s.blNo.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+                if (normBl) blToShipments.set(normBl, s);
+            }
             s.containers?.forEach(c => {
                 const norm = c.replace(/[^A-Z0-9]/gi, '').toUpperCase();
                 if (norm) containerToShipments.set(norm, s);
@@ -137,7 +165,7 @@ export const Controller = () => {
         });
 
         // Helper to resolve shipments from container string
-        const resolveShipmentInfo = (containerStr?: string, defaultShipment?: typeof shipments[0]) => {
+        const resolveShipmentInfo = (containerStr?: string, defaultShipment?: typeof shipments[0], requiredBl?: string) => {
             const detectedShipments = new Set<typeof shipments[0]>();
 
             if (defaultShipment) detectedShipments.add(defaultShipment);
@@ -148,6 +176,28 @@ export const Controller = () => {
                     const s = containerToShipments.get(c);
                     if (s) detectedShipments.add(s);
                 });
+            }
+
+            // Fallback: If we have a required BL but no shipments found via container (or container was empty), look up by BL
+            if (detectedShipments.size === 0 && requiredBl && requiredBl.length > 5) {
+                const normBl = requiredBl.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+                const s = blToShipments.get(normBl);
+                if (s) detectedShipments.add(s);
+            }
+
+            // STRICT BL FILTER: If we have an explicit BL, REJECT shipments that don't match it.
+            // This prevents "Ghost Shipments" (e.g. SEC...) from appearing just because they share a container
+            // when the known BL is essentially different (e.g. EGLV...).
+            if (requiredBl && requiredBl.length > 3) {
+                const normRequired = requiredBl.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+                if (normRequired) {
+                    // Filter the Set in-place (by creating new one)
+                    const valid = Array.from(detectedShipments).filter(s =>
+                        s.blNo && s.blNo.replace(/[^A-Z0-9]/gi, '').toUpperCase().includes(normRequired)
+                    );
+                    detectedShipments.clear();
+                    valid.forEach(v => detectedShipments.add(v));
+                }
             }
 
             const uniqueShipments = Array.from(detectedShipments);
@@ -168,7 +218,8 @@ export const Controller = () => {
             } else {
                 // Map unlinked rows immediately with provider resolution
                 const providerName = supplierMap.get(cost.provider) || cost.provider || 'Unknown';
-                const { blNo: detectedBl, containers: detectedContainers } = resolveShipmentInfo(cost.linkedContainer);
+                // Pass cost.extractedBl to enforce strict matching (Fix for Ghost Shipments)
+                const { blNo: detectedBl, containers: detectedContainers } = resolveShipmentInfo(cost.linkedContainer, undefined, cost.extractedBl);
 
                 unlinkedrows.push({
                     id: cost.id,
@@ -208,7 +259,8 @@ export const Controller = () => {
             if (shipmentCosts.length > 0) {
                 return shipmentCosts.map(cost => {
                     const providerName = supplierMap.get(cost.provider) || cost.provider;
-                    const { blNo: multiBl, containers: multiContainers } = resolveShipmentInfo(cost.linkedContainer, shipment);
+                    // Pass cost.extractedBl to enforce strict matching (Fix for Ghost Shipments)
+                    const { blNo: multiBl, containers: multiContainers } = resolveShipmentInfo(cost.linkedContainer, shipment, cost.extractedBl);
 
                     return {
                         ...cost,
@@ -232,6 +284,9 @@ export const Controller = () => {
                 });
             } else {
                 // Virtual Row
+                // Hide Virtual Row for PreAlerts (User request: purely for validation, not display)
+                if ((shipment as any).status === 'PRE_ALERT') return [];
+
                 const defaultProvider = shipment.forwarder || 'Unknown';
                 return [{
                     id: `temp_${shipment.id}`,
@@ -281,6 +336,7 @@ export const Controller = () => {
             if (filterType !== 'all' && item.type !== filterType) return false;
             if (dateRange.start && item.invoiceDate < dateRange.start) return false;
             if (dateRange.end && item.invoiceDate > dateRange.end) return false;
+
             return true;
         });
 
@@ -454,7 +510,7 @@ export const Controller = () => {
             csvContent = [
                 headers.join(','),
                 ...expenseRows.map(row => [
-                    row.blNo || '',
+                    `"${(row.blNo || '').replace(' (Unlinked)', '')}"`, // Quote BL and remove suffix
                     `"${row.container || ''}"`,
                     row.invoiceNo || '',
                     row.invoiceDate || '',
@@ -596,6 +652,21 @@ export const Controller = () => {
                 const xmlUrlRaw = await fileToBase64(xmlFile);
                 const pdfUrlRaw = pdfFile ? await fileToBase64(pdfFile) : '';
 
+                // 3c. XML Description Fallback/Priority
+                // Sometimes the PDF is bad but the XML Description has the BL.
+                let isXmlOverride = false;
+                if (xmlResult.description) {
+                    const xmlExt = extractBlAndContainer(xmlResult.description);
+                    if (xmlExt.extractedBl) {
+                        console.log(`BL Found in XML Description: ${xmlExt.extractedBl} (Overriding PDF: ${extractedBl})`);
+                        extractedBl = xmlExt.extractedBl;
+                        isXmlOverride = true;
+                    }
+                    if (xmlExt.extractedContainer && !extractedContainer) {
+                        extractedContainer = xmlExt.extractedContainer;
+                    }
+                }
+
                 // 4. Linkage
                 const cleanBl = extractedBl.replace(/[^A-Z0-9]/gi, '');
                 const targetShipment = shipments.find(s =>
@@ -605,42 +676,80 @@ export const Controller = () => {
                 console.log(`BL Found: ${extractedBl} -> Linked: ${targetShipment ? targetShipment.blNo : 'No'}`);
 
                 // 5. Construct Record
-                const existingCost = costs.find(c => c.uuid === xmlResult.uuid && c.uuid && c.uuid !== '-');
+                const normalizeUuid = (u: string | undefined) => (u || '').trim().toLowerCase();
+                const currentUuid = normalizeUuid(xmlResult.uuid);
+
+                // Enhanced Duplicate Detection
+                const existingCost = costs.find(c => {
+                    // 1. UUID Match (High Confidence)
+                    if (currentUuid && normalizeUuid(c.uuid) === currentUuid && currentUuid !== '-') return true;
+
+                    // 2. Fallback: Invoice + Amount (Medium Confidence, but prevents obvious visual duplicates)
+                    // Useful if data was entered manually without UUID, or XML parse variance
+                    if (c.invoiceNo && xmlResult.invoiceNo) {
+                        const normInvDb = c.invoiceNo.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        const normInvXml = xmlResult.invoiceNo.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        // Allow fuzzy match if invoice is contained or exact
+                        const invoiceMatch = normInvDb === normInvXml || (normInvDb.length > 5 && (normInvDb.includes(normInvXml) || normInvXml.includes(normInvDb)));
+
+                        if (invoiceMatch) {
+                            // Check Amount Tolerance (±1.00)
+                            if (Math.abs((c.amount || 0) - (xmlResult.amount || 0)) < 1.0) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                });
+
                 const validId = existingCost?.id || crypto.randomUUID();
 
+                // 6. Resolve Effective Shipment (Self-Healing Linkage)
+                // Prioritize the BL we already have in DB (if any) or the new one
+                // NEW: If XML Overrode the BL, we TRUST IT above the existing DB value.
+                const effectiveBl = (isXmlOverride ? extractedBl : existingCost?.extractedBl) || extractedBl;
+                const cleanEffectiveBl = effectiveBl.replace(/[^A-Z0-9]/gi, '');
+
+                const resolvedShipment = cleanEffectiveBl ? shipments.find(s =>
+                    s.blNo && s.blNo.replace(/[^A-Z0-9]/gi, '').includes(cleanEffectiveBl)
+                ) : undefined;
+
                 const finalRecord: CostRecord = {
-                    id: validId,
-                    shipmentId: targetShipment?.id || existingCost?.shipmentId || '',
+                    // Critical: Strict ID Reuse ensures "Upsert" behavior (Update if exists, Insert if new)
+                    id: existingCost ? existingCost.id : validId,
+                    shipmentId: resolvedShipment?.id || (existingCost?.shipmentId || ''),
                     type: existingCost?.type || 'INLAND',
                     amount: xmlResult.amount,
                     currency: xmlResult.currency as any,
-                    provider: xmlResult.senderName,
+                    provider: xmlResult.senderName || existingCost?.provider || 'Unknown',
                     description: existingCost?.description || xmlResult.description || 'Freight Cost',
                     date: xmlResult.date,
-                    status: existingCost?.status || 'Pending',
+                    status: existingCost?.status || 'Pending', // Don't reset status if already Paid
 
                     // Metadata
                     invoiceNo: xmlResult.invoiceNo,
-                    uuid: xmlResult.uuid,
-                    // Use XML Description for Comments (User Request)
-                    comments: xmlResult.description || (targetShipment ? `Linked to ${targetShipment.blNo}` : 'Unlinked - Manual Action Required'),
+                    uuid: xmlResult.uuid, // Ensure strict UUID sync
+                    comments: existingCost?.comments || (xmlResult.description || (targetShipment ? `Linked to ${targetShipment.blNo}` : 'Unlinked')),
 
-                    // Linkage Data
-                    extractedBl: extractedBl || (targetShipment ? targetShipment.blNo : ''),
-                    linkedContainer: extractedContainer,
+                    // Linkage: Prefer XML override if valid, else keep existing link
+                    extractedBl: (isXmlOverride ? extractedBl : (existingCost?.extractedBl || extractedBl)) || (targetShipment ? targetShipment.blNo : ''),
+                    linkedContainer: existingCost?.linkedContainer || extractedContainer,
 
-                    // Files
+                    // Files: Priority to NEW upload, fallback to OLD
                     xmlFile: xmlFile.name,
-                    pdfFile: pdfFile?.name || (existingCost?.pdfFile || ''),
-                    // PRIORITIZE NEW UPLOAD: If we parsed a file, use its URL. Only fallback if no new file (unreachable here usually as we iterate xmlFiles)
-                    xmlUrl: xmlUrlRaw || existingCost?.xmlUrl || '',
-                    pdfUrl: pdfUrlRaw || existingCost?.pdfUrl || '',
-                    xmlDriveId: existingCost?.xmlDriveId || '',
-                    pdfDriveId: existingCost?.pdfDriveId || '',
+                    pdfFile: pdfFile?.name || existingCost?.pdfFile,
+                    xmlUrl: xmlUrlRaw || existingCost?.xmlUrl,
+                    pdfUrl: pdfUrlRaw || existingCost?.pdfUrl,
+                    xmlDriveId: existingCost?.xmlDriveId,
+                    pdfDriveId: existingCost?.pdfDriveId,
 
-                    // Detailed XML Data
+                    // Extras
                     xmlItems: xmlResult.items,
-                    taxDetails: xmlResult.taxDetails
+                    taxDetails: xmlResult.taxDetails,
+                    bpm: existingCost?.bpm,
+                    paymentDate: existingCost?.paymentDate,
+                    submitDate: existingCost?.submitDate,
+                    aaRef: existingCost?.aaRef
                 };
 
                 // 6. Persistence
@@ -886,6 +995,84 @@ export const Controller = () => {
         }
     };
 
+
+
+    // DEDUPLICATION FIX
+    const handleDeduplicate = async () => {
+        const costGroups = new Map<string, CostRecord[]>();
+        const duplicates: CostRecord[][] = [];
+
+        // Group by UUID
+        costs.forEach(c => {
+            if (c.uuid && c.uuid !== '-') {
+                const norm = c.uuid.trim().toLowerCase();
+                const list = costGroups.get(norm) || [];
+                list.push(c);
+                costGroups.set(norm, list);
+            }
+        });
+
+        // Identify Duplicates
+        costGroups.forEach((group) => {
+            if (group.length > 1) {
+                duplicates.push(group);
+            }
+        });
+
+        if (duplicates.length === 0) {
+            showNotification('Clean', 'No duplicate UUIDs found.', 'success');
+            return;
+        }
+
+        const toDeleteIds: string[] = [];
+
+        duplicates.forEach(group => {
+            // Strategy: Keep the one with a ShipmentID (Green Link). If multiple, keep the one with most info.
+            // Sort: Has ShipmentId -> Has BL -> Updated At -> Created At
+            group.sort((a, b) => {
+                const aScore = (a.shipmentId ? 10 : 0) + (a.extractedBl ? 5 : 0);
+                const bScore = (b.shipmentId ? 10 : 0) + (b.extractedBl ? 5 : 0);
+                return bScore - aScore; // Descending score
+            });
+
+            // Keep index 0, delete the rest
+            const localDeletes = group.slice(1);
+            localDeletes.forEach(d => toDeleteIds.push(d.id));
+        });
+
+        if (toDeleteIds.length === 0) return;
+
+        setConfirmModal({
+            isOpen: true,
+            title: 'Repair Duplicates',
+            message: `Found ${duplicates.length} duplicate groups. Removing ${toDeleteIds.length} redundant records (keeping the best linked ones).`,
+            type: 'warning',
+            onConfirm: async () => {
+                setProcessingState({ isOpen: true, status: 'loading', title: 'Fixing Duplicates', message: 'Removing redundant records...', progress: 0 });
+                try {
+                    // Batch Delete
+                    await storageService.deleteInvoiceItems(toDeleteIds); // Using Invoice Delete for efficiency but these are Costs
+                    // Wait! Costs logic is deleteCost. storageService.deleteInvoiceItems is for Commercial Invoices!
+                    // We must use Promise.all with deleteCost for costs.
+                    const proms = toDeleteIds.map(id => storageService.deleteCost(id));
+                    await Promise.all(proms);
+
+                    // Cleanup UI
+                    setCosts(prev => prev.filter(c => !toDeleteIds.includes(c.id)));
+
+                    setProcessingState(prev => ({ ...prev, isOpen: false }));
+                    showNotification('Success', `Removed ${toDeleteIds.length} duplicates.`, 'success');
+                } catch (err: any) {
+                    console.error("Dedupe Error", err);
+                    setProcessingState(prev => ({ ...prev, isOpen: false }));
+                    showNotification('Error', 'Failed to remove duplicates.', 'error');
+                } finally {
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
+            }
+        });
+    };
+
     return (
         <div className="space-y-6">
             <ConfirmationModal
@@ -922,6 +1109,13 @@ export const Controller = () => {
                     <p className="text-slate-500 text-sm">Manage partner payments and track expenses.</p>
                 </div>
                 <div className="flex gap-2">
+                    <button
+                        onClick={handleDeduplicate}
+                        className="bg-amber-50 text-amber-700 border border-amber-200 px-3 py-2 rounded-lg flex items-center gap-2 shadow-sm hover:bg-amber-100 transition-all font-bold text-xs"
+                        title="Scan and Fix Duplicate Invoices"
+                    >
+                        <AlertTriangle size={14} /> Fix Duplicates
+                    </button>
                     {selectedIds.size > 0 && (
                         <button
                             onClick={handleBulkDelete}
@@ -1851,6 +2045,27 @@ export const Controller = () => {
                                 <button
                                     onClick={async () => {
                                         if (editingCost) {
+                                            // Re-Link Logic (Fix for ghost bookings)
+                                            if (editingCost.extractedBl) {
+                                                const cleanBl = editingCost.extractedBl.replace(/[^A-Z0-9]/gi, '');
+                                                const targetShipment = shipments.find(s =>
+                                                    cleanBl && s.blNo && s.blNo.replace(/[^A-Z0-9]/gi, '').includes(cleanBl)
+                                                );
+
+                                                if (targetShipment) {
+                                                    editingCost.shipmentId = targetShipment.id;
+                                                    // Auto-comment update if generic
+                                                    if (!editingCost.comments || editingCost.comments.startsWith('Linked to') || editingCost.comments.startsWith('Unlinked')) {
+                                                        editingCost.comments = `Linked to ${targetShipment.blNo}`;
+                                                    }
+                                                } else {
+                                                    editingCost.shipmentId = '';
+                                                    if (!editingCost.comments || editingCost.comments.startsWith('Linked to') || editingCost.comments.startsWith('Unlinked')) {
+                                                        editingCost.comments = 'Unlinked - Manual Action Required';
+                                                    }
+                                                }
+                                            }
+
                                             // Update Local
                                             setCosts(prev => prev.map(c => c.id === editingCost.id ? editingCost : c));
                                             // Update DB

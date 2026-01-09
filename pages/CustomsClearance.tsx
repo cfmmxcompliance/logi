@@ -67,20 +67,22 @@ export const CustomsClearance = () => {
         );
     };
 
-    const filteredRecords = records.filter(r => {
-        // 1. Tab Filter
-        if (activeTab === 'AIR' && !isAirMode(r)) return false;
-        if (activeTab === 'SEA' && isAirMode(r)) return false;
+    const filteredRecords = React.useMemo(() => {
+        return records.filter(r => {
+            // 1. Tab Filter
+            if (activeTab === 'AIR' && !isAirMode(r)) return false;
+            if (activeTab === 'SEA' && isAirMode(r)) return false;
 
-        // 2. Search Filter
-        if (!filter) return true;
-        const searchTerms = filter.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
-        return searchTerms.some(term =>
-            Object.values(r).some(val =>
-                val && typeof val !== 'object' && String(val).toLowerCase().includes(term)
-            )
-        );
-    });
+            // 2. Search Filter
+            if (!filter) return true;
+            const searchTerms = filter.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
+            return searchTerms.some(term =>
+                Object.values(r).some(val =>
+                    val && typeof val !== 'object' && String(val).toLowerCase().includes(term)
+                )
+            );
+        });
+    }, [records, activeTab, filter]);
 
     const handleEdit = (r: CustomsClearanceRecord) => {
         setCurrentRecord(r);

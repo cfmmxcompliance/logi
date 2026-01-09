@@ -327,9 +327,10 @@ export interface DSItemData {
 }
 
 export interface PedimentoRecord extends GeneralData {
-  id: string;
+  id: string; // Internal UUID
   items: DSItemData[];
   invoices: DSInvoiceData[];
+  referencias?: string; // Extracted references (e.g. BL, Containers)
   totalTaxes?: number;
   valorAduanaTotal?: number;
   dtaTotal?: number;

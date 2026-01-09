@@ -103,27 +103,30 @@ export const DataStage = () => {
             // 1. Deduplicate New Records internally
             const recordMap = new Map<string, PedimentoRecord>();
             allRecords.forEach(r => recordMap.set(r.id, r));
-            const newUniqueRecords = Array.from(recordMap.values());
+            const newBatchUnique = Array.from(recordMap.values());
 
             const fileName = fileArray.length === 1 ? fileArray[0].name : `Lote de ${fileArray.length}`;
 
-            // 2. ACCUMULATE: Merge with existing data
-            setData(prevData => {
-                const combinedMap = new Map<string, PedimentoRecord>();
-                // Add old records first
-                prevData.forEach(r => combinedMap.set(r.id, r));
-                // Overwrite/Add new records
-                newUniqueRecords.forEach(r => combinedMap.set(r.id, r));
-                return Array.from(combinedMap.values());
-            });
+            // 2. ACCUMULATE: Merge with existing data (PRE-CALCULATE for Draft Save)
+            // Fix: We must save the COMBINED state to draft, not just the new batch.
 
-            // Accumulate Raw Files for viewing source
-            setRawFiles(prevRaw => {
-                // Avoid duplicates by fileName+code? Simple concat for now, or check filename
-                const existingNames = new Set(prevRaw.map(f => f.fileName));
-                const newFiles = allRawFiles.filter(f => !existingNames.has(f.fileName));
-                return [...prevRaw, ...newFiles];
-            });
+            const combinedRecordsMap = new Map<string, PedimentoRecord>();
+            // Add old records first (from current state 'data')
+            if (data) {
+                data.forEach(r => combinedRecordsMap.set(r.id, r));
+            }
+            // Overwrite/Add new records
+            newBatchUnique.forEach(r => combinedRecordsMap.set(r.id, r));
+            const finalCombinedRecords = Array.from(combinedRecordsMap.values());
+
+            // Merge Raw Files
+            const existingFileNames = new Set(rawFiles.map(f => f.fileName));
+            const newFiles = allRawFiles.filter(f => !existingFileNames.has(f.fileName));
+            const finalRawFiles = [...rawFiles, ...newFiles];
+
+            // 3. Update State
+            setData(finalCombinedRecords);
+            setRawFiles(finalRawFiles);
 
             setCurrentFileName(prev => {
                 // If accumulating, switch to clean Summary Name immediately.
@@ -132,17 +135,18 @@ export const DataStage = () => {
                 }
                 return fileName;
             });
+
             if (fileArray.length > 0) {
                 setPendingFile(fileArray[0]);
             }
 
             setSaveStatus("");
 
-            // Background draft
+            // Background draft (Save the FULL STATE)
             storageService.saveDraftDataStage({
-                records: newUniqueRecords,
-                rawFiles: allRawFiles,
-                fileName: fileName,
+                records: finalCombinedRecords,
+                rawFiles: finalRawFiles,
+                fileName: fileName, // Or summary name? Keep last filename for context or update? Keep simple.
                 timestamp: new Date().toISOString()
             }).catch(console.warn);
 
@@ -228,43 +232,41 @@ export const DataStage = () => {
             // Implemented a safer "Check existence by Name" loop would be slow.
             // Let's stick to the high-value target: CUSTOMS OPERATIONS (Pedimentos).
 
-            // 2. Sync Customs Records
-            for (const record of data) {
-                // Check if exists by Pedimento? 
-                // storageService doesn't have "getByPedimento".
-                // We'll create new records or update if we can find them.
-                // For now, let's create new records with a specific ID strategy or random?
-                // Use Pedimento Number as ID? No, IDs are UUIDs.
-                // Let's just create them. User can dedupe or we assume they are new/updates.
+            // 2. Sync Customs Records (Optimized Batch)
+            let result = await storageService.batchSyncDataStage(data);
 
-                // Map PedimentoRecord -> CustomsClearanceRecord
-                const newRec = {
-                    id: crypto.randomUUID(),
-                    blNo: '', // Not linked to BL yet? Or try to find BL?
-                    // If we have "consignee" or "ref" in file?
-                    containerNo: 'Multiple',
-                    ataPort: '',
-                    pedimentoNo: record.pedimento,
-                    proformaRevisionBy: 'DataStage',
-                    targetReviewDate: '',
-                    proformaSentDate: '',
-                    pedimentoAuthorizedDate: record.fechaPago, // Fecha Pago -> Authorized
-                    peceRequestDate: '',
-                    peceAuthDate: '',
-                    pedimentoPaymentDate: record.fechaPago,
-                    truckAppointmentDate: '',
-                    ataFactory: '',
-                    eirDate: ''
-                };
+            // Check for Force Sync scenario
+            if (result.added === 0 && result.skipped > 0) {
+                const force = window.confirm(
+                    `⚠️ DUPLICADOS DETECTADOS\n\n` +
+                    `Se encontraron ${result.skipped} registros que YA existen en tu equipo.\n` +
+                    `¿Deseas FORZAR el envío a la Nube? (Útil si no aparecen en otros dispositivos).`
+                );
 
-                // Try to find matching BL from "Referencias" if available? 
-                // data-stage logic doesn't currently extract BLs reliably from M3 logic unless "Referencia" field is mapped.
-                // Let's just save valid Pedimento records.
-                await storageService.updateCustomsClearance(newRec);
-                customsCount++;
+                if (force) {
+                    setSaveStatus("Forzando Sincronización...");
+                    result = await storageService.batchSyncDataStage(data, { force: true });
+                }
             }
 
-            alert(`✅ Sincronización Completada:\n- ${customsCount} operaciones de aduanas registradas/actualizadas.`);
+            const { added, updated, skipped, cloudStatus, errorMsg } = result;
+
+            if (cloudStatus === 'failed') {
+                alert(
+                    `⚠️ GUARDADO PARCIAL (SOLO LOCAL)\n\n` +
+                    `Se procesaron ${added + (updated || 0)} registros, pero FALLÓ la sincronización con la Nube.\n` +
+                    `Error: ${errorMsg}\n\n` +
+                    `Tus datos NO serán visibles para otros usuarios hasta que se restablezca la conexión.`
+                );
+            } else {
+                let msg = `✅ Sincronización Completada:\n\n`;
+                if (added > 0) msg += `- ${added} nuevos registros.\n`;
+                if (updated && updated > 0) msg += `- ${updated} registros actualizados/sincronizados.\n`;
+                if (skipped > 0) msg += `- ${skipped} duplicados omitidos.\n`;
+                msg += `- ${supplierCount} proveedores verificados.`;
+
+                alert(msg);
+            }
         } catch (e) {
             console.error(e);
             alert("❌ Error al sincronizar con la base de datos.");

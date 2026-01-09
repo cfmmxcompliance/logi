@@ -74,6 +74,29 @@ export const authService = {
         return user;
     },
 
+    getUser: async (email: string): Promise<User | null> => {
+        if (!db) return null;
+        try {
+            const userRef = doc(db, 'users', email);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                return {
+                    username: data.username || email.split('@')[0],
+                    name: data.username || data.name || email.split('@')[0],
+                    role: data.role as UserRole,
+                    email: email,
+                    avatarInitials: (data.email || email).substring(0, 2).toUpperCase()
+                };
+            }
+            return null;
+        } catch (e) {
+            console.error("Error fetching user:", e);
+            return null;
+        }
+    },
+
     register: async (email: string, password: string): Promise<User | null> => {
         const username = email.split('@')[0];
         let role = UserRole.PENDING;
@@ -119,6 +142,31 @@ export const authService = {
         } catch (e: any) {
             console.error("Registration Error:", e);
             throw e;
+        }
+    },
+
+    adminCreateUser: async (email: string, password: string, role: UserRole): Promise<boolean> => {
+        if (!db) return false;
+        try {
+            const userRef = doc(db, 'users', email);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+                alert("User already exists!");
+                return false;
+            }
+
+            await setDoc(userRef, {
+                email,
+                username: email.split('@')[0],
+                role,
+                password,
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString()
+            });
+            return true;
+        } catch (e) {
+            console.error("Admin Create Error:", e);
+            return false;
         }
     },
 

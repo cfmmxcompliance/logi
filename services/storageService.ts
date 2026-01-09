@@ -1,5 +1,5 @@
 
-import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState } from '../types.ts';
+import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
   collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc
@@ -18,7 +18,6 @@ const LOCAL_STORAGE_KEY = 'logimaster_db';
 const INVOICES_BACKUP_KEY = 'logimaster_commercial_invoices_backup';
 const RESTORE_POINTS_KEY = 'logimaster_restore_points';
 const DRAFT_DATA_STAGE_KEY = 'logimaster_datastage_draft';
-
 
 let dbState: StorageState = {
   parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
@@ -741,12 +740,7 @@ export const storageService = {
       model: mergeField(record.model, existingPreAlert?.model),
       invoiceNo: mergeField(record.invoiceNo, existingPreAlert?.invoiceNo),
       etd: mergeField(record.etd, existingPreAlert?.etd),
-      atd: mergeField(record.atd, existingPreAlert?.atd),
-      departureCity: mergeField(record.departureCity, existingPreAlert?.departureCity),
-      eta: mergeField(record.eta, existingPreAlert?.eta),
-      ata: mergeField(record.ata, existingPreAlert?.ata),
-      ataFactory: mergeField(record.ataFactory, existingPreAlert?.ataFactory),
-      arrivalCity: mergeField(record.arrivalCity, existingPreAlert?.arrivalCity),
+      ...record,
       linkedContainers: containers.map(c => c.containerNo), // Always update containers from latest BL
       processed: true // Always mark processed
     };
@@ -1062,18 +1056,24 @@ export const storageService = {
       return;
     }
 
+    // Ensure blNo is trimmed for robust matching
+    const safeBl = blNo.trim();
+
     // Cloud: Query IDs first (delete by query is not direct in Firestore client SDK)
-    const getIds = async (col: string, field: string) => {
-      const q = query(collection(db, col), where(field, "==", blNo));
+    const getIdsSafe = async (col: string, field: string) => {
+      const q = query(collection(db, col), where(field, "==", safeBl));
       const s = await getDocs(q);
       return s.docs.map(d => d.id);
     };
 
-    paIds = await getIds(COLS.PRE_ALERTS, 'bookingAbw');
-    vtIds = await getIds(COLS.VESSEL_TRACKING, 'blNo');
-    ccIds = await getIds(COLS.CUSTOMS, 'blNo');
-    shIds = await getIds(COLS.SHIPMENTS, 'blNo');
-    etIds = await getIds(COLS.EQUIPMENT, 'blNo');
+    paIds = await getIdsSafe(COLS.PRE_ALERTS, 'bookingAbw');
+
+    if (safeBl) {
+      vtIds = await getIdsSafe(COLS.VESSEL_TRACKING, 'blNo');
+      ccIds = await getIdsSafe(COLS.CUSTOMS, 'blNo');
+      shIds = await getIdsSafe(COLS.SHIPMENTS, 'blNo');
+      etIds = await getIdsSafe(COLS.EQUIPMENT, 'blNo');
+    }
 
     const runBatch = async (col: string, ids: string[]) => {
       const batch = writeBatch(db);
@@ -1082,11 +1082,16 @@ export const storageService = {
     };
 
     // Execute Batches (one per collection to avoid limits/complexity)
-    if (paIds.length) await runBatch(COLS.PRE_ALERTS, paIds);
-    if (vtIds.length) await runBatch(COLS.VESSEL_TRACKING, vtIds);
-    if (ccIds.length) await runBatch(COLS.CUSTOMS, ccIds);
-    if (shIds.length) await runBatch(COLS.SHIPMENTS, shIds);
-    if (etIds.length) await runBatch(COLS.EQUIPMENT, etIds);
+    try {
+      if (paIds.length) await runBatch(COLS.PRE_ALERTS, paIds);
+      if (vtIds.length) await runBatch(COLS.VESSEL_TRACKING, vtIds);
+      if (ccIds.length) await runBatch(COLS.CUSTOMS, ccIds);
+      if (shIds.length) await runBatch(COLS.SHIPMENTS, shIds);
+      if (etIds.length) await runBatch(COLS.EQUIPMENT, etIds);
+    } catch (e) {
+      console.error("Global Delete Partial Failure:", e);
+      throw e; // Rethrow to notify UI
+    }
   },
 
 
@@ -1104,73 +1109,133 @@ export const storageService = {
   // Senior Frontend Engineer: Implemented missing deletePreAlert method.
   // Senior Frontend Engineer: Implemented cascading delete for admin safety.
   deletePreAlert: async (id: string) => {
-    // 1. Local State Update (Optimistic / Offline)
-    const recordToDelete = dbState.preAlerts.find((p: any) => p.id === id);
-    if (!recordToDelete) {
-      console.warn("Delete: Record not found in local state");
-      return;
-    }
-
-    dbState.preAlerts = dbState.preAlerts.filter((p: any) => p.id !== id);
-
-    // Cascade Local
-    const bookingRef = recordToDelete.bookingAbw;
-    const containers = recordToDelete.linkedContainers || [];
-
-    if (bookingRef) {
-      dbState.vesselTracking = dbState.vesselTracking.filter((v: any) => v.bookingNo !== bookingRef);
-      dbState.customsClearance = dbState.customsClearance.filter((c: any) => c.bookingNo !== bookingRef);
-    }
-    // Equipment is usually linked by container ID or booking
-    // Simple approach: Remove equipment matching any of the containers
-    if (containers.length > 0) {
-      dbState.equipmentTracking = dbState.equipmentTracking.filter((e: any) => !containers.includes(e.containerNo));
-    }
-
-    saveLocal();
-
-    if (!db) return;
-
-    // 2. Cloud Cascade (Batch Delete)
     try {
-      const { writeBatch, query, where, getDocs, collection, doc } = await import('firebase/firestore');
-      const batch = writeBatch(db);
+      console.log(`[Delete] Initiating delete for ID: ${id}`);
 
-      // A. Delete Main Record
-      const preAlertRef = doc(db, COLS.PRE_ALERTS, id);
-      batch.delete(preAlertRef);
+      // 1. NUCLEAR OPTION: Identify & Remove from Local State FIRST (Ghost Busting)
+      // We capture the data before deleting it from local state to use for cascade logic
+      let recordToDelete = dbState.preAlerts.find((p: any) => p.id === id);
 
-      // B. Find & Delete Vessel Tracking (by Booking)
+      // AGGRESSIVE UI CLEANUP: Filter out immediately regardless of what happens next
+      // This ensures that even if it's a ghost record that doesn't exist in DB, it vanishes from the Table.
+      if (dbState.preAlerts) {
+        const initialLength = dbState.preAlerts.length;
+        dbState.preAlerts = dbState.preAlerts.filter((p: any) => p.id !== id);
+
+        if (dbState.preAlerts.length < initialLength) {
+          console.log(`[Delete] Removed record ${id} from local state.`);
+          saveLocal(); // Persist local change immediately
+        } else {
+          console.warn(`[Delete] Record ${id} was not found in local state (already gone?), but proceeding with cloud delete.`);
+        }
+      }
+
+      if (!db) return;
+
+      // 2. If we didn't have the record locally (stale state?), try to fetch it from Cloud 
+      // to ensure we can still perform the cascade delete (need BL/Containers)
+      if (!recordToDelete) {
+        try {
+          const { getDoc, doc } = await import('firebase/firestore');
+          const snap = await getDoc(doc(db, COLS.PRE_ALERTS, id));
+          if (snap.exists()) {
+            recordToDelete = { id: snap.id, ...snap.data() } as PreAlertRecord;
+            console.log(`[Delete] Record found in Cloud (was missing locally).`);
+          } else {
+            console.warn(`[Delete] Record ${id} not found in Cloud either. Stopping.`);
+            return;
+          }
+        } catch (e) {
+          console.warn("Delete: Failed to fetch record from cloud", e);
+          // If we can't fetch it, we can't cascade, but at least we cleaned the UI.
+          return;
+        }
+      }
+
+      // 3. Prepare Cascade Data
+      const bookingRef = recordToDelete.bookingAbw ? recordToDelete.bookingAbw.trim() : '';
+      const containers = recordToDelete.linkedContainers || [];
+
+      // 4. Cascade Local (Clean up related local records just in case)
       if (bookingRef) {
-        const vtQuery = query(collection(db, COLS.VESSEL_TRACKING), where("bookingNo", "==", bookingRef));
-        const vtSnap = await getDocs(vtQuery);
-        vtSnap.forEach(doc => batch.delete(doc.ref));
-
-        // C. Find & Delete Customs (by Booking)
-        const customsQuery = query(collection(db, COLS.CUSTOMS), where("bookingNo", "==", bookingRef));
-        const customsSnap = await getDocs(customsQuery);
-        customsSnap.forEach(doc => batch.delete(doc.ref));
+        if (dbState.vesselTracking) dbState.vesselTracking = dbState.vesselTracking.filter((v: any) => v.blNo !== bookingRef);
+        if (dbState.customsClearance) dbState.customsClearance = dbState.customsClearance.filter((c: any) => c.blNo !== bookingRef);
       }
-
-      // D. Find & Delete Equipment (by Container No)
-      if (containers.length > 0) {
-        const chunks = [];
-        for (let i = 0; i < containers.length; i += 10) {
-          chunks.push(containers.slice(i, i + 10));
-        }
-
-        for (const chunk of chunks) {
-          const eqQuery = query(collection(db, COLS.EQUIPMENT), where("containerNo", "in", chunk));
-          const eqSnap = await getDocs(eqQuery);
-          eqSnap.forEach(doc => batch.delete(doc.ref));
-        }
+      if (containers.length > 0 && dbState.equipmentTracking) {
+        dbState.equipmentTracking = dbState.equipmentTracking.filter((e: any) => !containers.includes(e.containerNo));
       }
+      saveLocal();
 
-      await batch.commit();
-      console.log("✅ Cascading Delete Complete");
+      if (!db) return;
 
-    } catch (e) {
-      console.error("❌ Cascading Delete Failed (Cloud)", e);
+      // 2. Cloud Delete - PHASE 1: Kill the HEAD (The PreAlert itself)
+      // We do this individually first to ensure that even if the cascade logic (Batch) fails
+      // due to permissions or missing refs, the main record IS deleted.
+      try {
+        const { deleteDoc, doc, collection, writeBatch, query, where, getDocs } = await import('firebase/firestore');
+
+        console.log(`[Delete] Attempting DIRECT delete of PreAlert ID: ${id}`);
+        await deleteDoc(doc(db, COLS.PRE_ALERTS, id));
+        console.log(`[Delete] DIRECT delete successful.`);
+
+        // 3. Cloud Delete - PHASE 2: The Cascade (Best Effort)
+        // If this fails, we leave orphans, but at least the main record is gone from the UI.
+        try {
+          const batch = writeBatch(db);
+
+          // B. SMART SCRUB: Find Ghost Records by Content (Fuzzy Match)
+          if (bookingRef) {
+            try {
+              const cleanRef = bookingRef.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+              const allSnap = await getDocs(collection(db, COLS.PRE_ALERTS));
+
+              // Collect all matching ghosts first
+              const ghostsToDelete: any[] = [];
+              allSnap.forEach(d => {
+                const data = d.data();
+                const dRef = (data.bookingAbw || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                if (dRef && (dRef === cleanRef || dRef.includes(cleanRef) || cleanRef.includes(dRef))) {
+                  if (d.id !== id) {
+                    ghostsToDelete.push(d);
+                  }
+                }
+              });
+
+              // Nuke them one by one (Independent of Batch)
+              for (const ghost of ghostsToDelete) {
+                console.warn(`[Smart Scrub] Nuking ghost record: ${ghost.id}`);
+                await deleteDoc(ghost.ref);
+              }
+            } catch (scrubErr) {
+              console.error("Smart Scrub Partial Error", scrubErr);
+            }
+          }
+
+          // D. Find & Delete Equipment (by Container No)
+          if (containers.length > 0) {
+            const chunks = [];
+            for (let i = 0; i < containers.length; i += 10) {
+              chunks.push(containers.slice(i, i + 10));
+            }
+
+            for (const chunk of chunks) {
+              const eqQuery = query(collection(db, COLS.EQUIPMENT), where("containerNo", "in", chunk));
+              const eqSnap = await getDocs(eqQuery);
+              eqSnap.forEach(doc => batch.delete(doc.ref));
+            }
+          }
+
+          await batch.commit();
+          console.log("✅ Cascading Delete Complete");
+
+        } catch (e) {
+          console.error("❌ Cascading Delete Failed (Cloud)", e);
+        }
+      } catch (e) {
+        console.error("❌ Direct Delete Failed", e);
+      }
+    } catch (criticalErr) {
+      console.error("Critical Failure in deletePreAlert:", criticalErr);
     }
   },
 
@@ -1184,17 +1249,9 @@ export const storageService = {
 
 
   deletePreAlerts: async (ids: string[]) => {
-    // 1. Loop through each ID and perform cascade delete
-    // Note: iterating one by one to reuse the complex cascade logic in deletePreAlert
-    // Ideally we would optimize this to be a single batch operation, but for safety/correctness
-    // and given the complexity of cascading logic (finding related records by various keys),
-    // calling deletePreAlert sequentially is safer.
-    // However, deletePreAlert uses `writeBatch(db).commit()` internally, so we can't wrap these in another batch easily.
-    // For now, let's call them sequentially. If performance is an issue, we can refactor.
-
-    for (const id of ids) {
-      await storageService.deletePreAlert(id);
-    }
+    // 1. Parallelize deletes for performance
+    // Although deletePreAlert handles its own batch logic, waiting for them concurrently is faster than sequential.
+    await Promise.all(ids.map(id => storageService.deletePreAlert(id)));
   },
 
   // Senior Frontend Engineer: Check if PreAlloc exists (for duplicate prevention)
@@ -1247,25 +1304,27 @@ export const storageService = {
       let batchCount = 0;
 
       // Update Vessel Tracking
-      const vtQuery = query(collection(db, COLS.VESSEL_TRACKING), where("bookingNo", "==", bookingRef));
+      const vtQuery = query(collection(db, COLS.VESSEL_TRACKING), where("blNo", "==", bookingRef));
       const vtSnap = await getDocs(vtQuery);
       vtSnap.forEach(doc => {
         batch.update(doc.ref, {
           etd: record.etd,
           eta: record.eta,
           atd: record.atd,
-          ata: record.ata
+          ata: record.ata,
+          updatedAt: new Date().toISOString()
         });
         batchCount++;
       });
 
       // Update Customs Clearance (ATA Port mostly)
-      const ccQuery = query(collection(db, COLS.CUSTOMS), where("bookingNo", "==", bookingRef));
+      const ccQuery = query(collection(db, COLS.CUSTOMS), where("blNo", "==", bookingRef));
       const ccSnap = await getDocs(ccQuery);
       ccSnap.forEach(doc => {
         batch.update(doc.ref, {
           ataPort: record.ata,
-          ataFactory: record.ataFactory || doc.data().ataFactory // Update if provided
+          ataFactory: record.ataFactory || doc.data().ataFactory, // Update if provided
+          updatedAt: new Date().toISOString()
         });
         batchCount++;
       });
@@ -1361,6 +1420,124 @@ export const storageService = {
       console.error("Firebase Ping Failed:", e);
       return false;
     }
+  },
+
+  // Senior Frontend Engineer: Batch Sync specialized for DataStage (Performance)
+  batchSyncDataStage: async (records: PedimentoRecord[], options?: { force?: boolean }) => {
+    let added = 0;
+    let updated = 0;
+    let skipped = 0;
+    let cloudStatus: 'success' | 'failed' | 'offline' = 'offline';
+    let errorMsg = undefined;
+
+    // 1. Prepare Data
+    const validRecords = records.filter(r => r.pedimento && r.pedimento.length > 5);
+    if (validRecords.length === 0) return { added: 0, updated: 0, skipped: 0, cloudStatus: 'success' };
+
+    // 2. Load Existing Customs for Deduplication (Map Pedimento -> ID)
+    const existingMap = new Map<string, string>(); // PedimentoNo -> ID
+
+    // Local Check
+    dbState.customsClearance.forEach((c: any) => {
+      if (c.pedimentoNo) existingMap.set(c.pedimentoNo.trim(), c.id);
+    });
+
+    const itemsToSave: CustomsClearanceRecord[] = [];
+
+    // 3. Process Logic
+    for (const r of validRecords) {
+      const pedimentoKey = r.pedimento.trim();
+      let recordId = crypto.randomUUID();
+      let isUpdate = false;
+
+      if (existingMap.has(pedimentoKey)) {
+        if (!options?.force) {
+          skipped++;
+          continue;
+        }
+        // Force Mode: Update existing ID
+        recordId = existingMap.get(pedimentoKey)! as any;
+        isUpdate = true;
+      }
+
+      // Try extract BL from Referencias
+      let extractedBL = '';
+      if (r.referencias) {
+        const parts = r.referencias.split(/[\s,]+/);
+        const candidate = parts.find(p => p.length >= 8 && /^[A-Z0-9]+$/.test(p));
+        if (candidate) extractedBL = candidate;
+        else extractedBL = parts.join(' ').substring(0, 20);
+      }
+
+      // Create/Update Record
+      const newRec: CustomsClearanceRecord = {
+        id: recordId as any,
+        blNo: extractedBL,
+        containerNo: 'Multiple',
+        ataPort: '',
+        pedimentoNo: r.pedimento,
+        proformaRevisionBy: 'DataStage',
+        targetReviewDate: '',
+        proformaSentDate: '',
+        pedimentoAuthorizedDate: r.fechaPago || '',
+        peceRequestDate: '',
+        peceAuthDate: '',
+        pedimentoPaymentDate: r.fechaPago || '',
+        truckAppointmentDate: '',
+        ataFactory: '',
+        eirDate: '',
+        updatedAt: new Date().toISOString()
+      };
+
+      itemsToSave.push(newRec);
+      existingMap.set(pedimentoKey, recordId); // Prevent internal dupes
+
+      if (isUpdate) updated++;
+      else added++;
+    }
+
+    if (itemsToSave.length === 0) {
+      return { added, updated, skipped, cloudStatus: 'success' };
+    }
+
+    // 4. Save (One Local Save, One Batch Commit)
+
+    // Local - Filter out old versions if updating
+    if (updated > 0) {
+      const updatedIds = new Set(itemsToSave.map(i => i.id));
+      dbState.customsClearance = dbState.customsClearance.filter(c => !updatedIds.has(c.id));
+    }
+    dbState.customsClearance.push(...itemsToSave);
+    saveLocal();
+
+    // Cloud
+    if (db) {
+      cloudStatus = 'success';
+      try {
+        const { writeBatch, doc } = await import('firebase/firestore');
+        // Batch writes
+        const BATCH_SIZE = 450;
+        const chunks = [];
+        for (let i = 0; i < itemsToSave.length; i += BATCH_SIZE) {
+          chunks.push(itemsToSave.slice(i, i + BATCH_SIZE));
+        }
+
+        for (const chunk of chunks) {
+          const subBatch = writeBatch(db);
+          chunk.forEach(item => {
+            subBatch.set(doc(db, COLS.CUSTOMS, item.id), item);
+          });
+          await subBatch.commit();
+        }
+
+      } catch (e: any) {
+        console.error("Batch Sync Cloud Error:", e);
+        cloudStatus = 'failed';
+        errorMsg = e.message || 'Unknown Cloud Error';
+      }
+    }
+
+    return { added, updated, skipped, cloudStatus, errorMsg };
   },
 
   saveDataStageReport: async (report: DataStageReport, onProgress?: (percent: number) => void, originalFile?: File, preUploadedUrl?: string) => {
@@ -1928,17 +2105,16 @@ export const storageService = {
         status: 'PENDING_ANALYSIS',
         user: 'Admin'
       });
-
       return true;
-    } catch (error) {
-      console.error("Upload failed", error);
-      // Final safety net for localhost validation
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return await simulateLocalSuccess();
-      }
-      throw error;
+
+    } catch (e) {
+      console.error("Upload Training Doc Error", e);
+      // Fallback for demo stability
+      if (window.location.hostname === 'localhost') return simulateLocalSuccess();
+      throw e;
     }
-  },
-
-
+  }
 };
+
+
+export default storageService;

@@ -31,6 +31,70 @@ const CUSTOMS_CSV_KEYS: (keyof CustomsClearanceRecord)[] = [
     'truckAppointmentDate', 'ataFactory', 'eirDate'
 ];
 
+const Td = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
+    <td className={`px-3 py-2 border-r border-slate-100 ${className}`}>
+        {children || '-'}
+    </td>
+);
+
+interface CustomsRowProps {
+    record: CustomsClearanceRecord;
+    isSelected: boolean;
+    isAir: boolean;
+    isAdmin: boolean;
+    onSelect: (id: string) => void;
+    onEdit: (r: CustomsClearanceRecord) => void;
+    onDelete: (id: string) => void;
+}
+
+const CustomsRow = React.memo(({ record, isSelected, isAir, isAdmin, onSelect, onEdit, onDelete }: CustomsRowProps) => {
+    return (
+        <tr className="hover:bg-slate-50 transition-colors">
+            <td className="px-3 py-2 border-r border-slate-100 bg-white hover:bg-slate-50 text-center">
+                <input
+                    type="checkbox"
+                    className="rounded border-slate-300"
+                    checked={isSelected}
+                    onChange={() => onSelect(record.id)}
+                />
+            </td>
+            <td className="px-3 py-2 border-r border-slate-100 bg-white hover:bg-slate-50 w-[80px]">
+                <div className="flex items-center justify-center gap-2">
+                    <button onClick={() => onEdit(record)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50">
+                        <Edit2 size={14} />
+                    </button>
+                    {isAdmin && (
+                        <button onClick={() => onDelete(record.id)} className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50">
+                            <Trash2 size={14} />
+                        </button>
+                    )}
+                </div>
+            </td>
+            <td className="px-3 py-2 border-r border-slate-100 min-w-[200px]">
+                <div className="flex items-center gap-2 font-bold text-blue-600">
+                    {isAir ? <Plane size={14} className="text-purple-600" /> : <Anchor size={14} className="text-blue-400" />}
+                    {record.blNo}
+                </div>
+            </td>
+            <Td className={isAir ? "text-purple-600 font-bold text-[10px]" : "font-mono"}>
+                {record.containerNo || (isAir ? "AIR CARGO" : "-")}
+            </Td>
+            <Td>{record.ataPort}</Td>
+            <Td className="font-medium text-slate-800">{record.pedimentoNo}</Td>
+            <Td>{record.proformaRevisionBy}</Td>
+            <Td className="text-amber-600">{record.targetReviewDate}</Td>
+            <Td>{record.proformaSentDate}</Td>
+            <Td>{record.pedimentoAuthorizedDate}</Td>
+            <Td>{record.peceRequestDate}</Td>
+            <Td>{record.peceAuthDate}</Td>
+            <Td className="font-medium text-emerald-600">{record.pedimentoPaymentDate}</Td>
+            <Td>{record.truckAppointmentDate}</Td>
+            <Td>{record.ataFactory}</Td>
+            <Td className="border-r-0">{record.eirDate}</Td>
+        </tr>
+    );
+});
+
 export const CustomsClearance = () => {
     const { hasRole } = useAuth();
     const isAdmin = hasRole([UserRole.ADMIN]);
@@ -58,6 +122,9 @@ export const CustomsClearance = () => {
         return unsub;
     }, []);
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const [ITEMS_PER_PAGE, setItemsPerPage] = useState(50); // Default 50 items for speed
+
     const isAirMode = (record: CustomsClearanceRecord) => {
         // Logic to detect if it's air based on container content or BL pattern
         return (
@@ -83,6 +150,17 @@ export const CustomsClearance = () => {
             );
         });
     }, [records, activeTab, filter]);
+
+    // Derived Logic for Pagination
+    const paginatedRecords = React.useMemo(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredRecords.slice(start, start + ITEMS_PER_PAGE);
+    }, [filteredRecords, currentPage, ITEMS_PER_PAGE]);
+
+    // Reset pagination when filter changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filter, activeTab]);
 
     const handleEdit = (r: CustomsClearanceRecord) => {
         setCurrentRecord(r);
@@ -287,11 +365,7 @@ export const CustomsClearance = () => {
         </th>
     );
 
-    const Td = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
-        <td className={`px-3 py-2 border-r border-slate-100 ${className}`}>
-            {children || '-'}
-        </td>
-    );
+
 
     return (
         <div className="space-y-6">
@@ -389,7 +463,7 @@ export const CustomsClearance = () => {
             </div>
 
             {/* Customs Table - Horizontal Scroll */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[calc(100vh-300px)]">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[calc(100vh-340px)]">
                 <div className="overflow-auto flex-1">
                     <table className="w-full text-xs text-left border-collapse">
                         <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
@@ -463,52 +537,21 @@ export const CustomsClearance = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 whitespace-nowrap">
-                            {filteredRecords.map((r) => (
-                                <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-3 py-2 border-r border-slate-100 bg-white hover:bg-slate-50 text-center">
-                                        <input
-                                            type="checkbox"
-                                            className="rounded border-slate-300"
-                                            checked={selectedIds.has(r.id)}
-                                            onChange={() => handleSelectRow(r.id)}
-                                        />
-                                    </td>
-                                    <td className="px-3 py-2 border-r border-slate-100 bg-white hover:bg-slate-50 w-[80px]">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <button onClick={() => handleEdit(r)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"><Edit2 size={14} /></button>
-                                            {isAdmin && (
-                                                <button onClick={() => initiateDelete(r.id)} className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50">
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-3 py-2 border-r border-slate-100 min-w-[200px]">
-                                        <div className="flex items-center gap-2 font-bold text-blue-600">
-                                            {isAirMode(r) ? <Plane size={14} className="text-purple-600" /> : <Anchor size={14} className="text-blue-400" />}
-                                            {r.blNo}
-                                        </div>
-                                    </td>
-                                    <Td className={isAirMode(r) ? "text-purple-600 font-bold text-[10px]" : "font-mono"}>
-                                        {r.containerNo || (isAirMode(r) ? "AIR CARGO" : "-")}
-                                    </Td>
-                                    <Td>{r.ataPort}</Td>
-                                    <Td className="font-medium text-slate-800">{r.pedimentoNo}</Td>
-                                    <Td>{r.proformaRevisionBy}</Td>
-                                    <Td className="text-amber-600">{r.targetReviewDate}</Td>
-                                    <Td>{r.proformaSentDate}</Td>
-                                    <Td>{r.pedimentoAuthorizedDate}</Td>
-                                    <Td>{r.peceRequestDate}</Td>
-                                    <Td>{r.peceAuthDate}</Td>
-                                    <Td className="font-medium text-emerald-600">{r.pedimentoPaymentDate}</Td>
-                                    <Td>{r.truckAppointmentDate}</Td>
-                                    <Td>{r.ataFactory}</Td>
-                                    <Td className="border-r-0">{r.eirDate}</Td>
-                                </tr>
+                            {paginatedRecords.map((r) => (
+                                <CustomsRow
+                                    key={r.id}
+                                    record={r}
+                                    isSelected={selectedIds.has(r.id)}
+                                    isAir={isAirMode(r)}
+                                    isAdmin={isAdmin}
+                                    onSelect={handleSelectRow}
+                                    onEdit={handleEdit}
+                                    onDelete={initiateDelete}
+                                />
                             ))}
                             {filteredRecords.length === 0 && (
                                 <tr>
-                                    <td colSpan={15} className="p-12 text-center text-slate-400">
+                                    <td colSpan={16} className="p-12 text-center text-slate-400">
                                         <ClipboardCheck className="mx-auto mb-2 opacity-50" size={32} />
                                         No customs clearance records found in this section.
                                     </td>
@@ -516,6 +559,45 @@ export const CustomsClearance = () => {
                             )}
                         </tbody>
                     </table>
+                </div>
+                {/* Pagination Controls */}
+                <div className="bg-slate-50 border-t border-slate-200 p-2 flex items-center justify-between text-xs text-slate-600">
+                    <div className="flex items-center gap-4">
+                        <span className="font-medium">
+                            Showing {Math.min(filteredRecords.length, (currentPage - 1) * ITEMS_PER_PAGE + 1)} to {Math.min(filteredRecords.length, currentPage * ITEMS_PER_PAGE)} of {filteredRecords.length} records
+                        </span>
+                        <select
+                            value={ITEMS_PER_PAGE}
+                            onChange={(e) => {
+                                setItemsPerPage(Number(e.target.value));
+                                setCurrentPage(1);
+                            }}
+                            className="bg-white border border-slate-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            <option value={50}>50 per page</option>
+                            <option value={100}>100 per page</option>
+                            <option value={200}>200 per page</option>
+                        </select>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1 bg-white border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                        >
+                            Previous
+                        </button>
+                        <span className="flex items-center px-2 font-medium bg-white border border-slate-300 rounded">
+                            Page {currentPage} of {Math.max(1, Math.ceil(filteredRecords.length / ITEMS_PER_PAGE))}
+                        </span>
+                        <button
+                            onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredRecords.length / ITEMS_PER_PAGE), p + 1))}
+                            disabled={currentPage >= Math.ceil(filteredRecords.length / ITEMS_PER_PAGE)}
+                            className="px-3 py-1 bg-white border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                        >
+                            Next
+                        </button>
+                    </div>
                 </div>
             </div>
 

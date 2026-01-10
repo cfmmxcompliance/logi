@@ -478,6 +478,7 @@ export const CIExtractor: React.FC = () => {
                                     if (idx === -1) idx = hUpper.findIndex(h => h.includes('UNIT') && h.includes('USD'));
                                 } else if (col === 'TOTAL AMOUNT') {
                                     if (idx === -1) idx = hUpper.findIndex(h => h.includes('TOTAL') && h.includes('USD'));
+                                    if (idx === -1) idx = hUpper.findIndex(h => h.includes('AMOUNT') && h.includes('USD'));
                                 } else if (col === 'UM') {
                                     idx = hUpper.findIndex(h => h === 'UM' || h === 'U.M.' || h === 'U-M' || h === 'U/M');
                                 } else if (col === 'RB') {
@@ -540,7 +541,7 @@ export const CIExtractor: React.FC = () => {
                             const regime = row[colMap['REGIMEN']]?.toString().toUpperCase() || '';
                             const invoice = invoiceNo || 'UNKNOWN';
                             const qty = Number(row[colMap['QTY']]) || 0;
-                            const excelNetWeight = Number(row[colMap['NETWEIGHT']]);
+                            const excelNetWeight = Number(row[colMap['NETWEIGHT']] || 0);
 
                             rawItems.push({
                                 invoiceNo: invoice,

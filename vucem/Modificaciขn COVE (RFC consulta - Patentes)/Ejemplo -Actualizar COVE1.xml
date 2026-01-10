@@ -1,0 +1,61 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://ws.ingresocoveadenda.coveadenda.www.ventanillaunica.gob.mx" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+   <soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+<wsse:UsernameToken xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+<wsse:Username>AAL0409235E6</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">Z6fFB+bqbvqb6yPgstFf0gUYvQx8cAYFzHE2i9cHSWmIiGfgaD3GfyGDHWt9dBxp</wsse:Password>
+</wsse:UsernameToken>
+<wsu:Timestamp wsu:Id="Timestamp-5c9f0ef0-ab45-421d-a633-4c4fad26d945">
+<wsu:Created>2021-09-10T17:27:00Z</wsu:Created>
+<wsu:Expires>2021-09-10T23:59:59Z</wsu:Expires>
+</wsu:Timestamp>
+</wsse:Security>
+</soapenv:Header>
+   <soapenv:Body>
+      <ws:actualizarCove>
+         <!--Optional:-->
+         <informacionCove>
+            <firmaElectronica>
+               <certificado>MIIFTDCCBDSgAwIBAgIUMjAwMDEwMDAwMDAxMDAwMDE4MTUwDQYJKoZIhvcNAQEFBQAwggFvMRgw
+			FgYDVQQDDA9BLkMuIGRlIHBydWViYXMxLzAtBgNVBAoMJlNlcnZpY2lvIGRlIEFkbWluaXN0cmFj
+			acOzbiBUcmlidXRhcmlhMTgwNgYDVQQLDC9BZG1pbmlzdHJhY2nDs24gZGUgU2VndXJpZGFkIGRl
+			IGxhIEluZm9ybWFjacOzbjEpMCcGCSqGSIb3DQEJARYaYXNpc25ldEBwcnVlYmFzLnNhdC5nb2Iu
+			bXgxJjAkBgNVBAkMHUF2LiBIaWRhbGdvIDc3LCBDb2wuIEd1ZXJyZXJvMQ4wDAYDVQQRDAUwNjMw
+			MDELMAkGA1UEBhMCTVgxGTAXBgNVBAgMEERpc3RyaXRvIEZlZGVyYWwxEjAQBgNVBAcMCUNveW9h
+			Y8OhbjEVMBMGA1UELRMMU0FUOTcwNzAxTk4zMTIwMAYJKoZIhvcNAQkCDCNSZXNwb25zYWJsZTog
+			SMOpY3RvciBPcm5lbGFzIEFyY2lnYTAeFw0xMDEyMjQxOTA1NTlaFw0xMzAzMjMxOTA1NTlaMIHG
+			MSQwIgYDVQQDExtBR1JJQ09MQSBBTFBFIFMgREUgUkwgREUgQ1YxJDAiBgNVBCkTG0FHUklDT0xB
+			IEFMUEUgUyBERSBSTCBERSBDVjEkMCIGA1UEChMbQUdSSUNPTEEgQUxQRSBTIERFIFJMIERFIENW
+			MQswCQYDVQQGEwJNWDElMCMGA1UELRMcQUFMMDQwOTIzNUU2IC8gQlVSSTY5MDEyOFRWMDEeMBwG
+			A1UEBRMVIC8gQlVSSTY5MDEyOEhERk5NRzA1MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/
+			T5OIWfoQnYsMacvTIUbC7Lc0SkaFLs7w2gyvJGp3kGB5e+fxjF3uwdkgsBWBw6GPOs7TYbXNvMrN
+			2wO8DIPhTu/K0klAqr/ofSD4GBMuuafcsVymcFEeSQHshVo7vruDuRrl7viHL77bVpGLPNqkYn2m
+			CYvyEB/O/51muTjYIQIDAQABo4IBCDCCAQQwDAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCA9gwEQYJ
+			YIZIAYb4QgEBBAQDAgWgMB0GA1UdDgQWBBS0nGHAfbh87ltfURaINqtBbvxbXDAuBgNVHR8EJzAl
+			MCOgIaAfhh1odHRwOi8vcGtpLnNhdC5nb2IubXgvc2F0LmNybDAzBggrBgEFBQcBAQQnMCUwIwYI
+			KwYBBQUHMAGGF2h0dHA6Ly9vY3NwLnNhdC5nb2IubXgvMB8GA1UdIwQYMBaAFOtZfQQimlONnnEa
+			oFiWKfU54KDFMBAGA1UdIAQJMAcwBQYDKgMEMB0GA1UdJQQWMBQGCCsGAQUFBwMEBggrBgEFBQcD
+			AjANBgkqhkiG9w0BAQUFAAOCAQEAwNsi5H5mxDhGX/1w67YxvGg6XegxjHx9VMyF0DVHUrBGsXb5
+			1t1Y4FSjqKGFiw64cLNIFl1N1MnQHAXYg1G87zWpFmod6fcrBIMb0zgu3suU940hgS+hc6b+VJXz
+			LrFT6yKmmW+hFA7Dbof23OUTMw7juxiiACOUSvJ2j08izBlrJFsr5sYrztLbIh7eXoaRg02psRfy
+			/pBeQGe4IvErPhPDtTW5CqFdE5LOBVD1bcYyrJVGOAG1y77+zsW3IKf/V2uxgONJPXE6LpW/JwDp
+			DdwsEBgOl4WK2vu7yoZH0LWPFpMuRg3hW4dTxbMu+6x+VrCDpx4ijT1WHSa3JLpFOg==</certificado>
+               <cadenaOriginal>|COVE213XSXQ32|1010|1011|MAHA790703QW5|</cadenaOriginal>
+               <firma>YJSLjhcMzmTDCotKoeCfK+5d02IZGccwkjuvpYrBrfc/O42dsoVo+a2Q3Ej3jOwOOlXPh0B0hMJ9sPel/tV5QKzjpa5SpeoXT2UQp43T5r6l5PB751TmTQGKTFzRQOowh0UFxay4iJ9xQEJJ7M8Z7Sp19DNUbJb+tCGWUa2uiyo=</firma>
+            </firmaElectronica>
+            <datosCove>
+               <eDocument>COVE213XSXQ32</eDocument>
+               <patenteAduanal>
+                  <!--1 or more repetitions:-->
+                  <numeroPatente>1010</numeroPatente>
+                  <numeroPatente>1011</numeroPatente>
+               </patenteAduanal>
+               <rfcConsulta>
+                  <!--1 or more repetitions:-->
+                  <rfc>MAHA790703QW5</rfc>
+               </rfcConsulta>
+            </datosCove>
+         </informacionCove>
+      </ws:actualizarCove>
+   </soapenv:Body>
+</soapenv:Envelope>

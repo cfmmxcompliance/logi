@@ -7,6 +7,7 @@ import { VesselTracking } from './pages/VesselTracking.tsx';
 import { EquipmentTracking } from './pages/EquipmentTracking.tsx';
 import { CustomsClearance } from './pages/CustomsClearance.tsx';
 import { PreAlerts } from './pages/PreAlerts.tsx';
+import { ProformaValidator } from './pages/ProformaValidator';
 import { SmartDocs } from './pages/SmartDocs.tsx';
 import { DatabaseView } from './pages/DatabaseView.tsx';
 import { Suppliers } from './pages/Suppliers.tsx';
@@ -17,6 +18,7 @@ import { DataStage } from './pages/DataStage.tsx';
 import { CIExtractor } from './pages/CIExtractor.tsx';
 import CCPBuilder from './pages/CCPBuilder.tsx';
 import { Controller } from './pages/Controller.tsx';
+import { Vucem } from './pages/Vucem.tsx';
 import { storageService } from './services/storageService.ts';
 import { trackingService } from './services/trackingService.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
@@ -82,6 +84,8 @@ const AppContent = () => {
       <Route path="/ccp-builder" element={<ProtectedRoute><CCPBuilder /></ProtectedRoute>} />
       <Route path="/data-stage" element={<ProtectedRoute><DataStage /></ProtectedRoute>} />
       <Route path="/controller" element={<ProtectedRoute><Controller /></ProtectedRoute>} />
+      <Route path="/vucem" element={<ProtectedRoute><Vucem /></ProtectedRoute>} />
+      <Route path="/proforma-validator" element={<ProtectedRoute><ProformaValidator /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><SmartDocs /></ProtectedRoute>} />
       <Route path="/database" element={<ProtectedRoute><DatabaseView /></ProtectedRoute>} />
       <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />

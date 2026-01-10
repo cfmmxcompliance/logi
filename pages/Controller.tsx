@@ -67,6 +67,7 @@ export const Controller = () => {
 
     // Edit Modal State
     const [editingCost, setEditingCost] = useState<CostRecord | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -456,9 +457,17 @@ export const Controller = () => {
                 comments: values[8] || 'CSV Import'
             };
 
-            await storageService.updateCost(newRecord);
-            newRecords.push(newRecord);
-            importedCount++;
+            // Check for duplicates (Invoice + Amount)
+            const isDuplicate = costs.some(c =>
+                (c.invoiceNo || '').trim().toUpperCase() === (invoice || '').trim().toUpperCase() &&
+                Math.abs((c.amount || 0) - amount) < 0.1
+            );
+
+            if (!isDuplicate) {
+                await storageService.updateCost(newRecord);
+                newRecords.push(newRecord);
+                importedCount++;
+            }
         }
 
         if (newRecords.length > 0) {
@@ -625,6 +634,14 @@ export const Controller = () => {
         const newRecords: CostRecord[] = [];
         const totalFiles = xmlFiles.length;
 
+        // 0. Pre-Check for Replacement Mode
+        let targetReplacementId: string | null = null;
+        if (selectedCostId) {
+            targetReplacementId = selectedCostId;
+            // Clear it immediately to avoid stuck state
+            setSelectedCostId(null);
+        }
+
         // --- PROCESSING LOOP ---
         for (let i = 0; i < totalFiles; i++) {
             const xmlFile = xmlFiles[i];
@@ -702,6 +719,9 @@ export const Controller = () => {
 
                 // Enhanced Duplicate Detection
                 const existingCost = costs.find(c => {
+                    // 0. Explicit Replacement (Highest Priority)
+                    if (targetReplacementId && c.id === targetReplacementId) return true;
+
                     // 1. UUID Match (High Confidence)
                     if (currentUuid && normalizeUuid(c.uuid) === currentUuid && currentUuid !== '-') return true;
 
@@ -723,7 +743,7 @@ export const Controller = () => {
                     return false;
                 });
 
-                const validId = existingCost?.id || crypto.randomUUID();
+                const validId = targetReplacementId || existingCost?.id || crypto.randomUUID();
 
                 // 6. Resolve Effective Shipment (Self-Healing Linkage)
                 // Prioritize the BL we already have in DB (if any) or the new one
@@ -756,21 +776,21 @@ export const Controller = () => {
                     extractedBl: (isXmlOverride ? extractedBl : (existingCost?.extractedBl || extractedBl)) || (targetShipment ? targetShipment.blNo : ''),
                     linkedContainer: existingCost?.linkedContainer || extractedContainer,
 
-                    // Files: Priority to NEW upload, fallback to OLD
+                    // Files: Priority to NEW upload, fallback to OLD. prevent undefined.
                     xmlFile: xmlFile.name,
-                    pdfFile: pdfFile?.name || existingCost?.pdfFile,
-                    xmlUrl: xmlUrlRaw || existingCost?.xmlUrl,
-                    pdfUrl: pdfUrlRaw || existingCost?.pdfUrl,
-                    xmlDriveId: existingCost?.xmlDriveId,
-                    pdfDriveId: existingCost?.pdfDriveId,
+                    pdfFile: pdfFile?.name || existingCost?.pdfFile || null,
+                    xmlUrl: xmlUrlRaw || existingCost?.xmlUrl || null,
+                    pdfUrl: pdfUrlRaw || existingCost?.pdfUrl || null,
+                    xmlDriveId: existingCost?.xmlDriveId || null,
+                    pdfDriveId: existingCost?.pdfDriveId || null,
 
                     // Extras
-                    xmlItems: xmlResult.items,
-                    taxDetails: xmlResult.taxDetails,
-                    bpm: existingCost?.bpm,
-                    paymentDate: existingCost?.paymentDate,
-                    submitDate: existingCost?.submitDate,
-                    aaRef: existingCost?.aaRef
+                    xmlItems: xmlResult.items || [],
+                    taxDetails: xmlResult.taxDetails || null,
+                    bpm: existingCost?.bpm || null,
+                    paymentDate: existingCost?.paymentDate || null,
+                    submitDate: existingCost?.submitDate || null,
+                    aaRef: existingCost?.aaRef || null
                 };
 
                 // 6. Persistence
@@ -956,28 +976,50 @@ export const Controller = () => {
     const handleApplyBpm = async () => {
         if (!bpmInput.trim() || selectedIds.size === 0) return;
 
+        // Prevent double-submission
+        if (processingState.isOpen) return;
+
+        setProcessingState({
+            isOpen: true,
+            status: 'loading',
+            title: 'Applying BPM',
+            message: `Updating ${selectedIds.size} records...`,
+            progress: 0
+        });
+
         try {
             const submitDate = new Date().toISOString().split('T')[0]; // Auto-set Submit Date to Today
+            let count = 0;
+            const total = selectedIds.size;
 
             for (const id of selectedIds) {
                 const row = costs.find(r => r.id === id);
-                if (row) {
+                if (row && row.id) {
                     await storageService.updateCost({
                         ...row,
                         bpm: bpmInput.trim(),
                         submitDate: submitDate,         // Set Submit Date
-                        paymentDate: paymentDateInput || undefined // Set Payment Date (optional)
+                        paymentDate: paymentDateInput ? paymentDateInput : (row.paymentDate || null) // Prevent undefined
                     });
                 }
+                count++;
+                setProcessingState(prev => ({ ...prev, progress: (count / total) * 100 }));
             }
             setSelectedIds(new Set());
             setShowBpmModal(false);
             setBpmInput('');
             setPaymentDateInput(''); // Reset
             loadData();
-            showNotification('Success', 'BPM & Dates Assigned successfully!', 'success');
+
+            // Short delay to show 100%
+            setTimeout(() => {
+                setProcessingState(prev => ({ ...prev, isOpen: false }));
+                showNotification('Success', 'BPM & Dates Assigned successfully!', 'success');
+            }, 500);
+
         } catch (err) {
             console.error("Error applying BPM:", err);
+            setProcessingState(prev => ({ ...prev, isOpen: false }));
             showNotification('Error', 'Failed to update BPM.', 'error');
         }
     };
@@ -990,7 +1032,9 @@ export const Controller = () => {
     };
 
     const handleLinkSave = async (shipmentId: string) => {
-        if (!linkTargetId) return;
+        if (!linkTargetId || processingState.isOpen) return;
+
+        setProcessingState({ isOpen: true, status: 'loading', title: 'Linking Shipment', message: 'Updating record...', progress: 0 });
 
         const costToUpdate = costs.find(c => c.id === linkTargetId);
         const selectedShipment = shipments.find(s => s.id === shipmentId);
@@ -1008,9 +1052,11 @@ export const Controller = () => {
                 setShowLinkModal(false);
                 setLinkTargetId(null);
                 loadData();
+                setProcessingState(prev => ({ ...prev, isOpen: false }));
                 showNotification('Success', 'Linked shipment successfully', 'success');
             } catch (err) {
                 console.error("Error linking shipment:", err);
+                setProcessingState(prev => ({ ...prev, isOpen: false }));
                 showNotification('Error', 'Failed to link shipment', 'error');
             }
         }
@@ -1130,13 +1176,15 @@ export const Controller = () => {
                     <p className="text-slate-500 text-sm">Manage partner payments and track expenses.</p>
                 </div>
                 <div className="flex gap-2">
-                    <button
-                        onClick={handleDeduplicate}
-                        className="bg-amber-50 text-amber-700 border border-amber-200 px-3 py-2 rounded-lg flex items-center gap-2 shadow-sm hover:bg-amber-100 transition-all font-bold text-xs"
-                        title="Scan and Fix Duplicate Invoices"
-                    >
-                        <AlertTriangle size={14} /> Fix Duplicates
-                    </button>
+                    {user?.role === 'admin' && (
+                        <button
+                            onClick={handleDeduplicate}
+                            className="bg-amber-50 text-amber-700 border border-amber-200 px-3 py-2 rounded-lg flex items-center gap-2 shadow-sm hover:bg-amber-100 transition-all font-bold text-xs"
+                            title="Scan and Fix Duplicate Invoices"
+                        >
+                            <AlertTriangle size={14} /> Fix Duplicates
+                        </button>
+                    )}
                     {selectedIds.size > 0 && (
                         <button
                             onClick={handleBulkDelete}
@@ -1301,9 +1349,9 @@ export const Controller = () => {
                                             {/* Delete */}
                                             <button
                                                 onClick={() => handleDelete(row.id)}
-                                                className="text-slate-400 hover:text-red-500 transition-colors"
+                                                className={`text-slate-400 hover:text-red-500 transition-colors ${processingState.isOpen ? 'opacity-30 cursor-not-allowed' : ''}`}
                                                 title="Delete Record"
-                                                disabled={row.isVirtual}
+                                                disabled={row.isVirtual || processingState.isOpen}
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
                                             </button>
@@ -1529,7 +1577,75 @@ export const Controller = () => {
                         </div>
 
                         <div className="p-6 space-y-6 overflow-y-auto">
-                            {/* Invoices List */}
+                            {/* 1. Selected BLs */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-xs font-bold text-slate-500 uppercase">SELECTED BLS (Contrato, SAP, Factura)</label>
+                                    <button
+                                        onClick={() => copyToClipboard([...new Set(Array.from(selectedIds).map(id => expenseRows.find(r => r.id === id)?.extractedBl).filter(n => n && n !== '-'))].join(', '))}
+                                        className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        Copy List
+                                    </button>
+                                </div>
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-sm font-mono text-slate-600 break-words max-h-24 overflow-y-auto">
+                                    {[...new Set(Array.from(selectedIds).map(id => expenseRows.find(r => r.id === id)?.extractedBl).filter(n => n && n !== '-'))].join(', ') || 'No BLs'}
+                                </div>
+                            </div>
+
+                            {/* 2. Total Amount */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-xs font-bold text-slate-500 uppercase">TOTAL AMOUNT (MontoPago, MontoContrato, MontoFactura)</label>
+                                    <button
+                                        onClick={() => copyToClipboard((Array.from(selectedIds).reduce((acc, id) => acc + (expenseRows.find(r => r.id === id)?.amount || 0), 0) as number).toFixed(2))}
+                                        className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        Copy Sum
+                                    </button>
+                                </div>
+                                <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 text-2xl font-bold text-emerald-700 text-center">
+                                    ${(Array.from(selectedIds).reduce((acc, id) => acc + (expenseRows.find(r => r.id === id)?.amount || 0), 0) as number).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                            </div>
+
+                            {/* 3. Selected UUIDs */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-xs font-bold text-slate-500 uppercase">SELECTED UUIDS</label>
+                                    <button
+                                        onClick={() => copyToClipboard(Array.from(selectedIds).map(id => expenseRows.find(r => r.id === id)?.uuid).filter(n => n && n !== '-').join(', '))}
+                                        className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        Copy List
+                                    </button>
+                                </div>
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-sm font-mono text-slate-600 break-words max-h-24 overflow-y-auto">
+                                    {Array.from(selectedIds).map(id => expenseRows.find(r => r.id === id)?.uuid).filter(n => n && n !== '-').join(', ') || 'No UUIDs'}
+                                </div>
+                            </div>
+
+                            {/* 4. Selected Comments (Reordered) */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-xs font-bold text-slate-500 uppercase">Selected Comments</label>
+                                    <button
+                                        onClick={() => copyToClipboard([...new Set(Array.from(selectedIds).map(id => expenseRows.find(r => r.id === id)?.comments).filter(n => n && n !== '-'))].join(', '))}
+                                        className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        Copy List
+                                    </button>
+                                </div>
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-sm font-mono text-slate-600 break-words max-h-24 overflow-y-auto">
+                                    {[...new Set(Array.from(selectedIds).map(id => expenseRows.find(r => r.id === id)?.comments).filter(n => n && n !== '-'))].join(', ') || 'No Comments'}
+                                </div>
+                            </div>
+
+                            {/* 5. Invoices List (Reordered to bottom) */}
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center">
                                     <label className="text-xs font-bold text-slate-500 uppercase">Selected Invoices</label>
@@ -1546,57 +1662,6 @@ export const Controller = () => {
                                 </div>
                             </div>
 
-                            {/* UUIDs List */}
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <label className="text-xs font-bold text-slate-500 uppercase">Selected UUIDs</label>
-                                    <button
-                                        onClick={() => copyToClipboard(Array.from(selectedIds).map(id => expenseRows.find(r => r.id === id)?.uuid).filter(n => n && n !== '-').join(', '))}
-                                        className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                        Copy List
-                                    </button>
-                                </div>
-                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-sm font-mono text-slate-600 break-words max-h-24 overflow-y-auto">
-                                    {Array.from(selectedIds).map(id => expenseRows.find(r => r.id === id)?.uuid).filter(n => n && n !== '-').join(', ') || 'No UUIDs'}
-                                </div>
-                            </div>
-
-                            {/* Comments List */}
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <label className="text-xs font-bold text-slate-500 uppercase">Selected Comments</label>
-                                    <button
-                                        onClick={() => copyToClipboard(Array.from(selectedIds).map(id => expenseRows.find(r => r.id === id)?.comments).filter(n => n && n !== '-').join(', '))}
-                                        className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                        Copy List
-                                    </button>
-                                </div>
-                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-sm font-mono text-slate-600 break-words max-h-24 overflow-y-auto">
-                                    {Array.from(selectedIds).map(id => expenseRows.find(r => r.id === id)?.comments).filter(n => n && n !== '-').join(', ') || 'No Comments'}
-                                </div>
-                            </div>
-
-                            {/* Total Amount */}
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <label className="text-xs font-bold text-slate-500 uppercase">Total Amount</label>
-                                    <button
-                                        onClick={() => copyToClipboard((Array.from(selectedIds).reduce((acc, id) => acc + (expenseRows.find(r => r.id === id)?.amount || 0), 0) as number).toFixed(2))}
-                                        className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                        Copy Sum
-                                    </button>
-                                </div>
-                                <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 text-2xl font-bold text-emerald-700 text-center">
-                                    ${(Array.from(selectedIds).reduce((acc, id) => acc + (expenseRows.find(r => r.id === id)?.amount || 0), 0) as number).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </div>
-                            </div>
-
                             {/* BPM Input */}
                             <div className="space-y-4 pt-4 border-t border-slate-100">
                                 <div>
@@ -1605,7 +1670,7 @@ export const Controller = () => {
                                     </label>
                                     <input
                                         type="text"
-                                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full bg-white text-slate-800 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                         placeholder="Paste BPM Link or ID..."
                                         value={bpmInput}
                                         onChange={(e) => setBpmInput(e.target.value)}
@@ -1619,7 +1684,7 @@ export const Controller = () => {
                                     </label>
                                     <input
                                         type="date"
-                                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full bg-white text-slate-800 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                         value={paymentDateInput}
                                         onChange={(e) => setPaymentDateInput(e.target.value)}
                                     />
@@ -2089,7 +2154,8 @@ export const Controller = () => {
                                 </button>
                                 <button
                                     onClick={async () => {
-                                        if (editingCost) {
+                                        if (editingCost && !isSaving) {
+                                            setIsSaving(true);
                                             // Re-Link Logic (Fix for ghost bookings)
                                             if (editingCost.extractedBl) {
                                                 const cleanBl = editingCost.extractedBl.replace(/[^A-Z0-9]/gi, '');
@@ -2121,12 +2187,15 @@ export const Controller = () => {
                                             } catch (e) {
                                                 console.error(e);
                                                 showNotification('Error', 'Failed to save changes.', 'error');
+                                            } finally {
+                                                setIsSaving(false);
                                             }
                                         }
                                     }}
-                                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-blue-700 transition-all"
+                                    disabled={isSaving}
+                                    className={`bg-blue-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-blue-700 transition-all ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
-                                    Save Changes
+                                    {isSaving ? 'Saving...' : 'Save Changes'}
                                 </button>
                             </div>
                         </div>

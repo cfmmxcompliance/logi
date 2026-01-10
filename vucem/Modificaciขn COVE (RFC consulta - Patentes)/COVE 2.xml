@@ -1,0 +1,71 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://ws.ingresocoveadenda.coveadenda.www.ventanillaunica.gob.mx" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+   <soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+<wsse:UsernameToken xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+<wsse:Username>ROSM6409249T7</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">b1YwcGrait7CP1/feGk7I0JLs64cCs85+7QxdKqpQO+gNeI5CuZSe9fm6S9cWQOh</wsse:Password>
+</wsse:UsernameToken>
+<wsu:Timestamp wsu:Id="Timestamp-5c9f0ef0-ab45-421d-a633-4c4fad26d945">
+<wsu:Created>2021-09-22T19:42:00Z</wsu:Created>
+<wsu:Expires>2021-09-22T23:59:59Z</wsu:Expires>
+</wsu:Timestamp>
+</wsse:Security>
+</soapenv:Header>
+   <soapenv:Body>
+      <ws:actualizarCove>
+         <!--Optional:-->
+         <informacionCove>
+            <firmaElectronica>
+               <certificado>MIIGDzCCA/egAwIBAgIUMjAwMDEwMDAwMDAzMDAwMTA1NTEwDQYJKoZIhvcNAQEL
+BQAwggFmMSAwHgYDVQQDDBdBLkMuIDIgZGUgcHJ1ZWJhcyg0MDk2KTEvMC0GA1UE
+CgwmU2VydmljaW8gZGUgQWRtaW5pc3RyYWNpw7NuIFRyaWJ1dGFyaWExODA2BgNV
+BAsML0FkbWluaXN0cmFjacOzbiBkZSBTZWd1cmlkYWQgZGUgbGEgSW5mb3JtYWNp
+w7NuMSkwJwYJKoZIhvcNAQkBFhphc2lzbmV0QHBydWViYXMuc2F0LmdvYi5teDEm
+MCQGA1UECQwdQXYuIEhpZGFsZ28gNzcsIENvbC4gR3VlcnJlcm8xDjAMBgNVBBEM
+BTA2MzAwMQswCQYDVQQGEwJNWDEZMBcGA1UECAwQRGlzdHJpdG8gRmVkZXJhbDES
+MBAGA1UEBwwJQ295b2Fjw6FuMRUwEwYDVQQtEwxTQVQ5NzA3MDFOTjMxITAfBgkq
+hkiG9w0BCQIMElJlc3BvbnNhYmxlOiBBQ0RNQTAeFw0xNjAxMjIyMDA0MTBaFw0y
+MDAxMjEyMDA0MTBaMIHJMR0wGwYDVQQDExRKRVNVUyBFTlJJUVVFWiBBVklMQTEd
+MBsGA1UEKRMUSkVTVVMgRU5SSVFVRVogQVZJTEExHTAbBgNVBAoTFEpFU1VTIEVO
+UklRVUVaIEFWSUxBMQswCQYDVQQGEwJNWDEoMCYGCSqGSIb3DQEJARYZZ2lvdmFu
+bmkucGVyZXpAc2F0LmdvYi5teDEWMBQGA1UELRMNUk9TTTY0MDkyNDlUNzEbMBkG
+A1UEBRMSUEVHRzg5MTAxMEhERlJSVjAyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+MIIBCgKCAQEAj+DISoJxr15uLhgwFE3t3sIXwBwBW8e9yA0nWedVfM8j82HI8L83
+c5fw7YderoqWzNZt7u/xADHjyKOJpzwPGU/evSRsTmGIw5DxU/Sbyg1nwLsbb8EI
+lnPvwXhK20FVwpOwMd442XYB5OrKRGnLmCWgVTNTfAkiI3+4Iq1x4tcaadKRe0kM
+lku39s9fBfC4ucjfGGOrkM3wHJlJJ9dZ2athTYeoStM04RNGAM3HMa2tJI9SjIAZ
+ra0RDiEdYY62vvR/b8c3o1ZoiSW4M+3hd01uk9YneYxLASGxg1W7fP2uyKMFExhr
+03GE5oAKeAWIvWNRNUIA/3MFaoTLQGZfXwIDAQABo08wTTAMBgNVHRMBAf8EAjAA
+MAsGA1UdDwQEAwID2DARBglghkgBhvhCAQEEBAMCBaAwHQYDVR0lBBYwFAYIKwYB
+BQUHAwQGCCsGAQUFBwMCMA0GCSqGSIb3DQEBCwUAA4ICAQACjcwi/qwDF53fo1Sg
+Qvq3HQ4KsscEv+kP1F4cWeKWmdEa2gpOBS5QVXkaDS9swOZxBpw1nr9VjzItZ+2N
+HGbkYDndNthS/W6A1Zr5iqGLgl/cKbf9H9ram3jt905IFhLC9uASi3a7ER9cMpLr
+tnI3Uq32oU5il/x2XUUUncczt2aUXWGbTggND2q8XUizX20JvVLlOMbdxvGIVA6r
+myX6m2V6Xb839+IWCDy6mXwoCQc5u0RSO7plrdKa0mGHcGAXpFx3fqScFLN6dDjo
+RTuBNRcJF2DDQwsTX7+f6I5q/5O0mCnwWsdlJP+h+cE6wH6FLQ3T0hj2NbCmLou5
+fvN/nW61hlIn/KMN9WIqYlEbUkUa2yM+T7cVEWwZd82JsY0tTlCkE514qI004WpT
+kK90oRChvf3vTQYD8roaM16QE506mPKOp4WfDe5fwpBUiG9k68ehvoMR9WhahoNz
+CgwB2cEBJW+14YJaRSaJvY1MGHJJxRkmNLIjmWjSdm7jl61T9/W3lY2khjtpQKVX
+odiZ5CTDHpP8DZ5M2lJVn6l7ocfophwaiWHfj6XnVhCZXTWSaOPSxyF1dzzJN4A1
+KRDvflYfnex11PkTZ8CECGFaByAmpqa10etWjKQ/Ygb1luiex+yAYuccAdSecNFn
+EQr1F5ARs9UwPUseTfRvFSTIBw==</certificado>
+               <cadenaOriginal>|COVE213XSXYE4|3377|5050|MAVL621207C95|AAL0409235E6|</cadenaOriginal>
+               <firma>ONGUTabH0rqSUE+9IHpKaLbsJZaZBLwpkr8XoMX+P6Vb6Pe4WnrWR4ex9tgy9OpTmQe5IeHzoviqqz+FB5fUj4Ds/BOYMdNgGW0xOvtGUcBTdUn/sLOsEbXPEw6iWwDe3hHVUwGlx0p4h+zd7zCbwV2vAmQJcp5fkFlQzvFjN5ap9OSjC1YQrwVUfbgtegde3uemnqtFVc0Or2lgX3W/WF6RVqdtEex/HiVFYXxFEuemsP8euNLPbETf4IAYqv/rWnWihLQUPzYNKY+9ESW7pO3LvboBgbiM0tjVJQ6XJjqqv/DLDxiKsied60deexPLoLmUcwj7GkRA0wm0W+yaeQ==</firma>
+            </firmaElectronica>
+            <datosCove>
+               <eDocument>COVE213XSXYE4</eDocument>
+               <patenteAduanal>
+                  <!--1 or more repetitions:-->
+                  <numeroPatente>3377</numeroPatente>
+                  <numeroPatente>5050</numeroPatente>
+               </patenteAduanal>
+               <rfcConsulta>
+                  <!--1 or more repetitions:-->
+                  <rfc>MAVL621207C95</rfc>
+                  <rfc>AAL0409235E6</rfc>
+               </rfcConsulta>
+            </datosCove>
+         </informacionCove>
+      </ws:actualizarCove>
+   </soapenv:Body>
+</soapenv:Envelope>

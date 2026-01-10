@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="http://www.ventanillaunica.gob.mx/aga/digitalizar/ws/oxml/DigitalizarDocumento" 
+	elementFormDefault="qualified" xmlns="http://www.w3.org/2001/XMLSchema" 
+	xmlns:tns="http://www.ventanillaunica.gob.mx/aga/digitalizar/ws/oxml/DigitalizarDocumento" 
+	xmlns:Q1="http://www.ventanillaunica.gob.mx/common/ws/oxml/respuesta">
+
+    <import schemaLocation="../../../../common/ws/xsds/comunes.xsd" namespace="http://www.ventanillaunica.gob.mx/common/ws/oxml/respuesta"></import>
+    <complexType name="RegistroDigitalizarDocumentoRequest">
+    	<sequence>
+    		<element name="correoElectronico" type="string" maxOccurs="1" minOccurs="1" nillable="false"></element>
+    		<element name="documento" type="tns:Documento"
+    			nillable="false" maxOccurs="1" minOccurs="1">
+    		</element>
+    		<element name="peticionBase" type="Q1:PeticionBase"
+    			nillable="false" maxOccurs="1" minOccurs="1">
+    		</element>
+    	</sequence>
+    </complexType>
+
+
+
+    <complexType name="Documento">
+    	<sequence>
+    		<element name="idTipoDocumento" type="int" nillable="false" maxOccurs="1" minOccurs="1"></element>
+    		<element name="nombreDocumento" type="string" nillable="false" maxOccurs="1" minOccurs="1"></element>
+    		<element name="rfcConsulta" type="string" nillable="true" maxOccurs="1" minOccurs="0">
+    		</element>
+    		<element name="archivo" type="base64Binary" nillable="false" 
+    			xmime:expectedContentTypes="application/pdf" xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+    			maxOccurs="1" minOccurs="1"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="RegistroDigitalizarDocumentoResponse">
+    	<sequence>
+    		<element name="respuestaBase" type="Q1:RespuestaBase"></element>
+    		<element name="acuse" type="tns:AcuseDigitalizarDocumento"
+    			maxOccurs="1" minOccurs="1">
+    		</element>
+    	</sequence>
+    </complexType>
+    
+    <complexType name="AcuseDigitalizarDocumento">
+    	<sequence>
+    		<element name="respuestaBase" type="Q1:RespuestaBase"></element>
+    		<element name="numeroOperacion" type="long" nillable="false"
+    			maxOccurs="1" minOccurs="1">
+    		</element>
+    		<element name="horaRecepcion" type="dateTime"
+    			nillable="false" maxOccurs="1" minOccurs="1">
+    		</element>
+    		<element name="mensaje" type="string" nillable="false"
+    			maxOccurs="1" minOccurs="1">
+    		</element>
+    	</sequence>
+    </complexType>
+
+    <element name="registroDigitalizarDocumentoServiceRequest"
+    	type="tns:RegistroDigitalizarDocumentoRequest" nillable="false">
+    </element>
+
+    <element name="registroDigitalizarDocumentoServiceResponse"
+    	type="tns:RegistroDigitalizarDocumentoResponse" nillable="false">
+    </element>
+
+    <complexType name="ConsultaDigitalizarDocumentoRequest">
+    	<sequence>
+    		<element name="numeroOperacion" type="long" nillable="false" minOccurs="1" maxOccurs="1"></element>
+    		<element name="peticionBase"
+    			type="Q1:PeticionBase" nillable="false" maxOccurs="1" minOccurs="1">
+    		</element>
+    	</sequence>
+    </complexType>
+    
+    <complexType name="ConsultaDigitalizarDocumentoResponse">
+    	<sequence>
+    		<element name="numeroDeTramite" type="string"
+    			nillable="false" maxOccurs="1" minOccurs="1">
+    		</element>
+    		<element name="eDocument" type="string" nillable="false"
+    			maxOccurs="1" minOccurs="1">
+    		</element>
+    		<element name="cadenaOriginal" type="string" maxOccurs="1"
+    			minOccurs="1">
+    		</element>
+    		<element name="respuestaBase" type="Q1:RespuestaBase"
+    			maxOccurs="1" minOccurs="1">
+    		</element>
+    	</sequence>
+    </complexType>
+    
+    <complexType name="TipoDeDocumento">
+    	<sequence>
+    		<element name="idTipoDeDocumento" type="long" nillable="false" maxOccurs="1" minOccurs="1"></element>
+    		<element name="descripcion" type="string" nillable="false" maxOccurs="1" minOccurs="1"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="ConsultaTipoDeDocumentoRequest">
+    	<sequence>
+    		<element name="peticionBase" type="Q1:PeticionBase"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="ConsultaTipoDeDocumentoResponse">
+    	<sequence>
+    		<element name="tiposDeDocumentos"
+    			type="tns:ListaTipoDeDocumentos" maxOccurs="1" minOccurs="1"
+    			nillable="false">
+    		</element>
+    		<element name="respuestaBase" type="Q1:RespuestaBase" maxOccurs="1" minOccurs="1"></element>
+    	</sequence>
+    </complexType>
+
+    <element name="consultaDigitalizarDocumentoServiceRequest"
+    	type="tns:ConsultaDigitalizarDocumentoRequest" nillable="false">
+    </element>
+    
+    <element name="consultaDigitalizarDocumentoServiceResponse"
+    	type="tns:ConsultaDigitalizarDocumentoResponse" nillable="false">
+    </element>
+
+    <element name="consultaTipoDocumentoServiceResponse"
+    	type="tns:ConsultaTipoDeDocumentoResponse" nillable="false">
+    </element>
+
+    <element name="consultaTipoDocumentoServiceRequest"
+    	type="tns:ConsultaTipoDeDocumentoRequest" nillable="true">
+    </element>
+
+    <complexType name="ListaTipoDeDocumentos">
+    	<sequence>
+    		<element name="tipoDeDocumento" type="tns:TipoDeDocumento" maxOccurs="unbounded" minOccurs="0"></element>
+    	</sequence>
+    </complexType>
+</schema>

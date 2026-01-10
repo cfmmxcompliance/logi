@@ -1,0 +1,130 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:oxml="http://www.ventanillaunica.gob.mx/cove/ws/oxml/">
+<soapenv:Header>
+<wsse:Security soapenv:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+  <wsse:UsernameToken>
+   <wsse:Username>GWT921026L97</wsse:Username>
+<!-- localhost -->
+    <!--
+    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">nKQIr0UTZWQ6ZyBhYsOD2gSJ91qAAHxb2FHbFHf+RoixRr5SFBxD0d2DmSoPUGyZ</wsse:Password>
+    -->
+<!-- test -->
+   <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">w1Tgcn1adDiTwz8c/3LapRWOxFKLUuUFRwE9C9zKy6Hjk5nNRC3u2Tv+mB8r25EA</wsse:Password>
+  </wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+   <soapenv:Body>
+      <oxml:solicitarRecibirCoveServicio>
+         <!--1 or more repetitions:-->
+         <oxml:comprobantes>
+            <!--Optional:-->
+            <!--<oxml:e-document/>-->
+            <oxml:tipoOperacion>TOCE.IMP</oxml:tipoOperacion>
+            <!--Zero or more repetitions:-->
+            <oxml:patenteAduanal>0023</oxml:patenteAduanal>
+            <oxml:patenteAduanal>0097</oxml:patenteAduanal>
+            <oxml:fechaExpedicion>2011-11-15</oxml:fechaExpedicion>
+            <!--Optional:-->
+            <oxml:observaciones>Esta es una prueba del webservice de Cove</oxml:observaciones>
+            <!--Zero or more repetitions:-->
+            <oxml:rfcConsulta>APH0609268C2</oxml:rfcConsulta>
+                    <oxml:rfcConsulta>AFC000526BJ2</oxml:rfcConsulta>
+            <oxml:tipoFigura>5</oxml:tipoFigura>
+            <oxml:correoElectronico>miguel.mendoza@softtek.com</oxml:correoElectronico>
+<oxml:firmaElectronica>
+	<oxml:certificado>MIIFMTCCBBmgAwIBAgIUMjAwMDEwMDAwMDAxMDAwMDM4OTIwDQYJKoZIhvcNAQEFBQAwggFvMRgwFgYDVQQDDA9BLkMuIGRlIHBydWViYXMxLzAtBgNVBAoMJlNlcnZpY2lvIGRlIEFkbWluaXN0cmFjacOzbiBUcmlidXRhcmlhMTgwNgYDVQQLDC9BZG1pbmlzdHJhY2nDs24gZGUgU2VndXJpZGFkIGRlIGxhIEluZm9ybWFjacOzbjEpMCcGCSqGSIb3DQEJARYaYXNpc25ldEBwcnVlYmFzLnNhdC5nb2IubXgxJjAkBgNVBAkMHUF2LiBIaWRhbGdvIDc3LCBDb2wuIEd1ZXJyZXJvMQ4wDAYDVQQRDAUwNjMwMDELMAkGA1UEBhMCTVgxGTAXBgNVBAgMEERpc3RyaXRvIEZlZGVyYWwxEjAQBgNVBAcMCUNveW9hY8OhbjEVMBMGA1UELRMMU0FUOTcwNzAxTk4zMTIwMAYJKoZIhvcNAQkCDCNSZXNwb25zYWJsZTogSMOpY3RvciBPcm5lbGFzIEFyY2lnYTAeFw0xMTExMTEyMTQwMDhaFw0xNDAyMDgyMTQwMDhaMIGrMRswGQYDVQQDExJHUlVQTyBXVEMgU0EgREUgQ1YxGzAZBgNVBCkTEkdSVVBPIFdUQyBTQSBERSBDVjEbMBkGA1UEChMSR1JVUE8gV1RDIFNBIERFIENWMQswCQYDVQQGEwJNWDElMCMGA1UELRMcR1dU
+OTIxMDI2TDk3IC8gSEVHVDc2MTAwMzRTMjEeMBwGA1UEBRMVIC8gSEVHVDc2MTAwM01ERlJOTjA5MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/70QS6a3ldjhPhV9XSZJ5zoDgCJrli9EdT+MzVmTwEypX5rYkglls+cSF9t2yM8XQYj4x5+uRF79nqKt+m2zH/qZJT8rtJ9H7j9ed4H4lxXAXtYZ18DRyZlQy+IgwGZh3/C1J5asFKrTijeFviNBIiLocEqfJDLg6NWIAKQSbYwIDAQABo4IBCDCCAQQwDAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCA9gwEQYJYIZIAYb4QgEBBAQDAgWgMB0GA1UdDgQWBBTfky91eqA/IW2QpBBaJkiPwKyU8TAuBgNVHR8EJzAlMCOgIaAfhh1odHRwOi8vcGtpLnNhdC5nb2IubXgvc2F0LmNybDAzBggrBgEFBQcBAQQnMCUwIwYIKwYBBQUHMAGGF2h0dHA6Ly9vY3NwLnNhdC5nb2IubXgvMB8GA1UdIwQYMBaAFOtZfQQimlONnnEaoFiWKfU54KDFMBAGA1UdIAQJMAcwBQYDKgMEMB0GA1UdJQQWMBQGCCsGAQUFBwMEBggrBgEFBQcDAjANBgkqhkiG9w0BAQUFAAOCAQEAfKrT8z/vnMbq9KTXSSFRPIrEsaQIvb8Id0gzkm1IwyNvf0MwFkEOVKl6nVJCo4Q1zKJy9kfxXQhaycFCFjDsKh7hwim98iW1KGfdB0keMoLjFHk6z4P47pC9lafI3sLcMR9yI/ShNvTb7ZPwyEJHdlV9elO8ib4uxJGk8gcALx8GVjbjJJe46lv6EKsu4TSDj+yEz1ZxzGEwcYR5pllyhL5xDotGo4Sh1UiGeQDeTpi7WVaKgRlGHT4BNQe5fuie03NsHXu8z7cvUw180zmw4MbsvXGl+g/zpqAZnMMUZ1Br6fJdd0AOiSsUck51SznV6GNDsAbJC1GwXj5Cuor97A==
+</oxml:certificado>
+	<oxml:cadenaOriginal>|TOCE.IMP|ITUTUET66545|0|2011-11-15|5|Esta es una prueba del webservice de Cove|APH0609268C2|AFC000526BJ2|0023|0097|0|1|9984882|1|APH0609268C2|MARTINEZ|ORTIZ|MARIA|leo|23|23|BOSQUES DE LAS LOMAS|MEXICO|ECATEPEC|MEXICO|MEX|55567|1|AFC000526BJ2|BETANCOURT|MARTINEZ|FELIPE|CAPRICORNIO|78|78|PRADOS DE ECATEPEC|ECATEPEC|TULTITLAN|MEXICO|MEX|66532|CUADERNOS|2|USD|200.000|10.000000|2000.000000|200000.0000|SCRIBE|DE987|C-4567|LA-02012011-WE|</oxml:cadenaOriginal>
+	<oxml:firma>rFKpcP28jbZD+v00DdFIogjGjS2znlIwlVgMTt87fcLUkcN2ip/5ann+a3RJcCAjLimvOD0wpx38
+xOTDvMpr9TRt4BaKknfMnc3q0/WI+tXY1CeWRIX6slHRk31IceOv2SB0PFxctiyupvO/ZL+HLylA
+Yf58WllS0XZgtvobedc=
+</oxml:firma>
+</oxml:firmaElectronica>
+                    <oxml:numeroFacturaOriginal>ITUTUET66545</oxml:numeroFacturaOriginal>
+            <oxml:factura>
+               <oxml:certificadoOrigen>1</oxml:certificadoOrigen>
+               <!--Optional:-->
+               <oxml:numeroExportadorAutorizado>9984882</oxml:numeroExportadorAutorizado>
+               <oxml:subdivision>0</oxml:subdivision>
+            </oxml:factura>
+            <oxml:emisor>
+               <oxml:tipoIdentificador>1</oxml:tipoIdentificador>
+               <oxml:identificacion>APH0609268C2</oxml:identificacion>
+               <!--Optional:-->
+               <oxml:apellidoPaterno>MARTINEZ</oxml:apellidoPaterno>
+               <!--Optional:-->
+               <oxml:apellidoMaterno>ORTIZ</oxml:apellidoMaterno>
+               <oxml:nombre>MARIA</oxml:nombre>
+               <oxml:domicilio>
+                  <oxml:calle>leo</oxml:calle>
+                  <!--Optional:-->
+                  <oxml:numeroExterior>23</oxml:numeroExterior>
+                  <!--Optional:-->
+                  <oxml:numeroInterior>23</oxml:numeroInterior>
+                  <!--Optional:-->
+                  <oxml:colonia>BOSQUES DE LAS LOMAS</oxml:colonia>
+                  <!--Optional:-->
+                  <oxml:localidad>MEXICO</oxml:localidad>
+                  <!--Optional:-->
+                  <!--Optional:-->
+                  <oxml:municipio>ECATEPEC</oxml:municipio>
+                  <!--Optional:-->
+                  <oxml:entidadFederativa>MEXICO</oxml:entidadFederativa>
+                  <oxml:pais>MEX</oxml:pais>
+                  <!--Optional:-->
+                  <oxml:codigoPostal>55567</oxml:codigoPostal>
+               </oxml:domicilio>
+            </oxml:emisor>
+            <oxml:destinatario>
+               <oxml:tipoIdentificador>1</oxml:tipoIdentificador>
+               <oxml:identificacion>AFC000526BJ2</oxml:identificacion>
+               <!--Optional:-->
+               <oxml:apellidoPaterno>BETANCOURT</oxml:apellidoPaterno>
+               <!--Optional:-->
+               <oxml:apellidoMaterno>MARTINEZ</oxml:apellidoMaterno>
+               <oxml:nombre>FELIPE</oxml:nombre>
+               <oxml:domicilio>
+                  <oxml:calle>CAPRICORNIO</oxml:calle>
+                  <!--Optional:-->
+                  <oxml:numeroExterior>78</oxml:numeroExterior>
+                  <!--Optional:-->
+                  <oxml:numeroInterior>78</oxml:numeroInterior>
+                  <!--Optional:-->
+                  <oxml:colonia>PRADOS DE ECATEPEC</oxml:colonia>
+                  <!--Optional:-->
+                  <oxml:localidad>ECATEPEC</oxml:localidad>
+                  <!--Optional:-->
+                  <!--Optional:-->
+                  <oxml:municipio>TULTITLAN</oxml:municipio>
+                  <!--Optional:-->
+                  <oxml:entidadFederativa>MEXICO</oxml:entidadFederativa>
+                  <oxml:pais>MEX</oxml:pais>
+                  <!--Optional:-->
+                  <oxml:codigoPostal>66532</oxml:codigoPostal>
+               </oxml:domicilio>
+            </oxml:destinatario>
+            <!--1 or more repetitions:-->
+            <oxml:mercancias>
+               <oxml:descripcionGenerica>CUADERNOS</oxml:descripcionGenerica>
+               <oxml:claveUnidadMedida>2</oxml:claveUnidadMedida>
+               <oxml:tipoMoneda>USD</oxml:tipoMoneda>
+               <oxml:cantidad>200.000</oxml:cantidad>
+               <oxml:valorUnitario>10.00</oxml:valorUnitario>
+               <oxml:valorTotal>2000.00</oxml:valorTotal>
+               <oxml:valorDolares>200000.0000</oxml:valorDolares>
+               <!--Zero or more repetitions:-->
+               <oxml:descripcionesEspecificas>
+                  <!--Optional:-->
+                  <oxml:marca>SCRIBE</oxml:marca>
+                  <!--Optional:-->
+                  <oxml:modelo>DE987</oxml:modelo>
+                  <!--Optional:-->
+                  <oxml:subModelo>C-4567</oxml:subModelo>
+                  <!--Optional:-->
+                  <oxml:numeroSerie>LA-02012011-WE</oxml:numeroSerie>
+               </oxml:descripcionesEspecificas>
+            </oxml:mercancias>
+         </oxml:comprobantes>
+      </oxml:solicitarRecibirCoveServicio>
+   </soapenv:Body>
+</soapenv:Envelope>

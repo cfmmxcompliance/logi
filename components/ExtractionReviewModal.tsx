@@ -116,7 +116,7 @@ export const ExtractionReviewModal: React.FC<ExtractionReviewModalProps> = ({
                                     </label>
                                     <input
                                         type="text"
-                                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono tracking-wide"
+                                        className="w-full bg-white text-slate-800 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono tracking-wide"
                                         value={item.extractedBl || ''}
                                         onChange={(e) => handleChange(item.id, 'extractedBl', e.target.value.toUpperCase())}
                                         placeholder="Enter BL Number"
@@ -129,7 +129,7 @@ export const ExtractionReviewModal: React.FC<ExtractionReviewModalProps> = ({
                                         Type
                                     </label>
                                     <select
-                                        className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 outline-none ${!item.type ? 'border-red-300 ring-2 ring-red-100 bg-red-50' : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500 bg-white'}`}
+                                        className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 outline-none ${!item.type ? 'border-red-300 ring-2 ring-red-100 bg-red-50 text-red-900' : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-800'}`}
                                         value={item.type || ''}
                                         onChange={(e) => handleChange(item.id, 'type', e.target.value)}
                                     >
@@ -154,7 +154,7 @@ export const ExtractionReviewModal: React.FC<ExtractionReviewModalProps> = ({
                                     </label>
                                     <input
                                         type="text"
-                                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono tracking-wide text-center"
+                                        className="w-full bg-white text-slate-800 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono tracking-wide text-center"
                                         value={item.currency || ''}
                                         onChange={(e) => handleChange(item.id, 'currency', e.target.value.toUpperCase())}
                                         placeholder="USD/MXN"
@@ -169,7 +169,7 @@ export const ExtractionReviewModal: React.FC<ExtractionReviewModalProps> = ({
                                         </label>
                                         <input
                                             type="text"
-                                            className="w-full border border-blue-200 bg-blue-50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono tracking-wide"
+                                            className="w-full border border-blue-200 bg-blue-50 text-blue-900 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono tracking-wide"
                                             value={item.aaRef || ''}
                                             maxLength={20}
                                             onChange={(e) => handleChange(item.id, 'aaRef', e.target.value)}
@@ -185,7 +185,7 @@ export const ExtractionReviewModal: React.FC<ExtractionReviewModalProps> = ({
                                     </label>
                                     <input
                                         type="text"
-                                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                        className="w-full bg-white text-slate-800 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                         value={item.comments || ''}
                                         onChange={(e) => handleChange(item.id, 'comments', e.target.value)}
                                         placeholder="Description"
@@ -199,7 +199,7 @@ export const ExtractionReviewModal: React.FC<ExtractionReviewModalProps> = ({
                                     </label>
                                     <input
                                         type="text"
-                                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono tracking-wide"
+                                        className="w-full bg-white text-slate-800 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono tracking-wide"
                                         value={item.linkedContainer || ''}
                                         onChange={(e) => handleChange(item.id, 'linkedContainer', e.target.value.toUpperCase())}
                                         placeholder="Container Number(s)"

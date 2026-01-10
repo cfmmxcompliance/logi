@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Database, Ship, FileText, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck } from 'lucide-react';
+import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ConnectionStatus } from './ConnectionStatus.tsx';
 import { UserRole } from '../types.ts';
@@ -60,13 +60,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {user?.role === 'Admin' && (
             <>
               <SidebarItem to="/data-stage" icon={Scale} label={sidebarOpen ? "Data Stage (SAT)" : ""} />
+              <SidebarItem to="/vucem" icon={Globe} label={sidebarOpen ? "VUCEM" : ""} />
+              <SidebarItem to="/proforma-validator" icon={FileCheck} label={sidebarOpen ? "Validador Proforma" : ""} />
+              <SidebarItem to="/documents" icon={FileText} label={sidebarOpen ? "Smart Docs" : ""} />
               <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
             </>
           )}
 
-          {user?.role === 'Admin' && (
-            <SidebarItem to="/documents" icon={FileText} label={sidebarOpen ? "Smart Docs (AI)" : ""} />
-          )}
 
           {(user?.role === 'Admin' || user?.role === 'Editor') && (
             <SidebarItem to="/suppliers" icon={Users} label={sidebarOpen ? "Partners" : ""} />

@@ -83,9 +83,9 @@ export const geminiService = {
       });
 
       return JSON.parse(cleanJson(response.text || '[]')) as ExtractedInvoiceItem[];
-    } catch (error) {
+    } catch (error: any) {
       console.error("Gemini Parse Error", error);
-      throw new Error("Failed to parse invoice");
+      throw new Error(`Gemini Error: ${error.message || error}`);
     }
   },
 
@@ -218,7 +218,7 @@ export const geminiService = {
       const headerBase64 = await headerDoc.saveAsBase64();
 
       const headerPrompt = `
-          Analyze this Pedimento Page 1. Extract ONLY the Header information matching this structure.
+          Analyze this Pedimento Page 1. Extract ONLY the Header information.
           Return JSON: {
           "patente": string, "pedimento": string, "seccion": string, "tipoOperacion": string, "claveDocumento": string,
             "rfc": string, "tipoCambio": number, "fechaPago": string, "pesoBruto": number,
@@ -231,9 +231,14 @@ export const geminiService = {
                   }]
         }
         HINT:
-        - PATENTE is CRITICAL.Look for "PATENTE" followed by 4 digits(e.g. "1614").It is usually next to "PEDIMENTO".If ambiguous, look for "1614".
-          - Pedimento is the long 15 - digit code. 
-          - Look for "Fletes", "Seguros", "Embalajes", "Otros Incrementables" in the value section.
+        - **FECHAS**: Look for "Fecha de Pago", "Pago", or dates near the bottom header section. Format DD/MM/YYYY.
+        - **TIPO CAMBIO**: Look for "T.C.", "Tipo Cambio", "T. Cambio". Value usually around 18-22 for USD.
+        - **VALORES**: 
+             - "valorAduanaTotal" = "Valor Aduana" in the generic header summary.
+             - "precioPagado" / "valorComercial" = Header Commercial Value.
+        - **TAXES (CUADRO LIQUIDACION)**:
+             - Look for a table with columns: [CONCEPTO] [F.P.] [IMPORTE].
+             - "totalTaxes" = "TOTAL" or "EFECTIVO" at the bottom of that table.
         `;
       const headerData = await geminiService.extractGeneric(headerBase64, headerPrompt);
 
@@ -277,6 +282,12 @@ export const geminiService = {
                   { "clave": "6", "tasa": 0, "tipoTasa": "0", "formaPago": "0", "importe": 0 },
                   { "clave": "15", "tasa": 0.008, "tipoTasa": "1", "formaPago": "0", "importe": 100 }
                 ],
+                "regulaciones": [
+                  { "clave": "C1", "permiso": "1234567890" } 
+                ],
+                "identifiers": [
+                   { "code": "EC", "complement1": "1" }
+                ],
                 "observaciones": "PART NO 12345 FACTURA ABC",
                 "partNumber": "12345",
                 "invoiceNo": "ABC"
@@ -286,13 +297,15 @@ export const geminiService = {
           IMPORTANT:
           - **EXTRACT EVERY SINGLE ITEM**. Do NOT summarize. Do NOT skip any rows.
           - **STRICT STRUCTURE**: You MUST return ALL fields in the EXACT order shown above.
-          - **MANDATORY FIELDS**: 
-             - "nico" (2 digits), "vinculacion" (1 digit), "metodoValoracion" (1 digit) are REQUIRED. 
-             - If missing in text, look at the column headers "SUBD", "VINC", "MET VAL".
-          - **VALOR AGREGADO**:
-             - For Imports (Type IMP), "Valor Agregado" does NOT exist.
-             - **ALWAYS RETURN 0** for "valorAgregado".
-             - DO NOT map "Cantidad Tarifa" (e.g. 6.72) to "Valor Agregado".
+          
+          ** CRITICAL PART NUMBER RULES **:
+          1. ** Look for "No. De Parte", "Parte", "Part No" ** in the item block.
+          2. If explicitly labeled, use it.
+          3. If NOT labeled, look for alphanumeric codes in the "Observaciones" block (e.g. "0010-013010-0010", "TBQ381", "30006").
+          4. ** NEVER use the Description as the Part Number **.
+             - "ARTICULOS DE CAUCHO" is a Description. DO NOT put this in "partNumber".
+             - "TORNILLO DE ACERO" is a Description. DO NOT put this in "partNumber".
+             - If you cannot find a Part Number code, return "".
           
           LAYOUT RULES (OFFICIAL PEDIMENTO COLUMNS):
           1. **TOP ROW** (Header row of the item):
@@ -313,27 +326,26 @@ export const geminiService = {
              - Look for a list of taxes/fees associated with this item.
              - Columns: [CON] [TASA] [T.T.] [F.P.] [IMPORTE]
              - Extract ALL rows found (e.g. 6 (IGI), 15 (DTA), 3 (IVA), 50 (IEPS)).
+
+          4. **REGULATIONS & IDENTIFIERS** (Mixed in rows):
+             - **Regulaciones**: Look for "C1" or other keys followed by a permit number (long alphanumeric).
+             - **Identifiers**: Look for "IDENTIF" label. Extract codes like "EC", "TL", "XP".
+               - "complement1": The value strictly next to the identifier code.
              
-          4. **OBSERVACIONES SECTION** (Bottom of the item):
+          5. **OBSERVACIONES SECTION** (Bottom of the item):
              - Look for text like "OBS.", "OBSERVACIONES", or descriptive text at the end of the item block.
              - Extract the FULL Text into "observaciones".
-             - **AUDIT PARSING**:
-               - Look for "NO. DE PARTE" or "PARTE" -> Extract to "partNumber".
-               - Look for "FACTURA" or "FAC" -> Extract to "invoiceNo".
-               - **HEURISTIC**: If no labels found:
-                 - "invoiceNo": Look for strings matching header invoice format (e.g. "25CFTT...").
-                 - "partNumber": Look for alphanumeric strings, potentially with dashes (e.g. "TBQ381", "0010-080013-0010", "30006-060012810").
-                 - If text is ONLY "0010-080013-0010", that IS the part number.
-             
-             **FORMATTING RULES**:
-             - **ESCAPE NEWLINES**: If 'observaciones' has multiple lines, use "\\n". Do NOT use literal line breaks.
-             - Valid: "Line 1\\nLine 2"
-             - Invalid: "Line 1\nLine 2"
+             - **AS LAST RESORT**: Extract Part No / Invoice No from here if found.
+              
+              **FORMATTING RULES**:
+              - **ESCAPE NEWLINES**: If 'observaciones' has multiple lines, use "\\n". Do NOT use literal line breaks.
+              - Valid: "Line 1\\nLine 2"
+              - Invalid: "Line 1\nLine 2"
 
           ** CRITICAL NULL HANDLING **:
           - ** NO FIELDS CAN BE NULL ** (except 'valorAgregado' if necessary, but prefer 0).
           - If a ** Numeric ** field is empty, return 0.
-  - If a ** String ** field is empty, return ""(empty string).
+          - If a ** String ** field is empty, return ""(empty string).
 
         `;
         const chunkResult = await geminiService.extractGeneric(chunkBase64, itemPrompt);

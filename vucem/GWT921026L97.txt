@@ -1,0 +1,55 @@
+soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dig="http://www.ventanillaunica.gob.mx/aga/digitalizar/ws/oxml/DigitalizarDocumento" xmlns:res="http://www.ventanillaunica.gob.mx/common/ws/oxml/respuesta">
+   <soapenv:Header>
+	<wsse:Security soapenv:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+		<wsse:UsernameToken>
+			<wsse:Username>GWT921026L97</wsse:Username>
+			<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">w1Tgcn1adDiTwz8c/3LapRWOxFKLUuUFRwE9C9zKy6Hjk5nNRC3u2Tv+mB8r25EA</wsse:Password>
+		</wsse:UsernameToken>
+	</wsse:Security>
+   </soapenv:Header>
+   <soapenv:Body>
+      <dig:registroDigitalizarDocumentoServiceRequest>
+         <dig:correoElectronico>josel.rojas@softtek.com</dig:correoElectronico><dig:documento>
+            <dig:idTipoDocumento>421</dig:idTipoDocumento>
+            <dig:nombreDocumento>archivoDe-Prueba</dig:nombreDocumento>
+            <!--Optional:-->
+            <dig:rfcConsulta>ROGL810612HF5</dig:rfcConsulta>
+		<dig:archivo>cid:SiPasa2.pdf</dig:archivo>
+         </dig:documento>
+         <dig:peticionBase>
+            <res:firmaElectronica>
+	<res:certificado>MIIFMTCCBBmgAwIBAgIUMjAwMDEwMDAwMDAxMDAwMDM4OTIwDQYJKoZIhvcNAQEFBQAwggFvMRgw
+FgYDVQQDDA9BLkMuIGRlIHBydWViYXMxLzAtBgNVBAoMJlNlcnZpY2lvIGRlIEFkbWluaXN0cmFj
+acOzbiBUcmlidXRhcmlhMTgwNgYDVQQLDC9BZG1pbmlzdHJhY2nDs24gZGUgU2VndXJpZGFkIGRl
+IGxhIEluZm9ybWFjacOzbjEpMCcGCSqGSIb3DQEJARYaYXNpc25ldEBwcnVlYmFzLnNhdC5nb2Iu
+bXgxJjAkBgNVBAkMHUF2LiBIaWRhbGdvIDc3LCBDb2wuIEd1ZXJyZXJvMQ4wDAYDVQQRDAUwNjMw
+MDELMAkGA1UEBhMCTVgxGTAXBgNVBAgMEERpc3RyaXRvIEZlZGVyYWwxEjAQBgNVBAcMCUNveW9h
+Y8OhbjEVMBMGA1UELRMMU0FUOTcwNzAxTk4zMTIwMAYJKoZIhvcNAQkCDCNSZXNwb25zYWJsZTog
+SMOpY3RvciBPcm5lbGFzIEFyY2lnYTAeFw0xMTExMTEyMTQwMDhaFw0xNDAyMDgyMTQwMDhaMIGr
+MRswGQYDVQQDExJHUlVQTyBXVEMgU0EgREUgQ1YxGzAZBgNVBCkTEkdSVVBPIFdUQyBTQSBERSBD
+VjEbMBkGA1UEChMSR1JVUE8gV1RDIFNBIERFIENWMQswCQYDVQQGEwJNWDElMCMGA1UELRMcR1dU
+OTIxMDI2TDk3IC8gSEVHVDc2MTAwMzRTMjEeMBwGA1UEBRMVIC8gSEVHVDc2MTAwM01ERlJOTjA5
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/70QS6a3ldjhPhV9XSZJ5zoDgCJrli9EdT+Mz
+VmTwEypX5rYkglls+cSF9t2yM8XQYj4x5+uRF79nqKt+m2zH/qZJT8rtJ9H7j9ed4H4lxXAXtYZ1
+8DRyZlQy+IgwGZh3/C1J5asFKrTijeFviNBIiLocEqfJDLg6NWIAKQSbYwIDAQABo4IBCDCCAQQw
+DAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCA9gwEQYJYIZIAYb4QgEBBAQDAgWgMB0GA1UdDgQWBBTf
+ky91eqA/IW2QpBBaJkiPwKyU8TAuBgNVHR8EJzAlMCOgIaAfhh1odHRwOi8vcGtpLnNhdC5nb2Iu
+bXgvc2F0LmNybDAzBggrBgEFBQcBAQQnMCUwIwYIKwYBBQUHMAGGF2h0dHA6Ly9vY3NwLnNhdC5n
+b2IubXgvMB8GA1UdIwQYMBaAFOtZfQQimlONnnEaoFiWKfU54KDFMBAGA1UdIAQJMAcwBQYDKgME
+MB0GA1UdJQQWMBQGCCsGAQUFBwMEBggrBgEFBQcDAjANBgkqhkiG9w0BAQUFAAOCAQEAfKrT8z/v
+nMbq9KTXSSFRPIrEsaQIvb8Id0gzkm1IwyNvf0MwFkEOVKl6nVJCo4Q1zKJy9kfxXQhaycFCFjDs
+Kh7hwim98iW1KGfdB0keMoLjFHk6z4P47pC9lafI3sLcMR9yI/ShNvTb7ZPwyEJHdlV9elO8ib4u
+xJGk8gcALx8GVjbjJJe46lv6EKsu4TSDj+yEz1ZxzGEwcYR5pllyhL5xDotGo4Sh1UiGeQDeTpi7
+WVaKgRlGHT4BNQe5fuie03NsHXu8z7cvUw180zmw4MbsvXGl+g/zpqAZnMMUZ1Br6fJdd0AOiSsU
+ck51SznV6GNDsAbJC1GwXj5Cuor97A==
+</res:certificado>
+	<res:cadenaOriginal>|GWT921026L97|josel.rojas@softtek.com|421|archivoDe-Prueba|ROGL810612HF5|5341062dde72465f40dcb3becd987416a67bf432|</res:cadenaOriginal>
+	<res:firma>T1v8A2E4CBb016wcg9ZTiIIotgwAMbM2quEBpViAfFK8Mj/wsip1LHyAb7L8Sgk9nL2bpcLvxuG5
+ah6VDGulfPyB/2OGNTUyng7owuZ8cWYBwyfskY6o39fIgQFcS6Qq5X3ieSBTVEwVGGVm+r1B0s5q
+d7qLUkUDMLW/f1sLzYI=
+</res:firma>
+</res:firmaElectronica>
+         </dig:peticionBase>
+      </dig:registroDigitalizarDocumentoServiceRequest>
+   </soapenv:Body>
+</soapenv:Envelope>

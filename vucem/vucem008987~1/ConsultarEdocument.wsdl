@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions name="ConsultarEdocument" 
+	targetNamespace="http://www.ventanillaunica.gob.mx/cove/ws/service/"
+	xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" 
+	xmlns:tns="http://www.ventanillaunica.gob.mx/cove/ws/service/" 
+	xmlns:xsd1="http://www.ventanillaunica.gob.mx/ConsultarEdocument/"
+	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+	xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" 
+	xmlns:sp="http://docs.oasis-open.org/ws-sx/ws-securitypolicy/200702"
+	xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+  	
+	<wsp:Policy wsu:Id="BasicHttpBinding_ConsultarEdocumentService_policy">
+		<wsp:ExactlyOne >
+			<wsp:All >
+				<sp:TransportBinding xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy" >
+					<wsp:Policy >
+						<sp:TransportToken>
+							<wsp:Policy>
+								<sp:HttpsToken RequireClientCertificate="false"/>
+							</wsp:Policy>
+						</sp:TransportToken>
+						<sp:AlgorithmSuite>
+							<wsp:Policy>
+								<sp:Basic256/>
+							</wsp:Policy>
+						</sp:AlgorithmSuite>
+						<sp:Layout>
+							<wsp:Policy>
+								<sp:Lax/>
+							</wsp:Policy>
+						</sp:Layout>
+						<sp:IncludeTimestamp/>
+					</wsp:Policy>
+				</sp:TransportBinding >
+				<sp:SignedSupportingTokens xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+					<wsp:Policy>
+						<sp:UsernameToken sp:IncludeToken="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy/IncludeToken/AlwaysToRecipient">
+							<wsp:Policy>
+								<sp:WssUsernameToken10 />
+							</wsp:Policy>
+						</sp:UsernameToken>
+					</wsp:Policy>
+				</sp:SignedSupportingTokens>
+				<sp:Wss10 xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+					<wsp:Policy>
+						<sp:MustSupportRefKeyIdentifier/>
+						<sp:MustSupportRefIssuerSerial/>
+					</wsp:Policy>
+				</sp:Wss10>
+			</wsp:All>
+		</wsp:ExactlyOne>
+	</wsp:Policy>
+
+	<wsdl:types>
+		<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+			<xsd:import
+				namespace="http://www.ventanillaunica.gob.mx/ConsultarEdocument/"
+				schemaLocation="ConsultarEdocument.xsd">
+			</xsd:import>
+		</xsd:schema>
+    </wsdl:types>
+	
+	<wsdl:message name="ConsultarEdocumentRequest">
+  		<wsdl:part name="request" element="xsd1:ConsultarEdocumentRequest"></wsdl:part>
+  	</wsdl:message>
+  	
+  	<wsdl:message name="ConsultarEdocumentResponse">
+  		<wsdl:part name="response" element="xsd1:ConsultarEdocumentResponse"></wsdl:part>
+  	</wsdl:message>
+
+  	
+  	<wsdl:portType name="ConsultarEdocumentPortType">		<wsdl:operation name="ConsultarEdocument">			<wsdl:input message="tns:ConsultarEdocumentRequest"></wsdl:input>			<wsdl:output message="tns:ConsultarEdocumentResponse"></wsdl:output>        	        </wsdl:operation>
+	</wsdl:portType>
+
+  	<wsdl:binding name="ConsultarEdocumentEndPoint"
+  		type="tns:ConsultarEdocumentPortType">
+		<wsp:PolicyReference xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" URI="#BasicHttpBinding_ConsultarEdocumentService_policy"/>
+  		<soap:binding style="document"
+  			transport="http://schemas.xmlsoap.org/soap/http" />
+  		<wsdl:operation name="ConsultarEdocument">
+  			<soap:operation
+  				soapAction="http://www.ventanillaunica.gob.mx/cove/ws/service/ConsultarEdocument" />
+  			<wsdl:input>
+  				<soap:body use="literal" />
+  			</wsdl:input>
+  			<wsdl:output>
+  				<soap:body use="literal" />
+  			</wsdl:output>
+  		</wsdl:operation>
+  	</wsdl:binding>
+
+  	<wsdl:service name="ConsultarEdocumentService">
+	    <wsdl:port binding="tns:ConsultarEdocumentEndPoint" name="ConsultarEdocumentEndPoint">
+	      <soap:address location="http://www.ventanillaunica.gob.mx/ventanilla/ConsultarEdocument"/>
+	    </wsdl:port>
+  	</wsdl:service>
+
+</wsdl:definitions>

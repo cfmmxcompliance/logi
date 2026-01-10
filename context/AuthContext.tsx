@@ -35,13 +35,16 @@ export const AuthProvider = ({ children }: { children?: ReactNode }) => {
                 setUser(null);
               }
             } catch (err) {
-              console.error("Session Validation Error:", err);
-              // Offline fallback: Keep local session if DB unreachable? 
-              // Or fail safe? For now, keep local if DB error (offline support), but verify if DB success.
-              setUser(parsedUser);
+              // STRICT SECURITY: If DB validation errors, assume session invalid.
+              // Do NOT allow offline fallback if we suspect the user might be deleted/revoked.
+              console.error("Session Validation Failed (Possible Revocation):", err);
+              localStorage.removeItem('logimaster_user');
+              setUser(null);
             }
           } else {
-            setUser(parsedUser);
+            // Invalid structure
+            localStorage.removeItem('logimaster_user');
+            setUser(null);
           }
         } catch (e) {
           console.error("Failed to parse user session");

@@ -285,6 +285,26 @@ export const storageService = {
     }
   },
 
+  deleteAutoLearnedInvoices: async () => {
+    console.log("Deleting ONLY 'AUTO-LEARNED' Commercial Invoices...");
+    if (!db) {
+      dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => i.invoiceNo !== 'AUTO-LEARNED');
+      saveLocal();
+      return;
+    }
+
+    // Cloud: Fetch only AUTO-LEARNED items
+    const q = query(collection(db, COLS.INVOICES), where("invoiceNo", "==", "AUTO-LEARNED"));
+    const snap = await getDocs(q);
+    const ids = snap.docs.map(d => d.id);
+
+    console.log(`Found ${ids.length} auto-learned items to delete.`);
+
+    if (ids.length > 0) {
+      await storageService.deleteInvoiceItems(ids);
+    }
+  },
+
   isCloudMode: () => !!db,
   subscribe: (callback: () => void) => {
     listeners.push(callback);

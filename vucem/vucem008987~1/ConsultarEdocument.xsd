@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema 
+	xmlns="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://www.ventanillaunica.gob.mx/ConsultarEdocument/"
+	xmlns:tns="http://www.ventanillaunica.gob.mx/ConsultarEdocument/"
+	elementFormDefault="qualified"
+	xmlns:comun="http://www.ventanillaunica.gob.mx/cove/ws/oxml/">
+
+	<import schemaLocation="RecibirCove.xsd" namespace="http://www.ventanillaunica.gob.mx/cove/ws/oxml/"></import>
+
+	<complexType name="ConsultarEdocumentRequestType">
+		<sequence>
+			<element name="firmaElectronica" type="comun:FirmaElectronica"
+				minOccurs="1" maxOccurs="1" nillable="false">
+			</element>
+			<element name="criterioBusqueda"
+				type="tns:CriterioBusqueda" minOccurs="1" maxOccurs="1" nillable="false">
+			</element>
+		</sequence>
+	</complexType>
+
+	<complexType name="ConsultarEdocumentResponseType">
+		<sequence>
+            <element name="mensaje" type="string"></element>
+            <element name="contieneError" type="boolean"></element>
+			<element name="errores" type="tns:ArrayOfError"></element>
+			<element name="resultadoBusqueda"
+				type="tns:ResultadoBusqueda">
+			</element>
+		</sequence>
+	</complexType>
+
+	<complexType name="CriterioBusqueda">
+		<sequence>
+			<element name="eDocument" type="string" minOccurs="1"
+				maxOccurs="1" nillable="false">
+			</element>
+			<element name="numeroAdenda" type="string" minOccurs="0"
+				maxOccurs="1" nillable="true">
+			</element>
+		</sequence>
+	</complexType>
+
+	<complexType name="Cove">
+		<sequence>
+			<element name="eDocument" type="string"></element>
+			<element name="tipoOperacion" type="string"></element>
+			<element name="numeroFacturaRelacionFacturas" type="string"></element>
+            <element name="relacionFacturas" type="string"></element>
+			<element name="automotriz" type="string"></element>
+			<element name="fechaExpedicion" type="date"></element>
+			<element name="tipoFigura" type="string"></element>
+			<element name="patentesAduanales"
+				type="tns:ArrayOfPatenteAduanal">
+			</element>
+			<element name="rfcsConsulta"
+				type="tns:ArrayOfRfcConsulta">
+			</element>
+			<element name="observaciones" type="string"></element>
+			<element name="facturas" type="tns:ArrayOfFactura"></element>
+			<element name="emisor" type="tns:PersonaCove"></element>
+			<element name="destinatario" type="tns:PersonaCove"></element>
+		</sequence>
+	</complexType>
+
+	<complexType name="Adenda">
+    	<complexContent>
+    		<extension base="tns:Cove">
+    			<sequence>
+    				<element name="numeroAdenda" type="string"></element>
+    			</sequence>
+    		</extension>
+    	</complexContent>
+    </complexType>
+
+	<complexType name="Factura">
+		<sequence>
+            <element name="certificadoOrigen" type="int"></element>
+            <element name="numeroExportadorConfiable" type="string"></element>
+            <element name="subdivision" type="int"></element>
+            <element name="numeroFactura" type="string"></element>
+			<element name="emisor" type="tns:PersonaCove"></element>
+			<element name="destinatario" type="tns:PersonaCove"></element>
+			<element name="mercancias" type="tns:ArrayOfMercancia"></element>
+		</sequence>
+	</complexType>
+	
+    <complexType name="ArrayOfFactura">
+    	<sequence>
+    		<element name="factura" type="tns:Factura" maxOccurs="unbounded" minOccurs="1"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="Mercancia">
+    	<sequence>
+    		<element name="descripcionGenerica" type="string"></element>
+    		<element name="claveUnidadMedida" type="string"></element>
+            <element name="tipoMoneda" type="string"></element>
+            <element name="cantidad" type="decimal"></element>
+    		<element name="valorUnitario" type="decimal"></element>
+    		<element name="valorTotal" type="decimal"></element>
+    		<element name="valorDolares" type="decimal"></element>
+    		<element name="descripcionesEspecificas" type="tns:ArrayOfDetalleMercancia"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="DetalleMercancia">
+    	<sequence>
+    		<element name="marca" type="string"></element>
+    		<element name="modelo" type="string"></element>
+    		<element name="subModelo" type="string"></element>
+    		<element name="numeroSerie" type="string"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="ArrayOfDetalleMercancia">
+    	<sequence>
+    		<element name="descripcionEspecifica" type="tns:DetalleMercancia" minOccurs="0" maxOccurs="unbounded"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="ResultadoBusqueda">
+    	<sequence>
+    		<element name="cove" type="tns:Cove"></element>
+    		<element name="adenda" type="tns:Adenda"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="ArrayOfMercancia">
+    	<sequence>
+    		<element name="mercancia" type="tns:Mercancia" minOccurs="1" maxOccurs="unbounded"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="ArrayOfPatenteAduanal">
+    	<sequence>
+    		<element name="patenteAduanal" type="string" minOccurs="0" maxOccurs="unbounded"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="ArrayOfRfcConsulta">
+    	<sequence>
+    		<element name="rfcConsulta" type="string" minOccurs="0" maxOccurs="unbounded"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="PersonaCove">
+    	<sequence>
+    		<element name="tipoIdentificador" type="int"></element>
+    		<element name="identificacion" type="string"></element>
+    		<element name="apellidoPaterno" type="string"></element>
+    		<element name="apellidoMaterno" type="string"></element>
+    		<element name="nombre" type="string"></element>
+    		<element name="domicilio" type="tns:DomicilioCove"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="DomicilioCove">
+    	<sequence>
+    		<element name="calle" type="string"></element>
+    		<element name="numeroExterior" type="string"></element>
+    		<element name="numeroInterior" type="string"></element>
+    		<element name="colonia" type="string"></element>
+    		<element name="localidad" type="string"></element>
+    		<element name="municipio" type="string"></element>
+    		<element name="entidadFederativa" type="string"></element>
+    		<element name="pais" type="string"></element>
+    		<element name="codigoPostal" type="string"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="ArrayOfError">
+    	<sequence>
+    		<element name="error" type="string" maxOccurs="unbounded" minOccurs="0"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="RespuestaConsulta">
+    	<sequence>
+    		<element name="contieneError" type="boolean"></element>
+    		<element name="errores" type="tns:ArrayOfError"></element>
+    		<element name="resultado" type="tns:ResultadoBusqueda"></element>
+    	</sequence>
+    </complexType>
+
+    
+    
+	<element name="ConsultarEdocumentRequest" nillable="false">
+		<complexType>
+			<sequence>
+				<element name="request" type="tns:ConsultarEdocumentRequestType"></element>
+			</sequence>
+		</complexType>
+	</element>
+	
+	<element name="ConsultarEdocumentResponse" nillable="false">
+		<complexType>
+			<sequence>
+				<element name="response" type="tns:ConsultarEdocumentResponseType"></element>
+			</sequence>
+		</complexType>
+	</element>
+
+    
+</schema>

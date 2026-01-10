@@ -1,0 +1,160 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:oxml="http://www.ventanillaunica.gob.mx/cove/ws/oxml/">
+<soapenv:Header>
+<wsse:Security soapenv:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+  <wsse:UsernameToken>
+   <wsse:Username>GWT921026L97</wsse:Username>
+<!-- localhost -->
+    <!--
+    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">nKQIr0UTZWQ6ZyBhYsOD2gSJ91qAAHxb2FHbFHf+RoixRr5SFBxD0d2DmSoPUGyZ</wsse:Password>
+    -->
+<!-- test -->
+   <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">w1Tgcn1adDiTwz8c/3LapRWOxFKLUuUFRwE9C9zKy6Hjk5nNRC3u2Tv+mB8r25EA</wsse:Password>
+  </wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+   <soapenv:Body>
+      <oxml:solicitarRecibirRelacionFacturasIAServicio>
+         <!--1 or more repetitions:-->
+         <oxml:comprobantes>
+            <!--Optional:-->
+	    <!--
+            <oxml:e-document>?</oxml:e-document>
+            -->
+	    <oxml:tipoOperacion>TOCE.IMP</oxml:tipoOperacion>
+            <!--Zero or more repetitions:-->
+            <oxml:patenteAduanal>10</oxml:patenteAduanal>
+            <oxml:patenteAduanal>11</oxml:patenteAduanal>
+            <oxml:patenteAduanal>12</oxml:patenteAduanal>
+	    <oxml:fechaExpedicion>2012-01-05</oxml:fechaExpedicion>
+            <!--Optional:-->
+            <oxml:observaciones>PRUEBA RELACIOM DE FACTURAS IA</oxml:observaciones>
+            <!--Zero or more repetitions:-->
+            <oxml:rfcConsulta>AFC000526BJ2</oxml:rfcConsulta> 
+            <oxml:rfcConsulta>APH0609268C2</oxml:rfcConsulta>                       
+            <oxml:tipoFigura>5</oxml:tipoFigura>
+            <oxml:correoElectronico>miguel.mendoza@softtek.com</oxml:correoElectronico>
+<oxml:firmaElectronica>
+	<oxml:certificado>MIIFMTCCBBmgAwIBAgIUMjAwMDEwMDAwMDAxMDAwMDM4OTIwDQYJKoZIhvcNAQEFBQAwggFvMRgwFgYDVQQDDA9BLkMuIGRlIHBydWViYXMxLzAtBgNVBAoMJlNlcnZpY2lvIGRlIEFkbWluaXN0cmFjacOzbiBUcmlidXRhcmlhMTgwNgYDVQQLDC9BZG1pbmlzdHJhY2nDs24gZGUgU2VndXJpZGFkIGRlIGxhIEluZm9ybWFjacOzbjEpMCcGCSqGSIb3DQEJARYaYXNpc25ldEBwcnVlYmFzLnNhdC5nb2IubXgxJjAkBgNVBAkMHUF2LiBIaWRhbGdvIDc3LCBDb2wuIEd1ZXJyZXJvMQ4wDAYDVQQRDAUwNjMwMDELMAkGA1UEBhMCTVgxGTAXBgNVBAgMEERpc3RyaXRvIEZlZGVyYWwxEjAQBgNVBAcMCUNveW9hY8OhbjEVMBMGA1UELRMMU0FUOTcwNzAxTk4zMTIwMAYJKoZIhvcNAQkCDCNSZXNwb25zYWJsZTogSMOpY3RvciBPcm5lbGFzIEFyY2lnYTAeFw0xMTExMTEyMTQwMDhaFw0xNDAyMDgyMTQwMDhaMIGr
+MRswGQYDVQQDExJHUlVQTyBXVEMgU0EgREUgQ1YxGzAZBgNVBCkTEkdSVVBPIFdUQyBTQSBERSBDVjEbMBkGA1UEChMSR1JVUE8gV1RDIFNBIERFIENWMQswCQYDVQQGEwJNWDElMCMGA1UELRMcR1dUOTIxMDI2TDk3IC8gSEVHVDc2MTAwMzRTMjEeMBwGA1UEBRMVIC8gSEVHVDc2MTAwM01ERlJOTjA5MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/70QS6a3ldjhPhV9XSZJ5zoDgCJrli9EdT+MzVmTwEypX5rYkglls+cSF9t2yM8XQYj4x5+uRF79nqKt+m2zH/qZJT8rtJ9H7j9ed4H4lxXAXtYZ18DRyZlQy+IgwGZh3/C1J5asFKrTijeFviNBIiLocEqfJDLg6NWIAKQSbYwIDAQABo4IBCDCCAQQwDAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCA9gwEQYJYIZIAYb4QgEBBAQDAgWgMB0GA1UdDgQWBBTfky91eqA/IW2QpBBaJkiPwKyU8TAuBgNVHR8EJzAlMCOgIaAfhh1odHRwOi8vcGtpLnNhdC5nb2IubXgvc2F0LmNybDAzBggrBgEFBQcBAQQnMCUwIwYIKwYBBQUHMAGGF2h0dHA6Ly9vY3NwLnNhdC5nb2IubXgvMB8GA1UdIwQYMBaAFOtZfQQimlONnnEaoFiWKfU54KDFMBAGA1UdIAQJMAcwBQYDKgMEMB0GA1UdJQQWMBQGCCsGAQUFBwMEBggrBgEFBQcDAjANBgkqhkiG9w0BAQUFAAOCAQEAfKrT8z/vnMbq9KTXSSFRPIrEsaQIvb8Id0gzkm1IwyNvf0MwFkEOVKl6nVJCo4Q1zKJy9kfxXQhaycFCFjDsKh7hwim98iW1KGfdB0keMoLjFHk6z4P47pC9lafI3sLcMR9yI/ShNvTb7ZPwyEJHdlV9elO8ib4uxJGk8gcALx8GVjbjJJe46lv6EKsu4TSDj+yEz1ZxzGEwcYR5pllyhL5xDotGo4Sh1UiGeQDeTpi7WVaKgRlGHT4BNQe5fuie03NsHXu8z7cvUw180zmw4MbsvXGl+g/zpqAZnMMUZ1Br6fJdd0AOiSsUck51SznV6GNDsAbJC1GwXj5Cuor97A==
+	</oxml:certificado>
+	<oxml:cadenaOriginal>|TOCE.IMP|1000|1|2012-01-05|5|PRUEBA RELACIOM DE FACTURAS IA|AFC000526BJ2|APH0609268C2|10|11|12|1|CIG0202265M7||1|CMA010118D69|4334535|0|1|300000|COMPUTADORA APPLE|2|USD|12133.230|131234.560000|2342424.787800|6546464.8700|4334535|0|1|2000|COMPUTADORA APPLE|2|USD|12133.230|131234.560000|2342424.787800|6567575.8800|</oxml:cadenaOriginal>
+	<oxml:firma>hXr+6xyi5yGUw9/LoMI5rR1zce/DoUjloHKAEnlcNrSWr1x3oR1CdMehkRYWh3Rx3TgPk/MPoz6aH0yKrJ1CCb5cesdfTGT3iXocyqKjEkpptKEWN+3T2zYaDzYRjGSVMvpUi3xOx2MvANb/hZeLAcFMO4+AjUqeHfsQNPVp4Bk=
+	</oxml:firma>
+</oxml:firmaElectronica>
+            <oxml:numeroRelacionFacturas>1000</oxml:numeroRelacionFacturas>
+            <oxml:emisor>
+               <oxml:tipoIdentificador>1</oxml:tipoIdentificador>
+               <oxml:identificacion>CIG0202265M7</oxml:identificacion>
+               <!--Optional:-->
+               <oxml:apellidoPaterno></oxml:apellidoPaterno>
+               <!--Optional:-->
+               <oxml:apellidoMaterno></oxml:apellidoMaterno>
+               <oxml:nombre></oxml:nombre>
+               <oxml:domicilio>
+                  <oxml:calle></oxml:calle>
+                  <!--Optional:-->
+                  <oxml:numeroExterior></oxml:numeroExterior>
+                  <!--Optional:-->
+                  <oxml:numeroInterior></oxml:numeroInterior>
+                  <!--Optional:-->
+                  <oxml:colonia></oxml:colonia>
+                  <!--Optional:-->
+                  <oxml:localidad></oxml:localidad>
+                  <!--Optional:-->
+                  <oxml:municipio></oxml:municipio>
+                  <!--Optional:-->
+                  <oxml:entidadFederativa></oxml:entidadFederativa>
+                  <oxml:pais></oxml:pais>
+                  <!--Optional:-->
+                  <oxml:codigoPostal></oxml:codigoPostal>
+               </oxml:domicilio>
+            </oxml:emisor>
+            <!--Optional:-->
+            <oxml:destinatario>
+               <oxml:tipoIdentificador>1</oxml:tipoIdentificador>
+               <oxml:identificacion>CMA010118D69</oxml:identificacion>
+               <!--Optional:-->
+               <oxml:apellidoPaterno></oxml:apellidoPaterno>
+               <!--Optional:-->
+               <oxml:apellidoMaterno></oxml:apellidoMaterno>
+               <oxml:nombre></oxml:nombre>
+               <oxml:domicilio>
+                  <oxml:calle></oxml:calle>
+                  <!--Optional:-->
+                  <oxml:numeroExterior></oxml:numeroExterior>
+                  <!--Optional:-->
+                  <oxml:numeroInterior></oxml:numeroInterior>
+                  <!--Optional:-->
+                  <oxml:colonia></oxml:colonia>
+                  <!--Optional:-->
+                  <oxml:localidad></oxml:localidad>
+                  <!--Optional:-->
+                  <oxml:municipio></oxml:municipio>
+                  <!--Optional:-->
+                  <oxml:entidadFederativa></oxml:entidadFederativa>
+                  <oxml:pais></oxml:pais>
+                  <!--Optional:-->
+                  <oxml:codigoPostal></oxml:codigoPostal>
+               </oxml:domicilio>
+            </oxml:destinatario>
+            <!--1 or more repetitions:-->
+            <oxml:facturas>
+               <oxml:certificadoOrigen>1</oxml:certificadoOrigen>
+               <!--Optional:-->
+               <oxml:numeroExportadorAutorizado>300000</oxml:numeroExportadorAutorizado>
+               <oxml:subdivision>0</oxml:subdivision>
+               <oxml:numeroFactura>4334535</oxml:numeroFactura>
+               <!--1 or more repetitions:-->
+               <oxml:mercancias>
+                  <oxml:descripcionGenerica>COMPUTADORA APPLE</oxml:descripcionGenerica>
+                  <oxml:claveUnidadMedida>2</oxml:claveUnidadMedida>
+                  <oxml:tipoMoneda>USD</oxml:tipoMoneda>
+                  <oxml:cantidad>12133.23</oxml:cantidad>
+                  <oxml:valorUnitario>131234.56</oxml:valorUnitario>
+                  <oxml:valorTotal>2342424.7878</oxml:valorTotal>
+                  <oxml:valorDolares>6546464.87</oxml:valorDolares>
+                  <!--Zero or more repetitions:-->
+                  <oxml:descripcionesEspecificas>
+                     <!--Optional:-->
+                     <oxml:marca></oxml:marca>
+                     <!--Optional:-->
+                     <oxml:modelo></oxml:modelo>
+                     <!--Optional:-->
+                     <oxml:subModelo></oxml:subModelo>
+                     <!--Optional:-->
+                     <oxml:numeroSerie></oxml:numeroSerie>
+                  </oxml:descripcionesEspecificas>
+               </oxml:mercancias>
+            </oxml:facturas>
+        <oxml:facturas>
+               <oxml:certificadoOrigen>1</oxml:certificadoOrigen>
+               <!--Optional:-->
+               <oxml:numeroExportadorAutorizado>2000</oxml:numeroExportadorAutorizado>
+               <oxml:subdivision>0</oxml:subdivision>
+               <oxml:numeroFactura>4334535</oxml:numeroFactura>
+               <!--1 or more repetitions:-->
+               <oxml:mercancias>
+                  <oxml:descripcionGenerica>COMPUTADORA APPLE</oxml:descripcionGenerica>
+                  <oxml:claveUnidadMedida>2</oxml:claveUnidadMedida>
+                  <oxml:tipoMoneda>USD</oxml:tipoMoneda>
+                  <oxml:cantidad>12133.23</oxml:cantidad>
+                  <oxml:valorUnitario>131234.56</oxml:valorUnitario>
+                  <oxml:valorTotal>2342424.7878</oxml:valorTotal>
+                  <oxml:valorDolares>6567575.88</oxml:valorDolares>
+                  <!--Zero or more repetitions:-->
+                  <oxml:descripcionesEspecificas>
+                     <!--Optional:-->
+                     <oxml:marca></oxml:marca>
+                     <!--Optional:-->
+                     <oxml:modelo></oxml:modelo>
+                     <!--Optional:-->
+                     <oxml:subModelo></oxml:subModelo>
+                     <!--Optional:-->
+                     <oxml:numeroSerie></oxml:numeroSerie>
+                  </oxml:descripcionesEspecificas>
+               </oxml:mercancias>
+            </oxml:facturas>
+	 </oxml:comprobantes>
+      </oxml:solicitarRecibirRelacionFacturasIAServicio>
+   </soapenv:Body>
+</soapenv:Envelope>

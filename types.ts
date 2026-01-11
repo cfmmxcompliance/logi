@@ -175,7 +175,15 @@ export interface CustomsClearanceRecord {
   truckAppointmentDate: string;
   ataFactory: string;
   eirDate: string;
+  clavePedimento?: string; // New: E.g. A1, V1
   updatedAt?: string;
+}
+
+export interface DigitalArchiveRecord extends PedimentoRecord {
+  docId: string;    // Matches the document ID or Filename
+  uploadDate: string;
+  pdfUrl?: string;  // If uploaded to storage
+  status: 'DRAFT' | 'PROCESSED';
 }
 
 export interface PreAlertRecord {
@@ -277,6 +285,8 @@ export interface GeneralData {
   otrosIncrementables: number;
   pesoBruto: number;
   fechaPago: string;
+  fechaEntrada: string; // New: Extracted Entry Date
+  clavePedimento?: string; // New: Extracted Key (A1, V1)
 }
 
 export interface DSInvoiceData {
@@ -450,5 +460,6 @@ export interface StorageState {
   dataStageReports: DataStageReport[];
   trainingSubmissions: any[];
   commercialInvoices: CommercialInvoiceItem[];
-  dataStageDrafts?: DataStageSession[]; // Optional as it might be lazy loaded
+  dataStageDrafts?: DataStageSession[];
+  digitalArchive?: DigitalArchiveRecord[]; // New: Unpaid Pedimentos
 }

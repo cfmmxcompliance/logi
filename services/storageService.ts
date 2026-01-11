@@ -471,6 +471,34 @@ export const storageService = {
     await batch.commit();
   },
 
+  // Senior Frontend Engineer: Implemented missing upsertDataStageReport method for extracted Pedimentos.
+  upsertDataStageReport: async (report: DataStageReport) => {
+    const id = report.id || crypto.randomUUID();
+    const finalReport = { ...report, id };
+
+    if (!db) {
+      const idx = dbState.dataStageReports.findIndex((r: any) => r.id === id);
+      if (idx !== -1) dbState.dataStageReports[idx] = finalReport;
+      else dbState.dataStageReports.push(finalReport);
+
+      // Also save to separate localStorage key for robustness
+      try {
+        const currentReports = JSON.parse(localStorage.getItem(COLS.DATA_STAGE_REPORTS) || '[]');
+        const existingIdx = currentReports.findIndex((r: any) => r.id === id);
+        if (existingIdx !== -1) currentReports[existingIdx] = finalReport;
+        else currentReports.push(finalReport);
+        localStorage.setItem(COLS.DATA_STAGE_REPORTS, JSON.stringify(currentReports));
+      } catch (e) {
+        console.warn("Failed to backup DataStage report locally", e);
+      }
+
+      saveLocal();
+      return;
+    }
+    // Cloud Save
+    await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, id), finalReport);
+  },
+
   updateShipment: async (shipment: Shipment) => {
     const record = { ...shipment, updatedAt: new Date().toISOString() };
     const id = record.id || crypto.randomUUID();
@@ -2133,7 +2161,123 @@ export const storageService = {
       if (window.location.hostname === 'localhost') return simulateLocalSuccess();
       throw e;
     }
-  }
+  },
+
+  // --- DIGITAL ARCHIVE METHODS (Refined Workflow) ---
+  saveToDigitalArchive: async (record: PedimentoRecord, docId: string, pdfUrl: string = '') => {
+    const archiveRecord = {
+      ...record,
+      docId,
+      uploadDate: new Date().toISOString(),
+      pdfUrl,
+      status: 'DRAFT'
+    } as any; // Cast to avoid strict type issues with extended interface
+
+    // Local
+    if (!db) {
+      if (!dbState.digitalArchive) dbState.digitalArchive = [];
+      const idx = dbState.digitalArchive.findIndex((r: any) => r.pedimento === record.pedimento);
+      if (idx !== -1) dbState.digitalArchive[idx] = archiveRecord;
+      else dbState.digitalArchive.push(archiveRecord);
+      saveLocal();
+      return;
+    }
+
+    // Cloud (New Collection 'digital_archive')
+    await setDoc(doc(db, 'digital_archive', record.pedimento), archiveRecord);
+  },
+
+  // Sync Final/Paid Pedimento to Customs Clearance (Update existing records)
+  promoteToCustomsClearance: async (record: PedimentoRecord) => {
+    if (!record.pedimento) throw new Error("Pedimento number is missing.");
+
+    // 1. Find Matching Records in Customs Clearance (One Pedimento -> Many Containers)
+    let matchingRecords: CustomsClearanceRecord[] = [];
+
+    if (!db) {
+      matchingRecords = dbState.customsClearance.filter((c: any) => c.pedimentoNo && c.pedimentoNo.trim() === record.pedimento.trim());
+    } else {
+      const q = query(collection(db, COLS.CUSTOMS), where("pedimentoNo", "==", record.pedimento));
+      const snap = await getDocs(q);
+      matchingRecords = snap.docs.map(d => ({ ...d.data(), id: d.id })) as CustomsClearanceRecord[];
+    }
+
+    if (matchingRecords.length === 0) {
+      return { success: false, message: `No se encontraron embarques con Pedimento ${record.pedimento}. Verifica el 'Shipment Plan'.` };
+    }
+
+    // 2. Prepare Updates
+    // Map ATA Port from 'fechaEntrada'
+    const ataPortVal = record.fechaEntrada || null;
+
+    const updates = {
+      pedimentoPaymentDate: record.fechaPago,
+      // If we extracted Auth Date (often same as payment or close), use it
+      // For now, if missing in extraction, assume same as payment or keep old
+      pedimentoAuthorizedDate: record.fechaPago, // Fallback
+      clavePedimento: record.clavePedimento || '', // New Schema A1/V1
+      updatedAt: new Date().toISOString()
+    };
+
+    // If ATA Port is valid date in Pedimento, update it
+    let finalUpdates: any = { ...updates };
+    if (ataPortVal && ataPortVal.length > 5) {
+      finalUpdates.ataPort = ataPortVal;
+    }
+
+    // 3. Update ALL matching records
+    if (!db) {
+      matchingRecords.forEach((match) => {
+        const idx = dbState.customsClearance.findIndex((c: any) => c.id === match.id);
+        if (idx !== -1) {
+          dbState.customsClearance[idx] = { ...dbState.customsClearance[idx], ...finalUpdates };
+        }
+      });
+      // Remove from Archive (Draft)
+      if (dbState.digitalArchive) {
+        dbState.digitalArchive = dbState.digitalArchive.filter((r: any) => r.pedimento !== record.pedimento);
+      }
+      saveLocal();
+    } else {
+      const batch = writeBatch(db);
+      matchingRecords.forEach((match) => {
+        const ref = doc(db, COLS.CUSTOMS, match.id);
+        batch.update(ref, finalUpdates);
+      });
+
+      // Delete from Archive
+      const archiveRef = doc(db, 'digital_archive', record.pedimento);
+      batch.delete(archiveRef);
+
+      await batch.commit();
+    }
+
+    return {
+      success: true,
+    };
+  },
+
+  getDigitalArchive: () => {
+    return dbState.digitalArchive || [];
+  },
+
+  deleteDigitalArchive: async (pedimentoNo: string) => {
+    // Local Update
+    if (dbState.digitalArchive) {
+      dbState.digitalArchive = dbState.digitalArchive.filter((r: any) => r.pedimento !== pedimentoNo);
+    }
+    saveLocal();
+
+    // Cloud Update
+    if (db) {
+      try {
+        await deleteDoc(doc(db, 'digital_archive', pedimentoNo));
+      } catch (e) {
+        console.error("Error deleting from archive cloud:", e);
+      }
+    }
+  },
+
 };
 
 

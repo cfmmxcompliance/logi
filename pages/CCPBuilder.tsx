@@ -64,8 +64,8 @@ export default function CCPBuilder() {
         preAlerts.forEach(pa => {
             if (pa.bookingAbw) {
                 // Check 'containers' array or 'linkedContainers'
-                if (pa.containers && Array.isArray(pa.containers)) {
-                    pa.containers.forEach((c: any) => {
+                if ((pa as any).containers && Array.isArray((pa as any).containers)) {
+                    (pa as any).containers.forEach((c: any) => {
                         const cNum = typeof c === 'string' ? c : c.containerNo;
                         if (cNum) blMap[cNum] = pa.bookingAbw;
                     });

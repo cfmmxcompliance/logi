@@ -13,6 +13,9 @@ export const ProformaValidator: React.FC = () => {
     const { showNotification } = useNotification();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [pedimentoData, setPedimentoData] = useState<PedimentoData | null>(null);
+    // RESTORED STATE: For Phase 1 Raw Inspector
+    const [showRawModal, setShowRawModal] = useState(false);
+    const [rawInvoiceItems, setRawInvoiceItems] = useState<any>(null);
     const [comparisonRows, setComparisonRows] = useState<ComparisonRow[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState('Processing...');
@@ -34,16 +37,13 @@ export const ProformaValidator: React.FC = () => {
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        console.log("File Upload Triggered");
         const file = e.target.files?.[0];
         if (!file) return;
 
-        console.log("File selected:", file.name, file.size);
         e.target.value = ''; // Reset input
-
         setLoading(true);
         setErrorMessage(null);
-        setLoadingMessage('Reading file...');
+        setLoadingMessage('Gemini 2.0: Foreman Forensic Extraction...');
 
         try {
             // Read File to Base64 ONCE
@@ -57,120 +57,14 @@ export const ProformaValidator: React.FC = () => {
                 reader.readAsDataURL(file);
             });
 
-            // STEP 1: AI Auto-Learning (Extract & Save Invoice Data)
-            setLoadingMessage('AI Learning (Gemini Analysis)...');
-            try {
-                const learnedItems = await geminiService.parseInvoiceMaterials(base64, file.type);
-                if (learnedItems && learnedItems.length > 0) {
-                    // Transform to CommercialInvoiceItem format (Fail-Safe)
-                    const dbItems = learnedItems.map(item => ({
-                        id: crypto.randomUUID(),
-                        invoiceNo: 'AUTO-LEARNED',
-                        partNo: item.partNumber || 'UNIDENTIFIED',
-                        description: item.description || '(No Description)',
-                        qty: (typeof item.qty === 'number' && !isNaN(item.qty)) ? item.qty : -1,
-                        unitPrice: (typeof item.unitPrice === 'number' && !isNaN(item.unitPrice)) ? item.unitPrice : 0,
+            // PHASE 1 ONLY: Raw Forensic Text
+            const rawTextReal = await geminiService.parseInvoiceMaterials(base64, file.type);
 
-                        currency: 'USD',
-                        status: 'Pending',
-                        updatedAt: new Date().toISOString(),
-                        date: new Date().toISOString().split('T')[0],
-                        item: '',
-                        model: '',
-                        englishName: '',
-                        spanishDescription: '',
-                        hts: '',
-                        prosec: '',
-                        rb: '',
-                        um: 'PCS',
-                        netWeight: 0,
-                        totalAmount: 0,
-                        regimen: '',
-                    }));
+            // Connect to Raw Inspector
+            setRawInvoiceItems(rawTextReal);
+            setShowRawModal(true);
 
-                    if (dbItems.length > 0) {
-                        await storageService.addInvoiceItems(dbItems as any);
-                        showNotification('AI Learning Complete', `Learned ${dbItems.length} items.`, 'success');
-                    }
-                }
-            } catch (err: any) {
-                console.error("AI Learning Warning:", err);
-                // Non-fatal, continue to Step 2
-            }
-
-            // STEP 2: Pedimento Parsing (NOW USING GEMINI AI)
-            setLoadingMessage('Gemini AI: Extracting Pedimento Data...');
-            const aiRecord = await geminiService.extractPedimento(base64, 'application/pdf');
-
-            // MAP AI Record -> PedimentoData (UI Format)
-            const mappedHeader: any = {
-                pedimentoNo: aiRecord.pedimento || '',
-                isSimplified: false, // AI usually extracts standard
-                fechas: aiRecord.fechaPago ? [{ tipo: 'Pago' as const, fecha: aiRecord.fechaPago }] : [],
-                valores: {
-                    dolares: aiRecord.totalValueUsd || 0,
-                    aduana: aiRecord.valorAduanaTotal || 0,
-                    comercial: 0 // calculated from items if needed
-                },
-                importes: {
-                    dta: aiRecord.dtaTotal || 0,
-                    prv: aiRecord.prevalidacionTotal || 0,
-                    cnt: aiRecord.cntTotal || 0,
-                    iva: 0, // Sum from items
-                    igi: 0, // Sum from items
-                    totalEfectivo: aiRecord.totalTaxes || 0
-                },
-                tasasGlobales: [],
-                transporte: { medios: [], candados: [] },
-                guias: [],
-                contenedores: [],
-                facturas: [],
-                proveedores: []
-            };
-
-            const mappedItems: PedimentoItem[] = (aiRecord.items || []).map((aiItem: any, idx) => ({
-                partNo: aiItem.partNumber || `UNIDENTIFIED-${idx + 1}`,
-                secuencia: Number(aiItem.secuencia) || idx + 1,
-                fraccion: aiItem.fraccion || '',
-                nico: aiItem.nico,
-                description: aiItem.descripcion || '',
-                qty: Number(aiItem.cantidadComercial) || 0,
-                umc: aiItem.unidadMedidaComercial || '',
-                qtyUmt: Number(aiItem.cantidadTarifa) || 0,
-                umt: aiItem.unidadMedidaTarifa || '',
-                unitPrice: Number(aiItem.precioUnitario) || 0,
-                totalAmount: Number(aiItem.valorComercial) || 0,
-                valorAduana: Number(aiItem.valorAduana) || 0,
-                valorComercial: Number(aiItem.valorComercial) || 0,
-                identifiers: (aiItem.identifiers || []).map((id: any) => ({
-                    level: 'Item',
-                    code: id.code,
-                    complement1: id.complement1
-                })),
-                contribuciones: (aiItem.contribuciones || []).map((c: any) => ({
-                    clave: c.clave,
-                    importe: Number(c.importe),
-                    tasa: Number(c.tasa),
-                    tipoTasa: c.tipoTasa,
-                    formaPago: c.formaPago
-                })),
-                regulaciones: (aiItem.regulaciones || []).map((r: any) => ({
-                    clave: r.clave,
-                    permiso: r.permiso
-                })),
-                observaciones: aiItem.observaciones,
-                page: 1
-            }));
-
-            const data: PedimentoData = {
-                header: mappedHeader,
-                items: mappedItems,
-                rawText: "Extracted by Gemini AI",
-                validationResults: []
-            };
-
-            setPedimentoData(data);
-            processMatching(data);
+            // Finish (Do NOT proceed to Phase 2/3)
             setLoading(false);
 
         } catch (error: any) {
@@ -277,8 +171,7 @@ export const ProformaValidator: React.FC = () => {
             ...originalRecord,
             pedimentoNo: pedimentoData.header.pedimentoNo || originalRecord.pedimentoNo,
             pedimentoPaymentDate: pedimentoData.header.fechaPago || originalRecord.pedimentoPaymentDate,
-            // Assume Authorization happens same day as payment if missing?
-            pedimentoAuthorizedDate: pedimentoData.header.fechaPago || originalRecord.pedimentoAuthorizedDate,
+            pedimentoAuthorizedDate: originalRecord.pedimentoAuthorizedDate,
         };
 
         await storageService.updateCustomsClearance(updated);
@@ -297,7 +190,6 @@ export const ProformaValidator: React.FC = () => {
             <div className="flex justify-between items-center">
                 <div className="flex flex-col">
                     <h1 className="text-2xl font-bold text-slate-800">Proforma Validator</h1>
-                    <p className="text-sm text-slate-500">AI-Powered Compliance</p>
                 </div>
                 <div className="flex gap-2">
                     <button
@@ -363,7 +255,7 @@ export const ProformaValidator: React.FC = () => {
                                 <h3 className="text-xl font-bold text-slate-800 mb-2">Analyzing Document</h3>
                                 <div className="h-1 w-16 bg-indigo-600 mx-auto rounded mb-4"></div>
                                 <p className="text-slate-600 font-medium animate-pulse">{loadingMessage}</p>
-                                <p className="text-xs text-slate-400 mt-4">Please wait while we validate compliance rules...</p>
+                                {/* Static text removed */}
                             </>
                         )}
                     </div>
@@ -439,8 +331,30 @@ export const ProformaValidator: React.FC = () => {
             {!loading && !pedimentoData && (
                 <div className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center text-slate-400">
                     <Upload className="mx-auto mb-4 opacity-50" size={48} />
-                    <p className="text-lg font-medium">Upload a Pedimento PDF (Proforma or Paid)</p>
-                    <p className="text-sm">The system will analyze structure and validate against commercial invoices.</p>
+                    <p className="text-lg font-medium">Upload Document (Proforma / Paid)</p>
+                    <p className="text-sm mt-2 max-w-md mx-auto">
+                        Raw Forensic Text Extraction.
+                        <br />
+                        <span className="opacity-75 text-xs">Direct Gemini 2.0 Output • No Compliance Rules • No Filtering</span>
+                    </p>
+                </div>
+            )}
+
+            {/* RAW AI INSPECTOR: Phase 1 (Data Dump) */}
+            {showRawModal && (
+                <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+                    <button
+                        onClick={() => setShowRawModal(false)}
+                        className="absolute top-4 right-6 text-slate-500 hover:text-white transition-colors z-50 p-2"
+                    >
+                        <span className="sr-only">Close</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                    <textarea
+                        readOnly
+                        className="flex-1 w-full h-full bg-black text-emerald-500 font-mono text-xs p-8 resize-none focus:outline-none"
+                        value={typeof rawInvoiceItems === 'string' ? rawInvoiceItems : JSON.stringify(rawInvoiceItems, null, 2)}
+                    />
                 </div>
             )}
 

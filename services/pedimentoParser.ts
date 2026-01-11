@@ -1,6 +1,7 @@
 
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 // Vite-specific worker import
+// @ts-ignore
 import pdfWorker from 'pdfjs-dist/legacy/build/pdf.worker.mjs?url';
 
 // Polyfill for DOMMatrix in Node/Browser if missing

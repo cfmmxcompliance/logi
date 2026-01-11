@@ -735,7 +735,7 @@ export const DatabaseView = () => {
             result = result.filter(p => {
                 // Must have data in ALL active filtered columns (AND Logic)
                 for (const col of Array.from(activeFilters)) {
-                    const val = (p as any)[col];
+                    const val = (p as any)[col as string];
                     // "Has Data" means truthy AND not empty string. 
                     // Special case for Numbers: 0 is value? Or "has data"?
                     // User request: "que solo vea los que tienen datos". 

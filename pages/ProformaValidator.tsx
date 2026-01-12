@@ -6,7 +6,7 @@ import { PedimentoSummary } from '../components/proforma/PedimentoSummary';
 import { ComparisonTable, ComparisonRow } from '../components/proforma/ComparisonTable';
 import { Layout } from '../components/Layout';
 import { CustomsClearanceRecord } from '../types';
-import { Upload, FileText, AlertTriangle, CheckCircle, Search, Save, ArrowRight, Trash2 } from 'lucide-react';
+import { Upload, FileText, AlertTriangle, CheckCircle, Search, Save, ArrowRight, Trash2, List, X, History } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 
 export const ProformaValidator: React.FC = () => {
@@ -16,6 +16,12 @@ export const ProformaValidator: React.FC = () => {
     // RESTORED STATE: For Phase 1 Raw Inspector
     const [showRawModal, setShowRawModal] = useState(false);
     const [rawInvoiceItems, setRawInvoiceItems] = useState<any>(null);
+
+    // PHASE 2 STATE: Structured Analysis (Strict Mode)
+    const [showPhase2Modal, setShowPhase2Modal] = useState(false);
+    const [structuredData, setStructuredData] = useState<any>(null);
+    const [isStructuring, setIsStructuring] = useState(false);
+    const [phase2Error, setPhase2Error] = useState<string | null>(null);
 
 
 
@@ -36,6 +42,50 @@ export const ProformaValidator: React.FC = () => {
             setPedimentoData(null);
             setComparisonRows([]);
             showNotification('Validation Cache Cleared', 'Only auto-learned items were deleted.', 'success');
+        }
+    };
+
+    // INVOICE MANAGEMENT //
+    const [showInvoicesModal, setShowInvoicesModal] = useState(false);
+    const [storedInvoices, setStoredInvoices] = useState<{ invoiceNo: string, count: number }[]>([]);
+
+    const openInvoicesModal = () => {
+        const items = storageService.getInvoiceItems();
+        // Group by InvoiceNo
+        const grouped = items.reduce((acc: any, item: any) => {
+            const key = item.invoiceNo || 'Unknown';
+            acc[key] = (acc[key] || 0) + 1;
+            return acc;
+        }, {});
+
+        const list = Object.entries(grouped).map(([invoiceNo, count]) => ({
+            invoiceNo,
+            count: count as number
+        })).sort((a, b) => b.count - a.count);
+
+        setStoredInvoices(list);
+        setShowInvoicesModal(true);
+    };
+
+    const handleDeleteInvoice = async (invoiceNo: string) => {
+        if (confirm(`Are you sure you want to delete Invoice "${invoiceNo}"? This will remove all associated items.`)) {
+            await storageService.deleteInvoiceByNumber(invoiceNo);
+
+            // Refresh List
+            const items = storageService.getInvoiceItems();
+            const grouped = items.reduce((acc: any, item: any) => {
+                const key = item.invoiceNo || 'Unknown';
+                acc[key] = (acc[key] || 0) + 1;
+                return acc;
+            }, {});
+
+            const list = Object.entries(grouped).map(([inv, count]) => ({
+                invoiceNo: inv,
+                count: count as number
+            })).sort((a, b) => b.count - a.count);
+
+            setStoredInvoices(list);
+            showNotification('Invoice Deleted', `Invoice ${invoiceNo} removed successfully.`, 'success');
         }
     };
 
@@ -78,6 +128,42 @@ export const ProformaValidator: React.FC = () => {
     };
 
 
+
+
+    // PHASE 2 HANDLER: Strict Isolation (Restored)
+    const handlePhase2Analysis = async () => {
+        if (!rawInvoiceItems) return;
+
+        setIsStructuring(true);
+        // Transition: Close Raw -> Open Phase 2
+        setShowRawModal(false);
+        setShowPhase2Modal(true);
+
+        try {
+            setPhase2Error(null);
+            // Call the robust strict parser
+            const result = await geminiService.parseForensicStructure(rawInvoiceItems);
+
+            if (!result) {
+                throw new Error("Empty response from AI Analysis");
+            }
+
+            if (result.error) {
+                // Handle graceful failure from service
+                setPhase2Error(result.details || result.error);
+                // Still show partial data if available? 
+                // Currently service returns header even on error
+                setStructuredData(result);
+            } else {
+                setStructuredData(result);
+            }
+        } catch (error: any) {
+            console.error("Phase 2 Critical Error", error);
+            setPhase2Error(error.message || "Critical failure during analysis.");
+        } finally {
+            setIsStructuring(false);
+        }
+    };
 
     // Extract matching logic to keep handler clean (optional, but good for readability)
     const processMatching = (data: PedimentoData) => {
@@ -203,6 +289,32 @@ export const ProformaValidator: React.FC = () => {
                     >
                         <Trash2 size={14} />
                         Reset Items DB
+                    </button>
+                    <button
+                        onClick={async () => {
+                            try {
+                                const { collection, getCountFromServer } = await import('firebase/firestore');
+                                const { db } = await import('../services/firebaseConfig');
+                                if (!db) { alert('No DB connection'); return; }
+                                const coll = collection(db, 'commercial_invoices');
+                                const snapshot = await getCountFromServer(coll);
+                                alert(`Cloud Data Check:\nFound ${snapshot.data().count} items in Firestore 'commercial_invoices' collection.`);
+                            } catch (e: any) {
+                                console.error(e);
+                                alert(`Error checking cloud: ${e.message || e}`);
+                            }
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider"
+                    >
+                        <History size={14} />
+                        Debug Cloud
+                    </button>
+                    <button
+                        onClick={openInvoicesModal}
+                        className="flex items-center gap-2 px-3 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider"
+                    >
+                        <List size={14} />
+                        Manage Invoices
                     </button>
                     <input
                         type="file"
@@ -369,7 +481,12 @@ export const ProformaValidator: React.FC = () => {
                         {/* Footer (Bridge to Phase 2) */}
                         <div className="h-14 border-t bg-slate-50 flex items-center justify-between px-6 shrink-0">
                             <span className="text-xs text-slate-400 font-mono">Phase 1: Forensic Verification</span>
-                            {/* Phase 2 link removed */}
+                            <button
+                                onClick={handlePhase2Analysis}
+                                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-sm"
+                            >
+                                Analizar Estructura (Fase 2) <ArrowRight size={16} />
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -377,9 +494,171 @@ export const ProformaValidator: React.FC = () => {
 
 
 
+
+            {/* PHASE 2 INSPECTOR: Structured Analysis (Strict Mode) */}
+            {showPhase2Modal && (
+                <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white w-[1000px] max-w-full h-[700px] max-h-[90vh] rounded-lg shadow-2xl flex flex-col relative overflow-hidden">
+                        {/* Phase 2 Header */}
+                        <div className="h-14 border-b bg-indigo-50 flex items-center justify-between px-6">
+                            <h3 className="font-bold text-indigo-900 flex items-center gap-2">
+                                <FileText size={18} />
+                                Phase 2: Structured Analysis (Strict Mode)
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => { setShowPhase2Modal(false); setShowRawModal(true); }}
+                                    className="text-indigo-600 hover:bg-indigo-100 px-3 py-1 rounded text-sm font-medium transition-colors"
+                                >
+                                    Back to Raw
+                                </button>
+                                <button
+                                    onClick={() => setShowPhase2Modal(false)}
+                                    className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-3 py-1 rounded-md text-sm font-bold transition-colors"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Phase 2 Content (Forensic Dashboard) */}
+                        <div className="flex-1 overflow-hidden flex bg-slate-50">
+                            {isStructuring ? (
+                                <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-100 border-t-indigo-600"></div>
+                                    <p className="text-slate-500 font-medium animate-pulse">Running Strict Forensic Analysis...</p>
+                                    <p className="text-xs text-slate-400">Verifying Nulls • Validating Schema</p>
+                                </div>
+                            ) : structuredData ? (
+                                <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                                    {phase2Error && (
+                                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg mb-4 flex gap-3 text-amber-800 text-sm">
+                                            <AlertTriangle size={16} className="mt-0.5" />
+                                            <div>
+                                                <p className="font-bold">Partial Analysis Warning</p>
+                                                <p>{phase2Error}</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 1. Header & Metadata (Provenance) */}
+                                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                                                <FileText size={18} className="text-blue-500" />
+                                                Encabezado del Pedimento
+                                            </h4>
+                                            <span className="text-xs font-mono text-slate-400">
+                                                Pages: {structuredData.metadata?.pageCount} • Extracted: {structuredData.metadata?.extractionDate}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-4 gap-6 mb-6">
+                                            <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                                <label className="text-xs text-slate-500 block mb-1">Pedimento</label>
+                                                <div className="font-mono font-bold text-lg text-slate-800">
+                                                    {structuredData.header?.pedimentoNumber?.value || <span className="text-slate-300 italic">N/A</span>}
+                                                </div>
+                                            </div>
+                                            <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                                <label className="text-xs text-slate-500 block mb-1">Tipo Operación</label>
+                                                <div className="font-bold text-slate-800">{structuredData.header?.tipoOperacion || '-'}</div>
+                                            </div>
+                                            <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                                <label className="text-xs text-slate-500 block mb-1">Clave</label>
+                                                <div className="font-bold text-slate-800">{structuredData.header?.clavePedimento || '-'}</div>
+                                            </div>
+                                            <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                                <label className="text-xs text-slate-500 block mb-1">Régimen</label>
+                                                <div className="font-mono font-bold text-slate-800">{structuredData.header?.regimen || '-'}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 2. Items Table (The "Armado") */}
+                                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                        <div className="px-6 py-4 border-b bg-slate-50 flex justify-between items-center">
+                                            <h4 className="font-bold text-slate-800">Partidas ({structuredData.items?.length || 0})</h4>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-xs text-left">
+                                                <thead className="bg-slate-50 font-bold text-slate-500 uppercase">
+                                                    <tr>
+                                                        <th className="px-4 py-3">Sec</th>
+                                                        <th className="px-4 py-3">Fracción</th>
+                                                        <th className="px-4 py-3">Descripción</th>
+                                                        <th className="px-4 py-3 text-right">Cant UMC</th>
+                                                        <th className="px-4 py-3 text-right">P. Unit</th>
+                                                        <th className="px-4 py-3 text-right">Val Aduana</th>
+                                                        <th className="px-4 py-3">Identificadores</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {structuredData.items?.map((item: any, idx: number) => (
+                                                        <tr key={idx} className="hover:bg-indigo-50/30 transition-colors align-top">
+                                                            <td className="px-4 py-3 font-mono text-slate-500">{item.sequence ?? '-'}</td>
+                                                            <td className="px-4 py-3 font-mono font-bold text-indigo-600">
+                                                                {item.fraction || '-'}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-slate-600 max-w-[200px]">
+                                                                <div className="font-medium">{item.description || <span className="text-slate-300">No Desc</span>}</div>
+                                                                <div className="flex flex-wrap gap-2 text-[10px] mt-1">
+                                                                    {item.partNumber ? (
+                                                                        <span className="text-blue-600 bg-blue-50 px-1 rounded border border-blue-100">PN: {item.partNumber}</span>
+                                                                    ) : (
+                                                                        <span className="text-slate-300 italic">No PN</span>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right font-mono">
+                                                                {item.quantityUMC != null ? item.quantityUMC.toLocaleString() : '-'}
+                                                                <span className="text-[10px] text-slate-400 ml-1">{item.umc || ''}</span>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right font-mono">${item.unitPrice != null ? item.unitPrice.toLocaleString() : '-'}</td>
+                                                            <td className="px-4 py-3 text-right font-mono font-bold text-slate-700">${item.customsValue != null ? item.customsValue.toLocaleString() : '-'}</td>
+                                                            <td className="px-4 py-3">
+                                                                {item.identifiers?.map((id: any, idIdx: number) => (
+                                                                    <span key={idIdx} className="mr-1 inline-block text-[10px] bg-indigo-50 p-0.5 rounded border border-indigo-100 font-mono text-indigo-800">
+                                                                        {id.code}{id.complement1 ? `:${id.complement1}` : ''}
+                                                                    </span>
+                                                                ))}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            ) : (
+                                <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
+                                    {phase2Error ? (
+                                        <div className="max-w-md text-center p-6 bg-red-50 rounded-xl border border-red-100">
+                                            <AlertTriangle className="mx-auto text-red-500 mb-4" size={32} />
+                                            <h4 className="text-red-800 font-bold mb-2">Analysis Failed</h4>
+                                            <p className="text-sm text-red-600 mb-6 font-mono break-words">{phase2Error}</p>
+                                            <button
+                                                onClick={handlePhase2Analysis}
+                                                className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition-colors"
+                                            >
+                                                Retry Phase 2 (Strict)
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        "No Data"
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Customs Update Modal */}
             {showCustomsModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    {/* ... existing modal ... */}
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
                         <div className="p-6 border-b border-slate-100">
                             <h3 className="text-lg font-bold">Select Customs Record</h3>
@@ -426,6 +705,58 @@ export const ProformaValidator: React.FC = () => {
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Confirm Update
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Manage Invoices Modal */}
+            {showInvoicesModal && (
+                <div className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="flex justify-between items-center p-6 border-b border-slate-100">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800">Manage Invoices</h3>
+                                <p className="text-xs text-slate-500">Stored Commercial Invoices</p>
+                            </div>
+                            <button onClick={() => setShowInvoicesModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="max-h-[400px] overflow-y-auto p-4 bg-slate-50 space-y-3">
+                            {storedInvoices.length === 0 ? (
+                                <div className="text-center py-8 text-slate-400">
+                                    <FileText className="mx-auto mb-2 opacity-50" size={32} />
+                                    No invoices stored
+                                </div>
+                            ) : (
+                                storedInvoices.map((inv, idx) => (
+                                    <div key={idx} className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 flex justify-between items-center group hover:border-blue-200 transition-colors">
+                                        <div>
+                                            <div className="font-bold text-slate-700 text-sm flex items-center gap-2">
+                                                <FileText size={14} className="text-blue-500" />
+                                                {inv.invoiceNo}
+                                            </div>
+                                            <div className="text-xs text-slate-400 mt-1">{inv.count} items</div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeleteInvoice(inv.invoiceNo)}
+                                            className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 rounded transition-colors opacity-100"
+                                            title="Delete Invoice"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                        <div className="p-4 border-t border-slate-100 bg-white text-center">
+                            <button
+                                onClick={() => setShowInvoicesModal(false)}
+                                className="text-sm text-slate-500 hover:text-slate-700 font-medium"
+                            >
+                                Close
                             </button>
                         </div>
                     </div>

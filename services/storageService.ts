@@ -31,6 +31,26 @@ let unsubscribers: (() => void)[] = [];
 
 const notifyListeners = () => listeners.forEach(l => l());
 
+// Helper to convert undefined to null for Firestore
+const sanitizeForFirestore = (obj: any): any => {
+  if (obj === undefined) return null;
+  if (obj === null) return null;
+  if (Array.isArray(obj)) return obj.map(sanitizeForFirestore);
+  if (typeof obj === 'object' && !(obj instanceof Date)) {
+    const newObj: any = {};
+    Object.keys(obj).forEach(key => {
+      const val = obj[key];
+      if (val === undefined) {
+        newObj[key] = null;
+      } else {
+        newObj[key] = sanitizeForFirestore(val);
+      }
+    });
+    return newObj;
+  }
+  return obj;
+};
+
 const saveLocal = () => {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dbState));
   // Robust backup for Commercial Invoices
@@ -185,7 +205,7 @@ export const storageService = {
       if (idx !== -1) dbState.costs[idx] = { ...cost, id }; else dbState.costs.push({ ...cost, id });
       saveLocal(); return;
     }
-    await setDoc(doc(db, COLS.COSTS, id), cost);
+    await setDoc(doc(db, COLS.COSTS, id), sanitizeForFirestore(cost));
   },
 
   deleteCost: async (id: string) => {
@@ -233,7 +253,7 @@ export const storageService = {
       const batch = writeBatch(db);
       chunk.forEach(item => {
         const ref = doc(db, COLS.INVOICES, item.id);
-        batch.set(ref, item);
+        batch.set(ref, sanitizeForFirestore(item));
       });
       await batch.commit();
     }
@@ -248,7 +268,7 @@ export const storageService = {
       }
       return;
     }
-    await setDoc(doc(db, COLS.INVOICES, item.id), item);
+    await setDoc(doc(db, COLS.INVOICES, item.id), sanitizeForFirestore(item));
   },
 
   deleteInvoiceItem: async (id: string) => {
@@ -283,6 +303,10 @@ export const storageService = {
       });
       await batch.commit();
     }
+
+    // Fix: Also update local state to reflect changes immediately in UI
+    dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => !ids.includes(i.id));
+    // Optional: saveLocal() if we want to persist the "cache clearing", though cloud sync should handle it.
   },
 
   deleteAutoLearnedInvoices: async () => {
@@ -299,6 +323,32 @@ export const storageService = {
     const ids = snap.docs.map(d => d.id);
 
     console.log(`Found ${ids.length} auto-learned items to delete.`);
+
+    if (ids.length > 0) {
+      await storageService.deleteInvoiceItems(ids);
+    }
+  },
+
+  deleteInvoiceByNumber: async (invoiceNo: string) => {
+    console.log(`Deleting Invoice: ${invoiceNo}`);
+
+    // 1. Local Delete
+    if (!db) {
+      const initialCount = dbState.commercialInvoices.length;
+      dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => i.invoiceNo !== invoiceNo);
+      if (dbState.commercialInvoices.length < initialCount) {
+        saveLocal();
+        console.log("Local delete successful");
+      }
+      return;
+    }
+
+    // 2. Cloud Delete
+    const q = query(collection(db, COLS.INVOICES), where("invoiceNo", "==", invoiceNo));
+    const snap = await getDocs(q);
+    const ids = snap.docs.map(d => d.id);
+
+    console.log(`Found ${ids.length} items for invoice ${invoiceNo} to delete.`);
 
     if (ids.length > 0) {
       await storageService.deleteInvoiceItems(ids);
@@ -325,7 +375,7 @@ export const storageService = {
       if (idx !== -1) dbState.parts[idx] = data; else dbState.parts.push(data);
       saveLocal(); return;
     }
-    await setDoc(doc(db, COLS.PARTS, id), data);
+    await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(data));
   },
 
   // Senior Frontend Engineer: Implemented missing deletePart method.
@@ -379,7 +429,7 @@ export const storageService = {
       const batch = writeBatch(db);
 
       chunk.forEach((p) => {
-        batch.set(doc(db, COLS.PARTS, p.id || crypto.randomUUID()), p);
+        batch.set(doc(db, COLS.PARTS, p.id || crypto.randomUUID()), sanitizeForFirestore(p));
       });
 
       await batch.commit();
@@ -401,7 +451,7 @@ export const storageService = {
     const batch = writeBatch(db);
     items.forEach((item, idx) => {
       const id = item.id || crypto.randomUUID();
-      batch.set(doc(db, COLS.SHIPMENTS, id), { ...item, id });
+      batch.set(doc(db, COLS.SHIPMENTS, id), sanitizeForFirestore({ ...item, id }));
       if (onProgress) onProgress((idx + 1) / items.length);
     });
     await batch.commit();
@@ -417,7 +467,7 @@ export const storageService = {
     const batch = writeBatch(db);
     items.forEach((item, idx) => {
       const id = item.id || crypto.randomUUID();
-      batch.set(doc(db, COLS.VESSEL_TRACKING, id), { ...item, id });
+      batch.set(doc(db, COLS.VESSEL_TRACKING, id), sanitizeForFirestore({ ...item, id }));
       if (onProgress) onProgress((idx + 1) / items.length);
     });
     await batch.commit();
@@ -433,7 +483,7 @@ export const storageService = {
     const batch = writeBatch(db);
     items.forEach((item, idx) => {
       const id = item.id || crypto.randomUUID();
-      batch.set(doc(db, COLS.EQUIPMENT, id), { ...item, id });
+      batch.set(doc(db, COLS.EQUIPMENT, id), sanitizeForFirestore({ ...item, id }));
       if (onProgress) onProgress((idx + 1) / items.length);
     });
     await batch.commit();
@@ -449,7 +499,7 @@ export const storageService = {
     const batch = writeBatch(db);
     items.forEach((item, idx) => {
       const id = item.id || crypto.randomUUID();
-      batch.set(doc(db, COLS.CUSTOMS, id), { ...item, id });
+      batch.set(doc(db, COLS.CUSTOMS, id), sanitizeForFirestore({ ...item, id }));
       if (onProgress) onProgress((idx + 1) / items.length);
     });
     await batch.commit();
@@ -465,7 +515,7 @@ export const storageService = {
     const batch = writeBatch(db);
     items.forEach((item, idx) => {
       const id = item.id || crypto.randomUUID();
-      batch.set(doc(db, COLS.PRE_ALERTS, id), { ...item, id });
+      batch.set(doc(db, COLS.PRE_ALERTS, id), sanitizeForFirestore({ ...item, id }));
       if (onProgress) onProgress((idx + 1) / items.length);
     });
     await batch.commit();
@@ -496,7 +546,7 @@ export const storageService = {
       return;
     }
     // Cloud Save
-    await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, id), finalReport);
+    await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, id), sanitizeForFirestore(finalReport));
   },
 
   updateShipment: async (shipment: Shipment) => {
@@ -507,7 +557,7 @@ export const storageService = {
       if (idx !== -1) dbState.shipments[idx] = { ...record, id }; else dbState.shipments.push({ ...record, id });
       saveLocal(); return;
     }
-    await setDoc(doc(db, COLS.SHIPMENTS, id), { ...record, id });
+    await setDoc(doc(db, COLS.SHIPMENTS, id), sanitizeForFirestore({ ...record, id }));
   },
 
   // Senior Frontend Engineer: Implemented missing deleteShipment method.
@@ -570,6 +620,42 @@ export const storageService = {
               dbState.vesselTracking[i] = { ...v, ...sharedFields };
             }
           });
+
+          // Sync PreAlerts
+          dbState.preAlerts.forEach((p: any) => {
+            if (p.bookingAbw === updated.blNo) {
+              p.etd = updated.etd;
+              p.eta = updated.etaPort;
+              p.atd = updated.atd;
+              p.ata = updated.ataPort;
+            }
+          });
+
+          // Sync Customs
+          dbState.customsClearance.forEach((c: any) => {
+            if (c.blNo === updated.blNo) {
+              c.ataPort = updated.ataPort;
+            }
+          });
+
+          // Sync Equipment
+          dbState.equipmentTracking.forEach((e: any) => {
+            if (e.blNo === updated.blNo) {
+              e.etd = updated.etd;
+              e.etaPort = updated.etaPort;
+              e.atd = updated.atd;
+            }
+          });
+
+          // Sync Shipments
+          dbState.shipments.forEach((s: any) => {
+            if (s.blNo === updated.blNo) {
+              s.etd = updated.etd;
+              s.eta = updated.etaPort;
+              s.atd = updated.atd;
+              s.ata = updated.ataPort;
+            }
+          });
         }
       } else {
         dbState.vesselTracking.push({ ...updated, id });
@@ -581,16 +667,68 @@ export const storageService = {
     // Cloud Update
     const batch = writeBatch(db);
     // 1. Update the target record
-    batch.set(doc(db, COLS.VESSEL_TRACKING, id), updated);
+    batch.set(doc(db, COLS.VESSEL_TRACKING, id), sanitizeForFirestore(updated));
 
     // 2. Find siblings to sync
     if (updated.blNo) {
+      // A. Sync Siblings within Vessel Tracking (Same BL, different container/record)
       const q = query(collection(db, COLS.VESSEL_TRACKING), where("blNo", "==", updated.blNo));
       const snap = await getDocs(q);
       snap.docs.forEach(d => {
         if (d.id !== id) {
-          batch.update(doc(db, COLS.VESSEL_TRACKING, d.id), sharedFields);
+          batch.update(doc(db, COLS.VESSEL_TRACKING, d.id), sanitizeForFirestore(sharedFields));
         }
+      });
+
+      // B. Sync to Pre-Alerts (One-to-One or One-to-Many usually)
+      const paQuery = query(collection(db, COLS.PRE_ALERTS), where("bookingAbw", "==", updated.blNo));
+      const paSnap = await getDocs(paQuery);
+      paSnap.docs.forEach(d => {
+        batch.update(doc(db, COLS.PRE_ALERTS, d.id), sanitizeForFirestore({
+          etd: updated.etd,
+          eta: updated.etaPort, // PreAlert ETA usually refers to Port
+          atd: updated.atd,
+          ata: updated.ataPort, // PreAlert ATA usually refers to Port
+          updatedAt: new Date().toISOString()
+        }));
+      });
+
+      // C. Sync to Customs Clearance
+      const ccQuery = query(collection(db, COLS.CUSTOMS), where("blNo", "==", updated.blNo));
+      const ccSnap = await getDocs(ccQuery);
+      ccSnap.docs.forEach(d => {
+        batch.update(doc(db, COLS.CUSTOMS, d.id), sanitizeForFirestore({
+          ataPort: updated.ataPort, // Customs cares about ATA Port
+          updatedAt: new Date().toISOString()
+        }));
+      });
+
+      // D. Sync to Equipment Tracking
+      const eqQuery = query(collection(db, COLS.EQUIPMENT), where("blNo", "==", updated.blNo));
+      const eqSnap = await getDocs(eqQuery);
+      eqSnap.docs.forEach(d => {
+        batch.update(doc(db, COLS.EQUIPMENT, d.id), sanitizeForFirestore({
+          etd: updated.etd,
+          etaPort: updated.etaPort,
+          atd: updated.atd,
+          // equipment tracking might not have ATA Port explicitly or named differently?
+          // Using etaPort/atd which match standard fields.
+          updatedAt: new Date().toISOString()
+        }));
+      });
+
+      // E. Sync to Shipments (Master Record)
+      const shQuery = query(collection(db, COLS.SHIPMENTS), where("blNo", "==", updated.blNo));
+      const shSnap = await getDocs(shQuery);
+      shSnap.docs.forEach(d => {
+        batch.update(doc(db, COLS.SHIPMENTS, d.id), sanitizeForFirestore({
+          etd: updated.etd,
+          eta: updated.etaPort,
+          atd: updated.atd,
+          ata: updated.ataPort,
+          // Note: Shipment uses 'eta/ata' generic
+          updatedAt: new Date().toISOString()
+        }));
       });
     }
 
@@ -599,12 +737,19 @@ export const storageService = {
 
   // Senior Frontend Engineer: Implemented missing deleteVesselTracking method.
   deleteVesselTracking: async (id: string) => {
-    if (!db) {
+    // 1. Ghost Busting: Remove from local view immediately
+    if (dbState.vesselTracking) {
       dbState.vesselTracking = dbState.vesselTracking.filter((v: any) => v.id !== id);
       saveLocal();
-      return;
     }
-    await deleteDoc(doc(db, COLS.VESSEL_TRACKING, id));
+
+    if (!db) return;
+
+    try {
+      await deleteDoc(doc(db, COLS.VESSEL_TRACKING, id));
+    } catch (e) {
+      console.warn(`[Delete] Managed to clear local ghost, but cloud delete failed for ${id}`, e);
+    }
   },
 
   deleteVesselTrackings: async (ids: string[]) => {
@@ -631,7 +776,7 @@ export const storageService = {
       saveLocal();
       return;
     }
-    await setDoc(doc(db, COLS.EQUIPMENT, id), updated);
+    await setDoc(doc(db, COLS.EQUIPMENT, id), sanitizeForFirestore(updated));
   },
 
   // Senior Frontend Engineer: Implemented missing deleteEquipmentTracking method.
@@ -704,7 +849,7 @@ export const storageService = {
     // Cloud Update
     const batch = writeBatch(db);
     // 1. Update target
-    batch.set(doc(db, COLS.CUSTOMS, id), updated);
+    batch.set(doc(db, COLS.CUSTOMS, id), sanitizeForFirestore(updated));
 
     // 2. Sync siblings
     if (updated.blNo) {
@@ -712,7 +857,7 @@ export const storageService = {
       const snap = await getDocs(q);
       snap.docs.forEach(d => {
         if (d.id !== id) {
-          batch.update(doc(db, COLS.CUSTOMS, d.id), sharedFields);
+          batch.update(doc(db, COLS.CUSTOMS, d.id), sanitizeForFirestore(sharedFields));
         }
       });
     }
@@ -722,12 +867,19 @@ export const storageService = {
 
   // Senior Frontend Engineer: Implemented missing deleteCustomsClearance method.
   deleteCustomsClearance: async (id: string) => {
-    if (!db) {
+    // 1. Ghost Busting: Remove from local view immediately
+    if (dbState.customsClearance) {
       dbState.customsClearance = dbState.customsClearance.filter((c: any) => c.id !== id);
       saveLocal();
-      return;
     }
-    await deleteDoc(doc(db, COLS.CUSTOMS, id));
+
+    if (!db) return;
+
+    try {
+      await deleteDoc(doc(db, COLS.CUSTOMS, id));
+    } catch (e) {
+      console.warn(`[Delete] Managed to clear local ghost, but cloud delete failed for ${id}`, e);
+    }
   },
 
   deleteCustomsClearances: async (ids: string[]) => {
@@ -795,10 +947,11 @@ export const storageService = {
 
     await storageService.updatePreAlert(finalRecord);
 
-    const bookingRef = finalRecord.bookingAbw;
+    const bookingRef = (finalRecord.bookingAbw || '').trim();
 
     // --- HELPER: Fetch existing data by field ---
     const fetchExisting = async (colName: string, field: string, value: string) => {
+      if (!value) return null; // Safety Guard
       if (!db) {
         // @ts-ignore
         return dbState[colName === COLS.VESSEL_TRACKING ? 'vesselTracking' : colName === COLS.CUSTOMS ? 'customsClearance' : 'shipments'].find((r: any) => r[field] === value) || null;
@@ -817,12 +970,14 @@ export const storageService = {
     //   d. Create NEW records for each container, applying the "manual data".
 
     let existingVessels: VesselTrackingRecord[] = [];
-    if (!db) {
-      existingVessels = dbState.vesselTracking.filter((v: any) => v.blNo === bookingRef);
-    } else {
-      const q = query(collection(db, COLS.VESSEL_TRACKING), where("blNo", "==", bookingRef));
-      const snap = await getDocs(q);
-      existingVessels = snap.docs.map(d => ({ ...d.data(), id: d.id } as VesselTrackingRecord));
+    if (bookingRef) {
+      if (!db) {
+        existingVessels = dbState.vesselTracking.filter((v: any) => v.blNo === bookingRef);
+      } else {
+        const q = query(collection(db, COLS.VESSEL_TRACKING), where("blNo", "==", bookingRef));
+        const snap = await getDocs(q);
+        existingVessels = snap.docs.map(d => ({ ...d.data(), id: d.id } as VesselTrackingRecord));
+      }
     }
 
     // Capture manual data from the first record (or default) to propagate to all splits
@@ -909,12 +1064,14 @@ export const storageService = {
     // 3. Distribute to Customs Clearance (Merge & Split)
     // Same logic: 1 Row per Container.
     let existingCustomsList: CustomsClearanceRecord[] = [];
-    if (!db) {
-      existingCustomsList = dbState.customsClearance.filter((c: any) => c.blNo === bookingRef);
-    } else {
-      const q = query(collection(db, COLS.CUSTOMS), where("blNo", "==", bookingRef));
-      const snap = await getDocs(q);
-      existingCustomsList = snap.docs.map(d => ({ ...d.data(), id: d.id } as CustomsClearanceRecord));
+    if (bookingRef) {
+      if (!db) {
+        existingCustomsList = dbState.customsClearance.filter((c: any) => c.blNo === bookingRef);
+      } else {
+        const q = query(collection(db, COLS.CUSTOMS), where("blNo", "==", bookingRef));
+        const snap = await getDocs(q);
+        existingCustomsList = snap.docs.map(d => ({ ...d.data(), id: d.id } as CustomsClearanceRecord));
+      }
     }
 
     const baseCustomsFn = (defaults: Partial<CustomsClearanceRecord>) => {
@@ -991,55 +1148,57 @@ export const storageService = {
 
 
     // 4. Distribute to Shipments (Shipment Plan) - NEW
-    const existingShipment = (await fetchExisting(COLS.SHIPMENTS, 'blNo', bookingRef)) as Shipment | undefined;
-    const shipmentId: string = existingShipment ? existingShipment.id : crypto.randomUUID();
+    if (bookingRef) {
+      const existingShipment = (await fetchExisting(COLS.SHIPMENTS, 'blNo', bookingRef)) as Shipment | undefined;
+      const shipmentId: string = existingShipment ? existingShipment.id : crypto.randomUUID();
 
-    const shipmentUpdates: Partial<Shipment> = {
-      blNo: bookingRef,
-      reference: bookingRef,
-      origin: finalRecord.departureCity || existingShipment?.origin || 'Unknown',
-      destination: finalRecord.arrivalCity || existingShipment?.destination || 'Unknown',
-      etd: finalRecord.etd,
-      eta: finalRecord.eta,
-      atd: finalRecord.atd,
-      ata: finalRecord.ata,
-      status: existingShipment ? existingShipment.status : ShipmentStatus.IN_TRANSIT,
-      containers: containers.map(c => c.containerNo)
-    };
+      const shipmentUpdates: Partial<Shipment> = {
+        blNo: bookingRef,
+        reference: bookingRef,
+        origin: finalRecord.departureCity || existingShipment?.origin || 'Unknown',
+        destination: finalRecord.arrivalCity || existingShipment?.destination || 'Unknown',
+        etd: finalRecord.etd,
+        eta: finalRecord.eta,
+        atd: finalRecord.atd,
+        ata: finalRecord.ata,
+        status: existingShipment ? existingShipment.status : ShipmentStatus.IN_TRANSIT,
+        containers: containers.map(c => c.containerNo)
+      };
 
-    const shipmentData: Shipment = {
-      ...(existingShipment || {
-        id: shipmentId,
-        costs: 0,
-        projectSection: '',
-        shipmentBatch: '',
-        personInCharge: '',
-        locationOfGoods: '',
-        cargoReadyDate: '',
-        containerTypeQty: '',
-        submissionDeadline: '',
-        submissionStatus: '',
-        bpmShipmentNo: '',
-        carrier: '',
-        portTerminal: '',
-        forwarderId: '',
-        status: ShipmentStatus.PLANNED, // Required
-        origin: 'Unknown',
-        destination: 'Unknown',
-        reference: '',
-        containers: [],
-        etd: '',
-        eta: '',
-        blNo: ''
-      }),
-      ...shipmentUpdates,
-      id: shipmentId
-    };
-    // Need to expose updateShipment or use upsert. existing method 'updateShipment' exists.
-    await storageService.updateShipment(shipmentData);
+      const shipmentData: Shipment = {
+        ...(existingShipment || {
+          id: shipmentId,
+          costs: 0,
+          projectSection: '',
+          shipmentBatch: '',
+          personInCharge: '',
+          locationOfGoods: '',
+          cargoReadyDate: '',
+          containerTypeQty: '',
+          submissionDeadline: '',
+          submissionStatus: '',
+          bpmShipmentNo: '',
+          carrier: '',
+          portTerminal: '',
+          forwarderId: '',
+          status: ShipmentStatus.PLANNED, // Required
+          origin: 'Unknown',
+          destination: 'Unknown',
+          reference: '',
+          containers: [],
+          etd: '',
+          eta: '',
+          blNo: ''
+        }),
+        ...shipmentUpdates,
+        id: shipmentId
+      };
+      // Need to expose updateShipment or use upsert. existing method 'updateShipment' exists.
+      await storageService.updateShipment(shipmentData);
+    }
 
     // 5. Distribute to Equipment Tracking (Overwrite/Reset)
-    if (createEquipment) {
+    if (createEquipment && bookingRef) {
       // Logic: Delete existing equipment for this BL first to avoid duplicates/orphans, then recreate.
       if (!db) {
         dbState.equipmentTracking = dbState.equipmentTracking.filter((e: any) => e.blNo !== bookingRef);
@@ -1151,7 +1310,7 @@ export const storageService = {
       if (idx !== -1) dbState.preAlerts[idx] = { ...updated, id }; else dbState.preAlerts.push({ ...updated, id });
       saveLocal(); return;
     }
-    await setDoc(doc(db, COLS.PRE_ALERTS, id), updated);
+    await setDoc(doc(db, COLS.PRE_ALERTS, id), sanitizeForFirestore(updated));
   },
 
   // Senior Frontend Engineer: Implemented missing deletePreAlert method.
@@ -1355,13 +1514,13 @@ export const storageService = {
       const vtQuery = query(collection(db, COLS.VESSEL_TRACKING), where("blNo", "==", bookingRef));
       const vtSnap = await getDocs(vtQuery);
       vtSnap.forEach(doc => {
-        batch.update(doc.ref, {
+        batch.update(doc.ref, sanitizeForFirestore({
           etd: record.etd,
           eta: record.eta,
           atd: record.atd,
           ata: record.ata,
           updatedAt: new Date().toISOString()
-        });
+        }));
         batchCount++;
       });
 
@@ -1369,11 +1528,11 @@ export const storageService = {
       const ccQuery = query(collection(db, COLS.CUSTOMS), where("blNo", "==", bookingRef));
       const ccSnap = await getDocs(ccQuery);
       ccSnap.forEach(doc => {
-        batch.update(doc.ref, {
+        batch.update(doc.ref, sanitizeForFirestore({
           ataPort: record.ata,
           ataFactory: record.ataFactory || doc.data().ataFactory, // Update if provided
           updatedAt: new Date().toISOString()
-        });
+        }));
         batchCount++;
       });
 
@@ -1397,7 +1556,7 @@ export const storageService = {
       saveLocal();
       return;
     }
-    await setDoc(doc(db, COLS.COSTS, id), { ...updated, id });
+    await setDoc(doc(db, COLS.COSTS, id), sanitizeForFirestore({ ...updated, id }));
   },
 
   // Senior Frontend Engineer: Implemented missing updateSupplier method.
@@ -1411,7 +1570,7 @@ export const storageService = {
       saveLocal();
       return;
     }
-    await setDoc(doc(db, COLS.SUPPLIERS, id), { ...updated, id });
+    await setDoc(doc(db, COLS.SUPPLIERS, id), sanitizeForFirestore({ ...updated, id }));
   },
 
 
@@ -1573,7 +1732,7 @@ export const storageService = {
         for (const chunk of chunks) {
           const subBatch = writeBatch(db);
           chunk.forEach(item => {
-            subBatch.set(doc(db, COLS.CUSTOMS, item.id), item);
+            subBatch.set(doc(db, COLS.CUSTOMS, item.id), sanitizeForFirestore(item));
           });
           await subBatch.commit();
         }

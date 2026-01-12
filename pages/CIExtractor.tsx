@@ -26,19 +26,32 @@ const consolidateItems = (
         const descKey = (row.spanishDescription || '').trim();
         const key = `${row.partNo}|${row.unitPrice}|${row.invoiceNo}|${row.regimen}|${descKey}`;
 
-        const masterWeight = masterPartsMap.get(row.partNo);
-        const hasMasterWeight = masterWeight !== undefined && masterWeight !== null;
+        const masterPart = masterPartsMap.get(row.partNo);
+        // Handle both old (number) and new (object) map values for safety
+        const masterWeight = typeof masterPart === 'object' ? masterPart?.NETWEIGHT : masterPart;
+        const hasMasterWeight = masterWeight !== undefined && masterWeight !== null && !isNaN(Number(masterWeight));
 
         const existing = map.get(key);
         if (existing) {
             existing.qty += row.qty;
-            // Accumulate weight only if not from Master Data
+            // Accumulate weight only if not from Master Data (if from Master, we re-calc at the end or it stays per unit? 
+            // Actually, existing logic implies if it HAS master weight, we use unit weight * qty.
+            // If it behaves like "use Excel weight if Master missing", we accumulate row.netWeight.
             if (!hasMasterWeight) {
                 existing.netWeight += (row.netWeight || 0);
             }
             existing.totalAmount = existing.qty * existing.unitPrice;
         } else {
-            const initialWeight = hasMasterWeight ? Number(masterWeight) : (row.netWeight || 0);
+            // Initial weight: If master exists, it's Unit Weight. If not, it's Total Line Weight from Excel? 
+            // Wait, usually Master Data = Unit Weight. Excel = Total Weight.
+            // Let's stick to previous logic: `Number(masterWeight)` was likely Unit Weight.
+            const initialWeight = hasMasterWeight ? Number(masterWeight) * row.qty : (row.netWeight || 0);
+            // Wait, previous code was: `const initialWeight = hasMasterWeight ? Number(masterWeight) : (row.netWeight || 0);`
+            // If that was Unit Weight, logic seems flawed for "Total NetWeight" column unless we multiply later.
+            // Let's restore EXACT previous behavior but fixing the NaN issue.
+
+            const curWeight = hasMasterWeight ? Number(masterWeight) : (row.netWeight || 0);
+
             map.set(key, {
                 id: crypto.randomUUID(),
                 invoiceNo: row.invoiceNo,
@@ -115,7 +128,14 @@ export const CIExtractor: React.FC = () => {
 
     useEffect(() => {
         const syncMasterData = () => {
-            const parts = storageService.getParts();
+            const parts = [...storageService.getParts()];
+            // Sort by Date Ascending (Oldest -> Newest) so Newest overwrites Oldest in the map
+            parts.sort((a, b) => {
+                const dateA = a.UPDATE_TIME ? new Date(a.UPDATE_TIME).getTime() : 0;
+                const dateB = b.UPDATE_TIME ? new Date(b.UPDATE_TIME).getTime() : 0;
+                return dateA - dateB;
+            });
+
             const map: Record<string, RawMaterialPart> = {};
             parts.forEach(p => {
                 // Normalization: Key must be trimmed string to match lookup logic
@@ -163,6 +183,7 @@ export const CIExtractor: React.FC = () => {
                     ...item,
                     spanishDescription: match.DESCRIPCION_ES?.trim() || item.spanishDescription,
                     hts: match.HTSMX?.trim() || item.hts,
+                    rb: match.R8?.trim() || item.rb,
                     um: match.UMC?.trim() || item.um,
                     netWeight: match.NETWEIGHT !== undefined ? match.NETWEIGHT : (item.netWeight || 0)
                 });
@@ -508,8 +529,18 @@ export const CIExtractor: React.FC = () => {
                         }
 
                         // Pre-fetch Master Data for NetWeight correction
+                        // Pre-fetch Master Data for NetWeight and R8 correction
                         const allParts = storageService.getParts();
-                        const partsMap = new Map<string, number>(allParts.map(p => [p.PART_NUMBER, p.NETWEIGHT]));
+                        // Sort by Date Ascending (Oldest -> Newest) so Newest overwrites Oldest in the map
+                        allParts.sort((a, b) => {
+                            const dateA = a.UPDATE_TIME ? new Date(a.UPDATE_TIME).getTime() : 0;
+                            const dateB = b.UPDATE_TIME ? new Date(b.UPDATE_TIME).getTime() : 0;
+                            return dateA - dateB;
+                        });
+                        const partsMap = new Map<string, any>(allParts.map(p => {
+                            const key = p.PART_NUMBER ? String(p.PART_NUMBER).trim() : '';
+                            return [key, p];
+                        }));
 
                         // Parse to Raw Items first
                         const rawItems: any[] = [];
@@ -532,7 +563,7 @@ export const CIExtractor: React.FC = () => {
                             }
                             if (firstCell.includes('SAY TOTAL') || firstCell.includes('TOTAL US DOLLAR')) break;
 
-                            const partNo = row[colMap['PART NO']] || '';
+                            const partNo = row[colMap['PART NO']] ? String(row[colMap['PART NO']]).trim() : '';
                             const itemCode = row[colMap['ITEM']];
                             if (!partNo && !itemCode) continue;
                             if (String(itemCode).toUpperCase().includes('TOTAL')) continue;
@@ -541,7 +572,15 @@ export const CIExtractor: React.FC = () => {
                             const regime = row[colMap['REGIMEN']]?.toString().toUpperCase() || '';
                             const invoice = invoiceNo || 'UNKNOWN';
                             const qty = Number(row[colMap['QTY']]) || 0;
+                            const partData = partsMap.get(partNo);
                             const excelNetWeight = Number(row[colMap['NETWEIGHT']] || 0);
+
+                            // Auto-Correction logic:
+                            // 1. NetWeight: Use Master Data if Excel is 0
+                            // 2. R8: Use Master Data if Excel is empty
+                            const finalNetWeight = excelNetWeight > 0 ? excelNetWeight : (partData?.NETWEIGHT || 0);
+                            const fileRb = row[colMap['RB']] || '';
+                            const finalRb = fileRb ? fileRb : (partData?.R8 || '');
 
                             rawItems.push({
                                 invoiceNo: invoice,
@@ -553,10 +592,10 @@ export const CIExtractor: React.FC = () => {
                                 spanishDescription: row[colMap['SPANISH DESCRIPTION']] || '',
                                 hts: row[colMap['HTS']] || '',
                                 prosec: row[colMap['PROSEC']] || '',
-                                rb: row[colMap['RB']] || '',
+                                rb: finalRb,
                                 qty: qty,
                                 um: row[colMap['UM']] || '',
-                                netWeight: excelNetWeight,
+                                netWeight: finalNetWeight,
                                 unitPrice: unitPrice,
                                 regimen: regime,
                                 incoterm: '' // Set later
@@ -564,7 +603,7 @@ export const CIExtractor: React.FC = () => {
                         }
 
                         // Consolidate
-                        const newItems = consolidateItems(rawItems, partsMap);
+                        const newItems = consolidateItems(rawItems, partsMap as any);
 
                         // Apply Incoterm
                         if (parsedIncoterm) {
@@ -779,11 +818,21 @@ export const CIExtractor: React.FC = () => {
 
         // --- DATA ---
         let currentRowIdx = tableHeaderRowIdx + 1;
+
+        // Prepare Master Data Lookup for hydration
+        const allParts = storageService.getParts();
+        const partsMap = new Map<string, any>(allParts.map(p => [p.PART_NUMBER, p]));
+
         data.forEach(item => {
             const r = ws.getRow(currentRowIdx);
+
+            // Just-In-Time R8 Hydration
+            const masterPart = partsMap.get(item.partNo);
+            const r8Value = item.rb || (masterPart?.R8 || '');
+
             const values = [
                 item.item, item.model, item.partNo, item.englishName, item.spanishDescription,
-                item.hts, item.prosec, item.rb, item.qty, item.um,
+                item.hts, item.prosec, r8Value, item.qty, item.um,
                 item.netWeight,
                 parseFloat(((item.netWeight || 0) * (item.qty || 0)).toFixed(2)),
                 parseFloat(item.unitPrice?.toString() || '0'),
@@ -849,14 +898,16 @@ export const CIExtractor: React.FC = () => {
         const totalAmount = data.reduce((sum, item) => sum + ((item.qty || 0) * (item.unitPrice || 0)), 0);
 
         const qtyCell = fRow.getCell(9);
-        qtyCell.value = { formula: `SUM(I${sumStartRow}:I${sumEndRow})`, result: totalQty };
+        // FIX: Use static value instead of formula to prevent Excel "Repair" errors
+        qtyCell.value = totalQty;
         qtyCell.font = { bold: true };
         qtyCell.alignment = { horizontal: 'center' };
         qtyCell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
         // Total Amount (Col 14 / N)
         const amtCell = fRow.getCell(14);
-        amtCell.value = { formula: `SUM(N${sumStartRow}:N${sumEndRow})`, result: parseFloat(totalAmount.toFixed(2)) };
+        // FIX: Use static value instead of formula
+        amtCell.value = parseFloat(totalAmount.toFixed(2));
         amtCell.numFmt = '0.00';
         amtCell.font = { bold: true };
         amtCell.alignment = { horizontal: 'center' };
@@ -930,25 +981,35 @@ export const CIExtractor: React.FC = () => {
         }
 
         try {
+            // Prepare Master Data Lookup for hydration
+            const allParts = storageService.getParts();
+            const partsMap = new Map<string, any>(allParts.map(p => [p.PART_NUMBER, p]));
+
             // 1. Mapeo EXPLICITO: Evitamos que se filtre el campo 'id' (UUID) al CSV
-            const rows = itemsToExport.map((item, index) => ({
-                'INVOICE NO': String(item.invoiceNo || ''),
-                'DATE': item.date || '',
-                'ITEM': (index + 1).toString(),
-                'MODEL': item.model || '',
-                'PART NO': item.partNo || '',
-                'ENGLISH NAME': item.englishName || '',
-                'SPANISH DESCRIPTION': item.spanishDescription || '',
-                'HTS': item.hts || '',
-                'PROSEC': item.prosec || '',
-                'RB': item.rb || '',
-                'QTY': item.qty || 0,
-                'UM': item.um || '',
-                'NETWEIGHT': item.netWeight || 0,
-                'UNIT PRICE': item.unitPrice || 0,
-                'TOTAL AMOUNT': item.totalAmount || 0,
-                'REGIMEN': item.regimen || ''
-            }));
+            const rows = itemsToExport.map((item, index) => {
+                // Just-In-Time R8 Hydration
+                const masterPart = partsMap.get(item.partNo);
+                const r8Value = item.rb || (masterPart?.R8 || '');
+
+                return {
+                    'INVOICE NO': String(item.invoiceNo || ''),
+                    'DATE': item.date || '',
+                    'ITEM': (index + 1).toString(),
+                    'MODEL': item.model || '',
+                    'PART NO': item.partNo || '',
+                    'ENGLISH NAME': item.englishName || '',
+                    'SPANISH DESCRIPTION': item.spanishDescription || '',
+                    'HTS': item.hts || '',
+                    'PROSEC': item.prosec || '',
+                    'RB': item.rb || '',
+                    'QTY': item.qty || 0,
+                    'UM': item.um || '',
+                    'NETWEIGHT': item.netWeight || 0,
+                    'UNIT PRICE': item.unitPrice || 0,
+                    'TOTAL AMOUNT': item.totalAmount || 0,
+                    'REGIMEN': item.regimen || ''
+                };
+            });
 
             // 2. Generación usando exclusivamente la versión mini para evitar conflictos
             const ws = XLSX_Basic.utils.json_to_sheet(rows);

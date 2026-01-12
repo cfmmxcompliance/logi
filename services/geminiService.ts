@@ -285,6 +285,83 @@ export const geminiService = {
 
 
 
+  // Senior Frontend Engineer: PHASE 2 - Structured Forensic Analysis (Robust & Strict)
+  // RULE: Maps Phase 1 Raw Text -> Structured JSON. 
+  // CRITICAL: No "Imagination". If text is not there, return null.
+  parseForensicStructure: async (rawText: string): Promise<any> => {
+    try {
+      console.log("Starting Phase 2: Forensic Structured Analysis (Strict Mode)...");
+      const ai = getClient();
+
+      const prompt = `
+        ROLE: Strict Data Entry Clerk.
+        TASK: Convert the provided RAW TEXT dump into a JSON object.
+        
+        INPUT:
+        "${rawText.substring(0, 100000)}..." (Formatted markdown/text)
+
+        INSTRUCTIONS:
+        1. Parse the text into the strictly defined JSON structure below.
+        2. **STRICT RULE**: If a field is not EXPLICITLY found in the text, return \`null\`. DO NOT guess or infer.
+        3. **STRICT RULE**: Do NOT calculate totals unless they are written in the document.
+        4. "partNumber": Look for "No. Parte", "Part No", or codes resembling "Q..." or "0...". 
+           - **Recall OCR Tip**: Distinguish 'Q' vs '0'. If it looks like 'Q', it is 'Q'.
+        5. "commercialInvoice": Look for "Factura Comercial", "Invoice", "C.I.".
+        6. "fa": Look for "FIXED ASSET", "ACTIVO FIJO", "FA".
+        
+        OUTPUT FORMAT:
+        Return ONLY valid JSON. No markdown fences. No preamble.
+        Structure:
+        {
+          "metadata": { "extractionDate": "YYYY-MM-DD", "pageCount": number, "modelUsed": "Gemini 2.0 Flash" },
+          "header": { "pedimentoNumber": { "value": string, "confidence": 0-1 }, "tipoOperacion": string|null, "clavePedimento": string|null, "regimen": string|null, "tipoCambio": string|null, "pesoBruto": string|null, "aduanaEntradaSalida": string|null },
+          "parties": { "importer": { "name": string|null, "rfc": string|null, "address": string|null }, "supplier": { "name": string|null, "taxId": string|null, "address": string|null } },
+          "transport": { "identification": string|null, "country": string|null, "shippingNumber": string|null, "container": { "number": string|null, "type": string|null } },
+          "invoices": [ { "number": string, "date": string|null, "incoterm": string|null, "amount": number|null, "currency": string|null, "factor": number|null, "dollarAmount": number|null } ],
+          "items": [ 
+            { 
+              "sequence": number|null, "partNumber": string|null, "description": string|null, 
+              "fraction": string|null, "subdivision": string|null,
+              "quantityUMC": number|null, "umc": string|null, 
+              "unitPrice": number|null, "totalAmount": number|null, 
+              "originCountry": string|null, "vendorCountry": string|null,
+              "identifiers": [ { "code": string, "complement1": string|null } ],
+              "permissions": [ { "code": string, "number": string, "valueUsd": number|null } ],
+              "commercialInvoice": string|null, "fa": string|null, "observations": string|null
+            } 
+          ],
+          "amounts": { "valorDolares": number|null, "valorAduana": number|null, "valorComercial": number|null, "totalEfectivo": number|null, "fletes": number|null, "seguros": number|null, "otros": number|null },
+          "taxes": { "DTA": number|null, "IVA": number|null, "IGI": number|null, "PRV": number|null },
+          "rawFragments": { "headerFragment": "first 500 chars of header text", "totalsFragment": "text near totals", "firstItemFragment": "text of first item" }
+        }
+      `;
+
+      // Use the flash-exp model for speed and large context, but strict prompt
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash-exp', // Fast, high context
+        contents: {
+          parts: [{ text: prompt }]
+        },
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.1, // Very low temperature for strictness
+        }
+      });
+
+      const jsonText = cleanJson(response.text || '{}');
+      return JSON.parse(jsonText);
+
+    } catch (error: any) {
+      console.error("Phase 2 Structure Error (Graceful Fail)", error);
+      // Return a minimal valid object instead of crashing
+      return {
+        error: "Analisis Estructurado Falló",
+        details: error.message,
+        header: { pedimentoNumber: { value: "ERROR", confidence: 0 } },
+        items: []
+      };
+    }
+  },
   // Senior Frontend Engineer: Updated model name for logistics analysis.
   analyzeLogisticsInvoice: async (base64Data: string, mimeType: string = 'image/jpeg'): Promise<ExtractedCost[]> => {
     try {
@@ -314,9 +391,32 @@ export const geminiService = {
     try {
       const ai = getClient();
       const prompt = `
-        Analyze this shipping document (Bill of Lading, AWB, or Arrival Notice).
-        Extract key logistics data for a Pre-Alert record.
-// ... (truncated prompt for brevity in restoration, assuming less critical for this task)
+        Analyze this shipping document (Bill of Lading, AWB, or Arrival Notice) EXPERTLY.
+        Extract the following data into a strict JSON object:
+
+        - docType: "BL" or "AWB"
+        - bookingNo: The FULL Alphanumeric Booking/BL Number. (e.g. "EGLV12345678" NOT "12345678"). MUST include the carrier prefix (EGLV, COSU, MAEU, ONEY, MEDU, etc.).
+        - vesselOrFlight: Vessel Name and Voyage (e.g., "CMA CGM ANTOINE TR").
+        - etd: Estimated Time of Departure (YYYY-MM-DD).
+        - eta: Estimated Time of Arrival (YYYY-MM-DD).
+        - departurePort: Port of Loading / Departure.
+        - arrivalPort: Port of Discharge / Arrival.
+        - shippingCompany: Carrier Name (e.g. "COSCO", "MAERSK").
+        - containers: Array of objects:
+          - containerNo: Container Number (4 Letters + 7 Numbers, e.g. "CSNU1234567").
+          - size: Size/Type (e.g. "40HC", "20GP", "45'").
+          - seal: Seal Number.
+          - pkgCount: Number of packages.
+          - weightKg: Grs Weight in KG.
+        - invoiceNo: Any Commercial Invoice number if visible.
+        - poNumber: Purchase Order number if visible.
+        - model: Any model numbers/SKUs visible in the description.
+
+        CRITICAL: 
+        1. If multiple dates exist, use the most prominent ETD/ETA.
+        2. Ensure Container Numbers are alphanumeric (Standard Format: 4 letters + 7 numbers).
+        3. Do NOT hallucinate. If a field is missing, return null.
+        4. FOR BILL OF LADING: ALWAYS INCLUDE THE 4-LETTER PREFIX (EGLV, COSU, MSCU, etc.). NEVER return just numbers for a BL.
       `;
 
       const response = await ai.models.generateContent({

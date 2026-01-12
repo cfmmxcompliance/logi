@@ -41,3 +41,9 @@
 # Task: Source Control
 
 - [x] Sync local code to GitHub (`git push`) <!-- id: 19 -->
+
+# Task: Bug Fixes
+- [x] Fix "Function setDoc() called with invalid data" (undefined `ata` field) <!-- id: 28 -->
+- [x] Implement Cross-Module Sync for BL Updates (PreAlerts, Customs, Equipment) <!-- id: 30 -->
+- [x] Fix "where() called with invalid data" & "Cannot delete record" (Ghost Busting & Safe Fetch) <!-- id: 31 -->
+- [x] Refine AI Prompt to enforce "EGLV" prefix extraction <!-- id: 32 -->

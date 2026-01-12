@@ -241,6 +241,7 @@ export const geminiService = {
             - Do NOT omit "irrelevant" sections.
             - Preserve the rough visual layout (newlines/spacing) where possible.
             - If you see a table, represent it as text/csv/markdown-table, but INCLUDE ALL ROWS.
+            - **OCR TIP**: Pay close attention to Part Numbers. The letter 'Q' in this font often looks like '0' (e.g. 'Q890-...' vs '0890-...'). If there is any visual indication of a tail (Q), transcribe it as 'Q'.
             
             Your goal is a lossless text dump of this specific section.
         `;
@@ -281,6 +282,8 @@ export const geminiService = {
       return "Error during paginated extraction. Please check logs.";
     }
   },
+
+
 
   // Senior Frontend Engineer: Updated model name for logistics analysis.
   analyzeLogisticsInvoice: async (base64Data: string, mimeType: string = 'image/jpeg'): Promise<ExtractedCost[]> => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { PedimentoHeader } from '../services/pedimentoParser';
+import { PedimentoHeader } from '../../services/pedimentoParser';
 import { Calendar, DollarSign, FileText, TrendingUp } from 'lucide-react';
 
 interface PedimentoSummaryProps {

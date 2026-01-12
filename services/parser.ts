@@ -87,6 +87,7 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
               embalajes: parseFloatSafe(cols[12]),
               otrosIncrementables: parseFloatSafe(cols[13]),
               pesoBruto: parseFloatSafe(cols[15]),
+              fechaEntrada: cols[29] || '',
               fechaPago: cols[30] || '',
             });
           });

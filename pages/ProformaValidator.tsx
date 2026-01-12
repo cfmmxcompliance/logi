@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { parsePedimentoPdf, PedimentoData, PedimentoItem } from '../services/pedimentoParser';
+import { PedimentoData } from '../services/pedimentoParser';
 import { storageService } from '../services/storageService';
 import { geminiService } from '../services/geminiService';
 import { PedimentoSummary } from '../components/proforma/PedimentoSummary';
@@ -16,6 +16,9 @@ export const ProformaValidator: React.FC = () => {
     // RESTORED STATE: For Phase 1 Raw Inspector
     const [showRawModal, setShowRawModal] = useState(false);
     const [rawInvoiceItems, setRawInvoiceItems] = useState<any>(null);
+
+
+
     const [comparisonRows, setComparisonRows] = useState<ComparisonRow[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState('Processing...');
@@ -73,6 +76,8 @@ export const ProformaValidator: React.FC = () => {
             setErrorMessage(error.message || 'Failed to parse PDF');
         }
     };
+
+
 
     // Extract matching logic to keep handler clean (optional, but good for readability)
     const processMatching = (data: PedimentoData) => {
@@ -340,23 +345,37 @@ export const ProformaValidator: React.FC = () => {
                 </div>
             )}
 
-            {/* RAW AI INSPECTOR: Phase 1 (Data Dump) */}
+            {/* RAW AI INSPECTOR: Phase 1 (Data Dump - Compact View) */}
             {showRawModal && (
-                <div className="fixed inset-0 z-[100] bg-black flex flex-col">
-                    <button
-                        onClick={() => setShowRawModal(false)}
-                        className="absolute top-4 right-6 text-slate-500 hover:text-white transition-colors z-50 p-2"
-                    >
-                        <span className="sr-only">Close</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
-                    <textarea
-                        readOnly
-                        className="flex-1 w-full h-full bg-black text-emerald-500 font-mono text-xs p-8 resize-none focus:outline-none"
-                        value={typeof rawInvoiceItems === 'string' ? rawInvoiceItems : JSON.stringify(rawInvoiceItems, null, 2)}
-                    />
+                <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white w-[900px] max-w-full h-[600px] max-h-[90vh] rounded-lg shadow-2xl flex flex-col relative overflow-hidden ring-1 ring-slate-200">
+                        {/* Header */}
+                        <div className="absolute top-0 left-0 right-0 h-10 bg-white border-b flex items-center justify-end px-3">
+                            <button
+                                onClick={() => setShowRawModal(false)}
+                                className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded-md text-xs font-bold transition-colors flex items-center gap-1"
+                            >
+                                Cerrar <span className="text-slate-400">×</span>
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <textarea
+                            readOnly
+                            className="flex-1 w-full h-full bg-white text-black font-mono text-xs p-8 pt-12 resize-none focus:outline-none"
+                            value={typeof rawInvoiceItems === 'string' ? rawInvoiceItems : JSON.stringify(rawInvoiceItems, null, 2)}
+                        />
+
+                        {/* Footer (Bridge to Phase 2) */}
+                        <div className="h-14 border-t bg-slate-50 flex items-center justify-between px-6 shrink-0">
+                            <span className="text-xs text-slate-400 font-mono">Phase 1: Forensic Verification</span>
+                            {/* Phase 2 link removed */}
+                        </div>
+                    </div>
                 </div>
             )}
+
+
 
             {/* Customs Update Modal */}
             {showCustomsModal && (

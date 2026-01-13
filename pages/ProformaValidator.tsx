@@ -1,231 +1,315 @@
-import React, { useState, useRef } from 'react';
-import { PedimentoData } from '../services/pedimentoParser';
+import React, { useState, useRef, useEffect } from 'react';
+import { Upload, FileText, CheckCircle, Search, AlertTriangle, ArrowRight, Save, Trash2, History, List, X, UmbrellaIcon } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import { geminiService } from '../services/geminiService';
 import { PedimentoSummary } from '../components/proforma/PedimentoSummary';
-import { ComparisonTable, ComparisonRow } from '../components/proforma/ComparisonTable';
+import { PedimentoPartidas } from '../components/proforma/PedimentoPartidas';
 import { Layout } from '../components/Layout';
 import { CustomsClearanceRecord } from '../types';
-import { Upload, FileText, AlertTriangle, CheckCircle, Search, Save, ArrowRight, Trash2, List, X, History } from 'lucide-react';
-import { useNotification } from '../context/NotificationContext';
+import { PedimentoData } from '../services/pedimentoParser';
+import { AnnotationEditorUIManager } from 'pdfjs-dist';
+import { permission } from 'process';
 
-export const ProformaValidator: React.FC = () => {
-    const { showNotification } = useNotification();
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [pedimentoData, setPedimentoData] = useState<PedimentoData | null>(null);
-    // RESTORED STATE: For Phase 1 Raw Inspector
-    const [showRawModal, setShowRawModal] = useState(false);
-    const [rawInvoiceItems, setRawInvoiceItems] = useState<any>(null);
-
-    // PHASE 2 STATE: Structured Analysis (Strict Mode)
-    const [showPhase2Modal, setShowPhase2Modal] = useState(false);
-    const [structuredData, setStructuredData] = useState<any>(null);
-    const [isStructuring, setIsStructuring] = useState(false);
-    const [phase2Error, setPhase2Error] = useState<string | null>(null);
-
-
-
-    const [comparisonRows, setComparisonRows] = useState<ComparisonRow[]>([]);
+export const ProformaValidator = () => {
+    // --- STATE MANAGEMENT ---
+    const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
-    const [loadingMessage, setLoadingMessage] = useState('Processing...');
+    const [loadingMessage, setLoadingMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    // Customs Update State
+    // Phase 1 Data (Raw)
+    const [rawInvoiceItems, setRawInvoiceItems] = useState<any>(null); // Raw JSON from Gemini
+    const [showRawModal, setShowRawModal] = useState(false);
+
+    // Phase 2 Data (Structured)
+    const [pedimentoData, setPedimentoData] = useState<PedimentoData | null>(null);
+    const [structuredData, setStructuredData] = useState<any>(null); // Full Analysis Record
+    const [isStructuring, setIsStructuring] = useState(false);
+    const [phase2Error, setPhase2Error] = useState<string | null>(null);
+    const [showPhase2Modal, setShowPhase2Modal] = useState(false);
+
+    // Customs Update Modal
     const [showCustomsModal, setShowCustomsModal] = useState(false);
+    const [customsRecords, setCustomsRecords] = useState<CustomsClearanceRecord[]>([]);
     const [customsSearch, setCustomsSearch] = useState('');
     const [selectedCustomsId, setSelectedCustomsId] = useState<string | null>(null);
-    const [customsRecords, setCustomsRecords] = useState<CustomsClearanceRecord[]>([]);
 
-    const handleResetDatabase = async () => {
-        if (confirm('Are you sure you want to delete ONLY the "Auto-Learned" items? This will clear the validation cache but keep your manual records safe.')) {
-            await storageService.deleteAutoLearnedInvoices();
-            setPedimentoData(null);
-            setComparisonRows([]);
-            showNotification('Validation Cache Cleared', 'Only auto-learned items were deleted.', 'success');
+    // Invoice Management Modal
+    const [showInvoicesModal, setShowInvoicesModal] = useState(false);
+    const [viewMode, setViewMode] = useState<'anexo' | 'flat'>('flat'); // Default to Flat as requested
+    const [storedInvoices, setStoredInvoices] = useState<any[]>([]);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // --- EFFECT: Load Invoices on Mount ---
+    useEffect(() => {
+        loadInvoices();
+    }, []);
+
+    const loadInvoices = () => {
+        const items = storageService.getInvoiceItems();
+        // Group by Invoice No
+        const grouped = items.reduce((acc: any, item) => {
+            acc[item.invoiceNo] = (acc[item.invoiceNo] || 0) + 1;
+            return acc;
+        }, {});
+        setStoredInvoices(Object.entries(grouped).map(([inv, count]) => ({ invoiceNo: inv, count })));
+    };
+
+    const handleResetDatabase = () => {
+        if (confirm('Are you sure you want to delete ALL stored invoice items? This cannot be undone.')) {
+            // storageService.clearInvoiceItems(); // Method does not exist
+            const items = storageService.getInvoiceItems();
+            const ids = items.map(i => i.id).filter(id => id !== undefined) as string[];
+            storageService.deleteInvoiceItems(ids);
+            loadInvoices();
         }
     };
 
-    // INVOICE MANAGEMENT //
-    const [showInvoicesModal, setShowInvoicesModal] = useState(false);
-    const [storedInvoices, setStoredInvoices] = useState<{ invoiceNo: string, count: number }[]>([]);
-
     const openInvoicesModal = () => {
-        const items = storageService.getInvoiceItems();
-        // Group by InvoiceNo
-        const grouped = items.reduce((acc: any, item: any) => {
-            const key = item.invoiceNo || 'Unknown';
-            acc[key] = (acc[key] || 0) + 1;
-            return acc;
-        }, {});
-
-        const list = Object.entries(grouped).map(([invoiceNo, count]) => ({
-            invoiceNo,
-            count: count as number
-        })).sort((a, b) => b.count - a.count);
-
-        setStoredInvoices(list);
+        loadInvoices();
         setShowInvoicesModal(true);
     };
 
-    const handleDeleteInvoice = async (invoiceNo: string) => {
-        if (confirm(`Are you sure you want to delete Invoice "${invoiceNo}"? This will remove all associated items.`)) {
-            await storageService.deleteInvoiceByNumber(invoiceNo);
-
-            // Refresh List
-            const items = storageService.getInvoiceItems();
-            const grouped = items.reduce((acc: any, item: any) => {
-                const key = item.invoiceNo || 'Unknown';
-                acc[key] = (acc[key] || 0) + 1;
-                return acc;
-            }, {});
-
-            const list = Object.entries(grouped).map(([inv, count]) => ({
-                invoiceNo: inv,
-                count: count as number
-            })).sort((a, b) => b.count - a.count);
-
-            setStoredInvoices(list);
-            showNotification('Invoice Deleted', `Invoice ${invoiceNo} removed successfully.`, 'success');
+    const handleDeleteInvoice = (invoiceNo: string) => {
+        if (confirm(`Delete all items for Invoice ${invoiceNo}?`)) {
+            storageService.deleteInvoiceByNumber(invoiceNo);
+            loadInvoices();
         }
     };
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    // --- FILE HANDLING ---
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const uploadedFile = event.target.files?.[0];
+        if (!uploadedFile) return;
 
-        e.target.value = ''; // Reset input
+        setFile(uploadedFile);
         setLoading(true);
         setErrorMessage(null);
-        setLoadingMessage('Gemini 2.0: Foreman Forensic Extraction...');
+        setPedimentoData(null);
+        setRawInvoiceItems(null);
 
         try {
-            // Read File to Base64 ONCE
-            const base64 = await new Promise<string>((resolve, reject) => {
+            // PHASE 1: Forensic Extraction (Raw Text Analysis)
+            setLoadingMessage('Performing Deep Forensic Scan (Gemini 2.0 Flash)...');
+
+            // Convert to Base64
+            const base64Data = await new Promise<string>((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => {
-                    const res = reader.result as string;
-                    resolve(res.split(',')[1]);
+                    const result = reader.result as string;
+                    // Remove data URL prefix (e.g. "data:application/pdf;base64,")
+                    const base64 = result.split(',')[1];
+                    resolve(base64);
                 };
                 reader.onerror = reject;
-                reader.readAsDataURL(file);
+                reader.readAsDataURL(uploadedFile);
             });
 
-            // PHASE 1 ONLY: Raw Forensic Text
-            const rawTextReal = await geminiService.parseInvoiceMaterials(base64, file.type);
+            // Call correct service method (Raw Extraction)
+            const rawResult = await geminiService.parseInvoiceMaterials(base64Data);
 
-            // Connect to Raw Inspector
-            setRawInvoiceItems(rawTextReal);
-            setShowRawModal(true);
+            if (!rawResult) throw new Error("Forensic extraction failed to return data.");
 
-            // Finish (Do NOT proceed to Phase 2/3)
+            setRawInvoiceItems(rawResult); // Store Phase 1 result
             setLoading(false);
-
+            setShowRawModal(true); // Show Inspector immediately
         } catch (error: any) {
-            console.error(error);
+            console.error("Analysis Error:", error);
+            setErrorMessage(error.message || "Failed to analyze document.");
             setLoading(false);
-            setErrorMessage(error.message || 'Failed to parse PDF');
         }
     };
 
-
-
-
-    // PHASE 2 HANDLER: Strict Isolation (Restored)
+    // --- PHASE 2: STRUCTURED ANALYSIS ---
     const handlePhase2Analysis = async () => {
-        if (!rawInvoiceItems) return;
-
         setIsStructuring(true);
-        // Transition: Close Raw -> Open Phase 2
         setShowRawModal(false);
         setShowPhase2Modal(true);
 
         try {
             setPhase2Error(null);
-            // Call the robust strict parser
             const result = await geminiService.parseForensicStructure(rawInvoiceItems);
 
             if (!result) {
                 throw new Error("Empty response from AI Analysis");
             }
 
-            if (result.error) {
-                // Handle graceful failure from service
-                setPhase2Error(result.details || result.error);
-                // Still show partial data if available? 
-                // Currently service returns header even on error
-                setStructuredData(result);
-            } else {
-                setStructuredData(result);
-            }
+            // --- DATA MAPPING BRIDGE ---
+            // Convert Gemini JSON -> PedimentoData Interface
+            // Now using 'page1' structure for comprehensive Page 1 coverage
+            const p1 = result.page1 || {};
+            const itemArr = result.items || [];
+
+            // User requested flat mapping logic
+            const impuestos = p1.tasasGlobales || [];
+
+            const mappedData: PedimentoData = {
+                header: {
+                    // REF:
+                    pedimentoNo: p1.pedimento?.replace(/\D/g, '') || '', // Clean numeric
+                    tipoOperacion: p1.tipoOperacion,
+
+                    claveDocumento: p1.clavePedimento,
+                    regimen: p1.regimen, // Mapped
+                    destino: p1.destino, // Mapped
+                    tipoCambio: p1.tipoCambio,
+                    pesoBruto: p1.pesoBruto,
+                    aduana: p1.aduana, // This is location (e.g. 430)
+                    entradaSalida: p1.entradaSalida,
+                    arribo: p1.arribo,
+                    salida: p1.salida,
+
+                    // Added as optional fields in interface to support user map
+                    bultos: typeof p1.bultos === 'number' ? p1.bultos : 0,
+
+                    dolares: p1.valores?.valorDolares || 0,
+                    // aduana (money) mapped to valorAduana to avoid conflict with aduana (string)
+                    valorAduana: p1.valores?.valorAduana || 0,
+                    comercial: p1.valores?.valorComercial || 0,
+
+                    rfc: p1.rfcImportador || p1.rfc || '', // Try both keys
+                    curp: p1.curpImportador || p1.curp || '', // Try both keys
+                    nombre: p1.nombreImportador || p1.nombre || '', // Try both keys
+                    domicilio: p1.domicilioImportador || p1.domicilio || '', // Try both keys
+
+                    fletes: p1.valores?.fletes,
+                    seguros: p1.valores?.seguros,
+                    embalajes: p1.valores?.embalajes,
+                    otros: p1.valores?.otros,
+
+                    fechas: [
+                        { tipo: 'Entrada' as const, fecha: p1.fechas?.entrada || '' },
+                        { tipo: 'Pago' as const, fecha: p1.fechas?.pago || '' }
+                    ].filter(f => f.fecha),
+
+                    // Keep structure for compatibility but data enters via flattened fields too
+                    valores: {
+                        dolares: p1.valores?.valorDolares || 0,
+                        aduana: p1.valores?.valorAduana || 0,
+                        comercial: p1.valores?.valorComercial || 0,
+                        fletes: p1.valores?.fletes,
+                        seguros: p1.valores?.seguros,
+                        embalajes: p1.valores?.embalajes,
+                        otros: p1.valores?.otros
+                    },
+
+                    tasasGlobales: [],
+                    dta: impuestos,
+                    prv: impuestos,
+                    iva: impuestos,
+
+                    importes: {
+                        dta: p1.liquidacion?.dta,
+                        iva: p1.liquidacion?.iva,
+                        igi: p1.liquidacion?.igi,
+                        prv: p1.liquidacion?.prv,
+                        totalEfectivo: p1.liquidacion?.totalEfectivo
+                    },
+
+
+
+
+                    transporte: {
+                        medios: p1.transporte?.medios ? [p1.transporte.medios] : [],
+                        candados: p1.transporte?.candados || [],
+                        identificacion: p1.identificadoresGlobales ?
+                            p1.identificadoresGlobales.map((id: any) => `${id.clave}${id.complemento ? ':' + id.complemento : ''}`).join(', ')
+                            : '',
+                        pais: '',
+                        transportista: p1.transporte?.transportista
+                    },
+
+                    observaciones: p1.observaciones,
+                    acuseValidacion: p1.acuseValidacion,
+
+                    guias: (p1.transporte?.guias || []).map((g: any) => ({
+                        numero: g.numero || '',
+                        tipo: g.tipo || 'MASTER'
+                    })),
+
+                    contenedores: p1.transporte?.contenedores ? p1.transporte.contenedores.map((c: string) => ({
+                        numero: c,
+                        tipo: 'Unknown'
+                    })) : (p1.transporte?.container ? [{ numero: p1.transporte.container, tipo: 'Unknown' }] : []),
+
+                    facturas: (result.invoices || []).map((inv: any) => ({
+                        numero: inv.number,
+                        fecha: inv.date,
+                        incoterm: inv.incoterm,
+                        moneda: inv.currency,
+                        valorDolares: inv.amount,
+                        proveedor: p1.supplier?.name
+                    })),
+
+                    proveedores: p1.supplier ? [{
+                        id: p1.supplier.taxId || '',
+                        nombre: p1.supplier.name || '',
+                        domicilio: p1.supplier.address || ''
+                    }] : [],
+
+                    isSimplified: false,
+
+                    // User requested identifier mapping
+                    identif: p1.identif || p1.identificadoresGlobales?.[0]?.clave || '',
+                    compl1: p1.compl1 || p1.identificadoresGlobales?.[0]?.complemento || '',
+                    compl2: p1.compl2 || '',
+                    compl3: p1.compl3 || ''
+                },
+                partidas: itemArr.map((item: any, idx: number) => ({
+                    secuencia: item.secuencia || idx + 1,
+                    fraccion: item.fraccion,
+                    nico: item.nico,
+                    vinculacion: item.vinculacion,
+                    metodoValoracion: item.metodoValoracion,
+                    umc: item.umc,
+                    cantidadUMC: item.cantidadUMC,
+                    umt: item.umt,
+                    cantidadUMT: item.cantidadUMT,
+
+                    // Values
+                    paisVendedor: item.paisvendedor,
+                    paisComprador: item.paiscomprador,
+                    valorAduana: item.valoraduana,
+                    precioPagado: item.preciopagado,
+                    moneda: item.moneda,
+                    precioUnitario: item.preciounitario,
+                    valorAgregado: item.valagregado,
+
+                    // Identificadores (Flattened per user request)
+                    clave: item.clave,
+                    permiso: item.permiso,
+                    firmaDescargo: item.firmadescargo,
+                    valComDls: item.valcomdls,
+                    // cantidadumt/c logic skipped
+                    identificador: item.identificador,
+                    complemento1: item.complemento1,
+                    complemento2: item.complemento2,
+                    complemento3: item.complemento3,
+
+                    // Pass-through for Validation Logic
+                    contribuciones: item.contribuciones || [],
+                    regulaciones: item.regulaciones || [],
+                    identifiers: item.identifiers || []
+                }))
+            } as PedimentoData;
+
+            mappedData.rawText = result.rawText || '';
+            mappedData.validationResults = [];
+
+
+
+            setPedimentoData(mappedData);
+            setStructuredData(result); // Keep raw JSON for debug view
+
+
+
         } catch (error: any) {
             console.error("Phase 2 Critical Error", error);
             setPhase2Error(error.message || "Critical failure during analysis.");
         } finally {
             setIsStructuring(false);
         }
-    };
-
-    // Extract matching logic to keep handler clean (optional, but good for readability)
-    const processMatching = (data: PedimentoData) => {
-        const dbItems = storageService.getInvoiceItems();
-        // ... (existing logic) ...
-        const matchedDbKeys = new Set<string>();
-        const partMap = new Map();
-
-        // Aggregate DB Items by PartNo (Normalize)
-        dbItems.forEach(item => {
-            // Normalize: Remove dashes, spaces, uppercase
-            const key = normalizePart(item.partNo);
-            if (!partMap.has(key)) {
-                partMap.set(key, { ...item, qty: 0 });
-            }
-            const existing = partMap.get(key);
-            existing.qty += item.qty;
-        });
-
-        const rows: ComparisonRow[] = [];
-
-        // 1. PDF Items -> DB Matches
-        data.items.forEach(pItem => {
-            const pKey = normalizePart(pItem.partNo);
-            const dbItem = partMap.get(pKey);
-
-            let status: ComparisonRow['status'] = 'MISSING_IN_DB';
-            if (dbItem) {
-                matchedDbKeys.add(pKey);
-                if (dbItem.qty === pItem.qty && Math.abs(dbItem.unitPrice - pItem.unitPrice) < 0.01) {
-                    status = 'MATCH';
-                } else {
-                    status = 'MISMATCH';
-                }
-            }
-
-            rows.push({
-                partNo: pItem.partNo, // specific display
-                pdfItem: pItem,
-                dbItem: dbItem,
-                status
-            });
-        });
-
-        // 2. DB Items that were NOT matched
-        partMap.forEach((dbItem, key) => {
-            if (!matchedDbKeys.has(key)) {
-                rows.push({
-                    partNo: dbItem.partNo,
-                    dbItem,
-                    status: 'MISSING_IN_PDF'
-                });
-            }
-        });
-
-        // Sort: Mismatches/Missing First
-        rows.sort((a, b) => {
-            const score = (s: string) => s === 'MATCH' ? 1 : 0;
-            return score(a.status) - score(b.status);
-        });
-
-        setComparisonRows(rows);
     };
 
     // ... (rest of methods) ...
@@ -237,7 +321,7 @@ export const ProformaValidator: React.FC = () => {
 
     const normalizePart = (p: any) => {
         if (!p) return '';
-        return String(p).replace(/[^A-Z0-9]/gi, '').toUpperCase();
+        return String(p).toUpperCase().replace(/[^A-Z0-9]/g, '');
     };
 
     const handleOpenCustomsModal = () => {
@@ -275,6 +359,12 @@ export const ProformaValidator: React.FC = () => {
         r.containerNo.toLowerCase().includes(customsSearch.toLowerCase()) ||
         r.pedimentoNo.toLowerCase().includes(customsSearch.toLowerCase())
     );
+
+    const showNotification = (title: string, msg: string, type: 'info' | 'success' | 'error') => {
+        // Placeholder for notification system
+        console.log(`[${type.toUpperCase()}] ${title}: ${msg}`);
+        // You would typically use a toast library here
+    };
 
     return (
         <div className="space-y-6">
@@ -329,6 +419,23 @@ export const ProformaValidator: React.FC = () => {
                     >
                         <Upload size={18} /> Upload Pedimento PDF
                     </button>
+
+                    {pedimentoData && (
+                        <div className="flex bg-slate-100 p-1 rounded-lg">
+                            <button
+                                onClick={() => setViewMode('flat')}
+                                className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${viewMode === 'flat' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                                Flat View
+                            </button>
+                            <button
+                                onClick={() => setViewMode('anexo')}
+                                className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${viewMode === 'anexo' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                                Anexo 1
+                            </button>
+                        </div>
+                    )}
                     {pedimentoData && (
                         <button
                             onClick={handleOpenCustomsModal}
@@ -372,14 +479,13 @@ export const ProformaValidator: React.FC = () => {
                                 <h3 className="text-xl font-bold text-slate-800 mb-2">Analyzing Document</h3>
                                 <div className="h-1 w-16 bg-indigo-600 mx-auto rounded mb-4"></div>
                                 <p className="text-slate-600 font-medium animate-pulse">{loadingMessage}</p>
-                                {/* Static text removed */}
                             </>
                         )}
                     </div>
                 </div>
             )}
 
-            {!loading && pedimentoData && (
+            {!loading && pedimentoData && viewMode === 'anexo' && (
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                     <div className="flex items-start justify-between mb-6">
                         <div>
@@ -403,45 +509,84 @@ export const ProformaValidator: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Validation Findings Panel */}
-                    {(pedimentoData.validationResults?.length ?? 0) > 0 && (
-                        <div className="mb-6 border-b border-slate-200 pb-6">
-                            <h3 className="font-bold mb-3 text-slate-700 flex items-center gap-2">
-                                <AlertTriangle size={20} className="text-amber-500" />
-                                Audit Findings ({pedimentoData.validationResults.length})
-                            </h3>
-                            <div className="bg-slate-50 rounded-lg p-4 max-h-[300px] overflow-y-auto space-y-3">
-                                {pedimentoData.validationResults.map((res, idx) => (
-                                    <div key={idx} className={`p-3 rounded border text-sm flex gap-3 ${res.severity === 'ERROR' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
-                                        <div className="shrink-0 mt-0.5">
-                                            {res.severity === 'ERROR' ? <AlertTriangle size={16} /> : <AlertTriangle size={16} />}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold mb-0.5">{res.field} <span className="opacity-75 font-normal">- {res.severity}</span></p>
-                                            <p>{res.message}</p>
-                                            <div className="mt-1 text-xs opacity-80 flex gap-4">
-                                                <span>Expected: {res.expected}</span>
-                                                <span>Actual: {res.actual}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
                     {/* NEW: Pedimento Summary Panel */}
                     <PedimentoSummary header={pedimentoData.header} />
 
                     {!pedimentoData.header.isSimplified && (
                         <div>
-                            <h3 className="font-bold mb-4 text-slate-700 border-b pb-2">Item Validation ({comparisonRows.length} items)</h3>
-                            <ComparisonTable
-                                rows={comparisonRows}
-                                onManualMap={(part) => showNotification('Coming Soon', 'Manual Mapping not implemented yet', 'info')}
-                            />
+                            <h3 className="font-bold mb-4 text-slate-700 border-b pb-2">PARTIDAS ({pedimentoData.partidas.length})</h3>
+                            <PedimentoPartidas items={pedimentoData.partidas} />
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* RAW FLAT VIEW (Requested by User) */}
+            {!loading && pedimentoData && viewMode === 'flat' && (
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="border-b bg-slate-50 px-6 py-4">
+                        <h2 className="text-lg font-bold text-slate-800">Vista Plana de Extracción (Sistema)</h2>
+                        <p className="text-xs text-slate-500">Datos crudos extraídos sin formato oficial.</p>
+                    </div>
+
+                    <div className="p-6 grid gap-8">
+                        {/* Header Section */}
+                        <div>
+                            <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded flex items-center justify-center text-xs">H</span>
+                                Encabezado
+                            </h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-100 text-xs text-slate-600">
+                                {Object.entries(pedimentoData.header).map(([key, val]) => {
+                                    if (typeof val === 'object' && val !== null) return null; // Skip nested objects in this flat header view
+                                    return (
+                                        <div key={key} className="flex flex-col">
+                                            <span className="font-bold text-slate-400 uppercase text-[10px]">{key}</span>
+                                            <span className="font-mono text-slate-800 break-all">{String(val)}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Partidas Section */}
+                        <div>
+                            <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                <span className="bg-emerald-100 text-emerald-700 w-6 h-6 rounded flex items-center justify-center text-xs">P</span>
+                                Partidas ({pedimentoData.partidas.length})
+                            </h3>
+                            <div className="overflow-x-auto border rounded-lg">
+                                <table className="w-full text-left text-xs whitespace-nowrap">
+                                    <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b">
+                                        <tr>
+                                            <th className="px-4 py-2">Sec</th>
+                                            <th className="px-4 py-2">Fraccion</th>
+                                            <th className="px-4 py-2">Cant UMC</th>
+                                            <th className="px-4 py-2">UMC</th>
+                                            <th className="px-4 py-2">Precio Pag.</th>
+                                            <th className="px-4 py-2">P. Unit</th>
+                                            <th className="px-4 py-2">Moneda</th>
+                                            <th className="px-4 py-2">Vinculacion</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {pedimentoData.partidas.map((p, idx) => (
+                                            <tr key={idx} className="hover:bg-slate-50">
+                                                <td className="px-4 py-2 font-mono">{p.secuencia}</td>
+                                                <td className="px-4 py-2 font-mono font-bold text-blue-600">{p.fraccion}</td>
+                                                <td className="px-4 py-2 text-right font-mono">{p.cantidadUMC}</td>
+                                                <td className="px-4 py-2 font-mono">{p.umc}</td>
+                                                <td className="px-4 py-2 text-right font-mono">${(p.precioPagado || 0).toLocaleString()}</td>
+                                                <td className="px-4 py-2 text-right font-mono">${(p.precioUnitario || 0).toLocaleString()}</td>
+                                                <td className="px-4 py-2 font-mono">{p.moneda}</td>
+                                                <td className="px-4 py-2 font-mono">{p.vinculacion}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -492,9 +637,6 @@ export const ProformaValidator: React.FC = () => {
                 </div>
             )}
 
-
-
-
             {/* PHASE 2 INSPECTOR: Structured Analysis (Strict Mode) */}
             {showPhase2Modal && (
                 <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -521,115 +663,25 @@ export const ProformaValidator: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Phase 2 Content (Forensic Dashboard) */}
                         <div className="flex-1 overflow-hidden flex bg-slate-50">
                             {isStructuring ? (
                                 <div className="flex-1 flex flex-col items-center justify-center space-y-4">
                                     <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-100 border-t-indigo-600"></div>
                                     <p className="text-slate-500 font-medium animate-pulse">Running Strict Forensic Analysis...</p>
-                                    <p className="text-xs text-slate-400">Verifying Nulls • Validating Schema</p>
                                 </div>
-                            ) : structuredData ? (
+                            ) : pedimentoData ? (
                                 <div className="flex-1 overflow-y-auto p-8 space-y-8">
-                                    {phase2Error && (
-                                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg mb-4 flex gap-3 text-amber-800 text-sm">
-                                            <AlertTriangle size={16} className="mt-0.5" />
-                                            <div>
-                                                <p className="font-bold">Partial Analysis Warning</p>
-                                                <p>{phase2Error}</p>
-                                            </div>
+                                    <div className="space-y-4">
+                                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                                            <h4 className="font-bold text-yellow-800">Raw Data Inspector (Strict Mode)</h4>
+                                            <p className="text-sm text-yellow-700">Displaying raw forensic data extraction.</p>
                                         </div>
-                                    )}
-
-                                    {/* 1. Header & Metadata (Provenance) */}
-                                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <h4 className="font-bold text-slate-800 flex items-center gap-2">
-                                                <FileText size={18} className="text-blue-500" />
-                                                Encabezado del Pedimento
-                                            </h4>
-                                            <span className="text-xs font-mono text-slate-400">
-                                                Pages: {structuredData.metadata?.pageCount} • Extracted: {structuredData.metadata?.extractionDate}
-                                            </span>
-                                        </div>
-
-                                        <div className="grid grid-cols-4 gap-6 mb-6">
-                                            <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                                                <label className="text-xs text-slate-500 block mb-1">Pedimento</label>
-                                                <div className="font-mono font-bold text-lg text-slate-800">
-                                                    {structuredData.header?.pedimentoNumber?.value || <span className="text-slate-300 italic">N/A</span>}
-                                                </div>
-                                            </div>
-                                            <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                                                <label className="text-xs text-slate-500 block mb-1">Tipo Operación</label>
-                                                <div className="font-bold text-slate-800">{structuredData.header?.tipoOperacion || '-'}</div>
-                                            </div>
-                                            <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                                                <label className="text-xs text-slate-500 block mb-1">Clave</label>
-                                                <div className="font-bold text-slate-800">{structuredData.header?.clavePedimento || '-'}</div>
-                                            </div>
-                                            <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                                                <label className="text-xs text-slate-500 block mb-1">Régimen</label>
-                                                <div className="font-mono font-bold text-slate-800">{structuredData.header?.regimen || '-'}</div>
-                                            </div>
-                                        </div>
+                                        <textarea
+                                            className="w-full h-96 p-4 font-mono text-xs bg-gray-900 text-green-400 rounded-lg"
+                                            value={structuredData?.aiJson ? JSON.stringify(structuredData.aiJson, null, 2) : "No Raw Forensic Data Available"}
+                                            readOnly
+                                        />
                                     </div>
-
-                                    {/* 2. Items Table (The "Armado") */}
-                                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                                        <div className="px-6 py-4 border-b bg-slate-50 flex justify-between items-center">
-                                            <h4 className="font-bold text-slate-800">Partidas ({structuredData.items?.length || 0})</h4>
-                                        </div>
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-xs text-left">
-                                                <thead className="bg-slate-50 font-bold text-slate-500 uppercase">
-                                                    <tr>
-                                                        <th className="px-4 py-3">Sec</th>
-                                                        <th className="px-4 py-3">Fracción</th>
-                                                        <th className="px-4 py-3">Descripción</th>
-                                                        <th className="px-4 py-3 text-right">Cant UMC</th>
-                                                        <th className="px-4 py-3 text-right">P. Unit</th>
-                                                        <th className="px-4 py-3 text-right">Val Aduana</th>
-                                                        <th className="px-4 py-3">Identificadores</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-slate-100">
-                                                    {structuredData.items?.map((item: any, idx: number) => (
-                                                        <tr key={idx} className="hover:bg-indigo-50/30 transition-colors align-top">
-                                                            <td className="px-4 py-3 font-mono text-slate-500">{item.sequence ?? '-'}</td>
-                                                            <td className="px-4 py-3 font-mono font-bold text-indigo-600">
-                                                                {item.fraction || '-'}
-                                                            </td>
-                                                            <td className="px-4 py-3 text-slate-600 max-w-[200px]">
-                                                                <div className="font-medium">{item.description || <span className="text-slate-300">No Desc</span>}</div>
-                                                                <div className="flex flex-wrap gap-2 text-[10px] mt-1">
-                                                                    {item.partNumber ? (
-                                                                        <span className="text-blue-600 bg-blue-50 px-1 rounded border border-blue-100">PN: {item.partNumber}</span>
-                                                                    ) : (
-                                                                        <span className="text-slate-300 italic">No PN</span>
-                                                                    )}
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-4 py-3 text-right font-mono">
-                                                                {item.quantityUMC != null ? item.quantityUMC.toLocaleString() : '-'}
-                                                                <span className="text-[10px] text-slate-400 ml-1">{item.umc || ''}</span>
-                                                            </td>
-                                                            <td className="px-4 py-3 text-right font-mono">${item.unitPrice != null ? item.unitPrice.toLocaleString() : '-'}</td>
-                                                            <td className="px-4 py-3 text-right font-mono font-bold text-slate-700">${item.customsValue != null ? item.customsValue.toLocaleString() : '-'}</td>
-                                                            <td className="px-4 py-3">
-                                                                {item.identifiers?.map((id: any, idIdx: number) => (
-                                                                    <span key={idIdx} className="mr-1 inline-block text-[10px] bg-indigo-50 p-0.5 rounded border border-indigo-100 font-mono text-indigo-800">
-                                                                        {id.code}{id.complement1 ? `:${id.complement1}` : ''}
-                                                                    </span>
-                                                                ))}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-
                                 </div>
                             ) : (
                                 <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
@@ -658,7 +710,6 @@ export const ProformaValidator: React.FC = () => {
             {/* Customs Update Modal */}
             {showCustomsModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    {/* ... existing modal ... */}
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
                         <div className="p-6 border-b border-slate-100">
                             <h3 className="text-lg font-bold">Select Customs Record</h3>
@@ -700,7 +751,7 @@ export const ProformaValidator: React.FC = () => {
                         <div className="p-6 border-t border-slate-100 flex justify-end gap-3">
                             <button onClick={() => setShowCustomsModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium">Cancel</button>
                             <button
-                                onClick={handleUpdateCustoms}
+                                onClick={() => handleUpdateCustoms()}
                                 disabled={!selectedCustomsId}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -720,41 +771,42 @@ export const ProformaValidator: React.FC = () => {
                                 <h3 className="text-lg font-bold text-slate-800">Manage Invoices</h3>
                                 <p className="text-xs text-slate-500">Stored Commercial Invoices</p>
                             </div>
-                            <button onClick={() => setShowInvoicesModal(false)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setShowInvoicesModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
                                 <X size={20} />
                             </button>
                         </div>
-                        <div className="max-h-[400px] overflow-y-auto p-4 bg-slate-50 space-y-3">
+                        <div className="p-0 max-h-[400px] overflow-y-auto">
                             {storedInvoices.length === 0 ? (
-                                <div className="text-center py-8 text-slate-400">
-                                    <FileText className="mx-auto mb-2 opacity-50" size={32} />
-                                    No invoices stored
+                                <div className="p-8 text-center">
+                                    <div className="bg-slate-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <FileText className="text-slate-300" size={24} />
+                                    </div>
+                                    <p className="text-slate-500 text-sm">No invoices extracted yet.</p>
                                 </div>
                             ) : (
-                                storedInvoices.map((inv, idx) => (
-                                    <div key={idx} className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 flex justify-between items-center group hover:border-blue-200 transition-colors">
-                                        <div>
-                                            <div className="font-bold text-slate-700 text-sm flex items-center gap-2">
-                                                <FileText size={14} className="text-blue-500" />
-                                                {inv.invoiceNo}
+                                <div className="divide-y divide-slate-100">
+                                    {storedInvoices.map((inv, idx) => (
+                                        <div key={idx} className="p-4 hover:bg-slate-50 transition-colors flex justify-between items-center group">
+                                            <div>
+                                                <div className="font-bold text-slate-700 text-sm">{inv.invoiceNumber}</div>
+                                                <div className="text-xs text-slate-500">{inv.items?.length || 0} items • {inv.invoiceDate || 'No Date'}</div>
                                             </div>
-                                            <div className="text-xs text-slate-400 mt-1">{inv.count} items</div>
+                                            <button
+                                                onClick={() => handleDeleteInvoice(inv.invoiceNumber)}
+                                                className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-2"
+                                                title="Remove Invoice"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => handleDeleteInvoice(inv.invoiceNo)}
-                                            className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 rounded transition-colors opacity-100"
-                                            title="Delete Invoice"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                ))
+                                    ))}
+                                </div>
                             )}
                         </div>
-                        <div className="p-4 border-t border-slate-100 bg-white text-center">
+                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
                             <button
                                 onClick={() => setShowInvoicesModal(false)}
-                                className="text-sm text-slate-500 hover:text-slate-700 font-medium"
+                                className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors"
                             >
                                 Close
                             </button>

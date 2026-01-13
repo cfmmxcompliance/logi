@@ -25,12 +25,16 @@ export interface PedimentoDate {
 }
 
 export interface PedimentoTransport {
-    medios: string[]; // e.g. "98"
-    candados: string[];
+    medios: string[]; // 1=Transporte
+    candados?: string[]; // 2=Candados
     identificacion?: string;
     pais?: string;
-    transportista?: string;
-    rfc?: string;
+    transportista?: {
+        rfc?: string;
+        curp?: string;
+        nombre?: string;
+        domicilio?: string;
+    };
 }
 
 export interface PedimentoGuide {
@@ -73,6 +77,7 @@ export interface PedimentoHeader {
     claveDocumento?: string;
     tipoOperacion?: string;
     destino?: string;
+    regimen?: string; // e.g. IMD, IEX
     aduana?: string;
     patente?: string;
 
@@ -83,7 +88,24 @@ export interface PedimentoHeader {
 
     // Values & Weights
     pesoBruto?: number;
+    bultos?: number; // Added
     tipoCambio?: number;
+    entradaSalida?: string; // Added
+    arribo?: string; // Added
+    salida?: string; // Added
+    curp?: string; // Added direct access
+    nombre?: string; // Added direct access
+    domicilio?: string; // Added direct access
+
+    // Flattened Values (User Mapping Support)
+    dolares?: number;
+    // aduana?: any; // REMOVED DUPLICATE (Exists at line 81)
+    comercial?: number;
+    fletes?: number;
+    seguros?: number;
+    embalajes?: number;
+    otros?: number;
+
     valores: {
         dolares: number;
         aduana: number;
@@ -99,6 +121,11 @@ export interface PedimentoHeader {
 
     // Taxes
     tasasGlobales: PedimentoTax[];
+    // Direct Access for User Mapping
+    dta?: any;
+    prv?: any;
+    iva?: any;
+
     importes: { // Compat map
         dta?: number;
         iva?: number;
@@ -112,6 +139,16 @@ export interface PedimentoHeader {
     guias: PedimentoGuide[];
     contenedores: PedimentoContainer[];
 
+    observaciones?: string; // Added to fix type error
+    acuseValidacion?: any; // Added to fix type error
+
+    // User requested identifier mapping
+    identif?: string;
+    compl1?: string;
+    compl2?: string;
+    compl3?: string;
+    identificadores?: { clave: string; compl1?: string; compl2?: string; compl3?: string; }[];
+
     // Invoices
     facturas: PedimentoInvoice[];
     proveedores: { id: string, nombre: string, domicilio: string }[];
@@ -123,7 +160,8 @@ export interface PedimentoItem {
     partNo: string;
     secuencia: number;
     fraccion: string;
-    nico?: string;
+    pvc?: string; // P.V/C
+    pod?: string; // P.O/D
 
     // Description
     description: string;
@@ -134,32 +172,38 @@ export interface PedimentoItem {
     qtyUmt?: number;
     umt?: string;
 
+    // Legal Codes
+    vinculacion?: string; // VINC
+    metodoValoracion?: string; // MET VAL
+    clavePaisVendedor?: string; // O/V
+    clavePaisOrigen?: string;
+
     // Values
     unitPrice: number; // Precio Unitario
     totalAmount: number; // Precio Pagado / Valor Comercial?
     valorAduana?: number;
     valorComercial?: number;
     valorAgregado?: number;
+    preciopagado?: number; // User added alias
+    valoraduana?: number; // User added alias
 
     // Origin/Vendor
     origin?: string;
     vendor?: string;
-    vinculacion?: string;
-    metodoValoracion?: string;
 
     // Extras
-    identifiers: {
-        level: 'Global' | 'Item';
-        code: string;
-        complement1?: string;
-        complement2?: string;
-        complement3?: string;
-    }[];
-    contribuciones: PedimentoTax[];
-    regulaciones: PedimentoRegulation[];
+    identifiers?: any[];
+    contribuciones?: any[];
+    regulaciones?: any[]; // For permisos
     observaciones?: string;
 
-    page: number;
+    page?: number;
+
+    // User Requested Mappings
+    moneda?: string;
+    paisvendedor?: string;
+    paiscomprador?: string;
+    valagregado?: number;
 }
 
 export interface ValidationResult {
@@ -172,7 +216,7 @@ export interface ValidationResult {
 
 export interface PedimentoData {
     header: PedimentoHeader;
-    items: PedimentoItem[];
+    partidas: any[];
     rawText: string;
     validationResults: ValidationResult[];
 }
@@ -574,7 +618,7 @@ export const parsePedimentoPdf = async (file: File, onProgress?: (msg: string) =
         let validationResults: ValidationResult[] = [];
         try {
             if (header.pedimentoNo) {
-                validationResults = validatePedimento({ header, items, rawText: fullText, validationResults: [] });
+                validationResults = validatePedimento({ header, partidas: items, rawText: fullText, validationResults: [] });
             }
         } catch (error: any) {
             console.error("Validation Logic Error:", error);
@@ -587,7 +631,7 @@ export const parsePedimentoPdf = async (file: File, onProgress?: (msg: string) =
             });
         }
 
-        return { header, items, rawText: fullText, validationResults };
+        return { header, partidas: items, rawText: fullText, validationResults };
 
     } catch (e: any) {
         console.error("Critical PDF Parsing Error:", e);
@@ -598,7 +642,7 @@ export const parsePedimentoPdf = async (file: File, onProgress?: (msg: string) =
                 tasasGlobales: [], transporte: { medios: [], candados: [] }, guias: [], contenedores: [], facturas: [], proveedores: [],
                 importes: { dta: 0, prv: 0, igi: 0, iva: 0, totalEfectivo: 0 }
             },
-            items: [],
+            partidas: [],
             rawText: '',
             validationResults: [{
                 severity: 'ERROR',
@@ -613,17 +657,17 @@ export const parsePedimentoPdf = async (file: File, onProgress?: (msg: string) =
 
 export function validatePedimento(data: PedimentoData): ValidationResult[] {
     const results: ValidationResult[] = [];
-    const { header, items } = data;
+    const { header, partidas } = data;
 
     // 1. Validate Item Count vs Logic
     // If we have explicit sequence numbers?
     // For now, check if empty.
-    if (items.length === 0) {
+    if (partidas.length === 0) {
         results.push({ severity: 'ERROR', field: 'Items', expected: '>0', actual: 0, message: 'No items were extracted.' });
     }
 
     // 2. Validate Sums: Commercial Value
-    const sumComercial = items.reduce((sum, item) => sum + (item.totalAmount || 0), 0);
+    const sumComercial = partidas.reduce((sum, item) => sum + (item.precioPagado || item.valorComercial || item.totalAmount || 0), 0);
     // Note: totalAmount in Item usually maps to "Precio Pagado" which is close to Valor Comercial usually?
     // Or do we have explicit "valorComercial" extract in items?
     // In our parser: "totalAmount" is usually the last large number.
@@ -642,7 +686,7 @@ export function validatePedimento(data: PedimentoData): ValidationResult[] {
 
     // 3. Validate Taxes (IGI)
     const headerIGI = header.importes.igi || 0;
-    const sumIGI = items.reduce((sum, item) => {
+    const sumIGI = partidas.reduce((sum, item) => {
         const igi = item.contribuciones.find(c => c.clave === 'IGI');
         return sum + (igi ? igi.importe : 0);
     }, 0);
@@ -661,7 +705,7 @@ export function validatePedimento(data: PedimentoData): ValidationResult[] {
     const headerDTA = header.importes.dta || 0;
     // DTA is often per-pedimento (fixed) or calculated?
     // If items have DTA, we sum. If items don't have DTA (common if 8 millar rule applies globally), sum might be 0.
-    const sumDTA = items.reduce((sum, item) => {
+    const sumDTA = partidas.reduce((sum, item) => {
         const dta = item.contribuciones.find(c => c.clave === 'DTA');
         return sum + (dta ? dta.importe : 0);
     }, 0);
@@ -703,7 +747,7 @@ export function validatePedimento(data: PedimentoData): ValidationResult[] {
     // Or 'IM' (Immex) implies specific regime.
 
     // Check if any tax is IVA with FP 21
-    const ivaCreditItems = items.filter(i =>
+    const ivaCreditItems = partidas.filter(i =>
         i.contribuciones.some(c => c.clave === 'IVA' && c.formaPago === '21')
     );
 
@@ -714,7 +758,7 @@ export function validatePedimento(data: PedimentoData): ValidationResult[] {
         // Let's check if *any* item has CI, or ideally we should have parsed Header identifiers.
         // For now, heuristic: Scan all extracted identifiers.
 
-        const allIdentifiers = items.flatMap(i => i.identifiers);
+        const allIdentifiers = partidas.flatMap(i => i.identifiers);
         const hasCI = allIdentifiers.some(id => id.code === 'CI');
 
         if (!hasCI) {
@@ -734,7 +778,7 @@ export function validatePedimento(data: PedimentoData): ValidationResult[] {
     // Rule: If Origin is one of TLC countries, check for TL identifier?
     // Or: If TL identifier used, Check IGI Preference.
 
-    items.forEach(item => {
+    partidas.forEach(item => {
         const tlIdentifier = item.identifiers.find(id => id.code === 'TL');
         if (tlIdentifier) {
             // Treaty Claimed.
@@ -861,7 +905,7 @@ export function validatePedimento(data: PedimentoData): ValidationResult[] {
         // Check Destinatario? 
         // Ensure Items are Capital Goods? HTS checks (84, 85, 90...)?
         // Warn if Chapter is clearly consumables (e.g. Ch 01-24)?
-        const hasConsumables = items.some(i => {
+        const hasConsumables = partidas.some(i => {
             const ch = parseInt((i.fraccion || '00').replace(/\./g, '').substring(0, 2));
             return ch > 0 && ch < 25; // Food/Animals/Plants usually not AF
         });
@@ -900,7 +944,7 @@ export function validatePedimento(data: PedimentoData): ValidationResult[] {
     // Usually FP 5 or 6 (Pendiente payment)?
     if (header.claveDocumento === 'A4') {
         // Check if taxes have non-cash FP?
-        const hasPendingTax = items.some(i => i.contribuciones.some(c => c.formaPago !== '0' && c.formaPago !== '21')); // 0=Efectivo, 21=Credito. Maybe 5?
+        const hasPendingTax = partidas.some(i => i.contribuciones.some(c => c.formaPago !== '0' && c.formaPago !== '21')); // 0=Efectivo, 21=Credito. Maybe 5?
         // Just simple Alert.
         results.push({
             severity: 'INFO',
@@ -930,7 +974,7 @@ export function validatePedimento(data: PedimentoData): ValidationResult[] {
     // Rule: Extraction must pay taxes (unless Exempt via Treaty/Sectorial).
     // Context: Goods leaving A4 regime.
     if (header.claveDocumento === 'G1') {
-        const hasTaxes = items.some(i => i.contribuciones.some(c => c.importe > 0 && ['IGI', 'IVA'].includes(c.clave)));
+        const hasTaxes = partidas.some(i => i.contribuciones.some(c => c.importe > 0 && ['IGI', 'IVA'].includes(c.clave)));
 
         results.push({
             severity: hasTaxes ? 'INFO' : 'WARNING',
@@ -968,10 +1012,10 @@ export function validatePedimento(data: PedimentoData): ValidationResult[] {
     // 20. IDENTIFIER "T1" (DTA Reduction for Certified Companies)
     // Rule: If Identifier T1 is present, DTA should be Fixed (Quota Fija - e.g. ~400-500 MXN) or Exempt.
     // It overrides the 8 al millar rule.
-    const hasT1 = items.some(i => i.identifiers.some(id => id.code === 'T1')) || (header.rfc && header.rfc.length > 0 && false); // Heuristic: scan types?
+    const hasT1 = partidas.some(i => i.identifiers.some(id => id.code === 'T1')) || (header.rfc && header.rfc.length > 0 && false); // Heuristic: scan types?
     // Note: Our parser extracts identifiers at ITEM level mostly. T1 is often Global.
     // We scan all item identifiers.
-    const t1Identifier = items.flatMap(i => i.identifiers).find(id => id.code === 'T1');
+    const t1Identifier = partidas.flatMap(i => i.identifiers).find(id => id.code === 'T1');
 
     if (t1Identifier) {
         // Validation: Check DTA
@@ -1016,7 +1060,7 @@ export function validatePedimento(data: PedimentoData): ValidationResult[] {
     // We already have DTA checks, but let's be strict about legal basis.
     if (header.importes.dta && header.valorAduana) {
         // If Definitive (A1) and no Treaty (T1/TL), expect 8 al millar.
-        if (header.claveDocumento === 'A1' && !t1Identifier && !items.some(i => i.identifiers.some(id => id.code === 'TL'))) {
+        if (header.claveDocumento === 'A1' && !t1Identifier && !partidas.some(i => i.identifiers.some(id => id.code === 'TL'))) {
             // Expect 8/millar.
             const expected = header.valorAduana * 0.008;
             if (Math.abs(header.importes.dta - expected) > 100) {
@@ -1028,7 +1072,7 @@ export function validatePedimento(data: PedimentoData): ValidationResult[] {
 
     // 23. LEGAL FRAMEWORK: LIGIE (Vico / Fraccion)
     // Rule: Fraccion Must be 8 digits. NICO 2 digits.
-    items.forEach(i => {
+    partidas.forEach(i => {
         if (i.fraccion) {
             const cleanF = i.fraccion.replace(/\./g, '');
             if (cleanF.length !== 8) {

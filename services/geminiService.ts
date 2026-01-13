@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { PedimentoRecord } from '../types.ts';
 import { PDFDocument } from 'pdf-lib';
+import { PedimentoData as DomainPedimentoData } from './pedimentoParser';
 
 // Senior Frontend Engineer: Use GoogleGenAI with the recommended direct API key access.
 const getClient = () => {
@@ -51,7 +52,7 @@ export interface ExtractedShippingDoc {
 }
 
 // Senior Frontend Engineer: Strict User-Defined Interface (No Interpretations)
-export interface PedimentoData {
+interface GeminiRawResponse {
   header: {
     referencia: string;
     numPedimento: string;
@@ -96,6 +97,7 @@ export interface PedimentoData {
     contribucion: string;
     clave: string;
     tasa: string;
+    importe: string;
   }[];
   cuadroLiquidacion: {
     conceptos: {
@@ -116,10 +118,9 @@ export interface PedimentoData {
   transporte: {
     identificacion: string;
     pais: string;
-    transportista?: string;
-    rfc?: string;
-    curp?: string;
-    domicilio?: string;
+    transportista?: any;
+    candados?: string[];
+    guias?: any[];
   }[];
   contenedores: {
     numero: string;
@@ -136,6 +137,7 @@ export interface PedimentoData {
     valDolares: string;
   }[];
   observaciones: string; // Global observations block
+
   partidas: {
     secuencia: number;
     fraccion: string;
@@ -144,10 +146,10 @@ export interface PedimentoData {
     metodoValoracion: string;
     umc: string;
     cantidadUMC: string;
-    umt: string;
+    umt: string | number;
     cantidadUMT: string;
-    pvc: string; // P.V/C
-    pod: string; // P.O/D
+    PVC: string; // Uppercase key from user prompt
+    POD: string; // Uppercase key from user prompt
     descripcion: string;
     valores: {
       valorAduanaUSD: string;
@@ -165,15 +167,19 @@ export interface PedimentoData {
     identificadores: {
       identif: string;
       compl1: string;
-      compl2: string;
-      compl3: string;
+      compl2?: string;
+      compl3?: string;
+      descargo?: string; // User req
+      Valcomdls?: string; // User req
+      Cantidadumtc?: string; // User req
     }[];
     observaciones: string; // Observaciones a Nivel Partida
     tasas: {
-      tasa: string; // Tasa
-      tipoTasa: string; // TT
-      formaPago: string; // FP
-      importe: string; // Importe
+      clave?: string; // User uses 'clave' instead of implied type sometimes
+      tasa: string;
+      tipoTasa?: string;
+      formaPago?: string;
+      importe?: string; // User req
     }[];
   }[];
 }
@@ -196,10 +202,153 @@ const cleanJson = (text: string) => {
   return clean || "{}";
 };
 
+// Helper Logic: Extracted to avoid circular references and type errors in geminiService
+const processRawPedimentoLogic = (rawText: string): DomainPedimentoData => {
+  try {
+    let cleanText = cleanJson(rawText);
+    let extracted: any;
+    try {
+      extracted = JSON.parse(cleanText);
+    } catch (e) {
+      console.error("Strict Parse Failed.");
+      const snippet = cleanText.length > 50
+        ? cleanText.substring(0, 20) + "..." + cleanText.substring(cleanText.length - 20)
+        : cleanText;
+      throw new Error(`JSON Parse Error: ${(e as Error).message}. Snippet: ${snippet}`);
+    }
+
+    if (!extracted || typeof extracted !== 'object') {
+      throw new Error("AI returned invalid data structure (not an object).");
+    }
+
+    // Dates Helper
+    const mapFechas = (f: any): any[] => {
+      if (!f) return [];
+      const fechas = [];
+      if (f.entrada) fechas.push({ tipo: 'Entrada', fecha: f.entrada });
+      if (f.pago) fechas.push({ tipo: 'Pago', fecha: f.pago });
+      return fechas;
+    };
+
+    // Importes Helper (Flatten Cuadro Liquidacion)
+    const mapImportes = (liq: any): any => {
+      const imp: any = {
+        totalEfectivo: typeof liq?.efectivo === 'string' ? parseFloat(liq.efectivo) : (liq?.efectivo || 0),
+        dta: 0, prv: 0, igi: 0, iva: 0
+      };
+      if (liq?.conceptos && Array.isArray(liq.conceptos)) {
+        liq.conceptos.forEach((c: any) => {
+          if (!c.concepto) return;
+          const key = c.concepto.toLowerCase();
+          const val = typeof c.importe === 'string' ? parseFloat(c.importe) : (c.importe || 0);
+          if (key.includes('dta')) imp.dta = val;
+          if (key.includes('prv') || key.includes('cnt')) imp.prv = val;
+          if (key.includes('igi')) imp.igi = val;
+          if (key.includes('iva')) imp.iva = val;
+        });
+      }
+      return imp;
+    };
+
+    return {
+      header: {
+        pedimentoNo: extracted.header?.numPedimento || "",
+        rfc: extracted.importador?.rfc || "",
+        claveDocumento: extracted.header?.cvePedimento || "",
+        tipoOperacion: extracted.header?.tOper || "",
+        regimen: extracted.header?.regimen || "",
+        tipoCambio: typeof extracted.header?.tipoCambio === 'string' ? parseFloat(extracted.header.tipoCambio) : extracted.header?.tipoCambio,
+        pesoBruto: typeof extracted.header?.pesoBruto === 'string' ? parseFloat(extracted.header.pesoBruto) : extracted.header?.pesoBruto,
+        aduana: extracted.header?.aduanaES || "",
+
+        fechas: mapFechas(extracted.fechas),
+
+        valores: {
+          dolares: parseFloat(extracted.valores?.valorDolares || "0"),
+          aduana: parseFloat(extracted.valores?.valorAduana || "0"),
+          comercial: parseFloat(extracted.valores?.precioPagado || "0"),
+          seguros: parseFloat(extracted.valores?.seguros || "0"),
+          fletes: parseFloat(extracted.valores?.fletes || "0"),
+          embalajes: parseFloat(extracted.valores?.embalajes || "0"),
+          otros: parseFloat(extracted.valores?.otrosIncrementables || "0")
+        },
+
+        tasasGlobales: Array.isArray(extracted.tasasNivelPedimento) ? extracted.tasasNivelPedimento : [],
+
+        importes: mapImportes(extracted.cuadroLiquidacion),
+
+        identificadores: extracted.identificadores || [],
+
+        transporte: {
+          medios: [],
+          identificacion: extracted.transporte?.[0]?.identificacion || "",
+          transportista: extracted.transporte?.[0]?.transportista || {},
+          candados: extracted.transporte?.[0]?.candados || [],
+        },
+
+        guias: extracted.transporte?.[0]?.guias || [],
+        contenedores: extracted.contenedores || [],
+
+        facturas: Array.isArray(extracted.facturas) ? extracted.facturas.map((f: any) => ({
+          numero: f.numFactura || "",
+          fecha: f.fecha,
+          incoterm: f.incoterm,
+          moneda: f.monedaFact,
+          valorDolares: f.valDolares
+        })) : [],
+
+        proveedores: extracted.proveedor ? [extracted.proveedor] : [],
+
+        isSimplified: false
+      },
+      partidas: Array.isArray(extracted.partidas) ? extracted.partidas.map((p: any) => ({
+        secuencia: p.secuencia,
+        fraccion: p.fraccion,
+        nico: p.subdivision || "",
+        description: p.descripcion,
+        qty: parseFloat(p.cantidadUMC) || 0, // Ensure number
+        umc: String(p.umc || ""),
+        qtyUmt: parseFloat(p.cantidadUMT) || 0, // Ensure number
+        umt: p.umt !== null && p.umt !== undefined ? String(p.umt) : "", // map to string
+        pvc: p.PVC, // Map Strict Upper
+        pod: p.POD, // Map Strict Upper
+        unitPrice: parseFloat(p.valores?.precioUnitario) || 0,
+        totalAmount: parseFloat(p.valores?.impPrecioPag) || 0,
+        valorAduana: parseFloat(p.valores?.valorAduanaUSD) || 0,
+        valorAgregado: p.valores?.valorAgregado !== null && p.valores?.valorAgregado !== undefined ? parseFloat(p.valores.valorAgregado) : undefined, // Allow undefined/null
+        vinculacion: p.vinculacion,
+        metodoValoracion: p.metodoValoracion,
+        origin: p.POD || "N/A", // Heuristic mapping if origin not explicit
+        vendor: p.PVC || "N/A", // Heuristic mapping if vendor not explicit
+        identifiers: Array.isArray(p.identificadores) ? p.identificadores.map((id: any) => ({
+          code: id.identif,
+          complement1: id.compl1,
+          descargo: id.descargo,
+          valComDls: id.Valcomdls,
+          cantidadUmt: id.Cantidadumtc
+        })) : [],
+        contribuciones: Array.isArray(p.tasas) ? p.tasas.map((t: any) => ({
+          clave: t.clave,
+          tasa: t.tasa,
+          importe: t.importe
+        })) : [],
+        regulaciones: p.permisos || [], // Keep legacy if needed, or map strictly if user provides Permisos block in future
+        observaciones: p.observaciones || "",
+        partNo: ""
+      })) : [],
+      rawText: cleanText,
+      validationResults: []
+    };
+  } catch (error) {
+    console.error("Pedimento Parsing Logic Error", error);
+    throw error;
+  }
+};
+
 export const geminiService = {
   // Senior Frontend Engineer: RAW Extraction Mode (No Type coercion)
   // Senior Frontend Engineer: PAGINATED Forensic Extraction (Solves "Page 7 of 11" Truncation)
-  parseInvoiceMaterials: async (base64Data: string, mimeType: string = 'image/jpeg'): Promise<string> => {
+  async parseInvoiceMaterials(base64Data: string, mimeType: string = 'image/jpeg'): Promise<string> {
     try {
       console.log("Starting Paginated Forensic Extraction...");
 
@@ -277,102 +426,201 @@ export const geminiService = {
 
     } catch (error: any) {
       console.error("Forensic Parse Error", error);
-      // Fallback to single-shot if PDF lib fails (or logic error)
-      // throw new Error(`Forensic Error: ${error.message || error}`);
       return "Error during paginated extraction. Please check logs.";
     }
   },
 
-
-
-  // Senior Frontend Engineer: PHASE 2 - Structured Forensic Analysis (Robust & Strict)
-  // RULE: Maps Phase 1 Raw Text -> Structured JSON. 
-  // CRITICAL: No "Imagination". If text is not there, return null.
-  parseForensicStructure: async (rawText: string): Promise<any> => {
+  // Senior Frontend Engineer: PHASE 2 - Structured Forensic Analysis (Robust & Strict & Scalable)
+  async parseForensicStructure(rawText: string): Promise<any> {
     try {
-      console.log("Starting Phase 2: Forensic Structured Analysis (Strict Mode)...");
-      const ai = getClient();
+      console.log("Starting Phase 2: Structural Mapping (Text -> JSON Transformation)...");
 
-      const prompt = `
-        ROLE: Strict Data Entry Clerk.
-        TASK: Convert the provided RAW TEXT dump into a JSON object.
-        
-        INPUT:
-        "${rawText.substring(0, 100000)}..." (Formatted markdown/text)
+      // 1. Split into Chunks if marked
+      const chunks = rawText.split(/--- PAGE CHUNK \d+ ---/).map(s => s.trim()).filter(s => s.length > 20);
+      console.log(`Phase 2: Detected ${chunks.length} text chunks for structural analysis.`);
 
-        INSTRUCTIONS:
-        1. Parse the text into the strictly defined JSON structure below.
-        2. **STRICT RULE**: If a field is not EXPLICITLY found in the text, return \`null\`. DO NOT guess or infer.
-        3. **STRICT RULE**: Do NOT calculate totals unless they are written in the document.
-        4. "partNumber": Look for "No. Parte", "Part No", or codes resembling "Q..." or "0...". 
-           - **Recall OCR Tip**: Distinguish 'Q' vs '0'. If it looks like 'Q', it is 'Q'.
-        5. "commercialInvoice": Look for "Factura Comercial", "Invoice", "C.I.".
-        6. "fa": Look for "FIXED ASSET", "ACTIVO FIJO", "FA".
+      // Helper for Individual Chunk Analysis
+      const analyzeChunk = async (chunkText: string, index: number) => {
+        const ai = getClient();
+        console.log(`Analyzing Chunk ${index + 1}/${chunks.length} (${chunkText.length} chars)...`);
+
+        const isFirstChunk = index === 0;
+        const isLastChunk = index === chunks.length - 1;
+        const chunkInfo = `Chunk ${index + 1} of ${chunks.length}`;
+
+        const prompt = `
+        ACT AS A DATA EXTRACTOR.
+        INPUT: Partial text dump from a Mexican Pedimento PDF (${chunkInfo}).
+        OUTPUT: A SINGLE valid JSON object matching this structure exactly.
         
-        OUTPUT FORMAT:
-        Return ONLY valid JSON. No markdown fences. No preamble.
-        Structure:
+        CONTEXT: 
+        - This is ${chunkInfo}.
+        - Header info is likely ONLY in Chunk 1.
+        - Items (Partidas) may be split across chunks.
+        ${isLastChunk ? "- THIS IS THE FINAL CHUNK. EXPECT HIGH SEQUENCE NUMBERS (e.g. 40-100). DO NOT RESTART SEQUENCE AT 1." : ""}
+        
+        REQUIRED JSON STRUCTURE:
         {
-          "metadata": { "extractionDate": "YYYY-MM-DD", "pageCount": number, "modelUsed": "Gemini 2.0 Flash" },
-          "header": { "pedimentoNumber": { "value": string, "confidence": 0-1 }, "tipoOperacion": string|null, "clavePedimento": string|null, "regimen": string|null, "tipoCambio": string|null, "pesoBruto": string|null, "aduanaEntradaSalida": string|null },
-          "parties": { "importer": { "name": string|null, "rfc": string|null, "address": string|null }, "supplier": { "name": string|null, "taxId": string|null, "address": string|null } },
-          "transport": { "identification": string|null, "country": string|null, "shippingNumber": string|null, "container": { "number": string|null, "type": string|null } },
-          "invoices": [ { "number": string, "date": string|null, "incoterm": string|null, "amount": number|null, "currency": string|null, "factor": number|null, "dollarAmount": number|null } ],
-          "items": [ 
-            { 
-              "sequence": number|null, "partNumber": string|null, "description": string|null, 
-              "fraction": string|null, "subdivision": string|null,
-              "quantityUMC": number|null, "umc": string|null, 
-              "unitPrice": number|null, "totalAmount": number|null, 
-              "originCountry": string|null, "vendorCountry": string|null,
-              "identifiers": [ { "code": string, "complement1": string|null } ],
-              "permissions": [ { "code": string, "number": string, "valueUsd": number|null } ],
-              "commercialInvoice": string|null, "fa": string|null, "observations": string|null
-            } 
-          ],
-          "amounts": { "valorDolares": number|null, "valorAduana": number|null, "valorComercial": number|null, "totalEfectivo": number|null, "fletes": number|null, "seguros": number|null, "otros": number|null },
-          "taxes": { "DTA": number|null, "IVA": number|null, "IGI": number|null, "PRV": number|null },
-          "rawFragments": { "headerFragment": "first 500 chars of header text", "totalsFragment": "text near totals", "firstItemFragment": "text of first item" }
+          "header": { "numPedimento": "REQ", "tOper": "REQ", "cvePedimento": "REQ", "regimen": "REQ", "tipoCambio": "0.00", "pesoBruto": "0.00", "aduanaES": "REQ" },
+          "importador": { "rfc": "REQ", "nombre": "OPT", "domicilio": "OPT" },
+          "proveedor": { "idFiscal": "OPT", "nombre": "OPT", "domicilio": "OPT" },
+          "fechas": { "entrada": "YYYY-MM-DD", "pago": "YYYY-MM-DD" },
+          "valores": { "valorDolares": "0", "valorAduana": "0", "precioPagado": "0", "fletes": "0", "seguros": "0", "embalajes": "0", "otrosIncrementables": "0" },
+          "tasasNivelPedimento": [ { "clave": "STR", "tasa": "STR" } ],
+          "cuadroLiquidacion": { "efectivo": "0", "total": "0", "conceptos": [ { "concepto": "STR", "importe": "0" } ] },
+          "identificadores": [ { "clave": "STR", "compl1": "STR" } ],
+          "transporte": [ { "identificacion": "STR", "transportista": { "nombre": "STR" } } ],
+          "contenedores": [ { "numero": "STR", "tipo": "STR" } ],
+          "partidas": [
+            {
+              "secuencia": 1,
+              "fraccion": "STR",
+              "subdivision": "STR",
+              "vinculacion": "REQ",
+              "metodoValoracion": "REQ",
+              "umc": "REQ (Unit Code e.g. 1, 6, kg - NOT Country)",
+              "cantidadUMC": "REQ",
+              "umt": "REQ (Tariff Unit Code e.g. 1, 6 - NOT Country)",
+              "cantidadUMT": "REQ",
+              "PVC": "REQ (Country Code e.g. CHN, USA, MEX)",
+              "POD": "REQ (Country Code e.g. CHN, USA, MEX)",
+              "descripcion": "STR",
+              "valores": { 
+                "valorAduanaUSD": "0",
+                "impPrecioPag": "0",
+                "precioUnitario": "0",
+                "valorAgregado": "OPT (null if empty)"
+              },
+              "tasas": [ 
+                { "clave": "STR", "tasa": "0.00", "importe": "0" } 
+              ],
+              "identificadores": [ 
+                { 
+                  "identif": "STR", 
+                  "compl1": "STR",
+                  "descargo": "STR", 
+                  "Valcomdls": "0.00", 
+                  "Cantidadumtc": "0.00" 
+                } 
+              ],
+              "observaciones": "STR"
+            }
+          ]
         }
+
+        RULES:
+        1. Extract data STRICTLY from the input text.
+        2. If a Header field is missing (likely in later chunks), use null or empty string.
+        3. Do NOT invent data.
+        4. Return ONLY JSON.
+        5. EXTRACT ALL ITEMS FOUND IN THIS CHUNK. DO NOT TRUNCATE.
+        6. Do NOT copy 'impPrecioPag' to 'valorAgregado'. If empty, return null.
+        ${isLastChunk ? "7. CRITICAL: Look for the FINAL items (e.g. Seq 45). Do not hallucinate 'Seq 1' if it is not there." : ""}
+        
+        INPUT TEXT:
+        ${chunkText.substring(0, 30000)} // Chunk Safety Limit
       `;
 
-      // Use the flash-exp model for speed and large context, but strict prompt
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash-exp', // Fast, high context
-        contents: {
-          parts: [{ text: prompt }]
-        },
-        config: {
-          responseMimeType: 'application/json',
-          temperature: 0.1, // Very low temperature for strictness
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.0-flash-exp',
+          contents: { parts: [{ text: prompt }] },
+          config: { responseMimeType: 'application/json' }
+        });
+
+        const jsonString = cleanJson(response.text || '{}');
+        // Simple Repair Check
+        try {
+          return JSON.parse(jsonString);
+        } catch (e) {
+          console.warn(`Chunk ${index} JSON parse failed. Attempting repair...`);
+          // Minimal repair (removed complex state machine for brevity in loop, relying on cleanJson)
+          return {};
+        }
+      };
+
+      // 2. Parallel Analysis
+      const results = await Promise.all(chunks.map((chunk, idx) => analyzeChunk(chunk, idx)));
+
+      // 3. Merge Results
+      console.log("Merging Phase 2 Results...");
+      const masterRecord = results[0] || {}; // Assume Header in Chunk 0
+
+      // Concatenate Partidas
+      const allPartidas = results.flatMap(r => Array.isArray(r.partidas) ? r.partidas : []);
+
+      // Deduplicate Partidas (Safety against AI hallucinations repeating items in footer chunks)
+      const uniquePartidasMap = new Map();
+      allPartidas.forEach(p => {
+        if (p && p.secuencia && !uniquePartidasMap.has(p.secuencia)) {
+          uniquePartidasMap.set(p.secuencia, p);
         }
       });
+      const uniquePartidas = Array.from(uniquePartidasMap.values());
 
-      const jsonText = cleanJson(response.text || '{}');
-      return JSON.parse(jsonText);
+      console.log(`Total Partidas Extracted: ${allPartidas.length} (Unique: ${uniquePartidas.length})`);
+
+      // Re-assemble Strict Structure
+      // We stringify the merged object to pass it to the existing `processRawPedimentoLogic`
+      // which expects a JSON string of the *whole* pedimento structure.
+      const mergedRawStruct = {
+        ...masterRecord,
+        partidas: uniquePartidas
+      };
+
+      const jsonString = JSON.stringify(mergedRawStruct);
+
+      // Now that we have the JSON string, we can use our strict mapper (extracted helper).
+      const strictPedimentoData = processRawPedimentoLogic(jsonString);
+
+      return {
+        // Pass the raw AI JSON directly for inspection
+        aiJson: mergedRawStruct,
+
+        page1: {
+          ...strictPedimentoData.header,
+          valores: strictPedimentoData.header.valores,
+          fechas: {
+            entrada: strictPedimentoData.header.fechas.find(f => f.tipo === 'Entrada')?.fecha,
+            pago: strictPedimentoData.header.fechas.find(f => f.tipo === 'Pago')?.fecha
+          },
+          transporte: strictPedimentoData.header.transporte,
+          identificadoresGlobales: strictPedimentoData.header.identificadores,
+          liquidacion: strictPedimentoData.header.importes
+        },
+        items: strictPedimentoData.partidas.map(p => ({
+          secuencia: p.secuencia,
+          fraccion: p.fraccion,
+          nico: p.nico,
+          cantidadUMC: p.qty,
+          umc: p.umc,
+          precioPagado: p.totalAmount,
+          precioUnitario: p.unitPrice,
+          moneda: "USD", // Default or extract
+          vinculacion: p.vinculacion,
+          valcomdls: p.valorAduana,
+          tasas: p.contribuciones, // Add Tasas
+          identificadores: p.identifiers, // Add IDs
+        })),
+        rawText: rawText
+      };
 
     } catch (error: any) {
-      console.error("Phase 2 Structure Error (Graceful Fail)", error);
-      // Return a minimal valid object instead of crashing
-      return {
-        error: "Analisis Estructurado Falló",
-        details: error.message,
-        header: { pedimentoNumber: { value: "ERROR", confidence: 0 } },
-        items: []
-      };
+      console.error("Phase 2 Mapping Error", error);
+      throw error;
     }
   },
+
   // Senior Frontend Engineer: Updated model name for logistics analysis.
-  analyzeLogisticsInvoice: async (base64Data: string, mimeType: string = 'image/jpeg'): Promise<ExtractedCost[]> => {
+  async analyzeLogisticsInvoice(base64Data: string, mimeType: string = 'image/jpeg'): Promise<ExtractedCost[]> {
     try {
       const ai = getClient();
       const prompt = `
-        Analyze this logistics invoice. Identify line items: Freight, Customs, Transport, Handling, Other.
-        Extract Amount and Currency. Return ONLY a JSON array.
-      `;
+      Analyze this logistics invoice. Identify line items: Freight, Customs, Transport, Handling, Other.
+      Extract Amount and Currency. Return ONLY a JSON array.
+    `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-2.0-flash-exp',
         contents: {
           parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
         },
@@ -387,40 +635,35 @@ export const geminiService = {
   },
 
   // Senior Frontend Engineer: High accuracy extraction using gemini-3-flash-preview.
-  parseShippingDocument: async (base64Data: string, mimeType: string = 'image/jpeg'): Promise<ExtractedShippingDoc> => {
+  async parseShippingDocument(base64Data: string, mimeType: string = 'image/jpeg'): Promise<ExtractedShippingDoc> {
     try {
       const ai = getClient();
       const prompt = `
-        Analyze this shipping document (Bill of Lading, AWB, or Arrival Notice) EXPERTLY.
-        Extract the following data into a strict JSON object:
+    Analyze this shipping document (Bill of Lading, AWB, or Arrival Notice) EXPERTLY.
+    Extract the following data into a strict JSON object:
 
-        - docType: "BL" or "AWB"
-        - bookingNo: The FULL Alphanumeric Booking/BL Number. (e.g. "EGLV12345678" NOT "12345678"). MUST include the carrier prefix (EGLV, COSU, MAEU, ONEY, MEDU, etc.).
-        - vesselOrFlight: Vessel Name and Voyage (e.g., "CMA CGM ANTOINE TR").
-        - etd: Estimated Time of Departure (YYYY-MM-DD).
-        - eta: Estimated Time of Arrival (YYYY-MM-DD).
-        - departurePort: Port of Loading / Departure.
-        - arrivalPort: Port of Discharge / Arrival.
-        - shippingCompany: Carrier Name (e.g. "COSCO", "MAERSK").
-        - containers: Array of objects:
-          - containerNo: Container Number (4 Letters + 7 Numbers, e.g. "CSNU1234567").
-          - size: Size/Type (e.g. "40HC", "20GP", "45'").
-          - seal: Seal Number.
-          - pkgCount: Number of packages.
-          - weightKg: Grs Weight in KG.
-        - invoiceNo: Any Commercial Invoice number if visible.
-        - poNumber: Purchase Order number if visible.
-        - model: Any model numbers/SKUs visible in the description.
+    - docType: "BL" or "AWB"
+    - bookingNo: The FULL Alphanumeric Booking/BL Number. (e.g. "EGLV12345678" NOT "12345678"). MUST include the carrier prefix (EGLV, COSU, MAEU, ONEY, MEDU, etc.).
+    - vesselOrFlight: Vessel Name and Voyage.
+    - etd: YYYY-MM-DD.
+    - eta: YYYY-MM-DD.
+    - departurePort: Port of Loading / Departure.
+    - arrivalPort: Port of Discharge / Arrival.
+    - shippingCompany: Carrier Name.
+    - containers: Array of objects (containerNo, size, seal, pkgCount, weightKg).
+    - invoiceNo: Commercial Invoice number.
+    - poNumber: PO Number.
+    - model: Model numbers/SKUs.
 
-        CRITICAL: 
-        1. If multiple dates exist, use the most prominent ETD/ETA.
-        2. Ensure Container Numbers are alphanumeric (Standard Format: 4 letters + 7 numbers).
-        3. Do NOT hallucinate. If a field is missing, return null.
-        4. FOR BILL OF LADING: ALWAYS INCLUDE THE 4-LETTER PREFIX (EGLV, COSU, MSCU, etc.). NEVER return just numbers for a BL.
-      `;
+    CRITICAL: 
+    1. If multiple dates exist, use the most prominent ETD/ETA.
+    2. Ensure Container Numbers are alphanumeric (Standard Format: 4 letters + 7 numbers).
+    3. Do NOT hallucinate. If a field is missing, return null.
+    4. FOR BILL OF LADING: ALWAYS INCLUDE THE 4-LETTER PREFIX.
+  `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash-exp', // Updated to latest fast model
+        model: 'gemini-2.0-flash-exp',
         contents: {
           parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
         },
@@ -434,8 +677,7 @@ export const geminiService = {
     }
   },
 
-  // Senior Frontend Engineer: Data Stage executive summary in Spanish.
-  analyzeDataStage: async (data: PedimentoRecord[], promptContext: string): Promise<string> => {
+  async analyzeDataStage(data: PedimentoRecord[], promptContext: string): Promise<string> {
     try {
       const ai = getClient();
       const summary = `Operations: ${data.length}, Value: $${data.reduce((a, c) => a + c.totalValueUsd, 0)}`;
@@ -443,7 +685,7 @@ export const geminiService = {
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: fullPrompt
+        contents: { parts: [{ text: fullPrompt }] }
       });
 
       return response.text || "No analysis available.";
@@ -453,7 +695,7 @@ export const geminiService = {
   },
 
   // Senior Frontend Engineer: Phase 1 - High Volume Scalability (Pagination & Aggregation)
-  fetchRawPedimento: async (base64Images: string[]): Promise<string> => {
+  async fetchRawPedimento(base64Images: string[]): Promise<string> {
     try {
       console.log(`Starting Raw Pedimento Extraction...`);
       const fullPdfBase64 = base64Images[0];
@@ -487,41 +729,40 @@ export const geminiService = {
       const processChunk = async (chunk: typeof chunks[0], index: number) => {
         const client = getClient();
         const prompt = `
-        EXTRACT PEDIMENTO DATA (Partial Chunk: Pages ${chunk.start + 1}-${chunk.end + 1}).
-        Analyze this section of the document. Return a SINGLE JSON object matching this STRICT structure.
-        
-        Fields to extract:
-        - header: referencia, numPedimento, tOper, cvePedimento, regimen, tipoCambio, pesoBruto, aduanaES.
-        - importador: rfc, nombre, domicilio.
-        - proveedor: idFiscal, nombre, domicilio, vinculacion.
-        - fechas: entrada, pago.
-        - valores: valorDolares, valorAduana, precioPagado, seguros, fletes, embalajes, otrosIncrementables, transporteDecrementables, seguroDecrementables, cargaDecrementables, descargaDecrementables, otrosDecrementables.
-        - tasasNivelPedimento: Array of { contribucion, clave, tasa }.
-        - cuadroLiquidacion: conceptos [{ concepto, fp, importe }], efectivo, otros, total.
-        - tasasNivelPedimento: Array of { contribucion, clave, tasa }.
-        - cuadroLiquidacion: conceptos [{ concepto, fp, importe }], efectivo, otros, total.
-        - identificadores: Array of { clave, compl1, compl2, compl3 } (Global identifiers).
-        - transporte: Array of { identificacion, pais, transportista, rfc, curp, domicilio } (Capture GUIA/ORDEN EMBARQUE here in 'identificacion').
-        - contenedores: Array of { numero, tipo, candados } (Capture NUMERO/TIPO here).
-        - facturas: Array of { numFactura, fecha, incoterm, monedaFact, valMonFact, factorMonFact, valDolares }.
-        - observaciones: String.
-        - partidas: Array of objects with:
-            - secuencia (number)
-            - fraccion, subdivision, vinculacion, metodoValoracion
-            - umc, cantidadUMC, umt, cantidadUMT
-            - pvc, pod, descripcion
-            - valores: { valorAduanaUSD, impPrecioPag, precioUnitario, valorAgregado }
-            - permisos: Array of { clave, numeroPermiso, firmaDescargo, valComDls, cantidadUMT }
-            - identificadores: Array of { identif, compl1, compl2, compl3 }
-            - observaciones (Capture FULL text, even if multi-line. Do not truncate.)
-            - tasas
+    EXTRACT PEDIMENTO DATA (Partial Chunk: Pages ${chunk.start + 1}-${chunk.end + 1}).
+    Analyze this section of the document. Return a SINGLE JSON object matching this STRICT structure.
+    
+    Fields to extract:
+    - header: referencia, numPedimento, tOper, cvePedimento, regimen, tipoCambio, pesoBruto, aduanaES.
+    - importador: rfc, nombre, domicilio.
+    - proveedor: idFiscal, nombre, domicilio, vinculacion.
+    - fechas: entrada, pago.
+    - valores: valorDolares, valorAduana, precioPagado, seguros, fletes, embalajes, otrosIncrementables, transporteDecrementables, seguroDecrementables, cargaDecrementables, descargaDecrementables, otrosDecrementables.
+    - tasasNivelPedimento: Array of { contribucion, clave, tasa }.
+    - cuadroLiquidacion: conceptos [{ concepto, fp, importe }], efectivo, otros, total.
+    - identificadores: Array of { clave, compl1, compl2, compl3 } (Global identifiers).
+    - transporte: Array of { identificacion, pais, transportista, rfc, curp, domicilio } (Capture GUIA/ORDEN EMBARQUE here in 'identificacion').
+    - contenedores: Array of { numero, tipo, candados } (Capture NUMERO/TIPO here).
+    - facturas: Array of { numFactura, fecha, incoterm, monedaFact, valMonFact, factorMonFact, valDolares }.
+    - observaciones: String.
+    - partidas: Array of objects with:
+        - secuencia (number)
+        - fraccion, subdivision, vinculacion, metodoValoracion
+        - umc, cantidadUMC, umt, cantidadUMT
+        - pvc, pod, descripcion
+        - valores: { valorAduanaUSD, impPrecioPag, precioUnitario, valorAgregado }
+        - permisos: Array of { clave, numeroPermiso, firmaDescargo, valComDls, cantidadUMT }
+        - identificadores: Array of { identif, compl1, compl2, compl3 }
+        - observaciones (Capture FULL text, even if multi-line. Do not truncate.)
+        - tasas
+        - transportista (if listed per item)
 
-        RULES:
-        1. Extract what you see in THIS chunk.
-        2. Capture ALL sequences found in these pages.
-        3. RETURN MINIFIED JSON.
-        4. CRITICAL: Look for 'GUIA / ORDEN EMBARQUE', 'CONTENEDORES', and 'IDENTIFICADORES' sections. They often appear AFTER Facturas. Extract them accurately.
-        `;
+    RULES:
+    1. Extract what you see in THIS chunk.
+    2. Capture ALL sequences found in these pages.
+    3. RETURN MINIFIED JSON.
+    4. CRITICAL: Look for 'GUIA / ORDEN EMBARQUE', 'CONTENEDORES', and 'IDENTIFICADORES' sections. They often appear AFTER Facturas. Extract them accurately.
+    `;
 
         let attempt = 0;
         const maxAttempts = 5;
@@ -549,12 +790,9 @@ export const geminiService = {
         return { index, text: "{}" };
       };
 
-      // Execute in parallel (limited by JS runtime, effectively concurrent)
-      // For very large docs, we might want `p-limit`, but `Promise.all` is fine for <20 chunks usually.
       const results = await Promise.all(chunks.map((chunk, idx) => processChunk(chunk, idx)));
 
-      // 4. Aggregation (The Exception to Raw Rule)
-      // We stitch the JSONs together to form one logical document.
+      // 4. Aggregation 
       let masterRecord: any = {};
       let aggregatedPartidas: any[] = [];
       let aggregatedFacturas: any[] = [];
@@ -563,13 +801,9 @@ export const geminiService = {
         try {
           const json = JSON.parse(cleanJson(res.text));
 
-          // Base: Take header/main info from the FIRST successful chunk (usually chunk 0)
+          // Base: Take header/main info from the FIRST successful chunk
           if (i === 0 || !masterRecord.header) {
             masterRecord = { ...json };
-          } else {
-            // Improve: Should we merge "valores"? 
-            // Usually values are summary. Let's assume Chunk 0 or Last Chunk has summary.
-            // For now, simple strategy: Chunk 0 governs global fields.
           }
 
           // Append Arrays
@@ -577,10 +811,7 @@ export const geminiService = {
             aggregatedPartidas = [...aggregatedPartidas, ...json.partidas];
           }
           if (Array.isArray(json.facturas)) {
-            // Avoid duplicate invoices if they appear on multiple pages
-            const newFacturas = json.facturas;
-            // Simple merge for now
-            aggregatedFacturas = [...aggregatedFacturas, ...newFacturas];
+            aggregatedFacturas = [...aggregatedFacturas, ...json.facturas];
           }
 
         } catch (e) {
@@ -592,8 +823,7 @@ export const geminiService = {
       masterRecord.partidas = aggregatedPartidas;
       masterRecord.facturas = aggregatedFacturas;
 
-      // Return as String (simulating a Raw Response)
-      return JSON.stringify(masterRecord); // RAW COMPACT OUTPUT (No formatting)
+      return JSON.stringify(masterRecord);
 
     } catch (error) {
       console.error("Gemini Raw Extraction Error", error);
@@ -602,112 +832,18 @@ export const geminiService = {
   },
 
   // Senior Frontend Engineer: Phase 2 - Pure Logic (Sync)
-  processRawPedimento: (rawText: string): PedimentoData => {
-    try {
-      // 1. Basic Markdown cleanup only via standard string ops
-      let cleanText = cleanJson(rawText);
-
-      // NO REGEX INTERVENTION for syntax fixing.
-      // If the AI returns invalid JSON, it must fail or be fixed by the AI.
-
-      // 3. Attempt parse
-      let extracted: any;
-      try {
-        extracted = JSON.parse(cleanText);
-      } catch (e) {
-        console.error("Strict Parse Failed.");
-        // Create a snippet for the error message (start and end)
-        const snippet = cleanText.length > 50
-          ? cleanText.substring(0, 20) + "..." + cleanText.substring(cleanText.length - 20)
-          : cleanText;
-        throw new Error(`JSON Parse Error: ${(e as Error).message}. Snippet: ${snippet}`);
-      }
-
-      // Ensure extracted is an object
-      if (!extracted || typeof extracted !== 'object') {
-        throw new Error("AI returned invalid data structure (not an object).");
-      }
-
-      // Ensure structure matches PedimentoData interface (Defaulting)
-      return {
-        header: {
-          referencia: extracted.header?.referencia || "",
-          numPedimento: extracted.header?.numPedimento || "",
-          tOper: extracted.header?.tOper || "",
-          cvePedimento: extracted.header?.cvePedimento || "",
-          regimen: extracted.header?.regimen || "",
-          tipoCambio: extracted.header?.tipoCambio || "",
-          pesoBruto: extracted.header?.pesoBruto || "",
-          aduanaES: extracted.header?.aduanaES || ""
-        },
-        importador: extracted.importador || { rfc: "", nombre: "", domicilio: "" },
-        proveedor: extracted.proveedor || { idFiscal: "", nombre: "", domicilio: "", vinculacion: "NO" },
-        valores: extracted.valores || { valorDolares: "0", valorAduana: "0", precioPagado: "0", seguros: "0", fletes: "0", embalajes: "0", otrosIncrementables: "0", transporteDecrementables: "0", seguroDecrementables: "0", cargaDecrementables: "0", descargaDecrementables: "0", otrosDecrementables: "0" },
-        fechas: extracted.fechas || { entrada: "", pago: "" },
-        tasasNivelPedimento: extracted.tasasNivelPedimento || [],
-        cuadroLiquidacion: extracted.cuadroLiquidacion || { conceptos: [], efectivo: "0", otros: "0", total: "0" },
-        identificadores: extracted.identificadores || [],
-        transporte: extracted.transporte || [],
-        contenedores: extracted.contenedores || [],
-        facturas: Array.isArray(extracted.facturas) ? extracted.facturas.map((f: any) => ({
-          numFactura: f.numFactura || "",
-          fecha: f.fecha || "",
-          incoterm: f.incoterm || "",
-          monedaFact: f.monedaFact || "",
-          valMonFact: f.valMonFact || "",
-          factorMonFact: f.factorMonFact || "",
-          valDolares: f.valDolares || ""
-        })) : [],
-        observaciones: extracted.observaciones || "",
-        partidas: extracted.partidas || []
-      };
-    } catch (error) {
-      console.error("Pedimento Parsing Logic Error", error);
-      throw error; // Re-throw to be handled by UI
-    }
-  },
+  processRawPedimento: (rawText: string): DomainPedimentoData => processRawPedimentoLogic(rawText),
 
   // Valid Composition for Backward Compatibility (if needed)
-  extractPedimento: async (base64Images: string[]): Promise<{ data: PedimentoData | null, raw: string }> => {
+  async extractPedimento(base64Images: string[]): Promise<{ data: DomainPedimentoData | null, raw: string }> {
     // This is just a wrapper now, preserving the old signature
     let rawText = "";
     try {
-      rawText = await geminiService.fetchRawPedimento(base64Images);
-      const data = geminiService.processRawPedimento(rawText);
+      rawText = await this.fetchRawPedimento(base64Images);
+      const data = this.processRawPedimento(rawText);
       return { data, raw: rawText };
     } catch (e) {
       return { data: null, raw: rawText };
     }
   },
-
-  // ... (generic extraction methods) ...
-  // Senior Frontend Engineer: Generic extractor for custom prompts (used by batch processor)
-  extractGeneric: async (base64Data: string, prompt: string, mimeType: string = 'application/pdf'): Promise<any> => {
-    const ai = getClient();
-    let attempts = 0;
-    const maxAttempts = 3;
-
-    while (attempts < maxAttempts) {
-      try {
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash-exp',
-          contents: {
-            parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
-          },
-          config: { responseMimeType: 'application/json' }
-        });
-
-        return JSON.parse(cleanJson(response.text || '{}'));
-      } catch (error) {
-        attempts++;
-        console.warn(`Gemini Generic Extraction Attempt ${attempts} failed. Retrying...`, error);
-        if (attempts >= maxAttempts) {
-          console.error("Gemini Generic Extraction Fatal Error", error);
-          throw new Error("Failed to extract generic data after multiple attempts");
-        }
-        // Exponential backoff: 2s, 4s, 8s
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 1000));
-      }
-    }
-  }
 };

@@ -184,31 +184,20 @@ export const authService = {
 
             querySnapshot.docs.forEach(doc => {
                 const data = doc.data();
-                // Normalize username for dedup
+                // Normalize username but DO NOT DEDUPLICATE based on it
+                // We want to see ALL records to catch "Shadow Accounts"
                 const rawUsername = data.username || data.email || doc.id;
-                const usernameKey = rawUsername.toLowerCase().trim();
-                const docId = doc.id;
 
+                // Use doc.id (the email) as the absolute unique identifier
                 const userObj: User = {
-                    username: rawUsername,
-                    email: docId, // THE KEY IS THE EMAIL (DOC ID)
-                    name: data.username || data.email,
+                    username: rawUsername, // This might be same for multiple users, that's okay, we want to see them
+                    email: doc.id,         // This is the Firestore Document ID (Unique Source of Truth)
+                    name: data.username || data.name || data.email,
                     role: data.role as UserRole,
                     avatarInitials: (data.email || '??').substring(0, 2).toUpperCase()
                 };
 
-                // Deduplication Logic
-                if (uniqueUsers.has(usernameKey)) {
-                    // Conflict: We have a duplicate.
-                    // Prefer the one with actual EMAIL as ID (contains '@')
-                    const existing = uniqueUsers.get(usernameKey);
-                    if (existing && !existing.email?.includes('@') && docId.includes('@')) {
-                        // Replace legacy ID with Email ID
-                        uniqueUsers.set(usernameKey, userObj);
-                    }
-                } else {
-                    uniqueUsers.set(usernameKey, userObj);
-                }
+                uniqueUsers.set(doc.id, userObj); // Map by Doc ID (Email) instead of Username
             });
 
             return Array.from(uniqueUsers.values());

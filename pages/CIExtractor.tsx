@@ -81,6 +81,7 @@ const consolidateItems = (
 export const CIExtractor: React.FC = () => {
     const { user } = useAuth();
     const isAdmin = user?.role === 'Admin';
+    const isEditor = user?.role === 'Editor';
     const { showNotification } = useNotification();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -1290,14 +1291,17 @@ export const CIExtractor: React.FC = () => {
                         </div>
 
                         {/* Selection Actions */}
-                        {selectedIds.size > 0 && isAdmin && (
+                        {selectedIds.size > 0 && (isAdmin || isEditor) && (
                             <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
-                                <button
-                                    onClick={() => setBulkDeleteModal(true)}
-                                    className="bg-red-50 text-red-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-100 transition-colors border border-red-100 text-sm font-bold"
-                                >
-                                    <Trash2 size={16} /> Delete ({selectedIds.size})
-                                </button>
+                                {isAdmin && (
+                                    <button
+                                        onClick={() => setBulkDeleteModal(true)}
+                                        className="bg-red-50 text-red-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-100 transition-colors border border-red-100 text-sm font-bold"
+                                    >
+                                        <Trash2 size={16} /> Delete ({selectedIds.size})
+                                    </button>
+                                )}
+
                                 <button
                                     onClick={() => setShowRegimenModal(true)}
                                     className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-100 transition-colors border border-blue-100 text-sm font-bold"

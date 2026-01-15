@@ -157,7 +157,7 @@ export interface PedimentoHeader {
 }
 
 export interface PedimentoItem {
-    partNo: string;
+    partNo?: string;
     secuencia: number;
     fraccion: string;
     pvc?: string; // P.V/C

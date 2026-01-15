@@ -339,7 +339,13 @@ const processRawPedimentoLogic = (rawText: string): DomainPedimentoData => {
           fraccion: p.fraccion,
           nico: p.subdivision || "",
           description: p.descripcion,
-          partNo: p.partNo || "", // AI Extracted or Empty
+          // LOGIC: PartNo is now parsed from Observations (Phase 2 Requirement)
+          // Example Obs: "TBQ381-3 25CFTT176707-6-A1" -> PartNo: "TBQ381-3"
+          partNo: (() => {
+            if (!p.observaciones) return "";
+            const parts = p.observaciones.trim().split(/\s+/);
+            return parts.length > 0 ? parts[0] : "";
+          })(),
           qty: parseFloat(p.cantidadUMC) || 0, // Ensure number
           umc: String(p.umc || ""),
           qtyUmt: parseFloat(p.cantidadUMT) || 0, // Ensure number
@@ -433,7 +439,7 @@ export const geminiService = {
         `;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.0-flash',
           contents: {
             parts: [{ inlineData: { mimeType: 'application/pdf', data: chunk.base64 } }, { text: prompt }]
           },
@@ -513,7 +519,6 @@ export const geminiService = {
               "secuencia": 1,
               "fraccion": "STR",
               "subdivision": "STR",
-              "partNo": "OPT (Extract from Description if present)",
               "vinculacion": "REQ",
               "metodoValoracion": "REQ",
               "umc": "REQ (Unit Code e.g. 1, 6, kg - NOT Country)",
@@ -550,8 +555,12 @@ export const geminiService = {
 
         RULES:
         1. Extract data STRICTLY from the input text.
-        2. If a Header field is missing (likely in later chunks), use null or empty string.
-        3. Do NOT invent data.
+        2. **HEADER EXTRACTION (Chunk 1 Focus)**:
+           - **REGIMEN**: Look for "REGIMEN". It is usually a short code (e.g. "IMD", "A1", "V1"). Do not ignore it.
+           - **PESO BRUTO**: Look for "PESO BRUTO" or "P. BRUTO". Extract the value (e.g. "20436.00").
+           - **FECHAS**: Look for "FECHAS". "Entrada" is often "ENTRADA". "Pago" is "PAGO". Format as YYYY-MM-DD.
+           - **IMPORTADOR/PROVEEDOR**: Look for sections "DATOS DEL IMPORTADOR" and "DATOS DEL PROVEEDOR". Extract RFC/TaxID and Name.
+        3. Do NOT invent data. If truly missing/illegible, use null.
         4. Return ONLY JSON.
         5. EXTRACT ALL ITEMS FOUND IN THIS CHUNK. DO NOT TRUNCATE.
         6. Do NOT copy 'impPrecioPag' to 'valorAgregado'. If empty, return null.
@@ -597,7 +606,7 @@ export const geminiService = {
       `;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.0-flash',
           contents: { parts: [{ text: prompt }] },
           config: { responseMimeType: 'application/json' }
         });
@@ -607,9 +616,23 @@ export const geminiService = {
         try {
           return JSON.parse(jsonString);
         } catch (e) {
-          console.warn(`Chunk ${index} JSON parse failed. Attempting repair...`);
-          // Minimal repair (removed complex state machine for brevity in loop, relying on cleanJson)
-          return {};
+          console.warn(`Chunk ${index} JSON parse failed. Attempting robust repair...`);
+
+          // REPAIR STRATEGY for Truncated Arrays
+          try {
+            // 1. naive closure
+            return JSON.parse(jsonString + "]}");
+          } catch (e2) {
+            try {
+              // 2. Try closing just object
+              return JSON.parse(jsonString + "}");
+            } catch (e3) {
+              // 3. Fallback: aggressive trim to last valid comma?
+              // For now, return empty but Log the failure clearly
+              console.error(`Chunk ${index} UNRECOVERABLE JSON error:`, e);
+              return {};
+            }
+          }
         }
       };
 
@@ -648,6 +671,82 @@ export const geminiService = {
       // We apply the NO-REGEX cleaner to the final structured data to remove any \n leftovers.
       const strictPedimentoData = cleanObjectNoRegex(processRawPedimentoLogic(jsonString));
 
+      const items = strictPedimentoData.partidas.map(p => {
+        // 1. Remove Null partNo
+        const cleanPartNo = p.partNo && p.partNo.trim().length > 0 ? p.partNo : undefined;
+
+        // 2. Proactive Structure Detection (Audit Fix)
+        // Replaces strict "isR8" flag. Attempts to detect structure in ALL observations.
+        // Expected Structure: "ITEM FACTURA FRACCION" (e.g. "9060-180025-1000 25CFTT176707-6-A1 115")
+
+        let finalObs = p.observaciones || "";
+
+        if (finalObs) {
+          // Clean extra spaces and split
+          const tokens = finalObs.trim().split(/\s+/);
+
+          // Validate pattern: At least 2 tokens, and first 2 must contain numbers (to avoid plain text like "MERCANCIA DAÑADA")
+          const looksLikeStructuredData = tokens.length >= 2 && /[0-9]/.test(tokens[0]) && /[0-9]/.test(tokens[1]);
+
+          if (looksLikeStructuredData) {
+            const itemField = tokens[0];          // Item (9060-180025-1000)
+            const facturaField = tokens[1];       // Factura (25CFTT176707-6-A1)
+
+            // Smarter R8 Detection: Look for a significant numeric token in the remainder
+            // This skips "IN", "F.A.", "A1" which are short/labels.
+            const remainder = tokens.slice(2);
+            const r8Index = remainder.findIndex(t => t.length >= 4 && /\d/.test(t)); // Has numbers and length >= 4
+
+            let r8FraccionField = undefined;
+            let noteTokens = remainder;
+
+            if (r8Index !== -1) {
+              r8FraccionField = remainder[r8Index];
+              // Remove R8 from notes
+              noteTokens = remainder.filter((_, idx) => idx !== r8Index);
+            } else {
+              // Fallback: If no distinct R8 found, but we have a 3rd token that is NOT "IN" or "FA", maybe use it?
+              // For now, strict: If it doesn't look like R8, it's a note.
+            }
+
+            // Reconstruct observations with explicit tags
+            let newObs = `[Item: ${itemField}] [Factura: ${facturaField}]`;
+
+            if (r8FraccionField) {
+              newObs += ` [R8/Fraccion: ${r8FraccionField}]`;
+            }
+
+            // If text remains after the structured fields, keep it as a note
+            if (noteTokens.length > 0) {
+              newObs += ` [Nota: ${noteTokens.join(" ")}]`;
+            }
+
+            finalObs = newObs;
+
+          } else {
+            // Legacy Logic: If no structure match, standard behavior
+            if (cleanPartNo) {
+              finalObs = `${cleanPartNo} ${finalObs}`.trim();
+            }
+          }
+        }
+        return {
+          secuencia: p.secuencia,
+          fraccion: p.fraccion,
+          nico: p.nico,
+          cantidadUMC: p.qty,
+          umc: p.umc,
+          precioPagado: p.totalAmount,
+          precioUnitario: p.unitPrice,
+          moneda: "USD",
+          vinculacion: p.vinculacion,
+          valcomdls: p.valorAduana,
+          tasas: p.contribuciones,
+          identificadores: p.identifiers, // Strict: Do not touch
+          observaciones: finalObs // R8 info goes here
+        };
+      });
+
       return {
         // Pass the raw AI JSON directly for inspection
         aiJson: cleanObjectNoRegex(mergedRawStruct),
@@ -663,41 +762,7 @@ export const geminiService = {
           identificadoresGlobales: strictPedimentoData.header.identificadores,
           liquidacion: strictPedimentoData.header.importes
         },
-        items: strictPedimentoData.partidas.map(p => {
-          // 1. Remove Null partNo
-          const cleanPartNo = p.partNo && p.partNo.trim().length > 0 ? p.partNo : undefined;
-
-          // 2. R8 Injection Logic (Post-Phase 2 Mandatory)
-          // If fraction is Chapter 98 (Regla 8), ensure we handle this in OBSERVATIONS ONLY.
-          // We do NOT modify the 'identificadores' array or reuse existing fields.
-          let finalObs = p.observaciones || "";
-
-          if (p.fraccion && p.fraccion.startsWith('9802')) {
-            // Logic: Append R8 marker/data to observations
-            // This ensures we create the info ONLY in the observations section.
-            const r8Note = " [R8: 9802 DETECTED]";
-            if (!finalObs.includes("R8:")) {
-              finalObs += r8Note;
-            }
-          }
-
-          return {
-            secuencia: p.secuencia,
-            fraccion: p.fraccion,
-            nico: p.nico,
-            partNo: cleanPartNo, // Only defined if valid
-            cantidadUMC: p.qty,
-            umc: p.umc,
-            precioPagado: p.totalAmount,
-            precioUnitario: p.unitPrice,
-            moneda: "USD",
-            vinculacion: p.vinculacion,
-            valcomdls: p.valorAduana,
-            tasas: p.contribuciones,
-            identificadores: p.identifiers, // Strict: Do not touch
-            observaciones: finalObs // R8 info goes here
-          };
-        }),
+        items: items,
         rawText: rawText
       };
 
@@ -717,7 +782,7 @@ export const geminiService = {
     `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.0-flash',
         contents: {
           parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
         },
@@ -760,7 +825,7 @@ export const geminiService = {
   `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.0-flash',
         contents: {
           parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
         },
@@ -867,7 +932,7 @@ export const geminiService = {
         while (attempt < maxAttempts) {
           try {
             const result = await client.models.generateContent({
-              model: 'gemini-2.0-flash-exp',
+              model: 'gemini-2.0-flash',
               contents: { parts: [{ inlineData: { mimeType: 'application/pdf', data: chunk.base64 } }, { text: prompt }] },
               config: { responseMimeType: 'application/json', maxOutputTokens: 8192 }
             });

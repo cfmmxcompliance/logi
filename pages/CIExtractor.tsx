@@ -141,7 +141,8 @@ const InvoiceRow = React.memo(({
 
         // Sensible Logic
         const sensibleVal = masterPart?.SENSIBLE ? String(masterPart.SENSIBLE).trim().toUpperCase() : '';
-        const isSensibleClean = sensibleVal === 'N' || sensibleVal === '';
+        // User Request: Warning (X) only if Sensible AND Regimen is 'IN'. Otherwise Green Check.
+        const isSensibleClean = (sensibleVal === 'N' || sensibleVal === '') || item.regimen !== 'IN';
 
         return { isR8Match, isPriceIssue, isSensibleClean, estPrice };
     };
@@ -1436,1013 +1437,1009 @@ export const CIExtractor: React.FC = () => {
 
             if (!hasSearch) return true;
 
-            // MEMORY EFFICIENT SEARCH:
-            // Check fields directly. No new strings allocated per item.
-            return terms.some(term => {
-                if (i.invoiceNo && String(i.invoiceNo).toLowerCase().includes(term)) return true;
-                if (i.partNo && String(i.partNo).toLowerCase().includes(term)) return true;
-                if (i.englishName && String(i.englishName).toLowerCase().includes(term)) return true;
-                if (i.spanishDescription && String(i.spanishDescription).toLowerCase().includes(term)) return true;
+            // Optimized Search: Pre-compute searchable string for the row
+            const normalize = (str: any) => String(str || '').toLowerCase();
+            const rowSearchStr = `
+                ${normalize(i.invoiceNo)} 
+                ${normalize(i.partNo)} 
+                ${normalize(i.model)} 
+                ${normalize(i.englishName)} 
+                ${normalize(i.spanishDescription)} 
+                ${normalize(i.hts)} 
+                ${normalize(i.regimen)} 
+                ${normalize(i.containerNo)}
+                ${normalize(i.um)}
+                ${normalize(i.incoterm)}
+                ${normalize(i.item)}
+            `;
 
-                if (i.model && String(i.model).toLowerCase().includes(term)) return true;
-                if (i.containerNo && String(i.containerNo).toLowerCase().includes(term)) return true;
-                if (i.regimen && String(i.regimen).toLowerCase().includes(term)) return true;
-                if (i.hts && String(i.hts).includes(term)) return true;
-                if (i.item && String(i.item).toLowerCase().includes(term)) return true;
-
-                if (i.date && String(i.date).includes(term)) return true;
-                if (i.incoterm && String(i.incoterm).toLowerCase().includes(term)) return true;
-                if (i.um && String(i.um).toLowerCase().includes(term)) return true;
-                if (i.qty && String(i.qty).includes(term)) return true;
-                if (i.unitPrice && String(i.unitPrice).includes(term)) return true;
-
-                return false;
-            });
+            // AND Condition: ALL terms (from comma split) must match somewhere in this row
+            return terms.every(term => rowSearchStr.includes(term));
         });
-    }, [items, deferredSearchTerm, showMissingOnly, showErrorsOnly, showSensibleOnly, showNoDBOnly, showPricesOnly, masterDataMap]);
+}, [items, deferredSearchTerm, showMissingOnly, showErrorsOnly, showSensibleOnly, showNoDBOnly, showPricesOnly, masterDataMap]);
 
-    const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
-    const displayedItems = filteredItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+const displayedItems = filteredItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-    return (
-        <div className="flex flex-col h-[calc(100vh-140px)] gap-4">
-            {/* Rigid Layout Container */}
-            {/* Header and Stats */}
-            <div className="flex justify-between items-start">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Commercial Invoices</h1>
-                    <p className="text-slate-500">Manage and split commercial invoices by regimen</p>
+return (
+    <div className="flex flex-col h-[calc(100vh-140px)] gap-4">
+        {/* Rigid Layout Container */}
+        {/* Header and Stats */}
+        <div className="flex justify-between items-start">
+            <div>
+                <h1 className="text-2xl font-bold text-slate-800">Commercial Invoices</h1>
+                <p className="text-slate-500">Manage and split commercial invoices by regimen</p>
+            </div>
+            <div className="flex gap-4">
+                {/* Stats Cards */}
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 text-center min-w-[100px]">
+                    <p className="text-xs text-slate-500 uppercase font-bold">Total Items</p>
+                    <p className="text-xl font-bold text-blue-600">{stats.totalItems}</p>
                 </div>
-                <div className="flex gap-4">
-                    {/* Stats Cards */}
-                    <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 text-center min-w-[100px]">
-                        <p className="text-xs text-slate-500 uppercase font-bold">Total Items</p>
-                        <p className="text-xl font-bold text-blue-600">{stats.totalItems}</p>
-                    </div>
-                    <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 text-center min-w-[100px]">
-                        <p className="text-xs text-slate-500 uppercase font-bold">Standard</p>
-                        <p className="text-xl font-bold text-emerald-600">{stats.inCount}</p>
-                    </div>
-                    <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 text-center min-w-[100px]">
-                        <p className="text-xs text-slate-500 uppercase font-bold">A1 Regimen</p>
-                        <p className="text-xl font-bold text-purple-600">{stats.a1Count}</p>
-                    </div>
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 text-center min-w-[100px]">
+                    <p className="text-xs text-slate-500 uppercase font-bold">Standard</p>
+                    <p className="text-xl font-bold text-emerald-600">{stats.inCount}</p>
                 </div>
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 text-center min-w-[100px]">
+                    <p className="text-xs text-slate-500 uppercase font-bold">A1 Regimen</p>
+                    <p className="text-xl font-bold text-purple-600">{stats.a1Count}</p>
+                </div>
+            </div>
+        </div >
+
+        {/* Actions Toolbar */}
+        < div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4" >
+            {/* Row 1: Search Bar */}
+            < div className="relative w-full" >
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+                <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search by Invoice, Part No, or Model..."
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700"
+                    onChange={(e) => handleSearch(e.target.value)}
+                    defaultValue=""
+                />
+
+                {/* Clear Filters Button (New) */}
+                {(showMissingOnly || showErrorsOnly || showSensibleOnly || showNoDBOnly || showPricesOnly || searchTerm) && (
+                    <button
+                        onClick={() => {
+                            setShowMissingOnly(false);
+                            setShowErrorsOnly(false);
+                            setShowSensibleOnly(false);
+                            setShowNoDBOnly(false);
+                            setShowPricesOnly(false);
+                            setSearchTerm('');
+                            if (searchInputRef.current) searchInputRef.current.value = '';
+                        }}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-red-500 underline font-bold bg-white px-2 py-1 rounded shadow-sm opacity-90 hover:opacity-100"
+                    >
+                        Clear Filters ({filteredItems.length}/{items.length})
+                    </button>
+                )}
             </div >
 
-            {/* Actions Toolbar */}
-            < div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4" >
-                {/* Row 1: Search Bar */}
-                < div className="relative w-full" >
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                        ref={searchInputRef}
-                        type="text"
-                        placeholder="Search by Invoice, Part No, or Model..."
-                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700"
-                        onChange={(e) => handleSearch(e.target.value)}
-                        defaultValue=""
-                    />
-
-                    {/* Clear Filters Button (New) */}
-                    {(showMissingOnly || showErrorsOnly || showSensibleOnly || showNoDBOnly || showPricesOnly || searchTerm) && (
+            {/* Row 2: Actions & Filters */}
+            < div className="flex flex-wrap gap-3 items-center justify-between" >
+                <div className="flex items-center gap-3 flex-wrap">
+                    {/* Filters */}
+                    <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
                         <button
-                            onClick={() => {
-                                setShowMissingOnly(false);
-                                setShowErrorsOnly(false);
-                                setShowSensibleOnly(false);
-                                setShowNoDBOnly(false);
-                                setShowPricesOnly(false);
-                                setSearchTerm('');
-                                if (searchInputRef.current) searchInputRef.current.value = '';
-                            }}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-red-500 underline font-bold bg-white px-2 py-1 rounded shadow-sm opacity-90 hover:opacity-100"
+                            onClick={() => setShowErrorsOnly(!showErrorsOnly)}
+                            className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showErrorsOnly
+                                ? 'bg-red-500 text-white shadow-sm'
+                                : 'text-slate-600 hover:bg-white hover:shadow-sm'
+                                }`}
+                            title="Show Only R8 Mismatches"
                         >
-                            Clear Filters ({filteredItems.length}/{items.length})
+                            <AlertCircle size={16} />
+                            R8 Errors
                         </button>
-                    )}
-                </div >
+                        <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                        <button
+                            onClick={() => setShowMissingOnly(!showMissingOnly)}
+                            className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showMissingOnly
+                                ? 'bg-amber-500 text-white shadow-sm'
+                                : 'text-slate-600 hover:bg-white hover:shadow-sm'
+                                }`}
+                            title="Show Missing Data"
+                        >
+                            <AlertCircle size={16} />
+                            Missing Info
+                        </button>
+                        <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                        <button
+                            onClick={() => setShowPricesOnly(!showPricesOnly)}
+                            className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showPricesOnly
+                                ? 'bg-rose-500 text-white shadow-sm'
+                                : 'text-slate-600 hover:bg-white hover:shadow-sm'
+                                }`}
+                            title="Show Items with Estimate Price"
+                        >
+                            <AlertCircle size={16} />
+                            Prices
+                        </button>
+                        <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                        <button
+                            onClick={() => setShowSensibleOnly(!showSensibleOnly)}
+                            className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showSensibleOnly
+                                ? 'bg-rose-500 text-white shadow-sm'
+                                : 'text-slate-600 hover:bg-white hover:shadow-sm'
+                                }`}
+                            title="Show Items marked as Sensible (!= N)"
+                        >
+                            <AlertCircle size={16} />
+                            Sens
+                        </button>
+                        <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                        <button
+                            onClick={() => setShowNoDBOnly(!showNoDBOnly)}
+                            className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showNoDBOnly
+                                ? 'bg-rose-500 text-white shadow-sm'
+                                : 'text-slate-600 hover:bg-white hover:shadow-sm'
+                                }`}
+                            title="Show Items missing from DB"
+                        >
+                            <AlertCircle size={16} />
+                            DB
+                        </button>
+                    </div>
 
-                {/* Row 2: Actions & Filters */}
-                < div className="flex flex-wrap gap-3 items-center justify-between" >
-                    <div className="flex items-center gap-3 flex-wrap">
-                        {/* Filters */}
-                        <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
+                    {/* Selection Actions */}
+                    {selectedIds.size > 0 && (isAdmin || isEditor) && (
+                        <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+                            {isAdmin && (
+                                <button
+                                    onClick={() => setBulkDeleteModal(true)}
+                                    className="bg-red-50 text-red-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-100 transition-colors border border-red-100 text-sm font-bold"
+                                >
+                                    <Trash2 size={16} /> Delete ({selectedIds.size})
+                                </button>
+                            )}
+
                             <button
-                                onClick={() => setShowErrorsOnly(!showErrorsOnly)}
-                                className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showErrorsOnly
-                                    ? 'bg-red-500 text-white shadow-sm'
-                                    : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                                    }`}
-                                title="Show Only R8 Mismatches"
+                                onClick={() => setShowRegimenModal(true)}
+                                className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-100 transition-colors border border-blue-100 text-sm font-bold"
                             >
-                                <AlertCircle size={16} />
-                                R8 Errors
-                            </button>
-                            <div className="w-px h-4 bg-slate-300 mx-1"></div>
-                            <button
-                                onClick={() => setShowMissingOnly(!showMissingOnly)}
-                                className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showMissingOnly
-                                    ? 'bg-amber-500 text-white shadow-sm'
-                                    : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                                    }`}
-                                title="Show Missing Data"
-                            >
-                                <AlertCircle size={16} />
-                                Missing Info
-                            </button>
-                            <div className="w-px h-4 bg-slate-300 mx-1"></div>
-                            <button
-                                onClick={() => setShowPricesOnly(!showPricesOnly)}
-                                className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showPricesOnly
-                                    ? 'bg-rose-500 text-white shadow-sm'
-                                    : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                                    }`}
-                                title="Show Items with Estimate Price"
-                            >
-                                <AlertCircle size={16} />
-                                Prices
-                            </button>
-                            <div className="w-px h-4 bg-slate-300 mx-1"></div>
-                            <button
-                                onClick={() => setShowSensibleOnly(!showSensibleOnly)}
-                                className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showSensibleOnly
-                                    ? 'bg-rose-500 text-white shadow-sm'
-                                    : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                                    }`}
-                                title="Show Items marked as Sensible (!= N)"
-                            >
-                                <AlertCircle size={16} />
-                                Sens
-                            </button>
-                            <div className="w-px h-4 bg-slate-300 mx-1"></div>
-                            <button
-                                onClick={() => setShowNoDBOnly(!showNoDBOnly)}
-                                className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showNoDBOnly
-                                    ? 'bg-rose-500 text-white shadow-sm'
-                                    : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                                    }`}
-                                title="Show Items missing from DB"
-                            >
-                                <AlertCircle size={16} />
-                                DB
+                                <Repeat size={16} /> Amendments
                             </button>
                         </div>
+                    )}
+                </div>
 
-                        {/* Selection Actions */}
-                        {selectedIds.size > 0 && (isAdmin || isEditor) && (
-                            <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
-                                {isAdmin && (
-                                    <button
-                                        onClick={() => setBulkDeleteModal(true)}
-                                        className="bg-red-50 text-red-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-100 transition-colors border border-red-100 text-sm font-bold"
-                                    >
-                                        <Trash2 size={16} /> Delete ({selectedIds.size})
-                                    </button>
-                                )}
-
-                                <button
-                                    onClick={() => setShowRegimenModal(true)}
-                                    className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-100 transition-colors border border-blue-100 text-sm font-bold"
-                                >
-                                    <Repeat size={16} /> Amendments
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Main Actions */}
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={handleRestoreClick}
-                            className="bg-slate-100 text-slate-500 px-3 py-2 rounded-lg hover:bg-slate-200 transition-colors border border-slate-200"
-                            title="Restore from Backup"
-                        >
-                            <History size={18} />
-                        </button>
-                        <div className="h-8 w-px bg-slate-200 mx-1"></div>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileUpload}
-                            accept=".xlsx,.xls"
-                            multiple
-                            className="hidden"
-                        />
-                        <button
-                            onClick={handleExportCSV}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 shadow-sm transition-colors text-sm font-medium"
-                            title="Export filtered results to CSV"
-                        >
-                            <FileDown size={18} /> CSV
-                        </button>
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="bg-slate-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium"
-                        >
-                            <Upload size={18} /> Import
-                        </button>
-                        <button
-                            onClick={handleExportFiltered}
-                            className="bg-white text-blue-600 border border-blue-200 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-50 transition-colors text-sm font-medium"
-                        >
-                            <FileSpreadsheet size={18} /> Export Filtered
-                        </button>
-                        <button
-                            onClick={handleSplitAndExport}
-                            disabled={items.length === 0}
-                            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-bold shadow-sm ${items.length === 0
-                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                                }`}
-                        >
-                            <FileSpreadsheet size={18} /> Split & Export
-                        </button>
-                    </div>
-                </div >
+                {/* Main Actions */}
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={handleRestoreClick}
+                        className="bg-slate-100 text-slate-500 px-3 py-2 rounded-lg hover:bg-slate-200 transition-colors border border-slate-200"
+                        title="Restore from Backup"
+                    >
+                        <History size={18} />
+                    </button>
+                    <div className="h-8 w-px bg-slate-200 mx-1"></div>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        accept=".xlsx,.xls"
+                        multiple
+                        className="hidden"
+                    />
+                    <button
+                        onClick={handleExportCSV}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 shadow-sm transition-colors text-sm font-medium"
+                        title="Export filtered results to CSV"
+                    >
+                        <FileDown size={18} /> CSV
+                    </button>
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="bg-slate-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium"
+                    >
+                        <Upload size={18} /> Import
+                    </button>
+                    <button
+                        onClick={handleExportFiltered}
+                        className="bg-white text-blue-600 border border-blue-200 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-50 transition-colors text-sm font-medium"
+                    >
+                        <FileSpreadsheet size={18} /> Export Filtered
+                    </button>
+                    <button
+                        onClick={handleSplitAndExport}
+                        disabled={items.length === 0}
+                        className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-bold shadow-sm ${items.length === 0
+                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                            : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                            }`}
+                    >
+                        <FileSpreadsheet size={18} /> Split & Export
+                    </button>
+                </div>
             </div >
+        </div >
 
-            {/* Table Area - Flex Grow to take remaining space, forcing scroll ONLY here */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col min-h-0">
-                <div className="overflow-auto flex-1">
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200 sticky top-0 z-10">
-                            <tr>
-                                <th className="p-4 w-10">
-                                    <input
-                                        type="checkbox"
-                                        onChange={handleSelectAll}
-                                        checked={filteredItems.length > 0 && selectedIds.size === filteredItems.length}
-                                        className="rounded border-slate-300"
+        {/* Table Area - Flex Grow to take remaining space, forcing scroll ONLY here */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col min-h-0">
+            <div className="overflow-auto flex-1">
+                <table className="w-full text-sm text-left">
+                    <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200 sticky top-0 z-10">
+                        <tr>
+                            <th className="p-4 w-10">
+                                <input
+                                    type="checkbox"
+                                    onChange={handleSelectAll}
+                                    checked={filteredItems.length > 0 && selectedIds.size === filteredItems.length}
+                                    className="rounded border-slate-300"
+                                />
+                            </th>
+                            <th className="p-4 text-center">Actions</th>
+                            <th className="p-4">Item</th>
+                            <th className="p-4 text-center">R8Diff</th>
+                            <th className="p-4 text-center">Estimated</th>
+                            <th className="p-4 text-center">Sensible</th>
+                            <th className="p-4 text-center">NDB</th>
+                            <th className="p-4">Invoice No</th>
+                            <th className="p-4">Container/Guide</th>
+                            <th className="p-4">Date</th>
+                            <th className="p-4">Regimen</th>
+                            <th className="p-4">Incoterm</th>
+                            <th className="p-4">HTS</th>
+                            <th className="p-4">Part No</th>
+                            <th className="p-4">Model</th>
+                            <th className="p-4">English Name</th>
+                            <th className="p-4">Desc (ES)</th>
+                            <th className="p-4 text-right">Qty</th>
+                            <th className="p-4">UM</th>
+                            <th className="p-4 text-right">Net Weight</th>
+                            <th className="p-4 text-right">Total Net Wt</th>
+                            <th className="p-4 text-right">Unit Price</th>
+                            <th className="p-4 text-right">Total</th>
+
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {loading ? (
+                            <tr><td colSpan={15} className="p-8 text-center text-slate-400">Loading...</td></tr>
+                        ) : filteredItems.length === 0 ? (
+                            <tr><td colSpan={15} className="p-8 text-center text-slate-400">No invoice items found. Import an Excel file to get started.</td></tr>
+                        ) : (
+                            displayedItems.map((item, index) => {
+                                // Pre-calculate Master Data lookup
+                                const partNo = String(item.partNo || '').trim();
+                                const masterPart = masterDataMap[partNo];
+
+                                return (
+                                    <InvoiceRow
+                                        key={item.id}
+                                        item={item}
+                                        index={(currentPage - 1) * ITEMS_PER_PAGE + index}
+                                        isSelected={selectedIds.has(item.id)}
+                                        onSelect={handleSelectRow}
+                                        isEditing={editingId === item.id}
+                                        onStartEdit={handleStartEdit}
+                                        onCancelEdit={handleCancelEdit}
+                                        onSaveEdit={handleSaveEdit}
+                                        onDelete={handleDelete}
+                                        editValues={editValues}
+                                        setEditValues={setEditValues}
+                                        masterPart={masterPart}
+                                        onOpenDiff={handleOpenDiffModal}
+                                        onOpenEst={handleOpenEstModal}
                                     />
-                                </th>
-                                <th className="p-4 text-center">Actions</th>
-                                <th className="p-4">Item</th>
-                                <th className="p-4 text-center">R8Diff</th>
-                                <th className="p-4 text-center">Estimated</th>
-                                <th className="p-4 text-center">Sensible</th>
-                                <th className="p-4 text-center">NDB</th>
-                                <th className="p-4">Invoice No</th>
-                                <th className="p-4">Container/Guide</th>
-                                <th className="p-4">Date</th>
-                                <th className="p-4">Regimen</th>
-                                <th className="p-4">Incoterm</th>
-                                <th className="p-4">HTS</th>
-                                <th className="p-4">Part No</th>
-                                <th className="p-4">Model</th>
-                                <th className="p-4">English Name</th>
-                                <th className="p-4">Desc (ES)</th>
-                                <th className="p-4 text-right">Qty</th>
-                                <th className="p-4">UM</th>
-                                <th className="p-4 text-right">Net Weight</th>
-                                <th className="p-4 text-right">Total Net Wt</th>
-                                <th className="p-4 text-right">Unit Price</th>
-                                <th className="p-4 text-right">Total</th>
-
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {loading ? (
-                                <tr><td colSpan={15} className="p-8 text-center text-slate-400">Loading...</td></tr>
-                            ) : filteredItems.length === 0 ? (
-                                <tr><td colSpan={15} className="p-8 text-center text-slate-400">No invoice items found. Import an Excel file to get started.</td></tr>
-                            ) : (
-                                displayedItems.map((item, index) => {
-                                    // Pre-calculate Master Data lookup
-                                    const partNo = String(item.partNo || '').trim();
-                                    const masterPart = masterDataMap[partNo];
-
-                                    return (
-                                        <InvoiceRow
-                                            key={item.id}
-                                            item={item}
-                                            index={(currentPage - 1) * ITEMS_PER_PAGE + index}
-                                            isSelected={selectedIds.has(item.id)}
-                                            onSelect={handleSelectRow}
-                                            isEditing={editingId === item.id}
-                                            onStartEdit={handleStartEdit}
-                                            onCancelEdit={handleCancelEdit}
-                                            onSaveEdit={handleSaveEdit}
-                                            onDelete={handleDelete}
-                                            editValues={editValues}
-                                            setEditValues={setEditValues}
-                                            masterPart={masterPart}
-                                            onOpenDiff={handleOpenDiffModal}
-                                            onOpenEst={handleOpenEstModal}
+                                );
+                                /*
+                                <tr key={item.id} className={`hover:bg-slate-50 transition-colors group ${editingId === item.id ? 'bg-blue-50' : ''}`}>
+                                    <td className="p-4">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIds.has(item.id)}
+                                            onChange={() => handleSelectRow(item.id)}
+                                            className="rounded border-slate-300"
                                         />
-                                    );
-                                    /*
-                                    <tr key={item.id} className={`hover:bg-slate-50 transition-colors group ${editingId === item.id ? 'bg-blue-50' : ''}`}>
-                                        <td className="p-4">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedIds.has(item.id)}
-                                                onChange={() => handleSelectRow(item.id)}
-                                                className="rounded border-slate-300"
-                                            />
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {editingId === item.id ? (
-                                                <div className="flex items-center gap-1 justify-center">
-                                                    <button onClick={() => handleSaveEdit(item.id)} className="text-emerald-600 hover:bg-emerald-50 p-1 rounded" title="Save">
-                                                        <Save size={16} />
-                                                    </button>
-                                                    <button onClick={handleCancelEdit} className="text-slate-400 hover:bg-slate-100 p-1 rounded" title="Cancel">
-                                                        <X size={16} />
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-1 justify-center">
-                                                    <button onClick={() => handleStartEdit(item)} className="text-slate-400 hover:text-blue-600 transition-colors p-1" title="Edit">
-                                                        <Edit2 size={16} />
-                                                    </button>
-                                                    <button onClick={() => handleDelete(item.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Delete">
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="p-4 font-mono font-bold text-slate-700">
-                                            {index + 1}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {(() => {
-                                                const partNo = String(item.partNo || '').trim();
-                                                const masterPart = masterDataMap[partNo];
-                                                // If Part not in DB -> Red X
-                                                if (!masterPart) {
-                                                    return (
-                                                        <button
-                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
-                                                            title="Part not in Master Data"
-                                                        >
-                                                            <X size={20} strokeWidth={3} />
-                                                        </button>
-                                                    );
-                                                }
-
-                                                const r8Desc = masterPart?.DESCRIPCION_R8?.toString().trim().toUpperCase() || '';
-                                                const itemDesc = item.spanishDescription?.toString().trim().toUpperCase() || '';
-                                                const itemRb = item.rb?.toString().trim() || '';
-
-                                                // 1. Description Match (Relaxed)
-                                                const isTextMatch = r8Desc && itemDesc && (r8Desc.includes(itemDesc) || itemDesc.includes(r8Desc));
-
-                                                // 2. Both Empty Case (Not R8 in file AND Not R8 in Master Data)
-                                                const isBothEmpty = !itemRb && !r8Desc;
-
-                                                const isMatch = isTextMatch || isBothEmpty;
-
-                                                return isMatch ? (
-                                                    <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
-                                                ) : (
+                                    </td>
+                                    <td className="p-4 text-center">
+                                        {editingId === item.id ? (
+                                            <div className="flex items-center gap-1 justify-center">
+                                                <button onClick={() => handleSaveEdit(item.id)} className="text-emerald-600 hover:bg-emerald-50 p-1 rounded" title="Save">
+                                                    <Save size={16} />
+                                                </button>
+                                                <button onClick={handleCancelEdit} className="text-slate-400 hover:bg-slate-100 p-1 rounded" title="Cancel">
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1 justify-center">
+                                                <button onClick={() => handleStartEdit(item)} className="text-slate-400 hover:text-blue-600 transition-colors p-1" title="Edit">
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button onClick={() => handleDelete(item.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Delete">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className="p-4 font-mono font-bold text-slate-700">
+                                        {index + 1}
+                                    </td>
+                                    <td className="p-4 text-center">
+                                        {(() => {
+                                            const partNo = String(item.partNo || '').trim();
+                                            const masterPart = masterDataMap[partNo];
+                                            // If Part not in DB -> Red X
+                                            if (!masterPart) {
+                                                return (
                                                     <button
-                                                        onClick={() => handleOpenDiffModal(item)}
                                                         className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
-                                                        title="View Mismatch & Resolve"
+                                                        title="Part not in Master Data"
                                                     >
                                                         <X size={20} strokeWidth={3} />
                                                     </button>
                                                 );
-                                            })()}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {(() => {
-                                                const partNo = String(item.partNo || '').trim();
-                                                const masterPart = masterDataMap[partNo];
-                                                // If Part not in DB -> Red X
-                                                if (!masterPart) {
-                                                    return (
-                                                        <button
-                                                            onClick={() => handleOpenEstModal(item)}
-                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
-                                                            title="Part Not Found (Click to Edit Price)"
-                                                        >
-                                                            <X size={20} strokeWidth={3} />
-                                                        </button>
-                                                    );
-                                                }
+                                            }
 
-                                                const remarks = masterPart?.REMARKS?.toString().toLowerCase() || '';
-                                                const estimatedPrice = Number(masterPart?.ESTIMATED || 0);
-                                                const itemPrice = parseFloat(String(item.unitPrice || '0'));
+                                            const r8Desc = masterPart?.DESCRIPCION_R8?.toString().trim().toUpperCase() || '';
+                                            const itemDesc = item.spanishDescription?.toString().trim().toUpperCase() || '';
+                                            const itemRb = item.rb?.toString().trim() || '';
 
-                                                // Logic:
-                                                // Strictly Numeric:
-                                                // - Bad if Estimated > 0 AND Item Price < Estimated.
-                                                // - Otherwise Good (Green).
+                                            // 1. Description Match (Relaxed)
+                                            const isTextMatch = r8Desc && itemDesc && (r8Desc.includes(itemDesc) || itemDesc.includes(r8Desc));
 
-                                                const isPriceIssue = estimatedPrice > 0 && itemPrice < estimatedPrice;
+                                            // 2. Both Empty Case (Not R8 in file AND Not R8 in Master Data)
+                                            const isBothEmpty = !itemRb && !r8Desc;
 
-                                                return isPriceIssue ? (
+                                            const isMatch = isTextMatch || isBothEmpty;
+
+                                            return isMatch ? (
+                                                <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleOpenDiffModal(item)}
+                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
+                                                    title="View Mismatch & Resolve"
+                                                >
+                                                    <X size={20} strokeWidth={3} />
+                                                </button>
+                                            );
+                                        })()}
+                                    </td>
+                                    <td className="p-4 text-center">
+                                        {(() => {
+                                            const partNo = String(item.partNo || '').trim();
+                                            const masterPart = masterDataMap[partNo];
+                                            // If Part not in DB -> Red X
+                                            if (!masterPart) {
+                                                return (
                                                     <button
                                                         onClick={() => handleOpenEstModal(item)}
                                                         className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
-                                                        title={`Undervalued! Invoice: $${itemPrice} < Est: $${estimatedPrice}`}
+                                                        title="Part Not Found (Click to Edit Price)"
                                                     >
                                                         <X size={20} strokeWidth={3} />
                                                     </button>
-                                                ) : (
-                                                    <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
                                                 );
-                                            })()}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {(() => {
-                                                const masterPart = masterDataMap[String(item.partNo || '').trim()];
-                                                if (!masterPart) {
-                                                    return <X size={20} className="text-red-500 mx-auto" strokeWidth={3} title="Part Not Found" />;
-                                                }
-
-                                                const strVal = masterPart?.SENSIBLE ? String(masterPart.SENSIBLE).trim().toUpperCase() : '';
-                                                // If "N" OR Empty -> Green Check (Assuming empty means not sensible if part exists)
-                                                // Else (e.g. "Y") -> Red X
-                                                const isNotSensible = strVal === 'N' || strVal === '';
-
-                                                // If "N" (Not Sensible) -> Green Check
-                                                // Else -> Red X
-                                                return isNotSensible ? (
-                                                    <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
-                                                ) : (
-                                                    <X size={20} className="text-red-500 mx-auto" strokeWidth={3} />
-                                                );
-                                            })()}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {(() => {
-                                                const partNo = String(item.partNo || '').trim();
-                                                const exists = !!masterDataMap[partNo];
-                                                return exists ? (
-                                                    <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
-                                                ) : (
-                                                    <X size={20} className="text-red-500 mx-auto" strokeWidth={3} />
-                                                );
-                                            })()}
-                                        </td>
-                                        <td className="p-4 font-medium text-slate-800">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={editValues.invoiceNo || ''}
-                                                    onChange={e => setEditValues({ ...editValues, invoiceNo: e.target.value })}
-                                                    className="w-full px-2 py-1 border rounded bg-white text-xs"
-                                                />
-                                            ) : item.invoiceNo}
-                                        </td>
-                                        <td className="p-4 text-slate-600 font-mono text-xs">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={editValues.containerNo || ''}
-                                                    onChange={e => setEditValues({ ...editValues, containerNo: e.target.value })}
-                                                    className="w-full px-2 py-1 border rounded bg-white text-xs"
-                                                    placeholder="Container"
-                                                />
-                                            ) : (item.containerNo || '-')}
-                                        </td>
-                                        <td className="p-4 text-slate-600 whitespace-nowrap">{item.date}</td>
-                                        <td className="p-4">
-                                            {item.regimen ? (
-                                                <span className={`px-2 py-1 rounded text-xs font-bold ${item.regimen === 'A1'
-                                                    ? 'bg-purple-100 text-purple-700'
-                                                    : 'bg-emerald-100 text-emerald-700'
-                                                    }`}>
-                                                    {item.regimen}
-                                                </span>
-                                            ) : (
-                                                <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
-                                                    MISSING
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-slate-600 font-mono text-xs">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={editValues.incoterm || ''}
-                                                    onChange={e => setEditValues({ ...editValues, incoterm: e.target.value })}
-                                                    className="w-full px-2 py-1 border rounded bg-white text-xs"
-                                                    placeholder="Incoterm"
-                                                />
-                                            ) : (item.incoterm || '').replace(/INCOTERM/i, '').replace(/:/g, '').trim().split(' ')[0]}
-                                        </td>
-                                        <td className="p-4 text-slate-600 font-mono text-xs">
-                                            {item.hts ? (
-                                                item.hts
-                                            ) : (
-                                                <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
-                                                    MISSING
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-slate-600">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={editValues.partNo || ''}
-                                                    onChange={e => setEditValues({ ...editValues, partNo: e.target.value })}
-                                                    className="w-full px-2 py-1 border rounded bg-white text-xs font-mono"
-                                                />
-                                            ) : item.partNo}
-                                        </td>
-                                        <td className="p-4 text-slate-600">{item.model}</td>
-                                        <td className="p-4 text-slate-600 max-w-xs truncate" title={item.englishName}>{item.englishName}</td>
-                                        <td className="p-4 text-slate-600 max-w-xs truncate" title={item.spanishDescription || item.englishName}>
-                                            {item.spanishDescription ? (
-                                                <span className="uppercase">{item.spanishDescription}</span>
-                                            ) : (
-                                                <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
-                                                    MISSING
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-right font-mono">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="number"
-                                                    value={editValues.qty || 0}
-                                                    onChange={e => setEditValues({ ...editValues, qty: Number(e.target.value) })}
-                                                    className="w-20 px-2 py-1 border rounded bg-white text-right"
-                                                />
-                                            ) : item.qty}
-                                        </td>
-                                        <td className="p-4 font-mono text-xs">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={editValues.um || ''}
-                                                    onChange={e => setEditValues({ ...editValues, um: e.target.value })}
-                                                    className="w-16 px-2 py-1 border rounded bg-white uppercase"
-                                                />
-                                            ) : (
-                                                item.um ? item.um : (
-                                                    <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
-                                                        MISSING
-                                                    </span>
-                                                )
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-right font-mono">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="number"
-                                                    value={editValues.netWeight || 0}
-                                                    onChange={e => setEditValues({ ...editValues, netWeight: Number(e.target.value) })}
-                                                    className="w-20 px-2 py-1 border rounded bg-white text-right"
-                                                    step="0.01"
-                                                />
-                                            ) : (
-                                                item.netWeight ? item.netWeight.toFixed(2) : (
-                                                    <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
-                                                        MISSING
-                                                    </span>
-                                                )
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-right font-mono font-medium text-slate-600">
-                                            {editingId === item.id ? (
-                                                ((editValues.qty || 0) * (editValues.netWeight || 0)).toFixed(2)
-                                            ) : (
-                                                ((item.qty || 0) * (item.netWeight || 0)).toFixed(2)
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-right font-mono">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="number"
-                                                    value={editValues.unitPrice || 0}
-                                                    onChange={e => setEditValues({ ...editValues, unitPrice: Number(e.target.value) })}
-                                                    className="w-24 px-2 py-1 border rounded bg-white text-right"
-                                                    step="0.01"
-                                                />
-                                            ) : `$${item.unitPrice.toFixed(2)}`}
-                                        </td>
-                                        <td className="p-4 text-right font-mono font-medium">${((item.qty || 0) * (item.unitPrice || 0)).toFixed(2)}</td>
-
-                                    </tr>
-                                    */
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div >
-
-            {/* Bulk Delete Modal */}
-            {
-                bulkDeleteModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
-                            <h3 className="text-lg font-bold text-slate-800 mb-2">Confirm Deletion</h3>
-                            <p className="text-slate-600 mb-6">
-                                Are you sure you want to delete {selectedIds.size} selected items? This action cannot be undone.
-                            </p>
-                            <div className="flex justify-end gap-3">
-                                <button
-                                    onClick={() => setBulkDeleteModal(false)}
-                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmBulkDelete}
-                                    className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg"
-                                >
-                                    Delete {selectedIds.size} Items
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* Container Input Modal */}
-            {
-                showContainerModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl animate-in fade-in zoom-in duration-200">
-                            <div className="flex items-center gap-3 mb-4 text-blue-600">
-                                <Search size={24} />
-                                <h3 className="text-xl font-bold text-slate-800">Container Not Found</h3>
-                            </div>
-
-                            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
-                                <p className="text-blue-800 text-sm">
-                                    Could not find a Container Number in the filename (Pattern: 4 Letters + 7 Digits).
-                                    <br />
-                                    Please enter it manually to assign it to <b>{pendingFileItems.length} items</b>.
-                                </p>
-                            </div>
-
-                            <div className="mb-6">
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Container / Guide Number
-                                </label>
-                                <input
-                                    type="text"
-                                    autoFocus
-                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase font-mono"
-                                    placeholder="e.g. MSKU1234567"
-                                    value={tempContainerNo}
-                                    onChange={(e) => setTempContainerNo(e.target.value.toUpperCase())}
-                                    onKeyDown={(e) => e.key === 'Enter' && confirmContainerInput()}
-                                />
-                            </div>
-
-                            <div className="flex justify-end gap-3">
-                                <button
-                                    onClick={() => {
-                                        setShowContainerModal(false);
-                                        setPendingFileItems([]);
-                                        if (fileInputRef.current) fileInputRef.current.value = '';
-                                    }}
-                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-                                >
-                                    Cancel Import
-                                </button>
-                                <button
-                                    onClick={confirmContainerInput}
-                                    disabled={!tempContainerNo}
-                                    className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                >
-                                    <Save size={18} /> Save & Import
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* Amendments Modal */}
-            {
-                showRegimenModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-bold text-slate-800">Amendments & Corrections</h3>
-                                <button onClick={() => setShowRegimenModal(false)} className="text-slate-400 hover:text-slate-600">
-                                    <X size={24} />
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {/* Left: Regimen Update */}
-                                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                                    <h4 className="font-bold text-slate-700 mb-2 flex items-center gap-2">
-                                        <Repeat size={16} /> Bulk Regimen Update
-                                    </h4>
-                                    <p className="text-sm text-slate-500 mb-4">
-                                        Force update <b>{selectedIds.size} items</b> to a specific regimen.
-                                    </p>
-                                    <div className="flex gap-2 mb-4">
-                                        <button
-                                            onClick={() => setBulkRegimenValue('IN')}
-                                            className={`flex-1 py-2 px-3 rounded border font-bold text-sm transition-all ${bulkRegimenValue === 'IN'
-                                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                                                : 'border-slate-300 bg-white text-slate-400'
-                                                }`}
-                                        >
-                                            IN (Standard)
-                                        </button>
-                                        <button
-                                            onClick={() => setBulkRegimenValue('A1')}
-                                            className={`flex-1 py-2 px-3 rounded border font-bold text-sm transition-all ${bulkRegimenValue === 'A1'
-                                                ? 'border-purple-500 bg-purple-50 text-purple-700'
-                                                : 'border-slate-300 bg-white text-slate-400'
-                                                }`}
-                                        >
-                                            A1 (Regimen)
-                                        </button>
-                                    </div>
-                                    <button
-                                        onClick={handleBulkRegimenUpdate}
-                                        className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-bold"
-                                    >
-                                        Apply Regimen
-                                    </button>
-                                </div>
-
-                                {/* Right: Master Data Auto-Fill */}
-                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                    <h4 className="font-bold text-blue-800 mb-2 flex items-center gap-2">
-                                        <CheckCircle size={16} /> Master Data Auto-Fill
-                                    </h4>
-                                    <p className="text-sm text-blue-600 mb-4">
-                                        Found Matches: <b>{Object.keys(amendmentMatches).length}</b> / {selectedIds.size} items.
-                                    </p>
-
-                                    <div className="space-y-2 mb-4 max-h-40 overflow-y-auto text-xs bg-white p-2 rounded border border-blue-100">
-                                        {Object.keys(amendmentMatches).map(id => {
-                                            const match = amendmentMatches[id];
-                                            return (
-                                                <div key={id} className="grid grid-cols-12 gap-2 border-b border-gray-100 last:border-0 py-1 items-center">
-                                                    <span className="col-span-4 font-mono text-slate-600 truncate" title={match.PART_NUMBER}>{match.PART_NUMBER}</span>
-                                                    <span className="col-span-6 text-emerald-600 font-bold truncate text-[10px]" title={match.DESCRIPCION_ES}>{match.DESCRIPCION_ES}</span>
-                                                    <span className="col-span-2 text-slate-500 font-mono text-right">{match.UMC}</span>
-                                                </div>
-                                            );
-                                        })}
-                                        {Object.keys(amendmentMatches).length === 0 && (
-                                            <p className="text-center text-slate-400 py-2">No matching parts found in Master Data.</p>
-                                        )}
-                                    </div>
-
-                                    <button
-                                        onClick={handleApplyMasterData}
-                                        disabled={Object.keys(amendmentMatches).length === 0}
-                                        className="w-full py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
-                                    >
-                                        <Save size={16} /> Apply Master Data
-                                    </button>
-                                    <p className="text-[10px] text-blue-400 mt-2 text-center">
-                                        Updates: Desc(ES), HTS, UMC, NetWeight
-                                    </p>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                )
-            }
-            {/* Restore Modal */}
-            {
-                showRestoreModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-lg p-6 max-w-lg w-full shadow-xl animate-in fade-in zoom-in duration-200">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                                    <History size={24} className="text-blue-600" /> Restore Points
-                                </h3>
-                                <button onClick={() => setShowRestoreModal(false)} className="text-slate-400 hover:text-slate-600">
-                                    <X size={24} />
-                                </button>
-                            </div>
-                            <p className="text-sm text-slate-500 mb-4">
-                                Select a snapshot to restore. <b>Warning:</b> Unsaved changes made after the snapshot will be lost.
-                            </p>
-                            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-                                {restorePoints.length === 0 ? (
-                                    <p className="text-center text-slate-400 py-8">No restore points available.</p>
-                                ) : (
-                                    restorePoints.map((point: any) => (
-                                        <div key={point.id} className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors flex justify-between items-center group">
-                                            <div>
-                                                <p className="font-bold text-slate-700">{point.reason}</p>
-                                                <p className="text-xs text-slate-400">
-                                                    {new Date(point.timestamp).toLocaleString()} • {point.sizeKB} KB
-                                                </p>
-                                            </div>
-                                            <button
-                                                onClick={() => confirmRestore(point.id)}
-                                                className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-sm font-medium hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-1 opacity-0 group-hover:opacity-100"
-                                            >
-                                                <RotateCcw size={14} /> Restore
-                                            </button>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-            {/* --- ESTIMATED PRICE RESOLUTION MODAL --- */}
-            {showEstModal && estItem && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-                        {/* Header */}
-                        <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                                <AlertTriangle className="text-orange-500" size={24} />
-                                Resolve Estimated Price
-                            </h3>
-                            <button onClick={handleCloseEstModal} className="text-slate-400 hover:text-slate-600">
-                                <X size={24} />
-                            </button>
-                        </div>
-
-                        {/* Content */}
-                        <div className="p-6 space-y-6">
-
-                            {/* Part Info */}
-                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">PART NUMBER</span>
-                                <div className="font-mono text-lg font-bold text-slate-800">{estItem.partNo}</div>
-                                <div className="text-sm text-slate-500 mt-1">{estItem.spanishDescription}</div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-6">
-                                {/* Left: Master Data (Reference) */}
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center">
-                                        <label className="text-sm font-bold text-slate-600">Master Data Estimated</label>
-                                        <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-medium">Reference</span>
-                                    </div>
-                                    <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg">
-                                        <div className="text-xs text-indigo-400 mb-1">RECORDED ESTIMATE</div>
-                                        <div className={`text-lg font-mono font-bold ${estMasterPart ? 'text-indigo-900' : 'text-red-500'}`}>
-                                            {estMasterPart
-                                                ? `$${parseFloat(String(estMasterPart.ESTIMATED || 0)).toFixed(2)}`
-                                                : 'PART NOT FOUND'
                                             }
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {/* Right: Invoice (Target) */}
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center">
-                                        <label className="text-sm font-bold text-slate-600">Invoice Unit Price</label>
-                                        <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-medium">To Fix</span>
-                                    </div>
+                                            const remarks = masterPart?.REMARKS?.toString().toLowerCase() || '';
+                                            const estimatedPrice = Number(masterPart?.ESTIMATED || 0);
+                                            const itemPrice = parseFloat(String(item.unitPrice || '0'));
 
-                                    <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
-                                        <div className="text-xs text-emerald-400 mb-1">CURRENT INVOICE PRICE</div>
-                                        <div className="text-lg font-mono font-bold text-emerald-900">
-                                            ${parseFloat(String(estItem.unitPrice || 0)).toFixed(2)}
-                                        </div>
-                                    </div>
+                                            // Logic:
+                                            // Strictly Numeric:
+                                            // - Bad if Estimated > 0 AND Item Price < Estimated.
+                                            // - Otherwise Good (Green).
 
-                                    {/* Editable Invoice Price */}
-                                    <div className="pt-2">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <label className="text-xs font-medium text-slate-500">Corrected Price</label>
-                                            <button
-                                                onClick={() => setResolvedUnitPrice(String(estMasterPart?.ESTIMATED || '0'))}
-                                                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                                            >
-                                                Use Master Value
-                                            </button>
-                                        </div>
-                                        <textarea
-                                            className="w-full border border-emerald-300 ring-2 ring-emerald-100 rounded p-2 text-lg font-mono font-bold text-slate-800 focus:outline-none focus:ring-emerald-300"
-                                            value={resolvedUnitPrice}
-                                            onChange={(e) => setResolvedUnitPrice(e.target.value)}
-                                            placeholder="0.00"
-                                            rows={1}
-                                        />
-                                        <p className="text-xs text-slate-400 mt-1">
-                                            * Updates 'UNIT PRICE' and recalculates 'TOTAL AMOUNT'.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                                            const isPriceIssue = estimatedPrice > 0 && itemPrice < estimatedPrice;
 
-                        </div>
+                                            return isPriceIssue ? (
+                                                <button
+                                                    onClick={() => handleOpenEstModal(item)}
+                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
+                                                    title={`Undervalued! Invoice: $${itemPrice} < Est: $${estimatedPrice}`}
+                                                >
+                                                    <X size={20} strokeWidth={3} />
+                                                </button>
+                                            ) : (
+                                                <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
+                                            );
+                                        })()}
+                                    </td>
+                                    <td className="p-4 text-center">
+                                        {(() => {
+                                            const masterPart = masterDataMap[String(item.partNo || '').trim()];
+                                            if (!masterPart) {
+                                                return <X size={20} className="text-red-500 mx-auto" strokeWidth={3} title="Part Not Found" />;
+                                            }
 
-                        {/* Footer */}
-                        <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+                                            const strVal = masterPart?.SENSIBLE ? String(masterPart.SENSIBLE).trim().toUpperCase() : '';
+                                            // If "N" OR Empty -> Green Check (Assuming empty means not sensible if part exists)
+                                            // Else (e.g. "Y") -> Red X
+                                            const isNotSensible = strVal === 'N' || strVal === '';
+
+                                            // If "N" (Not Sensible) -> Green Check
+                                            // Else -> Red X
+                                            return isNotSensible ? (
+                                                <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
+                                            ) : (
+                                                <X size={20} className="text-red-500 mx-auto" strokeWidth={3} />
+                                            );
+                                        })()}
+                                    </td>
+                                    <td className="p-4 text-center">
+                                        {(() => {
+                                            const partNo = String(item.partNo || '').trim();
+                                            const exists = !!masterDataMap[partNo];
+                                            return exists ? (
+                                                <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
+                                            ) : (
+                                                <X size={20} className="text-red-500 mx-auto" strokeWidth={3} />
+                                            );
+                                        })()}
+                                    </td>
+                                    <td className="p-4 font-medium text-slate-800">
+                                        {editingId === item.id ? (
+                                            <input
+                                                type="text"
+                                                value={editValues.invoiceNo || ''}
+                                                onChange={e => setEditValues({ ...editValues, invoiceNo: e.target.value })}
+                                                className="w-full px-2 py-1 border rounded bg-white text-xs"
+                                            />
+                                        ) : item.invoiceNo}
+                                    </td>
+                                    <td className="p-4 text-slate-600 font-mono text-xs">
+                                        {editingId === item.id ? (
+                                            <input
+                                                type="text"
+                                                value={editValues.containerNo || ''}
+                                                onChange={e => setEditValues({ ...editValues, containerNo: e.target.value })}
+                                                className="w-full px-2 py-1 border rounded bg-white text-xs"
+                                                placeholder="Container"
+                                            />
+                                        ) : (item.containerNo || '-')}
+                                    </td>
+                                    <td className="p-4 text-slate-600 whitespace-nowrap">{item.date}</td>
+                                    <td className="p-4">
+                                        {item.regimen ? (
+                                            <span className={`px-2 py-1 rounded text-xs font-bold ${item.regimen === 'A1'
+                                                ? 'bg-purple-100 text-purple-700'
+                                                : 'bg-emerald-100 text-emerald-700'
+                                                }`}>
+                                                {item.regimen}
+                                            </span>
+                                        ) : (
+                                            <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
+                                                MISSING
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="p-4 text-slate-600 font-mono text-xs">
+                                        {editingId === item.id ? (
+                                            <input
+                                                type="text"
+                                                value={editValues.incoterm || ''}
+                                                onChange={e => setEditValues({ ...editValues, incoterm: e.target.value })}
+                                                className="w-full px-2 py-1 border rounded bg-white text-xs"
+                                                placeholder="Incoterm"
+                                            />
+                                        ) : (item.incoterm || '').replace(/INCOTERM/i, '').replace(/:/g, '').trim().split(' ')[0]}
+                                    </td>
+                                    <td className="p-4 text-slate-600 font-mono text-xs">
+                                        {item.hts ? (
+                                            item.hts
+                                        ) : (
+                                            <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
+                                                MISSING
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="p-4 text-slate-600">
+                                        {editingId === item.id ? (
+                                            <input
+                                                type="text"
+                                                value={editValues.partNo || ''}
+                                                onChange={e => setEditValues({ ...editValues, partNo: e.target.value })}
+                                                className="w-full px-2 py-1 border rounded bg-white text-xs font-mono"
+                                            />
+                                        ) : item.partNo}
+                                    </td>
+                                    <td className="p-4 text-slate-600">{item.model}</td>
+                                    <td className="p-4 text-slate-600 max-w-xs truncate" title={item.englishName}>{item.englishName}</td>
+                                    <td className="p-4 text-slate-600 max-w-xs truncate" title={item.spanishDescription || item.englishName}>
+                                        {item.spanishDescription ? (
+                                            <span className="uppercase">{item.spanishDescription}</span>
+                                        ) : (
+                                            <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
+                                                MISSING
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="p-4 text-right font-mono">
+                                        {editingId === item.id ? (
+                                            <input
+                                                type="number"
+                                                value={editValues.qty || 0}
+                                                onChange={e => setEditValues({ ...editValues, qty: Number(e.target.value) })}
+                                                className="w-20 px-2 py-1 border rounded bg-white text-right"
+                                            />
+                                        ) : item.qty}
+                                    </td>
+                                    <td className="p-4 font-mono text-xs">
+                                        {editingId === item.id ? (
+                                            <input
+                                                type="text"
+                                                value={editValues.um || ''}
+                                                onChange={e => setEditValues({ ...editValues, um: e.target.value })}
+                                                className="w-16 px-2 py-1 border rounded bg-white uppercase"
+                                            />
+                                        ) : (
+                                            item.um ? item.um : (
+                                                <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
+                                                    MISSING
+                                                </span>
+                                            )
+                                        )}
+                                    </td>
+                                    <td className="p-4 text-right font-mono">
+                                        {editingId === item.id ? (
+                                            <input
+                                                type="number"
+                                                value={editValues.netWeight || 0}
+                                                onChange={e => setEditValues({ ...editValues, netWeight: Number(e.target.value) })}
+                                                className="w-20 px-2 py-1 border rounded bg-white text-right"
+                                                step="0.01"
+                                            />
+                                        ) : (
+                                            item.netWeight ? item.netWeight.toFixed(2) : (
+                                                <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
+                                                    MISSING
+                                                </span>
+                                            )
+                                        )}
+                                    </td>
+                                    <td className="p-4 text-right font-mono font-medium text-slate-600">
+                                        {editingId === item.id ? (
+                                            ((editValues.qty || 0) * (editValues.netWeight || 0)).toFixed(2)
+                                        ) : (
+                                            ((item.qty || 0) * (item.netWeight || 0)).toFixed(2)
+                                        )}
+                                    </td>
+                                    <td className="p-4 text-right font-mono">
+                                        {editingId === item.id ? (
+                                            <input
+                                                type="number"
+                                                value={editValues.unitPrice || 0}
+                                                onChange={e => setEditValues({ ...editValues, unitPrice: Number(e.target.value) })}
+                                                className="w-24 px-2 py-1 border rounded bg-white text-right"
+                                                step="0.01"
+                                            />
+                                        ) : `$${item.unitPrice.toFixed(2)}`}
+                                    </td>
+                                    <td className="p-4 text-right font-mono font-medium">${((item.qty || 0) * (item.unitPrice || 0)).toFixed(2)}</td>
+
+                                </tr>
+                                */
+                            })
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div >
+
+        {/* Bulk Delete Modal */}
+        {
+            bulkDeleteModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+                        <h3 className="text-lg font-bold text-slate-800 mb-2">Confirm Deletion</h3>
+                        <p className="text-slate-600 mb-6">
+                            Are you sure you want to delete {selectedIds.size} selected items? This action cannot be undone.
+                        </p>
+                        <div className="flex justify-end gap-3">
                             <button
-                                onClick={handleCloseEstModal}
-                                className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg font-medium transition-colors"
+                                onClick={() => setBulkDeleteModal(false)}
+                                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
                             >
                                 Cancel
                             </button>
                             <button
-                                onClick={handleSaveEst}
-                                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm transition-colors flex items-center gap-2"
+                                onClick={confirmBulkDelete}
+                                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg"
+                            >
+                                Delete {selectedIds.size} Items
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
+        {/* Container Input Modal */}
+        {
+            showContainerModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-center gap-3 mb-4 text-blue-600">
+                            <Search size={24} />
+                            <h3 className="text-xl font-bold text-slate-800">Container Not Found</h3>
+                        </div>
+
+                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
+                            <p className="text-blue-800 text-sm">
+                                Could not find a Container Number in the filename (Pattern: 4 Letters + 7 Digits).
+                                <br />
+                                Please enter it manually to assign it to <b>{pendingFileItems.length} items</b>.
+                            </p>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Container / Guide Number
+                            </label>
+                            <input
+                                type="text"
+                                autoFocus
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase font-mono"
+                                placeholder="e.g. MSKU1234567"
+                                value={tempContainerNo}
+                                onChange={(e) => setTempContainerNo(e.target.value.toUpperCase())}
+                                onKeyDown={(e) => e.key === 'Enter' && confirmContainerInput()}
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowContainerModal(false);
+                                    setPendingFileItems([]);
+                                    if (fileInputRef.current) fileInputRef.current.value = '';
+                                }}
+                                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                            >
+                                Cancel Import
+                            </button>
+                            <button
+                                onClick={confirmContainerInput}
+                                disabled={!tempContainerNo}
+                                className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                <Save size={18} /> Save & Import
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
+        {/* Amendments Modal */}
+        {
+            showRegimenModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-slate-800">Amendments & Corrections</h3>
+                            <button onClick={() => setShowRegimenModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* Left: Regimen Update */}
+                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <h4 className="font-bold text-slate-700 mb-2 flex items-center gap-2">
+                                    <Repeat size={16} /> Bulk Regimen Update
+                                </h4>
+                                <p className="text-sm text-slate-500 mb-4">
+                                    Force update <b>{selectedIds.size} items</b> to a specific regimen.
+                                </p>
+                                <div className="flex gap-2 mb-4">
+                                    <button
+                                        onClick={() => setBulkRegimenValue('IN')}
+                                        className={`flex-1 py-2 px-3 rounded border font-bold text-sm transition-all ${bulkRegimenValue === 'IN'
+                                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                                            : 'border-slate-300 bg-white text-slate-400'
+                                            }`}
+                                    >
+                                        IN (Standard)
+                                    </button>
+                                    <button
+                                        onClick={() => setBulkRegimenValue('A1')}
+                                        className={`flex-1 py-2 px-3 rounded border font-bold text-sm transition-all ${bulkRegimenValue === 'A1'
+                                            ? 'border-purple-500 bg-purple-50 text-purple-700'
+                                            : 'border-slate-300 bg-white text-slate-400'
+                                            }`}
+                                    >
+                                        A1 (Regimen)
+                                    </button>
+                                </div>
+                                <button
+                                    onClick={handleBulkRegimenUpdate}
+                                    className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-bold"
+                                >
+                                    Apply Regimen
+                                </button>
+                            </div>
+
+                            {/* Right: Master Data Auto-Fill */}
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                <h4 className="font-bold text-blue-800 mb-2 flex items-center gap-2">
+                                    <CheckCircle size={16} /> Master Data Auto-Fill
+                                </h4>
+                                <p className="text-sm text-blue-600 mb-4">
+                                    Found Matches: <b>{Object.keys(amendmentMatches).length}</b> / {selectedIds.size} items.
+                                </p>
+
+                                <div className="space-y-2 mb-4 max-h-40 overflow-y-auto text-xs bg-white p-2 rounded border border-blue-100">
+                                    {Object.keys(amendmentMatches).map(id => {
+                                        const match = amendmentMatches[id];
+                                        return (
+                                            <div key={id} className="grid grid-cols-12 gap-2 border-b border-gray-100 last:border-0 py-1 items-center">
+                                                <span className="col-span-4 font-mono text-slate-600 truncate" title={match.PART_NUMBER}>{match.PART_NUMBER}</span>
+                                                <span className="col-span-6 text-emerald-600 font-bold truncate text-[10px]" title={match.DESCRIPCION_ES}>{match.DESCRIPCION_ES}</span>
+                                                <span className="col-span-2 text-slate-500 font-mono text-right">{match.UMC}</span>
+                                            </div>
+                                        );
+                                    })}
+                                    {Object.keys(amendmentMatches).length === 0 && (
+                                        <p className="text-center text-slate-400 py-2">No matching parts found in Master Data.</p>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={handleApplyMasterData}
+                                    disabled={Object.keys(amendmentMatches).length === 0}
+                                    className="w-full py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                                >
+                                    <Save size={16} /> Apply Master Data
+                                </button>
+                                <p className="text-[10px] text-blue-400 mt-2 text-center">
+                                    Updates: Desc(ES), HTS, UMC, NetWeight
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            )
+        }
+        {/* Restore Modal */}
+        {
+            showRestoreModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-lg w-full shadow-xl animate-in fade-in zoom-in duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                <History size={24} className="text-blue-600" /> Restore Points
+                            </h3>
+                            <button onClick={() => setShowRestoreModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <p className="text-sm text-slate-500 mb-4">
+                            Select a snapshot to restore. <b>Warning:</b> Unsaved changes made after the snapshot will be lost.
+                        </p>
+                        <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                            {restorePoints.length === 0 ? (
+                                <p className="text-center text-slate-400 py-8">No restore points available.</p>
+                            ) : (
+                                restorePoints.map((point: any) => (
+                                    <div key={point.id} className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors flex justify-between items-center group">
+                                        <div>
+                                            <p className="font-bold text-slate-700">{point.reason}</p>
+                                            <p className="text-xs text-slate-400">
+                                                {new Date(point.timestamp).toLocaleString()} • {point.sizeKB} KB
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => confirmRestore(point.id)}
+                                            className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-sm font-medium hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-1 opacity-0 group-hover:opacity-100"
+                                        >
+                                            <RotateCcw size={14} /> Restore
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+        {/* --- ESTIMATED PRICE RESOLUTION MODAL --- */}
+        {showEstModal && estItem && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                    {/* Header */}
+                    <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                        <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <AlertTriangle className="text-orange-500" size={24} />
+                            Resolve Estimated Price
+                        </h3>
+                        <button onClick={handleCloseEstModal} className="text-slate-400 hover:text-slate-600">
+                            <X size={24} />
+                        </button>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-6 space-y-6">
+
+                        {/* Part Info */}
+                        <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">PART NUMBER</span>
+                            <div className="font-mono text-lg font-bold text-slate-800">{estItem.partNo}</div>
+                            <div className="text-sm text-slate-500 mt-1">{estItem.spanishDescription}</div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-6">
+                            {/* Left: Master Data (Reference) */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-sm font-bold text-slate-600">Master Data Estimated</label>
+                                    <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-medium">Reference</span>
+                                </div>
+                                <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg">
+                                    <div className="text-xs text-indigo-400 mb-1">RECORDED ESTIMATE</div>
+                                    <div className={`text-lg font-mono font-bold ${estMasterPart ? 'text-indigo-900' : 'text-red-500'}`}>
+                                        {estMasterPart
+                                            ? `$${parseFloat(String(estMasterPart.ESTIMATED || 0)).toFixed(2)}`
+                                            : 'PART NOT FOUND'
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right: Invoice (Target) */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-sm font-bold text-slate-600">Invoice Unit Price</label>
+                                    <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-medium">To Fix</span>
+                                </div>
+
+                                <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
+                                    <div className="text-xs text-emerald-400 mb-1">CURRENT INVOICE PRICE</div>
+                                    <div className="text-lg font-mono font-bold text-emerald-900">
+                                        ${parseFloat(String(estItem.unitPrice || 0)).toFixed(2)}
+                                    </div>
+                                </div>
+
+                                {/* Editable Invoice Price */}
+                                <div className="pt-2">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <label className="text-xs font-medium text-slate-500">Corrected Price</label>
+                                        <button
+                                            onClick={() => setResolvedUnitPrice(String(estMasterPart?.ESTIMATED || '0'))}
+                                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                        >
+                                            Use Master Value
+                                        </button>
+                                    </div>
+                                    <textarea
+                                        className="w-full border border-emerald-300 ring-2 ring-emerald-100 rounded p-2 text-lg font-mono font-bold text-slate-800 focus:outline-none focus:ring-emerald-300"
+                                        value={resolvedUnitPrice}
+                                        onChange={(e) => setResolvedUnitPrice(e.target.value)}
+                                        placeholder="0.00"
+                                        rows={1}
+                                    />
+                                    <p className="text-xs text-slate-400 mt-1">
+                                        * Updates 'UNIT PRICE' and recalculates 'TOTAL AMOUNT'.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {/* Footer */}
+                    <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+                        <button
+                            onClick={handleCloseEstModal}
+                            className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg font-medium transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleSaveEst}
+                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm transition-colors flex items-center gap-2"
+                        >
+                            <Check size={18} /> Apply Correction
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        {/* R8 Diff Resolution Modal */}
+        {
+            showDiffModal && diffItem && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl animate-in fade-in zoom-in duration-200">
+                        <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                <AlertCircle className="text-amber-500" />
+                                Resolve R8 Mismatch
+                            </h3>
+                            <button onClick={handleCloseDiffModal} className="text-slate-400 hover:text-slate-600">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-6 mb-6">
+                            {/* Comparison Grid - Optimized for Large Text */}
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Row 1: Master Data Content (Full Width) */}
+                                <div className="col-span-2 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                    <p className="text-xs font-bold text-slate-500 uppercase mb-2">Master Data R8 Description (Reference)</p>
+                                    <div className="text-sm font-medium text-slate-800 bg-white p-3 rounded border border-slate-100 max-h-32 overflow-y-auto font-mono whitespace-pre-wrap">
+                                        {diffMasterPart?.DESCRIPCION_R8 || <span className="text-slate-400 italic">Not Found in Master Data</span>}
+                                    </div>
+                                </div>
+
+                                {/* Row 2: Comparison Side-by-Side */}
+                                <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                    <p className="text-xs font-bold text-slate-500 uppercase mb-2">File R8 (RB)</p>
+                                    <p className="text-sm font-medium text-slate-800 break-words">
+                                        {diffItem.rb || <span className="text-slate-400 italic">Empty</span>}
+                                    </p>
+                                </div>
+                                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                    <p className="text-xs font-bold text-blue-600 uppercase mb-2">Factura (Desc ES)</p>
+                                    <p className="text-sm font-medium text-blue-900 break-words">
+                                        {diffItem.spanishDescription || <span className="text-blue-300 italic">Empty</span>}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Edit Section - Dual Fields */}
+                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                        Corrected Description (Factura)
+                                    </label>
+                                    <textarea
+                                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm bg-white text-slate-800"
+                                        rows={4}
+                                        value={resolvedDescription}
+                                        onChange={(e) => setResolvedDescription(e.target.value)}
+                                        placeholder="Edit Invoice Description..."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center justify-between">
+                                        <span>Master Data R8</span>
+                                        <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Edits Database</span>
+                                    </label>
+                                    <textarea
+                                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 font-mono text-sm bg-white text-slate-800"
+                                        rows={4}
+                                        value={resolvedR8Description}
+                                        onChange={(e) => setResolvedR8Description(e.target.value)}
+                                        placeholder="Edit Master Data R8..."
+                                        disabled={!diffMasterPart}
+                                    />
+                                    {!diffMasterPart && <p className="text-xs text-red-400 mt-1">Part not found in DB</p>}
+                                </div>
+                            </div>
+
+                            <p className="text-xs text-slate-500 italic">
+                                * Saving will update the item in the list AND the Master Data record if changed.
+                            </p>
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                            <button
+                                onClick={handleCloseDiffModal}
+                                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveDiff}
+                                className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg flex items-center gap-2 font-bold shadow-sm"
                             >
                                 <Check size={18} /> Apply Correction
                             </button>
                         </div>
                     </div>
                 </div>
-            )}
-            {/* R8 Diff Resolution Modal */}
-            {
-                showDiffModal && diffItem && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl animate-in fade-in zoom-in duration-200">
-                            <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-                                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                                    <AlertCircle className="text-amber-500" />
-                                    Resolve R8 Mismatch
-                                </h3>
-                                <button onClick={handleCloseDiffModal} className="text-slate-400 hover:text-slate-600">
-                                    <X size={24} />
-                                </button>
-                            </div>
-
-                            <div className="space-y-6 mb-6">
-                                {/* Comparison Grid - Optimized for Large Text */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    {/* Row 1: Master Data Content (Full Width) */}
-                                    <div className="col-span-2 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                                        <p className="text-xs font-bold text-slate-500 uppercase mb-2">Master Data R8 Description (Reference)</p>
-                                        <div className="text-sm font-medium text-slate-800 bg-white p-3 rounded border border-slate-100 max-h-32 overflow-y-auto font-mono whitespace-pre-wrap">
-                                            {diffMasterPart?.DESCRIPCION_R8 || <span className="text-slate-400 italic">Not Found in Master Data</span>}
-                                        </div>
-                                    </div>
-
-                                    {/* Row 2: Comparison Side-by-Side */}
-                                    <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                                        <p className="text-xs font-bold text-slate-500 uppercase mb-2">File R8 (RB)</p>
-                                        <p className="text-sm font-medium text-slate-800 break-words">
-                                            {diffItem.rb || <span className="text-slate-400 italic">Empty</span>}
-                                        </p>
-                                    </div>
-                                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                        <p className="text-xs font-bold text-blue-600 uppercase mb-2">Factura (Desc ES)</p>
-                                        <p className="text-sm font-medium text-blue-900 break-words">
-                                            {diffItem.spanishDescription || <span className="text-blue-300 italic">Empty</span>}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Edit Section - Dual Fields */}
-                                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                                            Corrected Description (Factura)
-                                        </label>
-                                        <textarea
-                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm bg-white text-slate-800"
-                                            rows={4}
-                                            value={resolvedDescription}
-                                            onChange={(e) => setResolvedDescription(e.target.value)}
-                                            placeholder="Edit Invoice Description..."
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center justify-between">
-                                            <span>Master Data R8</span>
-                                            <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Edits Database</span>
-                                        </label>
-                                        <textarea
-                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 font-mono text-sm bg-white text-slate-800"
-                                            rows={4}
-                                            value={resolvedR8Description}
-                                            onChange={(e) => setResolvedR8Description(e.target.value)}
-                                            placeholder="Edit Master Data R8..."
-                                            disabled={!diffMasterPart}
-                                        />
-                                        {!diffMasterPart && <p className="text-xs text-red-400 mt-1">Part not found in DB</p>}
-                                    </div>
-                                </div>
-
-                                <p className="text-xs text-slate-500 italic">
-                                    * Saving will update the item in the list AND the Master Data record if changed.
-                                </p>
-                            </div>
-
-                            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                                <button
-                                    onClick={handleCloseDiffModal}
-                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleSaveDiff}
-                                    className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg flex items-center gap-2 font-bold shadow-sm"
-                                >
-                                    <Check size={18} /> Apply Correction
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-        </div >
-    );
+            )
+        }
+    </div >
+);
 };

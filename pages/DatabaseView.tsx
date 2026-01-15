@@ -75,7 +75,7 @@ const CSV_ORDER_KEYS: (keyof RawMaterialPart)[] = [
 
 export const DatabaseView = () => {
     const { hasRole } = useAuth();
-    const canEdit = hasRole([UserRole.ADMIN, UserRole.EDITOR, UserRole.OPERATOR]);
+    const canEdit = hasRole([UserRole.ADMIN, UserRole.OPERATOR]);
     const canDelete = hasRole([UserRole.ADMIN]);
 
     const [parts, setParts] = useState<RawMaterialPart[]>(storageService.getParts());
@@ -759,8 +759,9 @@ export const DatabaseView = () => {
         if (tokens.length === 0) return parts;
 
         return result.filter(p => {
-            // Match if ANY token is found in ANY column
-            return tokens.some(token => {
+            // Match if ALL tokens are found in ANY column (AND Logic)
+            // Example: "Bolt, 10mm" -> Requires row to have "Bolt" AND "10mm" (in same or different columns)
+            return tokens.every(token => {
                 return CSV_ORDER_KEYS.some(key => {
                     const val = (p as any)[key];
                     if (val === null || val === undefined) return false;
@@ -951,13 +952,15 @@ export const DatabaseView = () => {
                         <FileDown size={16} /> Export CSV
                     </button>
 
-                    <button
-                        onClick={handleDownloadTemplate}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"
-                        title="Download Exact Template"
-                    >
-                        <FileSpreadsheet size={16} /> Template
-                    </button>
+                    {canEdit && (
+                        <button
+                            onClick={handleDownloadTemplate}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"
+                            title="Download Exact Template"
+                        >
+                            <FileSpreadsheet size={16} /> Template
+                        </button>
+                    )}
 
                     {canEdit && (
                         <>
@@ -992,9 +995,11 @@ export const DatabaseView = () => {
                         </>
                     )}
 
-                    <button onClick={handleBackup} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-colors" title="Full Backup">
-                        <Download size={16} /> Backup
-                    </button>
+                    {canEdit && (
+                        <button onClick={handleBackup} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-colors" title="Full Backup">
+                            <Download size={16} /> Backup
+                        </button>
+                    )}
 
                     {canDelete && (
                         <button

@@ -63,8 +63,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <SidebarItem to="/vucem" icon={Globe} label={sidebarOpen ? "VUCEM" : ""} />
               <SidebarItem to="/proforma-validator" icon={FileCheck} label={sidebarOpen ? "Validador Proforma" : ""} />
               <SidebarItem to="/documents" icon={FileText} label={sidebarOpen ? "Smart Docs" : ""} />
-              <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
             </>
+          )}
+
+          {(user?.role === 'Admin' || user?.role === 'Editor') && (
+            <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
           )}
 
 

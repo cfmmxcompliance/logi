@@ -202,6 +202,38 @@ const cleanJson = (text: string) => {
   return clean || "{}";
 };
 
+// Helper to clean newlines from Phase 2 data
+// Helper to clean newlines WITHOUT REGEX (User Constraint)
+// Uses split/join chain to replace newlines with spaces.
+const cleanStringNoRegex = (str: string): string => {
+  if (!str) return "";
+  return str
+    .split('\\n').join(' ') // Literal \n
+    .split('\\r').join(' ') // Literal \r
+    .split('\n').join(' ')  // Newline char
+    .split('\r').join(' ')  // Return char
+    .split('  ').join(' ')  // Double spaces (simple pass)
+    .trim();
+};
+
+const cleanObjectNoRegex = (obj: any): any => {
+  if (typeof obj === 'string') {
+    return cleanStringNoRegex(obj);
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(cleanObjectNoRegex);
+  }
+  if (obj && typeof obj === 'object') {
+    const newObj: any = {};
+    for (const key in obj) {
+      newObj[key] = cleanObjectNoRegex(obj[key]);
+    }
+    return newObj;
+  }
+  return obj;
+};
+
+
 // Helper Logic: Extracted to avoid circular references and type errors in geminiService
 const processRawPedimentoLogic = (rawText: string): DomainPedimentoData => {
   try {
@@ -301,41 +333,46 @@ const processRawPedimentoLogic = (rawText: string): DomainPedimentoData => {
 
         isSimplified: false
       },
-      partidas: Array.isArray(extracted.partidas) ? extracted.partidas.map((p: any) => ({
-        secuencia: p.secuencia,
-        fraccion: p.fraccion,
-        nico: p.subdivision || "",
-        description: p.descripcion,
-        qty: parseFloat(p.cantidadUMC) || 0, // Ensure number
-        umc: String(p.umc || ""),
-        qtyUmt: parseFloat(p.cantidadUMT) || 0, // Ensure number
-        umt: p.umt !== null && p.umt !== undefined ? String(p.umt) : "", // map to string
-        pvc: p.PVC, // Map Strict Upper
-        pod: p.POD, // Map Strict Upper
-        unitPrice: parseFloat(p.valores?.precioUnitario) || 0,
-        totalAmount: parseFloat(p.valores?.impPrecioPag) || 0,
-        valorAduana: parseFloat(p.valores?.valorAduanaUSD) || 0,
-        valorAgregado: p.valores?.valorAgregado !== null && p.valores?.valorAgregado !== undefined ? parseFloat(p.valores.valorAgregado) : undefined, // Allow undefined/null
-        vinculacion: p.vinculacion,
-        metodoValoracion: p.metodoValoracion,
-        origin: p.POD || "N/A", // Heuristic mapping if origin not explicit
-        vendor: p.PVC || "N/A", // Heuristic mapping if vendor not explicit
-        identifiers: Array.isArray(p.identificadores) ? p.identificadores.map((id: any) => ({
-          code: id.identif,
-          complement1: id.compl1,
-          descargo: id.descargo,
-          valComDls: id.Valcomdls,
-          cantidadUmt: id.Cantidadumtc
-        })) : [],
-        contribuciones: Array.isArray(p.tasas) ? p.tasas.map((t: any) => ({
-          clave: t.clave,
-          tasa: t.tasa,
-          importe: t.importe
-        })) : [],
-        regulaciones: p.permisos || [], // Keep legacy if needed, or map strictly if user provides Permisos block in future
-        observaciones: p.observaciones || "",
-        partNo: ""
-      })) : [],
+      partidas: Array.isArray(extracted.partidas) ? extracted.partidas.map((p: any) => {
+        return {
+          secuencia: p.secuencia,
+          fraccion: p.fraccion,
+          nico: p.subdivision || "",
+          description: p.descripcion,
+          partNo: p.partNo || "", // AI Extracted or Empty
+          qty: parseFloat(p.cantidadUMC) || 0, // Ensure number
+          umc: String(p.umc || ""),
+          qtyUmt: parseFloat(p.cantidadUMT) || 0, // Ensure number
+          umt: p.umt !== null && p.umt !== undefined ? String(p.umt) : "", // map to string
+          pvc: p.PVC, // Map Strict Upper
+          pod: p.POD, // Map Strict Upper
+          unitPrice: parseFloat(p.valores?.precioUnitario) || 0,
+          totalAmount: parseFloat(p.valores?.impPrecioPag) || 0,
+          valorAduana: parseFloat(p.valores?.valorAduanaUSD) || 0,
+          valorAgregado: p.valores?.valorAgregado !== null && p.valores?.valorAgregado !== undefined ? parseFloat(p.valores.valorAgregado) : undefined, // Allow undefined/null
+          vinculacion: p.vinculacion,
+          metodoValoracion: p.metodoValoracion,
+          origin: p.POD || "N/A", // Heuristic mapping if origin not explicit
+          vendor: p.PVC || "N/A", // Heuristic mapping if vendor not explicit
+          identifiers: Array.isArray(p.identificadores) ? p.identificadores.map((id: any) => ({
+            code: id.identif,
+            complement1: id.compl1,
+            complement2: id.compl2, // Added per user req
+            complement3: id.compl3, // Added per user req
+            descargo: id.descargo,
+            valComDls: id.Valcomdls,
+            cantidadUmt: id.Cantidadumtc
+          })) : [],
+          contribuciones: Array.isArray(p.tasas) ? p.tasas.map((t: any) => ({
+            clave: t.clave,
+            tasa: t.tasa,
+            formaPago: t.formaPago,
+            importe: t.importe
+          })) : [],
+          regulaciones: p.permisos || [],
+          observaciones: p.observaciones || ""
+        };
+      }) : [],
       rawText: cleanText,
       validationResults: []
     };
@@ -476,6 +513,7 @@ export const geminiService = {
               "secuencia": 1,
               "fraccion": "STR",
               "subdivision": "STR",
+              "partNo": "OPT (Extract from Description if present)",
               "vinculacion": "REQ",
               "metodoValoracion": "REQ",
               "umc": "REQ (Unit Code e.g. 1, 6, kg - NOT Country)",
@@ -492,12 +530,14 @@ export const geminiService = {
                 "valorAgregado": "OPT (null if empty)"
               },
               "tasas": [ 
-                { "clave": "STR", "tasa": "0.00", "importe": "0" } 
+                { "clave": "STR", "tasa": "0.00", "formaPago": "0", "importe": "0" } 
               ],
               "identificadores": [ 
                 { 
                   "identif": "STR", 
                   "compl1": "STR",
+                  "compl2": "STR (null if empty)",
+                  "compl3": "STR (null if empty)",
                   "descargo": "STR", 
                   "Valcomdls": "0.00", 
                   "Cantidadumtc": "0.00" 
@@ -515,8 +555,43 @@ export const geminiService = {
         4. Return ONLY JSON.
         5. EXTRACT ALL ITEMS FOUND IN THIS CHUNK. DO NOT TRUNCATE.
         6. Do NOT copy 'impPrecioPag' to 'valorAgregado'. If empty, return null.
-        ${isLastChunk ? "7. CRITICAL: Look for the FINAL items (e.g. Seq 45). Do not hallucinate 'Seq 1' if it is not there." : ""}
+        7. **STRICT COLUMN DEFINITIONS FOR VALUES**:
+           - 'impPrecioPag' (Importe Precio Pagado) MUST be the TOTAL VALUE column (usually large number, matches Invoice total approx).
+           - 'precioUnitario' (Precio Unitario) MUST be the UNIT PRICE column (usually small, derived from Total / Qty).
+           - 'cantidadUMT' (Cantidad Tarifa) MUST be the QUANTITY column.
+           - DO NOT SWAP THESE. If 'impPrecioPag' looks like a small quantity (e.g. 3.84) and 'valorAduanaUSD' is large (104.00), you likely shifted columns. 'impPrecioPag' is usually close to 'valorAduana' or 'valorComercial'.
+           - 'cantidadUMT' is usually adjacent to 'UMT'.
+        8. **NULL HANDLING**: If a field is empty in the PDF (e.g. Price Unitario is blank), output explicit null, DO NOT guess or shift neighboring values.
         
+        ${isLastChunk ? "9. CRITICAL: Look for the FINAL items (e.g. Seq 45). Do not hallucinate 'Seq 1' if it is not there." : ""}
+
+        10. **STRICT OBSERVACIONES EXTRACTION**:
+            - **CRITICAL**: You MUST extract the 'observaciones' field at the bottom of each item (e.g. "0010-013010...").
+            - Do NOT leave this empty. If you see text below the identifiers but before the next sequence, that IS the observation.
+            - Keep it RAW (e.g. Include "Factura...", "Parte...", "F.A...."). Do not try to parse it, just dump the text string.
+
+        11. **STRICT TABLE LAYOUT MAPPING**:
+            - **CLAVE TABLE** (Headers: CLAVE | NUM. PERMISO...):
+              - **C1 ROW Structure**: "C1 | [Code] | [Empty/Null] | [ValComDls] | [Qty]"
+              - **CRITICAL**: 'FIRMA DESCARGO' (3rd col) is often EMPTY for C1. Do NOT grab the next line's "EC" to fill this. "EC" starts a NEW identifier.
+              - **ValComDls** (4th col) MUST be the small currency value (e.g. 5.76).
+              - **Cantidad UMT** (5th col) MUST be the quantity (e.g. 192.000).
+              - **Mismatch Fix**: If you see "192.000" in ValComDls, you shifted left. Move it to Cantidad UMT.
+            
+            - **IDENTIFICADORES TABLE** (Headers: IDENTIF. | COMPLEMENTO...):
+              - Items like **EC**, **EB** start here.
+              - **Fields**: "IDENTIF", "COMPLEMENTO 1", "COMPLEMENTO 2", "COMPLEMENTO 3".
+              - **CRITICAL STOP**: Do **NOT** capture text from the footer (like '25CFTT...', 'F.A.', 'Factura') as a complement.
+              - If you see a long Part Number or Invoice Code below the identifier, THAT IS OBSERVACIONES.
+              - **FIX**: "EC" usually has "compl1" = "1" (or "0"). Do NOT shift this to 'descargo'.
+              - They have NO 'ValComDls' and NO 'Cantidad UMT'. Return "0.00" for these.
+            
+            - **TASAS TABLE**: Headers are "CLAVE | TASA | TIPO | FORMA PAGO | IMPORTE".
+              - **CRITICAL COLUMNS**:
+                - Col 4 is **FORMA PAGO** (often "0"). Extract this as 'formaPago'.
+                - Col 5 (LAST) is **IMPORTE** (e.g. 17). Extract this as 'importe'.
+              - **FIX**: Ensure 'formaPago' gets the 4th col value (e.g. "0") and 'importe' gets the 5th (e.g. "17").
+
         INPUT TEXT:
         ${chunkText.substring(0, 30000)} // Chunk Safety Limit
       `;
@@ -570,11 +645,12 @@ export const geminiService = {
       const jsonString = JSON.stringify(mergedRawStruct);
 
       // Now that we have the JSON string, we can use our strict mapper (extracted helper).
-      const strictPedimentoData = processRawPedimentoLogic(jsonString);
+      // We apply the NO-REGEX cleaner to the final structured data to remove any \n leftovers.
+      const strictPedimentoData = cleanObjectNoRegex(processRawPedimentoLogic(jsonString));
 
       return {
         // Pass the raw AI JSON directly for inspection
-        aiJson: mergedRawStruct,
+        aiJson: cleanObjectNoRegex(mergedRawStruct),
 
         page1: {
           ...strictPedimentoData.header,
@@ -587,20 +663,41 @@ export const geminiService = {
           identificadoresGlobales: strictPedimentoData.header.identificadores,
           liquidacion: strictPedimentoData.header.importes
         },
-        items: strictPedimentoData.partidas.map(p => ({
-          secuencia: p.secuencia,
-          fraccion: p.fraccion,
-          nico: p.nico,
-          cantidadUMC: p.qty,
-          umc: p.umc,
-          precioPagado: p.totalAmount,
-          precioUnitario: p.unitPrice,
-          moneda: "USD", // Default or extract
-          vinculacion: p.vinculacion,
-          valcomdls: p.valorAduana,
-          tasas: p.contribuciones, // Add Tasas
-          identificadores: p.identifiers, // Add IDs
-        })),
+        items: strictPedimentoData.partidas.map(p => {
+          // 1. Remove Null partNo
+          const cleanPartNo = p.partNo && p.partNo.trim().length > 0 ? p.partNo : undefined;
+
+          // 2. R8 Injection Logic (Post-Phase 2 Mandatory)
+          // If fraction is Chapter 98 (Regla 8), ensure we handle this in OBSERVATIONS ONLY.
+          // We do NOT modify the 'identificadores' array or reuse existing fields.
+          let finalObs = p.observaciones || "";
+
+          if (p.fraccion && p.fraccion.startsWith('9802')) {
+            // Logic: Append R8 marker/data to observations
+            // This ensures we create the info ONLY in the observations section.
+            const r8Note = " [R8: 9802 DETECTED]";
+            if (!finalObs.includes("R8:")) {
+              finalObs += r8Note;
+            }
+          }
+
+          return {
+            secuencia: p.secuencia,
+            fraccion: p.fraccion,
+            nico: p.nico,
+            partNo: cleanPartNo, // Only defined if valid
+            cantidadUMC: p.qty,
+            umc: p.umc,
+            precioPagado: p.totalAmount,
+            precioUnitario: p.unitPrice,
+            moneda: "USD",
+            vinculacion: p.vinculacion,
+            valcomdls: p.valorAduana,
+            tasas: p.contribuciones,
+            identificadores: p.identifiers, // Strict: Do not touch
+            observaciones: finalObs // R8 info goes here
+          };
+        }),
         rawText: rawText
       };
 
@@ -833,6 +930,55 @@ export const geminiService = {
 
   // Senior Frontend Engineer: Phase 2 - Pure Logic (Sync)
   processRawPedimento: (rawText: string): DomainPedimentoData => processRawPedimentoLogic(rawText),
+
+  // New Feature: Document Structure Analysis (Learning Mode)
+  async analyzeDocumentStructure(base64Data: string, mimeType: string = 'image/jpeg'): Promise<any> {
+    const ai = getClient();
+
+    // Helper to try a specific model
+    const tryModel = async (modelName: string) => {
+      const prompt = `
+        Analyze the VISUAL STRUCTURE of this logistics document (Bill of Lading, Invoice, or Packing List).
+        Identify where key data fields are located.
+        
+        Return a JSON object with:
+        - documentType: "BL", "AWB", "INVOICE", "PACKING_LIST" or "UNKNOWN"
+        - confidence: 0-1 score
+        - layoutType: "Standard", "Table-Based", "Two-Column", etc.
+        - detectedFields: An object where keys are standard field names (bookingNo, containerNo, shipper, consignee, notifyParty, vessel, voyage, portOfLoading, portOfDischarge, grossWeight, volume) and values are the LABELS found near them or "Not Found".
+        - sampleValues: Extract one example value for each detected field.
+        
+        Do not output markdown code blocks, just the JSON.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: modelName,
+        contents: {
+          parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
+        },
+        config: { responseMimeType: 'application/json' }
+      });
+
+      return JSON.parse(cleanJson(response.text || '{}'));
+    };
+
+    // Retry Logic: Try 2.0 Flash Exp -> 1.5 Flash -> Fail
+    try {
+      console.log("Attempting Structure Analysis with gemini-2.0-flash-exp...");
+      return await tryModel('gemini-2.0-flash-exp');
+    } catch (e2) {
+      console.warn("Gemini 2.0 Flash Exp Failed. Falling back to 1.5 Flash...", e2);
+      // Wait 2 seconds to let Rate Limit bucket cool down
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      try {
+        return await tryModel('gemini-1.5-flash');
+      } catch (e1) {
+        console.error("All Structure Analysis Models Failed", e1);
+        // Propagate REAL error to UI for debugging
+        throw new Error(`Analysis Failed: ${(e1 as Error).message}`);
+      }
+    }
+  },
 
   // Valid Composition for Backward Compatibility (if needed)
   async extractPedimento(base64Images: string[]): Promise<{ data: DomainPedimentoData | null, raw: string }> {

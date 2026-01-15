@@ -29,6 +29,15 @@ export const DataStage = () => {
         // 2. Load Draft Session (Persistence active view) - ASYNC NOW
         const loadDraft = async () => {
             try {
+                // AUTO-RECOVERY TRIGGER (Critical Fix)
+                const recovered = await storageService.recoverLocalData();
+                if (recovered > 0) {
+                    // Force refresh reports if recovery happened
+                    setSavedReports(storageService.getDataStageReports());
+                    // We don't alert here to be "silent" as requested, or maybe a subtle toast?
+                    console.log(`Silent Recovery: ${recovered} items rescued.`);
+                }
+
                 const draft = await storageService.getDraftDataStage();
                 if (draft && draft.records.length > 0) {
                     setData(draft.records);

@@ -56,15 +56,7 @@ export const ProformaValidator = () => {
         setStoredInvoices(Object.entries(grouped).map(([inv, count]) => ({ invoiceNo: inv, count })));
     };
 
-    const handleResetDatabase = () => {
-        if (confirm('Are you sure you want to delete ALL stored invoice items? This cannot be undone.')) {
-            // storageService.clearInvoiceItems(); // Method does not exist
-            const items = storageService.getInvoiceItems();
-            const ids = items.map(i => i.id).filter(id => id !== undefined) as string[];
-            storageService.deleteInvoiceItems(ids);
-            loadInvoices();
-        }
-    };
+
 
     const openInvoicesModal = () => {
         loadInvoices();
@@ -373,13 +365,7 @@ export const ProformaValidator = () => {
                     <h1 className="text-2xl font-bold text-slate-800">Proforma Validator</h1>
                 </div>
                 <div className="flex gap-2">
-                    <button
-                        onClick={handleResetDatabase}
-                        className="flex items-center gap-2 px-3 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider"
-                    >
-                        <Trash2 size={14} />
-                        Reset Items DB
-                    </button>
+
                     <button
                         onClick={async () => {
                             try {

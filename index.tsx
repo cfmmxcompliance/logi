@@ -1,6 +1,8 @@
 import React, { ReactNode, ErrorInfo } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
+import { AuthProvider } from './context/AuthContext.tsx';
+import { NotificationProvider } from './context/NotificationContext.tsx';
 
 interface ErrorBoundaryProps {
   children?: ReactNode;
@@ -43,8 +45,8 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
                 {this.state.error?.message || 'Unknown Error'}
               </code>
             </div>
-            <button 
-              onClick={() => window.location.reload()} 
+            <button
+              onClick={() => window.location.reload()}
               className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
               Try Reloading
@@ -69,7 +71,11 @@ try {
   root.render(
     <React.StrictMode>
       <ErrorBoundary>
-        <App />
+        <AuthProvider>
+          <NotificationProvider>
+            <App />
+          </NotificationProvider>
+        </AuthProvider>
       </ErrorBoundary>
     </React.StrictMode>
   );

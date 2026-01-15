@@ -271,6 +271,33 @@ export const storageService = {
     await setDoc(doc(db, COLS.INVOICES, item.id), sanitizeForFirestore(item));
   },
 
+  batchUpdateInvoiceItems: async (items: CommercialInvoiceItem[]) => {
+    // 1. Local Update
+    if (!db) {
+      items.forEach(item => {
+        const idx = dbState.commercialInvoices.findIndex((i: any) => i.id === item.id);
+        if (idx !== -1) dbState.commercialInvoices[idx] = item;
+      });
+      saveLocal();
+      return;
+    }
+
+    // 2. Cloud Batch Update
+    const chunks = [];
+    for (let i = 0; i < items.length; i += 500) {
+      chunks.push(items.slice(i, i + 500));
+    }
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach(item => {
+        const ref = doc(db, COLS.INVOICES, item.id);
+        batch.set(ref, sanitizeForFirestore(item)); // set matches overwrite behavior of updateInvoiceItem
+      });
+      await batch.commit();
+    }
+  },
+
   deleteInvoiceItem: async (id: string) => {
     storageService.createSnapshot(`Delete Item ${id}`);
     if (!db) {
@@ -327,6 +354,101 @@ export const storageService = {
     if (ids.length > 0) {
       await storageService.deleteInvoiceItems(ids);
     }
+  },
+
+  // DATA RECOVERY FEATURE
+  recoverLocalData: async () => {
+    console.log("Attempting Local Data Recovery (Deep Scan)...");
+    let recoveredCount = 0;
+
+    try {
+      // 1. Read ALL Raw LocalStorage Keys
+      const rawLS = localStorage.getItem(LOCAL_STORAGE_KEY);
+      const rawBackup = localStorage.getItem(INVOICES_BACKUP_KEY);
+      const rawDraft = localStorage.getItem(DRAFT_DATA_STAGE_KEY); // DataStage Drafts
+
+      const localDB = rawLS ? JSON.parse(rawLS) : {};
+      const localItems = localDB.commercialInvoices || [];
+      const backupItems = rawBackup ? JSON.parse(rawBackup) : [];
+
+      // --- PART A: Commercial Invoices Recovery ---
+      const allLocalInvoices = [...localItems, ...backupItems];
+      const uniqueLocalMap = new Map();
+      allLocalInvoices.forEach(i => uniqueLocalMap.set(i.id, i));
+
+      const currentIds = new Set(dbState.commercialInvoices.map((i: any) => i.id));
+      const invoiceOrphans: CommercialInvoiceItem[] = [];
+      uniqueLocalMap.forEach((item, id) => {
+        if (!currentIds.has(id)) {
+          invoiceOrphans.push(item as CommercialInvoiceItem);
+        }
+      });
+
+      if (invoiceOrphans.length > 0) {
+        console.log(`Recovering ${invoiceOrphans.length} orphaned Invoices...`);
+        await storageService.addInvoiceItems(invoiceOrphans);
+        recoveredCount += invoiceOrphans.length;
+      }
+
+      // --- PART B: DataStage Draft Recovery ---
+      if (rawDraft) {
+        const draftData = JSON.parse(rawDraft);
+        if (draftData && (draftData.records?.length > 0 || (Array.isArray(draftData) && draftData.length > 0))) {
+          console.log("Found Local DataStage Draft. Promoting to Cloud...");
+          const draftRef = doc(db, COLS.DRAFTS, `RESCUED_${new Date().getTime()}`);
+          await setDoc(draftRef, {
+            content: draftData,
+            recoveredAt: new Date().toISOString(),
+            origin: 'Auto-Rescue'
+          });
+          recoveredCount += 1;
+        }
+      }
+
+      // --- PART C: DataStage History Recovery (The "Hidden" Reports) ---
+      const rawHistory = localStorage.getItem(COLS.DATA_STAGE_REPORTS);
+      if (rawHistory) {
+        const localReports: DataStageReport[] = JSON.parse(rawHistory);
+        // Check each local report. If it has records but Cloud doesn't (or key is missing), UPLOAD IT.
+
+        for (const localR of localReports) {
+          if (localR.records && localR.records.length > 0) {
+            // Check if this report is "empty" in Cloud State
+            const cloudR = dbState.dataStageReports.find((r: any) => r.id === localR.id);
+
+            // Logic: If Cloud missing OR Cloud has 0 records but Local has > 0 -> RESCUE
+            if (!cloudR || (!cloudR.records || cloudR.records.length === 0)) {
+              console.log(`Rescuing Report History: ${localR.name} (${localR.records.length} items)`);
+
+              const { writeBatch, collection, doc } = await import('firebase/firestore');
+              // We must upload the ITEMS to the subcollection
+              const recordsRef = collection(db, COLS.DATA_STAGE_REPORTS, localR.id, 'items');
+
+              const BATCH_SIZE = 400;
+              const chunks = [];
+              for (let i = 0; i < localR.records.length; i += BATCH_SIZE) {
+                chunks.push(localR.records.slice(i, i + BATCH_SIZE));
+              }
+
+              for (const chunk of chunks) {
+                const batch = writeBatch(db);
+                chunk.forEach(record => {
+                  const recordDocRef = doc(recordsRef, record.id);
+                  batch.set(recordDocRef, record);
+                });
+                await batch.commit();
+              }
+              recoveredCount += 1; // Count reports, not items
+            }
+          }
+        }
+      }
+
+    } catch (e) {
+      console.error("Recovery failed:", e);
+    }
+
+    return recoveredCount;
   },
 
   deleteInvoiceByNumber: async (invoiceNo: string) => {
@@ -460,14 +582,18 @@ export const storageService = {
   // Senior Frontend Engineer: Implemented missing bulk upload logic for vessels.
   upsertVesselTracking: async (items: VesselTrackingRecord[], onProgress?: (p: number) => void) => {
     if (!db) {
-      dbState.vesselTracking = [...dbState.vesselTracking, ...items];
+      // Clean data before local save
+      const cleanItems = items.map(i => ({ ...i, blNo: i.blNo ? String(i.blNo).trim() : '' }));
+      dbState.vesselTracking = [...dbState.vesselTracking, ...cleanItems];
       saveLocal();
       return;
     }
     const batch = writeBatch(db);
     items.forEach((item, idx) => {
       const id = item.id || crypto.randomUUID();
-      batch.set(doc(db, COLS.VESSEL_TRACKING, id), sanitizeForFirestore({ ...item, id }));
+      // CLEAN DATA: Normalize BL to ensure linking works
+      const cleanItem = { ...item, id, blNo: item.blNo ? String(item.blNo).trim() : '' };
+      batch.set(doc(db, COLS.VESSEL_TRACKING, id), sanitizeForFirestore(cleanItem));
       if (onProgress) onProgress((idx + 1) / items.length);
     });
     await batch.commit();
@@ -492,14 +618,18 @@ export const storageService = {
   // Senior Frontend Engineer: Implemented missing bulk upload logic for customs.
   upsertCustomsClearance: async (items: CustomsClearanceRecord[], onProgress?: (p: number) => void) => {
     if (!db) {
-      dbState.customsClearance = [...dbState.customsClearance, ...items];
+      // Clean data before local save
+      const cleanItems = items.map(i => ({ ...i, blNo: i.blNo ? String(i.blNo).trim() : '' }));
+      dbState.customsClearance = [...dbState.customsClearance, ...cleanItems];
       saveLocal();
       return;
     }
     const batch = writeBatch(db);
     items.forEach((item, idx) => {
       const id = item.id || crypto.randomUUID();
-      batch.set(doc(db, COLS.CUSTOMS, id), sanitizeForFirestore({ ...item, id }));
+      // CLEAN DATA: Normalize BL
+      const cleanItem = { ...item, id, blNo: item.blNo ? String(item.blNo).trim() : '' };
+      batch.set(doc(db, COLS.CUSTOMS, id), sanitizeForFirestore(cleanItem));
       if (onProgress) onProgress((idx + 1) / items.length);
     });
     await batch.commit();
@@ -1416,6 +1546,25 @@ export const storageService = {
             } catch (scrubErr) {
               console.error("Smart Scrub Partial Error", scrubErr);
             }
+          }
+
+          // C. Delete Vessel & Customs (by Booking/BL)
+          if (bookingRef) {
+            // Vessel
+            const vesselQuery = query(collection(db, COLS.VESSEL_TRACKING), where("blNo", "==", bookingRef));
+            const vesselSnap = await getDocs(vesselQuery);
+            vesselSnap.forEach(doc => {
+              console.log(`[Delete] Cascading to Vessel: ${doc.id}`);
+              batch.delete(doc.ref);
+            });
+
+            // Customs
+            const customsQuery = query(collection(db, COLS.CUSTOMS), where("blNo", "==", bookingRef));
+            const customsSnap = await getDocs(customsQuery);
+            customsSnap.forEach(doc => {
+              console.log(`[Delete] Cascading to Customs: ${doc.id}`);
+              batch.delete(doc.ref);
+            });
           }
 
           // D. Find & Delete Equipment (by Container No)

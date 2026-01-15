@@ -100,12 +100,8 @@ const AppContent = () => {
 const App: React.FC = () => {
   return (
     <HashRouter>
-      <AuthProvider>
-        <NotificationProvider>
-          <AppContent />
-          <NotificationPopup />
-        </NotificationProvider>
-      </AuthProvider>
+      <AppContent />
+      <NotificationPopup />
     </HashRouter>
   );
 };

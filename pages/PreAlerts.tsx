@@ -724,7 +724,7 @@ export const PreAlerts = () => {
 
         try {
             // 1. Upload for record (Silent)
-            // await storageService.uploadTrainingDocument(formatSub.file, formatSub.provider, formatSub.comments);
+            await storageService.uploadTrainingDocument(formatSub.file, formatSub.provider, formatSub.comments);
 
             // 2. Perform Analysis
             const base64 = await new Promise<string>((resolve) => {
@@ -751,13 +751,13 @@ export const PreAlerts = () => {
             setFormatSub({ file: null, provider: '', comments: '' });
             setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 1000);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
             setProcState({
                 isOpen: true,
                 status: 'error',
                 title: 'Analysis Failed',
-                message: 'Could not learn document structure.',
+                message: error?.message || 'Could not learn document structure.',
                 progress: 0
             });
         }
@@ -884,7 +884,22 @@ export const PreAlerts = () => {
                                                 {res.file.name}
                                             </td>
                                             <td className="px-4 py-3 font-mono text-slate-600">
-                                                {res.preAlert.bookingAbw || '-'}
+                                                <div className="flex items-center gap-1 group">
+                                                    <input
+                                                        type="text"
+                                                        value={res.preAlert.bookingAbw || ''}
+                                                        onChange={(e) => {
+                                                            const newVal = e.target.value.toUpperCase();
+                                                            const newResults = [...extractionReview.results];
+                                                            newResults[idx].preAlert.bookingAbw = newVal;
+                                                            // Auto-clear duplicate/conflict warnings if corrected? 
+                                                            // For now just update state.
+                                                            setExtractionReview({ ...extractionReview, results: newResults });
+                                                        }}
+                                                        className="bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none w-full font-bold text-slate-700 py-1"
+                                                    />
+                                                    <Edit2 size={12} className="text-slate-300 opacity-0 group-hover:opacity-100 pointer-events-none" />
+                                                </div>
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 <div className="flex items-center justify-center gap-2">

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import ExcelJS from 'exceljs';
-import * as XLSX_Basic from 'xlsx/dist/xlsx.mini.min.js';
+import React, { useState, useEffect, useRef, useDeferredValue } from 'react';
+// import ExcelJS from 'exceljs'; // REMOVED: Dynamic Import
+// import * as XLSX_Basic from 'xlsx/dist/xlsx.mini.min.js'; // REMOVED: Dynamic Import
 import { Upload, FileDown, Search, Plus, Trash2, Edit2, X, Check, FileSpreadsheet, AlertCircle, FileText, CheckCircle, Save, Repeat, History, RotateCcw, AlertTriangle } from 'lucide-react';
 import { storageService } from '../services/storageService.ts';
 import { CommercialInvoiceItem, RawMaterialPart } from '../types.ts';
@@ -14,6 +14,34 @@ import { LOGO_BASE64 } from '../src/constants/logo.ts';
 
 
 
+// Helper for Master Data Application (Shared Logic)
+const applyMasterDataToItems = (
+    items: CommercialInvoiceItem[],
+    masterDataMap: Record<string, RawMaterialPart>
+): CommercialInvoiceItem[] => {
+    return items.map(item => {
+        const normalizedPartNo = String(item.partNo || '').trim();
+        const match = masterDataMap[normalizedPartNo];
+
+        if (match) {
+            return {
+                ...item,
+                spanishDescription: match.DESCRIPCION_ES?.trim() || item.spanishDescription,
+                hts: match.HTSMX?.trim() || item.hts,
+                rb: match.R8?.trim() || item.rb,
+                um: match.UMC?.trim() || item.um,
+                // Only overwrite netWeight if Master Data has it defined (>0)
+                // If Invoice has weight but Master Data is 0, keep Invoice weight (safest assumption)
+                netWeight: (match.NETWEIGHT && Number(match.NETWEIGHT) > 0) ? Number(match.NETWEIGHT) : (item.netWeight || 0),
+                regimen: match.REGIMEN?.trim() || item.regimen,
+                // Correction of PartNo casing/trimming
+                partNo: match.PART_NUMBER?.trim() || item.partNo
+            };
+        }
+        return item;
+    });
+};
+
 // Helper for Consolidation
 const consolidateItems = (
     rawItems: any[],
@@ -22,8 +50,8 @@ const consolidateItems = (
     const map = new Map<string, CommercialInvoiceItem>();
 
     rawItems.forEach(row => {
-        // Key includes Description now
-        const descKey = (row.spanishDescription || '').trim();
+        // Key includes Description now (Normalized)
+        const descKey = (row.spanishDescription || '').trim().toUpperCase().replace(/\s+/g, ' ');
         const key = `${row.partNo}|${row.unitPrice}|${row.invoiceNo}|${row.regimen}|${descKey}`;
 
         const masterPart = masterPartsMap.get(row.partNo);
@@ -78,6 +106,179 @@ const consolidateItems = (
     return Array.from(map.values());
 };
 
+// Componente optimizado para evitar re-renderizados masivos
+const InvoiceRow = React.memo(({
+    item,
+    index,
+    isSelected,
+    onSelect,
+    isEditing,
+    onStartEdit,
+    onCancelEdit,
+    onSaveEdit,
+    onDelete,
+    editValues,
+    setEditValues,
+    masterPart, // Pasamos el MasterPart ya buscado
+    onOpenDiff,
+    onOpenEst
+}: any) => {
+
+    // Lógica auxiliar visual (extraída del render inline para velocidad)
+    const getStatusIcons = () => {
+        // R8 Logic
+        const r8Desc = masterPart?.DESCRIPCION_R8?.toString().trim().toUpperCase() || '';
+        const itemDesc = item.spanishDescription?.toString().trim().toUpperCase() || '';
+        const itemRb = item.rb?.toString().trim() || '';
+        const isTextMatch = r8Desc && itemDesc && (r8Desc.includes(itemDesc) || itemDesc.includes(r8Desc));
+        const isR8Match = isTextMatch || (!itemRb && !r8Desc);
+
+        // Price Logic
+        const estPrice = Number(masterPart?.ESTIMATED || 0);
+        const itemPrice = parseFloat(String(item.unitPrice || '0'));
+        const remarks = masterPart?.REMARKS?.toString().toLowerCase() || '';
+        const isPriceIssue = (estPrice > 0 && itemPrice < estPrice) || ((estPrice === 0 && remarks.includes('price')) && !item.priceVerified);
+
+        // Sensible Logic
+        const sensibleVal = masterPart?.SENSIBLE ? String(masterPart.SENSIBLE).trim().toUpperCase() : '';
+        const isSensibleClean = sensibleVal === 'N' || sensibleVal === '';
+
+        return { isR8Match, isPriceIssue, isSensibleClean, estPrice };
+    };
+
+    const status = getStatusIcons();
+
+    return (
+        <tr className={`hover:bg-slate-50 transition-colors group ${isEditing ? 'bg-blue-50' : ''}`}>
+            <td className="p-4">
+                <input type="checkbox" checked={isSelected} onChange={() => onSelect(item.id)} className="rounded border-slate-300" />
+            </td>
+            <td className="p-4 text-center">
+                {isEditing ? (
+                    <div className="flex items-center gap-1 justify-center">
+                        <button onClick={() => onSaveEdit(item.id)} className="text-emerald-600 hover:bg-emerald-50 p-1 rounded"><Save size={16} /></button>
+                        <button onClick={onCancelEdit} className="text-slate-400 hover:bg-slate-100 p-1 rounded"><X size={16} /></button>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-1 justify-center">
+                        <button onClick={() => onStartEdit(item)} className="text-slate-400 hover:text-blue-600 p-1"><Edit2 size={16} /></button>
+                        <button onClick={() => onDelete(item.id)} className="text-slate-400 hover:text-red-500 p-1"><Trash2 size={16} /></button>
+                    </div>
+                )}
+            </td>
+            <td className="p-4 font-mono font-bold text-slate-700">{index + 1}</td>
+
+            {/* R8 Diff Column */}
+            <td className="p-4 text-center">
+                {!masterPart ? (
+                    <button className="text-red-500 hover:text-red-700 p-1"><X size={20} strokeWidth={3} /></button>
+                ) : status.isR8Match ? (
+                    <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
+                ) : (
+                    <button onClick={() => onOpenDiff(item)} className="text-red-500 hover:text-red-700 p-1"><X size={20} strokeWidth={3} /></button>
+                )}
+            </td>
+
+            {/* Estimated Price Column */}
+            <td className="p-4 text-center">
+                {!masterPart ? (
+                    <button onClick={() => onOpenEst(item)} className="text-red-500 hover:text-red-700 p-1"><X size={20} strokeWidth={3} /></button>
+                ) : status.isPriceIssue ? (
+                    <button onClick={() => onOpenEst(item)} className="text-red-500 hover:text-red-700 p-1" title={`Est: $${status.estPrice}`}><X size={20} strokeWidth={3} /></button>
+                ) : (
+                    <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
+                )}
+            </td>
+
+            {/* Sensible Column */}
+            <td className="p-4 text-center">
+                {!masterPart ? <X size={20} className="text-red-500 mx-auto" strokeWidth={3} /> :
+                    status.isSensibleClean ? <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} /> : <X size={20} className="text-red-500 mx-auto" strokeWidth={3} />}
+            </td>
+
+            {/* DB Exists Column */}
+            <td className="p-4 text-center">
+                {masterPart ? <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} /> : <X size={20} className="text-red-500 mx-auto" strokeWidth={3} />}
+            </td>
+
+            {/* Invoice No */}
+            <td className="p-4 font-medium text-slate-800">
+                {isEditing ? (
+                    <input type="text" value={editValues.invoiceNo || ''} onChange={e => setEditValues({ ...editValues, invoiceNo: e.target.value })} className="w-full px-2 py-1 border rounded bg-white text-xs" />
+                ) : item.invoiceNo}
+            </td>
+
+            {/* Container */}
+            <td className="p-4 text-slate-600 font-mono text-xs">
+                {isEditing ? (
+                    <input type="text" value={editValues.containerNo || ''} onChange={e => setEditValues({ ...editValues, containerNo: e.target.value })} className="w-full px-2 py-1 border rounded bg-white text-xs" />
+                ) : (item.containerNo || '-')}
+            </td>
+
+            <td className="p-4 text-slate-600 whitespace-nowrap">{item.date}</td>
+
+            {/* Regimen */}
+            <td className="p-4">
+                {item.regimen ? (
+                    <span className={`px-2 py-1 rounded text-xs font-bold ${item.regimen === 'A1' ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}`}>{item.regimen}</span>
+                ) : <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse">MISSING</span>}
+            </td>
+
+            {/* Incoterm */}
+            <td className="p-4 text-slate-600 font-mono text-xs">
+                {isEditing ? (
+                    <input type="text" value={editValues.incoterm || ''} onChange={e => setEditValues({ ...editValues, incoterm: e.target.value })} className="w-full px-2 py-1 border rounded bg-white text-xs" />
+                ) : (item.incoterm || '').replace(/INCOTERM/i, '').split(' ')[0]}
+            </td>
+
+            {/* HTS */}
+            <td className="p-4 text-slate-600 font-mono text-xs">
+                {item.hts || <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse">MISSING</span>}
+            </td>
+
+            {/* Part No */}
+            <td className="p-4 text-slate-600">
+                {isEditing ? (
+                    <input type="text" value={editValues.partNo || ''} onChange={e => setEditValues({ ...editValues, partNo: e.target.value })} className="w-full px-2 py-1 border rounded bg-white text-xs font-mono" />
+                ) : item.partNo}
+            </td>
+
+            <td className="p-4 text-slate-600">{item.model}</td>
+            <td className="p-4 text-slate-600 max-w-xs truncate" title={item.englishName}>{item.englishName}</td>
+            <td className="p-4 text-slate-600 max-w-xs truncate" title={item.spanishDescription}>
+                {item.spanishDescription ? <span className="uppercase">{item.spanishDescription}</span> : <span className="px-2 py-1 bg-red-100 text-red-600 text-xs font-bold">MISSING</span>}
+            </td>
+
+            {/* Qty, UM, Weight, Price */}
+            <td className="p-4 text-right font-mono">
+                {isEditing ? <input type="number" value={editValues.qty || 0} onChange={e => setEditValues({ ...editValues, qty: Number(e.target.value) })} className="w-20 px-2 py-1 border rounded text-right" /> : item.qty}
+            </td>
+            <td className="p-4 font-mono text-xs">
+                {isEditing ? <input type="text" value={editValues.um || ''} onChange={e => setEditValues({ ...editValues, um: e.target.value })} className="w-16 px-2 py-1 border rounded uppercase" /> : (item.um || <span className="text-red-600 font-bold">MISSING</span>)}
+            </td>
+            <td className="p-4 text-right font-mono">
+                {isEditing ? <input type="number" step="0.01" value={editValues.netWeight || 0} onChange={e => setEditValues({ ...editValues, netWeight: Number(e.target.value) })} className="w-20 px-2 py-1 border rounded text-right" /> : (item.netWeight ? item.netWeight.toFixed(2) : <span className="text-red-600">MISSING</span>)}
+            </td>
+            <td className="p-4 text-right font-mono text-slate-600">
+                {isEditing ? ((editValues.qty || 0) * (editValues.netWeight || 0)).toFixed(2) : ((item.qty || 0) * (item.netWeight || 0)).toFixed(2)}
+            </td>
+            <td className="p-4 text-right font-mono">
+                {isEditing ? <input type="number" step="0.01" value={editValues.unitPrice || 0} onChange={e => setEditValues({ ...editValues, unitPrice: Number(e.target.value) })} className="w-24 px-2 py-1 border rounded text-right" /> : `$${item.unitPrice.toFixed(2)}`}
+            </td>
+            <td className="p-4 text-right font-mono font-medium">${((item.qty || 0) * (item.unitPrice || 0)).toFixed(2)}</td>
+        </tr>
+    );
+}, (prev, next) => {
+    // Custom compare function for performance
+    return (
+        prev.item === next.item &&
+        prev.isSelected === next.isSelected &&
+        prev.isEditing === next.isEditing &&
+        prev.masterPart === next.masterPart &&
+        prev.editValues === next.editValues
+    );
+});
+
 export const CIExtractor: React.FC = () => {
     const { user } = useAuth();
     const isAdmin = user?.role === 'Admin';
@@ -97,6 +298,8 @@ export const CIExtractor: React.FC = () => {
     const [items, setItems] = useState<CommercialInvoiceItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const deferredSearchTerm = useDeferredValue(searchTerm); // NON-BLOCKING UI
+
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [bulkDeleteModal, setBulkDeleteModal] = useState(false);
     const [editingItem, setEditingItem] = useState<CommercialInvoiceItem | null>(null);
@@ -129,7 +332,14 @@ export const CIExtractor: React.FC = () => {
 
     useEffect(() => {
         const syncMasterData = () => {
-            const parts = [...storageService.getParts()];
+            const rawParts = storageService.getParts();
+
+            // PERF: Skip rebuild if array reference hasn't changed (prevents unnecessary sorting/mapping)
+            // storageService.getParts() returns the same array reference if no parts changed
+            if ((syncMasterData as any).lastRef === rawParts) return;
+            (syncMasterData as any).lastRef = rawParts;
+
+            const parts = [...rawParts];
             // Sort by Date Ascending (Oldest -> Newest) so Newest overwrites Oldest in the map
             parts.sort((a, b) => {
                 const dateA = a.UPDATE_TIME ? new Date(a.UPDATE_TIME).getTime() : 0;
@@ -159,63 +369,104 @@ export const CIExtractor: React.FC = () => {
     }, []);
 
     // Look up Master Data when Amendments modal opens
+    // AUTO RECOVERY ON MOUNT
+    useEffect(() => {
+        const attemptRecovery = async () => {
+            const restored = await storageService.recoverLocalData();
+            if (restored > 0) {
+                showNotification('Data Recovery', `Restored ${restored} unsaved items from local storage.`, 'success');
+                loadData(); // Refresh UI
+            }
+        };
+        attemptRecovery();
+    }, []); // Only on Mount
+
+    // Look up Master Data when Amendments modal opens
     useEffect(() => {
         if (showRegimenModal && selectedIds.size > 0) {
             const allParts = storageService.getParts();
             const matches: Record<string, RawMaterialPart> = {};
 
             items.filter(i => selectedIds.has(i.id)).forEach(item => {
-                const part = allParts.find(p => p.PART_NUMBER === item.partNo);
+                // Improved Matching Logic using MasterDataMap (O(1) lookup vs O(N) find)
+                const normalizedPartNo = String(item.partNo || '').trim();
+                const part = masterDataMap[normalizedPartNo];
+
                 if (part) {
                     matches[item.id] = part;
                 }
             });
             setAmendmentMatches(matches);
         }
-    }, [showRegimenModal, selectedIds, items]);
+    }, [showRegimenModal, selectedIds, items, masterDataMap]);
 
     const handleApplyMasterData = async () => {
-        const updates: CommercialInvoiceItem[] = [];
+        try {
+            // 1. Filter selected items
+            const explicitItems = items.filter(i => selectedIds.has(i.id));
 
-        items.filter(i => selectedIds.has(i.id)).forEach(item => {
-            const match = amendmentMatches[item.id];
-            if (match) {
-                updates.push({
-                    ...item,
-                    spanishDescription: match.DESCRIPCION_ES?.trim() || item.spanishDescription,
-                    hts: match.HTSMX?.trim() || item.hts,
-                    rb: match.R8?.trim() || item.rb,
-                    um: match.UMC?.trim() || item.um,
-                    netWeight: match.NETWEIGHT !== undefined ? match.NETWEIGHT : (item.netWeight || 0)
-                });
+            // 2. Apply Master Data Logic
+            const enrichedItems = applyMasterDataToItems(explicitItems, masterDataMap);
 
+            // Optimization: Prevent "Ghost Writes" (updating items that didn't actually change)
+            const updates = enrichedItems.filter(newItem => {
+                const original = items.find(i => i.id === newItem.id);
+                if (!original) return false;
 
+                // Compare key fields to see if ANY changed
+                const hasChanged =
+                    newItem.spanishDescription !== original.spanishDescription ||
+                    newItem.hts !== original.hts ||
+                    newItem.rb !== original.rb ||
+                    newItem.um !== original.um ||
+                    newItem.regimen !== original.regimen ||
+                    newItem.netWeight !== original.netWeight ||
+                    newItem.partNo !== original.partNo; // In case normalization changed casing
+
+                return hasChanged;
+            });
+
+            if (updates.length > 0) {
+                // Use Batch Update (Atomic & Safer)
+                await storageService.batchUpdateInvoiceItems(updates);
+
+                loadData();
+                setShowRegimenModal(false);
+                setSelectedIds(new Set());
+                showNotification('Auto-Fill Success', `Updated ${updates.length} items from Master Data.`, 'success');
+            } else {
+                showNotification('No Matches', 'No Master Data found for selected items.', 'warning');
             }
-        });
-
-        if (updates.length > 0) {
-            await Promise.all(updates.map(i => storageService.updateInvoiceItem(i)));
-            loadData();
-            setShowRegimenModal(false);
-            setSelectedIds(new Set());
-            showNotification('Auto-Fill Success', `Updated ${updates.length} items from Master Data.`, 'success');
-        } else {
-            showNotification('No Matches', 'No Master Data found for selected items.', 'warning');
+        } catch (error) {
+            console.error("Apply Master Data Failed:", error);
+            showNotification('Update Failed', 'Could not apply Master Data updates.', 'error');
         }
     };
 
     const handleBulkRegimenUpdate = async () => {
-        const updates = items
-            .filter(i => selectedIds.has(i.id))
-            .map(i => ({ ...i, regimen: bulkRegimenValue }));
+        try {
+            const updates = items
+                .filter(i => selectedIds.has(i.id))
+                // Optimization: Ignore if already has this regimen
+                .filter(i => i.regimen !== bulkRegimenValue)
+                .map(i => ({ ...i, regimen: bulkRegimenValue }));
 
-        // Parallel update
-        await Promise.all(updates.map(i => storageService.updateInvoiceItem(i)));
+            if (updates.length === 0) {
+                showNotification('No Changes', 'Selected items already have this regimen.', 'info');
+                return;
+            }
 
-        loadData();
-        setShowRegimenModal(false);
-        setSelectedIds(new Set());
-        showNotification('Update Success', `Updated regimen for ${updates.length} items.`, 'success');
+            // Use Batch Update (Atomic & Safer than Promise.all)
+            await storageService.batchUpdateInvoiceItems(updates);
+
+            loadData();
+            setShowRegimenModal(false);
+            setSelectedIds(new Set());
+            showNotification('Update Success', `Updated regimen for ${updates.length} items.`, 'success');
+        } catch (error) {
+            console.error("Bulk Regimen Update Failed:", error);
+            showNotification('Update Failed', 'Could not update regimen.', 'error');
+        }
     };
 
 
@@ -461,6 +712,8 @@ export const CIExtractor: React.FC = () => {
                 reader.onload = async (evt) => {
                     try {
                         const buffer = evt.target?.result as ArrayBuffer;
+                        // DYNAMIC IMPORT: Load library only when needed
+                        const XLSX_Basic = await import('xlsx/dist/xlsx.mini.min.js');
                         const wb = XLSX_Basic.read(buffer, { type: 'array' });
                         const wsname = wb.SheetNames[0];
                         const ws = wb.Sheets[wsname];
@@ -604,7 +857,11 @@ export const CIExtractor: React.FC = () => {
                         }
 
                         // Consolidate
-                        const newItems = consolidateItems(rawItems, partsMap as any);
+                        const newItemsRaw = consolidateItems(rawItems, partsMap as any);
+
+                        // AUTOMATION: Auto-Apply Master Data to New Items
+                        // This ensures that when we save, we already have the correct HTS/Desc/etc.
+                        const newItems = applyMasterDataToItems(newItemsRaw, masterDataMap);
 
                         // Apply Incoterm
                         if (parsedIncoterm) {
@@ -612,22 +869,27 @@ export const CIExtractor: React.FC = () => {
                         }
 
                         if (newItems.length > 0) {
+                            // Fix: Define ID detection Regex
                             const containerRegex = /[A-Z]{4}\d{7}/;
                             const match = file.name.match(containerRegex);
 
                             if (match) {
-                                const containerNo = match[0];
-                                // Duplicate Check
-                                if (items.some(i => i.containerNo === containerNo)) {
-                                    errors.push(`${file.name}: Container ${containerNo} already exists.`);
+                                // CASE A: Container Found -> SAFE SAVE
+                                const targetContainerNo = match[0];
+
+                                // Check for duplicates
+                                if (items.some(i => i.containerNo === targetContainerNo)) {
+                                    errors.push(`${file.name}: Container ${targetContainerNo} already exists.`);
                                 } else {
-                                    const itemsWithContainer = newItems.map(i => ({ ...i, containerNo }));
+                                    const itemsWithContainer = newItems.map(i => ({ ...i, containerNo: targetContainerNo }));
                                     await storageService.addInvoiceItems(itemsWithContainer);
                                     importCount += itemsWithContainer.length;
                                 }
                             } else {
-                                // No container in filename -> Aggregate for manual entry
+                                // CASE B: No Container -> DO NOT SAVE YET
+                                // Add to pending logic for user manual assignment
                                 pendingAggregate.push(...newItems);
+                                // Note: We do NOT call storageService.addInvoiceItems here.
                             }
                         } else {
                             errors.push(`${file.name}: No valid items found.`);
@@ -649,14 +911,14 @@ export const CIExtractor: React.FC = () => {
         // Post-process
         if (importCount > 0) {
             loadData();
-            showNotification('Batch Import', `Successfully imported ${importCount} items found in ${files.length} files.`, 'success');
+            showNotification('Safe Upload', `Successfully persisted ${importCount} items to Cloud.`, 'success');
         }
 
         if (pendingAggregate.length > 0) {
             setPendingFileItems(pendingAggregate);
             setTempContainerNo('');
             setShowContainerModal(true);
-            showNotification('Manual Entry Needed', `${pendingAggregate.length} items need a Container Number.`, 'info');
+            showNotification('Action Required', `${pendingAggregate.length} items saved as TEMP. Please assign Container Number.`, 'info');
         }
 
         if (errors.length > 0) {
@@ -668,7 +930,11 @@ export const CIExtractor: React.FC = () => {
     };
 
     // --- REUSABLE EXPORT FUNCTION (ExcelJS) ---
+
     const exportToExcelStamped = async (data: CommercialInvoiceItem[], filename: string) => {
+        // DYNAMIC IMPORT: Load library only when needed
+        const ExcelJS = (await import('exceljs')).default;
+
         const meta = (data[0] || {}) as Partial<CommercialInvoiceItem>;
         const workbook = new ExcelJS.Workbook();
         const ws = workbook.addWorksheet('Invoice');
@@ -970,7 +1236,7 @@ export const CIExtractor: React.FC = () => {
     };
 
     // --- CSV EXPORT CORREGIDO (Adiós a la basura de antigravity) ---
-    const handleExportCSV = () => {
+    const handleExportCSV = async () => {
         let itemsToExport = items;
         if (selectedIds.size > 0) itemsToExport = items.filter(i => selectedIds.has(i.id));
         else if (searchTerm) itemsToExport = filteredItems;
@@ -1013,6 +1279,7 @@ export const CIExtractor: React.FC = () => {
             });
 
             // 2. Generación usando exclusivamente la versión mini para evitar conflictos
+            const XLSX_Basic = await import('xlsx/dist/xlsx.mini.min.js');
             const ws = XLSX_Basic.utils.json_to_sheet(rows);
             const csvContent = XLSX_Basic.utils.sheet_to_csv(ws);
 
@@ -1047,10 +1314,12 @@ export const CIExtractor: React.FC = () => {
     };
 
     const handleSelectRow = (id: string) => {
-        const newSelected = new Set(selectedIds);
-        if (newSelected.has(id)) newSelected.delete(id);
-        else newSelected.add(id);
-        setSelectedIds(newSelected);
+        setSelectedIds(prev => {
+            const newSelected = new Set(prev);
+            if (newSelected.has(id)) newSelected.delete(id);
+            else newSelected.add(id);
+            return newSelected;
+        });
     };
 
     const confirmBulkDelete = async () => {
@@ -1075,10 +1344,23 @@ export const CIExtractor: React.FC = () => {
             return;
         }
 
-        const itemsWithContainer = pendingFileItems.map(i => ({ ...i, containerNo: tempContainerNo }));
+        // Duplicate Check (Logic from User)
+        const exists = items.some(i => i.containerNo === tempContainerNo);
+        if (exists) {
+            if (!confirm(`Container ${tempContainerNo} already contains data. Merge items?`)) return;
+        }
+
+        // Assign Container and SAVE NOW (First time persistence)
+        const itemsWithContainer = pendingFileItems.map(i => ({
+            ...i,
+            containerNo: tempContainerNo,
+            id: i.id || crypto.randomUUID() // Ensure IDs
+        }));
+
         await storageService.addInvoiceItems(itemsWithContainer);
+
         loadData(); // REFRESH UI
-        showNotification('Import Successful', `Successfully imported ${itemsWithContainer.length} items with Container ${tempContainerNo}.`, 'success');
+        showNotification('Import Successful', `Successfully imported ${itemsWithContainer.length} items to ${tempContainerNo}.`, 'success');
 
         setPendingFileItems([]);
         setTempContainerNo('');
@@ -1090,7 +1372,9 @@ export const CIExtractor: React.FC = () => {
 
     // Helper to check R8 Mismatch
     const checkR8Mismatch = (item: CommercialInvoiceItem) => {
-        const masterPart = masterDataMap[item.partNo];
+        // PERF: Ensure O(1) lookup matches the map key normalization
+        const normalizedPartNo = String(item.partNo || '').trim();
+        const masterPart = masterDataMap[normalizedPartNo];
         const r8Desc = masterPart?.DESCRIPCION_R8?.toString().trim().toUpperCase() || '';
         const itemDesc = item.spanishDescription?.toString().trim().toUpperCase() || '';
         const itemRb = item.rb?.toString().trim() || '';
@@ -1105,7 +1389,13 @@ export const CIExtractor: React.FC = () => {
         return !(isTextMatch || isBothEmpty);
     };
 
+    // Memory Optimized Filter Logic
     const filteredItems = React.useMemo(() => {
+        // CPU Optimization: Calculate terms ONCE
+        const terms = deferredSearchTerm ? deferredSearchTerm.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0) : [];
+
+        const hasSearch = terms.length > 0;
+
         return items.filter(i => {
             if (showMissingOnly) {
                 const hasMissingData = !i.regimen || !i.hts || !i.spanishDescription || !i.um;
@@ -1119,18 +1409,12 @@ export const CIExtractor: React.FC = () => {
             if (showSensibleOnly) {
                 const partNo = String(i.partNo || '').trim();
                 const masterPart = masterDataMap[partNo];
-                const val = masterPart?.SENSIBLE;
-
                 const strVal = masterPart?.SENSIBLE ? String(masterPart.SENSIBLE).trim().toUpperCase() : '';
-                // Valid Non-Sensible value is "N" OR Empty
                 const isNotSensible = strVal === 'N' || strVal === '';
-
-                // We want to show items that ARE Sensible (i.e. NOT "N" and NOT Empty)
                 if (isNotSensible) return false;
             }
 
             if (showNoDBOnly) {
-                // Show ONLY if it does NOT exist in Master Data
                 const partNo = String(i.partNo || '').trim();
                 if (masterDataMap[partNo]) return false;
             }
@@ -1138,47 +1422,44 @@ export const CIExtractor: React.FC = () => {
             if (showPricesOnly) {
                 const partNo = String(i.partNo || '').trim();
                 const masterPart = masterDataMap[partNo];
-
-                // PURE "PRICES" FILTER Logic (Visual Match):
-                // The "Estimated" column shows a Red X if:
-                // 1. Part is Missing (!masterPart)
-                // 2. Part Exists BUT has "estimate_price" remark
-
                 if (!masterPart) {
-                    // Column has Red X (Part Not Found) -> Filter must SHOW it.
+                    // Keep
                 } else {
                     const remarks = masterPart.REMARKS?.toString().toLowerCase() || '';
                     const estimatedPrice = Number(masterPart.ESTIMATED || 0);
                     const itemPrice = parseFloat(String(i.unitPrice || '0'));
-
-                    // Match Render Logic: Only show if it causes a Red X
                     const isUndervalued = estimatedPrice > 0 && itemPrice < estimatedPrice;
                     const isLegacyError = (estimatedPrice === 0 && remarks.includes('price')) && !i.priceVerified;
-
-                    const isPriceIssue = isUndervalued || isLegacyError;
-
-                    // If NOT an issue, hide it.
-                    if (!isPriceIssue) return false;
+                    if (!(isUndervalued || isLegacyError)) return false;
                 }
             }
 
-            if (!searchTerm) return true;
+            if (!hasSearch) return true;
 
-            // Split search logic for better user experience
-            const terms = searchTerm.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
-            if (terms.length === 0) return true;
+            // MEMORY EFFICIENT SEARCH:
+            // Check fields directly. No new strings allocated per item.
+            return terms.some(term => {
+                if (i.invoiceNo && String(i.invoiceNo).toLowerCase().includes(term)) return true;
+                if (i.partNo && String(i.partNo).toLowerCase().includes(term)) return true;
+                if (i.englishName && String(i.englishName).toLowerCase().includes(term)) return true;
+                if (i.spanishDescription && String(i.spanishDescription).toLowerCase().includes(term)) return true;
 
-            // Senior Frontend Engineer: Updated to OR logic (some) so users can search multiple IDs.
-            return terms.some(term =>
-                String(i.invoiceNo || '').toLowerCase().includes(term) ||
-                String(i.partNo || '').toLowerCase().includes(term) ||
-                String(i.model || '').toLowerCase().includes(term) ||
-                String(i.englishName || '').toLowerCase().includes(term) ||
-                String(i.regimen || '').toLowerCase().includes(term) ||
-                String(i.containerNo || '').toLowerCase().includes(term)
-            );
+                if (i.model && String(i.model).toLowerCase().includes(term)) return true;
+                if (i.containerNo && String(i.containerNo).toLowerCase().includes(term)) return true;
+                if (i.regimen && String(i.regimen).toLowerCase().includes(term)) return true;
+                if (i.hts && String(i.hts).includes(term)) return true;
+                if (i.item && String(i.item).toLowerCase().includes(term)) return true;
+
+                if (i.date && String(i.date).includes(term)) return true;
+                if (i.incoterm && String(i.incoterm).toLowerCase().includes(term)) return true;
+                if (i.um && String(i.um).toLowerCase().includes(term)) return true;
+                if (i.qty && String(i.qty).includes(term)) return true;
+                if (i.unitPrice && String(i.unitPrice).includes(term)) return true;
+
+                return false;
+            });
         });
-    }, [items, searchTerm, showMissingOnly, showErrorsOnly, showSensibleOnly, showNoDBOnly, showPricesOnly, masterDataMap]);
+    }, [items, deferredSearchTerm, showMissingOnly, showErrorsOnly, showSensibleOnly, showNoDBOnly, showPricesOnly, masterDataMap]);
 
     const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
     const displayedItems = filteredItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -1222,6 +1503,24 @@ export const CIExtractor: React.FC = () => {
                         onChange={(e) => handleSearch(e.target.value)}
                         defaultValue=""
                     />
+
+                    {/* Clear Filters Button (New) */}
+                    {(showMissingOnly || showErrorsOnly || showSensibleOnly || showNoDBOnly || showPricesOnly || searchTerm) && (
+                        <button
+                            onClick={() => {
+                                setShowMissingOnly(false);
+                                setShowErrorsOnly(false);
+                                setShowSensibleOnly(false);
+                                setShowNoDBOnly(false);
+                                setShowPricesOnly(false);
+                                setSearchTerm('');
+                                if (searchInputRef.current) searchInputRef.current.value = '';
+                            }}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-red-500 underline font-bold bg-white px-2 py-1 rounded shadow-sm opacity-90 hover:opacity-100"
+                        >
+                            Clear Filters ({filteredItems.length}/{items.length})
+                        </button>
+                    )}
                 </div >
 
                 {/* Row 2: Actions & Filters */}
@@ -1408,7 +1707,31 @@ export const CIExtractor: React.FC = () => {
                             ) : filteredItems.length === 0 ? (
                                 <tr><td colSpan={15} className="p-8 text-center text-slate-400">No invoice items found. Import an Excel file to get started.</td></tr>
                             ) : (
-                                displayedItems.map((item, index) => (
+                                displayedItems.map((item, index) => {
+                                    // Pre-calculate Master Data lookup
+                                    const partNo = String(item.partNo || '').trim();
+                                    const masterPart = masterDataMap[partNo];
+
+                                    return (
+                                        <InvoiceRow
+                                            key={item.id}
+                                            item={item}
+                                            index={(currentPage - 1) * ITEMS_PER_PAGE + index}
+                                            isSelected={selectedIds.has(item.id)}
+                                            onSelect={handleSelectRow}
+                                            isEditing={editingId === item.id}
+                                            onStartEdit={handleStartEdit}
+                                            onCancelEdit={handleCancelEdit}
+                                            onSaveEdit={handleSaveEdit}
+                                            onDelete={handleDelete}
+                                            editValues={editValues}
+                                            setEditValues={setEditValues}
+                                            masterPart={masterPart}
+                                            onOpenDiff={handleOpenDiffModal}
+                                            onOpenEst={handleOpenEstModal}
+                                        />
+                                    );
+                                    /*
                                     <tr key={item.id} className={`hover:bg-slate-50 transition-colors group ${editingId === item.id ? 'bg-blue-50' : ''}`}>
                                         <td className="p-4">
                                             <input
@@ -1697,7 +2020,8 @@ export const CIExtractor: React.FC = () => {
                                         <td className="p-4 text-right font-mono font-medium">${((item.qty || 0) * (item.unitPrice || 0)).toFixed(2)}</td>
 
                                     </tr>
-                                ))
+                                    */
+                                })
                             )}
                         </tbody>
                     </table>

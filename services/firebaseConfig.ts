@@ -4,6 +4,8 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 // @ts-ignore
 import { getAuth } from 'firebase/auth';
+// @ts-ignore
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDEezg2uRbLKAfkGcXt1x0p0KamaTKAaBU",
@@ -15,23 +17,15 @@ const firebaseConfig = {
   measurementId: "G-01VXE7L5C3"
 };
 
-let app = null;
-let firestoreDb = null;
-let firebaseAuth = null;
+// 1. Inicialización Síncrona (Garantiza que 'app' existe antes de usarse)
+const app = initializeApp(firebaseConfig);
 
-try {
-  console.log("🔥 Firebase: Initializing...");
-  app = initializeApp(firebaseConfig);
-  firestoreDb = getFirestore(app);
-  firebaseAuth = getAuth(app);
-  console.log("✅ Firebase: Connected to Cloud Database & Auth");
-} catch (e) {
-  console.error("❌ Firebase Error:", e);
-}
+// 2. Instanciación inmediata de servicios
+const db = getFirestore(app);
+const auth = getAuth(app);
+const storage = getStorage(app);
 
-// Named export 'db' is required for live binding in other modules
-export { firestoreDb as db };
-export { firebaseAuth as auth };
-// @ts-ignore
-import { getStorage } from 'firebase/storage';
-export const storage = app ? getStorage(app) : null;
+console.log("✅ Firebase: Services Initialized");
+
+// 3. Exportación directa de constantes
+export { app, db, auth, storage };

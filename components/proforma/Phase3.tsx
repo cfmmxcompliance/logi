@@ -92,8 +92,43 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
 
     // --- 3. DATA POINTERS (Priority: Structured > Fallback) ---
     const h = root.header || {};
+
+    // RECOVERY: Helper to scan rawText for global lists if JSON is empty
+    const recoverList = (type: 'ids' | 'cont' | 'guias' | 'prov') => {
+        const txt = root.rawText || (data && data.rawText) || "";
+        if (!txt) return [];
+
+        switch (type) {
+            case 'ids': // Global Identifiers (Before Partidas)
+                const prePartidas = txt.split(/PARTIDAS/i)[0] || "";
+                const idMatches = prePartidas.match(/IDENTIF\.?\s*([A-Z]{2})/g);
+                return idMatches ? idMatches.map((m: string) => ({ clave: m.replace(/IDENTIF\.?\s*/, '').trim() })) : [];
+            case 'cont': // Containers (4 letters + 7 numbers)
+                const contMatches = txt.match(/[A-Z]{4}\d{7}/g);
+                return contMatches ? contMatches.map((m: string) => ({ numero: m, tipo: 'CN' })) : [];
+            case 'guias': // BLs / Guias (Look for GUIA/BL keywords or formatting)
+                const guiaMatch = txt.match(/(?:GUIA|BL|MASTER|HOUSE)[:\.]?\s*([A-Z0-9\-\.]+)/i);
+                return guiaMatch ? [{ numero: guiaMatch[1], tipo: 'BL' }] : [];
+            case 'prov': // Provider Name recovery
+                const provSection = txt.split(/DATOS DEL PROVEEDOR/i)[1];
+                if (provSection) {
+                    const provName = provSection.split(/NOMBRE|RAZON SOCIAL/i)[1]?.split('\n')[1]?.trim();
+                    if (provName) return { nombre: provName };
+                }
+                return {};
+        }
+        return [];
+    };
+
     const imp = root.importador || {};
-    const prov = root.proveedor || (Array.isArray(root.proveedores) ? root.proveedores[0] : root.proveedores) || {};
+
+    // CORRECTED MAPPING: Check all Phase 2 potential paths for Provider
+    // Gemini returns "proveedor" object OR "proveedores" array
+    let prov = root.proveedor || (Array.isArray(root.proveedores) ? root.proveedores[0] : root.proveedores) || {};
+    if (!prov.nombre && !prov.razonSocial) {
+        const recoveredProv = recoverList('prov');
+        prov = { ...prov, ...recoveredProv };
+    }
 
     // Header Merge
     const displayHeader = {
@@ -114,11 +149,34 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
     const v = root.valores || {};
 
     const toArray = (x: any) => Array.isArray(x) ? x : (x ? [x] : []);
+
+    // Arrays with Fallback
     const tasas = toArray(root.tasasNivelPedimento || root.tasasGlobales || root.dta);
     const liq = root.cuadroLiquidacion || root.importes || {};
-    const ids = toArray(root.identificadores || root.identificadoresGlobales);
-    const trans = toArray(root.transporte?.medios ? root.transporte.medios[0] : root.transporte);
-    const cont = toArray(root.contenedores);
+
+    // Recover Global IDs
+    let ids = toArray(root.identificadores || root.identificadoresGlobales);
+    if (ids.length === 0) ids = recoverList('ids');
+
+    // CORRECTED MAPPING: Transport
+    // Gemini returns "transporte" array of objects OR "transporte" object with "medios"
+    let trans = [];
+    if (Array.isArray(root.transporte)) {
+        trans = root.transporte; // Direct array from Gemini
+    } else if (root.transporte && root.transporte.medios) {
+        trans = root.transporte.medios; // Nested structure
+    }
+
+    // Fallback if still empty or missing ID
+    if (trans.length === 0 || !trans[0]?.identificacion) {
+        const recoveredGuias = recoverList('guias');
+        if (recoveredGuias.length > 0) trans = [{ ...trans[0], identificacion: recoveredGuias[0].numero, tipo: 'BL' }];
+    }
+
+    // Recover Containers
+    let cont = toArray(root.contenedores);
+    if (cont.length === 0) cont = recoverList('cont');
+
     const itemsRaw = toArray(root.partidas || root.items);
 
     // --- 4. POST-PROCESS DATA ENRICHMENT (User "Arreglo") ---
@@ -127,28 +185,76 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
     useEffect(() => {
         if (!itemsRaw || itemsRaw.length === 0) return;
 
-        // Logic: Scan 'observaciones' for implicit fields (PartNo, Invoice, FA)
-        const enriched = itemsRaw.map((item: any) => {
+        // --- 1. STRICT TEXT PARSER (Fallback for Missing AI Data) ---
+        // Solves: "Analiza que esta faltando" - Recovers Identifiers and Taxes from Raw Text if JSON is empty.
+        const rawText = root.rawText || (data && data.rawText) || "";
+        const partidasSection = rawText.split(/PARTIDAS[\s\n\r]+FRACCION/i)[1] || rawText; // Isolate Partidas block
+
+        // Logic: Scan 'observaciones' AND raw text context per item
+        const enriched = itemsRaw.map((item: any, idx: number) => {
+            // A. Existing Heuristic: PartNo/Invoice from Observaciones
             const obs = item.observaciones || item.descripcion || "";
             const tokens = obs.split(/[\s\n\r]+/).filter((t: string) => t.length > 0);
 
-            // Heuristic: First token is often PartNo, Second is often Invoice if matches pattern
             let partNo = item.numeroParte;
             let invoice = item.folioFactura;
             let fa = item.FA;
 
-            // If missing structured data, try to extract from observations
             if (!partNo && tokens.length > 0 && tokens[0].length > 3) {
-                partNo = tokens[0]; // Assume first token is PartNo
-                if (tokens.length > 1 && !invoice) invoice = tokens[1]; // Assume second is Invoice
-                if (tokens.length > 2 && !fa) fa = tokens[2]; // Assume third is FA
+                partNo = tokens[0];
+                if (tokens.length > 1 && !invoice) invoice = tokens[1];
+                if (tokens.length > 2 && !fa) fa = tokens[2];
+            }
+
+            // B. STRICT TEXT EXTRACTION (New Layer)
+            // Attempt to find this specific item's block in text using Sequence/Fraction
+            let recoveredIds = item.identificadores || [];
+            let recoveredTaxes = item.contribuciones || item.tasas || []; // "tasas" or "contribuciones"?
+
+            // Only run heavy text scan if missing data
+            if (rawText && (recoveredIds.length === 0 || recoveredTaxes.length === 0)) {
+                // Find a block roughly matching "SEC [idx+1] ... [Fraction]"
+                // Simple strict window: Since we don't have exact line numbers, we scan for the Sequence ID
+                const seqPattern = new RegExp(`\\b${item.secuencia || idx + 1}\\s+${item.fraccion}`, 'i');
+                const matchIndex = partidasSection.search(seqPattern);
+
+                if (matchIndex !== -1) {
+                    // Look ahead 500 chars (heuristic window for one item)
+                    const itemBlock = partidasSection.substring(matchIndex, matchIndex + 800);
+
+                    // Recover Identifiers: "IDENTIF. XX"
+                    if (recoveredIds.length === 0) {
+                        const idMatch = itemBlock.match(/IDENTIF\.?\s*([A-Z]{2,3})/g);
+                        if (idMatch) {
+                            recoveredIds = idMatch.map((m: string) => ({ clave: m.replace(/IDENTIF\.?\s*/, '').trim() }));
+                        }
+                    }
+
+                    // Recover Taxes: "IVA" followed by rate
+                    if (recoveredTaxes.length === 0) {
+                        // Simple patterns for likely taxes: IVA, IGI, DTA
+                        const taxTypes = ['IVA', 'IGI', 'DTA'];
+                        const newTaxes: any[] = [];
+                        taxTypes.forEach(tax => {
+                            // Look for "IVA 16" or "IVA 0" or "IVA EX"
+                            const taxRegex = new RegExp(`\\b${tax}\\s+([\\d\\.]+)`, 'i');
+                            const tMatch = itemBlock.match(taxRegex);
+                            if (tMatch) {
+                                newTaxes.push({ clave: tax, tasa: tMatch[1] });
+                            }
+                        });
+                        if (newTaxes.length > 0) recoveredTaxes = newTaxes;
+                    }
+                }
             }
 
             return {
                 ...item,
                 numeroParte: partNo,
                 folioFactura: invoice,
-                FA: fa
+                FA: fa,
+                identificadores: recoveredIds,
+                tasas: recoveredTaxes
             };
         });
 

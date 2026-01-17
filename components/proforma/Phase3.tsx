@@ -58,6 +58,7 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
     const [lastUpdate, setLastUpdate] = useState(Date.now());
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showRaw, setShowRaw] = useState(false);
+    const [showJson, setShowJson] = useState(false);
 
     useEffect(() => {
         if (data) console.log("Phase 3 Isolated Input:", data);
@@ -118,7 +119,41 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
     const ids = toArray(root.identificadores || root.identificadoresGlobales);
     const trans = toArray(root.transporte?.medios ? root.transporte.medios[0] : root.transporte);
     const cont = toArray(root.contenedores);
-    const items = toArray(root.partidas || root.items);
+    const itemsRaw = toArray(root.partidas || root.items);
+
+    // --- 4. POST-PROCESS DATA ENRICHMENT (User "Arreglo") ---
+    const [items, setItems] = useState<any[]>(itemsRaw);
+
+    useEffect(() => {
+        if (!itemsRaw || itemsRaw.length === 0) return;
+
+        // Logic: Scan 'observaciones' for implicit fields (PartNo, Invoice, FA)
+        const enriched = itemsRaw.map((item: any) => {
+            const obs = item.observaciones || item.descripcion || "";
+            const tokens = obs.split(/[\s\n\r]+/).filter((t: string) => t.length > 0);
+
+            // Heuristic: First token is often PartNo, Second is often Invoice if matches pattern
+            let partNo = item.numeroParte;
+            let invoice = item.folioFactura;
+            let fa = item.FA;
+
+            // If missing structured data, try to extract from observations
+            if (!partNo && tokens.length > 0 && tokens[0].length > 3) {
+                partNo = tokens[0]; // Assume first token is PartNo
+                if (tokens.length > 1 && !invoice) invoice = tokens[1]; // Assume second is Invoice
+                if (tokens.length > 2 && !fa) fa = tokens[2]; // Assume third is FA
+            }
+
+            return {
+                ...item,
+                numeroParte: partNo,
+                folioFactura: invoice,
+                FA: fa
+            };
+        });
+
+        setItems(enriched);
+    }, [root]); // Re-run when root changes
 
     // --- UI HELPERS ---
     const Field = ({ label, value, highlight = false }: { label: string, value: any, highlight?: boolean }) => (
@@ -193,9 +228,14 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                     <span className="font-bold text-slate-700 uppercase flex items-center gap-2">
                         <FileText size={16} /> Phase 3: Independent Viewer (Strict)
                     </span>
-                    <button onClick={() => setShowRaw(!showRaw)} className="text-[10px] text-blue-600 underline hover:text-blue-800">
-                        {showRaw ? 'Hide JSON Payload' : 'Show JSON Payload'}
-                    </button>
+                    <div className="flex gap-3">
+                        <button onClick={() => setShowRaw(!showRaw)} className="text-[10px] text-blue-600 underline hover:text-blue-800 font-bold">
+                            {showRaw ? 'Hide Raw (P1)' : 'Show Raw (P1)'}
+                        </button>
+                        <button onClick={() => setShowJson(!showJson)} className="text-[10px] text-purple-600 underline hover:text-purple-800 font-bold">
+                            {showJson ? 'Hide JSON (P2)' : 'Show JSON (P2)'}
+                        </button>
+                    </div>
                 </div>
                 <button onClick={handleLocalRefresh} className="border border-slate-400 bg-white px-3 py-1 text-[10px] uppercase hover:bg-slate-100 shadow-sm rounded flex items-center gap-1">
                     <RotateCcw size={10} /> Refresh View
@@ -203,8 +243,20 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
             </div>
 
             {showRaw && (
-                <div className="mb-4 p-4 bg-slate-900 text-green-400 text-[10px] overflow-auto max-h-80 border border-slate-700 rounded-lg shadow-inner font-mono">
-                    <pre>{JSON.stringify(root, null, 2)}</pre>
+                <div className="mb-4">
+                    <div className="bg-blue-800 text-white px-2 py-1 text-[10px] font-bold uppercase rounded-t">Phase 1: Raw Text Output</div>
+                    <div className="p-4 bg-slate-900 text-green-400 text-[10px] overflow-auto max-h-60 border border-slate-700 rounded-b-lg shadow-inner font-mono whitespace-pre-wrap">
+                        {typeof root === 'string' ? root : (root.rawText || "No Raw Text Available")}
+                    </div>
+                </div>
+            )}
+
+            {showJson && (
+                <div className="mb-4">
+                    <div className="bg-purple-800 text-white px-2 py-1 text-[10px] font-bold uppercase rounded-t">Phase 2: Structured JSON Output</div>
+                    <div className="p-4 bg-slate-900 text-cyan-400 text-[10px] overflow-auto max-h-60 border border-slate-700 rounded-b-lg shadow-inner font-mono">
+                        <pre>{JSON.stringify(root, null, 2)}</pre>
+                    </div>
                 </div>
             )}
 
@@ -297,25 +349,81 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                         <thead className="bg-slate-100 text-slate-500 font-bold uppercase border-b border-slate-200">
                             <tr>
                                 <th className="px-2 py-1.5">Sec</th>
+
                                 <th className="px-2 py-1.5">Fracción</th>
                                 <th className="px-2 py-1.5">Vinculación</th>
                                 <th className="px-2 py-1.5 text-right">Cant UMC</th>
                                 <th className="px-2 py-1.5 text-right">UMC</th>
+                                <th className="px-2 py-1.5 text-right">Cant UMT</th>
+                                <th className="px-2 py-1.5 text-right">UMT</th>
+                                <th className="px-2 py-1.5">PVC</th>
+                                <th className="px-2 py-1.5">POD</th>
                                 <th className="px-2 py-1.5 text-right">Precio Pag.</th>
-                                <th className="px-2 py-1.5 text-center">Observaciones (Parser Visual)</th>
+                                <th className="px-2 py-1.5">Identificadores</th>
+                                <th className="px-2 py-1.5">Contribuciones</th>
+                                <th className="px-2 py-1.5 bg-yellow-50 text-yellow-800 border-l border-yellow-200">Part No</th>
+                                <th className="px-2 py-1.5 bg-yellow-50 text-yellow-800">Invoice</th>
+                                <th className="px-2 py-1.5 bg-yellow-50 text-yellow-800 border-r border-yellow-200">F.A.</th>
+                                <th className="px-2 py-1.5 text-center">Observaciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 bg-white">
                             {items.map((p: any, idx: number) => (
-                                <tr key={idx} className="hover:bg-slate-50">
+                                <tr key={idx} className="hover:bg-slate-50 align-top">
                                     <td className="px-2 py-1.5 font-mono text-slate-400">{p.secuencia || idx + 1}</td>
-                                    <td className="px-2 py-1.5 font-mono font-bold text-blue-700">{p.fraccion}</td>
+
+
+
+                                    <td className="px-2 py-1.5 font-mono font-bold text-blue-700">
+                                        {p.fraccion}
+                                        {p.subdivision && <span className="block text-[8px] text-slate-400">Sub: {p.subdivision}</span>}
+                                    </td>
                                     <td className="px-2 py-1.5 font-mono">{p.vinculacion}</td>
                                     <td className="px-2 py-1.5 text-right font-mono">{p.cantidadUMC}</td>
                                     <td className="px-2 py-1.5 text-right font-mono">{p.umc}</td>
-                                    <td className="px-2 py-1.5 text-right font-mono font-medium">${Number(p.valComDls || p.precioPagado || 0).toLocaleString()}</td>
+                                    <td className="px-2 py-1.5 text-right font-mono">{p.cantidadUMT}</td>
+                                    <td className="px-2 py-1.5 text-right font-mono">{p.umt}</td>
+                                    <td className="px-2 py-1.5 font-mono">{p.PVC || p.paisVendedor}</td>
+                                    <td className="px-2 py-1.5 font-mono">{p.POD || p.paisOrigen}</td>
+                                    <td className="px-2 py-1.5 text-right font-mono font-medium">
+                                        <div className="font-bold">${Number(p.precioPagado || 0).toLocaleString()}</div>
+                                        <div className="text-[8px] text-slate-400">Unit: ${Number(p.precioUnitario || 0).toFixed(4)}</div>
+                                    </td>
+
+                                    {/* IDENTIFICADORES */}
+                                    <td className="px-2 py-1.5">
+                                        {p.identificadores && p.identificadores.length > 0 ? (
+                                            <div className="flex flex-wrap gap-1 max-w-[120px]">
+                                                {p.identificadores.map((id: any, k: number) => (
+                                                    <span key={k} className="px-1 py-0.5 bg-slate-100 border border-slate-300 rounded text-[9px] font-bold text-slate-600">
+                                                        {id.clave}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : <span className="text-slate-300">-</span>}
+                                    </td>
+
+                                    {/* CONTRIBUCIONES (MINI GRID) */}
+                                    <td className="px-2 py-1.5">
+                                        {p.tasas && p.tasas.length > 0 ? (
+                                            <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 max-w-[140px]">
+                                                {p.tasas.map((t: any, k: number) => (
+                                                    <div key={k} className="flex justify-between text-[8px] border-b border-dashed border-slate-200">
+                                                        <span className="font-bold">{t.clave}</span>
+                                                        <span>{t.tasa ? `${t.tasa}%` : 'Ex'}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : <span className="text-slate-300">-</span>}
+                                    </td>
+
+                                    {/* ENRICHED FIELDS (Commercial Refs) */}
+                                    <td className="px-2 py-1.5 font-mono font-bold text-yellow-700 bg-yellow-50/50 border-l border-yellow-100">{p.numeroParte || '-'}</td>
+                                    <td className="px-2 py-1.5 font-mono text-yellow-700 bg-yellow-50/50">{p.folioFactura || '-'}</td>
+                                    <td className="px-2 py-1.5 font-mono text-yellow-700 bg-yellow-50/50 border-r border-yellow-100">{p.FA || '-'}</td>
+
                                     <td className="px-2 py-1.5 max-w-xs break-words whitespace-normal border-l border-dashed border-slate-200 pl-4">
-                                        {renderObservaciones(p.observaciones || '')}
+                                        {renderObservaciones(p.observaciones || p.descripcion || '')}
                                     </td>
                                 </tr>
                             ))}

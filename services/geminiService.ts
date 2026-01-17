@@ -62,6 +62,9 @@ interface GeminiRawResponse {
     tipoCambio: string; // Keep as string to avoid rounding errors
     pesoBruto: string;
     aduanaES: string;
+    entradaSalida: string; // Added
+    arribo: string; // Added
+    salida: string; // Added
   };
   importador: {
     rfc: string;
@@ -97,6 +100,7 @@ interface GeminiRawResponse {
     contribucion: string;
     clave: string;
     tasa: string;
+    tipoTasa: string; // Added CVE. T. TASA
     importe: string;
   }[];
   cuadroLiquidacion: {
@@ -117,6 +121,7 @@ interface GeminiRawResponse {
   }[];
   transporte: {
     identificacion: string;
+    tipo?: string; // e.g. M (Master), H (House)
     pais: string;
     transportista?: any;
     candados?: string[];
@@ -150,6 +155,15 @@ interface GeminiRawResponse {
     cantidadUMT: string;
     PVC: string; // Uppercase key from user prompt
     POD: string; // Uppercase key from user prompt
+    paisOrigen: string; // Added for Phase 3
+    paisVendedor: string; // Added for Phase 3
+    paisComprador: string; // Added for Phase 3
+
+    // New User Requests
+    numeroParte: string; // Part No
+    folioFactura: string; // Invoice No
+    FA: string; // F.A.
+
     descripcion: string;
     valores: {
       valorAduanaUSD: string;
@@ -339,12 +353,30 @@ const processRawPedimentoLogic = (rawText: string): DomainPedimentoData => {
           fraccion: p.fraccion,
           nico: p.subdivision || "",
           description: p.descripcion,
-          // LOGIC: PartNo is now parsed from Observations (Phase 2 Requirement)
-          // Example Obs: "TBQ381-3 25CFTT176707-6-A1" -> PartNo: "TBQ381-3"
+          // LOGIC: Enhanced Parsing for Phase 3 (PartNo, Invoice, HTS)
+          // Re-implemented to support strict mirroring of print format
           partNo: (() => {
             if (!p.observaciones) return "";
             const parts = p.observaciones.trim().split(/\s+/);
             return parts.length > 0 ? parts[0] : "";
+          })(),
+          invoice: (() => {
+            if (!p.observaciones) return "";
+            const parts = p.observaciones.trim().split(/\s+/);
+            if (parts.length < 2) return "";
+            // Heuristic: Invoice is everything between PartNo and "F.A." or End
+            // Often: "PARTNO INVOICE F.A. 123..."
+            const endIndex = parts.findIndex((s: string) => s.includes("F.A."));
+            if (endIndex === -1) return parts.slice(1).join(" ");
+            return parts.slice(1, endIndex).join(" ");
+          })(),
+          obsHts: (() => {
+            if (!p.observaciones) return "";
+            const parts = p.observaciones.trim().split(/\s+/);
+            // Heuristic: Last token if numeric-ish
+            const last = parts[parts.length - 1];
+            if (last && /^\d+/.test(last)) return last;
+            return "";
           })(),
           qty: parseFloat(p.cantidadUMC) || 0, // Ensure number
           umc: String(p.umc || ""),
@@ -376,7 +408,7 @@ const processRawPedimentoLogic = (rawText: string): DomainPedimentoData => {
             importe: t.importe
           })) : [],
           regulaciones: p.permisos || [],
-          observaciones: p.observaciones || ""
+          observaciones: (p.observaciones || "").replace(/\n/g, " ").trim()
         };
       }) : [],
       rawText: cleanText,
@@ -504,16 +536,38 @@ export const geminiService = {
         
         REQUIRED JSON STRUCTURE:
         {
-          "header": { "numPedimento": "REQ", "tOper": "REQ", "cvePedimento": "REQ", "regimen": "REQ", "tipoCambio": "0.00", "pesoBruto": "0.00", "aduanaES": "REQ" },
+          "header": { 
+            "numPedimento": "REQ", 
+            "tOper": "REQ", 
+            "cvePedimento": "REQ", 
+            "regimen": "REQ", 
+            "tipoCambio": "0.00", 
+            "pesoBruto": "0.00", 
+            "aduanaES": "REQ",
+            "entradaSalida": "OPT (Look for 'ENTRADA/SALIDA' or 'E/S'. Extract code e.g. 1, 7)",
+            "arribo": "OPT (Look for 'ARRIBO' or 'ARR'. Extract code e.g. 1)",
+            "salida": "OPT (Look for 'SALIDA' or 'SAL'. Extract code e.g. 7)"
+          },
           "importador": { "rfc": "REQ", "nombre": "OPT", "domicilio": "OPT" },
           "proveedor": { "idFiscal": "OPT", "nombre": "OPT", "domicilio": "OPT" },
           "fechas": { "entrada": "YYYY-MM-DD", "pago": "YYYY-MM-DD" },
           "valores": { "valorDolares": "0", "valorAduana": "0", "precioPagado": "0", "fletes": "0", "seguros": "0", "embalajes": "0", "otrosIncrementables": "0" },
-          "tasasNivelPedimento": [ { "clave": "STR", "tasa": "STR" } ],
+          "tasasNivelPedimento": [ { "clave": "STR", "tasa": "STR", "tipoTasa": "STR (CVE. T. TASA e.g. 1, 4)" } ],
           "cuadroLiquidacion": { "efectivo": "0", "total": "0", "conceptos": [ { "concepto": "STR", "importe": "0" } ] },
           "identificadores": [ { "clave": "STR", "compl1": "STR" } ],
-          "transporte": [ { "identificacion": "STR", "transportista": { "nombre": "STR" } } ],
+          "transporte": [ { "identificacion": "STR", "tipo": "STR (e.g. M, H)", "transportista": { "nombre": "STR" } } ],
           "contenedores": [ { "numero": "STR", "tipo": "STR" } ],
+          "facturas": [
+            {
+              "numFactura": "STR",
+              "fecha": "YYYY-MM-DD",
+              "incoterm": "STR",
+              "monedaFact": "STR",
+              "valMonFact": "0.00",
+              "factorMonFact": "0.0000",
+              "valDolares": "0.00"
+            }
+          ],
           "partidas": [
             {
               "secuencia": 1,
@@ -527,6 +581,12 @@ export const geminiService = {
               "cantidadUMT": "REQ",
               "PVC": "REQ (Country Code e.g. CHN, USA, MEX)",
               "POD": "REQ (Country Code e.g. CHN, USA, MEX)",
+              "paisOrigen": "OPT (Full Country if PVC/POD unclear)",
+              "paisVendedor": "OPT (Full Country if PVC/POD unclear)",
+              "paisComprador": "OPT",
+              "numeroParte": "OPT (Look for 'Part No', 'Parte', or code in desc)",
+              "folioFactura": "OPT (Look for 'Invoice', 'Factura' in item)",
+              "FA": "OPT (Look for 'FA', 'F.A.')",
               "descripcion": "STR",
               "valores": { 
                 "valorAduanaUSD": "0",
@@ -556,13 +616,35 @@ export const geminiService = {
         RULES:
         1. Extract data STRICTLY from the input text.
         2. **HEADER EXTRACTION (Chunk 1 Focus)**:
-           - **REGIMEN**: Look for "REGIMEN". It is usually a short code (e.g. "IMD", "A1", "V1"). Do not ignore it.
-           - **PESO BRUTO**: Look for "PESO BRUTO" or "P. BRUTO". Extract the value (e.g. "20436.00").
-           - **FECHAS**: Look for "FECHAS". "Entrada" is often "ENTRADA". "Pago" is "PAGO". Format as YYYY-MM-DD.
-           - **IMPORTADOR/PROVEEDOR**: Look for sections "DATOS DEL IMPORTADOR" and "DATOS DEL PROVEEDOR". Extract RFC/TaxID and Name.
-        3. Do NOT invent data. If truly missing/illegible, use null.
-        4. Return ONLY JSON.
-        5. EXTRACT ALL ITEMS FOUND IN THIS CHUNK. DO NOT TRUNCATE.
+           - **REGIMEN**: Look for "REGIMEN" (e.g. "IMD", "A1").
+           - **TIPO DE CAMBIO**: Look for "T.C.", "TIPO CAMBIO". Example: "17.97920".
+           - **PESO BRUTO**: Look for "PESO BRUTO", "P. BRUTO". 'B.W.'. Example: "9328.000". Extract ONLY numeric (remove 'KG', 'LBS').
+
+        2.1 **TRANSPORTE / BL (Important)**:
+           - Look for 'MEDIOS DE TRANSPORTE'.
+           - **IDENTIFICACION**: Look for "NUMERO (GUIA/ORDEN EMBARQUE)/ID", "GUIA", "BL".
+           - Extract the code (e.g. "EGLV143574068432").
+           - **TIPO**: Look for adjacent short code (e.g. "M", "H"). Extract as 'tipo'.
+           - Note: 'NUMERO/TIPO' usually refers to Containers, do not confuse with Transport ID unless it is the only one.
+
+        2.2 **CONTENEDORES**:
+           - Look for 'CONTENEDORES' section.
+           - Extract 'NUMERO' (e.g. "GAOU7309230") and 'TIPO' (e.g. "3", "4").
+           - Note: Type is often a single digit next to the number.
+
+        3. **PARTIDAS (Chunk 2+ Focus)**:
+           - Iterate through lines starting with "SEC" or numeric sequences.
+           - Extract "UMC" and "UMT" carefully. They are usually codes (1, 6) or units (KG, PZ), NOT country codes.
+           - **PVC / POD**: These ARE Country Codes (Origin/Destination) -> e.g. CHN, MEX, TWN.
+           - **Part No / Folio**: Look within description lines.
+
+        4. **FACTURAS / INVOICES (Crucial)**:
+           - Look for 'NUM. FACTURA', 'FECHA', 'INCOTERM', 'MONEDA' (or 'MONEDA FACT'), 'VAL.MON.FACT', 'FACTOR MON.FACT', 'VAL.DOLARES'.
+           - Values may be below headers. 
+           - Example Pattern: "NUM. FACTURA" -> value "25CFT..." -> "FECHA" -> "26/11/..."
+           - Extract ALL invoices found.
+
+        5. Output valid JSON only. No markdown. EXTRACT ALL ITEMS FOUND IN THIS CHUNK. DO NOT TRUNCATE.
         6. Do NOT copy 'impPrecioPag' to 'valorAgregado'. If empty, return null.
         7. **STRICT COLUMN DEFINITIONS FOR VALUES**:
            - 'impPrecioPag' (Importe Precio Pagado) MUST be the TOTAL VALUE column (usually large number, matches Invoice total approx).

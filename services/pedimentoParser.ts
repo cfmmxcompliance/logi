@@ -178,6 +178,8 @@ export interface PedimentoItem {
     clavePaisVendedor?: string; // O/V
     clavePaisOrigen?: string;
 
+    observaciones?: string; // Item-level observations
+
     // Values
     unitPrice: number; // Precio Unitario
     totalAmount: number; // Precio Pagado / Valor Comercial?
@@ -195,7 +197,6 @@ export interface PedimentoItem {
     identifiers?: any[];
     contribuciones?: any[];
     regulaciones?: any[]; // For permisos
-    observaciones?: string;
 
     page?: number;
 

@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, FileText, CheckCircle, Search, AlertTriangle, ArrowRight, Save, Trash2, History, List, X, UmbrellaIcon } from 'lucide-react';
+import { Upload, FileText, CheckCircle, Search, AlertTriangle, ArrowRight, Save, Trash2, History, List, X, UmbrellaIcon, Minus } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import { geminiService } from '../services/geminiService';
+import { Phase3 } from '../components/proforma/Phase3';
 import { PedimentoSummary } from '../components/proforma/PedimentoSummary';
 import { PedimentoPartidas } from '../components/proforma/PedimentoPartidas';
 import { Layout } from '../components/Layout';
@@ -406,22 +407,7 @@ export const ProformaValidator = () => {
                         <Upload size={18} /> Upload Pedimento PDF
                     </button>
 
-                    {pedimentoData && (
-                        <div className="flex bg-slate-100 p-1 rounded-lg">
-                            <button
-                                onClick={() => setViewMode('flat')}
-                                className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${viewMode === 'flat' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                            >
-                                Flat View
-                            </button>
-                            <button
-                                onClick={() => setViewMode('anexo')}
-                                className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${viewMode === 'anexo' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                            >
-                                Anexo 1
-                            </button>
-                        </div>
-                    )}
+
                     {pedimentoData && (
                         <button
                             onClick={handleOpenCustomsModal}
@@ -507,299 +493,255 @@ export const ProformaValidator = () => {
                 </div>
             )}
 
-            {/* RAW FLAT VIEW (Requested by User) */}
-            {!loading && pedimentoData && viewMode === 'flat' && (
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="border-b bg-slate-50 px-6 py-4">
-                        <h2 className="text-lg font-bold text-slate-800">Vista Plana de Extracción (Sistema)</h2>
-                        <p className="text-xs text-slate-500">Datos crudos extraídos sin formato oficial.</p>
-                    </div>
-
-                    <div className="p-6 grid gap-8">
-                        {/* Header Section */}
-                        <div>
-                            <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded flex items-center justify-center text-xs">H</span>
-                                Encabezado
-                            </h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-100 text-xs text-slate-600">
-                                {Object.entries(pedimentoData.header).map(([key, val]) => {
-                                    if (typeof val === 'object' && val !== null) return null; // Skip nested objects in this flat header view
-                                    return (
-                                        <div key={key} className="flex flex-col">
-                                            <span className="font-bold text-slate-400 uppercase text-[10px]">{key}</span>
-                                            <span className="font-mono text-slate-800 break-all">{String(val)}</span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* Partidas Section */}
-                        <div>
-                            <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                <span className="bg-emerald-100 text-emerald-700 w-6 h-6 rounded flex items-center justify-center text-xs">P</span>
-                                Partidas ({pedimentoData.partidas.length})
-                            </h3>
-                            <div className="overflow-x-auto border rounded-lg">
-                                <table className="w-full text-left text-xs whitespace-nowrap">
-                                    <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b">
-                                        <tr>
-                                            <th className="px-4 py-2">Sec</th>
-                                            <th className="px-4 py-2">Fraccion</th>
-                                            <th className="px-4 py-2">Cant UMC</th>
-                                            <th className="px-4 py-2">UMC</th>
-                                            <th className="px-4 py-2">Precio Pag.</th>
-                                            <th className="px-4 py-2">P. Unit</th>
-                                            <th className="px-4 py-2">Moneda</th>
-                                            <th className="px-4 py-2">Vinculacion</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {pedimentoData.partidas.map((p, idx) => (
-                                            <tr key={idx} className="hover:bg-slate-50">
-                                                <td className="px-4 py-2 font-mono">{p.secuencia}</td>
-                                                <td className="px-4 py-2 font-mono font-bold text-blue-600">{p.fraccion}</td>
-                                                <td className="px-4 py-2 text-right font-mono">{p.cantidadUMC}</td>
-                                                <td className="px-4 py-2 font-mono">{p.umc}</td>
-                                                <td className="px-4 py-2 text-right font-mono">${(p.precioPagado || 0).toLocaleString()}</td>
-                                                <td className="px-4 py-2 text-right font-mono">${(p.precioUnitario || 0).toLocaleString()}</td>
-                                                <td className="px-4 py-2 font-mono">{p.moneda}</td>
-                                                <td className="px-4 py-2 font-mono">{p.vinculacion}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+            {/* NEW: Phase 3 Render (Replamiento de Flat View) */}
+            {!loading && pedimentoData && (
+                <div className="mt-8">
+                    <Phase3 data={pedimentoData} />
                 </div>
             )}
 
-            {!loading && !pedimentoData && (
-                <div className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center text-slate-400">
-                    <Upload className="mx-auto mb-4 opacity-50" size={48} />
-                    <p className="text-lg font-medium">Upload Document (Proforma / Paid)</p>
-                    <p className="text-sm mt-2 max-w-md mx-auto">
-                        Raw Forensic Text Extraction.
-                        <br />
-                        <span className="opacity-75 text-xs">Direct Gemini 2.0 Output • No Compliance Rules • No Filtering</span>
-                    </p>
-                </div>
-            )}
+
+            {
+                !loading && !pedimentoData && (
+                    <div className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center text-slate-400">
+                        <Upload className="mx-auto mb-4 opacity-50" size={48} />
+                        <p className="text-lg font-medium">Upload Document (Proforma / Paid)</p>
+                        <p className="text-sm mt-2 max-w-md mx-auto">
+                            Raw Forensic Text Extraction.
+                            <br />
+                            <span className="opacity-75 text-xs">Direct Gemini 2.0 Output • No Compliance Rules • No Filtering</span>
+                        </p>
+                    </div>
+                )
+            }
 
             {/* RAW AI INSPECTOR: Phase 1 (Data Dump - Compact View) */}
-            {showRawModal && (
-                <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-white w-[900px] max-w-full h-[600px] max-h-[90vh] rounded-lg shadow-2xl flex flex-col relative overflow-hidden ring-1 ring-slate-200">
-                        {/* Header */}
-                        <div className="absolute top-0 left-0 right-0 h-10 bg-white border-b flex items-center justify-end px-3">
-                            <button
-                                onClick={() => setShowRawModal(false)}
-                                className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded-md text-xs font-bold transition-colors flex items-center gap-1"
-                            >
-                                Cerrar <span className="text-slate-400">×</span>
-                            </button>
-                        </div>
+            {
+                showRawModal && (
+                    <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+                        <div className="bg-white w-[900px] max-w-full h-[600px] max-h-[90vh] rounded-lg shadow-2xl flex flex-col relative overflow-hidden ring-1 ring-slate-200">
+                            {/* Header */}
+                            <div className="absolute top-0 left-0 right-0 h-10 bg-white border-b flex items-center justify-end px-3">
+                                <button
+                                    onClick={() => setShowRawModal(false)}
+                                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded-md text-xs font-bold transition-colors flex items-center gap-1"
+                                >
+                                    Cerrar <span className="text-slate-400">×</span>
+                                </button>
+                            </div>
 
-                        {/* Body */}
-                        <textarea
-                            readOnly
-                            className="flex-1 w-full h-full bg-white text-black font-mono text-xs p-8 pt-12 resize-none focus:outline-none"
-                            value={typeof rawInvoiceItems === 'string' ? rawInvoiceItems : JSON.stringify(rawInvoiceItems, null, 2)}
-                        />
+                            {/* Body */}
+                            <textarea
+                                readOnly
+                                className="flex-1 w-full h-full bg-white text-black font-mono text-xs p-8 pt-12 resize-none focus:outline-none"
+                                value={typeof rawInvoiceItems === 'string' ? rawInvoiceItems : JSON.stringify(rawInvoiceItems, null, 2)}
+                            />
 
-                        {/* Footer (Bridge to Phase 2) */}
-                        <div className="h-14 border-t bg-slate-50 flex items-center justify-between px-6 shrink-0">
-                            <span className="text-xs text-slate-400 font-mono">Phase 1: Forensic Verification</span>
-                            <button
-                                onClick={handlePhase2Analysis}
-                                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-sm"
-                            >
-                                Analizar Estructura (Fase 2) <ArrowRight size={16} />
-                            </button>
+                            {/* Footer (Bridge to Phase 2) */}
+                            <div className="h-14 border-t bg-slate-50 flex items-center justify-between px-6 shrink-0">
+                                <span className="text-xs text-slate-400 font-mono">Phase 1: Forensic Verification</span>
+                                <button
+                                    onClick={handlePhase2Analysis}
+                                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-sm"
+                                >
+                                    Analizar Estructura (Fase 2) <ArrowRight size={16} />
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* PHASE 2 INSPECTOR: Structured Analysis (Strict Mode) */}
-            {showPhase2Modal && (
-                <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-white w-[1000px] max-w-full h-[700px] max-h-[90vh] rounded-lg shadow-2xl flex flex-col relative overflow-hidden">
-                        {/* Phase 2 Header */}
-                        <div className="h-14 border-b bg-indigo-50 flex items-center justify-between px-6">
-                            <h3 className="font-bold text-indigo-900 flex items-center gap-2">
-                                <FileText size={18} />
-                                Phase 2: Structured Analysis (Strict Mode)
-                            </h3>
-                            <div className="flex items-center gap-2">
+            {
+                showPhase2Modal && (
+                    <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                        <div className="bg-white w-[1000px] max-w-full h-[700px] max-h-[90vh] rounded-lg shadow-2xl flex flex-col relative overflow-hidden">
+                            {/* Phase 2 Header */}
+                            <div className="h-14 border-b bg-indigo-50 flex items-center justify-between px-6">
+                                <h3 className="font-bold text-indigo-900 flex items-center gap-2">
+                                    <FileText size={18} />
+                                    Phase 2: Structured Analysis (Strict Mode)
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => { setShowPhase2Modal(false); setShowRawModal(true); }}
+                                        className="text-indigo-600 hover:bg-indigo-100 px-3 py-1 rounded text-sm font-medium transition-colors"
+                                    >
+                                        Back to Raw
+                                    </button>
+                                    <button
+                                        onClick={() => setShowPhase2Modal(false)}
+                                        className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 p-1.5 rounded-md transition-colors"
+                                        title="Minimize"
+                                    >
+                                        <Minus size={18} />
+                                    </button>
+                                    <button
+                                        onClick={() => setShowPhase2Modal(false)}
+                                        className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-3 py-1 rounded-md text-sm font-bold transition-colors"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex-1 overflow-hidden flex bg-slate-50">
+                                {isStructuring ? (
+                                    <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+                                        <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-100 border-t-indigo-600"></div>
+                                        <p className="text-slate-500 font-medium animate-pulse">Running Strict Forensic Analysis...</p>
+                                    </div>
+                                ) : pedimentoData ? (
+                                    <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                                        <div className="space-y-4">
+                                            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                                                <h4 className="font-bold text-yellow-800">Raw Data Inspector (Strict Mode)</h4>
+                                                <p className="text-sm text-yellow-700">Displaying raw forensic data extraction.</p>
+                                            </div>
+                                            <textarea
+                                                className="w-full h-96 p-4 font-mono text-xs bg-gray-900 text-green-400 rounded-lg"
+                                                value={structuredData?.aiJson ? JSON.stringify(structuredData.aiJson, null, 2) : "No Raw Forensic Data Available"}
+                                                readOnly
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
+                                        {phase2Error ? (
+                                            <div className="max-w-md text-center p-6 bg-red-50 rounded-xl border border-red-100">
+                                                <AlertTriangle className="mx-auto text-red-500 mb-4" size={32} />
+                                                <h4 className="text-red-800 font-bold mb-2">Analysis Failed</h4>
+                                                <p className="text-sm text-red-600 mb-6 font-mono break-words">{phase2Error}</p>
+                                                <button
+                                                    onClick={handlePhase2Analysis}
+                                                    className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition-colors"
+                                                >
+                                                    Retry Phase 2 (Strict)
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            "No Data"
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Customs Update Modal */}
+            {
+                showCustomsModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+                            <div className="p-6 border-b border-slate-100">
+                                <h3 className="text-lg font-bold">Select Customs Record</h3>
+                                <p className="text-sm text-slate-500">Choose the record to update with Pedimento info.</p>
+                            </div>
+                            <div className="p-4 bg-slate-50 border-b border-slate-200">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                                    <input
+                                        className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        placeholder="Search by BL, Container or Pedimento..."
+                                        value={customsSearch}
+                                        onChange={(e) => setCustomsSearch(e.target.value)}
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+                            <div className="max-h-[300px] overflow-y-auto">
+                                {filteredCustoms.length === 0 ? (
+                                    <div className="p-8 text-center text-slate-400 text-sm">No records found.</div>
+                                ) : (
+                                    <div className="divide-y divide-slate-100">
+                                        {filteredCustoms.map(r => (
+                                            <button
+                                                key={r.id}
+                                                onClick={() => setSelectedCustomsId(r.id)}
+                                                className={`w-full text-left p-4 hover:bg-blue-50 transition-colors flex items-center justify-between ${selectedCustomsId === r.id ? 'bg-blue-50 ring-1 ring-blue-500 inner-border' : ''}`}
+                                            >
+                                                <div>
+                                                    <div className="font-bold text-slate-800 text-sm">{r.blNo || 'No BL'}</div>
+                                                    <div className="text-xs text-slate-500">{r.containerNo}</div>
+                                                </div>
+                                                {selectedCustomsId === r.id && <CheckCircle className="text-blue-600" size={18} />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="p-6 border-t border-slate-100 flex justify-end gap-3">
+                                <button onClick={() => setShowCustomsModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium">Cancel</button>
                                 <button
-                                    onClick={() => { setShowPhase2Modal(false); setShowRawModal(true); }}
-                                    className="text-indigo-600 hover:bg-indigo-100 px-3 py-1 rounded text-sm font-medium transition-colors"
+                                    onClick={() => handleUpdateCustoms()}
+                                    disabled={!selectedCustomsId}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Back to Raw
+                                    Confirm Update
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Manage Invoices Modal */}
+            {
+                showInvoicesModal && (
+                    <div className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+                        <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-800">Manage Invoices</h3>
+                                    <p className="text-xs text-slate-500">Stored Commercial Invoices</p>
+                                </div>
+                                <button onClick={() => setShowInvoicesModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <div className="p-0 max-h-[400px] overflow-y-auto">
+                                {storedInvoices.length === 0 ? (
+                                    <div className="p-8 text-center">
+                                        <div className="bg-slate-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                                            <FileText className="text-slate-300" size={24} />
+                                        </div>
+                                        <p className="text-slate-500 text-sm">No invoices extracted yet.</p>
+                                    </div>
+                                ) : (
+                                    <div className="divide-y divide-slate-100">
+                                        {storedInvoices.map((inv, idx) => (
+                                            <div key={idx} className="p-4 hover:bg-slate-50 transition-colors flex justify-between items-center group">
+                                                <div>
+                                                    <div className="font-bold text-slate-700 text-sm">{inv.invoiceNumber}</div>
+                                                    <div className="text-xs text-slate-500">{inv.items?.length || 0} items • {inv.invoiceDate || 'No Date'}</div>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleDeleteInvoice(inv.invoiceNumber)}
+                                                    className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-2"
+                                                    title="Remove Invoice"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
                                 <button
-                                    onClick={() => setShowPhase2Modal(false)}
-                                    className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-3 py-1 rounded-md text-sm font-bold transition-colors"
+                                    onClick={() => setShowInvoicesModal(false)}
+                                    className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors"
                                 >
                                     Close
                                 </button>
                             </div>
                         </div>
-
-                        <div className="flex-1 overflow-hidden flex bg-slate-50">
-                            {isStructuring ? (
-                                <div className="flex-1 flex flex-col items-center justify-center space-y-4">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-100 border-t-indigo-600"></div>
-                                    <p className="text-slate-500 font-medium animate-pulse">Running Strict Forensic Analysis...</p>
-                                </div>
-                            ) : pedimentoData ? (
-                                <div className="flex-1 overflow-y-auto p-8 space-y-8">
-                                    <div className="space-y-4">
-                                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                                            <h4 className="font-bold text-yellow-800">Raw Data Inspector (Strict Mode)</h4>
-                                            <p className="text-sm text-yellow-700">Displaying raw forensic data extraction.</p>
-                                        </div>
-                                        <textarea
-                                            className="w-full h-96 p-4 font-mono text-xs bg-gray-900 text-green-400 rounded-lg"
-                                            value={structuredData?.aiJson ? JSON.stringify(structuredData.aiJson, null, 2) : "No Raw Forensic Data Available"}
-                                            readOnly
-                                        />
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
-                                    {phase2Error ? (
-                                        <div className="max-w-md text-center p-6 bg-red-50 rounded-xl border border-red-100">
-                                            <AlertTriangle className="mx-auto text-red-500 mb-4" size={32} />
-                                            <h4 className="text-red-800 font-bold mb-2">Analysis Failed</h4>
-                                            <p className="text-sm text-red-600 mb-6 font-mono break-words">{phase2Error}</p>
-                                            <button
-                                                onClick={handlePhase2Analysis}
-                                                className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition-colors"
-                                            >
-                                                Retry Phase 2 (Strict)
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        "No Data"
-                                    )}
-                                </div>
-                            )}
-                        </div>
                     </div>
-                </div>
-            )}
-
-            {/* Customs Update Modal */}
-            {showCustomsModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="p-6 border-b border-slate-100">
-                            <h3 className="text-lg font-bold">Select Customs Record</h3>
-                            <p className="text-sm text-slate-500">Choose the record to update with Pedimento info.</p>
-                        </div>
-                        <div className="p-4 bg-slate-50 border-b border-slate-200">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-                                <input
-                                    className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                    placeholder="Search by BL, Container or Pedimento..."
-                                    value={customsSearch}
-                                    onChange={(e) => setCustomsSearch(e.target.value)}
-                                    autoFocus
-                                />
-                            </div>
-                        </div>
-                        <div className="max-h-[300px] overflow-y-auto">
-                            {filteredCustoms.length === 0 ? (
-                                <div className="p-8 text-center text-slate-400 text-sm">No records found.</div>
-                            ) : (
-                                <div className="divide-y divide-slate-100">
-                                    {filteredCustoms.map(r => (
-                                        <button
-                                            key={r.id}
-                                            onClick={() => setSelectedCustomsId(r.id)}
-                                            className={`w-full text-left p-4 hover:bg-blue-50 transition-colors flex items-center justify-between ${selectedCustomsId === r.id ? 'bg-blue-50 ring-1 ring-blue-500 inner-border' : ''}`}
-                                        >
-                                            <div>
-                                                <div className="font-bold text-slate-800 text-sm">{r.blNo || 'No BL'}</div>
-                                                <div className="text-xs text-slate-500">{r.containerNo}</div>
-                                            </div>
-                                            {selectedCustomsId === r.id && <CheckCircle className="text-blue-600" size={18} />}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        <div className="p-6 border-t border-slate-100 flex justify-end gap-3">
-                            <button onClick={() => setShowCustomsModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium">Cancel</button>
-                            <button
-                                onClick={() => handleUpdateCustoms()}
-                                disabled={!selectedCustomsId}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Confirm Update
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Manage Invoices Modal */}
-            {showInvoicesModal && (
-                <div className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="flex justify-between items-center p-6 border-b border-slate-100">
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-800">Manage Invoices</h3>
-                                <p className="text-xs text-slate-500">Stored Commercial Invoices</p>
-                            </div>
-                            <button onClick={() => setShowInvoicesModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
-                                <X size={20} />
-                            </button>
-                        </div>
-                        <div className="p-0 max-h-[400px] overflow-y-auto">
-                            {storedInvoices.length === 0 ? (
-                                <div className="p-8 text-center">
-                                    <div className="bg-slate-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                                        <FileText className="text-slate-300" size={24} />
-                                    </div>
-                                    <p className="text-slate-500 text-sm">No invoices extracted yet.</p>
-                                </div>
-                            ) : (
-                                <div className="divide-y divide-slate-100">
-                                    {storedInvoices.map((inv, idx) => (
-                                        <div key={idx} className="p-4 hover:bg-slate-50 transition-colors flex justify-between items-center group">
-                                            <div>
-                                                <div className="font-bold text-slate-700 text-sm">{inv.invoiceNumber}</div>
-                                                <div className="text-xs text-slate-500">{inv.items?.length || 0} items • {inv.invoiceDate || 'No Date'}</div>
-                                            </div>
-                                            <button
-                                                onClick={() => handleDeleteInvoice(inv.invoiceNumber)}
-                                                className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-2"
-                                                title="Remove Invoice"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-                            <button
-                                onClick={() => setShowInvoicesModal(false)}
-                                className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };

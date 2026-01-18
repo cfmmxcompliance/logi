@@ -744,7 +744,11 @@ export const geminiService = {
       // which expects a JSON string of the *whole* pedimento structure.
       const mergedRawStruct = {
         ...masterRecord,
-        partidas: uniquePartidas
+        partidas: uniquePartidas,
+        // COMPATIBILITY LAYER:
+        // Phase 3 expects 'page1' or 'aiJson'
+        page1: masterRecord.header || masterRecord.page1 || masterRecord,
+        aiJson: { ...masterRecord, partidas: uniquePartidas }
       };
 
       const jsonString = JSON.stringify(mergedRawStruct);

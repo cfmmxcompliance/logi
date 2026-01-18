@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FileText, RotateCcw } from 'lucide-react';
+import { FileText, RotateCcw, Code, Eye, AlertCircle, Box, Truck } from 'lucide-react';
 
-/* * STRICT PHASE 3 (ISOLATED & DETERMINISTIC)
+/* * STRICT PHASE 3 (EXACT MATCH & OFFICIAL LAYOUT)
  * -------------------------------
- * 1. NO REGEX allowed. Uses split/join/indexOf.
- * 2. NO External Phases dependencies.
- * 3. NO Data Repair/Hallucination.
- * 4. PURE Rendering with simple logic injection for columns.
+ * 1. Exact Key Mapping: Matches the specific JSON output from Phase 2.
+ * 2. Official Layout: Replicates the Mexican Pedimento Partidas grid.
+ * 3. Logic Injection: Extracts PartNo/Invoice/FA from 'observaciones'.
+ * 4. NO Regex.
  */
 
 interface Phase3Props {
@@ -14,376 +14,403 @@ interface Phase3Props {
     onRefresh: () => void;
 }
 
+// --- HELPER: TEXT MINING (NO REGEX) ---
+const findInText = (text: string, label: string, stopMarkers: string[] = ['\n'], maxLen = 100) => {
+    if (!text) return '';
+    const idx = text.indexOf(label);
+    if (idx === -1) return '';
+
+    const start = idx + label.length;
+    let bestEnd = start + maxLen;
+    let foundStop = false;
+
+    for (const marker of stopMarkers) {
+        const end = text.indexOf(marker, start);
+        if (end !== -1 && end < bestEnd) {
+            bestEnd = end;
+            foundStop = true;
+        }
+    }
+
+    if (!foundStop && (bestEnd > text.length)) {
+        bestEnd = text.length;
+    }
+
+    let val = text.substring(start, bestEnd).trim();
+    val = val.split('  ')[0];
+    return val;
+};
+
 export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
     const [lastUpdate, setLastUpdate] = useState(Date.now());
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showRaw, setShowRaw] = useState(false);
+    const [showJson, setShowJson] = useState(false);
 
-    // --- 1. NORMALIZACIÓN AGNÓSTICA (Aislamiento) ---
+    // --- 1. DATA NORMALIZATION ---
     const root = useMemo(() => {
         if (!data) return {};
-
         let processed = data;
-
-        // Solo validación de tipo, sin lógica de negocio externa
         if (typeof data === 'string') {
-            try {
-                processed = JSON.parse(data);
-            } catch (e) {
-                // Si falla el parseo, no intentamos arreglarlo. Fallamos seguro.
-                console.error("Phase3: Invalid JSON string provided.");
-                return {};
-            }
+            try { processed = JSON.parse(data); } catch (e) { return {}; }
         }
-
-        // Desempaquetado genérico si existe una propiedad 'data' envolvente
-        if (processed.data && !processed.header && !processed.partidas) {
-            return processed.data;
-        }
-
-        return processed;
+        // Unwrap logic
+        return processed.header ? processed : (processed.aiJson || processed.page1 || processed.data || processed || {});
     }, [data]);
+
+    // --- 2. FAILSAFE RECOVERY ---
+    const fallback = useMemo(() => {
+        const txt = root.rawText || (typeof data === 'string' ? '' : data.rawText) || '';
+        if (!txt) return {};
+
+        return {
+            pedimento: findInText(txt, 'NUM.DE PEDIMENTO:', [' T. OPER']),
+            tOper: findInText(txt, 'T. OPER:', [' CVE.']),
+            cveDoc: findInText(txt, 'CVE. PEDIMENTO:', [' REGIMEN']),
+            regimen: findInText(txt, 'REGIMEN:', [' DESTINO']),
+            rfc: findInText(txt, 'Clave en el RFC:', [' NOMBRE']),
+            nombre: findInText(txt, 'RAZON SOCIAL:\n', ['\n']),
+            peso: findInText(txt, 'PESO BRUTO:', ['\n']),
+            tc: findInText(txt, 'TIPO CAMBIO:', ['\n']),
+            aduana: findInText(txt, 'ADUANA E/S:', ['\n']),
+            entrada: findInText(txt, 'ENTRADA\n', ['\n']),
+            pago: findInText(txt, 'PAGO\n', ['\n'])
+        };
+    }, [root, data]);
 
     const handleLocalRefresh = () => {
         setIsRefreshing(true);
-        setTimeout(() => {
-            setLastUpdate(Date.now());
-            setIsRefreshing(false);
-            if (onRefresh) onRefresh();
-        }, 600);
+        setTimeout(() => { setLastUpdate(Date.now()); setIsRefreshing(false); if (onRefresh) onRefresh(); }, 600);
     };
 
-    // Validación de seguridad: Si no hay estructura mínima, no renderizamos nada creativo.
-    if (!root || (Object.keys(root).length === 0)) {
-        return <div className="p-4 border border-red-300 text-red-700 bg-red-50 font-mono text-xs">NO DATA STRUCTURE FOUND</div>;
+    if (!root || Object.keys(root).length === 0) {
+        return <div className="p-4 border border-red-300 text-red-700 bg-red-50 text-xs">NO DATA</div>;
     }
 
-    // --- 2. PUNTEROS DE DATOS (Lectura Directa) ---
-    // Usamos '||' solo para alias comunes de campos (numPedimento vs pedimento), no para lógica.
-    const h = root.header || root;
+    // --- 3. DATA POINTERS (Exact Keys from your JSON) ---
+    const h = root.header || {};
     const imp = root.importador || {};
-    const prov = root.proveedor || (Array.isArray(root.proveedores) ? root.proveedores[0] : root.proveedores) || {};
+    const prov = root.proveedor || {};
 
-    const f = root.fechas || {};
-    // Extracción segura de arrays sin regex
-    const f_entrada = Array.isArray(f) ? f.find((d: any) => d.tipo === 'Entrada')?.fecha : f.entrada;
-    const f_pago = Array.isArray(f) ? f.find((d: any) => d.tipo === 'Pago')?.fecha : f.pago;
+    // Header Data
+    const headerData = {
+        pedimento: h.numPedimento || h.pedimentoNo || fallback.pedimento,
+        tOper: h.tOper || h.tipoOperacion || fallback.tOper,
+        cveDoc: h.cvePedimento || h.claveDocumento || fallback.cveDoc,
+        regimen: h.regimen || fallback.regimen,
+        tc: h.tipoCambio || fallback.tc,
+        peso: h.pesoBruto || fallback.peso,
+        aduana: h.aduanaES || h.aduana || fallback.aduana,
+        rfc: imp.rfc || fallback.rfc,
+        nombre: imp.nombre || fallback.nombre,
+        domicilio: imp.domicilio || '',
+        fechaEntrada: root.fechas?.entrada || fallback.entrada,
+        fechaPago: root.fechas?.pago || fallback.pago
+    };
 
     const v = root.valores || {};
-
-    // Helpers de Arrays seguros
     const toArray = (x: any) => Array.isArray(x) ? x : (x ? [x] : []);
-    const tasas = toArray(root.tasasNivelPedimento || root.tasasGlobales || root.dta);
-    const liq = root.cuadroLiquidacion || root.importes || {};
-    const ids = toArray(root.identificadores || root.identificadoresGlobales);
-    const trans = toArray(root.transporte?.medios ? root.transporte.medios[0] : root.transporte);
-    const cont = toArray(root.contenedores);
-    const itemsRaw = toArray(root.partidas || root.items);
 
-    // --- 3. INYECCIÓN DE LÓGICA (Determinista) ---
-    // Analiza 'observaciones' para llenar las columnas calculadas.
+    // Arrays
+    const trans = toArray(root.transporte);
+    const cont = toArray(root.contenedores);
+    const itemsRaw = toArray(root.partidas);
+
+    // --- 4. ITEM ENRICHMENT (Logic Injection) ---
     const items = useMemo(() => {
         return itemsRaw.map((item: any, idx: number) => {
-            // A. Extracción de texto base
-            const rawObs = item.observaciones || item.descripcion || "";
-
-            // B. Limpieza SIN REGEX (Split/Join chain)
-            const cleanObs = rawObs.split('\n').join(' ').split('\r').join(' ').split('\t').join(' ');
-
-            // C. Tokenización simple
+            const cleanObs = (item.observaciones || item.descripcion || '').split('\n').join(' ').split('\r').join(' ');
             const tokens = cleanObs.split(' ').filter((t: string) => t.trim().length > 0);
 
-            // D. Variables Calculadas
             let calcPartNo = "";
             let calcInvoice = "";
             let calcFA = "";
 
-            // E. Escaneo Lineal (Sin backtracking ni regex)
             for (let i = 0; i < tokens.length; i++) {
                 const token = tokens[i].trim();
                 const tokenUpper = token.toUpperCase();
 
-                // 1. Detección de Factura (Heurística: contiene CFTT)
                 if (tokenUpper.indexOf('CFTT') !== -1) {
                     if (!calcInvoice) calcInvoice = token;
                     continue;
                 }
-
-                // 2. Detección de F.A. (Fracción Arancelaria)
-                // Caso A: Etiqueta explícita "F.A." o "FA"
                 if (tokenUpper === 'F.A.' || tokenUpper === 'FA') {
-                    if (i + 1 < tokens.length) {
-                        calcFA = tokens[i + 1]; // Tomar el siguiente token
-                        i++; // Avanzar índice manualmente
-                    }
+                    if (i + 1 < tokens.length) { calcFA = tokens[i + 1]; i++; }
                     continue;
                 }
-                // Caso B: Patrón numérico de 8 dígitos (verificación estricta de longitud y tipo)
                 if (token.length === 8 && !isNaN(Number(token))) {
                     if (!calcFA) calcFA = token;
                     continue;
                 }
-
-                // 3. Detección de Part Number (Descarte)
-                // Si no es un comando conocido (IN, F.A.) y es alfanumérico largo
-                if (!calcPartNo && token.length > 3 && tokenUpper !== 'IN' && isNaN(Number(token))) {
+                const ignore = ['IN', 'CHN', 'USA', 'MXN', 'USD', 'PZA', 'KGS', 'UN', 'NA'];
+                if (!calcPartNo && token.length > 3 && !ignore.includes(tokenUpper) && isNaN(Number(token))) {
                     calcPartNo = token;
                 }
             }
 
             return {
                 ...item,
-                // Prioridad: Dato existente > Dato calculado
-                displayPartNo: item.numeroParte || item.partNo || calcPartNo,
-                displayInvoice: item.folioFactura || item.invoiceNo || calcInvoice,
-                displayFA: item.FA || item.fraccionArancelaria || calcFA,
+                displayPartNo: item.numeroParte || calcPartNo,
+                displayInvoice: item.folioFactura || calcInvoice,
+                displayFA: item.FA || calcFA,
             };
         });
     }, [itemsRaw]);
 
-    // --- UI HELPERS (Pure Components) ---
-    const Field = ({ label, value, highlight = false }: { label: string, value: any, highlight?: boolean }) => (
-        <div className={`flex flex-col border border-slate-300 p-1 bg-white min-h-[36px] ${highlight ? 'bg-blue-50' : ''}`}>
-            <span className="text-[9px] bg-slate-100 text-slate-500 font-mono px-1 border-b border-slate-200 mb-1 block uppercase truncate">
-                {label}
-            </span>
-            <span className="text-xs font-mono px-1 truncate block text-slate-900 font-medium" title={String(value !== undefined ? value : '')}>
-                {value === null || value === undefined || value === '' ? <span className="text-slate-300">-</span> : String(value)}
+    // --- UI HELPERS ---
+    const FieldBox = ({ label, value }: { label: string, value: any }) => (
+        <div className="flex flex-col border-r border-slate-300 last:border-r-0 px-2 py-1 min-w-[80px] bg-white h-full justify-center">
+            <span className="text-[8px] text-slate-500 uppercase font-bold leading-none mb-0.5">{label}</span>
+            <span className="text-[10px] font-mono font-medium text-slate-900 truncate" title={String(value)}>
+                {value || '-'}
             </span>
         </div>
     );
 
     const Section = ({ title, children }: { title: string, children: React.ReactNode }) => (
         <div className="mb-6 border border-slate-400 shadow-sm bg-white">
-            <div className="bg-slate-800 text-white px-3 py-1.5 text-xs font-bold font-mono tracking-wider uppercase">
+            <div className="bg-slate-700 text-white px-2 py-1 text-[10px] font-bold font-mono tracking-wider uppercase">
                 {title}
             </div>
-            <div className="p-3 bg-slate-50 grid gap-3">
+            <div className="p-0 bg-slate-50">
                 {children}
             </div>
         </div>
     );
 
-    // --- VISUAL PARSER (Display Only - No Regex) ---
-    const renderObservaciones = (text: string) => {
-        if (!text) return <span className="text-slate-300 italic">Sin observaciones</span>;
+    const renderObservaciones = (p: any) => {
+        const parts = [];
+        if (p.displayPartNo) parts.push({ l: 'PN', v: p.displayPartNo, c: 'yellow' });
+        if (p.displayInvoice) parts.push({ l: 'INV', v: p.displayInvoice, c: 'blue' });
+        if (p.displayFA) parts.push({ l: 'FA', v: p.displayFA, c: 'purple' });
 
-        // Limpieza visual sin regex
-        const cleanText = text.split('\n').join(' ').split('\r').join(' ');
-        const tokens = cleanText.split(' ').filter(t => t.trim().length > 0);
-
-        // Si hay estructura mínima (2 tokens), intentamos colorear
-        if (tokens.length >= 2) {
-            return (
-                <div className="flex flex-col gap-1.5">
-                    <div className="flex flex-wrap gap-2 text-[10px] font-mono">
-                        {/* Token 1: Asumimos Item/Part */}
-                        <div className="flex flex-col">
-                            <span className="text-[7px] text-slate-400 uppercase">Item/Part</span>
-                            <span className="bg-blue-100 text-blue-900 px-1.5 py-0.5 rounded border border-blue-200 font-bold">{tokens[0]}</span>
-                        </div>
-
-                        {/* Token 2: Asumimos Factura */}
-                        <div className="flex flex-col">
-                            <span className="text-[7px] text-slate-400 uppercase">Factura</span>
-                            <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded border border-purple-200 font-bold">{tokens[1]}</span>
-                        </div>
-
-                        {/* Resto: Info */}
-                        {tokens.length > 2 && (
-                            <div className="flex flex-col">
-                                <span className="text-[7px] text-slate-400 uppercase">Info/R8</span>
-                                <span className="bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-200 font-medium">
-                                    {tokens.slice(2).join(' ')}
-                                </span>
-                            </div>
-                        )}
-                    </div>
+        return (
+            <div className="flex flex-col gap-1.5">
+                <div className="flex flex-wrap gap-2 text-[10px] font-mono">
+                    {parts.map((item, idx) => (
+                        <span key={idx} className={`bg-${item.c}-100 text-${item.c}-800 px-1 rounded border border-${item.c}-300 font-bold`}>
+                            {item.l}: {item.v}
+                        </span>
+                    ))}
                 </div>
-            );
-        }
-        return <span className="whitespace-pre-wrap text-[10px]">{text}</span>;
+                <div className="whitespace-pre-wrap text-[9px] text-slate-600 border-t border-slate-200 pt-1 mt-1 break-words">
+                    {p.observaciones || ''}
+                </div>
+            </div>
+        );
     };
 
     return (
-        <div key={lastUpdate} className={`font-mono text-xs text-slate-800 ${isRefreshing ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div key={lastUpdate} className={`font-mono text-xs text-slate-800 ${isRefreshing ? 'opacity-50' : ''}`}>
 
-            {/* HEADER TOOLBAR */}
-            <div className="mb-4 flex justify-between items-center bg-slate-200 p-2 border border-slate-400 rounded-t-lg mt-2">
+            {/* TOOLBAR */}
+            <div className="mb-4 flex justify-between items-center bg-slate-200 p-2 border border-slate-400 rounded-t-lg">
                 <div className="flex items-center gap-4">
                     <span className="font-bold text-slate-700 uppercase flex items-center gap-2">
-                        <FileText size={16} /> Phase 3: Independent Viewer
+                        <FileText size={16} /> Phase 3: Final Viewer
                     </span>
-                    <button onClick={() => setShowRaw(!showRaw)} className="text-[10px] text-blue-600 underline hover:text-blue-800">
-                        {showRaw ? 'Hide JSON Payload' : 'Show JSON Payload'}
-                    </button>
+                    <div className="flex gap-2">
+                        <button onClick={() => setShowRaw(!showRaw)} className="text-[10px] text-blue-600 underline">Raw</button>
+                        <button onClick={() => setShowJson(!showJson)} className="text-[10px] text-purple-600 underline">JSON</button>
+                    </div>
                 </div>
-                <button onClick={handleLocalRefresh} className="border border-slate-400 bg-white px-3 py-1 text-[10px] uppercase hover:bg-slate-100 shadow-sm rounded flex items-center gap-1">
+                <button onClick={handleLocalRefresh} className="border border-slate-400 bg-white px-3 py-1 text-[10px] hover:bg-slate-100 flex items-center gap-1">
                     <RotateCcw size={10} /> Refresh
                 </button>
             </div>
 
-            {showRaw && (
-                <div className="mb-4 p-4 bg-slate-900 text-green-400 text-[10px] overflow-auto max-h-80 border border-slate-700 rounded-lg shadow-inner font-mono">
-                    <pre>{JSON.stringify(root, null, 2)}</pre>
-                </div>
-            )}
+            {showRaw && <div className="mb-4 p-4 bg-slate-900 text-green-400 text-[10px] overflow-auto max-h-60 border font-mono whitespace-pre-wrap">{typeof root.rawText === 'string' ? root.rawText : (data.rawText || "No Raw Text")}</div>}
+            {showJson && <div className="mb-4 p-4 bg-slate-900 text-cyan-400 text-[10px] overflow-auto max-h-60 border font-mono"><pre>{JSON.stringify(data, null, 2)}</pre></div>}
 
-            {/* 1. HEADER DATA */}
+            {/* 1. HEADER */}
             <Section title="1. Header">
-                <div className="grid grid-cols-4 lg:grid-cols-7 gap-0">
-                    <Field label="Pedimento" value={h.numPedimento || h.pedimentoNo || h.pedimento} highlight />
-                    <Field label="T. Oper" value={h.tOper || h.tipoOperacion} />
-                    <Field label="Cve. Doc" value={h.cvePedimento || h.claveDocumento || h.cveDoc} />
-                    <Field label="Regimen" value={h.regimen} />
-                    <Field label="T. Cambio" value={h.tipoCambio} />
-                    <Field label="Peso Bruto" value={h.pesoBruto} />
-                    <Field label="Aduana" value={h.aduana || h.aduanaES} />
+                <div className="grid grid-cols-7 border-b border-slate-300">
+                    <FieldBox label="Pedimento" value={headerData.pedimento} />
+                    <FieldBox label="T. Oper" value={headerData.tOper} />
+                    <FieldBox label="Cve. Ped" value={headerData.cveDoc} />
+                    <FieldBox label="Regimen" value={headerData.regimen} />
+                    <FieldBox label="T. Cambio" value={headerData.tc} />
+                    <FieldBox label="Peso Bruto" value={headerData.peso} />
+                    <FieldBox label="Aduana E/S" value={headerData.aduana} />
                 </div>
             </Section>
 
             {/* 2. ACTORS */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
                 <Section title="2. Importador">
-                    <div className="grid grid-cols-1 gap-1">
-                        <div className="grid grid-cols-3 gap-0">
-                            <Field label="RFC" value={imp.rfc} highlight />
-                            <div className="col-span-2"><Field label="Nombre" value={imp.nombre} /></div>
+                    <div className="flex flex-col">
+                        <div className="flex border-b border-slate-300">
+                            <div className="w-1/3"><FieldBox label="RFC" value={headerData.rfc} /></div>
+                            <div className="w-2/3 border-l border-slate-300"><FieldBox label="Nombre" value={headerData.nombre} /></div>
                         </div>
-                        <Field label="Domicilio" value={imp.domicilio} />
+                        <FieldBox label="Domicilio" value={headerData.domicilio} />
                     </div>
                 </Section>
                 <Section title="3. Proveedor">
-                    <div className="grid grid-cols-1 gap-1">
-                        <div className="grid grid-cols-3 gap-0">
-                            <Field label="ID Fiscal" value={prov.idFiscal || prov.taxId} />
-                            <div className="col-span-2"><Field label="Nombre" value={prov.nombre} /></div>
+                    <div className="flex flex-col">
+                        <div className="flex border-b border-slate-300">
+                            <div className="w-1/3"><FieldBox label="ID Fiscal" value={prov.idFiscal} /></div>
+                            <div className="w-2/3 border-l border-slate-300"><FieldBox label="Nombre" value={prov.nombre} /></div>
                         </div>
-                        <Field label="Domicilio" value={prov.domicilio} />
+                        <FieldBox label="Domicilio" value={prov.domicilio} />
                     </div>
                 </Section>
             </div>
 
-            {/* 4. FINANCIALS */}
-            <Section title="4. Valores y Fechas">
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-0">
-                    <Field label="F. Entrada" value={f_entrada} />
-                    <Field label="F. Pago" value={f_pago} />
-                    <Field label="Valor Dolares" value={v.dolares || v.valorDolares} />
-                    <Field label="Valor Aduana" value={v.aduana || v.valorAduana} />
-                    <Field label="Precio Pagado" value={v.comercial || v.precioPagado} />
-                    <Field label="Fletes" value={v.fletes} />
+            {/* 4. DATES & VALUES */}
+            <Section title="4. Fechas y Valores">
+                <div className="grid grid-cols-6 border-b border-slate-300">
+                    <FieldBox label="Entrada" value={headerData.fechaEntrada} />
+                    <FieldBox label="Pago" value={headerData.fechaPago} />
+                    <FieldBox label="Valor Dolares" value={v.valorDolares} />
+                    <FieldBox label="Valor Aduana" value={v.valorAduana} />
+                    <FieldBox label="Precio Pagado" value={v.precioPagado} />
+                    <FieldBox label="Fletes" value={v.fletes} />
                 </div>
             </Section>
 
-            {/* 6. LIQUIDACION */}
-            <Section title="6. Liquidación">
-                <div className="bg-white border border-slate-200 text-[10px]">
-                    <div className="flex justify-between p-1.5 bg-slate-100 font-bold border-b border-slate-200">
-                        <span>CONCEPTOS</span><span>EFECTIVO</span>
-                    </div>
-
-                    {/* Mapeo directo de claves conocidas */}
-                    {liq.dta !== undefined && <div className="flex justify-between p-1.5 border-b border-slate-100"><span>DTA</span><span>{liq.dta}</span></div>}
-                    {liq.iva !== undefined && <div className="flex justify-between p-1.5 border-b border-slate-100"><span>IVA</span><span>{liq.iva}</span></div>}
-                    {liq.prv !== undefined && <div className="flex justify-between p-1.5 border-b border-slate-100"><span>PRV</span><span>{liq.prv}</span></div>}
-
-                    {/* Fallback a array de conceptos si existe */}
-                    {liq.conceptos && liq.conceptos.map((c: any, k: number) => (
-                        <div key={k} className="flex justify-between p-1.5 border-b border-slate-100"><span>{c.concepto || c.clave}</span><span>{c.importe}</span></div>
-                    ))}
-
-                    <div className="flex justify-between p-1.5 bg-slate-100 font-bold border-t border-slate-200 text-emerald-700">
-                        <span>TOTAL</span>
-                        <span>{liq.totalEfectivo || liq.total || liq.efectivo}</span>
-                    </div>
+            {/* 5. LOGISTICS */}
+            {(trans.length > 0 || cont.length > 0) && (
+                <div className="grid grid-cols-2 gap-4">
+                    {cont.length > 0 && (
+                        <Section title="Contenedores">
+                            <div className="flex flex-wrap gap-2 p-2">
+                                {cont.map((c: any, i: number) => (
+                                    <div key={i} className="border border-slate-400 bg-white px-2 py-1 text-[10px] font-bold">
+                                        {c.numero} {c.tipo && `(${c.tipo})`}
+                                    </div>
+                                ))}
+                            </div>
+                        </Section>
+                    )}
+                    {trans.length > 0 && (
+                        <Section title="Transporte">
+                            <div className="grid gap-1 p-2">
+                                {trans.map((t: any, i: number) => (
+                                    <div key={i} className="text-[10px] border-b border-slate-200 last:border-0 pb-1">
+                                        <span className="font-bold text-blue-800">{t.identificacion}</span>
+                                        {t.tipo && <span className="ml-2 text-slate-500">({t.tipo})</span>}
+                                    </div>
+                                ))}
+                            </div>
+                        </Section>
+                    )}
                 </div>
-            </Section>
+            )}
 
-            {/* 7. ITEMS (PARTIDAS) */}
-            <Section title={`7. Partidas (${items.length} detectadas)`}>
-                <div className="overflow-x-auto border rounded-sm">
-                    <table className="w-full text-left text-[10px] whitespace-nowrap">
-                        <thead className="bg-slate-100 text-slate-500 font-bold uppercase border-b border-slate-200">
-                            <tr>
-                                <th className="px-2 py-1.5">Sec</th>
-                                <th className="px-2 py-1.5">Fracción</th>
-                                <th className="px-2 py-1.5">Vinculación</th>
-                                <th className="px-2 py-1.5 text-right">Cant UMC</th>
-                                <th className="px-2 py-1.5 text-right">UMC</th>
-                                <th className="px-2 py-1.5 text-right">Precio Pag.</th>
-                                <th className="px-2 py-1.5">Identificadores</th>
-
-                                {/* COLUMNAS CALCULADAS POR LOGICA INYECTADA */}
-                                <th className="px-2 py-1.5 bg-yellow-50 text-yellow-800 border-l border-yellow-200">Part No</th>
-                                <th className="px-2 py-1.5 bg-yellow-50 text-yellow-800">Invoice</th>
-                                <th className="px-2 py-1.5 bg-yellow-50 text-yellow-800 border-r border-yellow-200">F.A.</th>
-
-                                <th className="px-2 py-1.5 text-center">Observaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 bg-white">
-                            {items.map((p: any, idx: number) => {
-                                // Resolver valores anidados o planos
-                                const val = p.valores || {};
-                                const price = p.precioPagado || val.impPrecioPag || val.precioPagado || 0;
-                                const unitPrice = p.precioUnitario || val.precioUnitario || 0;
-
-                                // Resolver Identificadores (Array A o B)
-                                const ids = p.identificadores || p.identifiers || [];
-
-                                return (
-                                    <tr key={idx} className="hover:bg-slate-50 align-top">
-                                        <td className="px-2 py-1.5 font-mono text-slate-400">{p.secuencia || idx + 1}</td>
-                                        <td className="px-2 py-1.5 font-mono font-bold text-blue-700">
-                                            {p.fraccion}
-                                            {(p.subdivision || p.nico) && <span className="block text-[8px] text-slate-400">Sub: {p.subdivision || p.nico}</span>}
-                                        </td>
-                                        <td className="px-2 py-1.5 font-mono">{p.vinculacion}</td>
-                                        <td className="px-2 py-1.5 text-right font-mono">{p.cantidadUMC}</td>
-                                        <td className="px-2 py-1.5 text-right font-mono">{p.umc}</td>
-                                        <td className="px-2 py-1.5 text-right font-mono font-medium">
-                                            <div className="font-bold">${Number(price).toLocaleString()}</div>
-                                            <div className="text-[8px] text-slate-400">Unit: ${Number(unitPrice).toFixed(4)}</div>
-                                        </td>
-
-                                        {/* IDENTIFICADORES */}
-                                        <td className="px-2 py-1.5">
-                                            {ids.length > 0 ? (
-                                                <div className="flex flex-wrap gap-1 max-w-[150px]">
-                                                    {ids.map((id: any, k: number) => (
-                                                        <span key={k} className="px-1 py-0.5 bg-indigo-50 border border-indigo-200 rounded text-[9px] text-indigo-700 flex flex-col" title={JSON.stringify(id)}>
-                                                            <span className="font-bold">{id.clave || id.identif || id.code}</span>
-                                                            {(id.compl1 || id.complemento1) && <span className="text-[7px] text-slate-500">{id.compl1 || id.complemento1}</span>}
-                                                            {/* Datos Extra (Cantidades/Valores) */}
-                                                            {id.Valcomdls > 0 && <span className="text-[7px] text-emerald-600">${id.Valcomdls}</span>}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            ) : <span className="text-slate-300">-</span>}
-                                        </td>
-
-                                        {/* CAMPOS CALCULADOS (LOGICA INDEPENDIENTE) */}
-                                        <td className="px-2 py-1.5 font-mono font-bold text-yellow-700 bg-yellow-50/50 border-l border-yellow-100">
-                                            {p.displayPartNo || '-'}
-                                        </td>
-                                        <td className="px-2 py-1.5 font-mono text-yellow-700 bg-yellow-50/50">
-                                            {p.displayInvoice || '-'}
-                                        </td>
-                                        <td className="px-2 py-1.5 font-mono text-yellow-700 bg-yellow-50/50 border-r border-yellow-100">
-                                            {p.displayFA || '-'}
-                                        </td>
-
-                                        <td className="px-2 py-1.5 max-w-xs break-words whitespace-pre-wrap text-[9px] border-l border-dashed border-slate-200 pl-4">
-                                            {renderObservaciones(p.observaciones || p.descripcion || '')}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+            {/* 6. PARTIDAS */}
+            <div className="mb-6 border border-slate-700">
+                <div className="bg-slate-700 text-white px-2 py-1 text-[10px] font-bold font-mono tracking-wider uppercase">
+                    7. Partidas ({items.length})
                 </div>
-            </Section>
+                <div className="bg-slate-100 p-2 space-y-4">
+                    {items.map((p: any, i: number) => {
+                        const val = p.valores || {};
+                        return (
+                            <div key={i} className="border border-black bg-white text-[9px] font-mono shadow-sm">
+                                {/* ROW 1: HEADER INFO */}
+                                <div className="flex border-b border-black">
+                                    <div className="w-8 border-r border-black p-1 text-center font-bold bg-slate-200 flex items-center justify-center">{p.secuencia}</div>
+                                    <div className="w-24 border-r border-black p-1">
+                                        <div className="font-bold text-[8px] text-slate-500">FRACCION</div>
+                                        <div className="font-bold text-blue-800 text-[11px]">{p.fraccion}</div>
+                                    </div>
+                                    <div className="w-16 border-r border-black p-1">
+                                        <div className="font-bold text-[8px] text-slate-500">NICO</div>
+                                        <div>{p.subdivision || p.nico}</div>
+                                    </div>
+                                    <div className="w-10 border-r border-black p-1 text-center">
+                                        <div className="font-bold text-[8px] text-slate-500">VINC</div>
+                                        <div>{p.vinculacion}</div>
+                                    </div>
+                                    <div className="w-12 border-r border-black p-1 text-center">
+                                        <div className="font-bold text-[8px] text-slate-500">UMC</div>
+                                        <div>{p.umc}</div>
+                                    </div>
+                                    <div className="w-20 border-r border-black p-1 text-right">
+                                        <div className="font-bold text-[8px] text-slate-500">CANT UMC</div>
+                                        <div>{p.cantidadUMC}</div>
+                                    </div>
+                                    <div className="w-12 border-r border-black p-1 text-center">
+                                        <div className="font-bold text-[8px] text-slate-500">UMT</div>
+                                        <div>{p.umt}</div>
+                                    </div>
+                                    <div className="w-20 border-r border-black p-1 text-right">
+                                        <div className="font-bold text-[8px] text-slate-500">CANT UMT</div>
+                                        <div>{p.cantidadUMT}</div>
+                                    </div>
+                                    <div className="w-12 border-r border-black p-1 text-center">
+                                        <div className="font-bold text-[8px] text-slate-500">P.V/C</div>
+                                        <div>{p.PVC}</div>
+                                    </div>
+                                    <div className="w-12 p-1 text-center">
+                                        <div className="font-bold text-[8px] text-slate-500">P.O/D</div>
+                                        <div>{p.POD}</div>
+                                    </div>
+                                </div>
+
+                                <div className="flex">
+                                    <div className="flex-1">
+                                        <div className="border-b border-black p-1 min-h-[24px] whitespace-pre-wrap">{p.descripcion}</div>
+                                        <div className="flex border-b border-black">
+                                            <div className="w-1/4 border-r border-black p-1">
+                                                <div className="font-bold text-[8px] text-slate-500">VAL.ADU/USD</div>
+                                                <div className="text-right">${val.valorAduanaUSD}</div>
+                                            </div>
+                                            <div className="w-1/4 border-r border-black p-1">
+                                                <div className="font-bold text-[8px] text-slate-500">IMP.PRECIO PAG</div>
+                                                <div className="text-right">${val.impPrecioPag}</div>
+                                            </div>
+                                            <div className="w-1/4 border-r border-black p-1">
+                                                <div className="font-bold text-[8px] text-slate-500">PRECIO UNIT.</div>
+                                                <div className="text-right">${val.precioUnitario}</div>
+                                            </div>
+                                            <div className="w-1/4 p-1">
+                                                <div className="font-bold text-[8px] text-slate-500">VAL AGREG</div>
+                                                <div className="text-right">{val.valorAgregado || 0}</div>
+                                            </div>
+                                        </div>
+                                        <div className="p-1 bg-yellow-50/50">
+                                            {renderObservaciones(p)}
+                                        </div>
+                                    </div>
+
+                                    {/* RIGHT COLUMN: TAXES */}
+                                    <div className="w-48 border-l border-black flex flex-col bg-slate-50">
+                                        <div className="flex bg-slate-200 border-b border-black font-bold text-[8px]">
+                                            <div className="w-8 p-0.5 text-center">CON</div>
+                                            <div className="w-12 p-0.5 text-center">TASA</div>
+                                            <div className="w-8 p-0.5 text-center">FP</div>
+                                            <div className="flex-1 p-0.5 text-center">IMPORTE</div>
+                                        </div>
+                                        {(p.tasas || []).map((t: any, k: number) => (
+                                            <div key={k} className="flex border-b border-slate-200 last:border-0 text-[8px]">
+                                                <div className="w-8 p-0.5 text-center font-bold">{t.clave}</div>
+                                                <div className="w-12 p-0.5 text-right">{t.tasa}</div>
+                                                <div className="w-8 p-0.5 text-center">{t.formaPago}</div>
+                                                <div className="flex-1 p-0.5 text-right">{t.importe}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* ROW 5: IDENTIFIERS */}
+                                {(p.identificadores || []).length > 0 && (
+                                    <div className="border-t border-black p-1 flex flex-wrap gap-2 bg-white">
+                                        {p.identificadores.map((id: any, k: number) => (
+                                            <div key={k} className="border border-slate-400 bg-white px-1 py-0.5 rounded flex items-center gap-1 shadow-sm">
+                                                <span className="font-bold text-blue-900">{id.identif}</span>
+                                                {id.compl1 && <span className="text-slate-500 text-[8px] ml-1">{id.compl1}</span>}
+                                                {id.Valcomdls > 0 && <span className="text-emerald-700 text-[8px] font-bold ml-1">${id.Valcomdls}</span>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
         </div>
     );
 };

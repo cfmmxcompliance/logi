@@ -496,7 +496,7 @@ export const ProformaValidator = () => {
             {/* NEW: Phase 3 Render (Replamiento de Flat View) */}
             {!loading && pedimentoData && (
                 <div className="mt-8">
-                    <Phase3 data={pedimentoData} />
+                    <Phase3 data={structuredData} />
                 </div>
             )}
 

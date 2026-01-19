@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FileText, RotateCcw, Code, Eye, AlertCircle, Box, Truck } from 'lucide-react';
+import { FileText, RotateCcw, Code, Eye, AlertCircle, Box, Truck, Check, X } from 'lucide-react';
+import { storageService } from '../../services/storageService';
+import { VesselTrackingRecord, EquipmentTrackingRecord, CommercialInvoiceItem } from '../../types';
 
 /* * STRICT PHASE 3 (EXACT MATCH & OFFICIAL LAYOUT)
  * -------------------------------
@@ -74,9 +76,25 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
             tc: findInText(txt, 'TIPO CAMBIO:', ['\n']),
             aduana: findInText(txt, 'ADUANA E/S:', ['\n']),
             entrada: findInText(txt, 'ENTRADA\n', ['\n']),
-            pago: findInText(txt, 'PAGO\n', ['\n'])
+            pago: findInText(txt, 'PAGO\n', ['\n']),
+            bl: findInText(txt, 'GUIA:', ['\n']) || findInText(txt, 'BL:', ['\n'])
         };
     }, [root, data]);
+
+    const [tracking, setTracking] = useState<VesselTrackingRecord[]>([]);
+    const [equipment, setEquipment] = useState<EquipmentTrackingRecord[]>([]);
+    const [invoices, setInvoices] = useState<CommercialInvoiceItem[]>([]);
+
+    useEffect(() => {
+        const loadData = () => {
+            setTracking(storageService.getVesselTracking());
+            setEquipment(storageService.getEquipmentTracking());
+            setInvoices(storageService.getInvoiceItems());
+        }
+        loadData();
+        const unsub = storageService.subscribe(loadData);
+        return unsub;
+    }, []);
 
     const handleLocalRefresh = () => {
         setIsRefreshing(true);
@@ -105,8 +123,14 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
         nombre: imp.nombre || fallback.nombre,
         domicilio: imp.domicilio || '',
         fechaEntrada: root.fechas?.entrada || fallback.entrada,
-        fechaPago: root.fechas?.pago || fallback.pago
+        fechaPago: root.fechas?.pago || fallback.pago,
+        bl: h.bl || h.guia || fallback.bl
     };
+
+    const isValidBL = useMemo(() => {
+        if (!headerData.bl) return false;
+        return tracking.some(t => t.refNo === headerData.bl.trim());
+    }, [headerData.bl, tracking]);
 
     const v = root.valores || {};
     const toArray = (x: any) => Array.isArray(x) ? x : (x ? [x] : []);
@@ -244,7 +268,7 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
 
             {/* 1. HEADER */}
             <Section title="1. Header">
-                <div className="grid grid-cols-7 border-b border-slate-300">
+                <div className="grid grid-cols-8 border-b border-slate-300">
                     <FieldBox label="Pedimento" value={headerData.pedimento} />
                     <FieldBox label="T. Oper" value={headerData.tOper} />
                     <FieldBox label="Cve. Ped" value={headerData.cveDoc} />
@@ -252,6 +276,17 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                     <FieldBox label="T. Cambio" value={headerData.tc} />
                     <FieldBox label="Peso Bruto" value={headerData.peso} />
                     <FieldBox label="Aduana E/S" value={headerData.aduana} />
+                    <div className="flex flex-col border-r border-slate-300 last:border-r-0 px-2 py-1 min-w-[80px] bg-white h-full justify-center">
+                        <span className="text-[8px] text-slate-500 uppercase font-bold leading-none mb-0.5">BL / GUIA</span>
+                        <div className="flex items-center gap-1">
+                            <span className="text-[10px] font-mono font-medium text-slate-900 truncate" title={String(headerData.bl || '-')}>
+                                {headerData.bl || '-'}
+                            </span>
+                            {headerData.bl && (
+                                isValidBL ? <Check size={20} strokeWidth={3} className="text-green-600" /> : <X size={20} strokeWidth={3} className="text-red-500" />
+                            )}
+                        </div>
+                    </div>
                 </div>
             </Section>
 
@@ -304,27 +339,107 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                     {/* Col 4: Logistics (50%) */}
                     <div className="flex flex-col w-[50%] p-1 overflow-hidden">
                         {/* Transports */}
+                        {/* Transports */}
                         <div className="w-full border-b border-slate-300 mb-1">
                             <div className="text-[9px] font-bold text-slate-500 mb-1">MEDIOS DE TRANSPORTE</div>
                             <div className="flex flex-col gap-1 mb-1">
-                                {trans.map((t: any, i: number) => (
-                                    <div key={i} className="flex justify-between items-center border border-slate-200 bg-slate-50 px-2 py-1">
-                                        <span className="font-bold text-blue-800 text-[10px]">{t.identificacion}</span>
-                                        <span className="text-[8px] font-bold bg-white border border-slate-300 px-1 rounded">{t.tipo || 'M'}</span>
-                                    </div>
-                                ))}
+                                {trans.map((t: any, i: number) => {
+                                    const isMatch = tracking.some(track => track.refNo === t.identificacion?.trim());
+                                    return (
+                                        <div key={i} className="flex justify-between items-center border border-slate-200 bg-slate-50 px-2 py-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-bold text-blue-800 text-[10px]">{t.identificacion}</span>
+                                                {t.identificacion && (
+                                                    isMatch ? <Check size={20} strokeWidth={3} className="text-green-600" /> : <X size={20} strokeWidth={3} className="text-red-500" />
+                                                )}
+                                            </div>
+                                            <span className="text-[8px] font-bold bg-white border border-slate-300 px-1 rounded">{t.tipo || 'M'}</span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                         {/* Containers */}
                         <div className="w-full">
                             <div className="text-[9px] font-bold text-slate-500 mb-1">CONTENEDORES ({cont.length})</div>
                             <div className="flex flex-wrap gap-2">
-                                {cont.map((c: any, i: number) => (
-                                    <div key={i} className="border border-slate-400 bg-white px-2 py-1 text-[10px] font-mono flex items-center shadow-sm">
-                                        <span className="font-bold mr-2">{c.numero}</span>
-                                        <span className="text-[8px] text-slate-500">{c.tipo}</span>
-                                    </div>
-                                ))}
+                                {cont.map((c: any, i: number) => {
+                                    // Validation Logic with Fuzzy Match (0 vs O)
+                                    const normalize = (s: any) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+                                    const fuzzyEq = (a: string, b: string) => {
+                                        if (a === b) return true;
+                                        // Treat 0 and O as same
+                                        const aPrime = a.replace(/0/g, 'O');
+                                        const bPrime = b.replace(/0/g, 'O');
+                                        return aPrime === bPrime;
+                                    };
+
+                                    const validTransportIds = trans.map((t: any) => normalize(t.identificacion));
+                                    const currentContainer = normalize(c.numero);
+
+                                    let debugInfo = `Container: ${currentContainer}\nBLs in Header: ${validTransportIds.join(', ')}`;
+
+                                    // Helper to check a specific dataset
+                                    const checkInList = (list: any[]) => {
+                                        const record = list.find(e => {
+                                            const eqContainer = normalize(e.containerNo);
+                                            return fuzzyEq(eqContainer, currentContainer) ||
+                                                (eqContainer.includes(currentContainer) && fuzzyEq(eqContainer.substr(0, 4), currentContainer.substr(0, 4))) ||
+                                                (currentContainer.includes(eqContainer));
+                                        });
+
+                                        const isValidMatch = list.some(e => {
+                                            const eqContainer = normalize(e.containerNo);
+                                            const eqBL = normalize(e.blNo);
+
+                                            const containerMatch = fuzzyEq(eqContainer, currentContainer) ||
+                                                eqContainer.includes(currentContainer) ||
+                                                currentContainer.includes(eqContainer);
+
+                                            if (!containerMatch) return false;
+
+                                            return validTransportIds.some((id: string) =>
+                                                fuzzyEq(eqBL, id) || eqBL.includes(id) || id.includes(eqBL)
+                                            );
+                                        });
+
+                                        return { record, isValidMatch };
+                                    };
+
+                                    // Check BOTH sources
+                                    const eqCheck = checkInList(equipment);
+                                    const vesselCheck = checkInList(tracking);
+
+                                    const isValid = eqCheck.isValidMatch || vesselCheck.isValidMatch;
+                                    const matchedRecord = eqCheck.record || vesselCheck.record;
+                                    const sourceName = eqCheck.record ? 'Equipment' : (vesselCheck.record ? 'VesselTracking' : 'None');
+
+                                    if (!isValid) {
+                                        if (matchedRecord) {
+                                            debugInfo += `\n❌ Found Container in ${sourceName} (${matchedRecord.containerNo}) but BL mismatch.`;
+                                            debugInfo += `\nDB BL: ${matchedRecord.blNo}`;
+                                            debugInfo += `\nExpected One Of: ${validTransportIds.join(', ')}`;
+                                        } else {
+                                            debugInfo += `\n❌ Container NOT found in DB.`;
+                                        }
+                                    } else {
+                                        debugInfo += `\n✅ Valid Match Found in ${sourceName}!`;
+                                    }
+
+                                    return (
+                                        <div key={i} className="flex flex-col">
+                                            <div className="border border-slate-400 bg-white px-2 py-1 text-[10px] font-mono flex items-center shadow-sm gap-2" title={debugInfo}>
+                                                <span className="font-bold">{c.numero}</span>
+                                                {isValid ? (
+                                                    <Check size={20} strokeWidth={3} className="text-green-600" />
+                                                ) : (
+                                                    <X size={20} strokeWidth={3} className="text-red-500" />
+                                                )}
+                                                <span className="text-[8px] text-slate-500 border-l border-slate-300 pl-2">{c.tipo}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
@@ -400,17 +515,57 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                                 <div className="w-24 p-1 text-right">FACTOR</div>
                                 <div className="w-24 p-1 text-right">VAL. DOLARES</div>
                             </div>
-                            {root.facturas.map((f: any, idx: number) => (
-                                <div key={idx} className="flex border-b border-slate-100 last:border-0 text-[10px]">
-                                    <div className="flex-1 p-1 font-bold text-slate-700">{f.numFactura}</div>
-                                    <div className="w-20 p-1 text-center">{f.fecha}</div>
-                                    <div className="w-16 p-1 text-center">{f.incoterm}</div>
-                                    <div className="w-16 p-1 text-center">{f.monedaFact}</div>
-                                    <div className="w-24 p-1 text-right font-mono">{f.valMonFact}</div>
-                                    <div className="w-24 p-1 text-right font-mono">{f.factorMonFact}</div>
-                                    <div className="w-24 p-1 text-right font-mono text-blue-700 font-bold">{f.valDolares}</div>
-                                </div>
-                            ))}
+                            {root.facturas.map((f: any, idx: number) => {
+                                // Validation Logic
+                                const normalize = (s: any) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+                                const fuzzyEq = (a: string, b: string) => {
+                                    if (a === b) return true;
+                                    const aPrime = a.replace(/0/g, 'O');
+                                    const bPrime = b.replace(/0/g, 'O');
+                                    return aPrime === bPrime;
+                                };
+
+                                const currentInvoice = normalize(f.numFactura);
+                                const headerRegime = normalize(headerData.regimen);
+
+                                const isValid = invoices.some(inv => {
+                                    const dbInvoice = normalize(inv.invoiceNo);
+                                    const dbRegime = normalize(inv.regimen);
+
+                                    const isInvoiceMatch = fuzzyEq(dbInvoice, currentInvoice) ||
+                                        (dbInvoice.includes(currentInvoice) && fuzzyEq(dbInvoice.substr(0, 4), currentInvoice.substr(0, 4))) ||
+                                        (currentInvoice.includes(dbInvoice));
+
+                                    if (!isInvoiceMatch) return false;
+
+                                    // If strict regime checking is desired:
+                                    // If both have regimes, they MUST match.
+                                    if (dbRegime && headerRegime) {
+                                        return dbRegime === headerRegime;
+                                    }
+
+                                    return true;
+                                });
+
+                                return (
+                                    <div key={idx} className="flex border-b border-slate-100 last:border-0 text-[10px]">
+                                        <div className="flex-1 p-1 font-bold text-slate-700 flex items-center gap-1">
+                                            {f.numFactura}
+                                            {isValid ? (
+                                                <Check size={20} strokeWidth={3} className="text-green-600" />
+                                            ) : (
+                                                <X size={20} strokeWidth={3} className="text-red-500" />
+                                            )}
+                                        </div>
+                                        <div className="w-20 p-1 text-center">{f.fecha}</div>
+                                        <div className="w-16 p-1 text-center">{f.incoterm}</div>
+                                        <div className="w-16 p-1 text-center">{f.monedaFact}</div>
+                                        <div className="w-24 p-1 text-right font-mono">{f.valMonFact}</div>
+                                        <div className="w-24 p-1 text-right font-mono">{f.factorMonFact}</div>
+                                        <div className="w-24 p-1 text-right font-mono text-blue-700 font-bold">{f.valDolares}</div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </Section>
                 </div>

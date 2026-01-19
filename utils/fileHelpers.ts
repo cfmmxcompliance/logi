@@ -14,7 +14,7 @@ export const downloadFile = (blob: Blob, fileName: string) => {
 
     // 2. Forzar visibilidad para navegadores estrictos (Firefox/Safari)
     link.style.display = 'none';
-    link.setAttribute('target', '_blank'); // Abre una pestaña temporal si es necesario
+    // link.setAttribute('target', '_blank'); // DISABLED: Causes UUID URL issue (opens in tab instead of download)
 
     document.body.appendChild(link);
     link.click();

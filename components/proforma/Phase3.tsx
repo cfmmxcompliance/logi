@@ -178,24 +178,30 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
         </div>
     );
 
-    const renderObservaciones = (p: any) => {
+    const renderRowChips = (p: any) => {
         const parts = [];
         if (p.displayPartNo) parts.push({ l: 'PN', v: p.displayPartNo, c: 'yellow' });
         if (p.displayInvoice) parts.push({ l: 'INV', v: p.displayInvoice, c: 'blue' });
         if (p.displayFA) parts.push({ l: 'FA', v: p.displayFA, c: 'purple' });
 
+        if (parts.length === 0) return null;
+
         return (
-            <div className="flex flex-col gap-1.5">
-                <div className="flex flex-wrap gap-2 text-[10px] font-mono">
-                    {parts.map((item, idx) => (
-                        <span key={idx} className={`bg-${item.c}-100 text-${item.c}-800 px-1 rounded border border-${item.c}-300 font-bold`}>
-                            {item.l}: {item.v}
-                        </span>
-                    ))}
-                </div>
-                <div className="whitespace-pre-wrap text-[9px] text-slate-600 border-t border-slate-200 pt-1 mt-1 break-words">
-                    {p.observaciones || ''}
-                </div>
+            <div className="flex flex-wrap gap-1 text-[8px] font-mono items-center h-full px-1">
+                {parts.map((item, idx) => (
+                    <span key={idx} className={`bg-${item.c}-100 text-${item.c}-800 px-1 rounded border border-${item.c}-300 font-bold whitespace-nowrap`}>
+                        {item.l}: {item.v}
+                    </span>
+                ))}
+            </div>
+        );
+    };
+
+    const renderObservaciones = (p: any) => {
+        if (!p.observaciones) return null;
+        return (
+            <div className="whitespace-pre-wrap text-[9px] text-slate-600 break-words">
+                {p.observaciones}
             </div>
         );
     };
@@ -219,8 +225,44 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                 </button>
             </div>
 
+
+
             {showRaw && <div className="mb-4 p-4 bg-slate-900 text-green-400 text-[10px] overflow-auto max-h-60 border font-mono whitespace-pre-wrap">{typeof root.rawText === 'string' ? root.rawText : (data.rawText || "No Raw Text")}</div>}
-            {showJson && <div className="mb-4 p-4 bg-slate-900 text-cyan-400 text-[10px] overflow-auto max-h-60 border font-mono"><pre>{JSON.stringify(data, null, 2)}</pre></div>}
+
+            {/* RECONSTRUCTED JSON VIEW: Shows the 'Effective' data used by the UI, not the mismatched input prop */}
+            {
+                showJson && (
+                    <div className="mb-4 p-4 bg-slate-900 text-cyan-400 text-[10px] overflow-auto max-h-60 border font-mono">
+                        <div className="flex justify-between border-b border-slate-700 pb-2 mb-2">
+                            <span className="font-bold text-white">RECONSTRUCTION ANALYSIS (Active UI Data)</span>
+                            <span className="text-slate-500">Source: {root.header ? 'Mapped Legacy' : 'Raw Strict'} &rarr; Normalized</span>
+                        </div>
+                        <pre>{JSON.stringify({
+                            header: {
+                                numPedimento: headerData.pedimento,
+                                tOper: headerData.tOper,
+                                claveDocumento: headerData.cveDoc,
+                                regimen: headerData.regimen,
+                                tipoCambio: headerData.tc,
+                                pesoBruto: headerData.peso,
+                                aduana: headerData.aduana,
+                                fechas: { entrada: headerData.fechaEntrada, pago: headerData.fechaPago },
+                                valores: v
+                            },
+                            importador: { rfc: headerData.rfc, nombre: headerData.nombre, domicilio: headerData.domicilio },
+                            proveedor: prov,
+                            partidas: items.map(i => ({
+                                secuencia: i.secuencia,
+                                fraccion: i.fraccion,
+                                cantidadUMC: i.cantidadUMC,
+                                precioUnitario: i.precioUnitario,
+                                observaciones: i.observaciones,
+                                struct: { pn: i.displayPartNo, inv: i.displayInvoice, fa: i.displayFA }
+                            }))
+                        }, null, 2)}</pre>
+                    </div>
+                )
+            }
 
             {/* 1. HEADER */}
             <Section title="1. Header">
@@ -259,49 +301,121 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
 
             {/* 4. DATES & VALUES */}
             <Section title="4. Fechas y Valores">
-                <div className="grid grid-cols-6 border-b border-slate-300">
-                    <FieldBox label="Entrada" value={headerData.fechaEntrada} />
-                    <FieldBox label="Pago" value={headerData.fechaPago} />
-                    <FieldBox label="Valor Dolares" value={v.valorDolares} />
-                    <FieldBox label="Valor Aduana" value={v.valorAduana} />
-                    <FieldBox label="Precio Pagado" value={v.precioPagado} />
-                    <FieldBox label="Fletes" value={v.fletes} />
+                <div className="flex border-b border-slate-300">
+                    {/* Left: Dates */}
+                    <div className="flex flex-col w-1/4 border-r border-slate-300">
+                        <FieldBox label="Entrada" value={headerData.fechaEntrada} />
+                        <div className="border-t border-slate-300"><FieldBox label="Pago" value={headerData.fechaPago} /></div>
+                    </div>
+
+                    {/* Middle: Main Values (Vertical Stack) */}
+                    <div className="flex flex-col w-1/4 border-r border-slate-300 bg-blue-50/30">
+                        <div className="border-b border-slate-300"><FieldBox label="Valor Dolares" value={v.valorDolares} /></div>
+                        <div className="border-b border-slate-300"><FieldBox label="Valor Aduana" value={v.valorAduana} /></div>
+                        <FieldBox label="Precio Pagado" value={v.precioPagado} />
+                    </div>
+
+                    {/* Right: Incrementables (Grid) */}
+                    <div className="grid grid-cols-2 w-1/2">
+                        <FieldBox label="Fletes" value={v.fletes} />
+                        <FieldBox label="Seguros" value={v.seguros} />
+                        <div className="border-t border-slate-300"><FieldBox label="Embalajes" value={v.embalajes} /></div>
+                        <div className="border-t border-slate-300"><FieldBox label="Otros Increm." value={v.otrosIncrementables} /></div>
+                    </div>
                 </div>
             </Section>
 
-            {/* 5. LOGISTICS */}
-            {(trans.length > 0 || cont.length > 0) && (
-                <div className="grid grid-cols-2 gap-4">
-                    {cont.length > 0 && (
-                        <Section title="Contenedores">
-                            <div className="flex flex-wrap gap-2 p-2">
-                                {cont.map((c: any, i: number) => (
-                                    <div key={i} className="border border-slate-400 bg-white px-2 py-1 text-[10px] font-bold">
-                                        {c.numero} {c.tipo && `(${c.tipo})`}
-                                    </div>
-                                ))}
+            {/* 5. & 6. GLOBAL DATA */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <Section title="5. Contribuciones">
+                    <div className="flex flex-col bg-white border-b border-slate-200">
+                        <div className="flex bg-slate-100 border-b border-slate-300 text-[9px] font-bold">
+                            <div className="w-16 p-1 text-center">CLAVE</div>
+                            <div className="w-16 p-1 text-center">TASA</div>
+                            <div className="w-12 p-1 text-center">T.T.</div>
+                            <div className="flex-1 p-1 text-right">IMPORTE</div>
+                        </div>
+                        {(root.tasasNivelPedimento || []).map((t: any, idx: number) => (
+                            <div key={idx} className="flex border-b border-slate-100 last:border-0 text-[10px]">
+                                <div className="w-16 p-1 text-center font-bold text-slate-700">{t.contribucion || t.clave}</div>
+                                <div className="w-16 p-1 text-center">{t.tasa}</div>
+                                <div className="w-12 p-1 text-center">{t.tipoTasa}</div>
+                                <div className="flex-1 p-1 text-right font-mono">{t.importe}</div>
                             </div>
-                        </Section>
-                    )}
-                    {trans.length > 0 && (
-                        <Section title="Transporte">
-                            <div className="grid gap-1 p-2">
-                                {trans.map((t: any, i: number) => (
-                                    <div key={i} className="text-[10px] border-b border-slate-200 last:border-0 pb-1">
-                                        <span className="font-bold text-blue-800">{t.identificacion}</span>
-                                        {t.tipo && <span className="ml-2 text-slate-500">({t.tipo})</span>}
-                                    </div>
-                                ))}
-                            </div>
-                        </Section>
-                    )}
+                        ))}
+                    </div>
+                </Section>
+
+                <Section title="6. Cuadro de Liquidación">
+                    <div className="flex flex-col h-full justify-between">
+                        <div className="grid grid-cols-2 gap-2 p-2">
+                            {(root.cuadroLiquidacion?.conceptos || []).map((c: any, idx: number) => (
+                                <div key={idx} className="flex justify-between border-b border-dashed border-slate-300 pb-1">
+                                    <span className="text-[10px] font-bold text-slate-600">{c.concepto}</span>
+                                    <span className="text-[10px] font-mono">{c.importe}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="bg-slate-800 text-white p-2 mt-2 flex justify-between items-center">
+                            <span className="text-[10px] font-bold uppercase">Total Efectivo</span>
+                            <span className="text-sm font-bold font-mono text-emerald-400">${root.cuadroLiquidacion?.efectivo || '0'}</span>
+                        </div>
+                    </div>
+                </Section>
+            </div>
+
+            {(root.identificadores || []).length > 0 && (
+                <div className="mb-6">
+                    <Section title="Identificadores Globales">
+                        <div className="flex flex-wrap gap-2 p-2">
+                            {root.identificadores.map((id: any, i: number) => (
+                                <div key={i} className="border border-blue-200 bg-blue-50 px-2 py-1 rounded flex items-center gap-2">
+                                    <span className="font-bold text-blue-900 text-xs">{id.clave}</span>
+                                    {id.compl1 && <span className="text-[10px] text-blue-700 border-l border-blue-200 pl-2">{id.compl1}</span>}
+                                </div>
+                            ))}
+                        </div>
+                    </Section>
                 </div>
             )}
 
-            {/* 6. PARTIDAS */}
+            {/* 7. LOGISTICS */}
+            {
+                (trans.length > 0 || cont.length > 0) && (
+                    <Section title="7. Logística">
+                        <div className="flex flex-col md:flex-row">
+                            {/* Transports */}
+                            <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-slate-300 p-1">
+                                <div className="text-[9px] font-bold text-slate-500 mb-1">MEDIOS DE TRANSPORTE</div>
+                                {trans.map((t: any, i: number) => (
+                                    <div key={i} className="flex justify-between items-center border border-slate-200 bg-slate-50 px-2 py-1 mb-1 last:mb-0">
+                                        <span className="font-bold text-blue-800 text-[10px]">{t.identificacion}</span>
+                                        <span className="text-[8px] font-bold bg-white border border-slate-300 px-1 rounded">{t.tipo || 'M'}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Containers */}
+                            <div className="w-full md:w-2/3 p-1">
+                                <div className="text-[9px] font-bold text-slate-500 mb-1">CONTENEDORES ({cont.length})</div>
+                                <div className="flex flex-wrap gap-2">
+                                    {cont.map((c: any, i: number) => (
+                                        <div key={i} className="border border-slate-400 bg-white px-2 py-1 text-[10px] font-mono flex items-center shadow-sm">
+                                            <span className="font-bold mr-2">{c.numero}</span>
+                                            <span className="text-[8px] text-slate-500">{c.tipo}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </Section>
+                )
+            }
+
+            {/* 8. PARTIDAS */}
             <div className="mb-6 border border-slate-700">
                 <div className="bg-slate-700 text-white px-2 py-1 text-[10px] font-bold font-mono tracking-wider uppercase">
-                    7. Partidas ({items.length})
+                    8. Partidas ({items.length})
                 </div>
                 <div className="bg-slate-100 p-2 space-y-4">
                     {items.map((p: any, i: number) => {
@@ -343,9 +457,12 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                                         <div className="font-bold text-[8px] text-slate-500">P.V/C</div>
                                         <div>{p.PVC}</div>
                                     </div>
-                                    <div className="w-12 p-1 text-center">
+                                    <div className="w-12 border-r border-black p-1 text-center">
                                         <div className="font-bold text-[8px] text-slate-500">P.O/D</div>
                                         <div>{p.POD}</div>
+                                    </div>
+                                    <div className="flex-1 border-black p-1 flex items-center bg-slate-50">
+                                        {renderRowChips(p)}
                                     </div>
                                 </div>
 
@@ -411,6 +528,6 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                     })}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };

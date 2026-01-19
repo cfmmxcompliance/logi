@@ -58,7 +58,6 @@ export const ProformaValidator = () => {
     };
 
 
-
     const openInvoicesModal = () => {
         loadInvoices();
         setShowInvoicesModal(true);
@@ -131,24 +130,26 @@ export const ProformaValidator = () => {
             // --- DATA MAPPING BRIDGE ---
             // Convert Gemini JSON -> PedimentoData Interface
             // Now using 'page1' structure for comprehensive Page 1 coverage
-            const p1 = result.page1 || {};
-            const itemArr = result.items || [];
+            const p1 = result.header || {};
+            const itemArr = result.partidas || [];
+            const importador = result.importador || {};
+            const proveedor = result.proveedor || {};
 
             // User requested flat mapping logic
-            const impuestos = p1.tasasGlobales || [];
+            const impuestos = result.tasasNivelPedimento || [];
 
             const mappedData: PedimentoData = {
                 header: {
                     // REF:
-                    pedimentoNo: p1.pedimento?.replace(/\D/g, '') || '', // Clean numeric
-                    tipoOperacion: p1.tipoOperacion,
+                    pedimentoNo: p1.numPedimento?.replace(/\D/g, '') || '', // Clean numeric
+                    tipoOperacion: p1.tOper,
 
-                    claveDocumento: p1.clavePedimento,
+                    claveDocumento: p1.cvePedimento,
                     regimen: p1.regimen, // Mapped
-                    destino: p1.destino, // Mapped
+                    destino: p1.destino || '', // Mapped
                     tipoCambio: p1.tipoCambio,
                     pesoBruto: p1.pesoBruto,
-                    aduana: p1.aduana, // This is location (e.g. 430)
+                    aduana: p1.aduanaES, // This is location (e.g. 430)
                     entradaSalida: p1.entradaSalida,
                     arribo: p1.arribo,
                     salida: p1.salida,
@@ -156,103 +157,98 @@ export const ProformaValidator = () => {
                     // Added as optional fields in interface to support user map
                     bultos: typeof p1.bultos === 'number' ? p1.bultos : 0,
 
-                    dolares: p1.valores?.valorDolares || 0,
+                    dolares: result.valores?.valorDolares || 0,
                     // aduana (money) mapped to valorAduana to avoid conflict with aduana (string)
-                    valorAduana: p1.valores?.valorAduana || 0,
-                    comercial: p1.valores?.valorComercial || 0,
+                    valorAduana: result.valores?.valorAduana || 0,
+                    comercial: result.valores?.precioPagado || 0,
 
-                    rfc: p1.rfcImportador || p1.rfc || '', // Try both keys
-                    curp: p1.curpImportador || p1.curp || '', // Try both keys
-                    nombre: p1.nombreImportador || p1.nombre || '', // Try both keys
-                    domicilio: p1.domicilioImportador || p1.domicilio || '', // Try both keys
+                    rfc: importador.rfc || '',
+                    curp: importador.curp || '',
+                    nombre: importador.nombre || '',
+                    domicilio: importador.domicilio || '',
 
-                    fletes: p1.valores?.fletes,
-                    seguros: p1.valores?.seguros,
-                    embalajes: p1.valores?.embalajes,
-                    otros: p1.valores?.otros,
+                    fletes: result.valores?.fletes,
+                    seguros: result.valores?.seguros,
+                    embalajes: result.valores?.embalajes,
+                    otros: result.valores?.otrosIncrementables,
 
                     fechas: [
-                        { tipo: 'Entrada' as const, fecha: p1.fechas?.entrada || '' },
-                        { tipo: 'Pago' as const, fecha: p1.fechas?.pago || '' }
-                    ].filter(f => f.fecha),
+                        { tipo: 'Entrada' as const, fecha: result.fechas?.entrada || '' },
+                        { tipo: 'Pago' as const, fecha: result.fechas?.pago || '' }
+                    ].filter((f: any) => f.fecha),
 
                     // Keep structure for compatibility but data enters via flattened fields too
                     valores: {
-                        dolares: p1.valores?.valorDolares || 0,
-                        aduana: p1.valores?.valorAduana || 0,
-                        comercial: p1.valores?.valorComercial || 0,
-                        fletes: p1.valores?.fletes,
-                        seguros: p1.valores?.seguros,
-                        embalajes: p1.valores?.embalajes,
-                        otros: p1.valores?.otros
+                        dolares: result.valores?.valorDolares || 0,
+                        aduana: result.valores?.valorAduana || 0,
+                        comercial: result.valores?.precioPagado || 0,
+                        fletes: result.valores?.fletes,
+                        seguros: result.valores?.seguros,
+                        embalajes: result.valores?.embalajes,
+                        otros: result.valores?.otrosIncrementables
                     },
 
-                    tasasGlobales: [],
-                    dta: impuestos,
+                    tasasGlobales: impuestos,
+                    dta: impuestos, // Mapping as same list for now
                     prv: impuestos,
                     iva: impuestos,
 
                     importes: {
-                        dta: p1.liquidacion?.dta,
-                        iva: p1.liquidacion?.iva,
-                        igi: p1.liquidacion?.igi,
-                        prv: p1.liquidacion?.prv,
-                        totalEfectivo: p1.liquidacion?.totalEfectivo
+                        dta: result.cuadroLiquidacion?.conceptos?.find((c: any) => c.concepto?.includes('DTA'))?.importe,
+                        iva: result.cuadroLiquidacion?.conceptos?.find((c: any) => c.concepto?.includes('IVA'))?.importe,
+                        igi: result.cuadroLiquidacion?.conceptos?.find((c: any) => c.concepto?.includes('IGI'))?.importe,
+                        prv: result.cuadroLiquidacion?.conceptos?.find((c: any) => c.concepto?.includes('PRV'))?.importe,
+                        totalEfectivo: result.cuadroLiquidacion?.efectivo
                     },
-
-
-
 
                     transporte: {
-                        medios: p1.transporte?.medios ? [p1.transporte.medios] : [],
-                        candados: p1.transporte?.candados || [],
-                        identificacion: p1.identificadoresGlobales ?
-                            p1.identificadoresGlobales.map((id: any) => `${id.clave}${id.complemento ? ':' + id.complemento : ''}`).join(', ')
-                            : '',
-                        pais: '',
-                        transportista: p1.transporte?.transportista
+                        medios: result.transporte?.map((t: any) => t.identificacion) || [],
+                        candados: result.transporte?.[0]?.candados || [],
+                        identificacion: result.transporte?.[0]?.identificacion,
+                        pais: result.transporte?.[0]?.pais,
+                        transportista: result.transporte?.[0]?.transportista
                     },
 
-                    observaciones: p1.observaciones,
+                    observaciones: result.observaciones,
                     acuseValidacion: p1.acuseValidacion,
 
-                    guias: (p1.transporte?.guias || []).map((g: any) => ({
+                    guias: (result.transporte?.[0]?.guias || []).map((g: any) => ({
                         numero: g.numero || '',
                         tipo: g.tipo || 'MASTER'
                     })),
 
-                    contenedores: p1.transporte?.contenedores ? p1.transporte.contenedores.map((c: string) => ({
-                        numero: c,
-                        tipo: 'Unknown'
-                    })) : (p1.transporte?.container ? [{ numero: p1.transporte.container, tipo: 'Unknown' }] : []),
+                    contenedores: result.contenedores ? result.contenedores.map((c: any) => ({
+                        numero: c.numero,
+                        tipo: c.tipo
+                    })) : [],
 
-                    facturas: (result.invoices || []).map((inv: any) => ({
-                        numero: inv.number,
-                        fecha: inv.date,
+                    facturas: (result.facturas || []).map((inv: any) => ({
+                        numero: inv.numFactura,
+                        fecha: inv.fecha,
                         incoterm: inv.incoterm,
-                        moneda: inv.currency,
-                        valorDolares: inv.amount,
-                        proveedor: p1.supplier?.name
+                        moneda: inv.monedaFact,
+                        valorDolares: inv.valDolares,
+                        proveedor: proveedor.nombre
                     })),
 
-                    proveedores: p1.supplier ? [{
-                        id: p1.supplier.taxId || '',
-                        nombre: p1.supplier.name || '',
-                        domicilio: p1.supplier.address || ''
+                    proveedores: proveedor ? [{
+                        id: proveedor.idFiscal || '',
+                        nombre: proveedor.nombre || '',
+                        domicilio: proveedor.domicilio || ''
                     }] : [],
 
                     isSimplified: false,
 
                     // User requested identifier mapping
-                    identif: p1.identif || p1.identificadoresGlobales?.[0]?.clave || '',
-                    compl1: p1.compl1 || p1.identificadoresGlobales?.[0]?.complemento || '',
-                    compl2: p1.compl2 || '',
-                    compl3: p1.compl3 || ''
+                    identif: result.identificadores?.[0]?.clave || '',
+                    compl1: result.identificadores?.[0]?.compl1 || '',
+                    compl2: result.identificadores?.[0]?.compl2 || '',
+                    compl3: result.identificadores?.[0]?.compl3 || ''
                 },
                 partidas: itemArr.map((item: any, idx: number) => ({
                     secuencia: item.secuencia || idx + 1,
                     fraccion: item.fraccion,
-                    nico: item.nico,
+                    nico: item.subdivision,
                     vinculacion: item.vinculacion,
                     metodoValoracion: item.metodoValoracion,
                     umc: item.umc,
@@ -261,29 +257,33 @@ export const ProformaValidator = () => {
                     cantidadUMT: item.cantidadUMT,
 
                     // Values
-                    paisVendedor: item.paisvendedor,
-                    paisComprador: item.paiscomprador,
-                    valorAduana: item.valoraduana,
-                    precioPagado: item.preciopagado,
-                    moneda: item.moneda,
-                    precioUnitario: item.preciounitario,
-                    valorAgregado: item.valagregado,
+                    paisVendedor: item.paisVendedor,
+                    paisComprador: item.paisComprador,
+                    valorAduana: item.valores?.valorAduanaUSD,
+                    precioPagado: item.valores?.impPrecioPag,
+                    moneda: item.moneda, // Might be missing in strict struct item level, check
+                    precioUnitario: item.valores?.precioUnitario,
+                    valorAgregado: item.valores?.valorAgregado,
 
                     // Identificadores (Flattened per user request)
-                    clave: item.clave,
-                    permiso: item.permiso,
-                    firmaDescargo: item.firmadescargo,
-                    valComDls: item.valcomdls,
+                    clave: item.identificadores?.[0]?.identif,
+                    permiso: item.regulaciones?.[0]?.numeroPermiso, // Check mapping
+                    firmaDescargo: item.regulaciones?.[0]?.firmaDescargo,
+                    valComDls: item.identificadores?.[0]?.Valcomdls,
                     // cantidadumt/c logic skipped
-                    identificador: item.identificador,
-                    complemento1: item.complemento1,
-                    complemento2: item.complemento2,
-                    complemento3: item.complemento3,
+                    identificador: item.identificadores?.[0]?.identif,
+                    complemento1: item.identificadores?.[0]?.compl1,
+                    complemento2: item.identificadores?.[0]?.compl2,
+                    complemento3: item.identificadores?.[0]?.compl3,
 
                     // Pass-through for Validation Logic
-                    contribuciones: item.contribuciones || [],
+                    contribuciones: item.tasas || [],
                     regulaciones: item.regulaciones || [],
-                    identifiers: item.identifiers || []
+                    identifiers: item.identificadores || [],
+
+                    // Observations for Phase 3 extraction
+                    observaciones: item.observaciones,
+                    descripcion: item.descripcion
                 }))
             } as PedimentoData;
 
@@ -291,10 +291,8 @@ export const ProformaValidator = () => {
             mappedData.validationResults = [];
 
 
-
             setPedimentoData(mappedData);
             setStructuredData(result); // Keep raw JSON for debug view
-
 
 
         } catch (error: any) {
@@ -407,7 +405,6 @@ export const ProformaValidator = () => {
                         <Upload size={18} /> Upload Pedimento PDF
                     </button>
 
-
                     {pedimentoData && (
                         <button
                             onClick={handleOpenCustomsModal}
@@ -499,7 +496,6 @@ export const ProformaValidator = () => {
                     <Phase3 data={structuredData} />
                 </div>
             )}
-
 
             {
                 !loading && !pedimentoData && (
@@ -601,7 +597,7 @@ export const ProformaValidator = () => {
                                             </div>
                                             <textarea
                                                 className="w-full h-96 p-4 font-mono text-xs bg-gray-900 text-green-400 rounded-lg"
-                                                value={structuredData?.aiJson ? JSON.stringify(structuredData.aiJson, null, 2) : "No Raw Forensic Data Available"}
+                                                value={structuredData ? JSON.stringify(structuredData, null, 2) : "No Raw Forensic Data Available"}
                                                 readOnly
                                             />
                                         </div>

@@ -744,113 +744,17 @@ export const geminiService = {
       // which expects a JSON string of the *whole* pedimento structure.
       const mergedRawStruct = {
         ...masterRecord,
-        partidas: uniquePartidas,
-        // COMPATIBILITY LAYER:
-        // Phase 3 expects 'page1' or 'aiJson'
-        page1: masterRecord.header || masterRecord.page1 || masterRecord,
-        aiJson: { ...masterRecord, partidas: uniquePartidas }
+        partidas: uniquePartidas
       };
 
       const jsonString = JSON.stringify(mergedRawStruct);
 
-      // Now that we have the JSON string, we can use our strict mapper (extracted helper).
-      // We apply the NO-REGEX cleaner to the final structured data to remove any \n leftovers.
-      const strictPedimentoData = cleanObjectNoRegex(processRawPedimentoLogic(jsonString));
-
-      const items = strictPedimentoData.partidas.map(p => {
-        // 1. Remove Null partNo
-        const cleanPartNo = p.partNo && p.partNo.trim().length > 0 ? p.partNo : undefined;
-
-        // 2. Proactive Structure Detection (Audit Fix)
-        // Replaces strict "isR8" flag. Attempts to detect structure in ALL observations.
-        // Expected Structure: "ITEM FACTURA FRACCION" (e.g. "9060-180025-1000 25CFTT176707-6-A1 115")
-
-        let finalObs = p.observaciones || "";
-
-        if (finalObs) {
-          // Clean extra spaces and split
-          const tokens = finalObs.trim().split(/\s+/);
-
-          // Validate pattern: At least 2 tokens, and first 2 must contain numbers (to avoid plain text like "MERCANCIA DAÑADA")
-          const looksLikeStructuredData = tokens.length >= 2 && /[0-9]/.test(tokens[0]) && /[0-9]/.test(tokens[1]);
-
-          if (looksLikeStructuredData) {
-            const itemField = tokens[0];          // Item (9060-180025-1000)
-            const facturaField = tokens[1];       // Factura (25CFTT176707-6-A1)
-
-            // Smarter R8 Detection: Look for a significant numeric token in the remainder
-            // This skips "IN", "F.A.", "A1" which are short/labels.
-            const remainder = tokens.slice(2);
-            const r8Index = remainder.findIndex(t => t.length >= 4 && /\d/.test(t)); // Has numbers and length >= 4
-
-            let r8FraccionField = undefined;
-            let noteTokens = remainder;
-
-            if (r8Index !== -1) {
-              r8FraccionField = remainder[r8Index];
-              // Remove R8 from notes
-              noteTokens = remainder.filter((_, idx) => idx !== r8Index);
-            } else {
-              // Fallback: If no distinct R8 found, but we have a 3rd token that is NOT "IN" or "FA", maybe use it?
-              // For now, strict: If it doesn't look like R8, it's a note.
-            }
-
-            // Reconstruct observations with explicit tags
-            let newObs = `[Item: ${itemField}] [Factura: ${facturaField}]`;
-
-            if (r8FraccionField) {
-              newObs += ` [R8/Fraccion: ${r8FraccionField}]`;
-            }
-
-            // If text remains after the structured fields, keep it as a note
-            if (noteTokens.length > 0) {
-              newObs += ` [Nota: ${noteTokens.join(" ")}]`;
-            }
-
-            finalObs = newObs;
-
-          } else {
-            // Legacy Logic: If no structure match, standard behavior
-            if (cleanPartNo) {
-              finalObs = `${cleanPartNo} ${finalObs}`.trim();
-            }
-          }
-        }
-        return {
-          secuencia: p.secuencia,
-          fraccion: p.fraccion,
-          nico: p.nico,
-          cantidadUMC: p.qty,
-          umc: p.umc,
-          precioPagado: p.totalAmount,
-          precioUnitario: p.unitPrice,
-          moneda: "USD",
-          vinculacion: p.vinculacion,
-          valcomdls: p.valorAduana,
-          tasas: p.contribuciones,
-          identificadores: p.identifiers, // Strict: Do not touch
-          observaciones: finalObs // R8 info goes here
-        };
-      });
-
-      return {
-        // Pass the raw AI JSON directly for inspection
-        aiJson: cleanObjectNoRegex(mergedRawStruct),
-
-        page1: {
-          ...strictPedimentoData.header,
-          valores: strictPedimentoData.header.valores,
-          fechas: {
-            entrada: strictPedimentoData.header.fechas.find(f => f.tipo === 'Entrada')?.fecha,
-            pago: strictPedimentoData.header.fechas.find(f => f.tipo === 'Pago')?.fecha
-          },
-          transporte: strictPedimentoData.header.transporte,
-          identificadoresGlobales: strictPedimentoData.header.identificadores,
-          liquidacion: strictPedimentoData.header.importes
-        },
-        items: items,
-        rawText: rawText
-      };
+      // 4. Return Raw Strict Structure
+      // We purposefully skip the legacy 'cleanObject' and 'processRawPedimentoLogic' 
+      // because ProformaValidator now handles strict mapping directly from this raw object.
+      // Returning 'mergedRawStruct' ensures Phase 3 receives the pure AI output.
+      console.log("GeminiService: Returning PURE WRAPPERless Data", new Date().toISOString());
+      return mergedRawStruct;
 
     } catch (error: any) {
       console.error("Phase 2 Mapping Error", error);

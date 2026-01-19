@@ -516,7 +516,7 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                                 <div className="w-24 p-1 text-right">VAL. DOLARES</div>
                             </div>
                             {root.facturas.map((f: any, idx: number) => {
-                                // Validation Logic
+                                // 1. INVOICE MATCHING LOGIC (With A1 Support)
                                 const normalize = (s: any) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
                                 const fuzzyEq = (a: string, b: string) => {
                                     if (a === b) return true;
@@ -525,44 +525,173 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                                     return aPrime === bPrime;
                                 };
 
-                                const currentInvoice = normalize(f.numFactura);
-                                const headerRegime = normalize(headerData.regimen);
+                                // Use RAW value for logic, normalize only for specific comparisons if needed later
+                                let rawDocInvoice = String(f.numFactura || '').trim();
 
-                                const isValid = invoices.some(inv => {
-                                    const dbInvoice = normalize(inv.invoiceNo);
+                                // FIX: Use 'cveDoc' (Cve. Ped) as the Document's Regimen indicator (A1, V1, etc)
+                                const headerCve = normalize(headerData.cveDoc);
+
+                                // STRATEGY: Strip the Header Cve/Regime from the Document Invoice if present (e.g. "123-A1" or "123 IN")
+                                // This aligns it with the DB which usually stores the raw number ("123")
+                                if (headerCve.length > 0) {
+                                    const suffixRegex = new RegExp(`[\\s-]*${headerCve}$`, 'i');
+                                    rawDocInvoice = rawDocInvoice.replace(suffixRegex, '');
+                                }
+
+                                const currentInvoiceNorm = normalize(rawDocInvoice);
+
+                                // Find ALL matching items for this invoice to calculate totals
+                                const matchingItems = invoices.filter(inv => {
+                                    const rawDbInvoice = String(inv.invoiceNo || '').trim();
                                     const dbRegime = normalize(inv.regimen);
 
-                                    const isInvoiceMatch = fuzzyEq(dbInvoice, currentInvoice) ||
-                                        (dbInvoice.includes(currentInvoice) && fuzzyEq(dbInvoice.substr(0, 4), currentInvoice.substr(0, 4))) ||
-                                        (currentInvoice.includes(dbInvoice));
+                                    // Normalize DB invoice directly (Use raw DB invoice, as Doc is now stripped of suffix)
+                                    const constructedNorm = normalize(rawDbInvoice);
+
+                                    const isInvoiceMatch = fuzzyEq(constructedNorm, currentInvoiceNorm) ||
+                                        (constructedNorm.includes(currentInvoiceNorm)) ||
+                                        (currentInvoiceNorm.includes(constructedNorm));
 
                                     if (!isInvoiceMatch) return false;
 
-                                    // If strict regime checking is desired:
-                                    // If both have regimes, they MUST match.
-                                    if (dbRegime && headerRegime) {
-                                        return dbRegime === headerRegime;
-                                    }
+                                    // REGIME/KEY VALIDATION
+                                    // If DB says A1, Header MUST be A1 (Cve. Ped)
+                                    if (dbRegime === 'A1' && headerCve !== 'A1') return false;
+                                    // General check: If both exist and DB isn't empty, they should match
+                                    if (dbRegime && headerCve && dbRegime !== headerCve) return false;
 
                                     return true;
                                 });
 
+                                const isInvoiceValid = matchingItems.length > 0;
+                                const isRecordFound = isInvoiceValid;
+
+                                // STRICT ID CHECK: Does the SOURCE document string match the DB string exactly?
+                                const isInvoiceIdStrictValid = matchingItems.some(inv => {
+                                    return normalize(inv.invoiceNo) === normalize(f.numFactura);
+                                });
+
+                                // 2. FIELD VALIDATION
+                                // Helpers
+                                const normalizeDate = (dateStr: string) => {
+                                    if (!dateStr) return '';
+                                    const s = String(dateStr).trim().toLowerCase();
+
+                                    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+                                    const match = s.match(/([a-z]{3})[ -](\d{1,2})(?:st|nd|rd|th)?[, ]+(\d{4})/);
+
+                                    if (match) {
+                                        const [_, monthName, day, year] = match;
+                                        const months: Record<string, string> = {
+                                            'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
+                                            'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12',
+                                            'ene': '01', 'abr': '04', 'ago': '08', 'dic': '12'
+                                        };
+                                        const mm = months[monthName] || '01';
+                                        const dd = day.padStart(2, '0');
+                                        return `${year}-${mm}-${dd}`;
+                                    }
+
+                                    const d = new Date(dateStr);
+                                    if (!isNaN(d.getTime())) {
+                                        return d.toISOString().split('T')[0];
+                                    }
+                                    return s;
+                                };
+
+                                const checkField = (actual: any, expected: any, isFloat = false, isDate = false) => {
+                                    if (!expected && expected !== 0) return { valid: true, debug: 'No DB Data' };
+                                    if (!actual) return { valid: false, debug: 'Missing Doc Data' };
+
+                                    if (isFloat) {
+                                        const n1 = parseFloat(String(actual).replace(/,/g, ''));
+                                        const n2 = parseFloat(String(expected));
+                                        // 5 cent tolerance
+                                        const valid = Math.abs(n1 - n2) < 0.05;
+                                        return { valid, debug: `${n1} vs ${n2}` };
+                                    }
+
+                                    if (isDate) {
+                                        const d1 = normalizeDate(String(actual));
+                                        const d2 = normalizeDate(String(expected));
+                                        return { valid: d1 === d2, debug: `norm('${d1}') vs norm('${d2}')` };
+                                    }
+
+                                    const normActual = normalize(actual);
+                                    const normExpected = normalize(expected);
+                                    return { valid: fuzzyEq(normActual, normExpected), debug: `'${normActual}' vs '${normExpected}'` };
+                                };
+
+                                // Calculate Expected Values from DB items
+                                const dbTotal = matchingItems.reduce((acc, item) => acc + (item.totalAmount || 0), 0);
+                                const dbDate = matchingItems[0]?.date;
+                                const dbIncoterm = matchingItems[0]?.incoterm;
+
+                                const isCFMOTO = (prov.nombre || '').toUpperCase().includes('CFMOTO');
+                                const dbCurrency = isCFMOTO ? 'USD' : (matchingItems[0]?.currency || '');
+
+                                // Validation Results (Returns Objects now)
+                                const rDate = checkField(f.fecha, dbDate, false, true);
+
+                                // Incoterm Custom Check: strict 3-letter extraction
+                                const rIncoterm = (() => {
+                                    if (!dbIncoterm) return { valid: true, debug: 'Skip' };
+                                    if (!f.incoterm) return { valid: false, debug: 'Missing' };
+
+                                    const docMatch = String(f.incoterm).toUpperCase().match(/[A-Z]{3}/);
+                                    const doc3 = docMatch ? docMatch[0] : '';
+
+                                    const dbMatch = String(dbIncoterm).toUpperCase().match(/[A-Z]{3}/);
+                                    const db3 = dbMatch ? dbMatch[0] : '';
+
+                                    return {
+                                        valid: doc3.length === 3 && doc3 === db3,
+                                        debug: `${doc3} vs ${db3}`
+                                    };
+                                })();
+
+                                const rCurrency = dbCurrency ? checkField(f.monedaFact, dbCurrency) : { valid: true, debug: 'Skip' };
+                                const rAmount = checkField(f.valMonFact, dbTotal, true);
+
+                                // Render Helper (Ensuring definition)
+                                // Helper for render status
+                                const CellStatus = ({ valid, children }: { valid: boolean, children: React.ReactNode }) => (
+                                    <div className={`flex items-center justify-center gap-1 ${valid ? 'text-slate-700' : 'text-red-600 font-bold bg-red-50'}`}>
+                                        {children}
+                                        {valid && <Check size={12} className="text-green-600" />}
+                                    </div>
+                                );
+
                                 return (
-                                    <div key={idx} className="flex border-b border-slate-100 last:border-0 text-[10px]">
-                                        <div className="flex-1 p-1 font-bold text-slate-700 flex items-center gap-1">
-                                            {f.numFactura}
-                                            {isValid ? (
-                                                <Check size={20} strokeWidth={3} className="text-green-600" />
-                                            ) : (
-                                                <X size={20} strokeWidth={3} className="text-red-500" />
-                                            )}
+                                    <div key={idx} className="flex flex-col border-b border-slate-100 last:border-0 text-[10px]">
+                                        <div className="flex w-full items-center whitespace-nowrap">
+                                            <div className="flex-1 p-1 font-bold text-slate-700 flex items-center gap-1 min-w-[150px] overflow-hidden text-ellipsis">
+                                                {/* Revert to RAW source data as requested, to reveal extraction 'errors' like 'IN' suffix */}
+                                                {f.numFactura}
+                                                {isInvoiceIdStrictValid ? (
+                                                    <Check size={16} className="text-green-600 shrink-0" />
+                                                ) : (
+                                                    <X size={16} className="text-red-500 shrink-0" />
+                                                )}
+                                            </div>
+                                            <div className="w-24 p-1 text-center" title={`DB: ${dbDate || 'N/A'}`}>
+                                                <CellStatus valid={isInvoiceValid ? (rDate.valid as boolean) : false}>{f.fecha}</CellStatus>
+                                            </div>
+                                            <div className="w-16 p-1 text-center" title={`DB: ${dbIncoterm} | Debug: ${rIncoterm.debug}`}>
+                                                <CellStatus valid={isInvoiceValid ? (rIncoterm.valid as boolean) : false}>{f.incoterm}</CellStatus>
+                                            </div>
+                                            <div className="w-16 p-1 text-center" title={`DB: ${dbCurrency || 'N/A'}`}>
+                                                <CellStatus valid={isRecordFound ? (rCurrency.valid as boolean) : false}>{f.monedaFact}</CellStatus>
+                                            </div>
+                                            <div className="w-24 p-1 text-right font-mono" title={`DB Sum: ${dbTotal.toFixed(2)} | Debug: ${rAmount.debug}`}>
+                                                <CellStatus valid={isRecordFound ? (rAmount.valid as boolean) : false}>{f.valMonFact}</CellStatus>
+                                            </div>
+                                            <div className="w-24 p-1 text-right font-mono">{f.factorMonFact}</div>
+                                            <div className="w-28 p-1 text-center font-mono text-blue-700 font-bold">
+                                                {f.valDolares}
+                                            </div>
                                         </div>
-                                        <div className="w-20 p-1 text-center">{f.fecha}</div>
-                                        <div className="w-16 p-1 text-center">{f.incoterm}</div>
-                                        <div className="w-16 p-1 text-center">{f.monedaFact}</div>
-                                        <div className="w-24 p-1 text-right font-mono">{f.valMonFact}</div>
-                                        <div className="w-24 p-1 text-right font-mono">{f.factorMonFact}</div>
-                                        <div className="w-24 p-1 text-right font-mono text-blue-700 font-bold">{f.valDolares}</div>
                                     </div>
                                 );
                             })}

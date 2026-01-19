@@ -341,6 +341,40 @@ export const CIExtractor: React.FC = () => {
     const [amendmentMatches, setAmendmentMatches] = useState<Record<string, RawMaterialPart>>({});
     const [masterDataMap, setMasterDataMap] = useState<Record<string, RawMaterialPart>>({});
 
+    const [stats, setStats] = useState({
+        totalItems: 0,
+        inCount: 0,
+        a1Count: 0
+    });
+
+    const updateStats = (data: CommercialInvoiceItem[]) => {
+        setStats({
+            totalItems: data.length,
+            inCount: data.filter(i => i.regimen !== 'A1').length,
+            a1Count: data.filter(i => i.regimen === 'A1').length
+        });
+    };
+
+    const loadData = () => {
+        const data = storageService.getInvoiceItems();
+        // Sort: Non-R8 first, then R8. Within groups, sort by Item Number.
+        data.sort((a, b) => {
+            const hasR8A = !!(a.rb && a.rb.toString().trim());
+            const hasR8B = !!(b.rb && b.rb.toString().trim());
+
+            if (hasR8A !== hasR8B) {
+                return hasR8A ? 1 : -1; // R8 items go to the bottom
+            }
+
+            const numA = parseFloat(a.item) || 0;
+            const numB = parseFloat(b.item) || 0;
+            return numA - numB;
+        });
+        setItems(data);
+        setLoading(false);
+        updateStats(data);
+    };
+
     useEffect(() => {
         const syncMasterData = () => {
             const rawParts = storageService.getParts();
@@ -373,7 +407,10 @@ export const CIExtractor: React.FC = () => {
         syncMasterData();
 
         // Subscribe to updates (Fixes slow load / race condition)
-        const unsubscribe = storageService.subscribe(syncMasterData);
+        const unsubscribe = storageService.subscribe(() => {
+            syncMasterData();
+            loadData(); // CRITICAL: Reload Invoices when Storage Updates (e.g. after Delete)
+        });
         return () => {
             if (unsubscribe) unsubscribe();
         };
@@ -636,47 +673,7 @@ export const CIExtractor: React.FC = () => {
     };
 
     // Stats
-    const [stats, setStats] = useState({
-        totalItems: 0,
-        inCount: 0,
-        a1Count: 0
-    });
 
-    useEffect(() => {
-        loadData();
-        const unsubscribe = storageService.subscribe(() => {
-            loadData();
-        });
-        return () => unsubscribe();
-    }, []);
-
-    const loadData = () => {
-        const data = storageService.getInvoiceItems();
-        // Sort: Non-R8 first, then R8. Within groups, sort by Item Number.
-        data.sort((a, b) => {
-            const hasR8A = !!(a.rb && a.rb.toString().trim());
-            const hasR8B = !!(b.rb && b.rb.toString().trim());
-
-            if (hasR8A !== hasR8B) {
-                return hasR8A ? 1 : -1; // R8 items go to the bottom
-            }
-
-            const numA = parseFloat(a.item) || 0;
-            const numB = parseFloat(b.item) || 0;
-            return numA - numB;
-        });
-        setItems(data);
-        setLoading(false);
-        updateStats(data);
-    };
-
-    const updateStats = (data: CommercialInvoiceItem[]) => {
-        setStats({
-            totalItems: data.length,
-            inCount: data.filter(i => i.regimen !== 'A1').length,
-            a1Count: data.filter(i => i.regimen === 'A1').length
-        });
-    };
 
     // --- ESTIMATED PRICE RESOLUTION MODAL ---
     const [showEstModal, setShowEstModal] = useState(false);
@@ -873,9 +870,11 @@ export const CIExtractor: React.FC = () => {
                             const excelNetWeight = Number(row[colMap['NETWEIGHT']] || 0);
 
                             // Auto-Correction logic:
-                            // 1. NetWeight: Use Master Data if Excel is 0
-                            // 2. R8: Use Master Data if Excel is empty
-                            const finalNetWeight = excelNetWeight > 0 ? excelNetWeight : (partData?.NETWEIGHT || 0);
+                            // 1. NetWeight: Prioritize Master Data (Unit Weight) over Excel to avoid "Total Weight treated as Unit" errors.
+                            // If Master Data is missing, use Excel value (fallback).
+                            const finalNetWeight = (partData?.NETWEIGHT && Number(partData.NETWEIGHT) > 0)
+                                ? Number(partData.NETWEIGHT)
+                                : excelNetWeight;
                             const fileRb = row[colMap['RB']] || '';
                             const finalRb = fileRb ? fileRb : (partData?.R8 || '');
 
@@ -1390,19 +1389,33 @@ export const CIExtractor: React.FC = () => {
         });
     };
 
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const confirmBulkDelete = async () => {
-        await storageService.deleteInvoiceItems(Array.from(selectedIds));
-        loadData(); // REFRESH UI
-        setSelectedIds(new Set());
-        setBulkDeleteModal(false);
-        showNotification('Deleted', `Deleted ${selectedIds.size} items.`, 'success');
+        try {
+            setIsDeleting(true);
+            await storageService.deleteInvoiceItems(Array.from(selectedIds));
+            // loadData() triggered by subscription
+            showNotification('Deleted', `Deleted ${selectedIds.size} items.`, 'success');
+            setSelectedIds(new Set());
+            setBulkDeleteModal(false);
+        } catch (error) {
+            console.error(error);
+            showNotification('Error', 'Failed to delete items. Please try again.', 'error');
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const handleDelete = async (id: string) => {
         if (confirm("Are you sure you want to delete this item?")) {
-            await storageService.deleteInvoiceItem(id);
-            loadData(); // REFRESH UI
-            showNotification('Deleted', "Item deleted.", 'success');
+            try {
+                await storageService.deleteInvoiceItem(id);
+                showNotification('Deleted', "Item deleted.", 'success');
+            } catch (error) {
+                console.error(error);
+                showNotification('Error', 'Failed to delete item.', 'error');
+            }
         }
     };
 
@@ -1722,6 +1735,8 @@ export const CIExtractor: React.FC = () => {
                         >
                             <FileSpreadsheet size={18} /> Split & Export
                         </button>
+
+
                     </div>
                 </div >
             </div >
@@ -2105,15 +2120,24 @@ export const CIExtractor: React.FC = () => {
                             <div className="flex justify-end gap-3">
                                 <button
                                     onClick={() => setBulkDeleteModal(false)}
-                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                                    disabled={isDeleting}
+                                    className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={confirmBulkDelete}
-                                    className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg"
+                                    disabled={isDeleting}
+                                    className="px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 shadow-lg shadow-red-200 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-wait"
                                 >
-                                    Delete {selectedIds.size} Items
+                                    {isDeleting ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            Deleting...
+                                        </>
+                                    ) : (
+                                        `Delete ${selectedIds.size} Items`
+                                    )}
                                 </button>
                             </div>
                         </div>

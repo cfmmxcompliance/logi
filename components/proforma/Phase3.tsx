@@ -49,6 +49,8 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
     const [showRaw, setShowRaw] = useState(false);
     const [showJson, setShowJson] = useState(false);
 
+
+
     // --- 1. DATA NORMALIZATION ---
     const root = useMemo(() => {
         if (!data) return {};
@@ -202,9 +204,84 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
         </div>
     );
 
+    // --- VALIDATION HELPERS ---
+    const normalize = (s: any) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const fuzzyEq = (a: string, b: string) => {
+        if (a === b) return true;
+        return a.replace(/0/g, 'O') === b.replace(/0/g, 'O');
+    };
+
+    // Helper to find matching invoice by Container + Part No OR Price/Qty
+    const findMatchingInvoice = (p: any) => {
+        const rawPartNo = p.displayPartNo || '';
+        const cleanPartNo = rawPartNo.replace(/^PN[:\s]*/i, '').trim();
+        // Allow empty part no for fallback matching
+
+        // Normalize Container List from Pedimento (Header)
+        const activeContainers = cont.map((c: any) => normalize(c.numero)).filter(Boolean);
+        const pnNorm = normalize(cleanPartNo);
+        const pPrice = Number(p.precioUnitario || 0);
+        const pQty = Number(p.cantidadUMC || 0); // UMC usually aligns with Invoice Qty
+
+        return invoices.find(inv => {
+            const invCont = normalize(inv.containerNo);
+            const invPn = normalize(inv.partNo);
+            const invPrice = Number(inv.unitPrice || 0);
+            const invQty = Number(inv.qty || 0);
+
+            // 1. Container Match (Relaxed)
+            // If Logic: If Pedimento has containers AND Invoice has container -> Must Match.
+            // If either is missing, assume potential match (Soft Pass).
+            let isContainerMatch = true;
+            if (activeContainers.length > 0 && invCont.length > 3) {
+                isContainerMatch = activeContainers.some(ac =>
+                    fuzzyEq(ac, invCont) ||
+                    (ac.includes(invCont) && invCont.length > 4) ||
+                    (invCont.includes(ac) && ac.length > 4)
+                );
+            }
+
+            if (!isContainerMatch) return false;
+
+            // 2. Part Match (Primary)
+            if (cleanPartNo && (invPn === pnNorm || invPn.includes(pnNorm) || pnNorm.includes(invPn))) {
+                return true;
+            }
+
+            // 3. Fallback: Price & Qty Match (if Part No fails or is empty)
+            // Useful when Pedimento uses HS Code as Part No
+            if (pPrice > 0 && invPrice > 0) {
+                const priceDiff = Math.abs(pPrice - invPrice);
+                const qtyDiff = Math.abs(pQty - invQty);
+                // 1% price tolerance, small qty tolerance
+                const priceMatch = priceDiff < 0.05 || (priceDiff / invPrice) < 0.01;
+                const qtyMatch = qtyDiff < 0.5;
+
+                if (priceMatch && qtyMatch) return true;
+            }
+
+            return false;
+        });
+    };
+
     const renderRowChips = (p: any) => {
+        // Validate Part No
+        const matchingInvoice = findMatchingInvoice(p);
+        const isPartNoValid = !!matchingInvoice;
+
+        // CLEAN UP: Remove "PN:" or "PN " prefix (for display)
+        const rawPartNo = p.displayPartNo || '';
+        const cleanPartNo = rawPartNo.replace(/^PN[:\s]*/i, '').trim();
+
         const parts = [];
-        if (p.displayPartNo) parts.push({ l: 'PN', v: p.displayPartNo, c: 'yellow' });
+        if (cleanPartNo) {
+            parts.push({
+                l: 'PN',
+                v: cleanPartNo,
+                c: isPartNoValid ? 'green' : 'red',
+                valid: isPartNoValid
+            });
+        }
         if (p.displayInvoice) parts.push({ l: 'INV', v: p.displayInvoice, c: 'blue' });
         if (p.displayFA) parts.push({ l: 'FA', v: p.displayFA, c: 'purple' });
 
@@ -213,9 +290,12 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
         return (
             <div className="flex flex-wrap gap-1 text-[8px] font-mono items-center h-full px-1">
                 {parts.map((item, idx) => (
-                    <span key={idx} className={`bg-${item.c}-100 text-${item.c}-800 px-1 rounded border border-${item.c}-300 font-bold whitespace-nowrap`}>
-                        {item.l}: {item.v}
-                    </span>
+                    <div key={idx} className={`bg-${item.c}-100 text-${item.c}-800 px-1 rounded border border-${item.c}-300 font-bold whitespace-nowrap flex items-center gap-1`}>
+                        <span>{item.l}: {item.v}</span>
+                        {item.l === 'PN' && (
+                            item.valid ? <Check size={10} strokeWidth={3} className="text-green-600" /> : <X size={10} strokeWidth={3} className="text-red-500" />
+                        )}
+                    </div>
                 ))}
             </div>
         );
@@ -323,8 +403,49 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
 
                     {/* Col 2: Values (15%) */}
                     <div className="flex flex-col w-[15%] border-r border-slate-300 bg-blue-50/30">
-                        <div className="border-b border-slate-300"><FieldBox label="Valor Dolares" value={v.valorDolares} /></div>
-                        <div className="border-b border-slate-300"><FieldBox label="Valor Aduana" value={v.valorAduana} /></div>
+                        <div className="border-b border-slate-300">
+                            <FieldBox label="Valor Dolares" value={v.valorDolares} />
+                            {(() => {
+                                const valDol = Number(v.valorDolares || 0);
+                                const valAdu = Number(v.valorAduana || 0);
+                                const tc = Number(headerData.tc || 1);
+                                // VAL DOLARES = VAL ADUANA / TC
+                                const expectedDol = valAdu / tc;
+
+                                if (valDol > 0 && valAdu > 0) {
+                                    const isValid = Math.abs(valDol - expectedDol) < 1.0;
+                                    return (
+                                        <div className="flex flex-col items-end pr-1 -mt-4 mb-1">
+                                            {isValid ? <Check size={20} className="text-green-600" /> : <X size={20} className="text-red-500" />}
+                                            {!isValid && <div className="text-[7px] text-slate-500 font-bold">Exp: ${expectedDol.toFixed(2)}</div>}
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            })()}
+                        </div>
+                        <div className="border-b border-slate-300">
+                            <FieldBox label="Valor Aduana" value={v.valorAduana} />
+                            {(() => {
+                                const valAduGlobal = Number(v.valorAduana || 0);
+                                // Sum of all items Val.Adu (MXN)
+                                const sumItems = data.partidas?.reduce((acc: number, p: any) => {
+                                    return acc + Number(p.valores?.valorAduanaUSD || 0); // item val is in MXN per user
+                                }, 0) || 0;
+
+                                if (valAduGlobal > 0) {
+                                    const diff = Math.abs(valAduGlobal - sumItems);
+                                    const isValid = diff < 5.0;
+                                    return (
+                                        <div className="flex flex-col items-end pr-1 -mt-4 mb-1">
+                                            {isValid ? <Check size={20} className="text-green-600" /> : <X size={20} className="text-red-500" />}
+                                            <div className="text-[7px] text-slate-500 font-bold">Sum: ${sumItems.toFixed(2)}</div>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            })()}
+                        </div>
                         <FieldBox label="Precio Pagado" value={v.precioPagado} />
                     </div>
 
@@ -447,7 +568,6 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
             </Section>
 
             {/* 5, 6 & IDENTIFICADORES GLOBAL DATA */}
-            {/* 5, 6 & IDENTIFICADORES GLOBAL DATA */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 w-full">
                 {/* IDENTIFICADORES IN COLUMN 1 */}
                 <Section title="Identificadores Globales">
@@ -461,6 +581,15 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                         {(root.identificadores || []).length === 0 && <div className="text-slate-400 text-[10px] italic p-2 text-center">Sin identificadores</div>}
                     </div>
                 </Section>
+
+                {/* LOGIC VALIDATION HELPER */}
+                {(() => {
+                    // This helper essentially runs "globally" for the render scope but we will define it here or above.
+                    // Actually, defining a function inside the map loop is inefficient. 
+                    // Let's define the validator logic closure here or assume we use it inside items.map
+                    // BUT for cleaner code, I'll return nothing here and stick to defining it inside the items.map or using a hook.
+                    return null;
+                })()}
 
                 <Section title="5. Contribuciones">
                     <div className="flex flex-col bg-white border-b border-slate-200">
@@ -624,9 +753,27 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                                 };
 
                                 // Calculate Expected Values from DB items
+
+                                // Calculate Expected Values from DB items
                                 const dbTotal = matchingItems.reduce((acc, item) => acc + (item.totalAmount || 0), 0);
                                 const dbDate = matchingItems[0]?.date;
-                                const dbIncoterm = matchingItems[0]?.incoterm;
+
+                                // INCOTERM: Prefer Container Match ("Truth Source"), fallback to Invoice Match
+                                const activeContainers = cont.map((c: any) => normalize(c.numero));
+                                const containerBasedRecord = invoices.find(inv => {
+                                    const invCont = normalize(inv.containerNo);
+                                    // Robust fuzzy match: Exact, Includes, or partial overlap
+                                    return activeContainers.some((ac: string) =>
+                                        fuzzyEq(ac, invCont) ||
+                                        (ac.includes(invCont) && invCont.length > 4) ||
+                                        (invCont.includes(ac) && ac.length > 4)
+                                    );
+                                });
+
+                                const containerIncoterm = containerBasedRecord?.incoterm;
+                                const invoiceIncoterm = matchingItems[0]?.incoterm;
+
+                                const dbIncoterm = containerIncoterm || invoiceIncoterm;
 
                                 const isCFMOTO = (prov.nombre || '').toUpperCase().includes('CFMOTO');
                                 const dbCurrency = isCFMOTO ? 'USD' : (matchingItems[0]?.currency || '');
@@ -634,20 +781,29 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                                 // Validation Results (Returns Objects now)
                                 const rDate = checkField(f.fecha, dbDate, false, true);
 
-                                // Incoterm Custom Check: strict 3-letter extraction
+                                // Incoterm Custom Check: strict 3-letter extraction, but robust against "CIF:" etc
                                 const rIncoterm = (() => {
                                     if (!dbIncoterm) return { valid: true, debug: 'Skip' };
                                     if (!f.incoterm) return { valid: false, debug: 'Missing' };
 
-                                    const docMatch = String(f.incoterm).toUpperCase().match(/[A-Z]{3}/);
-                                    const doc3 = docMatch ? docMatch[0] : '';
+                                    const docNorm = normalize(f.incoterm);
+                                    const dbNorm = normalize(dbIncoterm);
 
+                                    // Check for 3-letter codes specifically if possible
+                                    const docMatch = String(f.incoterm).toUpperCase().match(/[A-Z]{3}/);
                                     const dbMatch = String(dbIncoterm).toUpperCase().match(/[A-Z]{3}/);
-                                    const db3 = dbMatch ? dbMatch[0] : '';
+
+                                    const doc3 = docMatch ? docMatch[0] : docNorm;
+                                    const db3 = dbMatch ? dbMatch[0] : dbNorm;
+
+                                    const isValid = (doc3 === db3) ||
+                                        (docNorm === dbNorm) ||
+                                        (docNorm.includes(dbNorm) && dbNorm.length >= 3) ||
+                                        (dbNorm.includes(docNorm) && docNorm.length >= 3);
 
                                     return {
-                                        valid: doc3.length === 3 && doc3 === db3,
-                                        debug: `${doc3} vs ${db3}`
+                                        valid: isValid,
+                                        debug: `(${containerIncoterm ? 'Cont' : 'Inv'}) '${docNorm}' vs '${dbNorm}'`
                                     };
                                 })();
 
@@ -709,6 +865,7 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                     {items.map((p: any, i: number) => {
                         const val = p.valores || {};
                         return (
+
                             <div key={i} className="border border-black bg-white text-[9px] font-mono shadow-sm">
                                 {/* ROW 1: HEADER INFO */}
                                 <div className="flex border-b border-black">
@@ -727,11 +884,62 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                                     </div>
                                     <div className="w-12 border-r border-black p-1 text-center">
                                         <div className="font-bold text-[8px] text-slate-500">UMC</div>
-                                        <div>{p.umc}</div>
+                                        <div className="flex justify-center items-center gap-1">
+                                            {(() => {
+                                                const matchInv = findMatchingInvoice(p);
+                                                const umcDoc = String(p.umc || '').trim();
+                                                const umInv = normalize(matchInv?.um || '');
+
+                                                let isValid = false;
+                                                if (matchInv) {
+                                                    // PZA (Piece) -> 6
+                                                    if (['PZA', 'PIEZA', 'H87', 'PCS', 'EA'].some(u => umInv.includes(u))) {
+                                                        isValid = umcDoc === '6';
+                                                    }
+                                                    // KG (Kilogram) -> 1
+                                                    else if (['KG', 'KGM'].some(u => umInv.includes(u))) {
+                                                        isValid = umcDoc === '1';
+                                                    }
+                                                    // Fallback: Exact string match check (if needed in future, but based on request PZA->6, Kg->1 are the main rules)
+                                                    else {
+                                                        isValid = umcDoc === umInv; // weak fallback
+                                                    }
+                                                }
+
+                                                return (
+                                                    <>
+                                                        <span>{p.umc}</span>
+                                                        {matchInv ? (
+                                                            isValid ? <Check size={10} className="text-green-600" /> : <X size={20} className="text-red-500" />
+                                                        ) : (
+                                                            <X size={20} className="text-red-500" />
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
                                     </div>
                                     <div className="w-20 border-r border-black p-1 text-right">
                                         <div className="font-bold text-[8px] text-slate-500">CANT UMC</div>
-                                        <div>{p.cantidadUMC}</div>
+                                        <div className="flex justify-end items-center gap-1">
+                                            {(() => {
+                                                const matchInv = findMatchingInvoice(p);
+                                                const qtyDoc = Number(p.cantidadUMC);
+                                                const qtyDb = matchInv?.qty;
+                                                const isValid = matchInv && (Math.abs(qtyDoc - (qtyDb || 0)) < 0.01); // Float safe check
+
+                                                return (
+                                                    <>
+                                                        <span>{p.cantidadUMC}</span>
+                                                        {matchInv ? (
+                                                            isValid ? <Check size={10} className="text-green-600" /> : <X size={20} className="text-red-500" />
+                                                        ) : (
+                                                            <X size={20} className="text-red-500" />
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
                                     </div>
                                     <div className="w-12 border-r border-black p-1 text-center">
                                         <div className="font-bold text-[8px] text-slate-500">UMT</div>
@@ -739,7 +947,43 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                                     </div>
                                     <div className="w-20 border-r border-black p-1 text-right">
                                         <div className="font-bold text-[8px] text-slate-500">CANT UMT</div>
-                                        <div>{p.cantidadUMT}</div>
+                                        <div className="flex justify-end items-center gap-1">
+                                            {(() => {
+                                                const matchInv = findMatchingInvoice(p);
+                                                const cantUmt = Number(p.cantidadUMT || 0);
+                                                const umt = String(p.umt || '').trim();
+
+                                                // Rules logic
+                                                const isRule1 = umt === '1';
+                                                const isRule2 = umt === '6' && String(p.umc || '').trim() === '6';
+                                                const shouldValidate = isRule1 || isRule2;
+
+                                                if (!shouldValidate) return <span>{p.cantidadUMT}</span>;
+
+                                                if (!matchInv) return (
+                                                    <>
+                                                        <span>{p.cantidadUMT}</span>
+                                                        <X size={20} className="text-red-500" />
+                                                    </>
+                                                );
+
+                                                let isValid = false;
+                                                if (isRule1) {
+                                                    const netWt = matchInv.netWeight || 0;
+                                                    isValid = Math.abs(cantUmt - netWt) < 0.01;
+                                                } else if (isRule2) {
+                                                    const cantUmc = Number(p.cantidadUMC || 0);
+                                                    isValid = Math.abs(cantUmt - cantUmc) < 0.01;
+                                                }
+
+                                                return (
+                                                    <>
+                                                        <span>{p.cantidadUMT}</span>
+                                                        {isValid ? <Check size={10} className="text-green-600" /> : <X size={20} className="text-red-500" />}
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
                                     </div>
                                     <div className="w-12 border-r border-black p-1 text-center">
                                         <div className="font-bold text-[8px] text-slate-500">P.V/C</div>
@@ -759,19 +1003,198 @@ export const Phase3: React.FC<Phase3Props> = ({ data, onRefresh }) => {
                                     <div className="flex-1 flex">
                                         {/* COL 1: DESCRIPCION & VALUES (50%) */}
                                         <div className="w-1/2 border-r border-black flex flex-col">
-                                            <div className="p-1 min-h-[40px] whitespace-pre-wrap flex-1">{p.descripcion}</div>
+                                            {(() => {
+                                                const matchInv = findMatchingInvoice(p);
+                                                const dbDesc = matchInv?.spanishDescription || '';
+                                                let isDescValid = false;
+                                                if (matchInv) {
+                                                    const d1 = normalize(p.descripcion);
+                                                    const d2 = normalize(dbDesc);
+                                                    isDescValid = d1 === d2 || d1.includes(d2) || d2.includes(d1);
+                                                }
+                                                return (
+                                                    <div className="p-1 min-h-[40px] flex-1 relative">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <div className="font-bold text-[8px] text-slate-400">DESCRIPCION</div>
+                                                            {matchInv ? (
+                                                                isDescValid ? <Check size={10} className="text-green-600" /> : <X size={10} className="text-red-500" />
+                                                            ) : (
+                                                                <X size={20} className="text-red-500" />
+                                                            )}
+                                                        </div>
+                                                        <div className={`whitespace-pre-wrap ${matchInv && !isDescValid ? 'text-red-600' : ''}`}>
+                                                            {p.descripcion}
+                                                        </div>
+                                                        {matchInv && !isDescValid && (
+                                                            <div className="mt-1 text-[7px] text-slate-500 border-t border-slate-200 pt-1">
+                                                                <span className="font-bold">DB:</span> {dbDesc}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
                                             <div className="flex border-t border-black bg-slate-50">
                                                 <div className="w-1/4 border-r border-black p-1">
                                                     <div className="font-bold text-[8px] text-slate-500">VAL.ADU/USD</div>
-                                                    <div className="text-right text-[9px]">${val.valorAduanaUSD}</div>
+                                                    <div className="flex justify-end items-center gap-1">
+                                                        {(() => {
+                                                            const matchInv = findMatchingInvoice(p);
+                                                            const valAduDoc = Number(val.valorAduanaUSD || 0);
+
+                                                            // Global Totals (Parse from Header/Values)
+                                                            const totalWeight = Number(headerData.peso || 0);
+                                                            const totalVal = Number(v.valorDolares || 0);
+                                                            const globalFreight = Number(v.fletes || 0);
+                                                            const globalIns = Number(v.seguros || 0);
+                                                            const globalOthers = Number(v.otrosIncrementables || 0) + Number(v.embalajes || 0);
+
+                                                            let calculatedValAdu = 0;
+                                                            let isValid = false;
+                                                            let showValidation = false;
+
+                                                            const globalSumIncrements = globalFreight + globalIns + globalOthers;
+
+                                                            // RULE 1: No Global Incrementables -> VAL.ADU must equal IMP.PR.PAG (Strict MXN)
+                                                            // This check is internal to Pedimento and does NOT require a matching invoice.
+                                                            if (globalSumIncrements === 0) {
+                                                                const impPrPag = Number(val.impPrecioPag || 0);
+                                                                calculatedValAdu = impPrPag; // Expected is exactly PricePaid
+                                                                isValid = Math.abs(valAduDoc - impPrPag) < 1.0;
+                                                                showValidation = true;
+                                                            }
+                                                            // RULE 2: With Incrementables -> Requires Calculation via Invoice (Prorating)
+                                                            else if (matchInv) {
+                                                                const itemPrice = Number(matchInv.unitPrice || 0) * Number(matchInv.qty || 0);
+                                                                // ... Prorating Logic from previous steps ...
+                                                                // Recalculate Weights for Prorating
+                                                                const totalInvVal = invoices.reduce((acc: number, inv: any) => acc + (Number(inv.unitPrice || 0) * Number(inv.qty || 0)), 0) || 1;
+                                                                const totalWeight = data.partidas?.reduce((acc: number, p: any) => acc + Number(p.cantidadUMT || 0), 0) || 1; // Approx
+
+                                                                // Prorate Factors
+                                                                const weightFactor = (Number(p.cantidadUMT || 0)) / totalWeight;
+                                                                const valueFactor = itemPrice / totalInvVal;
+
+                                                                // CIF Logic (if CIF, Freight/Ins = 0 locally calculated, but here we using global headers?)
+                                                                // Assuming standard prorating of Global Headers onto items:
+
+                                                                const itemFreight = globalFreight * weightFactor; // Freight usually by Weight
+                                                                const itemIns = globalIns * valueFactor;      // Insurance by Value
+                                                                const itemOthers = globalOthers * valueFactor; // Others by Value
+
+                                                                const totalIncrements = itemFreight + itemIns + itemOthers;
+
+                                                                // Calculate in USD (Invoice Price + Increments)
+                                                                const calculatedValAduUSD = itemPrice + totalIncrements;
+                                                                // Convert to MXN
+                                                                const tc = Number(headerData.tc || 1);
+                                                                const calculatedValAduMXN = calculatedValAduUSD * tc;
+
+                                                                const isMatchMXN = Math.abs(valAduDoc - calculatedValAduMXN) < 1.0;
+
+                                                                isValid = isMatchMXN;
+                                                                calculatedValAdu = calculatedValAduMXN;
+                                                                showValidation = true;
+                                                            } else {
+                                                                // Incrementables exist but No Invoice Match found to calculate
+                                                                // We cannot validate definitively without invoice price
+                                                                showValidation = true;
+                                                                isValid = false;
+                                                                calculatedValAdu = 0; // Signals "Unknown"
+                                                            }
+
+                                                            return (
+                                                                <>
+                                                                    <div className={`text-right text-[9px] ${showValidation && !isValid ? 'text-red-600 font-bold' : ''}`}>
+                                                                        ${val.valorAduanaUSD}
+                                                                        {showValidation && !isValid && (
+                                                                            <div className="text-[7px] text-slate-400">Exp: ${calculatedValAdu.toFixed(2)}</div>
+                                                                        )}
+                                                                    </div>
+                                                                    {showValidation && (
+                                                                        isValid ? <Check size={20} className="text-green-600" /> : <X size={20} className="text-red-500" />
+                                                                    )}
+                                                                </>
+                                                            );
+                                                        })()}
+                                                    </div>
                                                 </div>
                                                 <div className="w-1/4 border-r border-black p-1">
                                                     <div className="font-bold text-[8px] text-slate-500">IMP.PR.PAG</div>
-                                                    <div className="text-right text-[9px]">${val.impPrecioPag}</div>
+                                                    <div className="flex justify-end items-center gap-1">
+                                                        {(() => {
+                                                            const matchInv = findMatchingInvoice(p);
+                                                            const impPrPag = Number(val.impPrecioPag || 0);
+                                                            const tc = Number(headerData.tc || 1); // Exchange Rate
+
+                                                            let isValid = false;
+                                                            let showValidation = false;
+                                                            let expectedVal = 0;
+
+                                                            if (matchInv) {
+                                                                // IMP.PR.PAG is predominantly in MXN (Invoice Total * TC)
+                                                                expectedVal = (matchInv.totalAmount || 0) * tc;
+
+                                                                // Tolerance of 1.0 or 0.1% for currency conversion diffs
+                                                                const diff = Math.abs(impPrPag - expectedVal);
+                                                                isValid = diff < 1.0 || (expectedVal > 0 && diff / expectedVal < 0.001);
+                                                                showValidation = true;
+                                                            } else {
+                                                                showValidation = true;
+                                                                isValid = false;
+                                                            }
+
+                                                            return (
+                                                                <>
+                                                                    <div className={`text-right text-[9px] ${showValidation && !isValid ? 'text-red-600 font-bold' : ''}`}>
+                                                                        ${val.impPrecioPag}
+                                                                        {showValidation && !isValid && (
+                                                                            <div className="text-[7px] text-slate-400">Exp: ${expectedVal.toFixed(2)}</div>
+                                                                        )}
+                                                                    </div>
+                                                                    {showValidation && (
+                                                                        isValid ? <Check size={20} className="text-green-600" /> : <X size={20} className="text-red-500" />
+                                                                    )}
+                                                                </>
+                                                            );
+                                                        })()}
+                                                    </div>
                                                 </div>
                                                 <div className="w-1/4 border-r border-black p-1">
                                                     <div className="font-bold text-[8px] text-slate-500">PRECIO UNIT.</div>
-                                                    <div className="text-right text-[9px]">${val.precioUnitario}</div>
+                                                    <div className="flex justify-end items-center gap-1">
+                                                        {(() => {
+                                                            const unitPrice = Number(val.precioUnitario || 0);
+                                                            const impPrPag = Number(val.impPrecioPag || 0);
+                                                            const cantUMC = Number(p.cantidadUMC || 0);
+
+                                                            let isValid = false;
+                                                            let showValidation = false;
+                                                            let expectedPrice = 0;
+
+                                                            if (impPrPag > 0 && cantUMC > 0) {
+                                                                expectedPrice = impPrPag / cantUMC;
+
+                                                                // Tolerance for calc division differences
+                                                                // E.g. 100 / 3 = 33.3333 vs 33.33 declared
+                                                                isValid = Math.abs(unitPrice - expectedPrice) < 0.02;
+                                                                showValidation = true;
+                                                            }
+
+                                                            return (
+                                                                <>
+                                                                    <div className={`text-right text-[9px] ${showValidation && !isValid ? 'text-red-600 font-bold' : ''}`}>
+                                                                        ${val.precioUnitario}
+                                                                        {showValidation && !isValid && (
+                                                                            <div className="text-[7px] text-slate-400">Exp: ${expectedPrice.toFixed(4)}</div>
+                                                                        )}
+                                                                    </div>
+                                                                    {showValidation && (
+                                                                        isValid ? <Check size={20} className="text-green-600" /> : <X size={20} className="text-red-500" />
+                                                                    )}
+                                                                </>
+                                                            );
+                                                        })()}
+                                                    </div>
                                                 </div>
                                                 <div className="w-1/4 p-1">
                                                     <div className="font-bold text-[8px] text-slate-500">VAL AGREG</div>

@@ -648,9 +648,13 @@ export const geminiService = {
         6. Do NOT copy 'impPrecioPag' to 'valorAgregado'. If empty, return null.
         7. **STRICT COLUMN DEFINITIONS FOR VALUES**:
            - 'impPrecioPag' (Importe Precio Pagado) MUST be the TOTAL VALUE column (usually large number, matches Invoice total approx).
-           - 'precioUnitario' (Precio Unitario) MUST be the UNIT PRICE column (usually small, derived from Total / Qty).
-           - 'cantidadUMT' (Cantidad Tarifa) MUST be the QUANTITY column.
-           - DO NOT SWAP THESE. If 'impPrecioPag' looks like a small quantity (e.g. 3.84) and 'valorAduanaUSD' is large (104.00), you likely shifted columns. 'impPrecioPag' is usually close to 'valorAduana' or 'valorComercial'.
+           - 'partidas': The most complex section.
+           - SEQUENCE BREAKS: Sometimes Items span multiple pages. Look for 'Secuencia', 'Fraccion', 'Vinculacion'.
+           - 'valorAduanaUSD': Extract the Customs Value.
+           - 'impPrecioPag': Check column alignment carefully.
+           - DO NOT SWAP THESE. If 'impPrecioPag' looks like a small quantity (e.g. 52.00) and 'valorAduanaUSD' is large (1000.00), that is CORRECT (USD vs MXN). 
+           - 'impPrecioPag' is usually the Invoice Value in MXN.
+           - 'precioUnitario' is the Unit Price (usually USD/Commercial).
            - 'cantidadUMT' is usually adjacent to 'UMT'.
         8. **NULL HANDLING**: If a field is empty in the PDF (e.g. Price Unitario is blank), output explicit null, DO NOT guess or shift neighboring values.
         

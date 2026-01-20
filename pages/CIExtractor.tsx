@@ -1697,7 +1697,22 @@ export const CIExtractor: React.FC = () => {
                         >
                             <History size={18} />
                         </button>
-                        <div className="h-8 w-px bg-slate-200 mx-1"></div>
+                        <button
+                            onClick={async () => {
+                                try {
+                                    const count = await storageService.refreshInvoices();
+                                    loadData(); // Re-sort and render
+                                    showNotification('Synced', `Refreshed ${count} items from Cloud.`, 'success');
+                                } catch (e: any) {
+                                    console.error("Sync Error:", e);
+                                    showNotification('Error', `Sync failed: ${e.message || 'Unknown error'}`, 'error');
+                                }
+                            }}
+                            className="bg-indigo-50 text-indigo-600 px-3 py-2 rounded-lg hover:bg-indigo-100 transition-colors border border-indigo-200 flex items-center gap-2 font-bold text-xs"
+                            title="Force Refresh from Cloud"
+                        >
+                            <RotateCcw size={16} /> Sync Cloud
+                        </button>
                         <input
                             type="file"
                             ref={fileInputRef}

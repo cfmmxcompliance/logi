@@ -11,7 +11,8 @@ const COLS = {
   EQUIPMENT: 'equipment_tracking', CUSTOMS: 'customs_clearance', PRE_ALERTS: 'pre_alerts',
   COSTS: 'costs', LOGS: 'logs', LOGISTICS: 'logistics', SUPPLIERS: 'suppliers',
   SNAPSHOTS: 'snapshots', DATA_STAGE_REPORTS: 'data_stage_reports',
-  TRAINING: 'training_submissions', INVOICES: 'commercial_invoices', DRAFTS: 'data_stage_drafts'
+  TRAINING: 'training_submissions', INVOICES: 'commercial_invoices', DRAFTS: 'data_stage_drafts',
+  METADATA: 'system_metadata'
 };
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
@@ -80,24 +81,20 @@ export const storageService = {
   init: async () => {
     unsubscribers.forEach(u => u());
     if (!db) {
+      // Offline / No-DB Mode
       const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (localData) dbState = JSON.parse(localData);
 
-      // Fix: Also load separated DataStage Reports (from Lean/Fallback saves)
+      // Load Separated Reports (Offline)
       try {
         const separateReports = localStorage.getItem(COLS.DATA_STAGE_REPORTS);
         if (separateReports) {
           const parsedReports = JSON.parse(separateReports);
           if (Array.isArray(parsedReports) && parsedReports.length > 0) {
-            // Merge or Prefer separated reports (usually newer/leaner)
-            // We'll combine them, deduplicating by ID
             const existingIds = new Set(dbState.dataStageReports.map((r: any) => r.id));
             parsedReports.forEach((r: any) => {
-              if (!existingIds.has(r.id)) {
-                dbState.dataStageReports.push(r);
-              }
+              if (!existingIds.has(r.id)) dbState.dataStageReports.push(r);
             });
-            console.log("Merged separated DataStage Reports:", parsedReports.length);
           }
         }
       } catch (e) { console.warn("Error loading separate reports", e); }
@@ -105,12 +102,65 @@ export const storageService = {
       notifyListeners();
       return;
     }
+
+    // 1. Load Local State First (Cache)
+    const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (localData) {
+      try {
+        dbState = JSON.parse(localData);
+      } catch (e) {
+        console.error("Corrupt LocalDB, resetting.", e);
+        dbState.parts = [];
+      }
+    }
+
+    // 2. MASTER DATA SYNC (Metadata Versioning) - "Semáforo"
+    // Optimization: Check version before downloading 6,000 parts
+    try {
+      const metaDocRef = doc(db, COLS.METADATA, 'parts_version');
+      const metaSnap = await getDoc(metaDocRef);
+
+      let serverVer = 0;
+      if (metaSnap.exists()) {
+        serverVer = metaSnap.data().version || 0;
+      } else {
+        // First run ever? Create the metadata doc
+        await setDoc(metaDocRef, { version: 1, lastUpdated: new Date().toISOString() });
+        serverVer = 1;
+      }
+
+      const localVer = Number(localStorage.getItem('logimaster_parts_version') || 0);
+      const hasParts = dbState.parts && dbState.parts.length > 0;
+
+      console.log(`🔍 Master Data Check - Cloud: v${serverVer} | Local: v${localVer} | Items: ${dbState.parts?.length}`);
+
+      if (serverVer > localVer || !hasParts) {
+        console.log("⬇️ Downloading Fresh Master Data (Delta/Version Mismatch)...");
+        const partsSnap = await getDocs(collection(db, COLS.PARTS));
+        // Map and ensure ID
+        dbState.parts = partsSnap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
+
+        // Save new version
+        localStorage.setItem('logimaster_parts_version', serverVer.toString());
+        saveLocal();
+        console.log(`✅ Master Data Synced: ${dbState.parts.length} items.`);
+      } else {
+        console.log("⚡ Using Cached Master Data (Up to date).");
+      }
+
+    } catch (e) {
+      console.error("Master Data Sync Failed (Using Local Cache)", e);
+      // Fallback: Proceed with whatever local data we have
+    }
+
+    // 3. REAL-TIME LISTENERS (For dynamic collections)
     Object.entries(COLS).forEach(([key, colName]) => {
-      // Sync all collections including INVOICES
+      // SKIP PARTS (Handled manually above to save quota)
+      if (key === 'PARTS') return;
+      if (key === 'METADATA') return;
 
       unsubscribers.push(onSnapshot(collection(db, colName), (snap) => {
         // CRITICAL: Always include the Firestore Document ID as 'id'
-        // This fixes issues where the stored data might have missing/empty 'id' fields
         const data = snap.docs.map(d => ({ ...d.data(), id: d.id }));
 
         let stateKey = key.toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase());
@@ -131,11 +181,10 @@ export const storageService = {
             const localTime = new Date(localItem.updatedAt).getTime();
             const cloudTime = new Date(cloudItem.updatedAt).getTime();
             if (localTime > cloudTime) {
-              console.warn(`Conflict [${stateKey}]: Keeping local version of ${cloudItem.id} (Local > Cloud)`);
+              // console.warn(`Conflict [${stateKey}]: Keeping local version.`);
               return; // Do NOT overwrite
             }
           }
-          // Otherwise, accept Cloud (Newer or First time seen)
           localMap.set(cloudItem.id, cloudItem);
         });
 
@@ -151,20 +200,11 @@ export const storageService = {
 
     // Always load local data for Commercial Invoices (Hybrid Mode)
     // 1. Try Main DB blob
-    const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    // 1. Try Main DB blob (Already loaded in dbState at start of init)
     let invoicesLoaded = false;
-
-    if (localData) {
-      try {
-        const parsed = JSON.parse(localData);
-        if (parsed.commercialInvoices && Array.isArray(parsed.commercialInvoices) && parsed.commercialInvoices.length > 0) {
-          dbState.commercialInvoices = parsed.commercialInvoices;
-          invoicesLoaded = true;
-          notifyListeners();
-        }
-      } catch (e) {
-        console.warn("Error parsing local DB", e);
-      }
+    if (dbState.commercialInvoices && dbState.commercialInvoices.length > 0) {
+      invoicesLoaded = true;
+      // notifyListeners(); // Already notified at end of init logic usually, but fine to keep if needed
     }
 
     // 2. Fallback to Dedicated Backup if main failed or was empty
@@ -257,6 +297,11 @@ export const storageService = {
       });
       await batch.commit();
     }
+
+    // Fix: Optimistic Update for UI
+    dbState.commercialInvoices = [...(dbState.commercialInvoices || []), ...uniqueNewItems];
+    // Optional: saveLocal() to persist cache, but notifyListeners is enough for runtime UI
+    notifyListeners();
   },
 
   updateInvoiceItem: async (item: CommercialInvoiceItem) => {
@@ -295,6 +340,28 @@ export const storageService = {
         batch.set(ref, sanitizeForFirestore(item)); // set matches overwrite behavior of updateInvoiceItem
       });
       await batch.commit();
+    }
+  },
+
+  refreshInvoices: async () => {
+    if (!db) return 0; // No-op in local mode
+    try {
+      console.log("Forcing refresh of Commercial Invoices from Cloud...");
+      const q = query(collection(db, COLS.INVOICES));
+      const snap = await getDocs(q);
+      const items = snap.docs.map(d => sanitizeForFirestore({ ...d.data(), id: d.id }));
+
+      dbState.commercialInvoices = items;
+      // Optional: Update local storage backup
+      if (items.length > 0) {
+        localStorage.setItem(INVOICES_BACKUP_KEY, JSON.stringify(items));
+      }
+      notifyListeners();
+      console.log(`Refreshed ${items.length} invoices from Cloud.`);
+      return items.length;
+    } catch (e) {
+      console.error("Failed to refresh invoices:", e);
+      throw e;
     }
   },
 

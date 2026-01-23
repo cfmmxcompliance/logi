@@ -51,14 +51,16 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
 const AppContent = () => {
     const [isReady, setIsReady] = useState(false);
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, loading, user } = useAuth();
 
     useEffect(() => {
+        if (loading) return;
+
         // Async Init for IndexedDB and Services
         const init = async () => {
             try {
-                await storageService.init();
-                storageService.initAutoBackup();
+                await storageService.init(user?.role);
+                // storageService.initAutoBackup();
 
                 // Initialize Automated 4AM Tracking Check
                 await trackingService.init();
@@ -73,7 +75,7 @@ const AppContent = () => {
             }
         };
         init();
-    }, []);
+    }, [loading, user?.role]);
 
     if (!isReady) {
         return (

@@ -1,5 +1,5 @@
 
-import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord } from '../types.ts';
+import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
   collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc
@@ -109,7 +109,7 @@ export const storageService = {
   getLocalState: () => dbState,
   logAction,
 
-  init: async () => {
+  init: async (role?: UserRole) => {
     unsubscribers.forEach(u => u());
     if (!db) {
       // Offline / No-DB Mode
@@ -184,11 +184,20 @@ export const storageService = {
       // Fallback: Proceed with whatever local data we have
     }
 
-    // 3. REAL-TIME LISTENERS (For dynamic collections)
+    // 3. REAL-TIME LISTENERS (Optimized based on Role and Weight)
     Object.entries(COLS).forEach(([key, colName]) => {
-      // SKIP PARTS (Handled manually above to save quota)
-      if (key === 'PARTS') return;
-      if (key === 'METADATA') return;
+      // (A) Skip Meta / Master Data (Handled manually above)
+      if (key === 'PARTS' || key === 'METADATA') return;
+
+      // (B) Skip Heavy Collections from Initial Sync (Lazy Load required on-page)
+      // These collections only grow and shouldn't be downloaded by everyone on boot.
+      if (key === 'LOGS' || key === 'INVOICES') return;
+
+      // (C) Agent Role Optimization: Only sync Suppliers + Logistics
+      // Agents don't need Shipments, Costs, Pre-alerts, etc.
+      if (role === UserRole.AGENT) {
+        if (key !== 'SUPPLIERS' && key !== 'LOGISTICS') return;
+      }
 
       unsubscribers.push(onSnapshot(collection(db, colName), (snap) => {
         // 1. Get current cloud state
@@ -217,7 +226,6 @@ export const storageService = {
         });
 
         // 3. REMOVAL: Remove items that are no longer in the cloud
-        // Filtering to ensure local state reflects cloud presence
         const finalState = Array.from(localMap.values()).filter((item: any) => cloudIds.has(item.id));
 
         (dbState as any)[stateKey] = finalState;
@@ -374,24 +382,15 @@ export const storageService = {
   },
 
   refreshInvoices: async () => {
-    if (!db) return 0; // No-op in local mode
+    if (!db) return;
     try {
-      console.log("Forcing refresh of Commercial Invoices from Cloud...");
-      const q = query(collection(db, COLS.INVOICES));
-      const snap = await getDocs(q);
-      const items = snap.docs.map(d => sanitizeForFirestore({ ...d.data(), id: d.id }));
-
-      dbState.commercialInvoices = items;
-      // Optional: Update local storage backup
-      if (items.length > 0) {
-        localStorage.setItem(INVOICES_BACKUP_KEY, JSON.stringify(items));
-      }
+      console.log("⬇️ Fetching Commercial Invoices (On-Demand)...");
+      const snap = await getDocs(collection(db, COLS.INVOICES));
+      dbState.commercialInvoices = snap.docs.map(d => ({ ...d.data(), id: d.id } as CommercialInvoiceItem));
+      saveLocal();
       notifyListeners();
-      console.log(`Refreshed ${items.length} invoices from Cloud.`);
-      return items.length;
     } catch (e) {
-      console.error("Failed to refresh invoices:", e);
-      throw e;
+      console.error("Failed to refresh invoices", e);
     }
   },
 
@@ -2244,6 +2243,20 @@ export const storageService = {
 
   getAuditLogs: () => {
     return (dbState.logs || []).sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  },
+
+  fetchAuditLogs: async (limitCount: number = 200) => {
+    if (!db) return;
+    try {
+      console.log(`⬇️ Fetching Audit Logs (Limit: ${limitCount})...`);
+      const { query, collection, orderBy, limit, getDocs } = await import('firebase/firestore');
+      const q = query(collection(db, COLS.LOGS), orderBy('timestamp', 'desc'), limit(limitCount));
+      const snap = await getDocs(q);
+      dbState.logs = snap.docs.map(d => ({ ...d.data(), id: d.id } as AuditLog));
+      notifyListeners();
+    } catch (e) {
+      console.error("Failed to fetch audit logs", e);
+    }
   },
 
   deleteDigitalArchive: async (pedimentoNo: string) => {

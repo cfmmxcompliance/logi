@@ -9,14 +9,17 @@ export const ActionLogs = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const loadLogs = () => {
+        const loadLogs = async () => {
             setIsLoading(true);
+            await storageService.fetchAuditLogs(200); // Manually fetch last 200 logs
             setLogs(storageService.getAuditLogs());
             setIsLoading(false);
         };
 
         loadLogs();
-        const unsub = storageService.subscribe(loadLogs);
+        const unsub = storageService.subscribe(() => {
+            setLogs(storageService.getAuditLogs());
+        });
         return unsub;
     }, []);
 

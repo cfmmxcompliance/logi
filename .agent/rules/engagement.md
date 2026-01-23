@@ -8,3 +8,4 @@
 6. **NO AUTOMATED BROWSER TESTING**: Do not use browser tools to verify UI changes, and under no circumstances create test accounts or bypass login screens. The user will provide all visual feedback and verification.
 7. **PROPOSALS FIRST**: Proactivity is permitted only in the form of **prior discussion**. You may suggest improvements or identify "loose ends", but you must NEVER plan or execute them without explicit user authorization.
 8. **STRICT RISK MAP**: No execution shall take place without a **Risk Map (Mapa de Riesgo)** that has been previously reviewed, resolved, and approved by the user. Every technical plan must include an impact analysis and a clear risk assessment to ensure zero-risk execution.
+9. **DEPLOYMENT TARGET**: All deployments MUST target `https://logimaster-cfmoto.web.app` using `firebase deploy --only hosting --project logimaster-cfmoto`.

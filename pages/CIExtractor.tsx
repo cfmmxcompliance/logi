@@ -379,7 +379,6 @@ export const CIExtractor: React.FC = () => {
             const rawParts = storageService.getParts();
 
             // PERF: Skip rebuild if array reference hasn't changed (prevents unnecessary sorting/mapping)
-            // storageService.getParts() returns the same array reference if no parts changed
             if ((syncMasterData as any).lastRef === rawParts) return;
             (syncMasterData as any).lastRef = rawParts;
 
@@ -393,7 +392,6 @@ export const CIExtractor: React.FC = () => {
 
             const map: Record<string, RawMaterialPart> = {};
             parts.forEach(p => {
-                // Normalization: Key must be trimmed string to match lookup logic
                 if (p.PART_NUMBER) {
                     const normalizedKey = String(p.PART_NUMBER).trim();
                     map[normalizedKey] = p;
@@ -402,13 +400,19 @@ export const CIExtractor: React.FC = () => {
             setMasterDataMap(map);
         };
 
-        // Initial Load
-        syncMasterData();
+        const initLoad = async () => {
+            setLoading(true);
+            await storageService.refreshInvoices(); // Manual Lazy Load from Cloud
+            syncMasterData();
+            loadData();
+        };
+
+        initLoad();
 
         // Subscribe to updates (Fixes slow load / race condition)
         const unsubscribe = storageService.subscribe(() => {
             syncMasterData();
-            loadData(); // CRITICAL: Reload Invoices when Storage Updates (e.g. after Delete)
+            loadData(); // CRITICAL: Reload Invoices when Storage Updates
         });
         return () => {
             if (unsubscribe) unsubscribe();

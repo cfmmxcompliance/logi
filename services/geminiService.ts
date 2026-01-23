@@ -581,9 +581,6 @@ export const geminiService = {
               "cantidadUMT": "REQ",
               "PVC": "REQ (Country Code e.g. CHN, USA, MEX)",
               "POD": "REQ (Country Code e.g. CHN, USA, MEX)",
-              "paisOrigen": "OPT (Full Country if PVC/POD unclear)",
-              "paisVendedor": "OPT (Full Country if PVC/POD unclear)",
-              "paisComprador": "OPT",
               "numeroParte": "OPT (Look for 'Part No', 'Parte', or code in desc)",
               "folioFactura": "OPT (Look for 'Invoice', 'Factura' in item)",
               "FA": "OPT (Look for 'FA', 'F.A.')",
@@ -649,12 +646,19 @@ export const geminiService = {
         7. **STRICT COLUMN DEFINITIONS FOR VALUES**:
            - 'impPrecioPag' (Importe Precio Pagado) MUST be the TOTAL VALUE column (usually large number, matches Invoice total approx).
            - 'partidas': The most complex section.
-           - SEQUENCE BREAKS: Sometimes Items span multiple pages. Look for 'Secuencia', 'Fraccion', 'Vinculacion'.
-           - 'valorAduanaUSD': Extract the Customs Value.
-           - 'impPrecioPag': Check column alignment carefully.
-           - DO NOT SWAP THESE. If 'impPrecioPag' looks like a small quantity (e.g. 52.00) and 'valorAduanaUSD' is large (1000.00), that is CORRECT (USD vs MXN). 
-           - 'impPrecioPag' is usually the Invoice Value in MXN.
-           - 'precioUnitario' is the Unit Price (usually USD/Commercial).
+           - 'valorAduanaUSD': Extract the Customs Value. It may appear ABOVE the main row, sometimes marked with an asterisk (e.g. '*104.00').
+             - **TRAP**: If you see '16.0000' or '0.16', this is likely the IVA RATE (Tax), NOT the Customs Value. Ignore it. Look for a value closer to 'IMP.PRECIO PAGADO'.
+           - 'impPrecioPag': This is the Commercial Value/Price Paid.
+           - **MATH CHECK (CRITICAL)**: Often there are three numbers defined: Total, Qty, UnitPrice.
+             - Example: 104.00, 192.000, 0.54167.
+             - Check: 104 / 192 = 0.54.
+             - **CONCLUSION**: 104 is TOTAL ('impPrecioPag'), 192 is QTY ('cantidadUMC'), 0.54 is UNIT PRICE ('precioUnitario').
+             - **ERROR**: Do NOT extract '192.000' as 'impPrecioPag' if it functions as the Quantity in this math relation.
+           - RULE: In this layout, 'IMP.PRECIO PAGADO' often matches 'VAL.ADU' (e.g. 104.00). Use that.
+           - 'precioUnitario': Look for the Unit Price (e.g. '0.54167').
+           - 'descripcion': Extract the full commercial description.
+             - **IGNORE**: usage terms like 'DIFERENCIAL', 'OBSERVACIONES', 'PEDIMENTO', 'VALOR'. These are headers.
+           - DO NOT SWAP COLUMNS. 'VAL.ADU' is separate from 'IMP.PRECIO PAGADO'.
            - 'cantidadUMT' is usually adjacent to 'UMT'.
         8. **NULL HANDLING**: If a field is empty in the PDF (e.g. Price Unitario is blank), output explicit null, DO NOT guess or shift neighboring values.
         
@@ -722,8 +726,25 @@ export const geminiService = {
         }
       };
 
-      // 2. Parallel Analysis
-      const results = await Promise.all(chunks.map((chunk, idx) => analyzeChunk(chunk, idx)));
+      // 2. Batched Parallel Analysis (Balance Speed vs Risk)
+      // Processing 5 pages at a time is faster.
+      const results = [];
+      const BATCH_SIZE = 5;
+
+      for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+        const batch = chunks.slice(i, i + BATCH_SIZE);
+        console.log(`Processing Batch ${i / BATCH_SIZE + 1} (${batch.length} chunks)...`);
+
+        const batchResults = await Promise.all(
+          batch.map((chunk, batchIdx) => analyzeChunk(chunk, i + batchIdx))
+        );
+        results.push(...batchResults);
+
+        // Small cooldown between batches if there are more to come
+        if (i + BATCH_SIZE < chunks.length) {
+          await new Promise(res => setTimeout(res, 500));
+        }
+      }
 
       // 3. Merge Results
       console.log("Merging Phase 2 Results...");

@@ -18,6 +18,7 @@ export enum DocType {
 export enum UserRole {
   ADMIN = 'Admin',       // Full access: Delete, Manage Users, Edit
   EDITOR = 'Editor',     // Write access: Create, Edit, No Delete
+  AGENT = 'Agent',       // External Agent: Master Data view only
   OPERATOR = 'Operator', // Same as Editor (User requested alias)
   CONTROLLER = 'Controller', // Finance & Expense Control
   VIEWER = 'Viewer',      // Read only

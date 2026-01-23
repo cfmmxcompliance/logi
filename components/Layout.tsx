@@ -43,13 +43,17 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {user?.role === 'Admin' && (
             <SidebarItem to="/" icon={LayoutDashboard} label={sidebarOpen ? "Dashboard" : ""} />
           )}
-          <SidebarItem to="/operations" icon={Ship} label={sidebarOpen ? "Shipment Plan" : ""} />
-          <SidebarItem to="/pre-alerts" icon={Bell} label={sidebarOpen ? "Pre-Alerts" : ""} />
-          <SidebarItem to="/vessel-tracking" icon={Anchor} label={sidebarOpen ? "Tracking" : ""} />
-          <SidebarItem to="/equipment-tracking" icon={Container} label={sidebarOpen ? "Equipment" : ""} />
-          <SidebarItem to="/customs-clearance" icon={ClipboardCheck} label={sidebarOpen ? "Customs Clearance" : ""} />
-          <SidebarItem to="/commercial-invoices" icon={FileText} label={sidebarOpen ? "CI Extractor" : ""} />
-          <SidebarItem to="/ccp-builder" icon={Truck} label={sidebarOpen ? "CCP Builder" : ""} />
+          {user?.role !== UserRole.AGENT && (
+            <>
+              <SidebarItem to="/operations" icon={Ship} label={sidebarOpen ? "Shipment Plan" : ""} />
+              <SidebarItem to="/pre-alerts" icon={Bell} label={sidebarOpen ? "Pre-Alerts" : ""} />
+              <SidebarItem to="/vessel-tracking" icon={Anchor} label={sidebarOpen ? "Tracking" : ""} />
+              <SidebarItem to="/equipment-tracking" icon={Container} label={sidebarOpen ? "Equipment" : ""} />
+              <SidebarItem to="/customs-clearance" icon={ClipboardCheck} label={sidebarOpen ? "Customs Clearance" : ""} />
+              <SidebarItem to="/commercial-invoices" icon={FileText} label={sidebarOpen ? "CI Extractor" : ""} />
+              <SidebarItem to="/ccp-builder" icon={Truck} label={sidebarOpen ? "CCP Builder" : ""} />
+            </>
+          )}
 
           {(user?.role === 'Admin' || user?.role === 'Controller' || user?.role === 'Editor') && (
             <SidebarItem to="/controller" icon={Settings} label={sidebarOpen ? "Payments" : ""} />
@@ -66,7 +70,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {(user?.role === 'Admin' || user?.role === 'Editor') && (
+          {(user?.role === UserRole.ADMIN || user?.role === UserRole.EDITOR || user?.role === UserRole.AGENT) && (
             <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
           )}
 
@@ -77,6 +81,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {user?.role === 'Admin' && (
             <>
               <SidebarItem to="/reports" icon={BarChart3} label={sidebarOpen ? "Reports & KPIs" : ""} />
+              <SidebarItem to="/audit-logs" icon={ClipboardCheck} label={sidebarOpen ? "Audit Logs" : ""} />
               <SidebarItem to="/settings" icon={Settings} label={sidebarOpen ? "Settings" : ""} />
             </>
           )}

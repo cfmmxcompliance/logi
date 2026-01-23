@@ -417,6 +417,57 @@ export const CustomsClearance = () => {
                     >
                         <FileDown size={18} /> Import CSV
                     </button>
+                    {isAdmin && records.some(r => r.containerNo === 'Multiple') && (
+                        <button
+                            onClick={async () => {
+                                if (window.confirm("¿Deseas corregir los registros agrupados (Multiple)? Esto creará una línea individual por cada contenedor de forma automática.")) {
+                                    setProcState({ isOpen: true, status: 'loading', title: 'Reparando Datos', message: 'Explotando registros agrupados...', progress: 40 });
+                                    try {
+                                        let moreToProcess = true;
+                                        let processedCount = 0;
+
+                                        while (moreToProcess) {
+                                            const result = await storageService.repairCustomsGranularity(100);
+                                            processedCount += result.affected;
+
+                                            if (result.remaining > 0) {
+                                                setProcState(prev => ({
+                                                    ...prev,
+                                                    message: `Procesados: ${processedCount}. Faltan ${result.remaining}...`,
+                                                    progress: Math.min(90, (processedCount / (processedCount + result.remaining)) * 100)
+                                                }));
+                                            } else {
+                                                moreToProcess = false;
+                                                setProcState({
+                                                    isOpen: true,
+                                                    status: 'success',
+                                                    title: 'Reparación Completa',
+                                                    message: `Se corrigieron un total de ${processedCount} registros.`,
+                                                    progress: 100
+                                                });
+                                                setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 4000);
+                                            }
+                                        }
+                                    } catch (e: any) {
+                                        console.error("Repair Error:", e);
+                                        const isQuotaError = e?.message?.toLowerCase().includes('quota') || e?.message?.toLowerCase().includes('limit');
+                                        setProcState({
+                                            isOpen: true,
+                                            status: 'error',
+                                            title: isQuotaError ? 'Cuota Agotada' : 'Error de Reparación',
+                                            message: isQuotaError
+                                                ? 'Se alcanzó la cuota de escrituras de hoy. El proceso se detuvo de forma segura; lo que falte se podrá procesar mañana.'
+                                                : (e?.message || 'Error desconocido al procesar los registros.'),
+                                            progress: 0
+                                        });
+                                    }
+                                }
+                            }}
+                            className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm hover:bg-amber-100 transition-all font-medium"
+                        >
+                            <AlertTriangle size={18} /> Repair Granularity
+                        </button>
+                    )}
                     <button
                         onClick={handleCreate}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-all"

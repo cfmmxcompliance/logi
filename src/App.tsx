@@ -14,6 +14,7 @@ import { Suppliers } from '../pages/Suppliers.tsx';
 import { Reports } from '../pages/Reports.tsx';
 import { Settings } from '../pages/Settings.tsx';
 import { Login } from '../pages/Login.tsx';
+import { ActionLogs } from '../pages/AuditLogs.tsx';
 import { DataStage } from '../pages/DataStage.tsx';
 import { CIExtractor } from '../pages/CIExtractor.tsx';
 import CCPBuilder from '../pages/CCPBuilder.tsx';
@@ -27,11 +28,23 @@ import { NotificationPopup } from '../components/NotificationPopup.tsx';
 import { Database } from 'lucide-react';
 
 // Authenticated Route Wrapper
-const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
-    const { isAuthenticated } = useAuth();
+const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode, allowedRoles?: string[] }) => {
+    const { isAuthenticated, user } = useAuth();
+    const location = useLocation();
+
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
     }
+
+    // Agent role is strictly limited to Master Data
+    if (user?.role === 'Agent' && location.pathname !== '/database') {
+        return <Navigate to="/database" replace />;
+    }
+
+    if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+        return <Navigate to="/" replace />;
+    }
+
     return <Layout>{children}</Layout>;
 };
 
@@ -94,6 +107,7 @@ const AppContent = () => {
             <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/audit-logs" element={<ProtectedRoute><ActionLogs /></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

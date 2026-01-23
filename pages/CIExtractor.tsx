@@ -80,8 +80,9 @@ const consolidateItems = (
 
             const curWeight = hasMasterWeight ? Number(masterWeight) : (row.netWeight || 0);
 
+            const cleanKey = key.replace(/[^a-zA-Z0-9|]/g, '-');
             map.set(key, {
-                id: crypto.randomUUID(),
+                id: cleanKey,
                 invoiceNo: row.invoiceNo,
                 date: row.date,
                 item: row.item,
@@ -122,7 +123,7 @@ const InvoiceRow = React.memo(({
     masterPart,
     onOpenDiff,
     onOpenEst,
-    isValidInvoice // NEW PROP
+    blNo
 }: any) => {
 
     // Lógica auxiliar visual (extraída del render inline para velocidad)
@@ -209,14 +210,12 @@ const InvoiceRow = React.memo(({
                     {isEditing ? (
                         <input type="text" value={editValues.invoiceNo || ''} onChange={e => setEditValues({ ...editValues, invoiceNo: e.target.value })} className="w-full px-2 py-1 border rounded bg-white text-xs" />
                     ) : item.invoiceNo}
-                    {!isEditing && (
-                        isValidInvoice ? (
-                            <Check size={20} className="text-emerald-500" strokeWidth={3} />
-                        ) : (
-                            <X size={20} className="text-red-500" strokeWidth={3} />
-                        )
-                    )}
                 </div>
+            </td>
+
+            {/* BL Column */}
+            <td className="p-4 text-slate-600 font-mono text-xs">
+                {blNo || '-'}
             </td>
 
             {/* Container */}
@@ -416,7 +415,7 @@ export const CIExtractor: React.FC = () => {
         };
     }, []);
 
-    // --- VESSEL TRACKING & INVOICE VALIDATION ---
+    // --- TRACKING DATA FOR BL MAPPING ---
     const [tracking, setTracking] = useState<VesselTrackingRecord[]>([]);
 
     useEffect(() => {
@@ -429,24 +428,14 @@ export const CIExtractor: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
-    const normalize = (s: any) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const fuzzyEq = (a: string, b: string) => {
-        if (a === b) return true;
-        const aPrime = a.replace(/0/g, 'O');
-        const bPrime = b.replace(/0/g, 'O');
-        return aPrime === bPrime;
-    };
-
-    const isInvoiceValid = (invoiceNo: string) => {
-        if (!invoiceNo) return false;
-        const currentInvoice = normalize(invoiceNo);
-        return tracking.some(t => {
-            const dbRef = normalize(t.refNo);
-            return fuzzyEq(dbRef, currentInvoice) ||
-                (dbRef.includes(currentInvoice) && fuzzyEq(dbRef.substr(0, 4), currentInvoice.substr(0, 4))) ||
-                (currentInvoice.includes(dbRef));
+    const invoiceToBLMap = React.useMemo(() => {
+        const map: Record<string, string> = {};
+        tracking.forEach(t => {
+            if (t.invoiceNo) map[t.invoiceNo] = t.blNo || '';
         });
-    };
+        return map;
+    }, [tracking]);
+
 
     // Look up Master Data when Amendments modal opens
     // AUTO RECOVERY ON MOUNT
@@ -1435,7 +1424,8 @@ export const CIExtractor: React.FC = () => {
         const itemsWithContainer = pendingFileItems.map(i => ({
             ...i,
             containerNo: tempContainerNo,
-            id: i.id || crypto.randomUUID() // Ensure IDs
+            // Natural key for persistence if missing (should already be there from consolidation)
+            id: i.id || `${i.invoiceNo}-${i.partNo}-${i.qty}-${tempContainerNo}`
         }));
 
         await storageService.addInvoiceItems(itemsWithContainer);
@@ -1531,6 +1521,7 @@ export const CIExtractor: React.FC = () => {
                 ${normalize(i.um)}
                 ${normalize(i.incoterm)}
                 ${normalize(i.item)}
+                ${normalize(invoiceToBLMap[i.invoiceNo])}
             `;
 
             // AND Condition: ALL terms (from comma split) must match somewhere in this row
@@ -1777,6 +1768,7 @@ export const CIExtractor: React.FC = () => {
                                 <th className="p-4 text-center">Sensible</th>
                                 <th className="p-4 text-center">NDB</th>
                                 <th className="p-4">Invoice No</th>
+                                <th className="p-4">BL</th>
                                 <th className="p-4">Container/Guide</th>
                                 <th className="p-4">Date</th>
                                 <th className="p-4">Regimen</th>
@@ -1797,9 +1789,9 @@ export const CIExtractor: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {loading ? (
-                                <tr><td colSpan={15} className="p-8 text-center text-slate-400">Loading...</td></tr>
+                                <tr><td colSpan={16} className="p-8 text-center text-slate-400">Loading...</td></tr>
                             ) : filteredItems.length === 0 ? (
-                                <tr><td colSpan={15} className="p-8 text-center text-slate-400">No invoice items found. Import an Excel file to get started.</td></tr>
+                                <tr><td colSpan={16} className="p-8 text-center text-slate-400">No invoice items found. Import an Excel file to get started.</td></tr>
                             ) : (
                                 displayedItems.map((item, index) => {
                                     // Pre-calculate Master Data lookup
@@ -1823,7 +1815,7 @@ export const CIExtractor: React.FC = () => {
                                             masterPart={masterPart}
                                             onOpenDiff={handleOpenDiffModal}
                                             onOpenEst={handleOpenEstModal}
-                                            isValidInvoice={isInvoiceValid(item.invoiceNo)}
+                                            blNo={invoiceToBLMap[item.invoiceNo]}
                                         />
                                     );
                                     /*

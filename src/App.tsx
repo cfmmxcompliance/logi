@@ -26,6 +26,7 @@ import { AuthProvider, useAuth } from '../context/AuthContext.tsx';
 import { NotificationProvider } from '../context/NotificationContext.tsx';
 import { NotificationPopup } from '../components/NotificationPopup.tsx';
 import { Database } from 'lucide-react';
+import { UserRole } from '../types.ts';
 
 // Authenticated Route Wrapper
 const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode, allowedRoles?: string[] }) => {
@@ -37,7 +38,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
     }
 
     // Agent role is strictly limited to Master Data
-    if (user?.role === 'Agent' && location.pathname !== '/database') {
+    if (user?.role === UserRole.AGENT && location.pathname !== '/database') {
         return <Navigate to="/database" replace />;
     }
 

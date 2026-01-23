@@ -1035,15 +1035,19 @@ export const DatabaseView = () => {
                     <table className="w-full text-xs text-left whitespace-nowrap">
                         <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 z-10 shadow-sm">
                             <tr>
-                                <th className="px-3 py-3 bg-slate-50 border-b border-slate-200 text-center w-[40px] sticky left-0 z-20">
-                                    <input
-                                        type="checkbox"
-                                        className="rounded border-slate-300"
-                                        checked={filteredParts.length > 0 && selectedIds.size === filteredParts.length}
-                                        onChange={handleSelectAll}
-                                    />
-                                </th>
-                                <th className="px-3 py-3 bg-slate-50 border-b border-slate-200">Actions</th>
+                                {canDelete && (
+                                    <th className="px-3 py-3 bg-slate-50 border-b border-slate-200 text-center w-[40px] sticky left-0 z-20">
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-slate-300"
+                                            checked={filteredParts.length > 0 && selectedIds.size === filteredParts.length}
+                                            onChange={handleSelectAll}
+                                        />
+                                    </th>
+                                )}
+                                {canEdit || canDelete ? (
+                                    <th className="px-3 py-3 bg-slate-50 border-b border-slate-200">Actions</th>
+                                ) : null}
                                 {CSV_ORDER_KEYS.map(key => {
                                     const isFiltered = activeFilters.has(key as keyof RawMaterialPart);
                                     return (
@@ -1069,28 +1073,32 @@ export const DatabaseView = () => {
                         <tbody className="divide-y divide-slate-100">
                             {currentItems.map(part => (
                                 <tr key={part.id || Math.random()} className="hover:bg-slate-50">
-                                    <td className="px-3 py-2 border-r border-slate-100 sticky left-0 bg-white hover:bg-slate-50 text-center z-10">
-                                        <input
-                                            type="checkbox"
-                                            className="rounded border-slate-300"
-                                            checked={selectedIds.has(part.id)}
-                                            onChange={() => handleSelectRow(part.id)}
-                                        />
-                                    </td>
-                                    <td className="px-3 py-2 flex items-center gap-2 border-r border-slate-100">
-                                        {canEdit ? (
-                                            <button onClick={() => handleEditPart(part as RawMaterialPart)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50">
-                                                <Edit2 size={14} />
-                                            </button>
-                                        ) : (
-                                            <span className="text-slate-300 p-1"><Edit2 size={14} /></span>
-                                        )}
-                                        {canDelete && (
-                                            <button onClick={() => initiateDelete(part.id)} className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50">
-                                                <Trash2 size={14} />
-                                            </button>
-                                        )}
-                                    </td>
+                                    {canDelete && (
+                                        <td className="px-3 py-2 border-r border-slate-100 sticky left-0 bg-white hover:bg-slate-50 text-center z-10">
+                                            <input
+                                                type="checkbox"
+                                                className="rounded border-slate-300"
+                                                checked={selectedIds.has(part.id)}
+                                                onChange={() => handleSelectRow(part.id)}
+                                            />
+                                        </td>
+                                    )}
+                                    {canEdit || canDelete ? (
+                                        <td className="px-3 py-2 flex items-center gap-2 border-r border-slate-100">
+                                            {canEdit ? (
+                                                <button onClick={() => handleEditPart(part as RawMaterialPart)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50">
+                                                    <Edit2 size={14} />
+                                                </button>
+                                            ) : (
+                                                <span className="text-slate-300 p-1"><Edit2 size={14} /></span>
+                                            )}
+                                            {canDelete && (
+                                                <button onClick={() => initiateDelete(part.id)} className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50">
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            )}
+                                        </td>
+                                    ) : null}
 
                                     {/* DYNAMIC ROW RENDERING IN EXACT ORDER */}
                                     {CSV_ORDER_KEYS.map(key => {

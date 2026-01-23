@@ -40,9 +40,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-6 px-2 space-y-2">
-          {user?.role === 'Admin' && (
+          {user?.role === UserRole.ADMIN && (
             <SidebarItem to="/" icon={LayoutDashboard} label={sidebarOpen ? "Dashboard" : ""} />
           )}
+
           {user?.role !== UserRole.AGENT && (
             <>
               <SidebarItem to="/operations" icon={Ship} label={sidebarOpen ? "Shipment Plan" : ""} />
@@ -55,13 +56,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {(user?.role === 'Admin' || user?.role === 'Controller' || user?.role === 'Editor') && (
+          {(user?.role === UserRole.ADMIN || user?.role === UserRole.CONTROLLER || user?.role === UserRole.EDITOR) && (
             <SidebarItem to="/controller" icon={Settings} label={sidebarOpen ? "Payments" : ""} />
           )}
 
-          {/* RBAC: Restricted Areas */}
-          {/* RBAC: Restricted Areas */}
-          {user?.role === 'Admin' && (
+          {/* RBAC: Restricted Areas (Admins only) */}
+          {user?.role === UserRole.ADMIN && (
             <>
               <SidebarItem to="/data-stage" icon={Scale} label={sidebarOpen ? "Data Stage (SAT)" : ""} />
               <SidebarItem to="/vucem" icon={Globe} label={sidebarOpen ? "VUCEM" : ""} />
@@ -70,15 +70,18 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
+          {/* Master Data: Accessible to Admin, Editor, and Agent */}
           {(user?.role === UserRole.ADMIN || user?.role === UserRole.EDITOR || user?.role === UserRole.AGENT) && (
             <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
           )}
 
-
-          {(user?.role === 'Admin' || user?.role === 'Editor') && (
+          {/* Partners & Setup: Admins and Editors */}
+          {(user?.role === UserRole.ADMIN || user?.role === UserRole.EDITOR) && (
             <SidebarItem to="/suppliers" icon={Users} label={sidebarOpen ? "Partners" : ""} />
           )}
-          {user?.role === 'Admin' && (
+
+          {/* Advanced Admin Modules */}
+          {user?.role === UserRole.ADMIN && (
             <>
               <SidebarItem to="/reports" icon={BarChart3} label={sidebarOpen ? "Reports & KPIs" : ""} />
               <SidebarItem to="/audit-logs" icon={ClipboardCheck} label={sidebarOpen ? "Audit Logs" : ""} />

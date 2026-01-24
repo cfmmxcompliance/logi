@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 client_secret*.json
+functions/service-account.json
+logimaster-cfmoto-a59f54d6641a.json
+check_firestore.cjs
+scripts/fix_json.js

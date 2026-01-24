@@ -1,9 +1,10 @@
 
-import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole } from '../types.ts';
+import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
   collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc
 } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { downloadFile } from '../utils/fileHelpers.ts';
 
 const COLS = {
@@ -12,7 +13,8 @@ const COLS = {
   COSTS: 'costs', LOGS: 'logs', LOGISTICS: 'logistics', SUPPLIERS: 'suppliers',
   SNAPSHOTS: 'snapshots', DATA_STAGE_REPORTS: 'data_stage_reports',
   TRAINING: 'training_submissions', INVOICES: 'commercial_invoices', DRAFTS: 'data_stage_drafts',
-  METADATA: 'system_metadata'
+  METADATA: 'system_metadata', DAILY_CHANGES: 'daily_changes', DAILY_REPORTS: 'master_data_reports',
+  SUBSCRIPTIONS: 'audit_subscriptions'
 };
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
@@ -24,7 +26,7 @@ let dbState: StorageState = {
   parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
   customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
   logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
-  dataStageDrafts: []
+  dataStageDrafts: [], dailyChanges: [], dailyReports: []
 };
 
 let listeners: (() => void)[] = [];
@@ -193,10 +195,10 @@ export const storageService = {
       // These collections only grow and shouldn't be downloaded by everyone on boot.
       if (key === 'LOGS' || key === 'INVOICES') return;
 
-      // (C) Agent Role Optimization: Only sync Suppliers + Logistics
+      // (C) Agent Role Optimization: Only sync Suppliers + Logistics + Daily Tools
       // Agents don't need Shipments, Costs, Pre-alerts, etc.
       if (role === UserRole.AGENT) {
-        if (key !== 'SUPPLIERS' && key !== 'LOGISTICS') return;
+        if (key !== 'SUPPLIERS' && key !== 'LOGISTICS' && key !== 'DAILY_CHANGES' && key !== 'DAILY_REPORTS') return;
       }
 
       unsubscribers.push(onSnapshot(collection(db, colName), (snap) => {
@@ -594,6 +596,17 @@ export const storageService = {
       saveLocal(); return;
     }
     await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(data));
+
+    // Record change for Daily Automation
+    const userStr = localStorage.getItem('logimaster_user');
+    const user = userStr ? JSON.parse(userStr) : { name: 'System' };
+    await setDoc(doc(db, COLS.DAILY_CHANGES, id), {
+      id,
+      timestamp: new Date().toISOString(),
+      action: 'UPDATE',
+      user: user.name || user.email || 'System',
+      partNumber: part.PART_NUMBER || 'N/A'
+    });
   },
 
   // Senior Frontend Engineer: Implemented missing deletePart method.
@@ -637,23 +650,35 @@ export const storageService = {
       saveLocal(); return;
     }
 
-    // Batch limit is 500. Split into chunks of 450 to be safe.
-    const CHUNK_SIZE = 450;
+    // Batch limit is 500. Split into chunks of 400 to be safe (since we also write to daily_changes)
+    const CHUNK_SIZE = 200; // Reduced because we are doing 2 writes per part
     const total = parts.length;
 
-    // Helper to process chunks sequentially
     for (let i = 0; i < total; i += CHUNK_SIZE) {
       const chunk = parts.slice(i, i + CHUNK_SIZE);
       const batch = writeBatch(db);
 
       chunk.forEach((p) => {
-        batch.set(doc(db, COLS.PARTS, p.id || crypto.randomUUID()), sanitizeForFirestore(p));
+        const id = p.id || crypto.randomUUID();
+        const partRef = doc(db, COLS.PARTS, id);
+        const changeRef = doc(db, COLS.DAILY_CHANGES, id);
+
+        const userStr = localStorage.getItem('logimaster_user');
+        const user = userStr ? JSON.parse(userStr) : { name: 'System' };
+
+        batch.set(partRef, sanitizeForFirestore({ ...p, id }));
+        batch.set(changeRef, {
+          id,
+          timestamp: new Date().toISOString(),
+          action: 'UPSERT',
+          user: user.name || user.email || 'System',
+          partNumber: p.PART_NUMBER || 'N/A'
+        });
       });
 
       await batch.commit();
 
       if (onProgress) {
-        // Report progress based on completed chunks
         onProgress(Math.min((i + CHUNK_SIZE) / total * 100, 100) / 100);
       }
     }
@@ -1980,7 +2005,7 @@ export const storageService = {
       parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
       customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
       logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
-      dataStageDrafts: []
+      dataStageDrafts: [], dailyChanges: [], dailyReports: []
     };
     saveLocal();
   },
@@ -2256,6 +2281,102 @@ export const storageService = {
       notifyListeners();
     } catch (e) {
       console.error("Failed to fetch audit logs", e);
+    }
+  },
+
+  getDailyChanges: () => {
+    return dbState.dailyChanges || [];
+  },
+
+  fetchDailyChanges: async () => {
+    if (!db) return [];
+    try {
+      console.log("⬇️ Fetching Daily Changes...");
+      const { query, collection, orderBy, getDocs } = await import('firebase/firestore');
+      const q = query(collection(db, COLS.DAILY_CHANGES), orderBy('timestamp', 'desc'));
+      const snap = await getDocs(q);
+      const changes = snap.docs.map(d => ({ ...d.data(), id: d.id } as DailyChange));
+      dbState.dailyChanges = changes;
+      notifyListeners();
+      return changes;
+    } catch (e) {
+      console.error("Failed to fetch daily changes", e);
+      return [];
+    }
+  },
+
+  getDailyReports: () => {
+    return dbState.dailyReports || [];
+  },
+
+  fetchDailyReports: async () => {
+    if (!db) return [];
+    try {
+      const { query, collection, orderBy, getDocs } = await import('firebase/firestore');
+      const q = query(collection(db, COLS.DAILY_REPORTS), orderBy('timestamp', 'desc'));
+      const snap = await getDocs(q);
+      const reports = snap.docs.map(d => ({ ...d.data(), id: d.id } as MasterDataReport));
+      dbState.dailyReports = reports;
+      notifyListeners();
+      return reports;
+    } catch (e) {
+      console.error("Failed to fetch daily reports", e);
+      return [];
+    }
+  },
+
+  getAuditReportEmails: async (): Promise<string[]> => {
+    if (!db) return [];
+    try {
+      const { doc, getDoc } = await import('firebase/firestore');
+      const docRef = doc(db, COLS.SUBSCRIPTIONS, 'daily_audit');
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        return snap.data().emails || [];
+      }
+      return [];
+    } catch (e) {
+      console.error("Failed to fetch audit emails", e);
+      return [];
+    }
+  },
+
+  updateAuditReportEmails: async (emails: string[]): Promise<boolean> => {
+    if (!db) return false;
+    try {
+      const { doc, setDoc } = await import('firebase/firestore');
+      await setDoc(doc(db, COLS.SUBSCRIPTIONS, 'daily_audit'), {
+        emails,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      return true;
+    } catch (e) {
+      console.error("Failed to update audit emails", e);
+      return false;
+    }
+  },
+
+  triggerManualAuditReport: async (): Promise<{ success: boolean; message: string }> => {
+    try {
+      const functions = getFunctions();
+      const triggerReport = httpsCallable(functions, 'triggerManualReport');
+      const result = await triggerReport();
+      const res = result.data as any;
+
+      if (res.success) {
+        return {
+          success: true,
+          message: `Éxito: ${res.diagnostics.email}. (Drive: ${res.diagnostics.drive})`
+        };
+      } else {
+        return {
+          success: false,
+          message: `Error: ${res.error || 'Fallo general'}.\nDiag: [Email: ${res.diagnostics?.email}, Drive: ${res.diagnostics?.drive}]`
+        };
+      }
+    } catch (e: any) {
+      console.error("Connection Error:", e);
+      return { success: false, message: `Conexión fallida: ${e.message}` };
     }
   },
 

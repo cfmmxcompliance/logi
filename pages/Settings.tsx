@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { storageService } from '../services/storageService.ts';
-import { Database, Trash2, AlertTriangle, History, RotateCcw, Save, Users, Shield, Play, Key, UserPlus } from 'lucide-react';
+import { Database, Trash2, AlertTriangle, History, RotateCcw, Save, Users, Shield, Play, Key, UserPlus, Mail, Plus } from 'lucide-react';
 import { RestorePoint, UserRole, User } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { authService } from '../services/authService.ts';
@@ -11,6 +11,8 @@ export const Settings = () => {
 
     const [snapshots, setSnapshots] = useState<RestorePoint[]>([]);
     const [systemUsers, setSystemUsers] = useState<User[]>([]);
+    const [reportEmails, setReportEmails] = useState<string[]>([]);
+    const [newEmail, setNewEmail] = useState('');
 
     useEffect(() => {
         // Initial load
@@ -20,6 +22,8 @@ export const Settings = () => {
         if (isAdmin) {
             // @ts-ignore
             authService.getUsers().then(users => setSystemUsers(users));
+            // @ts-ignore
+            storageService.getAuditReportEmails().then(emails => setReportEmails(emails));
         }
 
         // Subscribe to changes (e.g. if auto-backup runs)
@@ -329,6 +333,85 @@ export const Settings = () => {
                     System keeps up to 5 snapshots automatically to manage storage space.
                 </div>
             </div>
+
+            {/* AUDIT REPORT SUBSCRIPTIONS */}
+            {isAdmin && (
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                        <div>
+                            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <Mail className="text-blue-500" size={24} />
+                                Suscripciones a Reporte Diario
+                            </h2>
+                            <p className="text-slate-500 text-sm mt-1">Configura quién recibirá el reporte de Master Data todas las noches a la 1:00 AM.</p>
+                        </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                        <div className="flex gap-2">
+                            <input
+                                type="email"
+                                value={newEmail}
+                                onChange={(e) => setNewEmail(e.target.value)}
+                                placeholder="ejemplo@correo.com"
+                                className="flex-1 border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                            <button
+                                onClick={async () => {
+                                    const trimmedEmail = newEmail.trim().toLowerCase();
+                                    if (!trimmedEmail.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
+                                        alert("Email inválido. Por favor revisa el formato.");
+                                        return;
+                                    }
+                                    if (reportEmails.includes(trimmedEmail)) {
+                                        alert("Este correo ya está en la lista.");
+                                        return;
+                                    }
+                                    const newList = [...reportEmails, trimmedEmail];
+                                    // @ts-ignore
+                                    const success = await storageService.updateAuditReportEmails(newList);
+                                    if (success) {
+                                        setReportEmails(newList);
+                                        setNewEmail('');
+                                    }
+                                }}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors font-bold text-sm"
+                            >
+                                <Plus size={16} /> [ Agregar ]
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            {reportEmails.length === 0 ? (
+                                <p className="text-slate-400 text-sm italic py-4 text-center">No hay correos registrados para el reporte diario.</p>
+                            ) : (
+                                reportEmails.map((email, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold uppercase">
+                                                {email.charAt(0)}
+                                            </div>
+                                            <span className="text-sm font-medium text-slate-700">{email}</span>
+                                        </div>
+                                        <button
+                                            onClick={async () => {
+                                                if (window.confirm(`¿Quitar ${email} de la lista?`)) {
+                                                    const newList = reportEmails.filter(e => e !== email);
+                                                    // @ts-ignore
+                                                    const success = await storageService.updateAuditReportEmails(newList);
+                                                    if (success) setReportEmails(newList);
+                                                }
+                                            }}
+                                            className="text-slate-400 hover:text-red-500 p-1 transition-colors"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Local Storage Management */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">

@@ -256,6 +256,14 @@ export interface AuditLog {
   user: string;
 }
 
+export interface DailyChange {
+  id: string;
+  timestamp: string;
+  action: 'UPDATE' | 'UPSERT' | 'DELETE';
+  user: string;
+  partNumber: string;
+}
+
 export interface RestorePoint {
   id: string;
   timestamp: string;
@@ -417,6 +425,16 @@ export interface CommercialInvoiceItem {
   priceVerified?: boolean;
 }
 
+export interface MasterDataReport {
+  id: string; // Date (YYYY-MM-DD)
+  timestamp: string;
+  fullCsvUrl?: string; // Drive Link
+  changesCsvUrl?: string; // Drive Link
+  fullDriveId?: string;
+  changesDriveId?: string;
+  itemsAffected: number;
+}
+
 // Audit Module Interfaces
 export interface AuditDiscrepancy {
   id: string;
@@ -463,4 +481,6 @@ export interface StorageState {
   commercialInvoices: CommercialInvoiceItem[];
   dataStageDrafts?: DataStageSession[];
   digitalArchive?: DigitalArchiveRecord[]; // New: Unpaid Pedimentos
+  dailyChanges: DailyChange[];
+  dailyReports?: MasterDataReport[];
 }

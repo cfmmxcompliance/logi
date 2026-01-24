@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck, Globe } from 'lucide-react';
+import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck, Globe, Activity } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ConnectionStatus } from './ConnectionStatus.tsx';
 import { UserRole } from '../types.ts';
@@ -70,9 +70,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {/* Master Data: Accessible to Admin, Editor, and Agent */}
-          {(user?.role === UserRole.ADMIN || user?.role === UserRole.EDITOR || user?.role === UserRole.AGENT) && (
+          {/* Master Data: Accessible to Admin, Editor, Agent, Controller */}
+          {(user?.role === UserRole.ADMIN || user?.role === UserRole.EDITOR || user?.role === UserRole.AGENT || user?.role === UserRole.CONTROLLER) && (
             <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
+          )}
+
+          {/* Daily Audit: Accessible to Everyone (except Pending) */}
+          {user?.role !== UserRole.PENDING && (
+            <SidebarItem to="/daily-audit" icon={Activity} label={sidebarOpen ? "Cambios del Día" : ""} />
           )}
 
           {/* Partners & Setup: Admins and Editors */}

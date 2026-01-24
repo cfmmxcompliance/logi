@@ -15,6 +15,7 @@ import { Reports } from '../pages/Reports.tsx';
 import { Settings } from '../pages/Settings.tsx';
 import { Login } from '../pages/Login.tsx';
 import { ActionLogs } from '../pages/AuditLogs.tsx';
+import { DailyAudit } from '../pages/DailyAudit.tsx';
 import { DataStage } from '../pages/DataStage.tsx';
 import { CIExtractor } from '../pages/CIExtractor.tsx';
 import CCPBuilder from '../pages/CCPBuilder.tsx';
@@ -37,8 +38,9 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
         return <Navigate to="/login" replace />;
     }
 
-    // Agent role is strictly limited to Master Data
-    if (user?.role === UserRole.AGENT && location.pathname !== '/database') {
+    // Agent role is limited to Master Data and Daily Audit
+    const isAgentAllowedPath = location.pathname === '/database' || location.pathname === '/daily-audit';
+    if (user?.role === UserRole.AGENT && !isAgentAllowedPath) {
         return <Navigate to="/database" replace />;
     }
 
@@ -111,6 +113,7 @@ const AppContent = () => {
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/audit-logs" element={<ProtectedRoute><ActionLogs /></ProtectedRoute>} />
+            <Route path="/daily-audit" element={<ProtectedRoute><DailyAudit /></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -111,6 +111,25 @@ export const storageService = {
   getLocalState: () => dbState,
   logAction,
 
+  bumpPartsVersion: async () => {
+    if (!db) return;
+    try {
+      const metaDocRef = doc(db, COLS.METADATA, 'parts_version');
+      const snap = await getDoc(metaDocRef);
+      let nextVer = 1;
+      if (snap.exists()) {
+        nextVer = (snap.data().version || 0) + 1;
+      }
+      await setDoc(metaDocRef, {
+        version: nextVer,
+        lastUpdated: new Date().toISOString()
+      });
+      console.log(`🚀 Master Data Semaforo: Version bumped to v${nextVer}`);
+    } catch (e) {
+      console.error("Failed to bump parts version", e);
+    }
+  },
+
   init: async (role?: UserRole) => {
     unsubscribers.forEach(u => u());
     if (!db) {
@@ -590,11 +609,16 @@ export const storageService = {
   updatePart: async (part: RawMaterialPart) => {
     const id = part.id || crypto.randomUUID();
     const data = { ...part, id, UPDATE_TIME: new Date().toISOString() };
-    if (!db) {
-      const idx = dbState.parts.findIndex((p: any) => p.id === id);
-      if (idx !== -1) dbState.parts[idx] = data; else dbState.parts.push(data);
-      saveLocal(); return;
-    }
+
+    // 1. Sync Local State Immediately
+    const idx = dbState.parts.findIndex((p: any) => p.id === id);
+    if (idx !== -1) dbState.parts[idx] = data; else dbState.parts.push(data);
+    saveLocal();
+    notifyListeners();
+
+    if (!db) return;
+
+    // 2. Sync Cloud
     await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(data));
 
     // Record change for Daily Automation
@@ -607,25 +631,36 @@ export const storageService = {
       user: user.name || user.email || 'System',
       partNumber: part.PART_NUMBER || 'N/A'
     });
+
+    // 3. Trigger Version Refresh
+    await storageService.bumpPartsVersion();
   },
 
   // Senior Frontend Engineer: Implemented missing deletePart method.
   deletePart: async (id: string) => {
-    if (!db) {
-      dbState.parts = dbState.parts.filter((p: any) => p.id !== id);
-      saveLocal();
-      return;
-    }
+    // 1. Sync Local State Immediately
+    dbState.parts = dbState.parts.filter((p: any) => p.id !== id);
+    saveLocal();
+    notifyListeners();
+
+    if (!db) return;
+
+    // 2. Sync Cloud
     await deleteDoc(doc(db, COLS.PARTS, id));
+
+    // 3. Trigger Version Refresh
+    await storageService.bumpPartsVersion();
   },
 
   deleteParts: async (ids: string[]) => {
-    if (!db) {
-      dbState.parts = dbState.parts.filter((p: any) => !ids.includes(p.id));
-      saveLocal();
-      return;
-    }
+    // 1. Sync Local State Immediately
+    dbState.parts = dbState.parts.filter((p: any) => !ids.includes(p.id));
+    saveLocal();
+    notifyListeners();
 
+    if (!db) return;
+
+    // 2. Sync Cloud
     // Filter out invalid IDs to prevent "Invalid document reference" errors
     const validIds = ids.filter(id => id && id.trim() !== '');
     if (validIds.length === 0) return;
@@ -642,6 +677,9 @@ export const storageService = {
       });
       await batch.commit();
     }
+
+    // 3. Trigger Version Refresh
+    await storageService.bumpPartsVersion();
   },
 
   upsertParts: async (parts: RawMaterialPart[], onProgress?: (p: number) => void) => {
@@ -682,6 +720,9 @@ export const storageService = {
         onProgress(Math.min((i + CHUNK_SIZE) / total * 100, 100) / 100);
       }
     }
+
+    // 3. Trigger Version Refresh
+    await storageService.bumpPartsVersion();
   },
 
   // Senior Frontend Engineer: Implemented missing bulk upload logic for shipments.

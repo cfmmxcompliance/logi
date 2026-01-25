@@ -84,12 +84,15 @@ export const DatabaseView = () => {
     const [procState, setProcState] = useState<ProcessingState>(INITIAL_PROCESSING_STATE);
 
     useEffect(() => {
+        storageService.loadMasterData();
         setParts([...storageService.getParts()]);
         const unsub = storageService.subscribe(() => {
             setParts([...storageService.getParts()]);
         });
         return unsub;
     }, []);
+
+    const isMDLoading = storageService.isMasterDataLoading();
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 50;
@@ -239,8 +242,9 @@ export const DatabaseView = () => {
         try {
             await storageService.deletePart(deleteModal.id);
             setDeleteModal({ isOpen: false, id: null });
-        } catch (e) {
-            alert('Error eliminando el registro.');
+        } catch (e: any) {
+            console.error(e);
+            alert(`Error eliminando el registro: ${e.message || 'Error desconocido'}`);
         }
     };
 
@@ -268,8 +272,9 @@ export const DatabaseView = () => {
             await storageService.deleteParts(Array.from(selectedIds));
             setSelectedIds(new Set());
             setBulkDeleteModal(false);
-        } catch (e) {
-            alert('Error eliminando registros.');
+        } catch (e: any) {
+            console.error(e);
+            alert(`Error eliminando registros: ${e.message || 'Error desconocido'}`);
         }
     };
 

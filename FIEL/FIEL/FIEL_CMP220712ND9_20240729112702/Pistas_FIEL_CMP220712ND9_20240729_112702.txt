@@ -1,0 +1,4 @@
+Pista1: cfmoto0
+Pista2: 1
+
+cfmoto01

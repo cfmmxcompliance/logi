@@ -261,7 +261,8 @@ export interface DailyChange {
   timestamp: string;
   action: 'UPDATE' | 'UPSERT' | 'DELETE';
   user: string;
-  partNumber: string;
+  partNumbers: string[]; // List of affected part numbers
+  count: number;
 }
 
 export interface RestorePoint {
@@ -278,6 +279,8 @@ export enum DataStageRecordType {
   INVOICE = '505',
   ITEM = '551',
   TAXES = '510',
+  COVE_ASSOCIATION = '506',
+  DIGITALIZED_DOC = '520',
 }
 
 export interface GeneralData {
@@ -345,10 +348,27 @@ export interface DSItemData {
   invoiceNo?: string;
 }
 
+export interface DSCoveData {
+  patente: string;
+  pedimento: string;
+  seccion: string;
+  numeroFactura: string;
+  cove: string;
+}
+
+export interface DSDigitalizedData {
+  patente: string;
+  pedimento: string;
+  seccion: string;
+  eDocument: string;
+}
+
 export interface PedimentoRecord extends GeneralData {
   id: string; // Internal UUID
   items: DSItemData[];
   invoices: DSInvoiceData[];
+  coves: DSCoveData[];
+  digitalDocuments: DSDigitalizedData[];
   referencias?: string; // Extracted references (e.g. BL, Containers)
   totalTaxes?: number;
   valorAduanaTotal?: number;

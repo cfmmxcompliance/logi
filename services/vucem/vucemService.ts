@@ -7,7 +7,7 @@ const NAMESPACE_CONSULTA = 'http://www.ventanillaunica.gob.mx/ConsultarEdocument
 const NAMESPACE_COMMON = 'http://www.ventanillaunica.gob.mx/cove/ws/oxml/';
 
 export class VucemService {
-    async consultarEdocument(edocument: string, config: VucemConfig): Promise<ConsultarEdocumentResponse> {
+    async consultarEdocument(query: string | { start: string, end: string }, config: VucemConfig): Promise<ConsultarEdocumentResponse> {
         try {
             if (!config.keyFile || !config.cerFile) {
                 throw new Error("Faltan archivos de la FIEL (.key o .cer)");
@@ -18,11 +18,21 @@ export class VucemService {
             const { pem: certPem } = await readCertificate(config.cerFile);
             const certificateBody = getCertificateBody(certPem);
 
-            // 2. Build Cadena Original (Inferred Format: |RFC|EDOCUMENT|)
-            // NOTE: This format is crucial. If VUCEM rejects signature, this is the first place to debug.
-            // Often it is |RFC|eDocument| or just |eDocument|.
-            // Let's try |RFC|eDocument| as it's standard to include the caller's RFC.
-            const cadenaOriginal = `|${config.rfc}|${edocument}|`;
+            let cadenaOriginal = "";
+            let criterioXml = "";
+
+            if (typeof query === 'string') {
+                // Single Edocument Search
+                cadenaOriginal = `|${config.rfc}|${query}|`;
+                criterioXml = `<con:eDocument>${query}</con:eDocument>`;
+            } else {
+                // Date Range Search
+                // Format for Cadena Original with Dates: |RFC|FECHA_INI|FECHA_FIN|
+                cadenaOriginal = `|${config.rfc}|${query.start}|${query.end}|`;
+                criterioXml = `
+                <con:fechaInicio>${query.start}</con:fechaInicio>
+                <con:fechaFin>${query.end}</con:fechaFin>`;
+            }
 
             // 3. Sign
             const firma = signCadenaOriginal(cadenaOriginal, privateKey);
@@ -31,7 +41,7 @@ export class VucemService {
             const soapXml = `
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:con="${NAMESPACE_CONSULTA}" xmlns:com="${NAMESPACE_COMMON}">
    <soapenv:Header>
-        ${generateWSSEHeader(config.rfc, config.password)}
+        ${generateWSSEHeader(config.rfc, config.webServicePassword || config.password)}
    </soapenv:Header>
    <soapenv:Body>
       <con:ConsultarEdocumentRequest>
@@ -42,7 +52,7 @@ export class VucemService {
                <com:firma>${firma}</com:firma>
             </con:firmaElectronica>
             <con:criterioBusqueda>
-               <con:eDocument>${edocument}</con:eDocument>
+               ${criterioXml}
             </con:criterioBusqueda>
          </con:request>
       </con:ConsultarEdocumentRequest>
@@ -98,45 +108,126 @@ export class VucemService {
             }
         }
 
-        // Parse Result if exists
         const coveNode = doc.getElementsByTagName("cove")[0];
         let cove: Cove | undefined;
+        let coves: Cove[] = [];
 
+        // Single result parsing
         if (coveNode) {
-            cove = {
-                eDocument: this.getNodeText(coveNode, "eDocument") || "",
-                tipoOperacion: this.getNodeText(coveNode, "tipoOperacion") || "",
-                numeroFacturaRelacionFacturas: this.getNodeText(coveNode, "numeroFacturaRelacionFacturas") || "",
-                fechaExpedicion: this.getNodeText(coveNode, "fechaExpedicion") || "",
-                tipoFigura: this.getNodeText(coveNode, "tipoFigura") || "",
-                facturas: [], // Parse facturas details if needed
-                emisor: this.parsePersona(coveNode.getElementsByTagName("emisor")[0]),
-                destinatario: this.parsePersona(coveNode.getElementsByTagName("destinatario")[0]),
-                // Add more fields parsing as needed
-            };
+            cove = this.parseCoveNode(coveNode);
+        }
+
+        // Multiple results parsing (for Date Range)
+        const allCoveNodes = doc.getElementsByTagName("cove");
+        if (allCoveNodes.length > 0) {
+            for (let i = 0; i < allCoveNodes.length; i++) {
+                coves.push(this.parseCoveNode(allCoveNodes[i]));
+            }
+        }
+
+        // Check for Adenda
+        const adendaNode = doc.getElementsByTagName("adenda")[0];
+        let adendaXml: string | undefined;
+        if (adendaNode) {
+            // Serialize ONLY the content inside <adenda>
+            adendaXml = new XMLSerializer().serializeToString(adendaNode);
         }
 
         return {
             contieneError: containsError,
             errores: errors,
-            resultadoBusqueda: { cove }
+            resultadoBusqueda: { cove, coves, adenda: adendaXml }
         };
     }
 
+    private parseCoveNode(coveNode: Element): Cove {
+        return {
+            eDocument: this.getNodeText(coveNode, "eDocument") || "",
+            tipoOperacion: this.getNodeText(coveNode, "tipoOperacion") || "",
+            numeroFacturaRelacionFacturas: this.getNodeText(coveNode, "numeroFacturaRelacionFacturas") || "",
+            fechaExpedicion: this.getNodeText(coveNode, "fechaExpedicion") || "",
+            tipoFigura: this.getNodeText(coveNode, "tipoFigura") || "",
+            emisor: this.parsePersona(coveNode.getElementsByTagName("emisor")[0]),
+            destinatario: this.parsePersona(coveNode.getElementsByTagName("destinatario")[0]),
+            facturas: this.parseFacturas(coveNode),
+            observaciones: this.getNodeText(coveNode, "observaciones") || undefined
+        };
+    }
+
+    private parseFacturas(coveNode: Element): any[] {
+        const facturasNodes = coveNode.getElementsByTagName("facturas");
+        const facturas: any[] = [];
+        for (let i = 0; i < facturasNodes.length; i++) {
+            const node = facturasNodes[i];
+            facturas.push({
+                numeroFactura: this.getNodeText(node, "numeroFactura") || "",
+                mercancias: this.parseMercancias(node)
+            });
+        }
+        return facturas;
+    }
+
+    private parseMercancias(node: Element): any[] {
+        const mercsNodes = node.getElementsByTagName("mercancias");
+        const mercs: any[] = [];
+        for (let i = 0; i < mercsNodes.length; i++) {
+            const mNode = mercsNodes[i];
+            mercs.push({
+                descripcionGenerica: this.getNodeText(mNode, "descripcionGenerica") || "",
+                claveUnidadMedida: this.getNodeText(mNode, "claveUnidadMedida") || "",
+                tipoMoneda: this.getNodeText(mNode, "tipoMoneda") || "",
+                cantidad: Number(this.getNodeText(mNode, "cantidad") || 0),
+                valorUnitario: Number(this.getNodeText(mNode, "valorUnitario") || 0),
+                valorTotal: Number(this.getNodeText(mNode, "valorTotal") || 0),
+                valorDolares: Number(this.getNodeText(mNode, "valorDolares") || 0),
+                descripcionesEspecificas: this.parseDetalles(mNode)
+            });
+        }
+        return mercs;
+    }
+
+    private parseDetalles(mNode: Element): any[] {
+        const detNodes = mNode.getElementsByTagName("descripcionesEspecificas");
+        const detalles: any[] = [];
+        for (let i = 0; i < detNodes.length; i++) {
+            const dNode = detNodes[i];
+            detalles.push({
+                marca: this.getNodeText(dNode, "marca") || undefined,
+                modelo: this.getNodeText(dNode, "modelo") || undefined,
+                subModelo: this.getNodeText(dNode, "subModelo") || undefined,
+                numeroSerie: this.getNodeText(dNode, "numeroSerie") || undefined
+            });
+        }
+        return detalles;
+    }
+
     private parsePersona(node: Element | null): any {
+        if (!node) return { identificacion: '', domicilio: {} };
+        return {
+            tipoIdentificador: Number(this.getNodeText(node, "tipoIdentificador") || 0),
+            identificacion: this.getNodeText(node, "identificacion") || "",
+            nombre: this.getNodeText(node, "nombre") || undefined,
+            domicilio: this.parseDomicilio(node.getElementsByTagName("domicilio")[0])
+        };
+    }
+
+    private parseDomicilio(node: Element | null): any {
         if (!node) return {};
         return {
-            identificacion: this.getNodeText(node, "identificacion"),
-            nombre: this.getNodeText(node, "nombre"),
-            apellidoPaterno: this.getNodeText(node, "apellidoPaterno"),
+            calle: this.getNodeText(node, "calle") || "",
+            numeroExterior: this.getNodeText(node, "numeroExterior") || "",
+            numeroInterior: this.getNodeText(node, "numeroInterior") || undefined,
+            colonia: this.getNodeText(node, "colonia") || undefined,
+            localidad: this.getNodeText(node, "localidad") || undefined,
+            municipio: this.getNodeText(node, "municipio") || undefined,
+            entidadFederativa: this.getNodeText(node, "entidadFederativa") || undefined,
+            pais: this.getNodeText(node, "pais") || "",
+            codigoPostal: this.getNodeText(node, "codigoPostal") || ""
         };
     }
 
     private getNodeText(parent: Element, tagName: string): string | null {
-        const node = parent.getElementsByTagName(tagName)[0]; // naive search, assume unique direct child or use namespaces properly
-        // In SOAP response, tags might have namespaces.
-        // It's safer to search by localName if possible, or use getElementsByTagNameNS if namespace known.
-        // For simplicity:
+        // Search by localName to ignore namespaces
         const all = parent.getElementsByTagName("*");
         for (let i = 0; i < all.length; i++) {
             if (all[i].localName === tagName) return all[i].textContent;

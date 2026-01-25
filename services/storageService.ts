@@ -2,7 +2,7 @@
 import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
-  collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc
+  collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc, arrayUnion, increment, limit
 } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { downloadFile } from '../utils/fileHelpers.ts';
@@ -31,6 +31,7 @@ let dbState: StorageState = {
 
 let listeners: (() => void)[] = [];
 let unsubscribers: (() => void)[] = [];
+let isMDLoading = false;
 
 const notifyListeners = () => listeners.forEach(l => l());
 
@@ -132,10 +133,18 @@ export const storageService = {
 
   init: async (role?: UserRole) => {
     unsubscribers.forEach(u => u());
+    unsubscribers = [];
+
     if (!db) {
       // Offline / No-DB Mode
       const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (localData) dbState = JSON.parse(localData);
+      if (localData) {
+        try {
+          dbState = JSON.parse(localData);
+        } catch (e) {
+          console.error("Failed to parse local storage", e);
+        }
+      }
 
       // Load Separated Reports (Offline)
       try {
@@ -166,122 +175,128 @@ export const storageService = {
       }
     }
 
-    // 2. MASTER DATA SYNC (Metadata Versioning) - "Semáforo"
-    // Optimization: Check version before downloading 6,000 parts
+    // 2. MASTER DATA (Lazy loaded on-demand via loadMasterData)
+    // No longer downloading bytes here. Zero impact on boot.
+
     try {
-      const metaDocRef = doc(db, COLS.METADATA, 'parts_version');
-      const metaSnap = await getDoc(metaDocRef);
-
-      let serverVer = 0;
-      if (metaSnap.exists()) {
-        serverVer = metaSnap.data().version || 0;
-      } else {
-        // First run ever? Create the metadata doc
-        await setDoc(metaDocRef, { version: 1, lastUpdated: new Date().toISOString() });
-        serverVer = 1;
-      }
-
-      const localVer = Number(localStorage.getItem('logimaster_parts_version') || 0);
-      const hasParts = dbState.parts && dbState.parts.length > 0;
-
-      console.log(`🔍 Master Data Check - Cloud: v${serverVer} | Local: v${localVer} | Items: ${dbState.parts?.length}`);
-
-      if (serverVer > localVer || !hasParts) {
-        console.log("⬇️ Downloading Fresh Master Data (Delta/Version Mismatch)...");
-        const partsSnap = await getDocs(collection(db, COLS.PARTS));
-        // Map and ensure ID
-        dbState.parts = partsSnap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
-
-        // Save new version
-        localStorage.setItem('logimaster_parts_version', serverVer.toString());
-        saveLocal();
-        console.log(`✅ Master Data Synced: ${dbState.parts.length} items.`);
-      } else {
-        console.log("⚡ Using Cached Master Data (Up to date).");
-      }
-
-    } catch (e) {
-      console.error("Master Data Sync Failed (Using Local Cache)", e);
-      // Fallback: Proceed with whatever local data we have
-    }
-
-    // 3. REAL-TIME LISTENERS (Optimized based on Role and Weight)
-    Object.entries(COLS).forEach(([key, colName]) => {
-      // (A) Skip Meta / Master Data (Handled manually above)
-      if (key === 'PARTS' || key === 'METADATA') return;
-
-      // (B) Skip Heavy Collections from Initial Sync (Lazy Load required on-page)
-      // These collections only grow and shouldn't be downloaded by everyone on boot.
-      if (key === 'LOGS' || key === 'INVOICES') return;
-
-      // (C) Agent Role Optimization: Only sync Suppliers + Logistics + Daily Tools
-      // Agents don't need Shipments, Costs, Pre-alerts, etc.
-      if (role === UserRole.AGENT) {
-        if (key !== 'SUPPLIERS' && key !== 'LOGISTICS' && key !== 'DAILY_CHANGES' && key !== 'DAILY_REPORTS') return;
-      }
-
-      unsubscribers.push(onSnapshot(collection(db, colName), (snap) => {
-        // 1. Get current cloud state
-        const cloudData = snap.docs.map(d => ({ ...d.data(), id: d.id }));
-        const cloudIds = new Set(cloudData.map(d => d.id));
-
-        let stateKey = key.toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase());
-        if (key === 'CUSTOMS') stateKey = 'customsClearance';
-        if (key === 'EQUIPMENT') stateKey = 'equipmentTracking';
-        if (key === 'TRAINING') stateKey = 'trainingSubmissions';
-        if (key === 'INVOICES') stateKey = 'commercialInvoices';
-
-        // 2. Conflict Resolution: Last Write Wins Logic
-        const currentLocal = (dbState as any)[stateKey] || [];
-        const localMap = new Map(currentLocal.map((i: any) => [i.id, i]));
-
-        // UPDATE / ADD from Cloud
-        cloudData.forEach((cloudItem: any) => {
-          const localItem = localMap.get(cloudItem.id) as any;
-          if (localItem && localItem.updatedAt && cloudItem.updatedAt) {
-            const localTime = new Date(localItem.updatedAt).getTime();
-            const cloudTime = new Date(cloudItem.updatedAt).getTime();
-            if (localTime > cloudTime) return; // Keep local newer version
-          }
-          localMap.set(cloudItem.id, cloudItem);
-        });
-
-        // 3. REMOVAL: Remove items that are no longer in the cloud
-        const finalState = Array.from(localMap.values()).filter((item: any) => cloudIds.has(item.id));
-
-        (dbState as any)[stateKey] = finalState;
+      // 3. LISTENERS for dynamic data (Strict Daily Audit Sync)
+      // LIMIT entries to 3500 as requested for large batch updates
+      const qChanges = query(collection(db, COLS.DAILY_CHANGES), orderBy('timestamp', 'desc'), limit(3500));
+      unsubscribers.push(onSnapshot(qChanges, (snap) => {
+        dbState.dailyChanges = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChange));
         notifyListeners();
       }));
-    });
 
-    // Always load local data for Commercial Invoices (Hybrid Mode)
-    // 1. Try Main DB blob
-    // 1. Try Main DB blob (Already loaded in dbState at start of init)
+      const qReports = query(collection(db, COLS.DAILY_REPORTS), orderBy('id', 'desc'), limit(100));
+      unsubscribers.push(onSnapshot(qReports, (snap) => {
+        dbState.dailyReports = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as MasterDataReport));
+        notifyListeners();
+      }));
+
+      const qLogs = query(collection(db, COLS.LOGS), orderBy('timestamp', 'desc'), limit(150));
+      unsubscribers.push(onSnapshot(qLogs, (snap) => {
+        dbState.logs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
+        notifyListeners();
+      }));
+
+      // 4. REAL-TIME LISTENERS (Optimized based on Role and Weight)
+      Object.entries(COLS).forEach(([key, colName]) => {
+        // (A) Skip Meta / Master Data (Handled manually above)
+        if (key === 'PARTS' || key === 'METADATA') return;
+
+        // (B) Skip Heavy Collections from Initial Sync (Lazy Load required on-page)
+        if (key === 'LOGS' || key === 'INVOICES') return;
+
+        // (C) Agent Role Optimization: Only sync Suppliers + Logistics + Daily Tools
+        if (role === UserRole.AGENT) {
+          if (key !== 'SUPPLIERS' && key !== 'LOGISTICS' && key !== 'DAILY_CHANGES' && key !== 'DAILY_REPORTS') return;
+        }
+
+        // (D) Skip items handled by specialized listeners above
+        if (key === 'DAILY_CHANGES' || key === 'DAILY_REPORTS' || key === 'LOGS') return;
+
+        unsubscribers.push(onSnapshot(collection(db, colName), (snap) => {
+          const cloudData = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+          const cloudIds = new Set(cloudData.map(d => d.id));
+
+          let stateKey = key.toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+          if (key === 'CUSTOMS') stateKey = 'customsClearance';
+          if (key === 'EQUIPMENT') stateKey = 'equipmentTracking';
+          if (key === 'TRAINING') stateKey = 'trainingSubmissions';
+          if (key === 'INVOICES') stateKey = 'commercialInvoices';
+
+          const currentLocal = (dbState as any)[stateKey] || [];
+          const localMap = new Map(currentLocal.map((i: any) => [i.id, i]));
+
+          cloudData.forEach((cloudItem: any) => {
+            const localItem = localMap.get(cloudItem.id) as any;
+            if (localItem && localItem.updatedAt && cloudItem.updatedAt) {
+              const localTime = new Date(localItem.updatedAt).getTime();
+              const cloudTime = new Date(cloudItem.updatedAt).getTime();
+              if (localTime > cloudTime) return;
+            }
+            localMap.set(cloudItem.id, cloudItem);
+          });
+
+          const finalState = Array.from(localMap.values()).filter((item: any) => cloudIds.has(item.id));
+          (dbState as any)[stateKey] = finalState;
+          notifyListeners();
+        }));
+      });
+    } catch (e) {
+      console.error("Initialization Sync failed", e);
+    }
+
+    // Finally, handle commercial invoices hybrid load
     let invoicesLoaded = false;
     if (dbState.commercialInvoices && dbState.commercialInvoices.length > 0) {
       invoicesLoaded = true;
-      // notifyListeners(); // Already notified at end of init logic usually, but fine to keep if needed
     }
 
-    // 2. Fallback to Dedicated Backup if main failed or was empty
     if (!invoicesLoaded) {
       const backupData = localStorage.getItem(INVOICES_BACKUP_KEY);
       if (backupData) {
         try {
           const parsedBackup = JSON.parse(backupData);
           if (Array.isArray(parsedBackup)) {
-            console.log("Restored Commercial Invoices from Backup", parsedBackup.length);
             dbState.commercialInvoices = parsedBackup;
             notifyListeners();
           }
-        } catch (e) {
-          console.error("Failed to restore backup", e);
-        }
+        } catch (e) { }
       }
     }
   },
 
   getParts: () => dbState.parts || [],
+
+  isMasterDataLoading: () => isMDLoading,
+
+  loadMasterData: async () => {
+    if (!db || isMDLoading) return;
+
+    try {
+      isMDLoading = true;
+      notifyListeners();
+
+      const metaDocRef = doc(db, COLS.METADATA, 'parts_version');
+      const metaSnap = await getDoc(metaDocRef);
+      const serverVer = metaSnap.exists() ? metaSnap.data().version : 0;
+      const localVer = Number(localStorage.getItem('logimaster_parts_version') || 0);
+
+      if (serverVer > localVer || dbState.parts.length === 0) {
+        console.log("⬇️ Lazy Loading Master Data...");
+        const partsSnap = await getDocs(collection(db, COLS.PARTS));
+        dbState.parts = partsSnap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
+        localStorage.setItem('logimaster_parts_version', serverVer.toString());
+        saveLocal();
+      }
+    } catch (e) {
+      console.error("Lazy Load failed", e);
+    } finally {
+      isMDLoading = false;
+      notifyListeners();
+    }
+  },
   getShipments: () => dbState.shipments || [],
   getVesselTracking: () => dbState.vesselTracking || [],
   getEquipmentTracking: () => dbState.equipmentTracking || [],
@@ -621,23 +636,49 @@ export const storageService = {
     // 2. Sync Cloud
     await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(data));
 
-    // Record change for Daily Automation
-    const userStr = localStorage.getItem('logimaster_user');
-    const user = userStr ? JSON.parse(userStr) : { name: 'System' };
-    await setDoc(doc(db, COLS.DAILY_CHANGES, id), {
-      id,
-      timestamp: new Date().toISOString(),
-      action: 'UPDATE',
-      user: user.name || user.email || 'System',
-      partNumber: part.PART_NUMBER || 'N/A'
-    });
+    // 3. Record change for Daily Automation - DATE-BASED AGGREGATION
+    try {
+      const userStr = localStorage.getItem('logimaster_user');
+      let user = { name: 'System', email: '' };
+      try { if (userStr) user = JSON.parse(userStr); } catch (e) { console.warn("User parse fail", e); }
 
-    // 3. Trigger Version Refresh
+      const d = new Date();
+      // Enforce Mexico City Timezone for the "Day Bucket" ID
+      // This ensures 11:00 PM CST counts as Today, not Tomorrow (UTC)
+      const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }); // YYYY-MM-DD format
+
+      await setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
+        id: dateStr,
+        timestamp: new Date().toISOString(),
+        action: 'UPDATE',
+        user: user.name || user.email || 'System',
+        partNumbers: arrayUnion(part.PART_NUMBER || 'N/A'),
+        count: increment(1)
+      }, { merge: true });
+
+      // Mirror to Technical Log
+      await logAction('MASTER_DATA_EDIT', `Actualización de pieza: ${part.PART_NUMBER}`);
+    } catch (e) {
+      console.error("Secondary audit logging failed (Non-blocking):", e);
+    }
+
+    // 4. Trigger Version Refresh
     await storageService.bumpPartsVersion();
   },
 
-  // Senior Frontend Engineer: Implemented missing deletePart method.
+  // DATA REPAIR TOOL (Silent Patch)
+  patchPart: async (id: string, updates: any) => {
+    if (!db) return;
+    await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(updates), { merge: true });
+    // Update local state
+    const idx = dbState.parts.findIndex((p: any) => p.id === id);
+    if (idx !== -1) dbState.parts[idx] = { ...dbState.parts[idx], ...updates };
+  },
+
   deletePart: async (id: string) => {
+    // 0. Find part first (before filtering local state)
+    const partToDelete = dbState.parts.find(p => p.id === id);
+
     // 1. Sync Local State Immediately
     dbState.parts = dbState.parts.filter((p: any) => p.id !== id);
     saveLocal();
@@ -646,9 +687,38 @@ export const storageService = {
     if (!db) return;
 
     // 2. Sync Cloud
-    await deleteDoc(doc(db, COLS.PARTS, id));
+    const docId = String(id || '').trim();
+    if (!docId || docId.includes('/')) {
+      console.error("deletePart: Invalid Document ID", docId);
+      return;
+    }
+    await deleteDoc(doc(db, COLS.PARTS, docId));
 
-    // 3. Trigger Version Refresh
+    // 3. Record change for Daily Automation
+    try {
+      const userStr = localStorage.getItem('logimaster_user');
+      let user = { name: 'System', email: '' };
+      try { if (userStr) user = JSON.parse(userStr); } catch (e) { console.warn("User parse fail", e); }
+
+      const d = new Date();
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+      await setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
+        id: dateStr,
+        timestamp: new Date().toISOString(),
+        action: 'DELETE',
+        user: user.name || user.email || 'System',
+        partNumbers: arrayUnion(partToDelete?.PART_NUMBER || id),
+        count: increment(1)
+      }, { merge: true });
+
+      // Mirror to Technical Log
+      await logAction('MASTER_DATA_DELETE', `Eliminación de pieza: ${partToDelete?.PART_NUMBER || id}`);
+    } catch (e) {
+      console.error("Secondary audit logging failed (Non-blocking):", e);
+    }
+
+    // 4. Trigger Version Refresh
     await storageService.bumpPartsVersion();
   },
 
@@ -662,23 +732,65 @@ export const storageService = {
 
     // 2. Sync Cloud
     // Filter out invalid IDs to prevent "Invalid document reference" errors
-    const validIds = ids.filter(id => id && id.trim() !== '');
-    if (validIds.length === 0) return;
+    // Ensure all IDs are strings and don't contain slashes (which break Firestore doc paths)
+    const validIds = ids.filter(id => {
+      const idStr = String(id || '').trim();
+      return idStr !== '' && !idStr.includes('/');
+    }).map(id => String(id).trim());
+
+    if (validIds.length === 0) {
+      console.warn("deleteParts: No valid IDs found for cloud deletion", ids);
+      return;
+    }
+
+    console.log(`🗑️ cloudDelete: Processing ${validIds.length} parts...`);
 
     // Batch limit is 500. Split into chunks of 450.
     const CHUNK_SIZE = 450;
     const total = validIds.length;
 
-    for (let i = 0; i < total; i += CHUNK_SIZE) {
-      const chunk = validIds.slice(i, i + CHUNK_SIZE);
-      const batch = writeBatch(db);
-      chunk.forEach(id => {
-        batch.delete(doc(db, COLS.PARTS, id));
-      });
-      await batch.commit();
+    try {
+      for (let i = 0; i < total; i += CHUNK_SIZE) {
+        const chunk = validIds.slice(i, i + CHUNK_SIZE);
+        const batch = writeBatch(db);
+        chunk.forEach(id => {
+          const docRef = doc(db, COLS.PARTS, id);
+          batch.delete(docRef);
+        });
+        await batch.commit();
+        console.log(`✅ Batch ${Math.floor(i / CHUNK_SIZE) + 1} committed.`);
+      }
+    } catch (e: any) {
+      console.error("🔥 Firestore Batch Delete Failed:", e);
+      throw e; // Rethrow to show alert in UI
     }
 
-    // 3. Trigger Version Refresh
+    // 3. Record change for Daily Automation - DATE-BASED AGGREGATION
+    try {
+      const userStr = localStorage.getItem('logimaster_user');
+      let user = { name: 'System', email: '' };
+      try { if (userStr) user = JSON.parse(userStr); } catch (e) { console.warn("User parse fail", e); }
+
+      const d = new Date();
+      const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+
+      // Chunk arrayUnion for extremely large sets if needed, but for bulk delete usually fine
+      await setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
+        id: dateStr,
+        timestamp: new Date().toISOString(),
+        action: 'DELETE',
+        user: user.name || user.email || 'System',
+        partNumbers: arrayUnion(...validIds.slice(0, 1000)), // Limit elements in a single operation
+        count: increment(validIds.length)
+      }, { merge: true });
+
+      // Mirror to Technical Log
+      await logAction('MASTER_DATA_DELETE_MASSIVE', `Eliminación masiva de ${validIds.length} piezas.`);
+    } catch (e) {
+      console.error("Secondary audit logging failed (Non-blocking):", e);
+    }
+
+    // 4. Trigger Version Refresh
     await storageService.bumpPartsVersion();
   },
 
@@ -699,19 +811,13 @@ export const storageService = {
       chunk.forEach((p) => {
         const id = p.id || crypto.randomUUID();
         const partRef = doc(db, COLS.PARTS, id);
-        const changeRef = doc(db, COLS.DAILY_CHANGES, id);
-
-        const userStr = localStorage.getItem('logimaster_user');
-        const user = userStr ? JSON.parse(userStr) : { name: 'System' };
-
-        batch.set(partRef, sanitizeForFirestore({ ...p, id }));
-        batch.set(changeRef, {
+        // FORCE UPDATE TIMESTAMP
+        const dataWithTime = {
+          ...p,
           id,
-          timestamp: new Date().toISOString(),
-          action: 'UPSERT',
-          user: user.name || user.email || 'System',
-          partNumber: p.PART_NUMBER || 'N/A'
-        });
+          UPDATE_TIME: new Date().toISOString()
+        };
+        batch.set(partRef, sanitizeForFirestore(dataWithTime));
       });
 
       await batch.commit();
@@ -721,7 +827,40 @@ export const storageService = {
       }
     }
 
-    // 3. Trigger Version Refresh
+    // 3. Record change for Daily Automation - SHARDED LOGGING
+    // Split into chunks of 1000 to prevent ArrayUnion / Document Size limits
+    const LOG_CHUNK_SIZE = 1000;
+    try {
+      const userStr = localStorage.getItem('logimaster_user');
+      let user = { name: 'System', email: '' };
+      try { if (userStr) user = JSON.parse(userStr); } catch (e) { console.warn("User parse fail", e); }
+
+      for (let i = 0; i < parts.length; i += LOG_CHUNK_SIZE) {
+        const logChunk = parts.slice(i, i + LOG_CHUNK_SIZE);
+        const d = new Date();
+        // Use Auto-ID for each batch (addDoc logic) or Timestamp suffix
+        // Using collection reference directly to create new doc
+        const newLogRef = doc(collection(db, COLS.DAILY_CHANGES));
+        // Actually we want to keep date association? Yes timestamp.
+
+        await setDoc(newLogRef, {
+          id: newLogRef.id,
+          timestamp: new Date().toISOString(),
+          action: 'UPSERT_BATCH', // Distinct action
+          user: user.name || user.email || 'System',
+          partNumbers: logChunk.map(p => p.PART_NUMBER || 'N/A'), // Full array, no union needed for new doc
+          count: logChunk.length,
+          batchIndex: i / LOG_CHUNK_SIZE
+        });
+      }
+
+      // Mirror to Technical Log
+      await logAction('MASTER_DATA_UPSERT_MASSIVE', `Carga/Sync masivo de ${parts.length} piezas.`);
+    } catch (e) {
+      console.error("Secondary audit logging failed (Non-blocking):", e);
+    }
+
+    // 4. Trigger Version Refresh
     await storageService.bumpPartsVersion();
   },
 
@@ -2333,8 +2472,8 @@ export const storageService = {
     if (!db) return [];
     try {
       console.log("⬇️ Fetching Daily Changes...");
-      const { query, collection, orderBy, getDocs } = await import('firebase/firestore');
-      const q = query(collection(db, COLS.DAILY_CHANGES), orderBy('timestamp', 'desc'));
+      const { query, collection, orderBy, limit, getDocs } = await import('firebase/firestore');
+      const q = query(collection(db, COLS.DAILY_CHANGES), orderBy('timestamp', 'desc'), limit(100));
       const snap = await getDocs(q);
       const changes = snap.docs.map(d => ({ ...d.data(), id: d.id } as DailyChange));
       dbState.dailyChanges = changes;

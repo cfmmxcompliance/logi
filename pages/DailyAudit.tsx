@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { storageService } from '../services/storageService.ts';
 import { DailyChange, MasterDataReport, UserRole } from '../types.ts';
 import { Activity, RefreshCcw, Download, FileText, User, Calendar, ExternalLink } from 'lucide-react';
@@ -13,18 +13,11 @@ export const DailyAudit = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const loadData = async () => {
-            setIsLoading(true);
-            await Promise.all([
-                storageService.fetchDailyChanges(),
-                storageService.fetchDailyReports()
-            ]);
-            setChanges(storageService.getDailyChanges());
-            setReports((storageService as any).getDailyReports());
-            setIsLoading(false);
-        };
+        // Data is already synced by storageService listeners (limited to 100/150)
+        setChanges(storageService.getDailyChanges());
+        setReports((storageService as any).getDailyReports());
+        setIsLoading(false);
 
-        loadData();
         const unsub = storageService.subscribe(() => {
             setChanges(storageService.getDailyChanges());
             setReports((storageService as any).getDailyReports());
@@ -38,29 +31,39 @@ export const DailyAudit = () => {
         'UMC', 'UMT', 'HTSMX', 'HTSMXBASE', 'HTSMXNICO', 'IGI_DUTY', 'PROSEC', 'R8',
         'DESCRIPCION_R8', 'RRYNA_NON_DUTY_REQUIREMENTS', 'REMARKS', 'NETWEIGHT',
         'IMPORTED_OR_NOT', 'SENSIBLE', 'HTS_SerialNo', 'CLAVESAT', 'DESCRIPCION_CN',
-        'MATERIAL_CN', 'MATERIAL_EN', 'FUNCTION_CN', 'FUNCTION_EN', 'COMPANY', 'ESTIMATED'
+        'MATERIAL_CN', 'MATERIAL_EN', 'FUNCTION_CN', 'FUNCTION_EN', 'COMPANY', 'ESTIMATED', 'UPDATE_TIME'
     ];
 
-    const handleDownload = (type: 'full' | 'changes', dateContext?: string) => {
+
+
+
+    const handleDownload = async (type: 'full' | 'changes', dateContext?: string, specificChange?: DailyChange) => {
         const date = dateContext || new Date().toISOString().split('T')[0];
         let rawData: any[] = [];
         let filename = '';
-
         if (type === 'full') {
+            if (storageService.getParts().length === 0) {
+                await storageService.loadMasterData();
+            }
             rawData = storageService.getParts();
             filename = `MasterData_Full_${date}.csv`;
         } else {
-            const targetDateStr = date;
-            const dailyChanges = changes.filter(c => c.timestamp.split('T')[0] === targetDateStr);
-            const changedPartNumbers = Array.from(new Set(dailyChanges.map(c => c.partNumber)));
-            rawData = storageService.getParts().filter(p => changedPartNumbers.includes(p.PART_NUMBER));
-            filename = `MasterData_Changes_${date}.csv`;
+            // STRICT DATE-ONLY MODE (User Request)
+            // Ensure DB is loaded (Hydration Safety)
+            if (storageService.getParts().length === 0) await storageService.loadMasterData();
+
+            // Filter strictly by the modification timestamp
+            rawData = storageService.getParts().filter(p => p.UPDATE_TIME && p.UPDATE_TIME.startsWith(date));
+            filename = `MD_Changes_${date}.csv`;
         }
 
-        if (rawData.length === 0 && type === 'changes') {
-            alert('No hay cambios registrados para esta fecha.');
+        // Legacy check removed to favor detailed diagnostics above
+        /*
+        if (rawData.length === 0 && (type === 'changes' || specificChange)) {
+            alert('No hay cambios registrados para este set.');
             return;
         }
+        */
 
         // Map data to EXACT columns and order
         const formattedData = rawData.map(item => {
@@ -92,20 +95,61 @@ export const DailyAudit = () => {
         return reports.find(r => r.id === dateStr);
     };
 
+    // Aggregate everything by DATE (strictly one row per day)
+    const groupedData = useMemo(() => {
+        const dailyMap: Record<string, { changes: DailyChange[], report?: MasterDataReport }> = {};
+
+        changes.forEach(c => {
+            const d = c.id.includes('-') && c.id.length === 10 ? c.id : c.timestamp.split('T')[0];
+            if (!dailyMap[d]) dailyMap[d] = { changes: [] };
+            dailyMap[d].changes.push(c);
+        });
+
+        reports.forEach(r => {
+            const d = r.id;
+            if (!dailyMap[d]) dailyMap[d] = { changes: [] };
+            dailyMap[d].report = r;
+        });
+
+        return Object.entries(dailyMap)
+            .sort((a, b) => b[0].localeCompare(a[0]))
+            .map(([dateKey, data]) => {
+                const report = data.report;
+                const totalCount = data.changes.reduce((acc, curr) => {
+                    const parts = Array.isArray(curr.partNumbers) ? curr.partNumbers : ((curr as any).partNumber ? [(curr as any).partNumber] : []);
+                    return acc + Math.max(parts.length, curr.count || 1);
+                }, 0);
+
+                const uniquePartNumbers = Array.from(new Set(data.changes.flatMap(c => {
+                    return Array.isArray(c.partNumbers) ? c.partNumbers : ((c as any).partNumber ? [(c as any).partNumber] : []);
+                })));
+                const lastUser = data.changes.sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0]?.user || 'System';
+
+                return {
+                    dateKey,
+                    report,
+                    totalCount,
+                    uniquePartNumbers,
+                    lastUser,
+                    isReported: !!report
+                };
+            });
+    }, [changes, reports]);
+
     return (
         <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
             <header className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                        <Activity className="text-blue-600" /> Control de Cambios (Daily Audit)
+                        <Activity className="text-blue-600" size={28} /> Control de Auditoría (Resumen Diario)
                     </h1>
-                    <p className="text-slate-500 text-sm">Monitorea quién ha realizado cambios en el Master Data y accede a los respaldos diarios.</p>
+                    <p className="text-slate-500 text-sm">Registro consolidado de cambios y respaldos del Master Data.</p>
                 </div>
             </header>
 
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                 <p className="text-lg text-slate-700">
-                    Hoy se han adicionado o enmendado <span className="font-bold underline decoration-blue-500 decoration-2 underline-offset-4">{changes.filter(c => c.timestamp.split('T')[0] === new Date().toISOString().split('T')[0]).length} items</span> en el Master Data.
+                    Hoy se han adicionado o enmendado <span className="font-bold underline decoration-blue-500 decoration-2 underline-offset-4">{changes.filter(c => c.timestamp.split('T')[0] === new Date().toISOString().split('T')[0]).reduce((acc, curr) => acc + (curr.count || 1), 0).toLocaleString()} items</span> en el Master Data.
                 </p>
             </div>
 
@@ -114,118 +158,111 @@ export const DailyAudit = () => {
                     <table className="w-full text-left">
                         <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th className="px-6 py-4 font-bold text-slate-700 text-xs">Fecha y Hora</th>
-                                <th className="px-6 py-4 font-bold text-slate-700 text-xs">Usuario</th>
-                                <th className="px-6 py-4 font-bold text-slate-700 text-xs italic">Acción</th>
-                                <th className="px-6 py-4 font-bold text-slate-700 text-xs">Detalles de la Transacción</th>
-                                <th className="px-6 py-4 font-bold text-slate-700 text-xs">Anexos (CSV)</th>
-                                <th className="px-6 py-4 font-bold text-slate-700 text-xs text-center">Enlace</th>
+                                <th className="px-6 py-4 font-bold text-slate-700 text-xs">Fecha</th>
+                                <th className="px-6 py-4 font-bold text-slate-700 text-xs">Último Usuario</th>
+                                <th className="px-6 py-4 font-bold text-slate-700 text-xs text-center">Actividad Diaria</th>
+                                <th className="px-6 py-4 font-bold text-slate-700 text-xs text-center">Anexos (CSV)</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-10 text-center text-slate-400">
+                                    <td colSpan={4} className="px-6 py-10 text-center text-slate-400">
                                         <RefreshCcw className="animate-spin inline mr-2" /> Cargando registros de auditoría...
                                     </td>
                                 </tr>
-                            ) : changes.length === 0 ? (
+                            ) : groupedData.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                                        No se encontraron registros de cambios hoy.
+                                    <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
+                                        No se encontraron registros de cambios o reportes.
                                     </td>
                                 </tr>
                             ) : (
-                                [...changes]
-                                    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                                    .map((change) => {
-                                        const report = getReportForDate(change.timestamp);
-                                        const dateStr = change.timestamp.split('T')[0];
+                                groupedData.map((data) => {
+                                    const { dateKey, report, totalCount, uniquePartNumbers, lastUser, isReported } = data;
 
-                                        return (
-                                            <tr key={change.id} className={`hover:bg-slate-50 transition-colors ${(change as any).reported ? 'opacity-80' : 'bg-blue-50/20'}`}>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex flex-col gap-1">
-                                                        <div className="flex items-center gap-2 text-slate-600 text-[10px] font-mono">
-                                                            <Calendar size={12} className="text-slate-400" />
-                                                            {new Date(change.timestamp).toLocaleString()}
-                                                        </div>
-                                                        {(change as any).reported && (
-                                                            <span className="text-[9px] text-emerald-600 font-bold flex items-center gap-1">
-                                                                ✓ Reportado el {new Date((change as any).reportedAt || change.timestamp).toLocaleDateString()}
-                                                            </span>
-                                                        )}
-                                                        {!(change as any).reported && (
-                                                            <span className="text-[9px] text-amber-600 font-bold flex items-center gap-1 italic">
-                                                                Pending Report (Next 1 AM)
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2 text-xs font-medium text-slate-700">
-                                                        <User size={12} className="text-blue-500" />
-                                                        {change.user}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${change.action === 'UPDATE' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                                        change.action === 'UPSERT' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                                            'bg-slate-50 text-slate-700 border-slate-200'
-                                                        }`}>
-                                                        {change.action}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-xs text-slate-600 whitespace-nowrap">
-                                                    {change.partNumber === 'SYSTEM' ? 'Reporte Automatizado Generado' : `Modificación: ${change.partNumber}`}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        {/* Primary Action: Direct Local CSV Generation for the transaction's date */}
-                                                        <div className="flex gap-1.5">
-                                                            <button
-                                                                onClick={() => handleDownload('changes', dateStr)}
-                                                                className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center gap-1 font-bold"
-                                                                title="Descargar Cambios de este día"
-                                                            >
-                                                                <Download size={10} /> CSV
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDownload('full', dateStr)}
-                                                                className="bg-slate-50 text-slate-700 px-1.5 py-0.5 rounded text-[9px] border border-slate-200 hover:bg-slate-100 transition-colors flex items-center gap-1 font-bold"
-                                                                title="Descargar Backup Completo"
-                                                            >
-                                                                <FileText size={10} /> FULL
-                                                            </button>
+                                    // Virtual change object for handleDownload
+                                    const daySummary: DailyChange = {
+                                        id: dateKey,
+                                        timestamp: dateKey + 'T00:00:00Z',
+                                        action: 'UPSERT',
+                                        user: lastUser,
+                                        partNumbers: uniquePartNumbers,
+                                        count: totalCount
+                                    };
 
-                                                            {/* Optional: Actual Drive Link if available (e.g. from 1:00 AM job) */}
-                                                            {report?.fullCsvUrl && !report.fullCsvUrl.includes('test') && (
-                                                                <a
-                                                                    href={report.fullCsvUrl}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="text-blue-500 hover:text-blue-700"
-                                                                    title="Ver en Google Drive"
-                                                                >
-                                                                    <ExternalLink size={10} />
-                                                                </a>
-                                                            )}
-                                                        </div>
+                                    return (
+                                        <tr key={dateKey} className={`hover:bg-slate-50 transition-colors ${isReported ? 'opacity-80' : 'bg-blue-50/20'}`}>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
+                                                        <Calendar size={14} className="text-blue-500" />
+                                                        {dateKey}
                                                     </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    {change.partNumber !== 'SYSTEM' && (
-                                                        <Link
-                                                            to={`/database?search=${change.partNumber}`}
-                                                            className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2.5 py-1 rounded border border-blue-200 text-[10px] font-bold hover:bg-blue-100 transition-colors shadow-sm"
-                                                        >
-                                                            <ExternalLink size={10} /> VER PIEZA
-                                                        </Link>
+                                                    {isReported ? (
+                                                        <span className="text-[9px] text-emerald-600 font-bold flex items-center gap-1">
+                                                            ✓ Reporte Diario Generado
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[9px] text-amber-600 font-bold flex items-center gap-1 italic">
+                                                            Transacciones del día (En proceso)
+                                                        </span>
                                                     )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2 text-slate-700 font-medium">
+                                                    <User size={14} className="text-slate-400" />
+                                                    {lastUser}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="text-sm text-slate-600">
+                                                    {totalCount > 0 ? (
+                                                        <span>Actividad: <span className="font-bold text-slate-900">{totalCount.toLocaleString()} registros</span></span>
+                                                    ) : (
+                                                        <span className="italic text-slate-400">Sin cambios registrados</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="flex items-center justify-center gap-3">
+                                                    {/* CAMBIOS DEL DÍA */}
+                                                    {/* CAMBIOS DEL DÍA */}
+                                                    <button
+                                                        onClick={() => handleDownload('changes', dateKey, daySummary)}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all text-xs font-bold shadow-sm"
+                                                        title="Descargar archivo con solo los cambios de este día"
+                                                        disabled={totalCount === 0}
+                                                    >
+                                                        <Download size={14} /> Cambios (CSV)
+                                                    </button>
+
+                                                    {/* BACKUP COMPLETO */}
+                                                    {report?.fullCsvUrl ? (
+                                                        <a
+                                                            href={report.fullCsvUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 transition-all text-xs font-bold shadow-sm"
+                                                            title="Descargar respaldo completo del Master Data generado automáticamente"
+                                                        >
+                                                            <FileText size={14} /> Full (Backup)
+                                                        </a>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleDownload('full', dateKey)}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-all text-xs font-bold border border-slate-300 shadow-sm"
+                                                            title="Generar respaldo completo basado en el estado actual"
+                                                        >
+                                                            <FileText size={14} /> Full (Snapshot)
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>
@@ -236,33 +273,31 @@ export const DailyAudit = () => {
                 <div className="flex justify-end pt-4">
                     <button
                         onClick={async () => {
-                            const timestamp = new Date().toISOString();
-                            const mockChange: DailyChange = {
-                                id: `system_${Date.now()}`,
-                                timestamp: timestamp,
-                                action: 'UPSERT',
-                                user: 'SYSTEM_BOT',
-                                partNumber: 'SYSTEM'
-                            };
-
                             try {
-                                const { collection, doc, setDoc } = await import('firebase/firestore');
+                                const { collection, query, where, getDocs, setDoc, doc } = await import('firebase/firestore');
                                 const { db } = await import('../services/firebaseConfig');
 
-                                // 1. Add mock change to DB
-                                await setDoc(doc(collection(db, 'daily_changes'), mockChange.id), mockChange);
+                                // DIAGNOSTIC: Check 24th Jan
+                                const jan24Start = '2026-01-24T00:00:00';
+                                const jan24End = '2026-01-24T23:59:59';
 
-                                // 2. Trigger real Email delivery via Cloud Function
-                                const result = await storageService.triggerManualAuditReport();
+                                const q = query(collection(db, 'daily_changes'),
+                                    where('timestamp', '>=', jan24Start),
+                                    where('timestamp', '<=', jan24End)
+                                );
+                                const snap = await getDocs(q);
+                                const total = snap.size;
+                                const unreported = snap.docs.filter(d => !d.data().reported).length;
 
-                                if (result.success) {
-                                    alert(`Evento detonado: Se ha simulado el reporte y el servidor indica: ${result.message}`);
-                                } else {
-                                    alert(`Error en servidor: ${result.message}`);
+                                const userResp = prompt(`Diagnóstico 24 Enero:\nTotal: ${total}\nNo Reportados: ${unreported}\n\nSi quieres reenviar forzosamente lo pendiente, escribe "FORCE" para llamar al servidor.`);
+
+                                if (userResp === 'FORCE') {
+                                    const result = await storageService.triggerManualAuditReport();
+                                    alert(`Servidor: ${result.message}`);
                                 }
-                                storageService.fetchDailyChanges();
-                            } catch (e) {
+                            } catch (e: any) {
                                 console.error(e);
+                                alert("Error: " + e.message);
                             }
                         }}
                         className="text-slate-200 hover:text-blue-400 text-[8px] font-mono px-2 py-1"

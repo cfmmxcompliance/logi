@@ -9,16 +9,17 @@ interface Props {
 
 export const VucemConfigComponent: React.FC<Props> = ({ onConfigSave, currentConfig }) => {
     const [rfc, setRfc] = useState(currentConfig?.rfc || '');
-    const [password, setPassword] = useState('');
+    const [password, setPassword] = useState(''); // FIEL Key Password
+    const [webServicePassword, setWebServicePassword] = useState(''); // VUCEM Web Service Password
     const [keyFile, setKeyFile] = useState<File | null>(null);
     const [cerFile, setCerFile] = useState<File | null>(null);
 
     const handleSave = () => {
-        if (!rfc || !password || !keyFile || !cerFile) {
-            alert("Todos los campos son requeridos para configurar la FIEL.");
+        if (!rfc || !password || !webServicePassword || !keyFile || !cerFile) {
+            alert("Todos los campos (incluyendo Contraseña de Web Service) son requeridos.");
             return;
         }
-        onConfigSave({ rfc, password, keyFile, cerFile });
+        onConfigSave({ rfc, password, webServicePassword, keyFile, cerFile });
     };
 
     return (
@@ -38,13 +39,24 @@ export const VucemConfigComponent: React.FC<Props> = ({ onConfigSave, currentCon
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña de Clave Privada</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña de Clave Privada (FIEL .key)</label>
                     <input
                         type="password"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
                         className="w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="••••••••"
+                        placeholder="Contraseña del archivo .key"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña Web Service VUCEM</label>
+                    <input
+                        type="password"
+                        value={webServicePassword}
+                        onChange={e => setWebServicePassword(e.target.value)}
+                        className="w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border-l-4 border-l-indigo-400"
+                        placeholder="Contraseña del usuario de VUCEM"
+                        title="Es diferente a la de la FIEL. Es con la que entras a la página de Ventanilla Única."
                     />
                 </div>
                 <div>

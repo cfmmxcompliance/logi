@@ -22,12 +22,18 @@ export default function CCPBuilder() {
     }, []);
 
     const loadData = async () => {
-        const items = await storageService.getInvoiceItems();
-        const parts = await storageService.getParts();
-        const shipments = await storageService.getShipments();
-        const preAlerts = await storageService.getPreAlerts();
-        const vesselTracking = await storageService.getVesselTracking();
-        const customs = await storageService.getCustomsClearance();
+        // Trigger Lazy Load of Master Data + refresh invoices
+        await Promise.all([
+            storageService.loadMasterData(),
+            storageService.refreshInvoices()
+        ]);
+
+        const items = storageService.getInvoiceItems();
+        const parts = storageService.getParts();
+        const shipments = storageService.getShipments();
+        const preAlerts = storageService.getPreAlerts();
+        const vesselTracking = storageService.getVesselTracking();
+        const customs = storageService.getCustomsClearance();
 
         // Map Container -> BL (Aggregating from all sources)
         // Priority: PreAlerts (Freshest) > VesselTracking > Customs > Shipments

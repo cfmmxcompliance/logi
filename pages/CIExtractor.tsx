@@ -56,7 +56,7 @@ const consolidateItems = (
 
         const masterPart = masterPartsMap.get(row.partNo);
         // Handle both old (number) and new (object) map values for safety
-        const masterWeight = typeof masterPart === 'object' ? masterPart?.NETWEIGHT : masterPart;
+        const masterWeight = (typeof masterPart === 'object' && masterPart !== null) ? (masterPart as any).NETWEIGHT : masterPart;
         const hasMasterWeight = masterWeight !== undefined && masterWeight !== null && !isNaN(Number(masterWeight));
 
         const existing = map.get(key);
@@ -402,7 +402,11 @@ export const CIExtractor: React.FC = () => {
 
         const initLoad = async () => {
             setLoading(true);
-            await storageService.refreshInvoices(); // Manual Lazy Load from Cloud
+            // Trigger Lazy Load of Master Data + Invoices
+            await Promise.all([
+                storageService.loadMasterData(),
+                storageService.refreshInvoices()
+            ]);
             syncMasterData();
             loadData();
         };

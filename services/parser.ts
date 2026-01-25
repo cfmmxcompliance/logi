@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { GeneralData, DSInvoiceData, DSItemData, PedimentoRecord, DataStageRecordType, DSProcessingStats, RawFileParsed } from '../types.ts';
+import { GeneralData, DSInvoiceData, DSItemData, PedimentoRecord, DataStageRecordType, DSProcessingStats, RawFileParsed, DSCoveData, DSDigitalizedData } from '../types.ts';
 
 // Helper to safely parse float
 const parseFloatSafe = (val: string): number => {
@@ -29,6 +29,8 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
   const tempGeneral: GeneralData[] = [];
   const tempInvoices: DSInvoiceData[] = [];
   const tempItems: DSItemData[] = [];
+  const tempCoves: DSCoveData[] = [];
+  const tempDigitalized: DSDigitalizedData[] = [];
 
   const rawFiles: RawFileParsed[] = [];
 
@@ -137,6 +139,31 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
               metodoValoracion: ''
             });
           });
+        } else if (fileCode === DataStageRecordType.COVE_ASSOCIATION) {
+          lines.forEach(line => {
+            if (line.startsWith('Patente|') || line.startsWith('NUM_PED|')) return;
+            const cols = line.split('|');
+            if (cols.length < 6) return;
+            tempCoves.push({
+              patente: cols[0],
+              pedimento: cols[1],
+              seccion: cols[2],
+              numeroFactura: cols[4],
+              cove: cols[5],
+            });
+          });
+        } else if (fileCode === DataStageRecordType.DIGITALIZED_DOC) {
+          lines.forEach(line => {
+            if (line.startsWith('Patente|') || line.startsWith('NUM_PED|')) return;
+            const cols = line.split('|');
+            if (cols.length < 5) return;
+            tempDigitalized.push({
+              patente: cols[0],
+              pedimento: cols[1],
+              seccion: cols[2],
+              eDocument: cols[4],
+            });
+          });
         }
         filesProcessed++;
       } catch (err: any) {
@@ -165,6 +192,8 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
       id,
       items: [],
       invoices: [],
+      coves: [],
+      digitalDocuments: [],
       totalValueUsd: 0,
     });
   });
@@ -182,7 +211,23 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
     const record = pedimentoMap.get(id);
     if (record) {
       record.items.push(item);
-      record.totalValueUsd += item.valorDolares;
+      record.totalValueUsd += item.valorAduana || item.valorDolares;
+    }
+  });
+
+  tempCoves.forEach(cove => {
+    const id = `${cove.patente}-${cove.pedimento}-${cove.seccion}`;
+    const record = pedimentoMap.get(id);
+    if (record) {
+      record.coves.push(cove);
+    }
+  });
+
+  tempDigitalized.forEach(doc => {
+    const id = `${doc.patente}-${doc.pedimento}-${doc.seccion}`;
+    const record = pedimentoMap.get(id);
+    if (record) {
+      record.digitalDocuments.push(doc);
     }
   });
 

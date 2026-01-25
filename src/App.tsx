@@ -21,10 +21,12 @@ import { CIExtractor } from '../pages/CIExtractor.tsx';
 import CCPBuilder from '../pages/CCPBuilder.tsx';
 import { Controller } from '../pages/Controller.tsx';
 import { Vucem } from '../pages/Vucem.tsx';
+import { ExpedienteElectronico } from '../pages/ExpedienteElectronico';
 import { storageService } from '../services/storageService.ts';
 import { trackingService } from '../services/trackingService.ts';
 import { AuthProvider, useAuth } from '../context/AuthContext.tsx';
 import { NotificationProvider } from '../context/NotificationContext.tsx';
+import { VucemProvider } from '../context/VucemContext.tsx';
 import { NotificationPopup } from '../components/NotificationPopup.tsx';
 import { Database } from 'lucide-react';
 import { UserRole } from '../types.ts';
@@ -106,6 +108,14 @@ const AppContent = () => {
             <Route path="/data-stage" element={<ProtectedRoute><DataStage /></ProtectedRoute>} />
             <Route path="/controller" element={<ProtectedRoute><Controller /></ProtectedRoute>} />
             <Route path="/vucem" element={<ProtectedRoute><Vucem /></ProtectedRoute>} />
+            <Route path="/expediente-electronico" element={
+                <ProtectedRoute>
+                    <ExpedienteElectronico setActiveTab={(tab) => {
+                        // Simple shim: if tab is 'vucem', navigate there.
+                        if (tab === 'vucem') window.location.hash = '#/vucem';
+                    }} />
+                </ProtectedRoute>
+            } />
             <Route path="/proforma-validator" element={<ProtectedRoute><ProformaValidator /></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><SmartDocs /></ProtectedRoute>} />
             <Route path="/database" element={<ProtectedRoute><DatabaseView /></ProtectedRoute>} />
@@ -123,7 +133,9 @@ const AppContent = () => {
 const App: React.FC = () => {
     return (
         <HashRouter>
-            <AppContent />
+            <VucemProvider>
+                <AppContent />
+            </VucemProvider>
             <NotificationPopup />
         </HashRouter>
     );

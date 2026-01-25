@@ -2,17 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { VucemConfigComponent } from '../components/vucem/VucemConfig';
 import { EdocumentQuery } from '../components/vucem/EdocumentQuery';
+import { useVucem } from '../context/VucemContext.tsx';
 import { VucemConfig } from '../services/vucem/types';
 
 export const Vucem: React.FC = () => {
-    const [config, setConfig] = useState<VucemConfig | null>(null);
-    const [activeTab, setActiveTab] = useState<'config' | 'query'>('config');
+    const { config, setConfig } = useVucem();
+    const [activeTab, setActiveTab] = useState<'config' | 'query'>(config ? 'query' : 'config');
 
     const handleConfigSave = (newConfig: VucemConfig) => {
         setConfig(newConfig);
         setActiveTab('query');
-        // Ideally save to Context or LocalStorage (excluding File objects)
-        // For security, File objects must be re-selected on refresh in this basic version.
     };
 
     return (
@@ -23,6 +22,19 @@ export const Vucem: React.FC = () => {
                     <h1 className="text-2xl font-bold text-slate-800">Conexión VUCEM</h1>
                     <p className="text-slate-500 mt-1">Consulta de Edocuments y COVEs directamente desde la Ventanilla Única.</p>
                 </div>
+                {config && (
+                    <button
+                        onClick={() => {
+                            if (confirm("¿Estás seguro de cerrar la conexión VUCEM? Deberás re-seleccionar tus archivos de FIEL.")) {
+                                setConfig(null);
+                                setActiveTab('config');
+                            }
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl hover:bg-red-100 transition-all font-bold text-sm"
+                    >
+                        🔒 Cerrar Conexión
+                    </button>
+                )}
             </div>
 
             {/* Tabs */}

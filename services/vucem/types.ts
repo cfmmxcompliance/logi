@@ -3,11 +3,14 @@ export interface VucemConfig {
     rfc: string;
     keyFile: File | null;
     cerFile: File | null;
-    password: string;
+    password: string; // Contraseña FIEL (.key)
+    webServicePassword?: string; // Contraseña VUCEM Web Service
 }
 
 export interface EdocumentQuery {
-    edocument: string;
+    edocument?: string;
+    fechaInicio?: string; // Format: YYYY-MM-DD
+    fechaFin?: string;    // Format: YYYY-MM-DD
     adenda?: string;
 }
 
@@ -86,6 +89,7 @@ export interface ConsultarEdocumentResponse {
     errores?: string[];
     resultadoBusqueda?: {
         cove?: Cove;
-        adenda?: any; // Define properly if needed
+        coves?: Cove[]; // For date range queries
+        adenda?: string; // XML string content of Adenda
     };
 }

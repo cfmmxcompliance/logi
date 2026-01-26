@@ -1,6 +1,8 @@
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// https://vitejs.dev/config/
 export default defineConfig({
     plugins: [react()],
     optimizeDeps: {
@@ -19,9 +21,19 @@ export default defineConfig({
         strictPort: true,
         proxy: {
             '/vucem-proxy': {
-                target: 'http://www.ventanillaunica.gob.mx',
+                target: 'https://www.ventanillaunica.gob.mx',
                 changeOrigin: true,
+                secure: false, // Ignorar errores de SSL auto-firmados si ocurren
                 rewrite: (path) => path.replace(/^\/vucem-proxy/, ''),
+                configure: (proxy, _options) => {
+                    proxy.on('error', (err, _req, _res) => {
+                        console.log('Error en Proxy:', err);
+                    });
+                    proxy.on('proxyReq', (proxyReq, req, _res) => {
+                        // Forzar headers necesarios para SOAP
+                        proxyReq.setHeader('Content-Type', 'text/xml;charset=UTF-8');
+                    });
+                },
             },
         },
     },

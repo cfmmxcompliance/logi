@@ -299,6 +299,11 @@ export interface GeneralData {
   fechaPago: string;
   fechaEntrada: string; // New: Extracted Entry Date
   clavePedimento?: string; // New: Extracted Key (A1, V1)
+  ivaPrv?: number; // New: Extracted IVA on PRV
+  cnt?: number; // New: Extracted CNT
+  igiTotal?: number; // New: Extracted IGI (Total)
+  lineaCaptura?: string; // New: Extracted Alphanumeric Capture Line
+  isFixedAsset?: boolean; // New: Activo Fijo flag
 }
 
 export interface DSInvoiceData {
@@ -375,6 +380,10 @@ export interface PedimentoRecord extends GeneralData {
   dtaTotal?: number;
   prevalidacionTotal?: number;
   cntTotal?: number;
+  igiTotal?: number;
+  ivaPrvTotal?: number;
+  lineaCaptura?: string;
+  isFixedAsset?: boolean;
   totalValueUsd: number;
 }
 

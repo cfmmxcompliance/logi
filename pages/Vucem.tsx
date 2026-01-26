@@ -4,9 +4,10 @@ import { VucemConfigComponent } from '../components/vucem/VucemConfig';
 import { EdocumentQuery } from '../components/vucem/EdocumentQuery';
 import { useVucem } from '../context/VucemContext.tsx';
 import { VucemConfig } from '../services/vucem/types';
+import { vucemStorage } from '../services/vucem/vucemStorage';
 
 export const Vucem: React.FC = () => {
-    const { config, setConfig } = useVucem();
+    const { config, setConfig, logout } = useVucem();
     const [activeTab, setActiveTab] = useState<'config' | 'query'>(config ? 'query' : 'config');
 
     const handleConfigSave = (newConfig: VucemConfig) => {
@@ -24,12 +25,7 @@ export const Vucem: React.FC = () => {
                 </div>
                 {config && (
                     <button
-                        onClick={() => {
-                            if (confirm("¿Estás seguro de cerrar la conexión VUCEM? Deberás re-seleccionar tus archivos de FIEL.")) {
-                                setConfig(null);
-                                setActiveTab('config');
-                            }
-                        }}
+                        onClick={() => logout()}
                         className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl hover:bg-red-100 transition-all font-bold text-sm"
                     >
                         🔒 Cerrar Conexión

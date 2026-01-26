@@ -7,38 +7,44 @@ const NAMESPACE_CONSULTA = 'http://www.ventanillaunica.gob.mx/ConsultarEdocument
 const NAMESPACE_COMMON = 'http://www.ventanillaunica.gob.mx/cove/ws/oxml/';
 
 export class VucemService {
+    private formatDate(dateStr: string): string {
+        if (!dateStr) return "";
+        const cleanDate = dateStr.replace(/\//g, '-');
+        const parts = cleanDate.split('-');
+        if (parts[0].length === 2 && parts[2]?.length === 4) {
+            return `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[2]}`;
+        }
+        if (parts[0].length === 4) {
+            const [y, m, d] = parts;
+            return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+        }
+        return dateStr;
+    }
+
     async consultarEdocument(query: string | { start: string, end: string }, config: VucemConfig): Promise<ConsultarEdocumentResponse> {
-        try {
-            if (!config.keyFile || !config.cerFile) {
-                throw new Error("Faltan archivos de la FIEL (.key o .cer)");
-            }
+        if (!config.keyFile || !config.cerFile) throw new Error("Faltan archivos FIEL");
+        const privateKey = await readPrivateKey(config.keyFile, config.password);
+        const { pem: certPem } = await readCertificate(config.cerFile);
+        const certificateBody = getCertificateBody(certPem);
 
-            // 1. Prepare Credentials
-            const privateKey = await readPrivateKey(config.keyFile, config.password);
-            const { pem: certPem } = await readCertificate(config.cerFile);
-            const certificateBody = getCertificateBody(certPem);
+        let cadenaOriginal = "";
+        let criterioXml = "";
 
-            let cadenaOriginal = "";
-            let criterioXml = "";
+        if (typeof query === 'string') {
+            cadenaOriginal = `|${config.rfc}|${query}|`;
+            criterioXml = `<con:eDocument>${query}</con:eDocument>`;
+        } else {
+            const vStart = this.formatDate(query.start);
+            const vEnd = this.formatDate(query.end);
+            cadenaOriginal = `|${config.rfc}|${vStart}|${vEnd}|`;
+            criterioXml = `
+            <con:fechaInicio>${vStart}</con:fechaInicio>
+            <con:fechaFin>${vEnd}</con:fechaFin>`;
+        }
 
-            if (typeof query === 'string') {
-                // Single Edocument Search
-                cadenaOriginal = `|${config.rfc}|${query}|`;
-                criterioXml = `<con:eDocument>${query}</con:eDocument>`;
-            } else {
-                // Date Range Search
-                // Format for Cadena Original with Dates: |RFC|FECHA_INI|FECHA_FIN|
-                cadenaOriginal = `|${config.rfc}|${query.start}|${query.end}|`;
-                criterioXml = `
-                <con:fechaInicio>${query.start}</con:fechaInicio>
-                <con:fechaFin>${query.end}</con:fechaFin>`;
-            }
+        const firma = signCadenaOriginal(cadenaOriginal, privateKey);
 
-            // 3. Sign
-            const firma = signCadenaOriginal(cadenaOriginal, privateKey);
-
-            // 4. Build SOAP XML
-            const soapXml = `
+        const soapXml = `
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:con="${NAMESPACE_CONSULTA}" xmlns:com="${NAMESPACE_COMMON}">
    <soapenv:Header>
         ${generateWSSEHeader(config.rfc, config.webServicePassword || config.password)}
@@ -51,17 +57,19 @@ export class VucemService {
                <com:cadenaOriginal>${cadenaOriginal}</com:cadenaOriginal>
                <com:firma>${firma}</com:firma>
             </con:firmaElectronica>
-            <con:criterioBusqueda>
-               ${criterioXml}
-            </con:criterioBusqueda>
+            <con:criterioBusqueda>${criterioXml}</con:criterioBusqueda>
          </con:request>
       </con:ConsultarEdocumentRequest>
    </soapenv:Body>
 </soapenv:Envelope>`;
 
-            // 5. Send Request
-            console.log("Sending SOAP Request to VUCEM Proxy:", VUCEM_PROXY_ENDPOINT);
-            console.log(soapXml);
+        return this.fetchWithRetry(soapXml);
+    }
+
+    private async fetchWithRetry(xmlBody: string, retries = 2): Promise<ConsultarEdocumentResponse> {
+        try {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), 45000);
 
             const response = await fetch(VUCEM_PROXY_ENDPOINT, {
                 method: 'POST',
@@ -69,75 +77,61 @@ export class VucemService {
                     'Content-Type': 'text/xml;charset=UTF-8',
                     'SOAPAction': 'http://www.ventanillaunica.gob.mx/cove/ws/service/ConsultarEdocument'
                 },
-                body: soapXml
+                body: xmlBody,
+                signal: controller.signal
             });
+            clearTimeout(id);
 
-            if (!response.ok) {
-                const text = await response.text();
-                throw new Error(`VUCEM Error (${response.status}): ${text}`);
-            }
+            if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
 
             const responseText = await response.text();
-            console.log("VUCEM Response:", responseText);
-
             return this.parseResponse(responseText);
 
         } catch (error: any) {
-            console.error("VUCEM Service Error:", error);
-            throw new Error(error.message || "Error desconocido al consultar VUCEM");
+            const msg = (error.message || "").toLowerCase();
+
+            if (msg.includes('auth') ||
+                msg.includes('password') ||
+                msg.includes('contraseña') ||
+                msg.includes('credentials') ||
+                msg.includes('firma') ||
+                msg.includes('signature')) {
+                throw error;
+            }
+
+            if (retries > 0 && (error.name === 'AbortError' || msg.includes('network') || msg.includes('fetch'))) {
+                console.warn(`Reintentando conexión por fallo de red... quedan ${retries}`);
+                await new Promise(res => setTimeout(res, 1000));
+                return this.fetchWithRetry(xmlBody, retries - 1);
+            }
+            throw error;
         }
     }
 
     private parseResponse(xml: string): ConsultarEdocumentResponse {
         const parser = new DOMParser();
         const doc = parser.parseFromString(xml, "text/xml");
-
-        // Check for Fault
         const fault = doc.querySelector("Fault");
         if (fault) {
-            const faultString = doc.querySelector("faultstring")?.textContent;
-            throw new Error(`SOAP Fault: ${faultString}`);
+            const code = fault.querySelector("faultcode")?.textContent;
+            const str = fault.querySelector("faultstring")?.textContent;
+            throw new Error(`VUCEM SOAP Fault [${code}]: ${str}`);
         }
 
-        const containsError = doc.getElementsByTagName("contieneError")[0]?.textContent === 'true';
+        const contieneError = doc.getElementsByTagName("contieneError")[0]?.textContent === 'true';
         const errors: string[] = [];
-        if (containsError) {
+        if (contieneError) {
             const errorNodes = doc.getElementsByTagName("mensaje");
-            for (let i = 0; i < errorNodes.length; i++) {
-                errors.push(errorNodes[i].textContent || "Error desconocido");
-            }
+            for (let i = 0; i < errorNodes.length; i++) errors.push(errorNodes[i].textContent || "Error");
         }
-
-        const coveNode = doc.getElementsByTagName("cove")[0];
-        let cove: Cove | undefined;
-        let coves: Cove[] = [];
-
-        // Single result parsing
-        if (coveNode) {
-            cove = this.parseCoveNode(coveNode);
-        }
-
-        // Multiple results parsing (for Date Range)
         const allCoveNodes = doc.getElementsByTagName("cove");
-        if (allCoveNodes.length > 0) {
-            for (let i = 0; i < allCoveNodes.length; i++) {
-                coves.push(this.parseCoveNode(allCoveNodes[i]));
-            }
+        const coves: Cove[] = [];
+        for (let i = 0; i < allCoveNodes.length; i++) {
+            coves.push(this.parseCoveNode(allCoveNodes[i]));
         }
-
-        // Check for Adenda
         const adendaNode = doc.getElementsByTagName("adenda")[0];
-        let adendaXml: string | undefined;
-        if (adendaNode) {
-            // Serialize ONLY the content inside <adenda>
-            adendaXml = new XMLSerializer().serializeToString(adendaNode);
-        }
-
-        return {
-            contieneError: containsError,
-            errores: errors,
-            resultadoBusqueda: { cove, coves, adenda: adendaXml }
-        };
+        const adenda = adendaNode ? new XMLSerializer().serializeToString(adendaNode) : undefined;
+        return { contieneError, errores: errors, resultadoBusqueda: { cove: coves[0], coves, adenda } };
     }
 
     private parseCoveNode(coveNode: Element): Cove {
@@ -159,10 +153,7 @@ export class VucemService {
         const facturas: any[] = [];
         for (let i = 0; i < facturasNodes.length; i++) {
             const node = facturasNodes[i];
-            facturas.push({
-                numeroFactura: this.getNodeText(node, "numeroFactura") || "",
-                mercancias: this.parseMercancias(node)
-            });
+            facturas.push({ numeroFactura: this.getNodeText(node, "numeroFactura") || "", mercancias: this.parseMercancias(node) });
         }
         return facturas;
     }
@@ -227,11 +218,8 @@ export class VucemService {
     }
 
     private getNodeText(parent: Element, tagName: string): string | null {
-        // Search by localName to ignore namespaces
         const all = parent.getElementsByTagName("*");
-        for (let i = 0; i < all.length; i++) {
-            if (all[i].localName === tagName) return all[i].textContent;
-        }
+        for (let i = 0; i < all.length; i++) { if (all[i].localName === tagName) return all[i].textContent; }
         return null;
     }
 }

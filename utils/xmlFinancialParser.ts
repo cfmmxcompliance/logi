@@ -26,6 +26,7 @@ export interface PedimentoFinancials {
     supplierName: string;
     supplierTaxId: string;
     supplierCountry: string;
+    fechaEntrada?: string;
 }
 
 export const parsePedimentoFinancials = (xmlStr: string): PedimentoFinancials => {
@@ -113,6 +114,7 @@ export const parsePedimentoFinancials = (xmlStr: string): PedimentoFinancials =>
         cnt,
         supplierName,
         supplierTaxId,
-        supplierCountry
+        supplierCountry,
+        fechaEntrada: getTxt("fechaEntrada") || getTxt("fechaArribo")
     };
 };

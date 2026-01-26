@@ -9,6 +9,7 @@ import { DataStageReport, PedimentoRecord } from '../types';
 import { useVucem } from '../context/VucemContext';
 import { vucemAutomation } from '../services/vucem/vucemAutomation';
 import { VucemConfig } from '../services/vucem/types';
+import { Link2 } from 'lucide-react';
 
 interface DossierItem {
     name: string;
@@ -33,11 +34,13 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
     const [dossiers, setDossiers] = useState<Dossier[]>([]);
     const [reports, setReports] = useState<DataStageReport[]>([]);
     const [selectedReportId, setSelectedReportId] = useState<string>('');
-    const { config, isConfigured } = useVucem();
+    const { config, isConfigured, connectionStatus, testConnection, logout, lastError } = useVucem();
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [syncing, setSyncing] = useState(false);
     const [syncStats, setSyncStats] = useState({ current: 0, total: 0, status: '' });
+    const [reprocessingId, setReprocessingId] = useState<string | null>(null);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     // Discovery Mode State
     const [syncMode, setSyncMode] = useState<'report' | 'date'>('report');
@@ -93,7 +96,7 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
             setSyncStats(s => ({ ...s, current: i + 1, status: `Procesando ${pedimento.pedimento}...` }));
 
             try {
-                await vucemAutomation.syncPedimentoToDrive(pedimento, config, (msg) => {
+                await vucemAutomation.syncPedimentoToDrive(pedimento, config, (msg: string) => {
                     setSyncStats(s => ({ ...s, status: msg }));
                 });
             } catch (err) {
@@ -107,23 +110,69 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
     };
 
     const handleSyncDateRange = async () => {
-        if (!config || !dateRange.start || !dateRange.end) return;
+        const start = new Date(dateRange.start);
+        const end = new Date(dateRange.end);
+        const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 
-        setSyncing(true);
+        if (diffDays > 31) {
+            alert("⚠️ Límite Excedido: VUCEM solo permite consultas de hasta 31 días por vez para evitar saturación del servicio. Por favor ajusta tu rango.");
+            setSyncing(false);
+            return;
+        }
+
         setSyncStats({ current: 0, total: 0, status: 'Consultando VUCEM...' });
 
         try {
-            await vucemAutomation.syncDateRangeToDrive(dateRange.start, dateRange.end, config, (msg) => {
+            await vucemAutomation.syncDateRangeToDrive(dateRange.start, dateRange.end, config, (msg: string) => {
                 setSyncStats(s => ({ ...s, status: msg }));
             });
             alert("Sincronización por rango de fechas completada.");
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error syncing date range:", err);
-            alert("Ocurrió un error durante la sincronización.");
+            alert("Error durante la sincronización: " + (err.message || "Error desconocido"));
         } finally {
             setSyncing(false);
             setSyncStats(s => ({ ...s, status: 'Completado' }));
         }
+    };
+
+    const robustParseDate = (dateStr: string) => {
+        if (!dateStr || typeof dateStr !== 'string') return null;
+        const clean = dateStr.trim();
+        if (!clean) return null;
+
+        // Caso 1: YYYY-MM-DD (Evitar desfase de zona horaria)
+        if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+            const [y, m, d] = clean.split('T')[0].split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
+        // Caso 2: DD/MM/YYYY
+        if (/^\d{2}\/\d{2}\/\d{4}/.test(clean)) {
+            const [d, m, y] = clean.split(' ')[0].split('/').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
+        const d = new Date(clean);
+        return isNaN(d.getTime()) ? null : d;
+    };
+
+    const formatDateMMDDYYYY = (dateStr: string) => {
+        const d = robustParseDate(dateStr);
+        if (!d) return dateStr || "";
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        return `${mm}/${dd}/${yyyy}`;
+    };
+
+    const formatDateYYYYMMDD = (dateStr: string) => {
+        const d = robustParseDate(dateStr);
+        if (!d) return dateStr || "";
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
     };
 
     const handleFinancialExport = async () => {
@@ -136,25 +185,26 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
             const XLSX = await import('xlsx');
             const dataToExport = dossiers.map(d => {
                 const fins = (d as any).financials || {};
-                const fixedAssets = (d.numPedimento?.startsWith("24") || fins.clavePedimento === "AF") ? "Yes" : "No";
+                const fixedAssets = d.isFixedAsset || (d.numPedimento?.startsWith("24") || fins.clavePedimento === "AF") ? "Yes" : "No";
 
                 return {
                     "Pedimento Number": fins.pedimentoNum || d.numPedimento || "",
                     "Monto Pagado": fins.montoPagado || 0,
                     "Referencia Ampliada": fins.lineaCaptura || "",
-                    "Fiscal ID": fins.supplierTaxId || "",
-                    "Supplier Name": fins.supplierName || "",
-                    "Country": fins.supplierCountry || "",
+                    "Fiscal ID": fins.supplierTaxId || "91330100757206158J",
+                    "Supplier Name": fins.supplierName || "ZHEJIANG CFMOTO POWER CO.,LTD",
+                    "Country": fins.supplierCountry || "CN",
                     "Fixed Assets (Yes/No)": fixedAssets,
                     "Merchandise Custom Value": fins.valorAduana || 0,
-                    "Prevalidation VAT": (fins.prv || 0) * 0.16,
+                    "Prevalidation VAT": fins.ivaPrv || 0,
                     "Import VAT": fins.iva || 0,
                     "Prevalidation (PRV)": fins.prv || 0,
                     "Custom Duties (DTA)": fins.dta || 0,
                     "General Custom Tax (IGI)": fins.igi || 0,
                     "Fee (CNT)": fins.cnt || 0,
                     "Payed - Pedimento": fins.montoPagado || 0,
-                    "Payment Date": fins.fechaPago || "",
+                    "Payment Date": formatDateMMDDYYYY(fins.fechaPago),
+                    "Entry Date": formatDateYYYYMMDD(fins.fechaEntrada),
                     "DIFERENCIA": 0,
                     "CLAVE": fins.clavePedimento || "",
                     "Bank Name": fins.banco || ""
@@ -171,6 +221,106 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
         }
     };
 
+    const toggleSelect = (id: string) => {
+        const next = new Set(selectedIds);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setSelectedIds(next);
+    };
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedIds(new Set(filteredDossiers.map(d => d.numPedimento)));
+        } else {
+            setSelectedIds(new Set());
+        }
+    };
+
+    const handleBulkReprocess = async () => {
+        if (selectedIds.size === 0 || syncing || reprocessingId) return;
+
+        const idsToProcess = Array.from(selectedIds) as string[];
+        setSyncing(true);
+        setSyncStats({ current: 0, total: idsToProcess.length, status: 'Iniciando Reproceso Masivo...' });
+
+        let successCount = 0;
+        let failCount = 0;
+        const errorDetails: string[] = [];
+
+        for (let i = 0; i < idsToProcess.length; i++) {
+            const pedimentoNo = idsToProcess[i];
+            setSyncStats(s => ({ ...s, current: i + 1, status: `Reprocesando ${pedimentoNo}...` }));
+
+            try {
+                await vucemAutomation.reprocessDossier(pedimentoNo as string, (msg: string) => {
+                    setSyncStats(s => ({ ...s, status: `[${i + 1}/${idsToProcess.length}] ${msg}` }));
+                });
+                successCount++;
+            } catch (err: any) {
+                console.error(`Error reprocesando ${pedimentoNo}:`, err);
+                failCount++;
+                const msg = err.message || JSON.stringify(err);
+                errorDetails.push(`- ${pedimentoNo}: ${msg}`);
+            }
+        }
+
+        setSyncing(false);
+        setSyncStats({ current: 0, total: 0, status: '' });
+        setSelectedIds(new Set());
+
+        let finalMsg = `✅ Proceso Finalizado.\nÉxitos: ${successCount}\nFallos: ${failCount}`;
+        if (errorDetails.length > 0) {
+            finalMsg += `\n\nDETALLE DE ERRORES:\n${errorDetails.slice(0, 10).join('\n')}`;
+            if (errorDetails.length > 10) finalMsg += `\n... y ${errorDetails.length - 10} más.`;
+        }
+
+        alert(finalMsg);
+    };
+
+    const handleReprocess = async (pedimentoNo: string) => {
+        if (syncing || reprocessingId) return;
+
+        setReprocessingId(pedimentoNo);
+        setSyncStats({ current: 0, total: 1, status: 'Iniciando Reproceso...' });
+
+        try {
+            await vucemAutomation.reprocessDossier(pedimentoNo as string, (msg: string) => {
+                setSyncStats(s => ({ ...s, status: msg }));
+            });
+            alert(`✅ Expediente ${pedimentoNo} reprocesado con éxito.`);
+        } catch (err: any) {
+            console.error("Error al reprocesar:", err);
+            alert(`❌ Error al reprocesar: ${err.message || "Error desconocido"}`);
+        } finally {
+            setReprocessingId(null);
+            setSyncStats({ current: 0, total: 2, status: '' });
+        }
+    };
+
+    const handleLocalXmlImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        setSyncing(true);
+        let count = 0;
+        const fileList = Array.from(files) as File[];
+        for (const file of fileList) {
+            try {
+                setSyncStats({ current: count + 1, total: fileList.length, status: `Procesando ${file.name}...` });
+                await vucemAutomation.processLocalXml(file, (msg: string) => {
+                    setSyncStats(prev => ({ ...prev, status: msg }));
+                });
+                count++;
+            } catch (err: any) {
+                console.error(`Error importando ${file.name}:`, err);
+                alert(`Error en ${file.name}: ${err.message}`);
+            }
+        }
+        setSyncing(false);
+        alert(`✅ Importación finalizada. Se procesaron ${count} archivos correctamente.`);
+        // fetchDossiers(); se actualiza por onSnapshot
+    };
+
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -181,6 +331,43 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
                     <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
                         <FolderOpen className="text-blue-600" size={28} />
                         Expediente Electrónico
+                        {isConfigured && (
+                            <div className="flex items-center gap-3 ml-4 px-3 py-1.5 bg-slate-100 rounded-2xl border border-slate-200">
+                                <div className={`w-2 h-2 rounded-full animate-pulse ${connectionStatus === 'online' ? 'bg-emerald-500' :
+                                    connectionStatus === 'error' ? 'bg-red-500' :
+                                        connectionStatus === 'testing' ? 'bg-amber-500' : 'bg-slate-400'
+                                    }`} />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mr-2">
+                                    Vucem: {connectionStatus === 'online' ? 'Conectado' :
+                                        connectionStatus === 'error' ? 'Error' :
+                                            connectionStatus === 'testing' ? 'Validando' : 'Desconectado'}
+                                </span>
+
+                                {connectionStatus !== 'online' && (
+                                    <button
+                                        onClick={async () => {
+                                            const ok = await testConnection();
+                                            if (ok) alert("✅ Conexión Exitosa con VUCEM.");
+                                            else alert(lastError || "Error al intentar conectar.");
+                                        }}
+                                        disabled={connectionStatus === 'testing'}
+                                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg transition-all shadow-sm disabled:opacity-50"
+                                    >
+                                        {connectionStatus === 'testing' ? 'CONECTANDO...' : 'CONECTAR A VUCEM'}
+                                    </button>
+                                )}
+
+                                {isConfigured && (
+                                    <button
+                                        onClick={() => logout()}
+                                        className="px-3 py-1 bg-slate-200 hover:bg-red-600 hover:text-white text-slate-600 text-[10px] font-bold rounded-lg transition-all shadow-sm"
+                                        title="Borra archivos y cierra sesión"
+                                    >
+                                        DESCONECTAR / LIMPIAR
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </h2>
                     <p className="text-slate-500 text-sm mt-1">Gestión y respaldo automatizado de documentos de comercio exterior en Google Drive.</p>
                 </div>
@@ -203,6 +390,22 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
                     </div>
 
                     <div className="flex flex-wrap gap-3 items-center justify-end">
+                        <input
+                            type="file"
+                            id="local-xml-import"
+                            multiple
+                            accept=".xml"
+                            className="hidden"
+                            onChange={handleLocalXmlImport}
+                        />
+                        <button
+                            onClick={() => document.getElementById('local-xml-import')?.click()}
+                            disabled={syncing}
+                            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition-all shadow-sm disabled:opacity-50"
+                        >
+                            <FileText size={16} />
+                            IMPORTAR XML LOCAL
+                        </button>
                         {syncMode === 'report' ? (
                             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 p-1 rounded-xl">
                                 <FileSpreadsheet size={16} className="text-slate-400 ml-2" />
@@ -235,11 +438,12 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
                             </div>
                         )}
 
+
                         <button
                             onClick={!isConfigured ? () => { setActiveTab('vucem'); } : (syncMode === 'report' ? handleSyncSelectedReport : handleSyncDateRange)}
-                            disabled={syncing || (isConfigured && (syncMode === 'report' ? !selectedReportId : (!dateRange.start || !dateRange.end)))}
+                            disabled={syncing || !isConfigured || connectionStatus !== 'online' || (syncMode === 'report' ? !selectedReportId : (!dateRange.start || !dateRange.end))}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-100 disabled:opacity-50 disabled:shadow-none ${!isConfigured ? 'bg-amber-500 hover:bg-amber-600' : syncMode === 'date' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
-                            title={!isConfigured ? "Ir a Configuración VUCEM" : ""}
+                            title={connectionStatus !== 'online' ? "Debes Activar la Conexión primero" : ""}
                         >
                             {syncing ? (
                                 <>
@@ -268,6 +472,17 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
                             <FileSpreadsheet size={18} />
                             Reporte Financiero
                         </button>
+
+                        {selectedIds.size > 0 && (
+                            <button
+                                onClick={handleBulkReprocess}
+                                disabled={syncing}
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-100 transition-all animate-in slide-in-from-right-4"
+                            >
+                                <RefreshCw size={18} className={syncing ? 'animate-spin' : ''} />
+                                Reprocesar Selección ({selectedIds.size})
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -296,6 +511,14 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-slate-50 border-b border-slate-200">
+                            <th className="px-6 py-4 w-10">
+                                <input
+                                    type="checkbox"
+                                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                    checked={selectedIds.size > 0 && selectedIds.size === filteredDossiers.length}
+                                    onChange={handleSelectAll}
+                                />
+                            </th>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Pedimento</th>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Documentos Detectados</th>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Estatus</th>
@@ -322,7 +545,15 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
                             </tr>
                         ) : (
                             filteredDossiers.map((dossier) => (
-                                <tr key={dossier.id} className="hover:bg-slate-50/80 transition-colors group">
+                                <tr key={dossier.id} className={`hover:bg-slate-50/80 transition-colors group ${selectedIds.has(dossier.numPedimento) ? 'bg-blue-50/50' : ''}`}>
+                                    <td className="px-6 py-4 text-center">
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                            checked={selectedIds.has(dossier.numPedimento)}
+                                            onChange={() => toggleSelect(dossier.numPedimento)}
+                                        />
+                                    </td>
                                     <td className="px-6 py-4 text-center">
                                         <span className="font-mono font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">
                                             {dossier.numPedimento}
@@ -355,6 +586,16 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
+                                            {/* REPROCESS BUTTON */}
+                                            <button
+                                                onClick={() => handleReprocess(dossier.numPedimento)}
+                                                disabled={!!reprocessingId || syncing}
+                                                className={`p-2 rounded-lg transition-all ${reprocessingId === dossier.numPedimento ? 'text-blue-600 bg-blue-50 animate-pulse' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
+                                                title="Reprocesar (Extraer datos nuevamente desde Drive)"
+                                            >
+                                                <RefreshCw size={18} className={reprocessingId === dossier.numPedimento ? 'animate-spin' : ''} />
+                                            </button>
+
                                             <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Ver en Drive">
                                                 <ExternalLink size={18} />
                                             </button>
@@ -369,7 +610,7 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
                     </tbody>
                 </table>
             </div>
-        </div>
+        </div >
     );
 };
 

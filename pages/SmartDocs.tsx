@@ -1,15 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Check, AlertCircle, RefreshCw, Download, DollarSign } from 'lucide-react';
+import { Upload, FileText, Check, AlertCircle, RefreshCw, Download, DollarSign, FolderOpen } from 'lucide-react';
 import { geminiService, ExtractedInvoiceItem, ExtractedCost } from '../services/geminiService.ts';
 import { storageService } from '../services/storageService.ts';
+import { vucemAutomation } from '../services/vucem/vucemAutomation';
 import { RawMaterialPart } from '../types.ts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 export const SmartDocs = () => {
-  const [activeTab, setActiveTab] = useState<'correction' | 'costs'>('correction');
+  const [activeTab, setActiveTab] = useState<'correction' | 'costs' | 'ingestion'>('correction');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [syncStats, setSyncStats] = useState({ current: 0, total: 0, status: '' });
 
   // Correction State
   const [extractedItems, setExtractedItems] = useState<(ExtractedInvoiceItem & { matchedPart?: RawMaterialPart })[]>([]);
@@ -20,6 +22,77 @@ export const SmartDocs = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const handleZipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    setError('');
+    setSyncStats({ current: 0, total: 0, status: 'Iniciando descompresión...' });
+
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = await JSZip.loadAsync(file);
+      const files = Object.keys(zip.files).filter(name => !zip.files[name].dir && !name.includes('__MACOSX'));
+
+      setSyncStats({ current: 0, total: files.length, status: `Detectados ${files.length} archivos.` });
+
+      let processed = 0;
+      for (const filename of files) {
+        try {
+          const nameOnly = filename.split('/').pop() || filename;
+          const lowerName = nameOnly.toLowerCase();
+
+          // FILTER: Only process PDFs if they match specific keywords
+          if (lowerName.endsWith('.pdf')) {
+            const isNormal = lowerName.includes('normal') || lowerName.includes('norm') || lowerName.includes('completo') || lowerName.includes('extendido');
+            const isSimplified = lowerName.includes('simplificado') || lowerName.includes('simp') || lowerName.endsWith('s.pdf') || lowerName.includes(' -s');
+
+            if (isSimplified && !isNormal) {
+              console.log(`⏩ Saltando PDF simplificado: ${nameOnly}`);
+              continue; // Skip simplified as requested
+            }
+
+            if (!isNormal && !isSimplified) {
+              // Safety: If it doesn't match normal but isn't explicitly simplified, 
+              // we follow Alex's rule: only process if it says normal/norm/completo/extendido.
+              console.log(`⏩ Saltando archivo no solicitado: ${nameOnly}`);
+              continue;
+            }
+          }
+
+          const content = await zip.files[filename].async('uint8array');
+
+          setSyncStats(prev => ({ ...prev, current: processed + 1, status: `Procesando ${nameOnly}...` }));
+
+          // Race with 60s timeout - FAIL FAST
+          const fileProcessPromise = vucemAutomation.processLocalFile(nameOnly, content, (msg) => {
+            setSyncStats(prev => ({ ...prev, status: msg }));
+          });
+
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error(`Tiempo agotado (60s) en: ${nameOnly}`)), 60000)
+          );
+
+          await Promise.race([fileProcessPromise, timeoutPromise]);
+
+          processed++;
+        } catch (err: any) {
+          console.error(`Error crítico en ingesta (${filename}):`, err);
+          setError(`Proceso detenido en archivo ${filename}: ${err.message}`);
+          setSyncStats(prev => ({ ...prev, status: `❌ Error: ${err.message}` }));
+          return; // STOP THE ENTIRE PROCESS
+        }
+      }
+      alert(`✅ Ingesta completada. Se procesaron los ${processed} archivos correctamente.`);
+    } catch (err: any) {
+      setError('Error al procesar el archivo ZIP: ' + err.message);
+    } finally {
+      setLoading(false);
+      setSyncStats({ current: 0, total: 0, status: '' });
+    }
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -29,6 +102,11 @@ export const SmartDocs = () => {
     setLoading(true);
     setError('');
 
+    if (activeTab === 'ingestion') {
+      handleZipUpload(e);
+      return;
+    }
+
     // Convert to Base64
     const reader = new FileReader();
     reader.onloadend = async () => {
@@ -36,12 +114,12 @@ export const SmartDocs = () => {
 
       try {
         if (activeTab === 'correction') {
-          const items = await geminiService.parseInvoiceMaterials(base64, fileType);
+          const items: any = await geminiService.parseInvoiceMaterials(base64, fileType);
           // Match with DB
-          const enrichedItems = items.map(item => {
+          const enrichedItems = Array.isArray(items) ? items.map((item: any) => {
             const match = storageService.searchPart(item.partNumber);
             return { ...item, matchedPart: match };
-          });
+          }) : [];
           setExtractedItems(enrichedItems);
         } else {
           const costs = await geminiService.analyzeLogisticsInvoice(base64, fileType);
@@ -110,86 +188,125 @@ export const SmartDocs = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Smart Document Processing</h1>
-          <p className="text-slate-500">Use AI to analyze invoices, packing lists, and correct data anomalies.</p>
+          <h1 className="text-2xl font-black text-slate-800 flex items-center gap-3">
+            <FileText className="text-blue-600" />
+            Smart Document Processing
+          </h1>
+          <p className="text-slate-500">Use AI and automation to analyze invoices, packing lists, and customs ZIPs.</p>
         </div>
-        <div className="flex bg-white rounded-lg p-1 shadow-sm border border-slate-200 mt-4 md:mt-0">
+        <div className="flex bg-white rounded-xl p-1 shadow-sm border border-slate-200 mt-4 md:mt-0">
           <button
             onClick={() => setActiveTab('correction')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'correction' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'correction' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'}`}
           >
             Invoice Correction
           </button>
           <button
             onClick={() => setActiveTab('costs')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'costs' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'costs' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'}`}
           >
             Cost Extraction
+          </button>
+          <button
+            onClick={() => setActiveTab('ingestion')}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'ingestion' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'}`}
+          >
+            Ingesta Aduanas (ZIP)
           </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {/* Upload Area */}
-        <div className="p-8 border-b border-slate-100 text-center bg-slate-50">
-          <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 text-blue-600">
-            {loading ? <RefreshCw className="animate-spin" /> : <Upload />}
+        <div className="p-12 border-b border-slate-100 text-center bg-slate-50/50">
+          <div className="mx-auto w-20 h-20 bg-blue-100 rounded-3xl flex items-center justify-center mb-6 text-blue-600 shadow-inner">
+            {loading ? <RefreshCw className="animate-spin" size={32} /> : activeTab === 'ingestion' ? <FolderOpen size={32} /> : <Upload size={32} />}
           </div>
-          <h3 className="text-lg font-semibold text-slate-700">Upload {activeTab === 'correction' ? 'Packing List / Invoice' : 'Logistics Invoice'}</h3>
-          <p className="text-slate-500 text-sm mb-6 max-w-md mx-auto">
-            Upload a PDF (screenshot) or Image. The AI will extract data, match it with the Master Data, and {activeTab === 'correction' ? 'generate a corrected PDF' : 'allocate costs'}.
-          </p>
+
+          {activeTab === 'ingestion' ? (
+            <>
+              <h3 className="text-xl font-black text-slate-800">Carga Masiva de Expedientes (ZIP)</h3>
+              <p className="text-slate-500 text-sm mb-8 max-w-md mx-auto">
+                Sube el archivo ZIP de tu Agente Aduanal. Extraeremos pedimentos, COVEs y pagos para poblar tu base de datos automáticamente.
+              </p>
+            </>
+          ) : (
+            <>
+              <h3 className="text-xl font-black text-slate-800">Upload {activeTab === 'correction' ? 'Packing List / Invoice' : 'Logistics Invoice'}</h3>
+              <p className="text-slate-500 text-sm mb-8 max-w-md mx-auto">
+                Upload a PDF or Image. The AI will extract data, match it with the Master Data, and {activeTab === 'correction' ? 'generate a corrected PDF' : 'allocate costs'}.
+              </p>
+            </>
+          )}
+
           <input
             type="file"
             ref={fileInputRef}
             className="hidden"
-            accept="image/*,.pdf"
+            accept={activeTab === 'ingestion' ? '.zip' : 'image/*,.pdf'}
             onChange={handleFileUpload}
           />
+
           <button
             disabled={loading}
             onClick={() => fileInputRef.current?.click()}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-sm font-medium disabled:opacity-50"
+            className="bg-slate-900 hover:bg-black text-white px-10 py-3 rounded-xl shadow-lg font-black tracking-tight transition-all disabled:opacity-50 active:scale-95"
           >
-            {loading ? 'Processing with Gemini...' : 'Select File'}
+            {loading ? 'PROCESANDO...' : 'SELECCIONAR ARCHIVO'}
           </button>
-          {error && <p className="text-red-500 mt-4 text-sm flex items-center justify-center gap-2"><AlertCircle size={14} /> {error}</p>}
+
+          {loading && syncStats.total > 0 && (
+            <div className="mt-6 max-w-xs mx-auto">
+              <div className="flex justify-between text-[10px] font-black uppercase text-slate-400 mb-1">
+                <span>{syncStats.status}</span>
+                <span>{syncStats.current}/{syncStats.total}</span>
+              </div>
+              <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-blue-600 h-full transition-all duration-300"
+                  style={{ width: `${(syncStats.current / syncStats.total) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {error && <p className="text-red-500 mt-6 text-sm font-bold flex items-center justify-center gap-2 bg-red-50 py-2 rounded-lg"><AlertCircle size={14} /> {error}</p>}
         </div>
 
         {/* Results Area - Correction */}
         {activeTab === 'correction' && extractedItems.length > 0 && (
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg text-slate-700">Extracted & Matched Data</h3>
-              <button onClick={generateCorrectedPDF} className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-bold border border-emerald-200 bg-emerald-50 px-4 py-2 rounded-lg">
-                <Download size={18} /> Download Corrected PDF
+          <div className="p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-black text-xl text-slate-800">Extracted & Matched Data</h3>
+              <button onClick={generateCorrectedPDF} className="flex items-center gap-2 text-emerald-700 hover:bg-emerald-100 font-black border-2 border-emerald-200 bg-emerald-50 px-5 py-2.5 rounded-xl transition-all">
+                <Download size={20} /> Download Corrected PDF
               </button>
             </div>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-xl border border-slate-100">
               <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-slate-500 uppercase">
+                <thead className="bg-slate-50 text-slate-400 font-bold uppercase text-[10px] tracking-widest">
                   <tr>
-                    <th className="px-4 py-3">Part #</th>
-                    <th className="px-4 py-3">Extracted Desc</th>
-                    <th className="px-4 py-3">DB Match Status</th>
-                    <th className="px-4 py-3">Master Desc (ES)</th>
-                    <th className="px-4 py-3">HTS MX</th>
+                    <th className="px-6 py-4">Part #</th>
+                    <th className="px-6 py-4">Extracted Desc</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Master Desc (ES)</th>
+                    <th className="px-6 py-4">HTS MX</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-50">
                   {extractedItems.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 font-mono">{item.partNumber}</td>
-                      <td className="px-4 py-3">{item.description}</td>
-                      <td className="px-4 py-3">
+                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4 font-black text-blue-600">{item.partNumber}</td>
+                      <td className="px-6 py-4 text-slate-600">{item.description}</td>
+                      <td className="px-6 py-4">
                         {item.matchedPart ? (
-                          <span className="flex items-center text-emerald-600 gap-1"><Check size={14} /> Found</span>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 gap-1"><Check size={12} /> Found</span>
                         ) : (
-                          <span className="flex items-center text-red-500 gap-1"><AlertCircle size={14} /> Missing</span>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-600 gap-1"><AlertCircle size={12} /> Missing</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{item.matchedPart?.DESCRIPCION_ES || '-'}</td>
-                      <td className="px-4 py-3 text-slate-600">{item.matchedPart?.HTSMX || '-'}</td>
+                      <td className="px-6 py-4 text-slate-500 italic">{item.matchedPart?.DESCRIPCION_ES || 'No disponible'}</td>
+                      <td className="px-6 py-4 font-bold text-slate-700">{item.matchedPart?.HTSMX || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -200,33 +317,36 @@ export const SmartDocs = () => {
 
         {/* Results Area - Costs */}
         {activeTab === 'costs' && extractedCosts.length > 0 && (
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg text-slate-700">Extracted Logistics Costs</h3>
-              <div className="flex gap-2">
+          <div className="p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-black text-xl text-slate-800">Extracted Logistics Costs</h3>
+              <div className="flex gap-3">
                 <select
-                  className="border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                  className="border-2 border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 focus:border-blue-300 outline-none transition-all bg-slate-50"
                   onChange={(e) => setSelectedShipmentId(e.target.value)}
                 >
-                  <option value="">Select Shipment to Assign...</option>
+                  <option value="">Select Shipment...</option>
                   {storageService.getShipments().map(s => (
                     <option key={s.id} value={s.id}>{s.reference} ({s.origin})</option>
                   ))}
                 </select>
-                <button onClick={saveCosts} className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 font-medium px-4 py-2 rounded-lg">
-                  <DollarSign size={18} /> Confirm & Save
+                <button onClick={saveCosts} className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 font-black px-6 py-2.5 rounded-xl transition-all shadow-md shadow-blue-200">
+                  <DollarSign size={20} /> Confirm & Save
                 </button>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {extractedCosts.map((cost, idx) => (
-                <div key={idx} className="border border-slate-200 p-4 rounded-lg flex justify-between items-center bg-slate-50">
+                <div key={idx} className="border-2 border-slate-50 p-6 rounded-2xl flex justify-between items-center bg-white shadow-sm hover:border-blue-100 transition-all group">
                   <div>
-                    <div className="font-medium text-slate-800">{cost.description}</div>
-                    <div className="text-xs uppercase font-bold text-slate-400 mt-1">{cost.type}</div>
+                    <div className="font-black text-slate-800 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{cost.description}</div>
+                    <div className="text-[10px] uppercase font-black text-slate-400 mt-1.5 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                      {cost.type}
+                    </div>
                   </div>
-                  <div className="text-xl font-bold text-slate-700">
-                    {cost.amount} <span className="text-sm font-normal text-slate-500">{cost.currency}</span>
+                  <div className="text-2xl font-black text-slate-900 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+                    {cost.amount} <span className="text-[10px] font-black text-slate-400 ml-1">{cost.currency}</span>
                   </div>
                 </div>
               ))}

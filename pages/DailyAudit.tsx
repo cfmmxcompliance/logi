@@ -57,13 +57,10 @@ export const DailyAudit = () => {
             filename = `MD_Changes_${date}.csv`;
         }
 
-        // Legacy check removed to favor detailed diagnostics above
-        /*
-        if (rawData.length === 0 && (type === 'changes' || specificChange)) {
-            alert('No hay cambios registrados para este set.');
+        if (rawData.length === 0) {
+            alert('No se pudieron obtener los datos para el reporte. \n\nPosible causa: Su perfil (Agente) no tiene permisos de lectura sobre el "Master Data" (Colección: parts). Contacte al Administrador.');
             return;
         }
-        */
 
         // Map data to EXACT columns and order
         const formattedData = rawData.map(item => {

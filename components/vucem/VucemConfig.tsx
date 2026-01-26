@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { VucemConfig } from '../../services/vucem/types';
+import { vucemStorage } from '../../services/vucem/vucemStorage';
 
 interface Props {
     onConfigSave: (config: VucemConfig) => void;
@@ -13,13 +13,29 @@ export const VucemConfigComponent: React.FC<Props> = ({ onConfigSave, currentCon
     const [webServicePassword, setWebServicePassword] = useState(''); // VUCEM Web Service Password
     const [keyFile, setKeyFile] = useState<File | null>(null);
     const [cerFile, setCerFile] = useState<File | null>(null);
+    const [remember, setRemember] = useState(currentConfig?.remember || false);
 
-    const handleSave = () => {
-        if (!rfc || !password || !webServicePassword || !keyFile || !cerFile) {
-            alert("Todos los campos (incluyendo Contraseña de Web Service) son requeridos.");
+    useEffect(() => {
+        if (currentConfig) {
+            setRfc(currentConfig.rfc);
+            setRemember(currentConfig.remember || false);
+        }
+    }, [currentConfig]);
+
+    const handleSave = async () => {
+        if (!rfc || !password || !keyFile || !cerFile) {
+            alert("El RFC, la contraseña de la FIEL y los archivos (.key y .cer) son obligatorios.");
             return;
         }
-        onConfigSave({ rfc, password, webServicePassword, keyFile, cerFile });
+
+        if (remember) {
+            await vucemStorage.saveFiles(keyFile, cerFile);
+            vucemStorage.saveMeta({ rfc, password, webServicePassword, remember: true });
+        } else {
+            vucemStorage.saveMeta({ rfc: '', remember: false });
+        }
+
+        onConfigSave({ rfc, password, webServicePassword, keyFile, cerFile, remember });
     };
 
     return (
@@ -79,7 +95,19 @@ export const VucemConfigComponent: React.FC<Props> = ({ onConfigSave, currentCon
                 </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                        type="checkbox"
+                        checked={remember}
+                        onChange={e => setRemember(e.target.checked)}
+                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 transition-all"
+                    />
+                    <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700 group-hover:text-blue-600 transition-colors">Recordar mis archivos y contraseñas</span>
+                        <span className="text-[10px] text-slate-400">La información se guardará de forma segura en este navegador.</span>
+                    </div>
+                </label>
                 <button
                     onClick={handleSave}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 shadow transition-colors font-medium flex items-center gap-2"

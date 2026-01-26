@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // User Roles Helper
+    function isAdmin() {
+      return request.auth != null && request.auth.token.role == 'Admin';
+    }
+    function isAgent() {
+      return request.auth != null && request.auth.token.role == 'Agent';
+    }
+    
+    // Master Data (Parts)
+    // Agents need READ access to download CSVs. Admins need full access.
+    match /parts/{document=**} {
+      allow read: if isAdmin() || isAgent();
+      allow write: if isAdmin();
+    }
+    
+    // Default Rule: Deny all others by default for safety
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

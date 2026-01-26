@@ -1060,7 +1060,6 @@ export const geminiService = {
     }
   },
 
-  // Valid Composition for Backward Compatibility (if needed)
   async extractPedimento(base64Images: string[]): Promise<{ data: DomainPedimentoData | null, raw: string }> {
     // This is just a wrapper now, preserving the old signature
     let rawText = "";
@@ -1072,4 +1071,144 @@ export const geminiService = {
       return { data: null, raw: rawText };
     }
   },
+
+  /**
+   * FAST EXTRACTION (For ZIP Ingestion)
+   * Focuses exclusively on Page 1 - Cuadro de Liquidación for maximum speed.
+   */
+  async fastExtractPedimento(base64Data: string): Promise<any> {
+    const ai = getClient();
+
+    let targetBase64 = base64Data;
+
+    try {
+      // Isolating Page 1 to minimize tokens and focus AI
+      const pdfBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+      const pdfDoc = await PDFDocument.load(pdfBuffer);
+
+      if (pdfDoc.getPageCount() > 1) {
+        const subDoc = await PDFDocument.create();
+        const [firstPage] = await subDoc.copyPages(pdfDoc, [0]);
+        subDoc.addPage(firstPage);
+        targetBase64 = await subDoc.saveAsBase64();
+      }
+    } catch (e) {
+      console.warn("Could not isolate Page 1, falling back to full PDF:", e);
+    }
+
+    const prompt = `
+      ACT AS A CUSTOMS DATA ANALYST. 
+      YOU ARE LOOKING AT THE FIRST PAGE OF A MEXICAN CUSTOMS DOCUMENT (PEDIMENTO OR COVE).
+      
+      FOCUS AREAS:
+      1. THE "CUADRO DE LIQUIDACION" TABLE (Crucial for financials).
+      2. THE HEADER (For Pedimento Number, Dates, and Importer).
+      3. THE BOTTOM AREA (For Bank Seal and Institute).
+      4. IDENTIFIERS (Look for 'AF' or 'ACTIVO FIJO').
+      
+      IDENTIFY IF THIS IS A PEDIMENTO OR COVE.
+      
+      IF PEDIMENTO:
+      **EXTREME SIMPLIFICATION (ROW-MAX STRATEGY)**:
+      Forget about columns. The PDF parsing might check columns, but the rule is simple:
+      For each concept (IGI, IVA, DTA, etc.), the **Correct Payment Amount** is ALWAYS the **LARGEST NUMBER** in that text row.
+      
+      **INSTRUCTIONS**:
+      1. **Find "I.V.A."** row. Scan all numbers in that line (e.g. "16", "0", "45000"). **Pick 45000** (The Max).
+      2. **Find "IGI"** row. Scan extracted nums (e.g. "0", "6892"). **Pick 6892** (The Max).
+      3. **Find "DTA"** row. Scan nums (e.g. "462"). **Pick 462**.
+      4. **Find "PRV"** row. Scan nums (e.g. "0", "330"). **Pick 330**.
+      5. **Find "IVA/PRV"** row. Scan nums (e.g. "0", "53"). **Pick 53**.
+      
+      **IGNORE** small integers like 0, 1, 16, 21. They are just codes/rates.
+      **FOCUS** on the big money values.
+      
+      **FINANCIAL CHECKLIST (Extract ALL 6)**:
+      - IGI (General Import Tax)
+      - DTA (Customs Processing Fee)
+      - IVA (Value Added Tax)
+      - PRV (Prevalidation)
+      - CNT (Contraprestación)
+      - IVA/PRV (VAT on Prevalidation)
+
+      **CRITICAL BUSINESS RULES (STRICT ENFORCEMENT)**:
+      - **PRV**: IF value is 0, SEARCH the "Certificación" or "Pago Electrónico" areas at the bottom. It is NEVER 0 for valid entries.
+      - **IVA/PRV**: IF you extract anything less than 53 (like 16), it is INCORRECT. Look specifically for the 53 value near the PRV line. 
+      - **IVA**: This is usually the **LARGEST** amount in the list (after Total). If your IVA is small (like 462), you probably picked DTA by mistake. CHECK AGAIN.
+      - **IGI**: Use 0 ONLY if explicitly stated as 0 or the row is empty, but double check the right-side columns.
+      
+      **SELF-CORRECTION (SUM CHECK)**:
+      Values extracted (IGI + DTA + IVA + PRV + CNT + IVA/PRV) **MUST SUM UP** to the "Efectivo" or "Total".
+      - If your sum is far off, you likely missed IGI or picked a wrong column.
+      - example: 14448 (IGI) + 462 (DTA) + 5353 (IVA) + 260154 (Total) -> Sum is correct.
+      
+      Extract from Header/Footer/Body:
+      - numeroPedimento (11 or 15 digits). **NORMALIZATION**: Remove all spaces, dashes, or dots. Return ONLY the digits (e.g. "261619256100031").
+      - cvePedimento (e.g. A1, AF, IN, RT)
+      - fechaPago (Look for 'FECHA/HORA PAGO', bank seal date, or 'PAGO ELECTRONICO'). 
+        **FORMAT**: MUST be YYYY-MM-DD. If year is 2 digits (e.g. 24), use 2024.
+      - fechaEntrada (Entry date - look for 'FECHA ENTRADA' or similar). 
+        **FORMAT**: MUST be YYYY-MM-DD.
+      - Importador RFC and Name.
+      - valorAduana (Total Customs Value).
+      - Is Fixed Asset? (Check if 'AF' appears in Identifiers or 'ACTIVO FIJO' is mentioned).
+      
+      **SPECIAL EXTRACTION - LINEA DE CAPTURA**:
+      - Look for text like "LINEA DE CAPTURA:", "LINEA CAPTURA:", or "LC:".
+      - **EXTRACT ONLY** the alphanumeric code (e.g., "032600AOT8P148598227").
+      - **NEVER** include the label "LINEA CAPTURA" or the colon ":" in the JSON value.
+      - **CLEANING**: Remove any spaces found within the captured alphanumeric string.
+      - The code is typically 20 characters long.
+      
+      Extract from Bank Seal Area (Bottom of Page 1):
+      - Banco (The institution name like BBVA, BANORTE, HSBC, SANTANDER, SERFIN, etc.)
+      - Sello Bancario / Firma Digital del Banco.
+      
+      IF COVE:
+      Extract: eDocument (prefixed by 'ED').
+      
+      RETURN JSON:
+      {
+        "_reasoning": "Step 1: Found Total=X. Step 2: Found components IGI=A, DTA=B... Sum=Y. Step 3: Verified Y ~= X. If mismatch 6537, search for missing field...",
+        "type": "PEDIMENTO" | "COVE" | "UNKNOWN",
+        "numPedimento": "...",
+        "cvePedimento": "...",
+        "eDocument": "...",
+        "fixedAssets": boolean,
+        "lineaCaptura": "...", 
+        "financials": {
+          "pago": "YYYY-MM-DD",
+          "entrada": "YYYY-MM-DD",
+          "efectivo": 0,
+          "banco": "...",
+          "selloBancario": "...",
+          "dta": 0,
+          "igi": 0,
+          "iva": 0,
+          "prv": 0,
+          "ivaPrv": 0,
+          "cnt": 0,
+          "valorAduana": 0
+        },
+        "importador": { "nombre": "...", "rfc": "..." }
+      }
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-pro',
+      contents: {
+        parts: [{ inlineData: { mimeType: 'application/pdf', data: targetBase64 } }, { text: prompt }]
+      },
+      config: { responseMimeType: 'application/json' }
+    });
+
+    try {
+      const text = response.text || '{}';
+      const cleaned = cleanJson(text);
+      return JSON.parse(cleaned);
+    } catch (e) {
+      console.error("Gemini Fast Extraction JSON Parse Error:", e, response.text);
+      return { type: 'UNKNOWN' };
+    }
+  }
 };

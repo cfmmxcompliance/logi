@@ -6,6 +6,7 @@ const { stringify } = require("csv-stringify/sync");
 const { google } = require("googleapis");
 const nodemailer = require("nodemailer");
 const path = require("path");
+require("dotenv").config(); // Load environment variables
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -22,11 +23,17 @@ const CONFIG = {
  * GOOGLE DRIVE CLIENT SETUP
  */
 function getDriveClient() {
-    const auth = new google.auth.GoogleAuth({
-        keyFile: path.join(__dirname, "service-account.json"),
-        scopes: ["https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"],
+    const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        "http://localhost:3000"
+    );
+
+    oauth2Client.setCredentials({
+        refresh_token: process.env.GOOGLE_REFRESH_TOKEN
     });
-    return google.drive({ version: "v3", auth });
+
+    return google.drive({ version: "v3", auth: oauth2Client });
 }
 
 const CSV_ORDER_KEYS = [
@@ -139,7 +146,7 @@ async function runFullReportProcess() {
                 service: 'gmail',
                 auth: {
                     user: CONFIG.SENDER_EMAIL,
-                    pass: "cwotuqypfzygmnrh" // App Password
+                    pass: process.env.EMAIL_PASSWORD // App Password
                 }
             });
 
@@ -285,6 +292,47 @@ exports.saveFileToExpediente = onCall({
     }
 });
 /**
+ * CLOUD FUNCTION: Get File from Drive as Base64
+ */
+exports.getFileFromDrive = onCall({
+    memory: "512MiB"
+}, async (request) => {
+    const { fileId } = request.data;
+    if (!fileId) throw new HttpsError("invalid-argument", "Missing fileId.");
+
+    try {
+        console.log(`Attempting to download file: ${fileId}`);
+        const drive = getDriveClient();
+
+        // Using stream for better binary handling in Node.js
+        const response = await drive.files.get({
+            fileId: fileId,
+            alt: 'media'
+        }, { responseType: 'stream' });
+
+        return new Promise((resolve, reject) => {
+            const chunks = [];
+            response.data.on('data', (chunk) => chunks.push(chunk));
+            response.data.on('end', () => {
+                const buffer = Buffer.concat(chunks);
+                const base64 = buffer.toString('base64');
+                console.log(`File ${fileId} downloaded and converted to base64. Size: ${buffer.length} bytes`);
+                resolve({ success: true, fileBase64: base64 });
+            });
+            response.data.on('error', (err) => {
+                console.error("Stream Error:", err);
+                reject(new HttpsError("internal", `Stream Error: ${err.message}`));
+            });
+        });
+    } catch (err) {
+        console.error("DRIVE_DOWNLOAD_ERROR:", err.message);
+        // Map common Drive errors to better messages
+        const msg = err.errors ? JSON.stringify(err.errors) : err.message;
+        throw new HttpsError("aborted", `Drive API Fail: ${msg} (ID: ${fileId})`);
+    }
+});
+
+/**
  * CLOUD FUNCTION: Manual Trigger for Report
  */
 exports.triggerManualReport = onCall({
@@ -295,10 +343,10 @@ exports.triggerManualReport = onCall({
 });
 
 /**
- * CLOUD FUNCTION: Scheduled Daily Report (8:00 AM Central)
+ * CLOUD FUNCTION: Scheduled Daily Report (1:00 AM Mexico City)
  */
 exports.dailyReportLogimaster = onSchedule({
-    schedule: "0 8 * * *",
+    schedule: "0 1 * * *",
     timeZone: MX_TIMEZONE,
     memory: "512MiB",
     timeoutSeconds: 300

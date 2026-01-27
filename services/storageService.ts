@@ -1001,13 +1001,14 @@ export const storageService = {
     }
   },
 
-  bulkUpdateParts: async (ids: string[], updates: Partial<RawMaterialPart>) => {
+  bulkUpdateParts: async (ids: string[], updates: Partial<RawMaterialPart>, onProgress?: (p: number) => void) => {
     const timestamp = new Date().toISOString();
     const updatedParts: RawMaterialPart[] = [];
+    const idSet = new Set(ids);
 
-    // 1. Sync Local State
+    // 1. Sync Local State (Optimized with Set)
     dbState.parts = dbState.parts.map(p => {
-      if (ids.includes(p.id)) {
+      if (idSet.has(p.id)) {
         const updated = { ...p, ...updates, UPDATE_TIME: timestamp };
         updatedParts.push(updated);
         return updated;
@@ -1015,21 +1016,33 @@ export const storageService = {
       return p;
     });
 
+    if (onProgress) onProgress(20); // Local state finished
+
     await indexedDbService.saveParts(updatedParts);
     saveLocal();
     notifyListeners();
 
+    if (onProgress) onProgress(40); // IDB finished
+
     if (!db) {
       queueWrite('UPSERT_PARTS', updatedParts);
-      return;
+      return { success: true };
     }
 
     // 2. Sync Cloud in batches
     const CHUNK_SIZE = 200;
+    let cloudQuotaHit = false;
+
     for (let i = 0; i < updatedParts.length; i += CHUNK_SIZE) {
       const chunk = updatedParts.slice(i, i + CHUNK_SIZE);
-      const batch = writeBatch(db);
 
+      // If we already hit a quota limit, don't even try subsequent batches to avoid hangs
+      if (cloudQuotaHit) {
+        queueWrite('UPSERT_PARTS', chunk);
+        continue;
+      }
+
+      const batch = writeBatch(db);
       chunk.forEach(p => {
         const partRef = doc(db, COLS.PARTS, p.id);
         batch.set(partRef, sanitizeForFirestore(p), { merge: true });
@@ -1041,9 +1054,16 @@ export const storageService = {
         if (isQuotaError(e)) {
           console.warn("⚠️ Firebase Quota Exceeded during bulk upsert: Batch queued for local sync.");
           queueWrite('UPSERT_PARTS', chunk);
+          cloudQuotaHit = true; // Skip next cloud attempts in this session
         } else {
-          throw e; // Rerthrow other errors (permissions, etc.)
+          // If it's a real error (permissions, etc.), we stop and throw
+          throw e;
         }
+      }
+
+      if (onProgress) {
+        const loopProgress = 40 + (Math.min(i + CHUNK_SIZE, updatedParts.length) / updatedParts.length) * 40;
+        onProgress(Math.floor(loopProgress));
       }
     }
 
@@ -1055,29 +1075,34 @@ export const storageService = {
       const d = new Date();
       const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
 
-      await setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
-        id: dateStr,
-        timestamp: new Date().toISOString(),
-        action: 'UPDATE_MASSIVE',
-        user: user.name || user.email || 'System',
-        partNumbers: arrayUnion(...updatedParts.slice(0, 50).map(p => p.PART_NUMBER || 'N/A')),
-        count: increment(updatedParts.length),
-        reported: false
-      }, { merge: true });
+      // Daily automation is secondary, don't await if quota is already hit
+      if (!cloudQuotaHit) {
+        await setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
+          id: dateStr,
+          timestamp: new Date().toISOString(),
+          action: 'UPDATE_MASSIVE',
+          user: user.name || user.email || 'System',
+          partNumbers: arrayUnion(...updatedParts.slice(0, 50).map(p => p.PART_NUMBER || 'N/A')),
+          count: increment(updatedParts.length),
+          reported: false
+        }, { merge: true });
+      }
     } catch (e) {
       if (isQuotaError(e)) {
         console.warn("Quota exceeded during Daily Change Log (Non-blocking).");
       }
     }
 
+    // Secondary operations (Non-blocking)
     try {
-      await storageService.bumpPartsVersion();
-      await logAction('MASTER_DATA_MASSIVE_EDIT', `Editadas ${updatedParts.length} piezas masivamente.`);
+      storageService.bumpPartsVersion();
+      logAction('MASTER_DATA_MASSIVE_EDIT', `Editadas ${updatedParts.length} piezas masivamente.`);
     } catch (e) {
-      console.warn("Secondary operations deferred due to cloud limits.");
+      console.warn("Secondary operations deferred.");
     }
 
-    return { success: true }; // Always return success as local state is updated
+    if (onProgress) onProgress(100);
+    return { success: true };
   },
 
   // DATA REPAIR TOOL (Silent Patch)

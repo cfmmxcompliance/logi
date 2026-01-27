@@ -120,7 +120,11 @@ export const DatabaseView = () => {
         });
 
         try {
-            await storageService.bulkUpdateParts(Array.from(selectedIds), { [bulkEditField]: bulkEditValue });
+            await storageService.bulkUpdateParts(
+                Array.from(selectedIds),
+                { [bulkEditField]: bulkEditValue },
+                (p) => setProcState(prev => ({ ...prev, progress: p }))
+            );
             setIsBulkEditModalOpen(false);
             setSelectedIds(new Set());
             setProcState({

@@ -78,6 +78,9 @@ export const Login = () => {
         window.alert("Account created successfully. Please wait for an Administrator to assign you a role.");
         setError('Account pending approval.');
         setIsLogin(true); // Switch back to login
+      } else if (err.code === 'auth/initialization-failed') {
+        window.alert(`Critical Failure: ${err.message}`);
+        setError(err.message);
       } else {
         setError('Authentication error. ' + (err.message || ''));
       }

@@ -25,7 +25,6 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
 
-console.log("✅ Firebase: Services Initialized");
-
-// 3. Exportación directa de constantes
+// 3. Exportación robusta
 export { app, db, auth, storage };
+console.log("✅ Firebase: Services Initialized");

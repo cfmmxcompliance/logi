@@ -32,15 +32,20 @@ export const authService = {
             }
         }
 
+        if (!db || !auth) {
+            console.error("⛔ Firebase initialization failed.", { db: !!db, auth: !!auth });
+            // In dev environment, help developer. In prod, provide slightly more info.
+            const details = `DB: ${!!db}, AUTH: ${!!auth}`;
+            throw {
+                code: 'auth/initialization-failed',
+                message: `Servicios de seguridad no inicializados correctamente (${details}). Por favor reporta con soporte.`
+            };
+        }
+
         const username = email.split('@')[0];
         const isRootAdmin = email.toLowerCase() === ROOT_ADMIN_EMAIL;
         let role: UserRole | null = null;
         let legacyData: any = null;
-
-        if (!db) {
-            console.warn("⚠️ Firestore not available. Login Restricted.");
-            throw { code: 'auth/network-request-failed', message: 'Database unavailable.' };
-        }
 
         try {
             // 2. Fetch User Data (Role/Profile) from Firestore

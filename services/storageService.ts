@@ -46,6 +46,21 @@ let isMDLoading = false;
 
 const notifyListeners = () => listeners.forEach(l => l());
 
+export const isQuotaError = (e: any): boolean => {
+  if (!e) return false;
+  const errMsg = (e.message || e.toString() || '').toLowerCase();
+  const code = (e.code || '').toLowerCase();
+  return (
+    errMsg.includes('quota') ||
+    errMsg.includes('exhausted') ||
+    errMsg.includes('limit exceeded') ||
+    errMsg.includes('rebasado') || // Spanish variant
+    code === 'resource-exhausted' ||
+    code === 'quota-exceeded' ||
+    code.includes('quota')
+  );
+};
+
 // Helper to convert undefined to null for Firestore
 const sanitizeForFirestore = (obj: any): any => {
   if (obj === undefined) return null;
@@ -217,8 +232,12 @@ export const storageService = {
         lastUpdated: new Date().toISOString()
       });
       console.log(`🚀 Master Data Semaforo: Version bumped to v${nextVer}`);
-    } catch (e) {
-      console.error("Failed to bump parts version", e);
+    } catch (e: any) {
+      if (isQuotaError(e)) {
+        console.warn("Quota exceeded during Version Bump (Non-blocking).");
+      } else {
+        console.error("Failed to bump parts version", e);
+      }
     }
   },
 
@@ -973,8 +992,7 @@ export const storageService = {
 
       await storageService.bumpPartsVersion();
     } catch (e: any) {
-      const isQuotaError = e.message?.toLowerCase().includes('quota') || e.code === 'resource-exhausted';
-      if (isQuotaError) {
+      if (isQuotaError(e)) {
         console.warn("⚠️ Firebase Quota Exceeded: Part saved locally and queued for sync.");
         queueWrite('UPSERT_PARTS', [data]);
         return; // Success (local primary)
@@ -1020,15 +1038,46 @@ export const storageService = {
       try {
         await batch.commit();
       } catch (e: any) {
-        const isQuotaError = e.message?.toLowerCase().includes('quota') || e.code === 'resource-exhausted';
-        if (isQuotaError) {
+        if (isQuotaError(e)) {
+          console.warn("⚠️ Firebase Quota Exceeded during bulk upsert: Batch queued for local sync.");
           queueWrite('UPSERT_PARTS', chunk);
         } else {
-          throw e;
+          throw e; // Rerthrow other errors (permissions, etc.)
         }
       }
     }
-    await storageService.bumpPartsVersion();
+
+    // 3. Record change for Daily Automation
+    try {
+      const userStr = localStorage.getItem('logimaster_user');
+      let user = { name: 'System', email: '' };
+      try { if (userStr) user = JSON.parse(userStr); } catch (e) { }
+      const d = new Date();
+      const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+
+      await setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
+        id: dateStr,
+        timestamp: new Date().toISOString(),
+        action: 'UPDATE_MASSIVE',
+        user: user.name || user.email || 'System',
+        partNumbers: arrayUnion(...updatedParts.slice(0, 50).map(p => p.PART_NUMBER || 'N/A')),
+        count: increment(updatedParts.length),
+        reported: false
+      }, { merge: true });
+    } catch (e) {
+      if (isQuotaError(e)) {
+        console.warn("Quota exceeded during Daily Change Log (Non-blocking).");
+      }
+    }
+
+    try {
+      await storageService.bumpPartsVersion();
+      await logAction('MASTER_DATA_MASSIVE_EDIT', `Editadas ${updatedParts.length} piezas masivamente.`);
+    } catch (e) {
+      console.warn("Secondary operations deferred due to cloud limits.");
+    }
+
+    return { success: true }; // Always return success as local state is updated
   },
 
   // DATA REPAIR TOOL (Silent Patch)
@@ -1088,8 +1137,7 @@ export const storageService = {
       await logAction('MASTER_DATA_DELETE', `Eliminada pieza: ${partToDelete?.PART_NUMBER || id}`);
       await storageService.bumpPartsVersion();
     } catch (e: any) {
-      const isQuotaError = e.message?.toLowerCase().includes('quota') || e.code === 'resource-exhausted';
-      if (isQuotaError) {
+      if (isQuotaError(e)) {
         console.warn("⚠️ Firebase Quota Exceeded: Part deleted locally and queued for sync.");
         queueWrite('DELETE_PARTS', [id]);
         return; // Success (local primary)
@@ -1129,20 +1177,25 @@ export const storageService = {
     const CHUNK_SIZE = 450;
     const total = validIds.length;
 
-    try {
-      for (let i = 0; i < total; i += CHUNK_SIZE) {
-        const chunk = validIds.slice(i, i + CHUNK_SIZE);
-        const batch = writeBatch(db);
-        chunk.forEach(id => {
-          const docRef = doc(db, COLS.PARTS, id);
-          batch.delete(docRef);
-        });
+    for (let i = 0; i < total; i += CHUNK_SIZE) {
+      const chunk = validIds.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(db);
+      chunk.forEach(id => {
+        const docRef = doc(db, COLS.PARTS, id);
+        batch.delete(docRef);
+      });
+      try {
         await batch.commit();
         console.log(`✅ Batch ${Math.floor(i / CHUNK_SIZE) + 1} committed.`);
+      } catch (e: any) {
+        if (isQuotaError(e)) {
+          console.warn("⚠️ Firebase Quota Exceeded during bulk delete: Batch queued for local sync.");
+          queueWrite('DELETE_PARTS', chunk);
+        } else {
+          console.error("🔥 Firestore Batch Delete Failed:", e);
+          throw e; // Rethrow other errors (permissions, etc.)
+        }
       }
-    } catch (e: any) {
-      console.error("🔥 Firestore Batch Delete Failed:", e);
-      throw e; // Rethrow to show alert in UI
     }
 
     // 3. Record change for Daily Automation - DATE-BASED AGGREGATION
@@ -1206,8 +1259,7 @@ export const storageService = {
       try {
         await batch.commit();
       } catch (e: any) {
-        const isQuotaError = e.message?.toLowerCase().includes('quota') || e.code === 'resource-exhausted';
-        if (isQuotaError) {
+        if (isQuotaError(e)) {
           console.warn("⚠️ Firebase Quota Exceeded during bulk upsert: Batch queued for local sync.");
           queueWrite('UPSERT_PARTS', chunk);
         } else {

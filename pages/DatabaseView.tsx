@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { storageService } from '../services/storageService.ts';
+import { storageService, isQuotaError } from '../services/storageService.ts';
 import { RawMaterialPart, UserRole } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { Download, Plus, Save, X, Trash2, Edit2, Edit3, FileSpreadsheet, FileDown, ChevronLeft, ChevronRight, Search, RefreshCcw, Database, AlertTriangle, Filter } from 'lucide-react';
@@ -132,13 +132,26 @@ export const DatabaseView = () => {
             });
             setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 2000);
         } catch (err: any) {
-            setProcState({
-                isOpen: true,
-                status: 'error',
-                title: 'Error',
-                message: err.message,
-                progress: 0
-            });
+            if (isQuotaError(err)) {
+                setIsBulkEditModalOpen(false);
+                setSelectedIds(new Set());
+                setProcState({
+                    isOpen: true,
+                    status: 'success',
+                    title: 'Éxito (Local)',
+                    message: 'Datos guardados localmente. Se sincronizarán con la nube automáticamente al restablecerse la cuota.',
+                    progress: 100
+                });
+                setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 3000);
+            } else {
+                setProcState({
+                    isOpen: true,
+                    status: 'error',
+                    title: 'Error',
+                    message: err.message || 'Error al procesar la enmienda.',
+                    progress: 0
+                });
+            }
         }
     };
 
@@ -1009,7 +1022,7 @@ export const DatabaseView = () => {
                     )}
 
                     {/* Bulk Edit Button */}
-                    {selectedIds.size > 0 && canEdit && (
+                    {selectedIds.size > 0 && canDelete && (
                         <button
                             onClick={() => setIsBulkEditModalOpen(true)}
                             className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm hover:bg-amber-100 transition-all font-medium animate-in fade-in slide-in-from-left-2"

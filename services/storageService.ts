@@ -1,4 +1,3 @@
-
 import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
@@ -6,6 +5,7 @@ import {
 } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { downloadFile } from '../utils/fileHelpers.ts';
+import { indexedDbService } from './indexedDbService.ts';
 
 const COLS = {
   PARTS: 'parts', SHIPMENTS: 'shipments', VESSEL_TRACKING: 'vessel_tracking',
@@ -18,10 +18,11 @@ const COLS = {
 };
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
-const INVOICES_BACKUP_KEY = 'logimaster_commercial_invoices_backup';
+const INVOICES_BACKUP_KEY = 'logimaster_invoices_backup';
+const PARTS_BACKUP_KEY = 'logimaster_parts_backup';
 const RESTORE_POINTS_KEY = 'logimaster_restore_points';
 const DRAFT_DATA_STAGE_KEY = 'logimaster_datastage_draft';
-const PENDING_WRITES_KEY = 'logimaster_pending_writes';
+const PENDING_WRITES_KEY = 'logimaster_sync_queue';
 
 interface PendingWrite {
   id: string;
@@ -66,11 +67,21 @@ const sanitizeForFirestore = (obj: any): any => {
 };
 
 const saveLocal = () => {
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dbState));
-  // Robust backup for Commercial Invoices
+  // 1. Decouple Parts for High-Capacity Performance
+  const { parts, ...lightState } = dbState;
+
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(lightState));
+
+  // 2. Persist Parts to IndexedDB (Asynchronous backup)
+  if (dbState.parts.length > 0) {
+    indexedDbService.saveParts(dbState.parts);
+  }
+
+  // 3. Robust backup for Commercial Invoices
   if (dbState.commercialInvoices && dbState.commercialInvoices.length > 0) {
     localStorage.setItem(INVOICES_BACKUP_KEY, JSON.stringify(dbState.commercialInvoices));
   }
+
   // Persist Queue
   if (pendingWrites.length > 0) {
     localStorage.setItem(PENDING_WRITES_KEY, JSON.stringify(pendingWrites));
@@ -256,8 +267,17 @@ export const storageService = {
       }
     }
 
-    // 2. MASTER DATA (Lazy loaded on-demand via loadMasterData)
-    // No longer downloading bytes here. Zero impact on boot.
+    // 2. MASTER DATA (Initial Hydration from IDB)
+    try {
+      await indexedDbService.init();
+      const localParts = await indexedDbService.getAllParts();
+      if (localParts.length > 0) {
+        dbState.parts = localParts;
+        console.log(`📦 Pre-loaded ${dbState.parts.length} parts from IndexedDB`);
+      }
+    } catch (e) {
+      console.warn("IndexedDB hydration failed", e);
+    }
 
     try {
       // 3. LISTENERS for dynamic data (Strict Daily Audit Sync)
@@ -386,20 +406,56 @@ export const storageService = {
       isMDLoading = true;
       notifyListeners();
 
-      const metaDocRef = doc(db, COLS.METADATA, 'parts_version');
-      const metaSnap = await getDoc(metaDocRef);
-      const serverVer = metaSnap.exists() ? metaSnap.data().version : 0;
-      const localVer = Number(localStorage.getItem('logimaster_parts_version') || 0);
-
-      if (serverVer > localVer || dbState.parts.length === 0) {
-        console.log("⬇️ Lazy Loading Master Data...");
-        const partsSnap = await getDocs(collection(db, COLS.PARTS));
-        dbState.parts = partsSnap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
-        localStorage.setItem('logimaster_parts_version', serverVer.toString());
-        saveLocal();
+      // 1. HYDRATE FROM INDEXEDDB (Cold Start/Reset)
+      if (dbState.parts.length === 0) {
+        console.log("💾 Hydrating Master Data from IndexedDB...");
+        const localParts = await indexedDbService.getAllParts();
+        if (localParts.length > 0) {
+          dbState.parts = localParts;
+          notifyListeners();
+        }
       }
+
+      // 2. DETERMINE DELTA STARTING POINT
+      // We look for the latest update time in our local cache
+      let lastLocalUpdate = '1970-01-01T00:00:00.000Z';
+      dbState.parts.forEach(p => {
+        if (p.UPDATE_TIME && p.UPDATE_TIME > lastLocalUpdate) {
+          lastLocalUpdate = p.UPDATE_TIME;
+        }
+      });
+
+      console.log(`📡 Checking for Master Data changes since ${lastLocalUpdate}...`);
+
+      // 3. DELTA FETCH (Only modified records)
+      const q = query(
+        collection(db, COLS.PARTS),
+        where('UPDATE_TIME', '>', lastLocalUpdate),
+        orderBy('UPDATE_TIME', 'asc') // Fetch in order of change
+      );
+
+      const partsSnap = await getDocs(q);
+
+      if (!partsSnap.empty) {
+        console.log(`✨ Found ${partsSnap.size} new/modified Master Data records.`);
+        const changedParts = partsSnap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
+
+        // Merge into state
+        const partsMap = new Map(dbState.parts.map(p => [p.PART_NUMBER, p]));
+        changedParts.forEach(cp => partsMap.set(cp.PART_NUMBER, cp));
+
+        dbState.parts = Array.from(partsMap.values());
+
+        // Persist only changes to IndexedDB
+        await indexedDbService.saveParts(changedParts);
+
+        notifyListeners();
+      } else {
+        console.log("✅ Master Data is already up to date.");
+      }
+
     } catch (e) {
-      console.error("Lazy Load failed", e);
+      console.error("Master Data Sync failed", e);
     } finally {
       isMDLoading = false;
       notifyListeners();
@@ -841,6 +897,10 @@ export const storageService = {
     // 1. Sync Local State Immediately
     const idx = dbState.parts.findIndex((p: any) => p.id === id);
     if (idx !== -1) dbState.parts[idx] = data; else dbState.parts.push(data);
+
+    // Sync IndexedDB (Atomic)
+    indexedDbService.putPart(data);
+
     saveLocal();
     notifyListeners();
 
@@ -899,6 +959,10 @@ export const storageService = {
 
     // 1. Sync Local State Immediately
     dbState.parts = dbState.parts.filter((p: any) => p.id !== id);
+
+    // Sync IndexedDB (Atomic)
+    indexedDbService.deletePart(id);
+
     saveLocal();
     notifyListeners();
 
@@ -947,6 +1011,10 @@ export const storageService = {
   deleteParts: async (ids: string[]) => {
     // 1. Sync Local State Immediately
     dbState.parts = dbState.parts.filter((p: any) => !ids.includes(p.id));
+
+    // Sync IndexedDB (Atomic)
+    ids.forEach(id => indexedDbService.deletePart(id));
+
     saveLocal();
     notifyListeners();
 
@@ -1048,10 +1116,28 @@ export const storageService = {
 
       await batch.commit();
 
+      // Update Local State for immediate visibility (since PARTS doesn't have a listener)
+      const dataChunk: any[] = [];
+      chunk.forEach(p => {
+        const id = p.id || crypto.randomUUID();
+        const data = { ...p, id, UPDATE_TIME: new Date().toISOString() };
+        dataChunk.push(data);
+        const idx = dbState.parts.findIndex(lp => lp.PART_NUMBER === p.PART_NUMBER);
+        if (idx !== -1) dbState.parts[idx] = data;
+        else dbState.parts.push(data);
+      });
+
+      // Async Sync to IndexedDB (Crucial for High-Capacity)
+      indexedDbService.saveParts(dataChunk);
+
+      notifyListeners();
+
       if (onProgress) {
         onProgress(Math.min((i + CHUNK_SIZE) / total * 100, 100) / 100);
       }
     }
+
+    saveLocal(); // Persists lighter metadata and light parts of state
 
     // 3. Record change for Daily Automation - SHARDED LOGGING
     // Split into chunks of 1000 to prevent ArrayUnion / Document Size limits

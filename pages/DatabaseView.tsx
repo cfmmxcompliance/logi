@@ -227,10 +227,21 @@ export const DatabaseView = () => {
         setCurrentPart(emptyPart);
         setIsPartModalOpen(true);
     };
-    const handleSavePart = (e: React.FormEvent) => {
+    const handleSavePart = async (e: React.FormEvent) => {
         e.preventDefault();
-        storageService.updatePart(currentPart);
-        setIsPartModalOpen(false);
+        try {
+            await storageService.updatePart(currentPart);
+            setIsPartModalOpen(false);
+        } catch (err: any) {
+            console.error("Save failed:", err);
+            setProcState({
+                isOpen: true,
+                status: 'error',
+                title: 'Error de Guardado',
+                message: err.message || 'Error desconocido al guardar la pieza.',
+                progress: 0
+            });
+        }
     };
 
     const initiateDelete = (id: string) => {
@@ -244,7 +255,13 @@ export const DatabaseView = () => {
             setDeleteModal({ isOpen: false, id: null });
         } catch (e: any) {
             console.error(e);
-            alert(`Error eliminando el registro: ${e.message || 'Error desconocido'}`);
+            setProcState({
+                isOpen: true,
+                status: 'error',
+                title: 'Error de Eliminación',
+                message: e.message || 'No se pudo eliminar el registro.',
+                progress: 0
+            });
         }
     };
 
@@ -274,7 +291,13 @@ export const DatabaseView = () => {
             setBulkDeleteModal(false);
         } catch (e: any) {
             console.error(e);
-            alert(`Error eliminando registros: ${e.message || 'Error desconocido'}`);
+            setProcState({
+                isOpen: true,
+                status: 'error',
+                title: 'Error de Eliminación Masiva',
+                message: e.message || 'Error al eliminar múltiples registros.',
+                progress: 0
+            });
         }
     };
 
@@ -597,7 +620,7 @@ export const DatabaseView = () => {
                                     const num = parseFloat(rawVal.replace(/[^0-9.]/g, ''));
                                     partialPart[key] = isNaN(num) ? 0 : num;
                                 }
-                                else if (key === 'IKI_DUTY' || key === 'IGI_DUTY') { // Handle IGI/IKI
+                                else if (key === 'IGI_DUTY') { // Handle IGI
                                     if (rawVal.toUpperCase().includes('EX')) partialPart[key] = 0;
                                     else {
                                         const num = parseFloat(rawVal.replace(/[^0-9.]/g, ''));
@@ -893,8 +916,18 @@ export const DatabaseView = () => {
                 </div>
             )}
 
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-slate-800">Master Data Management</h1>
+            <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200 mb-8 shadow-sm">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                        <Database size={24} />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Master Data Management</h1>
+                        <p className="text-sm text-slate-500">
+                            Product catalog & customs definitions.
+                        </p>
+                    </div>
+                </div>
                 <div className="flex gap-2">
                     {/* Mass Query Button */}
                     <button

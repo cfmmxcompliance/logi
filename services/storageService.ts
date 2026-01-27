@@ -492,8 +492,9 @@ export const storageService = {
         }
       }
 
-    } catch (e) {
+    } catch (e: any) {
       console.error("Master Data Sync failed", e);
+      throw e; // Allow UI to catch the exception if needed
     } finally {
       isMDLoading = false;
       notifyListeners();
@@ -933,35 +934,33 @@ export const storageService = {
     const id = part.id || crypto.randomUUID();
     const data = { ...part, id, UPDATE_TIME: new Date().toISOString() };
 
-    // 1. Sync Local State Immediately
-    const idx = dbState.parts.findIndex((p: any) => p.id === id);
-    if (idx !== -1) dbState.parts[idx] = data; else dbState.parts.push(data);
-
-    // Sync IndexedDB (Atomic)
-    indexedDbService.putPart(data);
-
-    saveLocal();
-    notifyListeners();
-
-    if (!db) {
-      console.warn("Offline: Queueing Part Update");
-      queueWrite('UPSERT_PARTS', [data]);
-      return;
-    }
-
-    // 2. Sync Cloud
-    await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(data));
-
-    // 3. Record change for Daily Automation - DATE-BASED AGGREGATION
     try {
+      // 1. Sync Local State Immediately
+      const idx = dbState.parts.findIndex((p: any) => p.id === id);
+      if (idx !== -1) dbState.parts[idx] = data; else dbState.parts.push(data);
+
+      // Sync IndexedDB (Atomic)
+      await indexedDbService.putPart(data);
+
+      saveLocal();
+      notifyListeners();
+
+      if (!db) {
+        console.warn("Offline: Queueing Part Update");
+        queueWrite('UPSERT_PARTS', [data]);
+        return;
+      }
+
+      // 2. Sync Cloud
+      await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(data));
+
+      // 3. Record change for Daily Automation
       const userStr = localStorage.getItem('logimaster_user');
       let user = { name: 'System', email: '' };
-      try { if (userStr) user = JSON.parse(userStr); } catch (e) { console.warn("User parse fail", e); }
+      try { if (userStr) user = JSON.parse(userStr); } catch (e) { }
 
       const d = new Date();
-      // Enforce Mexico City Timezone for the "Day Bucket" ID
-      // This ensures 11:00 PM CST counts as Today, not Tomorrow (UTC)
-      const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }); // YYYY-MM-DD format
+      const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
 
       await setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
         id: dateStr,
@@ -973,14 +972,11 @@ export const storageService = {
         reported: false
       }, { merge: true });
 
-      // Mirror to Technical Log
-      await logAction('MASTER_DATA_EDIT', `Actualización de pieza: ${part.PART_NUMBER}`);
-    } catch (e) {
-      console.error("Secondary audit logging failed (Non-blocking):", e);
+      await storageService.bumpPartsVersion();
+    } catch (e: any) {
+      console.error("❌ Master Data Update Failed:", e);
+      throw new Error(`Failed to save part: ${e.message || 'Unknown error'}`);
     }
-
-    // 4. Trigger Version Refresh
-    await storageService.bumpPartsVersion();
   },
 
   // DATA REPAIR TOOL (Silent Patch)
@@ -993,40 +989,40 @@ export const storageService = {
   },
 
   deletePart: async (id: string) => {
-    // 0. Find part first (before filtering local state)
-    const partToDelete = dbState.parts.find(p => p.id === id);
-
-    // 1. Sync Local State Immediately
-    dbState.parts = dbState.parts.filter((p: any) => p.id !== id);
-
-    // Sync IndexedDB (Atomic)
-    indexedDbService.deletePart(id);
-
-    saveLocal();
-    notifyListeners();
-
-    if (!db) {
-      console.warn("Offline: Queueing Part Delete");
-      queueWrite('DELETE_PARTS', [id]);
-      return;
-    }
-
-    // 2. Sync Cloud
-    const docId = String(id || '').trim();
-    if (!docId || docId.includes('/')) {
-      console.error("deletePart: Invalid Document ID", docId);
-      return;
-    }
-    await deleteDoc(doc(db, COLS.PARTS, docId));
-
-    // 3. Record change for Daily Automation
     try {
+      const partToDelete = dbState.parts.find(p => p.id === id);
+      if (!partToDelete) return;
+
+      // 1. Sync Local State Immediately
+      dbState.parts = dbState.parts.filter((p: any) => p.id !== id);
+
+      // Sync IndexedDB (Atomic)
+      await indexedDbService.deletePart(id);
+
+      saveLocal();
+      notifyListeners();
+
+      if (!db) {
+        console.warn("Offline: Queueing Part Delete");
+        queueWrite('DELETE_PARTS', [id]);
+        return;
+      }
+
+      // 2. Sync Cloud
+      const docId = String(id || '').trim();
+      if (!docId || docId.includes('/')) {
+        console.error("deletePart: Invalid Document ID", docId);
+        return;
+      }
+      await deleteDoc(doc(db, COLS.PARTS, docId));
+
+      // 3. Record change for Daily Automation
       const userStr = localStorage.getItem('logimaster_user');
       let user = { name: 'System', email: '' };
-      try { if (userStr) user = JSON.parse(userStr); } catch (e) { console.warn("User parse fail", e); }
+      try { if (userStr) user = JSON.parse(userStr); } catch (e) { }
 
       const d = new Date();
-      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
 
       await setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
         id: dateStr,
@@ -1037,14 +1033,12 @@ export const storageService = {
         count: increment(1)
       }, { merge: true });
 
-      // Mirror to Technical Log
-      await logAction('MASTER_DATA_DELETE', `Eliminación de pieza: ${partToDelete?.PART_NUMBER || id}`);
-    } catch (e) {
-      console.error("Secondary audit logging failed (Non-blocking):", e);
+      await logAction('MASTER_DATA_DELETE', `Eliminada pieza: ${partToDelete?.PART_NUMBER || id}`);
+      await storageService.bumpPartsVersion();
+    } catch (e: any) {
+      console.error("❌ Master Data Delete Failed:", e);
+      throw new Error(`Failed to delete part: ${e.message || 'Unknown error'}`);
     }
-
-    // 4. Trigger Version Refresh
-    await storageService.bumpPartsVersion();
   },
 
   deleteParts: async (ids: string[]) => {
@@ -1052,7 +1046,7 @@ export const storageService = {
     dbState.parts = dbState.parts.filter((p: any) => !ids.includes(p.id));
 
     // Sync IndexedDB (Atomic)
-    ids.forEach(id => indexedDbService.deletePart(id));
+    await Promise.all(ids.map(id => indexedDbService.deletePart(id)));
 
     saveLocal();
     notifyListeners();
@@ -1166,15 +1160,15 @@ export const storageService = {
         else dbState.parts.push(data);
       });
 
-      // Async Sync to IndexedDB (Crucial for High-Capacity)
-      indexedDbService.saveParts(dataChunk);
-
-      notifyListeners();
+      // Sync to IndexedDB (Crucial for High-Capacity)
+      await indexedDbService.saveParts(dataChunk);
 
       if (onProgress) {
         onProgress(Math.min((i + CHUNK_SIZE) / total * 100, 100) / 100);
       }
     }
+
+    notifyListeners(); // Final notification after all batches
 
     saveLocal(); // Persists lighter metadata and light parts of state
 

@@ -72,14 +72,12 @@ export const Login = () => {
         setError('Network error. Cannot validate user.');
       } else if (err.code === 'auth/role-pending') {
         // Explicit requirement: Pop-up for pending users
-        window.alert("Access Denied: Role not assigned. Please contact Admin. / Acceso Denegado: Solicita soporte de Admin");
         setError('Access Denied. Contact Admin.');
       } else if (err.code === 'auth/signup-success-pending') {
         window.alert("Account created successfully. Please wait for an Administrator to assign you a role.");
         setError('Account pending approval.');
         setIsLogin(true); // Switch back to login
       } else if (err.code === 'auth/initialization-failed') {
-        window.alert(`Critical Failure: ${err.message}`);
         setError(err.message);
       } else {
         setError('Authentication error. ' + (err.message || ''));

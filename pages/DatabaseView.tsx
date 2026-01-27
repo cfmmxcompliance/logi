@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { storageService } from '../services/storageService.ts';
 import { RawMaterialPart, UserRole } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
-import { Download, Plus, Save, X, Trash2, Edit2, FileSpreadsheet, FileDown, ChevronLeft, ChevronRight, Search, RefreshCcw, Database, AlertTriangle, Filter } from 'lucide-react';
+import { Download, Plus, Save, X, Trash2, Edit2, Edit3, FileSpreadsheet, FileDown, ChevronLeft, ChevronRight, Search, RefreshCcw, Database, AlertTriangle, Filter } from 'lucide-react';
 import { parseCSV } from '../utils/csvHelpers.ts';
 import * as XLSX from 'xlsx';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
@@ -102,6 +102,45 @@ export const DatabaseView = () => {
     const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, id: string | null }>({ isOpen: false, id: null });
     const [bulkDeleteModal, setBulkDeleteModal] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    // --- BULK EDIT STATE ---
+    const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
+    const [bulkEditField, setBulkEditField] = useState<keyof RawMaterialPart | ''>('');
+    const [bulkEditValue, setBulkEditValue] = useState('');
+
+    const handleApplyBulkEdit = async () => {
+        if (!bulkEditField || selectedIds.size === 0) return;
+
+        setProcState({
+            isOpen: true,
+            status: 'loading',
+            title: 'Enmienda Masiva',
+            message: `Actualizando ${selectedIds.size} registros...`,
+            progress: 50
+        });
+
+        try {
+            await storageService.bulkUpdateParts(Array.from(selectedIds), { [bulkEditField]: bulkEditValue });
+            setIsBulkEditModalOpen(false);
+            setSelectedIds(new Set());
+            setProcState({
+                isOpen: true,
+                status: 'success',
+                title: 'Éxito',
+                message: 'Registros actualizados correctamente.',
+                progress: 100
+            });
+            setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 2000);
+        } catch (err: any) {
+            setProcState({
+                isOpen: true,
+                status: 'error',
+                title: 'Error',
+                message: err.message,
+                progress: 0
+            });
+        }
+    };
 
     // --- COLUMN FILTER STATE ---
     // Stores SET of columns that are currently filtered to show ONLY "Has Data"
@@ -969,6 +1008,16 @@ export const DatabaseView = () => {
                         </button>
                     )}
 
+                    {/* Bulk Edit Button */}
+                    {selectedIds.size > 0 && canEdit && (
+                        <button
+                            onClick={() => setIsBulkEditModalOpen(true)}
+                            className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm hover:bg-amber-100 transition-all font-medium animate-in fade-in slide-in-from-left-2"
+                        >
+                            <Edit3 size={16} /> Bulk Amendment ({selectedIds.size})
+                        </button>
+                    )}
+
                     <input
                         type="file"
                         ref={restoreInputRef}
@@ -1301,6 +1350,63 @@ export const DatabaseView = () => {
                                     className="w-full px-4 py-2 text-slate-400 hover:text-slate-600 text-sm font-medium"
                                 >
                                     Cancel Import
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* BULK EDIT MODAL */}
+                {isBulkEditModalOpen && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                            <div className="bg-amber-50 p-6 flex flex-col items-center text-center border-b border-amber-100">
+                                <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-3">
+                                    <Edit3 size={24} />
+                                </div>
+                                <h3 className="text-lg font-bold text-amber-900">Bulk Amendment</h3>
+                                <p className="text-sm text-amber-800 mt-2">
+                                    Applying change to <span className="font-bold">{selectedIds.size}</span> selected records.
+                                </p>
+                            </div>
+                            <div className="p-6 space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Select Field</label>
+                                    <select
+                                        value={bulkEditField}
+                                        onChange={(e) => setBulkEditField(e.target.value as any)}
+                                        className="w-full rounded-md border-slate-300 shadow-sm focus:ring-amber-500 focus:border-amber-500 border p-2 text-sm"
+                                    >
+                                        <option value="">-- Choose Field --</option>
+                                        {CSV_ORDER_KEYS.map(key => (
+                                            <option key={key} value={key}>{key.replace(/_/g, ' ')}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">New Value</label>
+                                    <input
+                                        type="text"
+                                        value={bulkEditValue}
+                                        onChange={(e) => setBulkEditValue(e.target.value)}
+                                        placeholder="Enter new value..."
+                                        className="w-full rounded-md border-slate-300 shadow-sm focus:ring-amber-500 focus:border-amber-500 border p-2 text-sm"
+                                    />
+                                </div>
+                            </div>
+                            <div className="p-6 bg-slate-50 flex gap-3 border-t border-slate-100">
+                                <button
+                                    onClick={() => setIsBulkEditModalOpen(false)}
+                                    className="flex-1 px-4 py-2 text-slate-600 hover:text-slate-800 font-medium"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleApplyBulkEdit}
+                                    disabled={!bulkEditField}
+                                    className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Apply Change
                                 </button>
                             </div>
                         </div>

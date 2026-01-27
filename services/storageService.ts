@@ -973,8 +973,62 @@ export const storageService = {
 
       await storageService.bumpPartsVersion();
     } catch (e: any) {
+      const isQuotaError = e.message?.toLowerCase().includes('quota') || e.code === 'resource-exhausted';
+      if (isQuotaError) {
+        console.warn("⚠️ Firebase Quota Exceeded: Part saved locally and queued for sync.");
+        queueWrite('UPSERT_PARTS', [data]);
+        return; // Success (local primary)
+      }
       throw new Error(`Failed to save part: ${e.message || 'Unknown error'}`);
     }
+  },
+
+  bulkUpdateParts: async (ids: string[], updates: Partial<RawMaterialPart>) => {
+    const timestamp = new Date().toISOString();
+    const updatedParts: RawMaterialPart[] = [];
+
+    // 1. Sync Local State
+    dbState.parts = dbState.parts.map(p => {
+      if (ids.includes(p.id)) {
+        const updated = { ...p, ...updates, UPDATE_TIME: timestamp };
+        updatedParts.push(updated);
+        return updated;
+      }
+      return p;
+    });
+
+    await indexedDbService.saveParts(updatedParts);
+    saveLocal();
+    notifyListeners();
+
+    if (!db) {
+      queueWrite('UPSERT_PARTS', updatedParts);
+      return;
+    }
+
+    // 2. Sync Cloud in batches
+    const CHUNK_SIZE = 200;
+    for (let i = 0; i < updatedParts.length; i += CHUNK_SIZE) {
+      const chunk = updatedParts.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(db);
+
+      chunk.forEach(p => {
+        const partRef = doc(db, COLS.PARTS, p.id);
+        batch.set(partRef, sanitizeForFirestore(p), { merge: true });
+      });
+
+      try {
+        await batch.commit();
+      } catch (e: any) {
+        const isQuotaError = e.message?.toLowerCase().includes('quota') || e.code === 'resource-exhausted';
+        if (isQuotaError) {
+          queueWrite('UPSERT_PARTS', chunk);
+        } else {
+          throw e;
+        }
+      }
+    }
+    await storageService.bumpPartsVersion();
   },
 
   // DATA REPAIR TOOL (Silent Patch)
@@ -1034,6 +1088,12 @@ export const storageService = {
       await logAction('MASTER_DATA_DELETE', `Eliminada pieza: ${partToDelete?.PART_NUMBER || id}`);
       await storageService.bumpPartsVersion();
     } catch (e: any) {
+      const isQuotaError = e.message?.toLowerCase().includes('quota') || e.code === 'resource-exhausted';
+      if (isQuotaError) {
+        console.warn("⚠️ Firebase Quota Exceeded: Part deleted locally and queued for sync.");
+        queueWrite('DELETE_PARTS', [id]);
+        return; // Success (local primary)
+      }
       throw new Error(`Failed to delete part: ${e.message || 'Unknown error'}`);
     }
   },
@@ -1135,7 +1195,6 @@ export const storageService = {
       chunk.forEach((p) => {
         const id = p.id || crypto.randomUUID();
         const partRef = doc(db, COLS.PARTS, id);
-        // FORCE UPDATE TIMESTAMP
         const dataWithTime = {
           ...p,
           id,
@@ -1144,9 +1203,19 @@ export const storageService = {
         batch.set(partRef, sanitizeForFirestore(dataWithTime));
       });
 
-      await batch.commit();
+      try {
+        await batch.commit();
+      } catch (e: any) {
+        const isQuotaError = e.message?.toLowerCase().includes('quota') || e.code === 'resource-exhausted';
+        if (isQuotaError) {
+          console.warn("⚠️ Firebase Quota Exceeded during bulk upsert: Batch queued for local sync.");
+          queueWrite('UPSERT_PARTS', chunk);
+        } else {
+          throw e;
+        }
+      }
 
-      // Update Local State for immediate visibility (since PARTS doesn't have a listener)
+      // Update Local State for immediate visibility
       const dataChunk: any[] = [];
       chunk.forEach(p => {
         const id = p.id || crypto.randomUUID();
@@ -1157,7 +1226,7 @@ export const storageService = {
         else dbState.parts.push(data);
       });
 
-      // Sync to IndexedDB (Crucial for High-Capacity)
+      // Sync to IndexedDB
       await indexedDbService.saveParts(dataChunk);
 
       if (onProgress) {

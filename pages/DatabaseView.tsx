@@ -581,7 +581,7 @@ export const DatabaseView = () => {
                         const row = rows[i];
                         if (!row || row.length === 0) continue;
 
-                        const newPart: any = { ...emptyPart };
+                        const partialPart: any = {};
                         let hasData = false;
 
                         CSV_ORDER_KEYS.forEach(key => {
@@ -591,32 +591,29 @@ export const DatabaseView = () => {
 
                                 // Specific conversions
                                 if (key === 'NETWEIGHT') {
-                                    newPart[key] = parseFloat(rawVal) || 0;
-                                }
-                                else if (key === 'IGI_DUTY') {
-                                    if (rawVal.toUpperCase().includes('EX')) newPart[key] = 0;
-                                    else {
-                                        const num = parseFloat(rawVal.replace(/[^0-9.]/g, ''));
-                                        newPart[key] = isNaN(num) ? 0 : num;
-                                    }
-                                }
-                                else if (key === 'IMPORTED_OR_NOT' || key === 'SENSIBLE') {
-                                    newPart[key] = rawVal; // Store exact string (e.g. "N", "NO", "Y")
+                                    partialPart[key] = parseFloat(rawVal) || 0;
                                 }
                                 else if (key === 'ESTIMATED') {
                                     const num = parseFloat(rawVal.replace(/[^0-9.]/g, ''));
-                                    newPart[key] = isNaN(num) ? 0 : num;
+                                    partialPart[key] = isNaN(num) ? 0 : num;
+                                }
+                                else if (key === 'IKI_DUTY' || key === 'IGI_DUTY') { // Handle IGI/IKI
+                                    if (rawVal.toUpperCase().includes('EX')) partialPart[key] = 0;
+                                    else {
+                                        const num = parseFloat(rawVal.replace(/[^0-9.]/g, ''));
+                                        partialPart[key] = isNaN(num) ? 0 : num;
+                                    }
                                 }
                                 else {
-                                    newPart[key] = rawVal;
+                                    partialPart[key] = rawVal;
                                 }
 
                                 if (rawVal) hasData = true;
                             }
                         });
 
-                        if (hasData && newPart.PART_NUMBER) {
-                            parsedParts.push(newPart);
+                        if (hasData && partialPart.PART_NUMBER) {
+                            parsedParts.push(partialPart);
                         }
                     }
 
@@ -637,7 +634,8 @@ export const DatabaseView = () => {
                         if (existingMap[p.PART_NUMBER]) {
                             conflictingItems.push(p);
                         } else {
-                            newItems.push(p);
+                            // New items need defaults mixed in
+                            newItems.push({ ...emptyPart, ...p });
                         }
                     });
 
@@ -708,10 +706,19 @@ export const DatabaseView = () => {
 
         if (action === 'replace') {
             // Check: map duplicate items to their EXISTING IDs so we overwrite them
-            const updates = conflictingItems.map(p => ({
-                ...p,
-                id: existingMap[p.PART_NUMBER] // CRITICAL: Use existing ID to force update
-            }));
+            const updates = conflictingItems.map(p => {
+                const existingId = existingMap[p.PART_NUMBER];
+                const existingRec = storageService.getParts().find(ep => ep.id === existingId) || emptyPart;
+
+                // MERGE: Existing Record + New Logic (Partial) -> Full Record
+                // This ensures we don't wipe fields that are missing in the CSV
+                return {
+                    ...existingRec,
+                    ...p,
+                    id: existingId, // Ensure ID is preserved
+                    UPDATE_TIME: new Date().toISOString()
+                };
+            });
             finalUploadList = [...finalUploadList, ...updates];
         }
         // If 'skip', we just upload 'newItems' and ignore 'conflictingItems'

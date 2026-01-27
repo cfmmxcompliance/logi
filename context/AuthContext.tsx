@@ -14,47 +14,48 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children?: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(() => {
+    // 1. OPTIMISTIC HYDRATION: Read from localStorage immediately during initialization
+    const stored = localStorage.getItem('logimaster_user');
+    if (stored) {
+      try { return JSON.parse(stored); } catch (e) { return null; }
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(!localStorage.getItem('logimaster_user'));
 
   useEffect(() => {
-    const initSession = async () => {
+    const validateSession = async () => {
       const storedUser = localStorage.getItem('logimaster_user');
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          // Validate against DB if possible
-          if (parsedUser.email) {
-            try {
-              const dbUser = await authService.getUser(parsedUser.email);
-              if (dbUser) {
-                setUser(dbUser); // Use fresh data (e.g. Role updates)
-              } else {
-                console.warn("⚠️ Session Expired: User deleted from database.");
-                localStorage.removeItem('logimaster_user');
-                setUser(null);
-              }
-            } catch (err) {
-              // STRICT SECURITY: If DB validation errors, assume session invalid.
-              // Do NOT allow offline fallback if we suspect the user might be deleted/revoked.
-              console.error("Session Validation Failed (Possible Revocation):", err);
-              localStorage.removeItem('logimaster_user');
-              setUser(null);
-            }
+      if (!storedUser) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        if (parsedUser.email) {
+          // BACKGROUND VALIDATION: Don't block UI if we already have a user
+          const dbUser = await authService.getUser(parsedUser.email);
+          if (dbUser) {
+            setUser(dbUser); // Refresh with latest data (roles, etc)
+            localStorage.setItem('logimaster_user', JSON.stringify(dbUser));
           } else {
-            // Invalid structure
+            console.warn("⚠️ Session Expired: User deleted from database.");
             localStorage.removeItem('logimaster_user');
             setUser(null);
           }
-        } catch (e) {
-          console.error("Failed to parse user session");
-          localStorage.removeItem('logimaster_user');
         }
+      } catch (err) {
+        console.error("Session Validation Failed:", err);
+        // We only clear if it's a definitive "user not found" or similar auth error
+        // If it's just a network error, we keep the optimistic session for offline support
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    initSession();
+    validateSession();
   }, []);
 
   const login = (userData: User) => {

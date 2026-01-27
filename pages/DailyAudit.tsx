@@ -38,7 +38,8 @@ export const DailyAudit = () => {
 
 
     const handleDownload = async (type: 'full' | 'changes', dateContext?: string, specificChange?: DailyChange) => {
-        const date = dateContext || new Date().toISOString().split('T')[0];
+        const getTodayMX = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+        const date = dateContext || getTodayMX();
         let rawData: any[] = [];
         let filename = '';
         if (type === 'full') {
@@ -52,8 +53,14 @@ export const DailyAudit = () => {
             // Ensure DB is loaded (Hydration Safety)
             if (storageService.getParts().length === 0) await storageService.loadMasterData();
 
-            // Filter strictly by the modification timestamp
-            rawData = storageService.getParts().filter(p => p.UPDATE_TIME && p.UPDATE_TIME.startsWith(date));
+            // Filter strictly by the modification timestamp (Converted to MX Time)
+            rawData = storageService.getParts().filter(p => {
+                if (!p.UPDATE_TIME) return false;
+                try {
+                    const pDate = new Date(p.UPDATE_TIME).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+                    return pDate === date;
+                } catch (e) { return false; }
+            });
             filename = `MD_Changes_${date}.csv`;
         }
 
@@ -88,7 +95,7 @@ export const DailyAudit = () => {
     };
 
     const getReportForDate = (timestamp: string) => {
-        const dateStr = new Date(timestamp).toISOString().split('T')[0];
+        const dateStr = new Date(timestamp).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
         return reports.find(r => r.id === dateStr);
     };
 
@@ -96,8 +103,18 @@ export const DailyAudit = () => {
     const groupedData = useMemo(() => {
         const dailyMap: Record<string, { changes: DailyChange[], report?: MasterDataReport }> = {};
 
+        const getMXDateStr = (isoString: string) => {
+            if (!isoString) return '';
+            try {
+                return new Date(isoString).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+            } catch (e) { return ''; }
+        };
+
         changes.forEach(c => {
-            const d = c.id.includes('-') && c.id.length === 10 ? c.id : c.timestamp.split('T')[0];
+            // Priority 1: ID is already YYYY-MM-DD (from storageService bucket)
+            // Priority 2: Convert UTC timestamp to MX Date
+            const d = (c.id.includes('-') && c.id.length === 10) ? c.id : getMXDateStr(c.timestamp);
+            if (!d) return;
             if (!dailyMap[d]) dailyMap[d] = { changes: [] };
             dailyMap[d].changes.push(c);
         });
@@ -146,7 +163,13 @@ export const DailyAudit = () => {
 
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                 <p className="text-lg text-slate-700">
-                    Hoy se han adicionado o enmendado <span className="font-bold underline decoration-blue-500 decoration-2 underline-offset-4">{changes.filter(c => c.timestamp.split('T')[0] === new Date().toISOString().split('T')[0]).reduce((acc, curr) => acc + (curr.count || 1), 0).toLocaleString()} items</span> en el Master Data.
+                    Hoy se han adicionado o enmendado <span className="font-bold underline decoration-blue-500 decoration-2 underline-offset-4">{
+                        changes.filter(c => {
+                            const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+                            const cDate = (c.id.includes('-') && c.id.length === 10) ? c.id : new Date(c.timestamp).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+                            return cDate === today;
+                        }).reduce((acc, curr) => acc + (curr.count || 1), 0).toLocaleString()
+                    } items</span> en el Master Data.
                 </p>
             </div>
 
@@ -289,7 +312,8 @@ export const DailyAudit = () => {
                                 const userResp = prompt(`Diagnóstico 24 Enero:\nTotal: ${total}\nNo Reportados: ${unreported}\n\nSi quieres reenviar forzosamente lo pendiente, escribe "FORCE" para llamar al servidor.`);
 
                                 if (userResp === 'FORCE') {
-                                    const result = await storageService.triggerManualAuditReport();
+                                    const targetDate = prompt("Ingrese la fecha (YYYY-MM-DD) para forzar el reporte de ESE DÍA ESPECÍFICO (Ej: 2026-01-26). Deje vacío para 'Ayer':");
+                                    const result = await storageService.triggerManualAuditReport(targetDate || undefined);
                                     alert(`Servidor: ${result.message}`);
                                 }
                             } catch (e: any) {

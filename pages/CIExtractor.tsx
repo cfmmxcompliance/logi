@@ -637,36 +637,47 @@ export const CIExtractor: React.FC = () => {
     const handleSaveDiff = async () => {
         if (!diffItem) return;
 
-        // 1. Update Invoice Item Description
+        // 1. Prepare Updates
         const updatedItem = {
             ...diffItem,
             spanishDescription: resolvedDescription
         };
 
-        // 2. Update Master Data R8 Description (if changed and part exists)
+        const promises: Promise<any>[] = [];
+
+        // 2. Optimistic Item Update
+        setItems(prevItems => prevItems.map(i => i.id === diffItem.id ? updatedItem : i));
+        promises.push(storageService.updateInvoiceItem(updatedItem));
+
+        // 3. Master Data Update (if changed)
         if (diffMasterPart && diffMasterPart.DESCRIPCION_R8 !== resolvedR8Description) {
             const updatedPart: RawMaterialPart = {
                 ...diffMasterPart,
                 DESCRIPCION_R8: resolvedR8Description,
                 UPDATE_TIME: new Date().toISOString()
             };
-            await storageService.updatePart(updatedPart);
 
-            // Update local map locally to reflect changes immediately
+            // Local Map Update
             setMasterDataMap(prev => ({
                 ...prev,
                 [updatedPart.PART_NUMBER]: updatedPart
             }));
 
-            showNotification('Master Data Updated', 'R8 Description updated in database.', 'success');
+            promises.push(storageService.updatePart(updatedPart));
         }
 
-        // Optimistic Update Item
-        setItems(prevItems => prevItems.map(i => i.id === diffItem.id ? updatedItem : i));
-
-        await storageService.updateInvoiceItem(updatedItem);
-        showNotification('Description Updated', 'Item description corrected successfully.', 'success');
+        // 4. IMMEDIATE CLOSURE (Optimistic UI)
         handleCloseDiffModal();
+
+        // 5. Background Cloud Update
+        Promise.all(promises)
+            .then(() => {
+                showNotification('R8 Resolution', 'Descriptions updated successfully in cloud.', 'success');
+            })
+            .catch(err => {
+                console.error("R8 Background Update Failed:", err);
+                showNotification('Update Sync Warning', 'Updates saved locally but cloud sync failed. Retrying in background...', 'warning');
+            });
     };
 
     // Stats
@@ -700,29 +711,33 @@ export const CIExtractor: React.FC = () => {
         if (!estItem) return;
 
         const newPrice = parseFloat(resolvedUnitPrice) || 0;
-        const masterPrice = parseFloat(resolvedMasterPrice) || 0;
 
-        // 1. Update Invoice Item Price
+        // 1. Prepare Update
         const hasChanged = Math.abs(newPrice - (estItem.unitPrice || 0)) > 0.001;
-
         const updatedItem = {
             ...estItem,
             unitPrice: newPrice,
-            // Update Amount too? Usually yes: Price * Qty
             totalAmount: parseFloat((newPrice * (estItem.qty || 0)).toFixed(2)),
-            priceVerified: hasChanged ? true : (estItem.priceVerified || false) // Only verify if changed, or keep existing
+            priceVerified: hasChanged ? true : (estItem.priceVerified || false)
         };
 
-        // Note: Master Data is NOT updated here as it is fixed customs data.
-
-        // Optimistic Update Item
+        // 2. Optimistic UI Update
         setItems(prevItems => prevItems.map(i => i.id === estItem.id ? updatedItem : i));
-        await storageService.updateInvoiceItem(updatedItem);
 
-        const msg = hasChanged ? 'Price Corrected & Verified.' : 'No changes made.';
-        const type = hasChanged ? 'success' : 'info';
-        showNotification('Price Update', msg, type);
+        // 3. IMMEDIATE CLOSURE
         handleCloseEstModal();
+
+        // 4. Background Cloud Update
+        storageService.updateInvoiceItem(updatedItem)
+            .then(() => {
+                if (hasChanged) {
+                    showNotification('Price Update', 'Price corrected & verified in cloud.', 'success');
+                }
+            })
+            .catch(err => {
+                console.error("Price Sync Failed:", err);
+                showNotification('Sync Warning', 'Price updated locally but cloud sync failed.', 'warning');
+            });
     };
 
 

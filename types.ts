@@ -512,4 +512,5 @@ export interface StorageState {
   digitalArchive?: DigitalArchiveRecord[]; // New: Unpaid Pedimentos
   dailyChanges: DailyChange[];
   dailyReports?: MasterDataReport[];
+  users: User[];
 }

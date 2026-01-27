@@ -1,19 +1,41 @@
-import { getAuth, sendPasswordResetEmail } from "firebase/auth";
+import { getAuth, sendPasswordResetEmail, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { User, UserRole } from '../types.ts';
 // @ts-ignore
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, orderBy, deleteField } from 'firebase/firestore';
-import { db } from './firebaseConfig';
+import { db, auth } from './firebaseConfig';
+import { storageService } from './storageService';
 
 const ROOT_ADMIN_EMAIL = 'admin@logimaster.com';
 
 export const authService = {
     login: async (email: string, password: string): Promise<User | null> => {
-        // Simulate network delay
-        await new Promise(r => setTimeout(r, 500));
+        let firebaseUser = null;
+        let migrationNeeded = false;
+
+        // 1. Attempt Firebase Native Auth First
+        if (auth) {
+            try {
+                const credential = await signInWithEmailAndPassword(auth, email, password);
+                firebaseUser = credential.user;
+                console.log("✅ Firebase Auth: Login Success");
+            } catch (e: any) {
+                if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-login-credentials') {
+                    console.warn("⚠️ Firebase Auth failed. Checking Legacy DB for migration...");
+                    migrationNeeded = true;
+                } else if (e.code === 'auth/wrong-password') {
+                    console.warn("⛔ Firebase Auth: Wrong Password.");
+                    throw e;
+                } else {
+                    console.error("Firebase Auth Error:", e);
+                    // Continue to legacy check in case of network weirdness? No, usually stop.
+                }
+            }
+        }
 
         const username = email.split('@')[0];
         const isRootAdmin = email.toLowerCase() === ROOT_ADMIN_EMAIL;
         let role: UserRole | null = null;
+        let legacyData: any = null;
 
         if (!db) {
             console.warn("⚠️ Firestore not available. Login Restricted.");
@@ -21,51 +43,69 @@ export const authService = {
         }
 
         try {
+            // 2. Fetch User Data (Role/Profile) from Firestore
+            // We ALWAYS need this because we store Roles in Firestore (until Custom Claims are built)
             const userRef = doc(db, 'users', email);
             const userSnap = await getDoc(userRef);
 
             if (userSnap.exists()) {
                 const data = userSnap.data();
+                legacyData = data;
                 role = data.role as UserRole;
 
-                // 1. HARD OVERRIDE: Root Admin is ALWAYS Admin in memory, regardless of DB status
+                // A. HARD OVERRIDE: Root Admin is ALWAYS Admin
                 if (isRootAdmin) {
                     role = UserRole.ADMIN;
-                    // Background sync: Fix DB if it's wrong, but don't block login if write fails
                     if (data.role !== UserRole.ADMIN) {
-                        console.warn(`⚠️ Elevating Root Admin in DB.`);
                         updateDoc(userRef, { role: UserRole.ADMIN }).catch(console.error);
                     }
                 }
 
-                // 2. Forced Password Reset Check
+                // B. Legacy Password Check (Only if Firebase Auth failed/didn't exist)
+                if (!firebaseUser) {
+                    // If migration is needed, we verify the LEGACY password here
+                    if (data.password && data.password !== password) {
+                        console.warn(`⛔ Access Denied: User ${email} entered wrong password (Legacy).`);
+                        throw { code: 'auth/wrong-password', message: 'Invalid password.' };
+                    }
+
+                    // C. AUTO-MIGRATION
+                    // If we are here, Legacy Password matched.
+                    if (auth) {
+                        console.log(`🚀 Migrating user ${email} to Firebase Auth...`);
+                        try {
+                            const newCred = await createUserWithEmailAndPassword(auth, email, password);
+                            firebaseUser = newCred.user;
+                            console.log(`✅ Migration Successful for ${email}`);
+                            // Optional: Clear legacy password field to enforce Firebase usage?
+                            // await updateDoc(userRef, { password: deleteField() }); 
+                        } catch (migErr) {
+                            console.error("Migration Failed (User might exist or weak pass):", migErr);
+                            // We allow them to login via Legacy for now, but log the error
+                        }
+                    }
+                }
+
+                // D. Check "Require Reset" flag
                 if (data.requireReset) {
-                    console.warn(`⚠️ User ${email} requires password reset.`);
                     throw { code: 'auth/new-password-required', message: 'Admin requested password reset.' };
                 }
 
-                // 3. Password Check
-                if (data.password && data.password !== password) {
-                    console.warn(`⛔ Access Denied: User ${email} entered wrong password.`);
-                    throw { code: 'auth/wrong-password', message: 'Invalid password.' };
-                }
-
-                console.log(`✅ Logged in as ${email} [${role}]`);
             } else {
                 console.warn(`⛔ Access Denied: User ${email} not found.`);
                 throw { code: 'auth/user-not-found', message: 'User not registered.' };
             }
 
-            // 4. Role Verification (The Barrier)
+            // 3. Role Verification
             if (!role || (role === UserRole.PENDING && !isRootAdmin)) {
                 console.error("⛔ Security Alert: Role not assigned or Pending.");
                 throw { code: 'auth/role-pending', message: 'Role verification failed. Pending Approval.' };
             }
 
             const user: User = {
-                username,
-                name: username,
-                role, // Guaranteed to be ADMIN for root user
+                username: legacyData.username || username,
+                name: legacyData.name || legacyData.username || username,
+                role,
                 avatarInitials: email.substring(0, 2).toUpperCase()
             };
 
@@ -73,7 +113,7 @@ export const authService = {
             return user;
 
         } catch (e) {
-            console.error("Auth Error (Firestore):", e);
+            console.error("Auth Error:", e);
             throw e;
         }
     },
@@ -107,8 +147,6 @@ export const authService = {
     register: async (email: string, password: string): Promise<User | null> => {
         const username = email.split('@')[0];
         const isRootAdmin = email.toLowerCase() === ROOT_ADMIN_EMAIL;
-
-        // Force role assignment immediately upon creation logic
         let role = isRootAdmin ? UserRole.ADMIN : UserRole.PENDING;
 
         if (!db) {
@@ -116,19 +154,38 @@ export const authService = {
         }
 
         try {
+            // 1. Check for duplicate in Firestore first (Legacy check)
             const userRef = doc(db, 'users', email);
             const userSnap = await getDoc(userRef);
 
             if (userSnap.exists()) {
-                throw { code: 'auth/email-already-in-use', message: 'User already registered.' };
+                throw { code: 'auth/email-already-in-use', message: 'User already registered (Legacy).' };
             }
 
+            // 2. Create User in Firebase Auth
+            let firebaseDetail = null;
+            if (auth) {
+                try {
+                    const cred = await createUserWithEmailAndPassword(auth, email, password);
+                    firebaseDetail = cred.user;
+                } catch (e: any) {
+                    if (e.code === 'auth/email-already-in-use') {
+                        // Special Case: Exists in Auth but not in Firestore?
+                        // Proceed to create Firestore record.
+                        console.warn("User exists in Auth but not Firestore. Fixing...");
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+
+            // 3. Create User in Firestore (Source of Truth for Role)
             console.log(`🆕 Creating New User ${email}. Registering as ${role}.`);
             await setDoc(userRef, {
                 email,
                 username,
                 role,
-                password,
+                password, // Legacy fallback. Ideally we'd remove this.
                 createdAt: new Date().toISOString(),
                 lastLogin: new Date().toISOString()
             });
@@ -164,7 +221,7 @@ export const authService = {
                 return false;
             }
 
-            await setDoc(userRef, {
+            await storageService.upsertUser({
                 email,
                 username: email.split('@')[0],
                 role,
@@ -182,7 +239,7 @@ export const authService = {
     logout: async () => localStorage.removeItem('logimaster_user'),
 
     getUsers: async (): Promise<User[]> => {
-        if (!db) return [];
+        if (!db) return storageService.getLocalState().users || [];
 
         try {
             const q = query(collection(db, 'users'));
@@ -208,11 +265,15 @@ export const authService = {
                 uniqueUsers.set(doc.id, userObj);
             });
 
-            return Array.from(uniqueUsers.values());
+            const usersArray = Array.from(uniqueUsers.values());
+            // Sync local state for offline use
+            (storageService.getLocalState() as any).users = usersArray;
+
+            return usersArray;
 
         } catch (e) {
             console.error("Error fetching users:", e);
-            return [];
+            return storageService.getLocalState().users || [];
         }
     },
 
@@ -224,8 +285,8 @@ export const authService = {
             return false;
         }
         try {
-            const userRef = doc(db, 'users', email);
-            await updateDoc(userRef, { role: newRole });
+            // Delegate to storageService for Offline Sync Queue support
+            await storageService.upsertUser({ email, role: newRole });
             return true;
         } catch (e) {
             console.error("Error updating role:", e);
@@ -240,7 +301,7 @@ export const authService = {
             return false;
         }
         try {
-            await deleteDoc(doc(db, 'users', email));
+            await storageService.deleteUser(email);
             return true;
         } catch (e) {
             console.error("Error deleting user:", e);

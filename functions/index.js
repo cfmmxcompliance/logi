@@ -1,5 +1,4 @@
-const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const functions = require("firebase-functions");
 const MX_TIMEZONE = 'America/Mexico_City';
 const admin = require("firebase-admin");
 const { stringify } = require("csv-stringify/sync");
@@ -10,6 +9,15 @@ require("dotenv").config(); // Load environment variables
 
 admin.initializeApp();
 const db = admin.firestore();
+
+function getMXDate(isoString) {
+    if (!isoString) return null;
+    try {
+        return new Date(isoString).toLocaleDateString('en-CA', { timeZone: MX_TIMEZONE });
+    } catch (e) {
+        return null;
+    }
+}
 
 const CONFIG = {
     SENDER_EMAIL: "cfm.mx.compliance@gmail.com",
@@ -36,6 +44,7 @@ function getDriveClient() {
     return google.drive({ version: "v3", auth: oauth2Client });
 }
 
+
 const CSV_ORDER_KEYS = [
     'PART_NUMBER', 'REGIMEN', 'TypeMaterial', 'DESCRIPTION_EN', 'DESCRIPCION_ES',
     'UMC', 'UMT', 'HTSMX', 'HTSMXBASE', 'HTSMXNICO', 'IGI_DUTY', 'PROSEC', 'R8',
@@ -47,28 +56,44 @@ const CSV_ORDER_KEYS = [
 /**
  * CORE REPORT LOGIC
  */
-async function runFullReportProcess() {
+async function runFullReportProcess(targetDateString = null) {
     let diagnostics = {
         database: "Pending",
         csv: "Pending",
         drive: "Pending",
         email: "Pending",
-        changesFound: 0
+        changesFound: 0,
+        reportDate: ""
     };
 
     try {
-        // 1. DATABASE FETCH (Filter for UNREPORTED changes only)
-        console.log("Fetching pending daily changes...");
+        // 1. Determine Target Date (Yesterday by default)
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const dateStr = targetDateString || yesterday.toLocaleDateString('en-CA', { timeZone: MX_TIMEZONE });
+        diagnostics.reportDate = dateStr;
+
+        console.log(`Generating report for date: ${dateStr}`);
+
+        // 2. Fetch changes ONLY for that specific date
+        // We look for docs where timestamp starts with the date OR the ID is the date
         const changesSnap = await db.collection("daily_changes")
-            .where("reported", "!=", true)
             .get();
 
-        const changedIds = changesSnap.docs.map(doc => doc.id);
+        const changesDocs = changesSnap.docs.filter(doc => {
+            const data = doc.data();
+            // If ID is YYYY-MM-DD (length 10), use it directly as it's already MX-Local from frontend
+            // Otherwise, convert the UTC timestamp to MX date
+            const docDate = (doc.id.length === 10) ? doc.id : getMXDate(data.timestamp);
+            return docDate === dateStr;
+        });
 
-        const changedParts = changesSnap.docs
+        const changedIds = changesDocs.map(doc => doc.id);
+        const changedParts = changesDocs
             .flatMap(doc => {
                 const data = doc.data();
-                // Support both legacy single field and new array field
                 if (Array.isArray(data.partNumbers)) return data.partNumbers;
                 return [data.partNumber || data.PART_NUMBER];
             })
@@ -78,44 +103,19 @@ async function runFullReportProcess() {
         const partsSnap = await db.collection("parts").get();
         const allParts = partsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Match by ID list OR by Date found in logs
         const changedPartsSet = new Set(changedParts);
-        const reportDates = new Set(
-            changesSnap.docs.map(doc => {
-                const data = doc.data();
-                return (doc.id.length === 10) ? doc.id : (data.timestamp || '').split('T')[0];
-            }).filter(d => !!d)
-        );
-
         const dailyChanges = allParts.filter(p => {
             const pKey = p.PART_NUMBER || p.partNumber || p.id;
-            const pDate = p.UPDATE_TIME ? p.UPDATE_TIME.split('T')[0] : null;
+            // Crucial fix: convert UTC UPDATE_TIME to MX date before comparison
+            const pDate = getMXDate(p.UPDATE_TIME);
 
-            return changedPartsSet.has(pKey) ||
-                changedIds.includes(p.id) ||
-                (pDate && reportDates.has(pDate));
+            return changedPartsSet.has(pKey) || (pDate === dateStr);
         });
 
         diagnostics.changesFound = dailyChanges.length;
         diagnostics.database = `OK (${allParts.length} parts total)`;
 
-        // 2. CSV GENERATION
-        // Smart Date: If reporting historical changes, name the file after the event date, not today.
-        // Default to Mexico City "Today" if no changes found
-        let reportDateStr = new Date().toLocaleDateString('en-CA', { timeZone: MX_TIMEZONE }); // YYYY-MM-DD
-
-        if (dailyChanges.length > 0) {
-            // Find the most relevant date from the changes (e.g., the date of the first change)
-            const changeId = changedIds[0]; // e.g. "system_yesterday_..." or ISO date
-            // If ID is a date string or timestamp, try to parse it. 
-            // However, better to rely on `daily_changes` docs data if available in scope.
-            // We have `changesSnap`. Let's peek at the first doc.
-            const firstChange = changesSnap.docs[0].data();
-            if (firstChange && firstChange.timestamp) {
-                // Convert the change timestamp to MX Date
-                reportDateStr = new Date(firstChange.timestamp).toLocaleDateString('en-CA', { timeZone: MX_TIMEZONE });
-            }
-        }
+        const reportDateStr = dateStr;
 
         const formatForCsv = (data) => {
             return data.map(item => {
@@ -130,11 +130,8 @@ async function runFullReportProcess() {
         const fullCsv = stringify(formatForCsv(allParts), { header: true, columns: CSV_ORDER_KEYS });
         const changesCsv = stringify(formatForCsv(dailyChanges), { header: true, columns: CSV_ORDER_KEYS });
         diagnostics.csv = "OK";
-
-        // 3. DRIVE BACKUP (REMOVED: Limitation on personal Google accounts)
         diagnostics.drive = "Entregado vía Email (Adjunto)";
 
-        // 4. EMAIL DELIVERY (PRIORITY)
         try {
             const settingsSnap = await db.collection("audit_subscriptions").doc("daily_audit").get();
             let recipients = CONFIG.RECIPIENTS;
@@ -146,7 +143,7 @@ async function runFullReportProcess() {
                 service: 'gmail',
                 auth: {
                     user: CONFIG.SENDER_EMAIL,
-                    pass: process.env.EMAIL_PASSWORD // App Password
+                    pass: process.env.EMAIL_PASSWORD
                 }
             });
 
@@ -164,17 +161,28 @@ async function runFullReportProcess() {
 
             await transporter.sendMail(mailOptions);
             diagnostics.email = `OK (Sent to ${recipients.length} addresses)`;
+
+            // 3. Save official completion record for this DATE (Used by UI to show status)
+            await db.collection("daily_reports").doc(reportDateStr).set({
+                id: reportDateStr,
+                timestamp: new Date().toISOString(),
+                changesCount: dailyChanges.length,
+                totalParts: allParts.length,
+                status: 'COMPLETED',
+                recipients: recipients
+            });
+
         } catch (emailErr) {
             console.error("EMAIL_DELIVERY_FAILED:", emailErr.message);
             diagnostics.email = `Error: ${emailErr.message}`;
             throw emailErr;
         }
 
-        // 5. UPDATE DAILY CHANGES (Flag as reported instead of deleting)
+        // Keep this for legacy / technical log visibility, though report logic now uses Date
         if (changedIds.length > 0) {
             const batch = db.batch();
             const reportTime = new Date().toISOString();
-            changesSnap.docs.forEach(doc => {
+            changesDocs.forEach(doc => {
                 batch.update(doc.ref, {
                     reported: true,
                     reportedAt: reportTime
@@ -195,9 +203,6 @@ async function runFullReportProcess() {
     }
 }
 
-/**
- * Cloud Functions Configuration
- */
 
 /**
  * DRIVE HELPER: Ensure pedimento folder exists
@@ -225,29 +230,21 @@ async function getOrCreatePedimentoFolder(drive, parentId, pedimentoNo) {
 }
 
 /**
- * CLOUD FUNCTION: Save VUCEM Document to Drive
+ * CLOUD FUNCTION: Save VUCEM Document to Drive (v1)
  */
-exports.saveFileToExpediente = onCall({
-    memory: "512MiB"
-}, async (request) => {
-    const { pedimentoNo, fileName, fileBase64, mimeType } = request.data;
+exports.saveFileToExpediente = functions.https.onCall(async (data, context) => {
+    const { pedimentoNo, fileName, fileBase64, mimeType } = data;
 
     if (!pedimentoNo || !fileName || !fileBase64) {
-        throw new HttpsError("invalid-argument", "Missing required fields.");
+        throw new functions.https.HttpsError("invalid-argument", "Missing required fields.");
     }
 
     try {
         const drive = getDriveClient();
-
-        // 1. Get or create pedimento subfolder
         const pedimentoFolderId = await getOrCreatePedimentoFolder(drive, CONFIG.EXPEDIENTE_FOLDER_ID, pedimentoNo);
 
-        // 2. Upload file
         const buffer = Buffer.from(fileBase64, 'base64');
-        const fileMetadata = {
-            name: fileName,
-            parents: [pedimentoFolderId]
-        };
+        const fileMetadata = { name: fileName, parents: [pedimentoFolderId] };
         const media = {
             mimeType: mimeType || 'application/pdf',
             body: require('stream').Readable.from(buffer)
@@ -259,10 +256,8 @@ exports.saveFileToExpediente = onCall({
             fields: 'id, webViewLink'
         });
 
-        // 3. Register in Firestore (Metadata tracking)
         const dossierRef = db.collection("electronic_dossiers").doc(pedimentoNo);
         const dossierDoc = await dossierRef.get();
-
         const fileInfo = {
             name: fileName,
             driveId: file.data.id,
@@ -288,23 +283,19 @@ exports.saveFileToExpediente = onCall({
 
     } catch (err) {
         console.error("DRIVE_UPLOAD_ERROR:", err);
-        throw new HttpsError("internal", err.message);
+        throw new functions.https.HttpsError("internal", err.message);
     }
 });
+
 /**
- * CLOUD FUNCTION: Get File from Drive as Base64
+ * CLOUD FUNCTION: Get File from Drive as Base64 (v1)
  */
-exports.getFileFromDrive = onCall({
-    memory: "512MiB"
-}, async (request) => {
-    const { fileId } = request.data;
-    if (!fileId) throw new HttpsError("invalid-argument", "Missing fileId.");
+exports.getFileFromDrive = functions.https.onCall(async (data, context) => {
+    const { fileId } = data;
+    if (!fileId) throw new functions.https.HttpsError("invalid-argument", "Missing fileId.");
 
     try {
-        console.log(`Attempting to download file: ${fileId}`);
         const drive = getDriveClient();
-
-        // Using stream for better binary handling in Node.js
         const response = await drive.files.get({
             fileId: fileId,
             alt: 'media'
@@ -316,41 +307,33 @@ exports.getFileFromDrive = onCall({
             response.data.on('end', () => {
                 const buffer = Buffer.concat(chunks);
                 const base64 = buffer.toString('base64');
-                console.log(`File ${fileId} downloaded and converted to base64. Size: ${buffer.length} bytes`);
                 resolve({ success: true, fileBase64: base64 });
             });
             response.data.on('error', (err) => {
-                console.error("Stream Error:", err);
-                reject(new HttpsError("internal", `Stream Error: ${err.message}`));
+                reject(new functions.https.HttpsError("internal", `Stream Error: ${err.message}`));
             });
         });
     } catch (err) {
         console.error("DRIVE_DOWNLOAD_ERROR:", err.message);
-        // Map common Drive errors to better messages
-        const msg = err.errors ? JSON.stringify(err.errors) : err.message;
-        throw new HttpsError("aborted", `Drive API Fail: ${msg} (ID: ${fileId})`);
+        throw new functions.https.HttpsError("aborted", `Drive API Fail: ${err.message}`);
     }
 });
 
 /**
- * CLOUD FUNCTION: Manual Trigger for Report
+ * CLOUD FUNCTION: Manual Trigger for Report (v1)
  */
-exports.triggerManualReport = onCall({
-    memory: "512MiB",
-    timeoutSeconds: 300
-}, async (request) => {
-    return await runFullReportProcess();
+exports.triggerManualReport = functions.https.onCall(async (data, context) => {
+    return await runFullReportProcess(data?.date);
 });
 
 /**
  * CLOUD FUNCTION: Scheduled Daily Report (1:00 AM Mexico City)
+ * Uses v1 (legacy) to avoid EventArc/PubSub identity issues
  */
-exports.dailyReportLogimaster = onSchedule({
-    schedule: "0 1 * * *",
-    timeZone: MX_TIMEZONE,
-    memory: "512MiB",
-    timeoutSeconds: 300
-}, async (event) => {
-    console.log("Running scheduled daily report...");
-    return await runFullReportProcess();
-});
+exports.dailyReportLogimaster = functions
+    .pubsub.schedule("0 1 * * *")
+    .timeZone(MX_TIMEZONE)
+    .onRun(async (context) => {
+        console.log("Running scheduled daily report...");
+        return await runFullReportProcess();
+    });

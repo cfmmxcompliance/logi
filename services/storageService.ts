@@ -406,6 +406,9 @@ export const storageService = {
       isMDLoading = true;
       notifyListeners();
 
+      const migrationKey = 'logimaster_md_migrated_v2';
+      const isMigrated = localStorage.getItem(migrationKey) === 'true';
+
       // 1. HYDRATE FROM INDEXEDDB (Cold Start/Reset)
       if (dbState.parts.length === 0) {
         console.log("💾 Hydrating Master Data from IndexedDB...");
@@ -416,42 +419,77 @@ export const storageService = {
         }
       }
 
-      // 2. DETERMINE DELTA STARTING POINT
-      // We look for the latest update time in our local cache
-      let lastLocalUpdate = '1970-01-01T00:00:00.000Z';
-      dbState.parts.forEach(p => {
-        if (p.UPDATE_TIME && p.UPDATE_TIME > lastLocalUpdate) {
-          lastLocalUpdate = p.UPDATE_TIME;
-        }
-      });
+      // 2. DETERMINE SYNC STRATEGY
+      if (!isMigrated || dbState.parts.length < 100) {
+        // CASE A: FULL SYNC (Migration or Fresh Start)
+        console.warn("🚀 Performing High-Capacity Migration V2 (Full Sync)...");
+        const partsSnap = await getDocs(collection(db, COLS.PARTS));
+        const allParts = partsSnap.docs.map(d => {
+          const data = d.data();
+          return {
+            ...data,
+            id: d.id,
+            UPDATE_TIME: data.UPDATE_TIME || '1970-01-01T00:00:00.000Z'
+          } as RawMaterialPart;
+        });
 
-      console.log(`📡 Checking for Master Data changes since ${lastLocalUpdate}...`);
+        dbState.parts = allParts;
+        await indexedDbService.clearParts(); // Clean start
+        await indexedDbService.saveParts(allParts);
 
-      // 3. DELTA FETCH (Only modified records)
-      const q = query(
-        collection(db, COLS.PARTS),
-        where('UPDATE_TIME', '>', lastLocalUpdate),
-        orderBy('UPDATE_TIME', 'asc') // Fetch in order of change
-      );
-
-      const partsSnap = await getDocs(q);
-
-      if (!partsSnap.empty) {
-        console.log(`✨ Found ${partsSnap.size} new/modified Master Data records.`);
-        const changedParts = partsSnap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
-
-        // Merge into state
-        const partsMap = new Map(dbState.parts.map(p => [p.PART_NUMBER, p]));
-        changedParts.forEach(cp => partsMap.set(cp.PART_NUMBER, cp));
-
-        dbState.parts = Array.from(partsMap.values());
-
-        // Persist only changes to IndexedDB
-        await indexedDbService.saveParts(changedParts);
-
-        notifyListeners();
+        localStorage.setItem(migrationKey, 'true');
+        console.log(`✅ Migration Complete: ${allParts.length} items synced.`);
       } else {
-        console.log("✅ Master Data is already up to date.");
+        // CASE B: DELTA SYNC (Optimal)
+        let lastLocalUpdate = '1970-01-01T00:00:00.000Z';
+        dbState.parts.forEach(p => {
+          if (p.UPDATE_TIME && p.UPDATE_TIME > lastLocalUpdate) {
+            lastLocalUpdate = p.UPDATE_TIME;
+          }
+        });
+
+        console.log(`📡 Checking for Delta changes since ${lastLocalUpdate}...`);
+
+        // 3. DELTA FETCH (Only modified records)
+        const q = query(
+          collection(db, COLS.PARTS),
+          where('UPDATE_TIME', '>=', lastLocalUpdate),
+          orderBy('UPDATE_TIME', 'asc')
+        );
+
+        const partsSnap = await getDocs(q);
+
+        if (!partsSnap.empty) {
+          console.log(`✨ Found ${partsSnap.size} potentially new Master Data records.`);
+          const changedParts = partsSnap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
+
+          // Merge into state using Map (Deduplicates by ID)
+          const partsMap = new Map(dbState.parts.map(p => [p.id, p]));
+
+          // Secondary map by PART_NUMBER to prevent "Ghost" duplicates if IDs shifted
+          const partNumberMap = new Map(dbState.parts.map(p => [p.PART_NUMBER, p.id]));
+
+          changedParts.forEach(cp => {
+            // If we find an item with same part number but different ID, update the ID map
+            if (partNumberMap.has(cp.PART_NUMBER)) {
+              const oldId = partNumberMap.get(cp.PART_NUMBER)!;
+              if (oldId !== cp.id) {
+                partsMap.delete(oldId); // Prevents duplicates if ID changed
+              }
+            }
+            partsMap.set(cp.id, cp);
+          });
+
+          dbState.parts = Array.from(partsMap.values());
+
+          // Persist only changes to IndexedDB
+          await indexedDbService.saveParts(changedParts);
+
+          notifyListeners();
+          console.log(`✅ Master Data Sync Complete. Total local: ${dbState.parts.length}`);
+        } else {
+          console.log("✅ Master Data is already up to date.");
+        }
       }
 
     } catch (e) {
@@ -461,6 +499,7 @@ export const storageService = {
       notifyListeners();
     }
   },
+
   getShipments: () => dbState.shipments || [],
   getVesselTracking: () => dbState.vesselTracking || [],
   getEquipmentTracking: () => dbState.equipmentTracking || [],

@@ -1074,51 +1074,12 @@ export const DatabaseView = () => {
                     )}
 
                     {canEdit && (
-                        <>
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={procState.isOpen}
-                                className={`flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-colors ${procState.isOpen ? 'opacity-50 cursor-wait' : ''}`}
-                            >
-                                <FileSpreadsheet size={16} /> Bulk Upload
-                            </button>
-                            <button
-                                onClick={handleCreatePart}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm transition-colors"
-                            >
-                                <Plus size={16} /> Add Item
-                            </button>
-                            {/* CFMDB Sync Button */}
-                            <button
-                                onClick={() => cfmdbInputRef.current?.click()}
-                                disabled={procState.isOpen}
-                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-sm transition-colors"
-                                title="Sync with CFMDB-01.02.xlsx"
-                            >
-                                <Database size={16} /> Sync Master DB
-                            </button>
-                            <div className="w-px h-8 bg-slate-300 mx-1"></div>
-                            {!storageService.isCloudMode() && (
-                                <button onClick={() => restoreInputRef.current?.click()} disabled={procState.isOpen} className="flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-200 shadow-sm transition-colors" title="Restore DB">
-                                    <RefreshCcw size={16} /> Restore
-                                </button>
-                            )}
-                        </>
-                    )}
-
-                    {canEdit && (
-                        <button onClick={handleBackup} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm transition-colors" title="Full Backup">
-                            <Download size={16} /> Backup
-                        </button>
-                    )}
-
-                    {canDelete && (
                         <button
-                            onClick={handleWipeDatabase}
-                            className="flex items-center gap-2 px-4 py-2 bg-red-100 border border-red-300 text-red-800 rounded-lg hover:bg-red-200 shadow-sm transition-colors font-bold"
-                            title="Delete ALL Records"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={procState.isOpen}
+                            className={`flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-sm transition-colors ${procState.isOpen ? 'opacity-50 cursor-wait' : ''}`}
                         >
-                            <Trash2 size={16} /> WIPE DB
+                            <FileSpreadsheet size={16} /> Bulk Upload
                         </button>
                     )}
                 </div>

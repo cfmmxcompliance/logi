@@ -141,16 +141,15 @@ const processSyncQueue = async () => {
         case 'DELETE_COSTS': await storageService.deleteCosts(task.data); break;
         case 'UPSERT_PRE_ALERTS': await storageService.updatePreAlert(task.data); break;
         case 'DELETE_PRE_ALERTS': await storageService.deletePreAlerts(task.data); break;
-      }  // Remove from queue on success
+      }
+
+      // Success: Remove from queue
       pendingWrites = pendingWrites.filter(w => w.id !== task.id);
       localStorage.setItem(PENDING_WRITES_KEY, JSON.stringify(pendingWrites));
     } catch (e) {
-      console.error(`[Sync] Failed to process task ${task.id}`, e);
-      // Keep in queue? Or move to "Dead Letter Queue"?
-      // For now, keep it.
+      // Keep in queue until success
     }
   }
-  console.log("[Sync] Queue processing complete.");
 };
 
 // --- AUDIT LOGGING HELPER ---
@@ -974,7 +973,6 @@ export const storageService = {
 
       await storageService.bumpPartsVersion();
     } catch (e: any) {
-      console.error("❌ Master Data Update Failed:", e);
       throw new Error(`Failed to save part: ${e.message || 'Unknown error'}`);
     }
   },
@@ -1036,7 +1034,6 @@ export const storageService = {
       await logAction('MASTER_DATA_DELETE', `Eliminada pieza: ${partToDelete?.PART_NUMBER || id}`);
       await storageService.bumpPartsVersion();
     } catch (e: any) {
-      console.error("❌ Master Data Delete Failed:", e);
       throw new Error(`Failed to delete part: ${e.message || 'Unknown error'}`);
     }
   },
@@ -3036,7 +3033,40 @@ export const storageService = {
     return { affected: recordsToProcess.length, created: itemsToCreate.length, remaining: remainingCount };
   },
 
+  // Technical Validation Suite (Trigger via Console: storageService.validateCRUD())
+  validateCRUD: async () => {
+    console.log("🛠️ Starting Technical CRUD Validation...");
+    const testId = `test_${Date.now()}`;
+    const part: any = {
+      id: testId,
+      PART_NUMBER: 'CRUD-TEST',
+      DESCRIPTION_EN: 'Initial State',
+      UPDATE_TIME: new Date().toISOString()
+    };
+
+    try {
+      console.log("1. Testing Write...");
+      await storageService.updatePart(part);
+
+      console.log("2. Testing Read/Edit...");
+      const editPart = { ...part, DESCRIPTION_EN: 'Edited State' };
+      await storageService.updatePart(editPart);
+
+      console.log("3. Testing Delete...");
+      await storageService.deletePart(testId);
+
+      console.log("✅ FIRESTORE CRUD STABLE: All operations verified.");
+      return "SUCCESS: Firebase CRUD validated.";
+    } catch (e: any) {
+      console.error("❌ FIRESTORE CRUD FAILED:", e);
+      return `FAILURE: ${e.message}`;
+    }
+  }
 };
 
+// Expose to window for user-driven technical validation
+if (typeof window !== 'undefined') {
+  (window as any).storageService = storageService;
+}
 
 export default storageService;

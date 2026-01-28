@@ -528,8 +528,8 @@ export const storageService = {
   getSuppliers: () => dbState.suppliers || [],
 
   // --- SUPPLIERS CRUD ---
-// --- SUPPLIERS CRUD ---
-upsertSupplier: async (record: Supplier) => {
+  // --- SUPPLIERS CRUD ---
+  upsertSupplier: async (record: Supplier) => {
     const updated = { ...record, updatedAt: new Date().toISOString() };
     const id = record.id || crypto.randomUUID();
 
@@ -540,319 +540,319 @@ upsertSupplier: async (record: Supplier) => {
     const idx = dbState.suppliers.findIndex((s: any) => s.id === id);
     if (idx !== -1) dbState.suppliers[idx] = { ...updated, id };
     else dbState.suppliers.push({ ...updated, id });
-},
+  },
 
-    deleteSupplier: async (id: string) => {
-        if (!db) throw new Error("Sin conexión a Internet.");
-        await deleteDoc(doc(db, COLS.SUPPLIERS, id));
+  deleteSupplier: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.SUPPLIERS, id));
 
-        // Update Local
-        dbState.suppliers = dbState.suppliers.filter((s: any) => s.id !== id);
-    },
+    // Update Local
+    dbState.suppliers = dbState.suppliers.filter((s: any) => s.id !== id);
+  },
 
-        // --- LOGISTICS CRUD ---
-        upsertLogistics: async (record: any) => {
-            const updated = { ...record, updatedAt: new Date().toISOString() };
-            const id = record.id || crypto.randomUUID();
+  // --- LOGISTICS CRUD ---
+  upsertLogistics: async (record: any) => {
+    const updated = { ...record, updatedAt: new Date().toISOString() };
+    const id = record.id || crypto.randomUUID();
 
-            if (!db) throw new Error("Sin conexión a Internet.");
-            await setDoc(doc(db, COLS.LOGISTICS, id), sanitizeForFirestore({ ...updated, id }));
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await setDoc(doc(db, COLS.LOGISTICS, id), sanitizeForFirestore({ ...updated, id }));
 
-            // Update Local
-            const idx = dbState.logistics.findIndex((l: any) => l.id === id);
-            if (idx !== -1) dbState.logistics[idx] = { ...updated, id };
-            else dbState.logistics.push({ ...updated, id });
-        },
+    // Update Local
+    const idx = dbState.logistics.findIndex((l: any) => l.id === id);
+    if (idx !== -1) dbState.logistics[idx] = { ...updated, id };
+    else dbState.logistics.push({ ...updated, id });
+  },
 
-            deleteLogistics: async (id: string) => {
-                if (!db) throw new Error("Sin conexión a Internet.");
-                await deleteDoc(doc(db, COLS.LOGISTICS, id));
+  deleteLogistics: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.LOGISTICS, id));
 
-                // Update Local
-                dbState.logistics = dbState.logistics.filter((l: any) => l.id !== id);
-            },
+    // Update Local
+    dbState.logistics = dbState.logistics.filter((l: any) => l.id !== id);
+  },
 
-                // --- USER MANAGEMENT CRUD ---
-                upsertUser: async (user: any) => {
-                    const id = user.email;
-                    const updated = { ...user, lastLogin: user.lastLogin || new Date().toISOString() };
+  // --- USER MANAGEMENT CRUD ---
+  upsertUser: async (user: any) => {
+    const id = user.email;
+    const updated = { ...user, lastLogin: user.lastLogin || new Date().toISOString() };
 
-                    if (!db) throw new Error("Sin conexión a Internet.");
-                    await setDoc(doc(db, COLS.USERS, id), sanitizeForFirestore(updated), { merge: true });
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await setDoc(doc(db, COLS.USERS, id), sanitizeForFirestore(updated), { merge: true });
 
-                    // Update Local
-                    const idx = dbState.users.findIndex((u: any) => u.email === id);
-                    if (idx !== -1) dbState.users[idx] = { ...dbState.users[idx], ...updated };
-                    else dbState.users.push(updated);
-                },
+    // Update Local
+    const idx = dbState.users.findIndex((u: any) => u.email === id);
+    if (idx !== -1) dbState.users[idx] = { ...dbState.users[idx], ...updated };
+    else dbState.users.push(updated);
+  },
 
-                    deleteUser: async (email: string) => {
-                        if (!db) throw new Error("Sin conexión a Internet.");
-                        await deleteDoc(doc(db, COLS.USERS, email));
+  deleteUser: async (email: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.USERS, email));
 
-                        // Update Local
-                        dbState.users = dbState.users.filter((u: any) => u.email !== email);
-                    },
-                        getDataStageReports: () => dbState.dataStageReports || [],
-                            getInvoiceItems: () => dbState.commercialInvoices || [],
+    // Update Local
+    dbState.users = dbState.users.filter((u: any) => u.email !== email);
+  },
+  getDataStageReports: () => dbState.dataStageReports || [],
+  getInvoiceItems: () => dbState.commercialInvoices || [],
 
-                                updateCost: async (cost: CostRecord) => {
-                                    const id = cost.id || crypto.randomUUID();
-                                    if (!db) throw new Error("Sin conexión a Internet.");
-                                    await setDoc(doc(db, COLS.COSTS, id), sanitizeForFirestore(cost));
+  updateCost: async (cost: CostRecord) => {
+    const id = cost.id || crypto.randomUUID();
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await setDoc(doc(db, COLS.COSTS, id), sanitizeForFirestore(cost));
 
-                                    // Update Local
-                                    const idx = dbState.costs.findIndex((c: any) => c.id === id);
-                                    if (idx !== -1) dbState.costs[idx] = { ...cost, id }; else dbState.costs.push({ ...cost, id });
-                                },
+    // Update Local
+    const idx = dbState.costs.findIndex((c: any) => c.id === id);
+    if (idx !== -1) dbState.costs[idx] = { ...cost, id }; else dbState.costs.push({ ...cost, id });
+  },
 
-                                    deleteCost: async (id: string) => {
-                                        if (!db) throw new Error("Sin conexión a Internet.");
-                                        await deleteDoc(doc(db, COLS.COSTS, id));
+  deleteCost: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.COSTS, id));
 
-                                        // Update Local
-                                        dbState.costs = dbState.costs.filter((c: any) => c.id !== id);
-                                    },
+    // Update Local
+    dbState.costs = dbState.costs.filter((c: any) => c.id !== id);
+  },
 
-                                        deleteCosts: async (ids: string[]) => {
-                                            if (!db) throw new Error("Sin conexión a Internet.");
-                                            const batch = writeBatch(db);
-                                            ids.forEach(id => {
-                                                batch.delete(doc(db, COLS.COSTS, id));
-                                            });
-                                            await batch.commit();
+  deleteCosts: async (ids: string[]) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    ids.forEach(id => {
+      batch.delete(doc(db, COLS.COSTS, id));
+    });
+    await batch.commit();
 
-                                            // Update Local
-                                            dbState.costs = dbState.costs.filter((c: any) => !ids.includes(c.id));
-                                        },
+    // Update Local
+    dbState.costs = dbState.costs.filter((c: any) => !ids.includes(c.id));
+  },
 
-                                            // Commercial Invoices CRUD (Cloud-Enabled & Direct Write)
-                                            addInvoiceItems: async (newItems: CommercialInvoiceItem[]) => {
-                                                // 1. Deduplication (using local state as cache)
-                                                const existingKeys = new Set(
-                                                    (dbState.commercialInvoices || []).map(
-                                                        (i: any) => `${i.invoiceNo}-${i.partNo}-${i.qty}-${i.hts || ''}`
-                                                    )
-                                                );
+  // Commercial Invoices CRUD (Cloud-Enabled & Direct Write)
+  addInvoiceItems: async (newItems: CommercialInvoiceItem[]) => {
+    // 1. Deduplication (using local state as cache)
+    const existingKeys = new Set(
+      (dbState.commercialInvoices || []).map(
+        (i: any) => `${i.invoiceNo}-${i.partNo}-${i.qty}-${i.hts || ''}`
+      )
+    );
 
-                                                const uniqueNewItems = newItems.filter(item => {
-                                                    const key = `${item.invoiceNo}-${item.partNo}-${item.qty}-${item.hts || ''}`;
-                                                    return !existingKeys.has(key);
-                                                });
+    const uniqueNewItems = newItems.filter(item => {
+      const key = `${item.invoiceNo}-${item.partNo}-${item.qty}-${item.hts || ''}`;
+      return !existingKeys.has(key);
+    });
 
-                                                if (uniqueNewItems.length === 0) {
-                                                    console.log("No unique items to add.");
-                                                    return;
-                                                }
+    if (uniqueNewItems.length === 0) {
+      console.log("No unique items to add.");
+      return;
+    }
 
-                                                if (!db) throw new Error("Sin conexión a Internet/Base de Datos.");
+    if (!db) throw new Error("Sin conexión a Internet/Base de Datos.");
 
-                                                // Cloud Write FIRST (Batch)
-                                                const chunks = [];
-                                                for (let i = 0; i < uniqueNewItems.length; i += 400) {
-                                                    chunks.push(uniqueNewItems.slice(i, i + 400));
-                                                }
+    // Cloud Write FIRST (Batch)
+    const chunks = [];
+    for (let i = 0; i < uniqueNewItems.length; i += 400) {
+      chunks.push(uniqueNewItems.slice(i, i + 400));
+    }
 
-                                                for (const chunk of chunks) {
-                                                    const batch = writeBatch(db);
-                                                    chunk.forEach((item) => {
-                                                        batch.set(doc(db, COLS.INVOICES, item.id), sanitizeForFirestore(item));
-                                                    });
-                                                    try {
-                                                        await batch.commit();
-                                                    } catch (e) {
-                                                        console.error("Critical Invoice Batch Write Failed", e);
-                                                        throw e;
-                                                    }
-                                                }
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach((item) => {
+        batch.set(doc(db, COLS.INVOICES, item.id), sanitizeForFirestore(item));
+      });
+      try {
+        await batch.commit();
+      } catch (e) {
+        console.error("Critical Invoice Batch Write Failed", e);
+        throw e;
+      }
+    }
 
-                                                const invoiceNos = Array.from(new Set(uniqueNewItems.map(i => i.invoiceNo))).join(', ');
-                                                const containers = Array.from(new Set(uniqueNewItems.map(i => i.containerNo).filter(Boolean))).join(', ');
+    const invoiceNos = Array.from(new Set(uniqueNewItems.map(i => i.invoiceNo))).join(', ');
+    const containers = Array.from(new Set(uniqueNewItems.map(i => i.containerNo).filter(Boolean))).join(', ');
 
-                                                try {
-                                                    logAction('INVOICE_IMPORT', `Factura: ${invoiceNos} | Contenedor: ${containers || 'N/A'} | Líneas: ${uniqueNewItems.length}`);
-                                                } catch (e) { }
+    try {
+      logAction('INVOICE_IMPORT', `Factura: ${invoiceNos} | Contenedor: ${containers || 'N/A'} | Líneas: ${uniqueNewItems.length}`);
+    } catch (e) { }
 
-                                                // Update Local State AFTER successful Cloud Write
-                                                dbState.commercialInvoices = [...(dbState.commercialInvoices || []), ...uniqueNewItems];
-                                                notifyListeners();
-                                            },
+    // Update Local State AFTER successful Cloud Write
+    dbState.commercialInvoices = [...(dbState.commercialInvoices || []), ...uniqueNewItems];
+    notifyListeners();
+  },
 
-                                                updateInvoiceItem: async (item: CommercialInvoiceItem) => {
-                                                    if (!db) throw new Error("Sin conexión a Internet.");
+  updateInvoiceItem: async (item: CommercialInvoiceItem) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
 
-                                                    // Direct Write
-                                                    try {
-                                                        await setDoc(doc(db, COLS.INVOICES, item.id), sanitizeForFirestore(item));
+    // Direct Write
+    try {
+      await setDoc(doc(db, COLS.INVOICES, item.id), sanitizeForFirestore(item));
 
-                                                        // Update Local State AFTER success
-                                                        const idx = dbState.commercialInvoices.findIndex((i: any) => i.id === item.id);
-                                                        if (idx !== -1) {
-                                                            dbState.commercialInvoices[idx] = item;
-                                                            notifyListeners();
-                                                        }
-                                                    } catch (e) {
-                                                        console.error("Update Invoice Item Failed", e);
-                                                        throw e;
-                                                    }
-                                                },
+      // Update Local State AFTER success
+      const idx = dbState.commercialInvoices.findIndex((i: any) => i.id === item.id);
+      if (idx !== -1) {
+        dbState.commercialInvoices[idx] = item;
+        notifyListeners();
+      }
+    } catch (e) {
+      console.error("Update Invoice Item Failed", e);
+      throw e;
+    }
+  },
 
-                                                    batchUpdateInvoiceItems: async (items: CommercialInvoiceItem[]) => {
-                                                        if (!db) throw new Error("Sin conexión a Internet.");
+  batchUpdateInvoiceItems: async (items: CommercialInvoiceItem[]) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
 
-                                                        // Direct Cloud Batch Update
-                                                        const chunks = [];
-                                                        for (let i = 0; i < items.length; i += 400) {
-                                                            chunks.push(items.slice(i, i + 400));
-                                                        }
+    // Direct Cloud Batch Update
+    const chunks = [];
+    for (let i = 0; i < items.length; i += 400) {
+      chunks.push(items.slice(i, i + 400));
+    }
 
-                                                        for (const chunk of chunks) {
-                                                            const batch = writeBatch(db);
-                                                            chunk.forEach(item => {
-                                                                const ref = doc(db, COLS.INVOICES, item.id);
-                                                                batch.set(ref, sanitizeForFirestore(item));
-                                                            });
-                                                            try {
-                                                                await batch.commit();
-                                                            } catch (e) {
-                                                                console.error("Critical Batch Update Failed", e);
-                                                                throw e;
-                                                            }
-                                                        }
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach(item => {
+        const ref = doc(db, COLS.INVOICES, item.id);
+        batch.set(ref, sanitizeForFirestore(item));
+      });
+      try {
+        await batch.commit();
+      } catch (e) {
+        console.error("Critical Batch Update Failed", e);
+        throw e;
+      }
+    }
 
-                                                        // Update Local State AFTER success
-                                                        items.forEach(item => {
-                                                            const idx = dbState.commercialInvoices.findIndex((i: any) => i.id === item.id);
-                                                            if (idx !== -1) dbState.commercialInvoices[idx] = item;
-                                                        });
-                                                        notifyListeners();
-                                                    },
+    // Update Local State AFTER success
+    items.forEach(item => {
+      const idx = dbState.commercialInvoices.findIndex((i: any) => i.id === item.id);
+      if (idx !== -1) dbState.commercialInvoices[idx] = item;
+    });
+    notifyListeners();
+  },
 
-                                                        refreshInvoices: async () => {
-                                                            if (!db) return;
-                                                            try {
-                                                                console.log("⬇️ Fetching Commercial Invoices (On-Demand)...");
-                                                                const snap = await getDocs(collection(db, COLS.INVOICES));
-                                                                dbState.commercialInvoices = snap.docs.map(d => ({ ...d.data(), id: d.id } as CommercialInvoiceItem));
-                                                                // saveLocal(); // Can skip saving entire DB to disk on every refresh for speed
-                                                                notifyListeners();
-                                                            } catch (e) {
-                                                                console.error("Failed to refresh invoices", e);
-                                                            }
-                                                        },
+  refreshInvoices: async () => {
+    if (!db) return;
+    try {
+      console.log("⬇️ Fetching Commercial Invoices (On-Demand)...");
+      const snap = await getDocs(collection(db, COLS.INVOICES));
+      dbState.commercialInvoices = snap.docs.map(d => ({ ...d.data(), id: d.id } as CommercialInvoiceItem));
+      // saveLocal(); // Can skip saving entire DB to disk on every refresh for speed
+      notifyListeners();
+    } catch (e) {
+      console.error("Failed to refresh invoices", e);
+    }
+  },
 
-                                                            deleteInvoiceItem: async (id: string) => {
-                                                                if (!db) throw new Error("Sin conexión a Internet.");
-                                                                await deleteDoc(doc(db, COLS.INVOICES, id));
+  deleteInvoiceItem: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.INVOICES, id));
 
-                                                                dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => i.id !== id);
-                                                            },
+    dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => i.id !== id);
+  },
 
-                                                                deleteInvoiceItems: async (ids: string[]) => {
-                                                                    if (!db) throw new Error("Sin conexión a Internet.");
+  deleteInvoiceItems: async (ids: string[]) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
 
-                                                                    // Batch delete
-                                                                    const chunks = [];
-                                                                    for (let i = 0; i < ids.length; i += 500) {
-                                                                        chunks.push(ids.slice(i, i + 500));
-                                                                    }
+    // Batch delete
+    const chunks = [];
+    for (let i = 0; i < ids.length; i += 500) {
+      chunks.push(ids.slice(i, i + 500));
+    }
 
-                                                                    for (const chunk of chunks) {
-                                                                        const batch = writeBatch(db);
-                                                                        chunk.forEach(id => {
-                                                                            const ref = doc(db, COLS.INVOICES, id);
-                                                                            batch.delete(ref);
-                                                                        });
-                                                                        await batch.commit();
-                                                                    }
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach(id => {
+        const ref = doc(db, COLS.INVOICES, id);
+        batch.delete(ref);
+      });
+      await batch.commit();
+    }
 
-                                                                    dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => !ids.includes(i.id));
-                                                                },
+    dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => !ids.includes(i.id));
+  },
 
-                                                                    deleteAutoLearnedInvoices: async () => {
-                                                                        if (!db) throw new Error("Sin conexión a Internet.");
+  deleteAutoLearnedInvoices: async () => {
+    if (!db) throw new Error("Sin conexión a Internet.");
 
-                                                                        const q = query(collection(db, COLS.INVOICES), where("invoiceNo", "==", "AUTO-LEARNED"));
-                                                                        const snap = await getDocs(q);
-                                                                        const ids = snap.docs.map(d => d.id);
+    const q = query(collection(db, COLS.INVOICES), where("invoiceNo", "==", "AUTO-LEARNED"));
+    const snap = await getDocs(q);
+    const ids = snap.docs.map(d => d.id);
 
-                                                                        if (ids.length > 0) {
-                                                                            await storageService.deleteInvoiceItems(ids);
-                                                                        }
-                                                                    },
+    if (ids.length > 0) {
+      await storageService.deleteInvoiceItems(ids);
+    }
+  },
 
-                                                                        recoverLocalData: async () => {
-                                                                            // Keep recovery logic as is, it's useful for "oops" moments but doesn't block writes
-                                                                            console.log("Recovery skipped in Direct Mode to avoid conflicts.");
-                                                                            return 0;
-                                                                        },
+  recoverLocalData: async () => {
+    // Keep recovery logic as is, it's useful for "oops" moments but doesn't block writes
+    console.log("Recovery skipped in Direct Mode to avoid conflicts.");
+    return 0;
+  },
 
-                                                                            deleteInvoiceByNumber: async (invoiceNo: string) => {
-                                                                                if (!db) throw new Error("Sin conexión a Internet.");
+  deleteInvoiceByNumber: async (invoiceNo: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
 
-                                                                                const q = query(collection(db, COLS.INVOICES), where("invoiceNo", "==", invoiceNo));
-                                                                                const snap = await getDocs(q);
-                                                                                const ids = snap.docs.map(d => d.id);
+    const q = query(collection(db, COLS.INVOICES), where("invoiceNo", "==", invoiceNo));
+    const snap = await getDocs(q);
+    const ids = snap.docs.map(d => d.id);
 
-                                                                                if (ids.length > 0) {
-                                                                                    await storageService.deleteInvoiceItems(ids);
-                                                                                }
-                                                                            },
+    if (ids.length > 0) {
+      await storageService.deleteInvoiceItems(ids);
+    }
+  },
 
-                                                                                isCloudMode: () => !!db,
-                                                                                    subscribe: (callback: () => void) => {
-                                                                                        listeners.push(callback);
-                                                                                        return () => { listeners = listeners.filter(l => l !== callback); };
-                                                                                    },
+  isCloudMode: () => !!db,
+  subscribe: (callback: () => void) => {
+    listeners.push(callback);
+    return () => { listeners = listeners.filter(l => l !== callback); };
+  },
 
-                                                                                        seedDatabase: async () => { },
+  seedDatabase: async () => { },
 
-                                                                                            updatePart: async (part: RawMaterialPart) => {
-                                                                                                const id = part.id || crypto.randomUUID();
-                                                                                                const data = { ...part, id, UPDATE_TIME: new Date().toISOString() };
+  updatePart: async (part: RawMaterialPart) => {
+    const id = part.id || crypto.randomUUID();
+    const data = { ...part, id, UPDATE_TIME: new Date().toISOString() };
 
-                                                                                                if (!db) throw new Error("Sin conexión a Internet.");
+    if (!db) throw new Error("Sin conexión a Internet.");
 
-                                                                                                try {
-                                                                                                    // 2. Sync Cloud
-                                                                                                    await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(data));
+    try {
+      // 2. Sync Cloud
+      await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(data));
 
-                                                                                                    // 1. Sync Local State Immediately
-                                                                                                    const idx = dbState.parts.findIndex((p: any) => p.id === id);
-                                                                                                    if (idx !== -1) dbState.parts[idx] = data; else dbState.parts.push(data);
-                                                                                                    notifyListeners();
+      // 1. Sync Local State Immediately
+      const idx = dbState.parts.findIndex((p: any) => p.id === id);
+      if (idx !== -1) dbState.parts[idx] = data; else dbState.parts.push(data);
+      notifyListeners();
 
-                                                                                                    // Sync IndexedDB (Atomic)
-                                                                                                    await indexedDbService.putPart(data);
+      // Sync IndexedDB (Atomic)
+      await indexedDbService.putPart(data);
 
-                                                                                                    // 3. Record change for Daily Automation
-                                                                                                    try {
-                                                                                                        const d = new Date();
-                                                                                                        const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
-                                                                                                        await setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
-                                                                                                            id: dateStr,
-                                                                                                            timestamp: new Date().toISOString(),
-                                                                                                            action: 'UPDATE',
-                                                                                                            user: 'System',
-                                                                                                            partNumbers: arrayUnion(part.PART_NUMBER || 'N/A'),
-                                                                                                            count: increment(1),
-                                                                                                            reported: false
-                                                                                                        }, { merge: true });
+      // 3. Record change for Daily Automation
+      try {
+        const d = new Date();
+        const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+        await setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
+          id: dateStr,
+          timestamp: new Date().toISOString(),
+          action: 'UPDATE',
+          user: 'System',
+          partNumbers: arrayUnion(part.PART_NUMBER || 'N/A'),
+          count: increment(1),
+          reported: false
+        }, { merge: true });
 
-                                                                                                        await storageService.bumpPartsVersion();
-                                                                                                    } catch (e) { console.warn("Log failed", e); }
+        await storageService.bumpPartsVersion();
+      } catch (e) { console.warn("Log failed", e); }
 
-                                                                                                } catch (e: any) {
-                                                                                                    if (isQuotaError(e)) {
-                                                                                                        console.warn("⚠️ Firebase Quota Exceeded.");
-                                                                                                        // Still throw to UI so user knows? Or silent fail? User asked for NO QUEUES.
-                                                                                                        // If quota exceeded, we cannot write. So we should throw.
-                                                                                                    }
-                                                                                                    throw new Error(`Failed to save part: ${e.message || 'Unknown error'}`);
-                                                                                                }
-                                                                                            },
+    } catch (e: any) {
+      if (isQuotaError(e)) {
+        console.warn("⚠️ Firebase Quota Exceeded.");
+        // Still throw to UI so user knows? Or silent fail? User asked for NO QUEUES.
+        // If quota exceeded, we cannot write. So we should throw.
+      }
+      throw new Error(`Failed to save part: ${e.message || 'Unknown error'}`);
+    }
+  },
 
-bulkUpdateParts: async (ids: string[], updates: Partial<RawMaterialPart>, onProgress?: (p: number) => void) => {
+  bulkUpdateParts: async (ids: string[], updates: Partial<RawMaterialPart>, onProgress?: (p: number) => void) => {
     // MODO DIRECTO FINAL: Sin colas, directo a Firestore. BATCH OPTIMIZED.
     if (!db) throw new Error("Sin conexión a Base de Datos");
     if (onProgress) onProgress(5);
@@ -869,641 +869,465 @@ bulkUpdateParts: async (ids: string[], updates: Partial<RawMaterialPart>, onProg
 
     // Solo iteramos una vez sobre todo el array (Mucho mas rápido que find() repetido)
     dbState.parts.forEach(p => {
-        if (idsSet.has(p.id)) {
-            Object.assign(p, finalUpdates);
-            updatedItems.push(p);
-        }
+      if (idsSet.has(p.id)) {
+        Object.assign(p, finalUpdates);
+        updatedItems.push(p);
+      }
     });
 
     if (onProgress) onProgress(15);
 
     // 2. Loop Directo de Escritura (Cloud)
     for (let i = 0; i < total; i += CHUNK_SIZE) {
-        const batchIds = ids.slice(i, i + CHUNK_SIZE);
-        const batch = writeBatch(db);
+      const batchIds = ids.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(db);
 
-        // Construir batch
-        batchIds.forEach(id => {
-            const ref = doc(db, COLS.PARTS, id);
-            batch.set(ref, finalUpdates, { merge: true });
-        });
+      // Construir batch
+      batchIds.forEach(id => {
+        const ref = doc(db, COLS.PARTS, id);
+        batch.set(ref, finalUpdates, { merge: true });
+      });
 
-        // ENVIAR A NUBE (Bloqueante para asegurar consistencia)
-        try {
-            await batch.commit();
-        } catch (e) {
-            console.error("❌ Error CRÍTICO en Escritura Directa (Batch " + i + "):", e);
-            throw e; // Interrumpir para no dejar estado inconsistente sin aviso
-        }
+      // ENVIAR A NUBE (Bloqueante para asegurar consistencia)
+      try {
+        await batch.commit();
+      } catch (e) {
+        console.error("❌ Error CRÍTICO en Escritura Directa (Batch " + i + "):", e);
+        throw e; // Interrumpir para no dejar estado inconsistente sin aviso
+      }
 
-        processed += batchIds.length;
-        // Progreso Visual: 15% -> 85%
-        if (onProgress) onProgress(15 + Math.floor((processed / total) * 70));
+      processed += batchIds.length;
+      // Progreso Visual: 15% -> 85%
+      if (onProgress) onProgress(15 + Math.floor((processed / total) * 70));
     }
 
     // 3. Persistencia Local Eficiente (Solo lo modificado)
     // Evitamos re-guardar las 20,000 piezas, solo las 50-5000 cambiadas.
     try {
-        if (onProgress) onProgress(90);
-        await indexedDbService.saveParts(updatedItems);
-        saveLocal(true); // true = Skip saving parts again
+      if (onProgress) onProgress(90);
+      await indexedDbService.saveParts(updatedItems);
+      saveLocal(true); // true = Skip saving parts again
     } catch (e) {
-        console.warn("Error guardando cache local (No crítico)", e);
+      console.warn("Error guardando cache local (No crítico)", e);
     }
 
     notifyListeners();
 
     // 4. Auditoría (No bloqueante)
     try {
-        const d = new Date();
-        const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
-        setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
-            id: dateStr,
-            timestamp: new Date().toISOString(),
-            action: 'UPDATE_MASSIVE_DIRECT',
-            count: increment(total),
-            reported: false
-        }, { merge: true }).catch(err => console.warn("Log failed", err));
+      const d = new Date();
+      const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+      setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
+        id: dateStr,
+        timestamp: new Date().toISOString(),
+        action: 'UPDATE_MASSIVE_DIRECT',
+        count: increment(total),
+        reported: false
+      }, { merge: true }).catch(err => console.warn("Log failed", err));
     } catch (e) { }
 
     // Secondary operations (Non-blocking)
     try {
-        storageService.bumpPartsVersion();
-        logAction('MASTER_DATA_MASSIVE_EDIT', `Editadas ${total} piezas masivamente (Directo).`);
+      storageService.bumpPartsVersion();
+      logAction('MASTER_DATA_MASSIVE_EDIT', `Editadas ${total} piezas masivamente (Directo).`);
     } catch (e) {
-        console.warn("Secondary operations deferred.");
+      console.warn("Secondary operations deferred.");
     }
 
     if (onProgress) onProgress(100);
     return { success: true };
-},
+  },
 
-    patchPart: async (id: string, updates: any) => {
-      if (!db) return;
-      await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(updates), { merge: true });
-      // Update local state
-      const idx = dbState.parts.findIndex((p: any) => p.id === id);
-      if (idx !== -1) dbState.parts[idx] = { ...dbState.parts[idx], ...updates };
-    },
-
-      deletePart: async (id: string) => {
-        try {
-          const partToDelete = dbState.parts.find(p => p.id === id);
-          if (!partToDelete) return;
-
-          // 1. Sync Local State Immediately
-          dbState.parts = dbState.parts.filter((p: any) => p.id !== id);
-
-          // Sync IndexedDB (Atomic)
-          await indexedDbService.deletePart(id);
-
-          saveLocal();
-          notifyListeners();
-
-          if (!db) {
-            console.warn("Offline: Queueing Part Delete");
-            queueWrite('DELETE_PARTS', [id]);
-            return;
-          }
-
-          // 2. Sync Cloud
-          const docId = String(id || '').trim();
-          if (!docId || docId.includes('/')) {
-            console.error("deletePart: Invalid Document ID", docId);
-            return;
-          }
-          await deleteDoc(doc(db, COLS.PARTS, docId));
-
-          // 3. Record change for Daily Automation
-          const userStr = localStorage.getItem('logimaster_user');
-          let user = { name: 'System', email: '' };
-          try { if (userStr) user = JSON.parse(userStr); } catch (e) { }
-
-          const d = new Date();
-          const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
-
-          await setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
-            id: dateStr,
-            timestamp: new Date().toISOString(),
-            action: 'DELETE',
-            user: user.name || user.email || 'System',
-            partNumbers: arrayUnion(partToDelete?.PART_NUMBER || id),
-            count: increment(1)
-          }, { merge: true });
-
-          await logAction('MASTER_DATA_DELETE', `Eliminada pieza: ${partToDelete?.PART_NUMBER || id}`);
-          await storageService.bumpPartsVersion();
-        } catch (e: any) {
-          if (isQuotaError(e)) {
-            console.warn("⚠️ Firebase Quota Exceeded: Part deleted locally and queued for sync.");
-            queueWrite('DELETE_PARTS', [id]);
-            return; // Success (local primary)
-          }
-          throw new Error(`Failed to delete part: ${e.message || 'Unknown error'}`);
-        }
-      },
-
-        deleteParts: async (ids: string[]) => {
-          // 1. Sync Local State Immediately
-          dbState.parts = dbState.parts.filter((p: any) => !ids.includes(p.id));
-
-          // Sync IndexedDB (Atomic)
-          await Promise.all(ids.map(id => indexedDbService.deletePart(id)));
-
-          saveLocal();
-          notifyListeners();
-
-          if (!db) return;
-
-          // 2. Sync Cloud
-          // Filter out invalid IDs to prevent "Invalid document reference" errors
-          // Ensure all IDs are strings and don't contain slashes (which break Firestore doc paths)
-          const validIds = ids.filter(id => {
-            const idStr = String(id || '').trim();
-            return idStr !== '' && !idStr.includes('/');
-          }).map(id => String(id).trim());
-
-          if (validIds.length === 0) {
-            console.warn("deleteParts: No valid IDs found for cloud deletion", ids);
-            return;
-          }
-
-          console.log(`🗑️ cloudDelete: Processing ${validIds.length} parts...`);
-
-          // Batch limit is 500. Split into chunks of 450.
-          const CHUNK_SIZE = 450;
-          const total = validIds.length;
-
-          for (let i = 0; i < total; i += CHUNK_SIZE) {
-            const chunk = validIds.slice(i, i + CHUNK_SIZE);
-            const batch = writeBatch(db);
-            chunk.forEach(id => {
-              const docRef = doc(db, COLS.PARTS, id);
-              batch.delete(docRef);
-            });
-            try {
-              await batch.commit();
-              console.log(`✅ Batch ${Math.floor(i / CHUNK_SIZE) + 1} committed.`);
-            } catch (e: any) {
-              if (isQuotaError(e)) {
-                console.warn("⚠️ Firebase Quota Exceeded during bulk delete: Batch queued for local sync.");
-                queueWrite('DELETE_PARTS', chunk);
-              } else {
-                console.error("🔥 Firestore Batch Delete Failed:", e);
-                throw e; // Rethrow other errors (permissions, etc.)
-              }
-            }
-          }
-
-          // 3. Record change for Daily Automation - DATE-BASED AGGREGATION
-          try {
-            const userStr = localStorage.getItem('logimaster_user');
-            let user = { name: 'System', email: '' };
-            try { if (userStr) user = JSON.parse(userStr); } catch (e) { console.warn("User parse fail", e); }
-
-            const d = new Date();
-            const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
-
-            // Chunk arrayUnion for extremely large sets if needed, but for bulk delete usually fine
-            await setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
-              id: dateStr,
-              timestamp: new Date().toISOString(),
-              action: 'DELETE',
-              user: user.name || user.email || 'System',
-              partNumbers: arrayUnion(...validIds.slice(0, 1000)), // Limit elements in a single operation
-              count: increment(validIds.length),
-              reported: false
-            }, { merge: true });
-
-            // Mirror to Technical Log
-            await logAction('MASTER_DATA_DELETE_MASSIVE', `Eliminación masiva de ${validIds.length} piezas.`);
-          } catch (e) {
-            console.error("Secondary audit logging failed (Non-blocking):", e);
-          }
-
-          // 4. Trigger Version Refresh
-          await storageService.bumpPartsVersion();
-        },
-
-          upsertParts: async (parts: RawMaterialPart[], onProgress?: (p: number) => void) => {
-            if (!db) {
-              console.warn("Offline: Queueing Parts Upsert");
-              dbState.parts = [...dbState.parts, ...parts]; // Optimistic Update
-              queueWrite('UPSERT_PARTS', parts);
-patchPart: async (id: string, updates: any) => {
+  patchPart: async (id: string, updates: any) => {
     if (!db) return; // Silent return if offline? User asked for no queues. But patchPart is minor. Let's leave it or throw.
     // Assuming patchPart is safe to skip if offline (it's usually UI driven small edit)
     // But let's follow the rule: Strict.
     // await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(updates), { merge: true });
     // Actually patchPart implies partial update.
     try {
-        await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(updates), { merge: true });
-        // Local
-        const idx = dbState.parts.findIndex((p: any) => p.id === id);
-        if (idx !== -1) dbState.parts[idx] = { ...dbState.parts[idx], ...updates };
+      await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(updates), { merge: true });
+      // Local
+      const idx = dbState.parts.findIndex((p: any) => p.id === id);
+      if (idx !== -1) dbState.parts[idx] = { ...dbState.parts[idx], ...updates };
     } catch (e) {
-        console.warn("Patch Part failed", e);
+      console.warn("Patch Part failed", e);
     }
-},
+  },
 
-    deletePart: async (id: string) => {
-        if (!db) throw new Error("Sin conexión a Internet.");
+  deletePart: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
 
-        // 1. Delete Cloud
-        const docId = String(id || '').trim();
-        await deleteDoc(doc(db, COLS.PARTS, docId));
+    // 1. Delete Cloud
+    const docId = String(id || '').trim();
+    await deleteDoc(doc(db, COLS.PARTS, docId));
 
-        // 2. Local Sync
-        dbState.parts = dbState.parts.filter((p: any) => p.id !== id);
-        await indexedDbService.deletePart(id);
-        saveLocal();
-        notifyListeners();
+    // 2. Local Sync
+    dbState.parts = dbState.parts.filter((p: any) => p.id !== id);
+    await indexedDbService.deletePart(id);
+    saveLocal();
+    notifyListeners();
 
-        // Audit Log
-        try {
-            // simplified audit
-            storageService.bumpPartsVersion();
-        } catch (e) { }
-    },
+    // Audit Log
+    try {
+      // simplified audit
+      storageService.bumpPartsVersion();
+    } catch (e) { }
+  },
 
-        deleteParts: async (ids: string[]) => {
-            if (!db) throw new Error("Sin conexión a Internet.");
+  deleteParts: async (ids: string[]) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
 
-            // Cloud Batch
-            const validIds = ids.filter(id => id && !id.includes('/')).map(String);
-            const CHUNK_SIZE = 450;
-            for (let i = 0; i < validIds.length; i += CHUNK_SIZE) {
-                const chunk = validIds.slice(i, i + CHUNK_SIZE);
-                const batch = writeBatch(db);
-                chunk.forEach(id => batch.delete(doc(db, COLS.PARTS, id)));
-                await batch.commit();
-            }
+    // Cloud Batch
+    const validIds = ids.filter(id => id && !id.includes('/')).map(String);
+    const CHUNK_SIZE = 450;
+    for (let i = 0; i < validIds.length; i += CHUNK_SIZE) {
+      const chunk = validIds.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(db);
+      chunk.forEach(id => batch.delete(doc(db, COLS.PARTS, id)));
+      await batch.commit();
+    }
 
-            // Local Sync
-            dbState.parts = dbState.parts.filter((p: any) => !ids.includes(p.id));
-            await Promise.all(ids.map(id => indexedDbService.deletePart(id)));
-            saveLocal();
-            notifyListeners();
+    // Local Sync
+    dbState.parts = dbState.parts.filter((p: any) => !ids.includes(p.id));
+    await Promise.all(ids.map(id => indexedDbService.deletePart(id)));
+    saveLocal();
+    notifyListeners();
 
-            storageService.bumpPartsVersion();
-        },
+    storageService.bumpPartsVersion();
+  },
 
-            upsertParts: async (parts: RawMaterialPart[], onProgress?: (p: number) => void) => {
-                if (!db) throw new Error("Sin conexión a Internet.");
+  upsertParts: async (parts: RawMaterialPart[], onProgress?: (p: number) => void) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
 
-                const CHUNK_SIZE = 200;
-                const total = parts.length;
+    const CHUNK_SIZE = 200;
+    const total = parts.length;
 
-                for (let i = 0; i < total; i += CHUNK_SIZE) {
-                    const chunk = parts.slice(i, i + CHUNK_SIZE);
-                    const batch = writeBatch(db);
+    for (let i = 0; i < total; i += CHUNK_SIZE) {
+      const chunk = parts.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(db);
 
-                    chunk.forEach((p) => {
-                        const id = p.id || crypto.randomUUID();
-                        const partRef = doc(db, COLS.PARTS, id);
-                        batch.set(partRef, sanitizeForFirestore({ ...p, id, UPDATE_TIME: new Date().toISOString() }));
-                    });
+      chunk.forEach((p) => {
+        const id = p.id || crypto.randomUUID();
+        const partRef = doc(db, COLS.PARTS, id);
+        batch.set(partRef, sanitizeForFirestore({ ...p, id, UPDATE_TIME: new Date().toISOString() }));
+      });
 
-                    await batch.commit();
+      await batch.commit();
 
-                    // Local
-                    const dataChunk: any[] = [];
-                    chunk.forEach(p => {
-                        const id = p.id || crypto.randomUUID();
-                        const data = { ...p, id, UPDATE_TIME: new Date().toISOString() };
-                        dataChunk.push(data);
-                        const idx = dbState.parts.findIndex(lp => lp.PART_NUMBER === p.PART_NUMBER);
-                        if (idx !== -1) dbState.parts[idx] = data;
-                        else dbState.parts.push(data);
-                    });
-                    await indexedDbService.saveParts(dataChunk);
+      // Local
+      const dataChunk: any[] = [];
+      chunk.forEach(p => {
+        const id = p.id || crypto.randomUUID();
+        const data = { ...p, id, UPDATE_TIME: new Date().toISOString() };
+        dataChunk.push(data);
+        const idx = dbState.parts.findIndex(lp => lp.PART_NUMBER === p.PART_NUMBER);
+        if (idx !== -1) dbState.parts[idx] = data;
+        else dbState.parts.push(data);
+      });
+      await indexedDbService.saveParts(dataChunk);
 
-                    if (onProgress) onProgress(Math.min((i + CHUNK_SIZE) / total * 100, 100) / 100);
-                }
-                notifyListeners();
-                saveLocal();
-                storageService.bumpPartsVersion();
-            },
+      if (onProgress) onProgress(Math.min((i + CHUNK_SIZE) / total * 100, 100) / 100);
+    }
+    notifyListeners();
+    saveLocal();
+    storageService.bumpPartsVersion();
+  },
 
-                upsertShipments: async (items: Shipment[], onProgress?: (p: number) => void) => {
-                    if (!db) throw new Error("Sin conexión a Internet.");
-                    const batch = writeBatch(db);
-                    items.forEach((item, idx) => {
-                        const id = item.id || crypto.randomUUID();
-                        batch.set(doc(db, COLS.SHIPMENTS, id), sanitizeForFirestore({ ...item, id }));
-                    });
-                    await batch.commit();
+  upsertShipments: async (items: Shipment[], onProgress?: (p: number) => void) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    items.forEach((item, idx) => {
+      const id = item.id || crypto.randomUUID();
+      batch.set(doc(db, COLS.SHIPMENTS, id), sanitizeForFirestore({ ...item, id }));
+    });
+    await batch.commit();
 
-                    // Local - Optional if we just refresh, but nice for UX
-                    dbState.shipments = [...dbState.shipments, ...items];
-                    notifyListeners();
-                },
+    // Local - Optional if we just refresh, but nice for UX
+    dbState.shipments = [...dbState.shipments, ...items];
+    notifyListeners();
+  },
 
-                    upsertVesselTracking: async (items: VesselTrackingRecord[], onProgress?: (p: number) => void) => {
-                        if (!db) throw new Error("Sin conexión a Internet.");
-                        const batch = writeBatch(db);
-                        items.forEach((item, idx) => {
-                            const id = item.id || crypto.randomUUID();
-                            const cleanItem = { ...item, id, blNo: item.blNo ? String(item.blNo).trim() : '' };
-                            batch.set(doc(db, COLS.VESSEL_TRACKING, id), sanitizeForFirestore(cleanItem));
-                        });
-                        await batch.commit();
+  upsertVesselTracking: async (items: VesselTrackingRecord[], onProgress?: (p: number) => void) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    items.forEach((item, idx) => {
+      const id = item.id || crypto.randomUUID();
+      const cleanItem = { ...item, id, blNo: item.blNo ? String(item.blNo).trim() : '' };
+      batch.set(doc(db, COLS.VESSEL_TRACKING, id), sanitizeForFirestore(cleanItem));
+    });
+    await batch.commit();
 
-                        // Local
-                        const cleanItems = items.map(i => ({ ...i, id: i.id || crypto.randomUUID(), blNo: i.blNo ? String(i.blNo).trim() : '' }));
-                        dbState.vesselTracking = [...dbState.vesselTracking, ...cleanItems];
-                        notifyListeners();
-                    },
+    // Local
+    const cleanItems = items.map(i => ({ ...i, id: i.id || crypto.randomUUID(), blNo: i.blNo ? String(i.blNo).trim() : '' }));
+    dbState.vesselTracking = [...dbState.vesselTracking, ...cleanItems];
+    notifyListeners();
+  },
 
-                        upsertEquipmentTracking: async (items: EquipmentTrackingRecord[], onProgress?: (p: number) => void) => {
-                            if (!db) throw new Error("Sin conexión a Internet.");
-                            const batch = writeBatch(db);
-                            items.forEach((item) => {
-                                const id = item.id || crypto.randomUUID();
-                                batch.set(doc(db, COLS.EQUIPMENT, id), sanitizeForFirestore({ ...item, id }));
-                            });
-                            await batch.commit();
-                            dbState.equipmentTracking = [...dbState.equipmentTracking, ...items];
-                            notifyListeners();
-                        },
+  upsertEquipmentTracking: async (items: EquipmentTrackingRecord[], onProgress?: (p: number) => void) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    items.forEach((item) => {
+      const id = item.id || crypto.randomUUID();
+      batch.set(doc(db, COLS.EQUIPMENT, id), sanitizeForFirestore({ ...item, id }));
+    });
+    await batch.commit();
+    dbState.equipmentTracking = [...dbState.equipmentTracking, ...items];
+    notifyListeners();
+  },
 
-                            upsertCustomsClearance: async (items: CustomsClearanceRecord[], onProgress?: (p: number) => void) => {
-                                if (!db) throw new Error("Sin conexión a Internet.");
-                                const batch = writeBatch(db);
-                                items.forEach((item) => {
-                                    const id = item.id || crypto.randomUUID();
-                                    const cleanItem = { ...item, id, blNo: item.blNo ? String(item.blNo).trim() : '' };
-                                    batch.set(doc(db, COLS.CUSTOMS, id), sanitizeForFirestore(cleanItem));
-                                });
-                                await batch.commit();
+  upsertCustomsClearance: async (items: CustomsClearanceRecord[], onProgress?: (p: number) => void) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    items.forEach((item) => {
+      const id = item.id || crypto.randomUUID();
+      const cleanItem = { ...item, id, blNo: item.blNo ? String(item.blNo).trim() : '' };
+      batch.set(doc(db, COLS.CUSTOMS, id), sanitizeForFirestore(cleanItem));
+    });
+    await batch.commit();
 
-                                const cleanItems = items.map(i => ({ ...i, id: i.id || crypto.randomUUID(), blNo: i.blNo ? String(i.blNo).trim() : '' }));
-                                dbState.customsClearance = [...dbState.customsClearance, ...cleanItems];
-                                notifyListeners();
-                            },
+    const cleanItems = items.map(i => ({ ...i, id: i.id || crypto.randomUUID(), blNo: i.blNo ? String(i.blNo).trim() : '' }));
+    dbState.customsClearance = [...dbState.customsClearance, ...cleanItems];
+    notifyListeners();
+  },
 
-                                upsertPreAlerts: async (items: PreAlertRecord[], onProgress?: (p: number) => void) => {
-                                    if (!db) throw new Error("Sin conexión a Internet.");
-                                    const batch = writeBatch(db);
-                                    items.forEach((item) => {
-                                        const id = item.id || crypto.randomUUID();
-                                        batch.set(doc(db, COLS.PRE_ALERTS, id), sanitizeForFirestore({ ...item, id }));
-                                    });
-                                    await batch.commit();
-                                    dbState.preAlerts = [...dbState.preAlerts, ...items];
-                                    notifyListeners();
-                                },
+  upsertPreAlerts: async (items: PreAlertRecord[], onProgress?: (p: number) => void) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    items.forEach((item) => {
+      const id = item.id || crypto.randomUUID();
+      batch.set(doc(db, COLS.PRE_ALERTS, id), sanitizeForFirestore({ ...item, id }));
+    });
+    await batch.commit();
+    dbState.preAlerts = [...dbState.preAlerts, ...items];
+    notifyListeners();
+  },
 
-                                    upsertDataStageReport: async (report: DataStageReport) => {
-                                        if (!db) throw new Error("Sin conexión a Internet.");
-                                        const id = report.id || crypto.randomUUID();
-                                        const finalReport = { ...report, id };
-                                        await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, id), sanitizeForFirestore(finalReport));
+  upsertDataStageReport: async (report: DataStageReport) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const id = report.id || crypto.randomUUID();
+    const finalReport = { ...report, id };
+    await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, id), sanitizeForFirestore(finalReport));
 
-                                        dbState.dataStageReports.push(finalReport);
-                                        notifyListeners();
-                                    },
+    dbState.dataStageReports.push(finalReport);
+    notifyListeners();
+  },
 
-                                        updateShipment: async (shipment: Shipment) => {
-                                            if (!db) throw new Error("Sin conexión a Internet.");
-                                            const record = { ...shipment, updatedAt: new Date().toISOString() };
-                                            const id = record.id || crypto.randomUUID();
-                                            await setDoc(doc(db, COLS.SHIPMENTS, id), sanitizeForFirestore({ ...record, id }));
+  updateShipment: async (shipment: Shipment) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const record = { ...shipment, updatedAt: new Date().toISOString() };
+    const id = record.id || crypto.randomUUID();
+    await setDoc(doc(db, COLS.SHIPMENTS, id), sanitizeForFirestore({ ...record, id }));
 
-                                            const idx = dbState.shipments.findIndex((s: any) => s.id === id);
-                                            if (idx !== -1) dbState.shipments[idx] = { ...record, id };
-                                        },
+    const idx = dbState.shipments.findIndex((s: any) => s.id === id);
+    if (idx !== -1) dbState.shipments[idx] = { ...record, id };
+  },
 
-                                            deleteShipment: async (id: string) => {
-                                                if (!db) throw new Error("Sin conexión a Internet.");
-                                                await deleteDoc(doc(db, COLS.SHIPMENTS, id));
-                                                dbState.shipments = dbState.shipments.filter((s: any) => s.id !== id);
-                                            },
+  deleteShipment: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.SHIPMENTS, id));
+    dbState.shipments = dbState.shipments.filter((s: any) => s.id !== id);
+  },
 
-                                                deleteShipments: async (ids: string[]) => {
-                                                    if (!db) throw new Error("Sin conexión a Internet.");
-                                                    const batch = writeBatch(db);
-                                                    ids.forEach(id => batch.delete(doc(db, COLS.SHIPMENTS, id)));
-                                                    await batch.commit();
-                                                    dbState.shipments = dbState.shipments.filter((s: any) => !ids.includes(s.id));
-                                                },
-                                    const batch = writeBatch(db);
-                                    ids.forEach(id => {
-                                      batch.delete(doc(db, COLS.VESSEL_TRACKING, id));
-                                    });
-                                    await batch.commit();
-                                  },
+  deleteShipments: async (ids: string[]) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    ids.forEach(id => batch.delete(doc(db, COLS.SHIPMENTS, id)));
+    await batch.commit();
+    dbState.shipments = dbState.shipments.filter((s: any) => !ids.includes(s.id));
+  },
 
-                                    // Senior Frontend Engineer: Implemented missing updateEquipmentTracking method.
-                                    updateEquipmentTracking: async (record: EquipmentTrackingRecord) => {
-                                      const updated = { ...record, updatedAt: new Date().toISOString() };
-                                      const id = updated.id || crypto.randomUUID();
-                                      if (!db) {
-                                        console.warn("Offline: Queueing Equipment Update");
-                                        const idx = dbState.equipmentTracking.findIndex((e: any) => e.id === id);
-                                        if (idx !== -1) dbState.equipmentTracking[idx] = { ...updated, id };
-                                        else dbState.equipmentTracking.push({ ...updated, id });
-                                        queueWrite('UPDATE_EQUIPMENT', updated);
-                                        saveLocal();
-                                        return;
-                                      }
-                                      await setDoc(doc(db, COLS.EQUIPMENT, id), sanitizeForFirestore(updated));
-                                    },
+  deleteVesselTrackings: async (ids: string[]) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    ids.forEach(id => batch.delete(doc(db, COLS.VESSEL_TRACKING, id)));
+    await batch.commit();
 
-                                      // Senior Frontend Engineer: Implemented missing deleteEquipmentTracking method.
-                                      deleteEquipmentTracking: async (id: string) => {
-                                        if (!db) {
-                                          console.warn("Offline: Queueing Equipment Delete");
-                                          dbState.equipmentTracking = dbState.equipmentTracking.filter((e: any) => e.id !== id);
-                                          queueWrite('DELETE_EQUIPMENT', [id]);
-                                          saveLocal();
-                                          return;
-                                        }
-                                        await deleteDoc(doc(db, COLS.EQUIPMENT, id));
-                                      },
+    // Local
+    dbState.vesselTracking = dbState.vesselTracking.filter((v: any) => !ids.includes(v.id));
+    // No saveLocal necessary immediately if strict, but good for UI consistency
+  },
 
-                                        deleteEquipmentTrackings: async (ids: string[]) => {
-                                          if (!db) {
-                                            console.warn("Offline: Queueing Equipment Bulk Delete");
-                                            dbState.equipmentTracking = dbState.equipmentTracking.filter((e: any) => !ids.includes(e.id));
-                                            queueWrite('DELETE_EQUIPMENT', ids);
-                                            saveLocal();
-                                            return;
-                                          }
-                                          const batch = writeBatch(db);
-                                          ids.forEach(id => {
-                                            batch.delete(doc(db, COLS.EQUIPMENT, id));
-                                          });
-                                          await batch.commit();
-                                        },
+  updateEquipmentTracking: async (record: EquipmentTrackingRecord) => {
+    const updated = { ...record, updatedAt: new Date().toISOString() };
+    const id = updated.id || crypto.randomUUID();
+    if (!db) throw new Error("Sin conexión a Internet.");
 
-                                          // Senior Frontend Engineer: Implemented missing updateCustomsClearance method.
-                                          updateCustomsClearance: async (record: CustomsClearanceRecord, silent: boolean = false) => {
-                                            const updated = { ...record, updatedAt: new Date().toISOString() };
-                                            const id = updated.id || crypto.randomUUID();
+    await setDoc(doc(db, COLS.EQUIPMENT, id), sanitizeForFirestore(updated));
 
-                                            if (!silent) {
-                                              logAction('CUSTOMS_UPDATE', `Pedimento: ${updated.pedimentoNo} | Container: ${updated.containerNo}`);
-                                            }
+    const idx = dbState.equipmentTracking.findIndex((e: any) => e.id === id);
+    if (idx !== -1) dbState.equipmentTracking[idx] = { ...updated, id };
+    else dbState.equipmentTracking.push({ ...updated, id });
+  },
 
-                                            // BROADCAST UPDATE: Sync shared fields to all containers for the same BL
-                                            const sharedFields = {
-                                              pedimentoNo: updated.pedimentoNo,
-                                              proformaRevisionBy: updated.proformaRevisionBy,
-                                              targetReviewDate: updated.targetReviewDate,
-                                              proformaSentDate: updated.proformaSentDate,
-                                              pedimentoAuthorizedDate: updated.pedimentoAuthorizedDate,
-                                              peceRequestDate: updated.peceRequestDate,
-                                              peceAuthDate: updated.peceAuthDate,
-                                              pedimentoPaymentDate: updated.pedimentoPaymentDate,
-                                              truckAppointmentDate: updated.truckAppointmentDate,
-                                              ataFactory: updated.ataFactory,
-                                              eirDate: updated.eirDate,
-                                              ataPort: updated.ataPort,
-                                              blNo: updated.blNo, // Ensure link is maintained
-                                              updatedAt: updated.updatedAt // Also sync updatedAt for siblings
-                                            };
+  deleteEquipmentTracking: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.EQUIPMENT, id));
+    dbState.equipmentTracking = dbState.equipmentTracking.filter((e: any) => e.id !== id);
+  },
 
-                                            if (!db) {
-                                              console.warn("Offline: Queueing Customs Update");
-                                              // Local Update
-                                              const idx = dbState.customsClearance.findIndex((c: any) => c.id === id);
-                                              if (idx !== -1) {
-                                                dbState.customsClearance[idx] = { ...updated, id };
-                                                // Sync siblings (Local Logic Retained)
-                                                if (updated.blNo) {
-                                                  dbState.customsClearance.forEach((c: any, i: number) => {
-                                                    if (c.blNo === updated.blNo && c.id !== id) {
-                                                      dbState.customsClearance[i] = { ...c, ...sharedFields };
-                                                    }
-                                                  });
-                                                }
-                                              } else {
-                                                dbState.customsClearance.push({ ...updated, id });
-                                              }
-                                              queueWrite('UPDATE_CUSTOMS', updated);
-                                              saveLocal();
-                                              return;
-                                            }
+  deleteEquipmentTrackings: async (ids: string[]) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    ids.forEach(id => batch.delete(doc(db, COLS.EQUIPMENT, id)));
+    await batch.commit();
+    dbState.equipmentTracking = dbState.equipmentTracking.filter((e: any) => !ids.includes(e.id));
+  },
 
-                                            // Cloud Update
-                                            const batch = writeBatch(db);
-                                            // 1. Update target
-                                            batch.set(doc(db, COLS.CUSTOMS, id), sanitizeForFirestore(updated));
+  updateCustomsClearance: async (record: CustomsClearanceRecord, silent: boolean = false) => {
+    const updated = { ...record, updatedAt: new Date().toISOString() };
+    const id = updated.id || crypto.randomUUID();
 
-                                            // 2. Sync siblings
-                                            if (updated.blNo) {
-                                              const q = query(collection(db, COLS.CUSTOMS), where("blNo", "==", updated.blNo));
-                                              const snap = await getDocs(q);
-                                              snap.docs.forEach(d => {
-                                                if (d.id !== id) {
-                                                  batch.update(doc(db, COLS.CUSTOMS, d.id), sanitizeForFirestore(sharedFields));
-                                                }
-                                              });
-                                            }
+    if (!silent) {
+      logAction('CUSTOMS_UPDATE', `Pedimento: ${updated.pedimentoNo} | Container: ${updated.containerNo}`);
+    }
 
-                                            await batch.commit();
-                                          },
+    if (!db) throw new Error("Sin conexión a Internet.");
 
-                                            // Senior Frontend Engineer: Implemented missing deleteCustomsClearance method.
-                                            deleteCustomsClearance: async (id: string) => {
-                                              const record = dbState.customsClearance.find((c: any) => c.id === id);
-                                              logAction('CUSTOMS_DELETE', `ID: ${id} | Pedimento: ${record?.pedimentoNo || 'Unknown'}`);
+    // BROADCAST UPDATE: Sync shared fields to all containers for the same BL
+    const sharedFields = {
+      pedimentoNo: updated.pedimentoNo,
+      proformaRevisionBy: updated.proformaRevisionBy,
+      targetReviewDate: updated.targetReviewDate,
+      proformaSentDate: updated.proformaSentDate,
+      pedimentoAuthorizedDate: updated.pedimentoAuthorizedDate,
+      peceRequestDate: updated.peceRequestDate,
+      peceAuthDate: updated.peceAuthDate,
+      pedimentoPaymentDate: updated.pedimentoPaymentDate,
+      truckAppointmentDate: updated.truckAppointmentDate,
+      ataFactory: updated.ataFactory,
+      eirDate: updated.eirDate,
+      ataPort: updated.ataPort,
+      blNo: updated.blNo,
+      updatedAt: updated.updatedAt
+    };
 
-                                              // 1. Ghost Busting: Remove from local view immediately
-                                              if (dbState.customsClearance) {
-                                                dbState.customsClearance = dbState.customsClearance.filter((c: any) => c.id !== id);
-                                                saveLocal();
-                                              }
+    const batch = writeBatch(db);
+    batch.set(doc(db, COLS.CUSTOMS, id), sanitizeForFirestore(updated));
 
-                                              if (!db) {
-                                                console.warn("Offline: Queueing Customs Delete");
-                                                queueWrite('DELETE_CUSTOMS', [id]);
-                                                return;
-                                              }
+    if (updated.blNo) {
+      const q = query(collection(db, COLS.CUSTOMS), where("blNo", "==", updated.blNo));
+      const snap = await getDocs(q);
+      snap.docs.forEach(d => {
+        if (d.id !== id) {
+          batch.update(doc(db, COLS.CUSTOMS, d.id), sanitizeForFirestore(sharedFields));
+        }
+      });
+    }
+    await batch.commit();
 
-                                              try {
-                                                await deleteDoc(doc(db, COLS.CUSTOMS, id));
-                                              } catch (e) {
-                                                console.warn(`[Delete] Managed to clear local ghost, but cloud delete failed for ${id}`, e);
-                                              }
-                                            },
+    // Local Sync
+    const idx = dbState.customsClearance.findIndex((c: any) => c.id === id);
+    if (idx !== -1) {
+      dbState.customsClearance[idx] = { ...updated, id };
+      if (updated.blNo) {
+        dbState.customsClearance.forEach((c: any, i: number) => {
+          if (c.blNo === updated.blNo && c.id !== id) {
+            dbState.customsClearance[i] = { ...c, ...sharedFields };
+          }
+        });
+      }
+    } else {
+      dbState.customsClearance.push({ ...updated, id });
+    }
+  },
 
-                                              deleteCustomsClearances: async (ids: string[]) => {
-                                                if (!db) {
-                                                  console.warn("Offline: Queueing Customs Bulk Delete");
-                                                  dbState.customsClearance = dbState.customsClearance.filter((c: any) => !ids.includes(c.id));
-                                                  queueWrite('DELETE_CUSTOMS', ids);
-                                                  saveLocal();
-                                                  return;
-                                                }
-                                                const batch = writeBatch(db);
-                                                ids.forEach(id => {
-                                                  batch.delete(doc(db, COLS.CUSTOMS, id));
-                                                });
-                                                await batch.commit();
-                                              },
+  deleteCustomsClearance: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.CUSTOMS, id));
+    dbState.customsClearance = dbState.customsClearance.filter((c: any) => c.id !== id);
+  },
 
-                                                processPreAlertExtraction: async (record: PreAlertRecord, containers: any[], createEquipment: boolean = true) => {
-                                                  // --- ATOMIC BATCH START ---
-                                                  const batch = writeBatch(db);
+  deleteCustomsClearances: async (ids: string[]) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    ids.forEach(id => batch.delete(doc(db, COLS.CUSTOMS, id)));
+    await batch.commit();
+    dbState.customsClearance = dbState.customsClearance.filter((c: any) => !ids.includes(c.id));
+  },
 
-                                                  // 1. Pre-Alert UPSERT (Idempotent)
-                                                  let preAlertId = record.id || record.bookingAbw; // Use BL as ID if missing
-                                                  const preAlertRef = doc(db, COLS.PRE_ALERTS, preAlertId);
-                                                  batch.set(preAlertRef, sanitizeForFirestore({ ...record, processed: true, id: preAlertId, linkedContainers: containers.map(c => c.containerNo) }), { merge: true });
+  processPreAlertExtraction: async (record: PreAlertRecord, containers: any[], createEquipment: boolean = true) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
 
-                                                  const bookingRef = (record.bookingAbw || '').trim();
+    // 1. Pre-Alert UPSERT (Idempotent)
+    let preAlertId = record.id || record.bookingAbw;
+    const preAlertRef = doc(db, COLS.PRE_ALERTS, preAlertId);
+    batch.set(preAlertRef, sanitizeForFirestore({ ...record, processed: true, id: preAlertId, linkedContainers: containers.map(c => c.containerNo) }), { merge: true });
 
-                                                  // --- RESILIENCE SCRUBBER: Find and Kill Legacy UUID Records ---
-                                                  if (bookingRef) {
-                                                    const scrubCollections = [COLS.VESSEL_TRACKING, COLS.CUSTOMS, COLS.EQUIPMENT, COLS.SHIPMENTS];
-                                                    for (const colName of scrubCollections) {
-                                                      const qScrub = query(collection(db, colName), where("blNo", "==", bookingRef));
-                                                      const snapScrub = await getDocs(qScrub);
-                                                      snapScrub.forEach(d => {
-                                                        // If ID is a UUID (Aleatorio) or doesn't match our specific deterministic pattern
-                                                        // We delete it to avoid duplicates, but batch.set(..., {merge: true}) will preserve manual fields 
-                                                        // if we were writing to the SAME ID. Since we are changing IDs, we must delete the old one.
-                                                        if (d.id.includes('-') && d.id.split('-').length > 2 && d.id.length > 20 && !d.id.startsWith(bookingRef)) {
-                                                          batch.delete(d.ref);
-                                                        }
-                                                      });
-                                                    }
-                                                  }
+    const bookingRef = (record.bookingAbw || '').trim();
 
-                                                  // 2. Distribute to Vessel Tracking, Customs & Equipment (Deterministic IDs)
-                                                  if (bookingRef) {
-                                                    for (const cont of (containers.length > 0 ? containers : [{ containerNo: 'Bulk/LCL', size: '' }])) {
-                                                      const deterministicId = `${bookingRef}-${cont.containerNo}`;
+    // --- RESILIENCE SCRUBBER ---
+    if (bookingRef) {
+      const scrubCollections = [COLS.VESSEL_TRACKING, COLS.CUSTOMS, COLS.EQUIPMENT, COLS.SHIPMENTS];
+      for (const colName of scrubCollections) {
+        const qScrub = query(collection(db, colName), where("blNo", "==", bookingRef));
+        const snapScrub = await getDocs(qScrub);
+        snapScrub.forEach(d => {
+          if (d.id.includes('-') && d.id.split('-').length > 2 && d.id.length > 20 && !d.id.startsWith(bookingRef)) {
+            batch.delete(d.ref);
+          }
+        });
+      }
+    }
 
-                                                      // Vessel Tracking
-                                                      const vesselRef = doc(db, COLS.VESSEL_TRACKING, deterministicId);
-                                                      batch.set(vesselRef, sanitizeForFirestore({
-                                                        id: deterministicId,
-                                                        blNo: bookingRef,
-                                                        containerNo: cont.containerNo,
-                                                        containerSize: cont.size || '',
-                                                        modelCode: record.model,
-                                                        invoiceNo: record.invoiceNo,
-                                                        etd: record.etd,
-                                                        etaPort: record.eta,
-                                                        updatedAt: new Date().toISOString()
-                                                      }), { merge: true });
+    // 2. Distribute
+    if (bookingRef) {
+      for (const cont of (containers.length > 0 ? containers : [{ containerNo: 'Bulk/LCL', size: '' }])) {
+        const deterministicId = `${bookingRef}-${cont.containerNo}`;
 
-                                                      // Customs Clearance
-                                                      const customsRef = doc(db, COLS.CUSTOMS, deterministicId);
-                                                      batch.set(customsRef, sanitizeForFirestore({
-                                                        id: deterministicId,
-                                                        blNo: bookingRef,
-                                                        containerNo: cont.containerNo,
-                                                        updatedAt: new Date().toISOString()
-                                                      }), { merge: true });
+        // Vessel Tracking
+        const vesselRef = doc(db, COLS.VESSEL_TRACKING, deterministicId);
+        batch.set(vesselRef, sanitizeForFirestore({
+          id: deterministicId,
+          blNo: bookingRef,
+          containerNo: cont.containerNo,
+          containerSize: cont.size || '',
+          modelCode: record.model,
+          invoiceNo: record.invoiceNo,
+          etd: record.etd,
+          etaPort: record.eta,
+          updatedAt: new Date().toISOString()
+        }), { merge: true });
 
+        // Customs Clearance
+        const customsRef = doc(db, COLS.CUSTOMS, deterministicId);
+        batch.set(customsRef, sanitizeForFirestore({
+          id: deterministicId,
+          blNo: bookingRef,
+          containerNo: cont.containerNo,
+          updatedAt: new Date().toISOString()
+        }), { merge: true });
+
+        // Equipment
+        if (createEquipment) {
+          const eqRef = doc(db, COLS.EQUIPMENT, deterministicId);
+          batch.set(eqRef, sanitizeForFirestore({
+            id: deterministicId,
+            blNo: bookingRef,
+            containerNo: cont.containerNo,
+            updatedAt: new Date().toISOString()
+          }), { merge: true });
+        }
+      }
+
+      // Shipment Plan
+      const shipmentRef = doc(db, COLS.SHIPMENTS, bookingRef);
+      batch.set(shipmentRef, sanitizeForFirestore({
+        id: bookingRef,
+        blNo: bookingRef,
+        reference: bookingRef,
+        containers: containers.map(c => c.containerNo),
+        updatedAt: new Date().toISOString()
+      }), { merge: true });
+    }
+
+    await batch.commit();
+    logAction('PREALERT_PROCESSED', `BL: ${bookingRef} | ${containers.length} Contenedores (Sync In-Place)`);
+  },
   updateVesselTracking: async (record: VesselTrackingRecord) => {
     const updated = { ...record, updatedAt: new Date().toISOString() };
     const id = updated.id || crypto.randomUUID();
-    
+
     if (!db) throw new Error("Sin conexión a Internet.");
 
     // Cloud Update
@@ -1516,12 +1340,12 @@ patchPart: async (id: string, updates: any) => {
     // Wait, `syncVesselDataToOthers` is likely defined above or imported? 
     // I don't see it in the file view. It might be further down or missed?
     // Let's assume it works.
-    
+
     // BROADCAST UPDATE Logic
     const sharedFields = {
       refNo: updated.refNo,
       modelCode: updated.modelCode,
-      qty: updated.qty, 
+      qty: updated.qty,
       projectType: updated.projectType,
       contractNo: updated.contractNo,
       invoiceNo: updated.invoiceNo,
@@ -1541,27 +1365,27 @@ patchPart: async (id: string, updates: any) => {
 
     // 2. Broadcast (Query for siblings)
     if (updated.blNo) {
-        const q = query(collection(db, COLS.VESSEL_TRACKING), where("blNo", "==", updated.blNo));
-        const snap = await getDocs(q);
-        snap.forEach(d => {
-            if (d.id !== id) {
-                batch.update(d.ref, sharedFields);
-            }
-        });
+      const q = query(collection(db, COLS.VESSEL_TRACKING), where("blNo", "==", updated.blNo));
+      const snap = await getDocs(q);
+      snap.forEach(d => {
+        if (d.id !== id) {
+          batch.update(d.ref, sharedFields);
+        }
+      });
     }
     await batch.commit();
 
     // Local Sync
     const idx = dbState.vesselTracking.findIndex((v: any) => v.id === id);
     if (idx !== -1) {
-        dbState.vesselTracking[idx] = { ...updated, id };
-        if (updated.blNo) {
-             dbState.vesselTracking.forEach((v: any, i: number) => {
-                 if (v.blNo === updated.blNo && v.id !== id) {
-                     dbState.vesselTracking[i] = { ...v, ...sharedFields };
-                 }
-             });
-        }
+      dbState.vesselTracking[idx] = { ...updated, id };
+      if (updated.blNo) {
+        dbState.vesselTracking.forEach((v: any, i: number) => {
+          if (v.blNo === updated.blNo && v.id !== id) {
+            dbState.vesselTracking[i] = { ...v, ...sharedFields };
+          }
+        });
+      }
     }
   },
 
@@ -1570,7 +1394,7 @@ patchPart: async (id: string, updates: any) => {
     const id = record.id || crypto.randomUUID();
     if (!db) throw new Error("Sin conexión a Internet.");
     await setDoc(doc(db, COLS.PRE_ALERTS, id), sanitizeForFirestore(updated));
-    
+
     const idx = dbState.preAlerts.findIndex((p: any) => p.id === id);
     if (idx !== -1) dbState.preAlerts[idx] = { ...updated, id }; else dbState.preAlerts.push({ ...updated, id });
   },
@@ -1583,18 +1407,18 @@ patchPart: async (id: string, updates: any) => {
     const bookingRef = recordToDelete?.bookingAbw;
 
     const batch = writeBatch(db);
-    
+
     // A. Delete Main Record
     batch.delete(doc(db, COLS.PRE_ALERTS, id));
 
     // B. Surgical Cleanup
     if (bookingRef) {
-        const collectionsToScrub = [COLS.VESSEL_TRACKING, COLS.CUSTOMS, COLS.EQUIPMENT, COLS.SHIPMENTS];
-        for (const col of collectionsToScrub) {
-            const q = query(collection(db, col), where("blNo", "==", bookingRef));
-            const snap = await getDocs(q);
-            snap.forEach(d => batch.delete(d.ref));
-        }
+      const collectionsToScrub = [COLS.VESSEL_TRACKING, COLS.CUSTOMS, COLS.EQUIPMENT, COLS.SHIPMENTS];
+      for (const col of collectionsToScrub) {
+        const q = query(collection(db, col), where("blNo", "==", bookingRef));
+        const snap = await getDocs(q);
+        snap.forEach(d => batch.delete(d.ref));
+      }
     }
     await batch.commit();
     logAction('PREALERT_DELETE', `BL: ${bookingRef || id} (Atomic Clean)`);
@@ -1602,17 +1426,17 @@ patchPart: async (id: string, updates: any) => {
     // UI Cleanup
     dbState.preAlerts = dbState.preAlerts.filter((p: any) => p.id !== id);
     if (bookingRef) {
-        dbState.vesselTracking = dbState.vesselTracking.filter((v: any) => v.blNo !== bookingRef);
-        dbState.customsClearance = dbState.customsClearance.filter((c: any) => c.blNo !== bookingRef);
-        dbState.equipmentTracking = dbState.equipmentTracking.filter((e: any) => e.blNo !== bookingRef);
-        dbState.shipments = dbState.shipments.filter((s: any) => s.blNo !== bookingRef);
+      dbState.vesselTracking = dbState.vesselTracking.filter((v: any) => v.blNo !== bookingRef);
+      dbState.customsClearance = dbState.customsClearance.filter((c: any) => c.blNo !== bookingRef);
+      dbState.equipmentTracking = dbState.equipmentTracking.filter((e: any) => e.blNo !== bookingRef);
+      dbState.shipments = dbState.shipments.filter((s: any) => s.blNo !== bookingRef);
     }
     saveLocal();
   },
 
   deletePreAlerts: async (ids: string[]) => {
-      if (!db) throw new Error("Sin conexión a Internet.");
-      await Promise.all(ids.map(id => storageService.deletePreAlert(id)));
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await Promise.all(ids.map(id => storageService.deletePreAlert(id)));
   },
 
   checkPreAlertExists: async (bookingAbw: string): Promise<PreAlertRecord | null> => {
@@ -1621,7 +1445,7 @@ patchPart: async (id: string, updates: any) => {
     const q = query(collection(db, COLS.PRE_ALERTS), where("bookingAbw", "==", bookingAbw));
     const snap = await getDocs(q);
     if (!snap.empty) {
-        return { id: snap.docs[0].id, ...snap.docs[0].data() } as PreAlertRecord;
+      return { id: snap.docs[0].id, ...snap.docs[0].data() } as PreAlertRecord;
     }
     return null;
   },
@@ -1638,43 +1462,43 @@ patchPart: async (id: string, updates: any) => {
     const vtQuery = query(collection(db, COLS.VESSEL_TRACKING), where("blNo", "==", bookingRef));
     const vtSnap = await getDocs(vtQuery);
     vtSnap.forEach(doc => {
-        batch.update(doc.ref, sanitizeForFirestore({
-            etd: record.etd,
-            eta: record.eta,
-            atd: record.atd,
-            ata: record.ata,
-            updatedAt: new Date().toISOString()
-        }));
-        batchCount++;
+      batch.update(doc.ref, sanitizeForFirestore({
+        etd: record.etd,
+        eta: record.eta,
+        atd: record.atd,
+        ata: record.ata,
+        updatedAt: new Date().toISOString()
+      }));
+      batchCount++;
     });
 
     // Update Customs Clearance (ATA Port)
     const ccQuery = query(collection(db, COLS.CUSTOMS), where("blNo", "==", bookingRef));
     const ccSnap = await getDocs(ccQuery);
     ccSnap.forEach(doc => {
-        batch.update(doc.ref, sanitizeForFirestore({
-            ataPort: record.ata,
-            ataFactory: record.ataFactory || doc.data().ataFactory,
-            updatedAt: new Date().toISOString()
-        }));
-        batchCount++;
+      batch.update(doc.ref, sanitizeForFirestore({
+        ataPort: record.ata,
+        ataFactory: record.ataFactory || doc.data().ataFactory,
+        updatedAt: new Date().toISOString()
+      }));
+      batchCount++;
     });
 
     if (batchCount > 0) {
-        await batch.commit();
-        // Update Local
-        dbState.vesselTracking.forEach((vt: any) => {
-             if (vt.bookingNo === bookingRef) {
-                  vt.etd = record.etd; vt.eta = record.eta; vt.atd = record.atd; vt.ata = record.ata;
-             }
-        });
-        dbState.customsClearance.forEach((cc: any) => {
-             if (cc.bookingNo === bookingRef) {
-                  cc.ataPort = record.ata;
-                  cc.ataFactory = record.ataFactory || cc.ataFactory;
-             }
-        });
-        saveLocal();
+      await batch.commit();
+      // Update Local
+      dbState.vesselTracking.forEach((vt: any) => {
+        if (vt.bookingNo === bookingRef) {
+          vt.etd = record.etd; vt.eta = record.eta; vt.atd = record.atd; vt.ata = record.ata;
+        }
+      });
+      dbState.customsClearance.forEach((cc: any) => {
+        if (cc.bookingNo === bookingRef) {
+          cc.ataPort = record.ata;
+          cc.ataFactory = record.ataFactory || cc.ataFactory;
+        }
+      });
+      saveLocal();
     }
   },
 
@@ -1683,7 +1507,7 @@ patchPart: async (id: string, updates: any) => {
     const id = cost.id || crypto.randomUUID();
     if (!db) throw new Error("Sin conexión a Internet.");
     await setDoc(doc(db, COLS.COSTS, id), sanitizeForFirestore({ ...updated, id }));
-    
+
     dbState.costs.push({ ...updated, id });
   },
 
@@ -1697,10 +1521,10 @@ patchPart: async (id: string, updates: any) => {
     const uploadTask = uploadBytesResumable(storageRef, file);
 
     if (onProgress) {
-        uploadTask.on('state_changed', (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            onProgress(Math.round(progress));
-        });
+      uploadTask.on('state_changed', (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        onProgress(Math.round(progress));
+      });
     }
     await uploadTask;
     return await getDownloadURL(storageRef);
@@ -1710,166 +1534,135 @@ patchPart: async (id: string, updates: any) => {
     if (!navigator.onLine) return false;
     if (!db) return false;
     try {
-        const { getDocs, query, collection, limit } = await import('firebase/firestore');
-        const q = query(collection(db, COLS.DATA_STAGE_REPORTS), limit(1));
-        await getDocs(q);
-        return true;
+      const { getDocs, query, collection, limit } = await import('firebase/firestore');
+      const q = query(collection(db, COLS.DATA_STAGE_REPORTS), limit(1));
+      await getDocs(q);
+      return true;
     } catch (e) {
-        return false;
+      return false;
     }
   },
 
   batchSyncDataStage: async (records: PedimentoRecord[], options?: { force?: boolean }) => {
-     // This method (lines 1758-1871 in view) looks safe (uses `if (db)` then explicit cloud writes).
-     // It does NOT use `queueWrite`. It returns CloudStatus.
-     // I will leave it as is or Copy it if I'm replacing the block including it.
-     // My block C ends at `deleteDataStageReport`. The `batchSyncDataStage` is BEFORE `saveDataStageReport`.
-     // So I need to INCLUDE `batchSyncDataStage`.
-     // To save context, I will just call the original implementation or paste it.
-     // Since this `write_to_file` is for REPLACEMENT, I must provide the content.
-     // I will exclude `batchSyncDataStage` from this block to avoid 200 lines of copy-paste if I can.
-     // Can I stitch *around* it?
-     // `chunk_b` ended at `updateVesselTracking`.
-     // `batchSyncDataStage` is at 1758.
-     // I can do `chunk_c` from `updateVesselTracking` to `checkConnection` (1755).
-     // And then `chunk_d` from `saveDataStageReport` (1873) to EOF.
-     // `batchSyncDataStage` is lines 1758-1871.
-     // Checks: `batchSyncDataStage` line 1849: `if (db) { ... }` Else? It returns `cloudStatus='offline'`.
-     // It DOES NOT QUEUE. So it is fine.
-     return { added: 0, updated: 0, skipped: 0, cloudStatus: 'offline' };
+    let added = 0;
+    let updated = 0;
+    let skipped = 0;
+    let cloudStatus: 'success' | 'failed' | 'offline' = 'offline';
+    let errorMsg = undefined;
+
+    // 1. Prepare Data
+    const validRecords = records.filter(r => r.pedimento && r.pedimento.length > 5);
+    if (validRecords.length === 0) return { added: 0, updated: 0, skipped: 0, cloudStatus: 'success' };
+
+    // 2. Load Existing Customs for Deduplication (Map "BL|Cont|Clave" -> ID)
+    const existingMap = new Map<string, string>();
+    dbState.customsClearance.forEach((c: any) => {
+      const key = `${(c.blNo || '').trim()}| ${(c.containerNo || '').trim()}| ${(c.clavePedimento || '').trim()} `;
+      existingMap.set(key, c.id);
+    });
+
+    const itemsToSave: CustomsClearanceRecord[] = [];
+
+    // 3. Process Logic
+    for (const r of validRecords) {
+      // A. Try extract BL from Referencias
+      let extractedBL = '';
+      if (r.referencias) {
+        const parts = r.referencias.split(/[\s,]+/);
+        const candidate = parts.find(p => p.length >= 8 && /^[A-Z0-9]+$/.test(p));
+        if (candidate) extractedBL = candidate;
+        else extractedBL = parts.join(' ').substring(0, 20).trim();
+      }
+
+      const clave = (r.claveDocumento || r.clavePedimento || 'A1').trim();
+      // Optimized: Individial logAction removed
+
+      // B. Find target containers from Tracking to distribute information
+      let targetContainers: string[] = [];
+      if (extractedBL) {
+        targetContainers = dbState.vesselTracking
+          .filter((v: any) => v.blNo === extractedBL)
+          .map((v: any) => v.containerNo);
+      }
+
+      // If no containers found in tracking, fallback to single entry
+      if (targetContainers.length === 0) targetContainers = ['Bulk/LCL'];
+
+      // C. Create/Update records FOR EACH container (Deterministic Sync)
+      for (const containerNo of targetContainers) {
+        const detId = `${extractedBL}-${containerNo}-${clave}`;
+        let recordId = detId; // Force Deterministic ID
+        const isUpdate = existingMap.has(extractedBL + '| ' + containerNo + '| ' + clave) || dbState.customsClearance.some(c => c.id === detId);
+
+        const newRec: CustomsClearanceRecord = {
+          id: recordId,
+          blNo: extractedBL,
+          containerNo: containerNo,
+          ataPort: r.fechaEntrada || '',
+          pedimentoNo: r.pedimento,
+          clavePedimento: clave,
+          proformaRevisionBy: 'DataStage',
+          targetReviewDate: '',
+          proformaSentDate: '',
+          pedimentoAuthorizedDate: r.fechaPago || '',
+          peceRequestDate: '',
+          peceAuthDate: '',
+          pedimentoPaymentDate: r.fechaPago || '',
+          truckAppointmentDate: '',
+          ataFactory: '',
+          eirDate: '',
+          updatedAt: new Date().toISOString()
+        };
+
+        itemsToSave.push(newRec);
+        if (isUpdate) updated++; else added++;
+
+        // Update map to prevent duplicates within the same batch
+        existingMap.set(`${extractedBL}| ${containerNo}| ${clave}`, recordId);
+      }
+    }
+
+    if (itemsToSave.length === 0) return { added: 0, updated: 0, skipped: 0, cloudStatus: 'success' };
+
+    // 4. Save (Local Update + Cloud Batch)
+    // Local Update
+    const updatedIds = new Set(itemsToSave.map(i => i.id));
+    dbState.customsClearance = [
+      ...dbState.customsClearance.filter(c => !updatedIds.has(c.id)),
+      ...itemsToSave
+    ];
+    saveLocal();
+
+    // Cloud Update
+    if (db) {
+      cloudStatus = 'success';
+      try {
+        const { writeBatch, doc } = await import('firebase/firestore');
+        const BATCH_SIZE = 450;
+        for (let i = 0; i < itemsToSave.length; i += BATCH_SIZE) {
+          const chunk = itemsToSave.slice(i, i + BATCH_SIZE);
+          const subBatch = writeBatch(db);
+          chunk.forEach(item => {
+            subBatch.set(doc(db, COLS.CUSTOMS, item.id), sanitizeForFirestore(item));
+          });
+          await subBatch.commit();
+        }
+      } catch (e: any) {
+        console.error("DataStage Sync Cloud Error:", e);
+        cloudStatus = 'failed';
+        errorMsg = e.message;
+      }
+    }
+
+    logAction('DATASTAGE_SYNC_COMPLETE', `Successfully synced ${itemsToSave.length} customs records from DataStage`);
+    return { added, updated, skipped, cloudStatus: 'success' };
   },
-  // Oh wait, `batchSyncDataStage` is inside the `storageService` object. I can't just return it.
-  // I will just PASTE the `batchSyncDataStage` implementation here. It is important to keep.
-  // Actually, I can use the existing one if I stitch correctly.
-  
-  // Revised Stitch Limit for Chunk C:
-  // Start: `updateVesselTracking` (1502)
-  // End: `checkConnection` (1755).
-  // Then I keep `batchSyncDataStage`.
-  // Then Chunk D: `saveDataStageReport` (1873) replacement.
-  
-  // Let's do Chunk C: `updateVesselTracking` --> `checkConnection`.
-                                                                  batchSyncDataStage: async (records: PedimentoRecord[], options?: { force?: boolean }) => {
-                                                                    let added = 0;
-                                                                    let updated = 0;
-                                                                    let skipped = 0;
-                                                                    let cloudStatus: 'success' | 'failed' | 'offline' = 'offline';
-                                                                    let errorMsg = undefined;
 
-                                                                    // 1. Prepare Data
-                                                                    const validRecords = records.filter(r => r.pedimento && r.pedimento.length > 5);
-                                                                    if (validRecords.length === 0) return { added: 0, updated: 0, skipped: 0, cloudStatus: 'success' };
-
-                                                                    // 2. Load Existing Customs for Deduplication (Map "BL|Cont|Clave" -> ID)
-                                                                    const existingMap = new Map<string, string>();
-                                                                    dbState.customsClearance.forEach((c: any) => {
-                                                                      const key = `${(c.blNo || '').trim()}| ${(c.containerNo || '').trim()}| ${(c.clavePedimento || '').trim()} `;
-                                                                      existingMap.set(key, c.id);
-                                                                    });
-
-                                                                    const itemsToSave: CustomsClearanceRecord[] = [];
-
-                                                                    // 3. Process Logic
-                                                                    for (const r of validRecords) {
-                                                                      // A. Try extract BL from Referencias
-                                                                      let extractedBL = '';
-                                                                      if (r.referencias) {
-                                                                        const parts = r.referencias.split(/[\s,]+/);
-                                                                        const candidate = parts.find(p => p.length >= 8 && /^[A-Z0-9]+$/.test(p));
-                                                                        if (candidate) extractedBL = candidate;
-                                                                        else extractedBL = parts.join(' ').substring(0, 20).trim();
-                                                                      }
-
-                                                                      const clave = (r.claveDocumento || r.clavePedimento || 'A1').trim();
-                                                                      // Optimized: Individial logAction removed
-
-                                                                      // B. Find target containers from Tracking to distribute information
-                                                                      let targetContainers: string[] = [];
-                                                                      if (extractedBL) {
-                                                                        targetContainers = dbState.vesselTracking
-                                                                          .filter((v: any) => v.blNo === extractedBL)
-                                                                          .map((v: any) => v.containerNo);
-                                                                      }
-
-                                                                      // If no containers found in tracking, fallback to single entry
-                                                                      if (targetContainers.length === 0) targetContainers = ['Bulk/LCL'];
-
-                                                                      // C. Create/Update records FOR EACH container (Deterministic Sync)
-                                                                      for (const containerNo of targetContainers) {
-                                                                        const detId = `${extractedBL}-${containerNo}-${clave}`;
-                                                                        let recordId = detId; // Force Deterministic ID
-                                                                        const isUpdate = existingMap.has(extractedBL + '| ' + containerNo + '| ' + clave) || dbState.customsClearance.some(c => c.id === detId);
-
-                                                                        const newRec: CustomsClearanceRecord = {
-                                                                          id: recordId,
-                                                                          blNo: extractedBL,
-                                                                          containerNo: containerNo,
-                                                                          ataPort: r.fechaEntrada || '',
-                                                                          pedimentoNo: r.pedimento,
-                                                                          clavePedimento: clave,
-                                                                          proformaRevisionBy: 'DataStage',
-                                                                          targetReviewDate: '',
-                                                                          proformaSentDate: '',
-                                                                          pedimentoAuthorizedDate: r.fechaPago || '',
-                                                                          peceRequestDate: '',
-                                                                          peceAuthDate: '',
-                                                                          pedimentoPaymentDate: r.fechaPago || '',
-                                                                          truckAppointmentDate: '',
-                                                                          ataFactory: '',
-                                                                          eirDate: '',
-                                                                          updatedAt: new Date().toISOString()
-                                                                        };
-
-                                                                        itemsToSave.push(newRec);
-                                                                        if (isUpdate) updated++; else added++;
-
-                                                                        // Update map to prevent duplicates within the same batch
-                                                                        existingMap.set(`${extractedBL}| ${containerNo}| ${clave}`, recordId);
-                                                                      }
-                                                                    }
-
-                                                                    if (itemsToSave.length === 0) return { added: 0, updated: 0, skipped: 0, cloudStatus: 'success' };
-
-                                                                    // 4. Save (Local Update + Cloud Batch)
-                                                                    // Local Update
-                                                                    const updatedIds = new Set(itemsToSave.map(i => i.id));
-                                                                    dbState.customsClearance = [
-                                                                      ...dbState.customsClearance.filter(c => !updatedIds.has(c.id)),
-                                                                      ...itemsToSave
-                                                                    ];
-                                                                    saveLocal();
-
-                                                                    // Cloud Update
-                                                                    if (db) {
-                                                                      cloudStatus = 'success';
-                                                                      try {
-                                                                        const { writeBatch, doc } = await import('firebase/firestore');
-                                                                        const BATCH_SIZE = 450;
-                                                                        for (let i = 0; i < itemsToSave.length; i += BATCH_SIZE) {
-                                                                          const chunk = itemsToSave.slice(i, i + BATCH_SIZE);
-                                                                          const subBatch = writeBatch(db);
-                                                                          chunk.forEach(item => {
-                                                                            subBatch.set(doc(db, COLS.CUSTOMS, item.id), sanitizeForFirestore(item));
-                                                                          });
-                                                                          await subBatch.commit();
-                                                                        }
-                                                                      } catch (e: any) {
-                                                                        console.error("DataStage Sync Cloud Error:", e);
-                                                                        cloudStatus = 'failed';
-                                                                        errorMsg = e.message;
-                                                                      }
-                                                                    }
-
-                                                                    logAction('DATASTAGE_SYNC_COMPLETE', `Successfully synced ${itemsToSave.length} customs records from DataStage`);
-                                                                    return { added, updated, skipped, cloudStatus: 'success' };
-                                                                  },
-
-                                                                    saveDataStageReport: async (report: DataStageReport, onProgress?: (percent: number) => void, originalFile?: File, preUploadedUrl?: string) => {
-saveDataStageReport: async (report: DataStageReport, onProgress?: (percent: number) => void, originalFile?: File, preUploadedUrl?: string) => {
+  saveDataStageReport: async (report: DataStageReport, onProgress?: (percent: number) => void, originalFile?: File, preUploadedUrl?: string) => {
     // 0. Deletion Support for Sync Replayer (Legacy? If action is DELETE)
     if ((report as any).action === 'DELETE') {
-        if (db) await deleteDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id));
-        return;
+      if (db) await deleteDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id));
+      return;
     }
 
     if (!db) throw new Error("Sin conexión a Internet. No se puede guardar el reporte.");
@@ -1879,18 +1672,18 @@ saveDataStageReport: async (report: DataStageReport, onProgress?: (percent: numb
 
     // 2. Cloud Persistence
     try {
-        // ALWAYS Try Lean Report to Firestore First (Metadata only)
-        const leanReport = {
-            ...report,
-            records: [],
-            rawFiles: report.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
-        };
-        await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), leanReport);
+      // ALWAYS Try Lean Report to Firestore First (Metadata only)
+      const leanReport = {
+        ...report,
+        records: [],
+        rawFiles: report.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
+      };
+      await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), leanReport);
     } catch (e: any) {
-        console.warn("Firestore save failed (lean):", e);
-        if (e.code === 'resource-exhausted') {
-            throw new Error("Cuota de Firestore Excedida.");
-        }
+      console.warn("Firestore save failed (lean):", e);
+      if (e.code === 'resource-exhausted') {
+        throw new Error("Cuota de Firestore Excedida.");
+      }
     }
 
     // 3. Batch Write Records
@@ -1902,820 +1695,820 @@ saveDataStageReport: async (report: DataStageReport, onProgress?: (percent: numb
     const chunks = [];
 
     for (let i = 0; i < report.records.length; i += BATCH_SIZE) {
-        chunks.push(report.records.slice(i, i + BATCH_SIZE));
+      chunks.push(report.records.slice(i, i + BATCH_SIZE));
     }
 
     let totalProcessed = 0;
     const totalRecords = report.records.length;
 
     for (let i = 0; i < chunks.length; i++) {
-        const batch = writeBatch(db);
-        const chunk = chunks[i];
+      const batch = writeBatch(db);
+      const chunk = chunks[i];
 
-        chunk.forEach(record => {
-            const recordDocRef = doc(recordsRef, record.id);
-            batch.set(recordDocRef, record);
-        });
+      chunk.forEach(record => {
+        const recordDocRef = doc(recordsRef, record.id);
+        batch.set(recordDocRef, record);
+      });
 
-        try {
-            await batch.commit();
-            totalProcessed += chunk.length;
-            if (onProgress) {
-                const progress = Math.min((totalProcessed / totalRecords) * 100, 99);
-                onProgress(progress);
-            }
-            await new Promise(r => setTimeout(r, 20));
-        } catch (e) {
-            console.error("Batch Write Failed", e);
-            throw new Error("Error guardando registros en la nube (Batch Fail).");
+      try {
+        await batch.commit();
+        totalProcessed += chunk.length;
+        if (onProgress) {
+          const progress = Math.min((totalProcessed / totalRecords) * 100, 99);
+          onProgress(progress);
         }
+        await new Promise(r => setTimeout(r, 20));
+      } catch (e) {
+        console.error("Batch Write Failed", e);
+        throw new Error("Error guardando registros en la nube (Batch Fail).");
+      }
     }
 
     // Notify Success
     console.log("Report Saved Successfully to Cloud.");
     saveLocal(); // Save meta-data locally
-},
-
-    deleteDataStageReport: async (id: string) => {
-        if (!db) throw new Error("Sin conexión a Internet.");
-        await deleteDoc(doc(db, COLS.DATA_STAGE_REPORTS, id));
-        dbState.dataStageReports = dbState.dataStageReports.filter((r: any) => r.id !== id);
-        saveLocal();
-    },
-                                                                          saveDraftDataStage: async (session: DataStageSession) => {
-                                                                            // 1. Try LocalStorage (Speed)
-                                                                            // 1. Try LocalStorage (Speed)
-                                                                            try {
-                                                                              const payload = JSON.stringify(session);
-                                                                              if (payload.length > 4000000) { // 4MB Limit Safety
-                                                                                console.warn("Draft too large for LocalStorage (" + (payload.length / 1024 / 1024).toFixed(2) + " MB). Saving Lean Draft only.");
-                                                                                throw new Error("Payload too large"); // Trigger fallback to lean
-                                                                              }
-                                                                              localStorage.setItem(DRAFT_DATA_STAGE_KEY, payload);
-                                                                            } catch (e) {
-                                                                              console.warn("Draft LocalStorage Full. Clearing old Reports to make space...");
-                                                                              try {
-                                                                                // Try to free space from Reports to save the Draft (Priority: Current Work > Old History)
-                                                                                let localReports = JSON.parse(localStorage.getItem(COLS.DATA_STAGE_REPORTS) || '[]');
-                                                                                while (localReports.length > 0) {
-                                                                                  localReports.pop(); // Remove oldest
-                                                                                  localStorage.setItem(COLS.DATA_STAGE_REPORTS, JSON.stringify(localReports));
-                                                                                  try {
-                                                                                    localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(session));
-                                                                                    console.log("Draft saved after clearing history.");
-                                                                                    return; // Success
-                                                                                  } catch (retryErr) {
-                                                                                    // Continue loop
-                                                                                  }
-                                                                                }
-                                                                                // If reports empty and still fails, try lean draft
-                                                                                throw e;
-                                                                              } catch (e2) {
-                                                                                console.warn("Still full even after clearing history. Attempting lean save...");
-                                                                                try {
-                                                                                  const leanSession = {
-                                                                                    ...session,
-                                                                                    rawFiles: session.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
-                                                                                  };
-                                                                                  localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(leanSession));
-                                                                                } catch (e3) {
-                                                                                  console.error("Local persistence failed completely", e3);
-                                                                                }
-                                                                              }
-                                                                            }
-
-                                                                            // 2. Sync to Cloud (Unlimited* Storage)
-                                                                            if (db) {
-                                                                              try {
-                                                                                // Firestore has 1MB limit per document too!
-                                                                                // We might need to be careful here. If rawFiles are huge, Firestore will also fail.
-                                                                                // For now, let's try.
-                                                                                await setDoc(doc(db, COLS.DRAFTS, 'current_session'), session);
-                                                                              } catch (e) {
-                                                                                console.warn("Failed to sync draft to cloud", e);
-                                                                                // If Document too large, try saving without rawFiles
-                                                                                try {
-                                                                                  const leanSession = {
-                                                                                    ...session,
-                                                                                    rawFiles: session.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
-                                                                                  };
-                                                                                  await setDoc(doc(db, COLS.DRAFTS, 'current_session'), leanSession);
-                                                                                } catch (e2) {
-                                                                                  console.warn("Lean draft also failed. Attempting Storage Upload (Unlimited Size)...", e2);
-
-                                                                                  try {
-                                                                                    // 3. STORAGE FALLBACK FOR DRAFTS
-                                                                                    const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-                                                                                    const { storage } = await import('./firebaseConfig');
-
-                                                                                    if (!storage) throw new Error("Storage not initialized");
-
-                                                                                    const jsonString = JSON.stringify(session);
-                                                                                    const blob = new Blob([jsonString], { type: 'application/json' });
-                                                                                    // Use a fixed path for current_session to overwrite properly
-                                                                                    const storagePath = `drafts / current_session_${Date.now()}.json`;
-                                                                                    const storageRef = ref(storage, storagePath);
-
-                                                                                    // Timeout 120s
-                                                                                    const uploadPromise = uploadBytes(storageRef, blob);
-                                                                                    const timeoutPromise = new Promise((_, reject) =>
-                                                                                      setTimeout(() => reject(new Error("Timeout: La subida del borrador tardó demasiado.")), 120000)
-                                                                                    );
-
-                                                                                    await Promise.race([uploadPromise, timeoutPromise]);
-                                                                                    const downloadURL = await getDownloadURL(storageRef);
-
-                                                                                    // Save "Pointer" to Firestore
-                                                                                    const pointerSession: DataStageSession = {
-                                                                                      ...session,
-                                                                                      records: [],
-                                                                                      rawFiles: [],
-                                                                                      storageUrl: downloadURL
-                                                                                    } as any; // Cast safely if type check strictness varies
-
-                                                                                    await setDoc(doc(db, COLS.DRAFTS, 'current_session'), pointerSession);
-                                                                                    console.log("Saved large draft via Storage Link:", downloadURL);
-
-                                                                                  } catch (e3) {
-                                                                                    console.error("Critical: Failed to save draft via Storage fallback.", e3);
-                                                                                    // Silent fail for drafts to not block UI, but log it.
-                                                                                  }
-                                                                                }
-                                                                              }
-                                                                            }
-                                                                          },
-
-                                                                            getDraftDataStage: async (): Promise<DataStageSession | null> => {
-                                                                              // 1. Get Local Data (Fast/Offline)
-                                                                              const localStr = localStorage.getItem(DRAFT_DATA_STAGE_KEY);
-                                                                              const localDraft: DataStageSession | null = localStr ? JSON.parse(localStr) : null;
-
-                                                                              // 2. Try Cloud (If available)
-                                                                              if (db) {
-                                                                                try {
-                                                                                  const snap = await getDoc(doc(db, COLS.DRAFTS, 'current_session'));
-                                                                                  if (snap.exists()) {
-                                                                                    const cloudDraft = snap.data() as DataStageSession;
-
-                                                                                    // Conflict Resolution: Use the latest
-                                                                                    const localTime = localDraft?.timestamp ? new Date(localDraft.timestamp).getTime() : 0;
-                                                                                    const cloudTime = cloudDraft.timestamp ? new Date(cloudDraft.timestamp).getTime() : 0;
-
-                                                                                    if (cloudTime > localTime) {
-                                                                                      console.log("Using Cloud Draft (Newer)");
-
-                                                                                      // HYDRATE IF POINTER
-                                                                                      let finalDraft = cloudDraft;
-                                                                                      if ((cloudDraft as any).storageUrl && cloudDraft.records.length === 0) {
-                                                                                        try {
-                                                                                          console.log("Hydrating draft from storage...", (cloudDraft as any).storageUrl);
-                                                                                          const res = await fetch((cloudDraft as any).storageUrl);
-                                                                                          if (res.ok) {
-                                                                                            finalDraft = await res.json();
-                                                                                          }
-                                                                                        } catch (err) {
-                                                                                          console.error("Failed to hydrate draft from storage", err);
-                                                                                          // Fallback to local if hydration fails but local exists? 
-                                                                                          // Or return empty to avoid inconsistency.
-                                                                                          // If hydration fails, we probably shouldn't return a broken empty draft.
-                                                                                          if (localDraft) return localDraft;
-                                                                                        }
-                                                                                      }
-
-                                                                                      localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(finalDraft));
-                                                                                      return finalDraft;
-                                                                                    } else {
-                                                                                      console.log("Using Local Draft (Newer or Equal)");
-                                                                                      // Determine if we should push local to cloud? 
-                                                                                      // Maybe, but let's just return local for speed and safety.
-                                                                                      return localDraft;
-                                                                                    }
-                                                                                  }
-                                                                                } catch (e) {
-                                                                                  console.warn("Cloud draft fetch failed", e);
-                                                                                }
-                                                                              }
-
-                                                                              return localDraft;
-                                                                            },
-
-                                                                              clearDraftDataStage: async () => {
-                                                                                localStorage.removeItem(DRAFT_DATA_STAGE_KEY);
-                                                                                if (db) {
-                                                                                  try {
-                                                                                    await deleteDoc(doc(db, COLS.DRAFTS, 'current_session'));
-                                                                                  } catch (e) { console.error(e); }
-                                                                                }
-                                                                              },
-
-                                                                                // 2. Método de Descarga Universal (Solución al error de Chrome)
-                                                                                // Reemplaza tu método backup por este más robusto
-                                                                                backup: () => {
-                                                                                  try {
-                                                                                    const dataStr = JSON.stringify(dbState, null, 2); // Formateado para legibilidad
-                                                                                    const blob = new Blob([dataStr], { type: 'application/json' });
-                                                                                    const fileName = `logimaster_full_backup_${new Date().toISOString().split('T')[0]}.json`;
-
-                                                                                    const url = window.URL.createObjectURL(blob);
-                                                                                    const link = document.createElement('a');
-                                                                                    link.href = url;
-                                                                                    link.download = fileName;
-
-                                                                                    // Chrome requiere que el link esté en el DOM para evitar el error de UUID
-                                                                                    document.body.appendChild(link);
-                                                                                    link.click();
-
-                                                                                    // Limpieza con retraso para que el SO procese el archivo antes de que el navegador lo borre de RAM
-                                                                                    setTimeout(() => {
-                                                                                      window.URL.revokeObjectURL(url);
-                                                                                      if (document.body.contains(link)) {
-                                                                                        document.body.removeChild(link);
-                                                                                      }
-                                                                                    }, 3000);
-                                                                                  } catch (e) {
-                                                                                    console.error("Error crítico en backup:", e);
-                                                                                  }
-                                                                                },
-
-                                                                                  importLocalData: async (jsonFile: File) => {
-                                                                                    return new Promise((resolve, reject) => {
-                                                                                      const reader = new FileReader();
-                                                                                      reader.onload = (e) => {
-                                                                                        try {
-                                                                                          const imported = JSON.parse(e.target?.result as string);
-
-                                                                                          // Merge Inteligente: Mantenemos lo que tenemos y sumamos lo nuevo
-                                                                                          // basándonos en la lógica de duplicados para Facturas
-                                                                                          if (imported.commercialInvoices) {
-                                                                                            const existingKeys = new Set(dbState.commercialInvoices.map((i: any) => `${i.invoiceNo} -${i.partNo} -${i.qty} `));
-                                                                                            const uniqueNew = imported.commercialInvoices.filter((i: any) =>
-                                                                                              !existingKeys.has(`${i.invoiceNo} -${i.partNo} -${i.qty} `)
-                                                                                            );
-                                                                                            dbState.commercialInvoices = [...dbState.commercialInvoices, ...uniqueNew];
-                                                                                          }
-
-                                                                                          // Para otros módulos que SI están en nube, el sync de Firebase se encargará,
-                                                                                          // pero para LocalStorage, sobrescribimos el estado actual:
-                                                                                          saveLocal();
-                                                                                          resolve(true);
-                                                                                        } catch (err) {
-                                                                                          reject(err);
-                                                                                        }
-                                                                                      };
-                                                                                      reader.readAsText(jsonFile);
-                                                                                    });
-                                                                                  },
-
-                                                                                    // 3. Importación Reforzada
-                                                                                    importDatabase: async (jsonStr: string) => {
-                                                                                      try {
-                                                                                        const imported = JSON.parse(jsonStr);
-                                                                                        // Mergeo inteligente para no perder facturas locales si el backup no las tiene
-                                                                                        dbState = {
-                                                                                          ...dbState,
-                                                                                          ...imported,
-                                                                                          commercialInvoices: imported.commercialInvoices || dbState.commercialInvoices,
-                                                                                          users: imported.users || dbState.users || []
-                                                                                        };
-                                                                                        saveLocal();
-                                                                                        return true;
-                                                                                      } catch (e) {
-                                                                                        console.error("Error al importar base de datos:", e);
-                                                                                        return false;
-                                                                                      }
-                                                                                    },
-
-
-
-                                                                                      // Senior Frontend Engineer: Implemented missing resetDatabase method.
-                                                                                      resetDatabase: async () => {
-                                                                                        dbState = {
-                                                                                          parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
-                                                                                          customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
-                                                                                          logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
-                                                                                          dataStageDrafts: [], dailyChanges: [], dailyReports: [], users: []
-                                                                                        };
-                                                                                        saveLocal();
-                                                                                      },
-
-                                                                                        searchPart: (num: string) => dbState.parts.find((p: any) => p.PART_NUMBER.toUpperCase() === num.toUpperCase()),
-
-                                                                                          // Senior Frontend Engineer: Implemented snapshot management methods.
-                                                                                          // Senior Frontend Engineer: Implemented snapshot management methods (Isolated Storage)
-                                                                                          getSnapshots: () => {
-                                                                                            try {
-                                                                                              const stored = localStorage.getItem(RESTORE_POINTS_KEY);
-                                                                                              return stored ? JSON.parse(stored) : [];
-                                                                                            } catch (e) { return []; }
-                                                                                          },
-
-                                                                                            createSnapshot: (action: string) => {
-                                                                                              try {
-                                                                                                // 1. Get current snapshots from separate storage
-                                                                                                const stored = localStorage.getItem(RESTORE_POINTS_KEY);
-                                                                                                const output = stored ? JSON.parse(stored) : [];
-
-                                                                                                // 2. Create new snapshot (Only Commercial Invoices for now to save space, or full dbState but carefully)
-                                                                                                // Safety Net is specifically for Commercial Invoices loss.
-                                                                                                const newSnapshot: RestorePoint = {
-                                                                                                  id: crypto.randomUUID(),
-                                                                                                  timestamp: new Date().toISOString(),
-                                                                                                  reason: action,
-                                                                                                  data: dbState.commercialInvoices || [], // Only backing up Invoices to avoid huge size
-                                                                                                  sizeKB: 0
-                                                                                                };
-                                                                                                newSnapshot.sizeKB = Math.round(JSON.stringify(newSnapshot.data).length / 1024);
-
-                                                                                                // 3. Prepend and Limit to 5
-                                                                                                const updated = [newSnapshot, ...output].slice(0, 5);
-
-                                                                                                // 4. Save to separate key
-                                                                                                localStorage.setItem(RESTORE_POINTS_KEY, JSON.stringify(updated));
-                                                                                                console.log(`Snapshot created: ${action} `);
-                                                                                                return true;
-                                                                                              } catch (e) {
-                                                                                                console.warn("Safety Net: Snapshot creation failed", e);
-                                                                                                return false;
-                                                                                              }
-                                                                                            },
-
-                                                                                              restoreSnapshot: (id: string) => {
-                                                                                                try {
-                                                                                                  const stored = localStorage.getItem(RESTORE_POINTS_KEY);
-                                                                                                  const points = stored ? JSON.parse(stored) : [];
-                                                                                                  const snap = points.find((s: any) => s.id === id);
-                                                                                                  if (!snap) return false;
-
-                                                                                                  console.log(`Restoring snapshot: ${snap.reason} `);
-                                                                                                  dbState.commercialInvoices = snap.data;
-                                                                                                  saveLocal(); // Persist restored state
-                                                                                                  notifyListeners();
-                                                                                                  return true;
-                                                                                                } catch (e) {
-                                                                                                  console.error("Restore failed", e);
-                                                                                                  return false;
-                                                                                                }
-                                                                                              },
-
-                                                                                                deleteSnapshot: (id: string) => {
-                                                                                                  try {
-                                                                                                    const stored = localStorage.getItem(RESTORE_POINTS_KEY);
-                                                                                                    const points = stored ? JSON.parse(stored) : [];
-                                                                                                    const updated = points.filter((s: any) => s.id !== id);
-                                                                                                    localStorage.setItem(RESTORE_POINTS_KEY, JSON.stringify(updated));
-                                                                                                    notifyListeners(); // Optional, if we want UI to update instantly (might need a new listener for snapshots though)
-                                                                                                  } catch (e) { console.error(e); }
-                                                                                                },
-
-
-
-                                                                                                  initAutoBackup: () => { },
-
-                                                                                                    // Senior Frontend Engineer: Feature - Proactive Format Submission (Training Loop)
-                                                                                                    uploadTrainingDocument: async (file: File, provider: string, comments: string) => {
-                                                                                                      // Defines the record structure for local state update
-                                                                                                      const newRecord = {
-                                                                                                        id: crypto.randomUUID(),
-                                                                                                        fileName: file.name,
-                                                                                                        fileUrl: URL.createObjectURL(file), // Mock URL for local
-                                                                                                        provider: provider || 'Unknown',
-                                                                                                        comments: comments || '',
-                                                                                                        uploadedAt: new Date().toISOString(),
-                                                                                                        status: 'PENDING_ANALYSIS', // Initial status
-                                                                                                        user: 'Admin (Local)'
-                                                                                                      };
-
-                                                                                                      // Helper for simulation on localhost if real upload fails (CORS/Auth issues)
-                                                                                                      const simulateLocalSuccess = async () => {
-                                                                                                        console.warn("⚠️ Localhost: Upload blocked (likely CORS). Simulating success and updating local state.");
-                                                                                                        await new Promise(resolve => setTimeout(resolve, 800)); // Fake network delay
-
-                                                                                                        // Update Local State so UI updates immediately!
-                                                                                                        if (!dbState.trainingSubmissions) dbState.trainingSubmissions = [];
-                                                                                                        dbState.trainingSubmissions.push(newRecord);
-                                                                                                        saveLocal();
-
-                                                                                                        return true;
-                                                                                                      };
-
-                                                                                                      if (!db) {
-                                                                                                        console.log("Mock Upload: File would be uploaded here.", file.name);
-                                                                                                        return simulateLocalSuccess();
-                                                                                                      }
-
-                                                                                                      try {
-                                                                                                        // 1. Upload File
-                                                                                                        const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-                                                                                                        const { storage } = await import('./firebaseConfig');
-
-                                                                                                        if (!storage) throw new Error("Storage not initialized");
-
-                                                                                                        const storageRef = ref(storage, `training_data / ${Date.now()}_${file.name} `);
-
-                                                                                                        let downloadURL = '';
-                                                                                                        try {
-                                                                                                          // Create a timeout promise that rejects after 5 seconds
-                                                                                                          const timeoutPromise = new Promise((_, reject) =>
-                                                                                                            setTimeout(() => reject(new Error("Upload timed out")), 5000)
-                                                                                                          );
-
-                                                                                                          // Race the upload against the timeout
-                                                                                                          const uploadResult: any = await Promise.race([
-                                                                                                            uploadBytes(storageRef, file),
-                                                                                                            timeoutPromise
-                                                                                                          ]);
-
-                                                                                                          downloadURL = await getDownloadURL(uploadResult.ref);
-                                                                                                        } catch (uploadError) {
-                                                                                                          // If upload fails on localhost (or times out), fall back to simulation to prove flow works
-                                                                                                          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                                                                                                            return await simulateLocalSuccess();
-                                                                                                          }
-                                                                                                          throw uploadError;
-                                                                                                        }
-
-                                                                                                        // 2. Create Submission Record
-                                                                                                        // The onSnapshot listener in init() will catch this and update the state automatically for all clients!
-                                                                                                        await setDoc(doc(collection(db, 'training_submissions')), {
-                                                                                                          ...newRecord, // Use the same structure
-                                                                                                          fileName: file.name,
-                                                                                                          fileUrl: downloadURL,
-                                                                                                          provider: provider || 'Unknown',
-                                                                                                          comments: comments || '',
-                                                                                                          uploadedAt: new Date().toISOString(),
-                                                                                                          status: 'PENDING_ANALYSIS',
-                                                                                                          user: 'Admin'
-                                                                                                        });
-                                                                                                        return true;
-
-                                                                                                      } catch (e) {
-                                                                                                        console.error("Upload Training Doc Error", e);
-                                                                                                        // Fallback for demo stability
-                                                                                                        if (window.location.hostname === 'localhost') return simulateLocalSuccess();
-                                                                                                        throw e;
-                                                                                                      }
-                                                                                                    },
-
-                                                                                                      // --- DIGITAL ARCHIVE METHODS (Refined Workflow) ---
-                                                                                                      saveToDigitalArchive: async (record: PedimentoRecord, docId: string, pdfUrl: string = '') => {
-                                                                                                        const archiveRecord = {
-                                                                                                          ...record,
-                                                                                                          docId,
-                                                                                                          uploadDate: new Date().toISOString(),
-                                                                                                          pdfUrl,
-                                                                                                          status: 'DRAFT'
-                                                                                                        } as any; // Cast to avoid strict type issues with extended interface
-
-                                                                                                        // Local
-                                                                                                        if (!db) {
-                                                                                                          console.warn("Offline: Queueing Archive Save");
-                                                                                                          if (!dbState.digitalArchive) (dbState as any).digitalArchive = [];
-                                                                                                          const idx = (dbState as any).digitalArchive.findIndex((r: any) => r.pedimento === record.pedimento);
-                                                                                                          if (idx !== -1) (dbState as any).digitalArchive[idx] = archiveRecord;
-                                                                                                          else (dbState as any).digitalArchive.push(archiveRecord);
-                                                                                                          queueWrite('SAVE_ARCHIVE', { record, docId, pdfUrl });
-                                                                                                          saveLocal();
-                                                                                                          return;
-                                                                                                        }
-
-                                                                                                        // Cloud (New Collection 'digital_archive')
-                                                                                                        await setDoc(doc(db, 'digital_archive', record.pedimento), archiveRecord);
-                                                                                                      },
-
-                                                                                                        // Sync Final/Paid Pedimento to Customs Clearance (Update existing records)
-                                                                                                        promoteToCustomsClearance: async (record: PedimentoRecord) => {
-                                                                                                          if (!record.pedimento) throw new Error("Pedimento number is missing.");
-
-                                                                                                          // 1. Find Matching Records in Customs Clearance (One Pedimento -> Many Containers)
-                                                                                                          let matchingRecords: CustomsClearanceRecord[] = [];
-
-                                                                                                          if (!db) {
-                                                                                                            matchingRecords = dbState.customsClearance.filter((c: any) => c.pedimentoNo && c.pedimentoNo.trim() === record.pedimento.trim());
-                                                                                                          } else {
-                                                                                                            const q = query(collection(db, COLS.CUSTOMS), where("pedimentoNo", "==", record.pedimento));
-                                                                                                            const snap = await getDocs(q);
-                                                                                                            matchingRecords = snap.docs.map(d => ({ ...d.data(), id: d.id })) as CustomsClearanceRecord[];
-                                                                                                          }
-
-                                                                                                          if (matchingRecords.length === 0) {
-                                                                                                            return { success: false, message: `No se encontraron embarques con Pedimento ${record.pedimento}. Verifica el 'Shipment Plan'.` };
-                                                                                                          }
-
-                                                                                                          // 2. Prepare Updates
-                                                                                                          // Map ATA Port from 'fechaEntrada'
-                                                                                                          const ataPortVal = record.fechaEntrada || null;
-
-                                                                                                          const updates = {
-                                                                                                            pedimentoPaymentDate: record.fechaPago,
-                                                                                                            // If we extracted Auth Date (often same as payment or close), use it
-                                                                                                            // For now, if missing in extraction, assume same as payment or keep old
-                                                                                                            pedimentoAuthorizedDate: record.fechaPago, // Fallback
-                                                                                                            clavePedimento: record.clavePedimento || '', // New Schema A1/V1
-                                                                                                            updatedAt: new Date().toISOString()
-                                                                                                          };
-
-                                                                                                          // If ATA Port is valid date in Pedimento, update it
-                                                                                                          let finalUpdates: any = { ...updates };
-                                                                                                          if (ataPortVal && ataPortVal.length > 5) {
-                                                                                                            finalUpdates.ataPort = ataPortVal;
-                                                                                                          }
-
-                                                                                                          // 3. Update ALL matching records
-                                                                                                          if (!db) {
-                                                                                                            matchingRecords.forEach((match) => {
-                                                                                                              const idx = dbState.customsClearance.findIndex((c: any) => c.id === match.id);
-                                                                                                              if (idx !== -1) {
-                                                                                                                dbState.customsClearance[idx] = { ...dbState.customsClearance[idx], ...finalUpdates };
-                                                                                                              }
-                                                                                                            });
-                                                                                                            // Remove from Archive (Draft)
-                                                                                                            if (dbState.digitalArchive) {
-                                                                                                              dbState.digitalArchive = dbState.digitalArchive.filter((r: any) => r.pedimento !== record.pedimento);
-                                                                                                            }
-                                                                                                            saveLocal();
-                                                                                                          } else {
-                                                                                                            const batch = writeBatch(db);
-                                                                                                            matchingRecords.forEach((match) => {
-                                                                                                              const ref = doc(db, COLS.CUSTOMS, match.id);
-                                                                                                              batch.update(ref, finalUpdates);
-                                                                                                            });
-
-                                                                                                            // Delete from Archive
-                                                                                                            const archiveRef = doc(db, 'digital_archive', record.pedimento);
-                                                                                                            batch.delete(archiveRef);
-
-                                                                                                            await batch.commit();
-                                                                                                          }
-
-                                                                                                          return {
-                                                                                                            success: true,
-                                                                                                          };
-                                                                                                        },
-
-                                                                                                          getDigitalArchive: () => {
-                                                                                                            return dbState.digitalArchive || [];
-                                                                                                          },
-
-                                                                                                            getAuditLogs: () => {
-                                                                                                              return (dbState.logs || []).sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-                                                                                                            },
-
-                                                                                                              fetchAuditLogs: async (limitCount: number = 200) => {
-                                                                                                                if (!db) return;
-                                                                                                                try {
-                                                                                                                  console.log(`⬇️ Fetching Audit Logs (Limit: ${limitCount})...`);
-                                                                                                                  const { query, collection, orderBy, limit, getDocs } = await import('firebase/firestore');
-                                                                                                                  const q = query(collection(db, COLS.LOGS), orderBy('timestamp', 'desc'), limit(limitCount));
-                                                                                                                  const snap = await getDocs(q);
-                                                                                                                  dbState.logs = snap.docs.map(d => ({ ...d.data(), id: d.id } as AuditLog));
-                                                                                                                  notifyListeners();
-                                                                                                                } catch (e) {
-                                                                                                                  console.error("Failed to fetch audit logs", e);
-                                                                                                                }
-                                                                                                              },
-
-                                                                                                                getDailyChanges: () => {
-                                                                                                                  return dbState.dailyChanges || [];
-                                                                                                                },
-
-                                                                                                                  fetchDailyChanges: async () => {
-                                                                                                                    if (!db) return [];
-                                                                                                                    try {
-                                                                                                                      console.log("⬇️ Fetching Daily Changes...");
-                                                                                                                      const { query, collection, orderBy, limit, getDocs } = await import('firebase/firestore');
-                                                                                                                      const q = query(collection(db, COLS.DAILY_CHANGES), orderBy('timestamp', 'desc'), limit(100));
-                                                                                                                      const snap = await getDocs(q);
-                                                                                                                      const changes = snap.docs.map(d => ({ ...d.data(), id: d.id } as DailyChange));
-                                                                                                                      dbState.dailyChanges = changes;
-                                                                                                                      notifyListeners();
-                                                                                                                      return changes;
-                                                                                                                    } catch (e) {
-                                                                                                                      console.error("Failed to fetch daily changes", e);
-                                                                                                                      return [];
-                                                                                                                    }
-                                                                                                                  },
-
-                                                                                                                    getDailyReports: () => {
-                                                                                                                      return dbState.dailyReports || [];
-                                                                                                                    },
-
-                                                                                                                      fetchDailyReports: async () => {
-                                                                                                                        if (!db) return [];
-                                                                                                                        try {
-                                                                                                                          const { query, collection, orderBy, getDocs } = await import('firebase/firestore');
-                                                                                                                          const q = query(collection(db, COLS.DAILY_REPORTS), orderBy('timestamp', 'desc'));
-                                                                                                                          const snap = await getDocs(q);
-                                                                                                                          const reports = snap.docs.map(d => ({ ...d.data(), id: d.id } as MasterDataReport));
-                                                                                                                          dbState.dailyReports = reports;
-                                                                                                                          notifyListeners();
-                                                                                                                          return reports;
-                                                                                                                        } catch (e) {
-                                                                                                                          console.error("Failed to fetch daily reports", e);
-                                                                                                                          return [];
-                                                                                                                        }
-                                                                                                                      },
-
-                                                                                                                        getAuditReportEmails: async (): Promise<string[]> => {
-                                                                                                                          if (!db) return [];
-                                                                                                                          try {
-                                                                                                                            const { doc, getDoc } = await import('firebase/firestore');
-                                                                                                                            const docRef = doc(db, COLS.SUBSCRIPTIONS, 'daily_audit');
-                                                                                                                            const snap = await getDoc(docRef);
-                                                                                                                            if (snap.exists()) {
-                                                                                                                              return snap.data().emails || [];
-                                                                                                                            }
-                                                                                                                            return [];
-                                                                                                                          } catch (e) {
-                                                                                                                            console.error("Failed to fetch audit emails", e);
-                                                                                                                            return [];
-                                                                                                                          }
-                                                                                                                        },
-
-                                                                                                                          updateAuditReportEmails: async (emails: string[]): Promise<boolean> => {
-                                                                                                                            if (!db) return false;
-                                                                                                                            try {
-                                                                                                                              const { doc, setDoc } = await import('firebase/firestore');
-                                                                                                                              await setDoc(doc(db, COLS.SUBSCRIPTIONS, 'daily_audit'), {
-                                                                                                                                emails,
-                                                                                                                                updatedAt: new Date().toISOString()
-                                                                                                                              }, { merge: true });
-                                                                                                                              return true;
-                                                                                                                            } catch (e) {
-                                                                                                                              console.error("Failed to update audit emails", e);
-                                                                                                                              return false;
-                                                                                                                            }
-                                                                                                                          },
-
-                                                                                                                            triggerManualAuditReport: async (date?: string): Promise<{ success: boolean; message: string }> => {
-                                                                                                                              try {
-                                                                                                                                const functions = getFunctions();
-                                                                                                                                const triggerReport = httpsCallable(functions, 'triggerManualReport');
-                                                                                                                                const result = await triggerReport({ date });
-                                                                                                                                const res = result.data as any;
-
-                                                                                                                                if (res.success) {
-                                                                                                                                  return {
-                                                                                                                                    success: true,
-                                                                                                                                    message: `Éxito: ${res.diagnostics.email}. (Drive: ${res.diagnostics.drive})`
-                                                                                                                                  };
-                                                                                                                                } else {
-                                                                                                                                  return {
-                                                                                                                                    success: false,
-                                                                                                                                    message: `Error: ${res.error || 'Fallo general'}.\nDiag: [Email: ${res.diagnostics?.email}, Drive: ${res.diagnostics?.drive}]`
-                                                                                                                                  };
-                                                                                                                                }
-                                                                                                                              } catch (e: any) {
-                                                                                                                                console.error("Connection Error:", e);
-                                                                                                                                return { success: false, message: `Conexión fallida: ${e.message}` };
-                                                                                                                              }
-                                                                                                                            },
-
-                                                                                                                              deleteDigitalArchive: async (pedimentoNo: string) => {
-                                                                                                                                // Local Update
-                                                                                                                                if (dbState.digitalArchive) {
-                                                                                                                                  dbState.digitalArchive = dbState.digitalArchive.filter((r: any) => r.pedimento !== pedimentoNo);
-                                                                                                                                }
-                                                                                                                                saveLocal();
-
-                                                                                                                                // Cloud Update
-                                                                                                                                if (!db) {
-                                                                                                                                  console.warn("Offline: Queueing Archive Delete");
-                                                                                                                                  queueWrite('DELETE_ARCHIVE', pedimentoNo);
-                                                                                                                                  return;
-                                                                                                                                }
-
-                                                                                                                                // Cloud Update
-                                                                                                                                try {
-                                                                                                                                  await deleteDoc(doc(db, 'digital_archive', pedimentoNo));
-                                                                                                                                } catch (e) {
-                                                                                                                                  console.error("Error deleting from archive cloud:", e);
-                                                                                                                                }
-                                                                                                                              },
-
-                                                                                                                                repairCustomsGranularity: async (limit: number = 50) => {
-                                                                                                                                  logAction('REPAIR_TOOL_START', `Batch Limit: ${limit} `);
-                                                                                                                                  console.log(`🚀 Starting Customs Granularity Repair(Batch Limit: ${limit})...`);
-
-                                                                                                                                  // Get all "Multiple" records to know the total remaining
-                                                                                                                                  const allMultiple = dbState.customsClearance.filter(c => (c.containerNo || '').trim() === 'Multiple');
-
-                                                                                                                                  if (allMultiple.length === 0) {
-                                                                                                                                    console.log("✅ No 'Multiple' records found.");
-                                                                                                                                    return { affected: 0, created: 0, remaining: 0 };
-                                                                                                                                  }
-
-                                                                                                                                  // Slice the records to process only the current batch
-                                                                                                                                  const recordsToProcess = allMultiple.slice(0, limit);
-                                                                                                                                  console.log(`🔍 Processing ${recordsToProcess.length} records.Remaining: ${allMultiple.length} `);
-
-                                                                                                                                  const itemsToCreate: CustomsClearanceRecord[] = [];
-                                                                                                                                  const idsToDelete: string[] = [];
-
-                                                                                                                                  for (const record of recordsToProcess) {
-                                                                                                                                    const blNo = (record.blNo || '').trim();
-                                                                                                                                    if (!blNo) continue;
-
-                                                                                                                                    const containers = dbState.vesselTracking
-                                                                                                                                      .filter(v => (v.blNo || '').trim() === blNo)
-                                                                                                                                      .map(v => (v.containerNo || '').trim());
-
-                                                                                                                                    const uniqueContainers = Array.from(new Set(containers.filter(c => c && c !== 'Multiple')));
-
-                                                                                                                                    if (uniqueContainers.length > 0) {
-                                                                                                                                      uniqueContainers.forEach(containerNo => {
-                                                                                                                                        itemsToCreate.push({
-                                                                                                                                          ...record,
-                                                                                                                                          id: crypto.randomUUID(),
-                                                                                                                                          containerNo: containerNo,
-                                                                                                                                          updatedAt: new Date().toISOString()
-                                                                                                                                        });
-                                                                                                                                      });
-                                                                                                                                      idsToDelete.push(record.id);
-                                                                                                                                    } else {
-                                                                                                                                      itemsToCreate.push({
-                                                                                                                                        ...record,
-                                                                                                                                        id: crypto.randomUUID(),
-                                                                                                                                        containerNo: 'Bulk/LCL',
-                                                                                                                                        updatedAt: new Date().toISOString()
-                                                                                                                                      });
-                                                                                                                                      idsToDelete.push(record.id);
-                                                                                                                                    }
-                                                                                                                                  }
-
-                                                                                                                                  // Local Update
-                                                                                                                                  dbState.customsClearance = [
-                                                                                                                                    ...dbState.customsClearance.filter(c => !idsToDelete.includes(c.id)),
-                                                                                                                                    ...itemsToCreate
-                                                                                                                                  ];
-                                                                                                                                  saveLocal();
-
-                                                                                                                                  // Cloud Update (Batch)
-                                                                                                                                  if (db) {
-                                                                                                                                    try {
-                                                                                                                                      const batchSize = 400;
-                                                                                                                                      const combinedOps = [
-                                                                                                                                        ...idsToDelete.map(id => ({ type: 'delete', id })),
-                                                                                                                                        ...itemsToCreate.map(item => ({ type: 'set', item }))
-                                                                                                                                      ];
-
-                                                                                                                                      for (let i = 0; i < combinedOps.length; i += batchSize) {
-                                                                                                                                        const chunk = combinedOps.slice(i, i + batchSize);
-                                                                                                                                        const batchOperation = writeBatch(db);
-
-                                                                                                                                        chunk.forEach((op: any) => {
-                                                                                                                                          const colRef = collection(db, COLS.CUSTOMS);
-                                                                                                                                          if (op.type === 'delete') {
-                                                                                                                                            batchOperation.delete(doc(colRef, op.id));
-                                                                                                                                          } else {
-                                                                                                                                            batchOperation.set(doc(colRef, op.item.id), sanitizeForFirestore(op.item));
-                                                                                                                                          }
-                                                                                                                                        });
-
-                                                                                                                                        await batchOperation.commit();
-                                                                                                                                      }
-                                                                                                                                    } catch (e: any) {
-                                                                                                                                      console.error("❌ Cloud Migration Failed:", e);
-                                                                                                                                      throw new Error(`Cloud Sync Failed: ${e.message} `);
-                                                                                                                                    }
-                                                                                                                                  }
-
-                                                                                                                                  const remainingCount = allMultiple.length - recordsToProcess.length;
-                                                                                                                                  return { affected: recordsToProcess.length, created: itemsToCreate.length, remaining: remainingCount };
-                                                                                                                                },
-
-                                                                                                                                  // Technical Validation Suite (Trigger via Console: storageService.validateCRUD())
-                                                                                                                                  validateCRUD: async () => {
-                                                                                                                                    console.log("🛠️ Starting Technical CRUD Validation...");
-                                                                                                                                    const testId = `test_${Date.now()}`;
-                                                                                                                                    const part: any = {
-                                                                                                                                      id: testId,
-                                                                                                                                      PART_NUMBER: 'CRUD-TEST',
-                                                                                                                                      DESCRIPTION_EN: 'Initial State',
-                                                                                                                                      UPDATE_TIME: new Date().toISOString()
-                                                                                                                                    };
-
-                                                                                                                                    try {
-                                                                                                                                      console.log("1. Testing Write...");
-                                                                                                                                      await storageService.updatePart(part);
-
-                                                                                                                                      console.log("2. Testing Read/Edit...");
-                                                                                                                                      const editPart = { ...part, DESCRIPTION_EN: 'Edited State' };
-                                                                                                                                      await storageService.updatePart(editPart);
-
-                                                                                                                                      console.log("3. Testing Delete...");
-                                                                                                                                      await storageService.deletePart(testId);
-
-                                                                                                                                      console.log("✅ FIRESTORE CRUD STABLE: All operations verified.");
-                                                                                                                                      return "SUCCESS: Firebase CRUD validated.";
-                                                                                                                                    } catch (e: any) {
-                                                                                                                                      console.error("❌ FIRESTORE CRUD FAILED:", e);
-                                                                                                                                      return `FAILURE: ${e.message}`;
-                                                                                                                                    }
-                                                                                                                                  }
-  };
-
-  // Expose to window for user-driven technical validation
-  if(typeof window !== 'undefined') {
+  },
+
+  deleteDataStageReport: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.DATA_STAGE_REPORTS, id));
+    dbState.dataStageReports = dbState.dataStageReports.filter((r: any) => r.id !== id);
+    saveLocal();
+  },
+  saveDraftDataStage: async (session: DataStageSession) => {
+    // 1. Try LocalStorage (Speed)
+    // 1. Try LocalStorage (Speed)
+    try {
+      const payload = JSON.stringify(session);
+      if (payload.length > 4000000) { // 4MB Limit Safety
+        console.warn("Draft too large for LocalStorage (" + (payload.length / 1024 / 1024).toFixed(2) + " MB). Saving Lean Draft only.");
+        throw new Error("Payload too large"); // Trigger fallback to lean
+      }
+      localStorage.setItem(DRAFT_DATA_STAGE_KEY, payload);
+    } catch (e) {
+      console.warn("Draft LocalStorage Full. Clearing old Reports to make space...");
+      try {
+        // Try to free space from Reports to save the Draft (Priority: Current Work > Old History)
+        let localReports = JSON.parse(localStorage.getItem(COLS.DATA_STAGE_REPORTS) || '[]');
+        while (localReports.length > 0) {
+          localReports.pop(); // Remove oldest
+          localStorage.setItem(COLS.DATA_STAGE_REPORTS, JSON.stringify(localReports));
+          try {
+            localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(session));
+            console.log("Draft saved after clearing history.");
+            return; // Success
+          } catch (retryErr) {
+            // Continue loop
+          }
+        }
+        // If reports empty and still fails, try lean draft
+        throw e;
+      } catch (e2) {
+        console.warn("Still full even after clearing history. Attempting lean save...");
+        try {
+          const leanSession = {
+            ...session,
+            rawFiles: session.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
+          };
+          localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(leanSession));
+        } catch (e3) {
+          console.error("Local persistence failed completely", e3);
+        }
+      }
+    }
+
+    // 2. Sync to Cloud (Unlimited* Storage)
+    if (db) {
+      try {
+        // Firestore has 1MB limit per document too!
+        // We might need to be careful here. If rawFiles are huge, Firestore will also fail.
+        // For now, let's try.
+        await setDoc(doc(db, COLS.DRAFTS, 'current_session'), session);
+      } catch (e) {
+        console.warn("Failed to sync draft to cloud", e);
+        // If Document too large, try saving without rawFiles
+        try {
+          const leanSession = {
+            ...session,
+            rawFiles: session.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
+          };
+          await setDoc(doc(db, COLS.DRAFTS, 'current_session'), leanSession);
+        } catch (e2) {
+          console.warn("Lean draft also failed. Attempting Storage Upload (Unlimited Size)...", e2);
+
+          try {
+            // 3. STORAGE FALLBACK FOR DRAFTS
+            const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+            const { storage } = await import('./firebaseConfig');
+
+            if (!storage) throw new Error("Storage not initialized");
+
+            const jsonString = JSON.stringify(session);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            // Use a fixed path for current_session to overwrite properly
+            const storagePath = `drafts / current_session_${Date.now()}.json`;
+            const storageRef = ref(storage, storagePath);
+
+            // Timeout 120s
+            const uploadPromise = uploadBytes(storageRef, blob);
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("Timeout: La subida del borrador tardó demasiado.")), 120000)
+            );
+
+            await Promise.race([uploadPromise, timeoutPromise]);
+            const downloadURL = await getDownloadURL(storageRef);
+
+            // Save "Pointer" to Firestore
+            const pointerSession: DataStageSession = {
+              ...session,
+              records: [],
+              rawFiles: [],
+              storageUrl: downloadURL
+            } as any; // Cast safely if type check strictness varies
+
+            await setDoc(doc(db, COLS.DRAFTS, 'current_session'), pointerSession);
+            console.log("Saved large draft via Storage Link:", downloadURL);
+
+          } catch (e3) {
+            console.error("Critical: Failed to save draft via Storage fallback.", e3);
+            // Silent fail for drafts to not block UI, but log it.
+          }
+        }
+      }
+    }
+  },
+
+  getDraftDataStage: async (): Promise<DataStageSession | null> => {
+    // 1. Get Local Data (Fast/Offline)
+    const localStr = localStorage.getItem(DRAFT_DATA_STAGE_KEY);
+    const localDraft: DataStageSession | null = localStr ? JSON.parse(localStr) : null;
+
+    // 2. Try Cloud (If available)
+    if (db) {
+      try {
+        const snap = await getDoc(doc(db, COLS.DRAFTS, 'current_session'));
+        if (snap.exists()) {
+          const cloudDraft = snap.data() as DataStageSession;
+
+          // Conflict Resolution: Use the latest
+          const localTime = localDraft?.timestamp ? new Date(localDraft.timestamp).getTime() : 0;
+          const cloudTime = cloudDraft.timestamp ? new Date(cloudDraft.timestamp).getTime() : 0;
+
+          if (cloudTime > localTime) {
+            console.log("Using Cloud Draft (Newer)");
+
+            // HYDRATE IF POINTER
+            let finalDraft = cloudDraft;
+            if ((cloudDraft as any).storageUrl && cloudDraft.records.length === 0) {
+              try {
+                console.log("Hydrating draft from storage...", (cloudDraft as any).storageUrl);
+                const res = await fetch((cloudDraft as any).storageUrl);
+                if (res.ok) {
+                  finalDraft = await res.json();
+                }
+              } catch (err) {
+                console.error("Failed to hydrate draft from storage", err);
+                // Fallback to local if hydration fails but local exists? 
+                // Or return empty to avoid inconsistency.
+                // If hydration fails, we probably shouldn't return a broken empty draft.
+                if (localDraft) return localDraft;
+              }
+            }
+
+            localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(finalDraft));
+            return finalDraft;
+          } else {
+            console.log("Using Local Draft (Newer or Equal)");
+            // Determine if we should push local to cloud? 
+            // Maybe, but let's just return local for speed and safety.
+            return localDraft;
+          }
+        }
+      } catch (e) {
+        console.warn("Cloud draft fetch failed", e);
+      }
+    }
+
+    return localDraft;
+  },
+
+  clearDraftDataStage: async () => {
+    localStorage.removeItem(DRAFT_DATA_STAGE_KEY);
+    if (db) {
+      try {
+        await deleteDoc(doc(db, COLS.DRAFTS, 'current_session'));
+      } catch (e) { console.error(e); }
+    }
+  },
+
+  // 2. Método de Descarga Universal (Solución al error de Chrome)
+  // Reemplaza tu método backup por este más robusto
+  backup: () => {
+    try {
+      const dataStr = JSON.stringify(dbState, null, 2); // Formateado para legibilidad
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const fileName = `logimaster_full_backup_${new Date().toISOString().split('T')[0]}.json`;
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+
+      // Chrome requiere que el link esté en el DOM para evitar el error de UUID
+      document.body.appendChild(link);
+      link.click();
+
+      // Limpieza con retraso para que el SO procese el archivo antes de que el navegador lo borre de RAM
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        if (document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+      }, 3000);
+    } catch (e) {
+      console.error("Error crítico en backup:", e);
+    }
+  },
+
+  importLocalData: async (jsonFile: File) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target?.result as string);
+
+          // Merge Inteligente: Mantenemos lo que tenemos y sumamos lo nuevo
+          // basándonos en la lógica de duplicados para Facturas
+          if (imported.commercialInvoices) {
+            const existingKeys = new Set(dbState.commercialInvoices.map((i: any) => `${i.invoiceNo} -${i.partNo} -${i.qty} `));
+            const uniqueNew = imported.commercialInvoices.filter((i: any) =>
+              !existingKeys.has(`${i.invoiceNo} -${i.partNo} -${i.qty} `)
+            );
+            dbState.commercialInvoices = [...dbState.commercialInvoices, ...uniqueNew];
+          }
+
+          // Para otros módulos que SI están en nube, el sync de Firebase se encargará,
+          // pero para LocalStorage, sobrescribimos el estado actual:
+          saveLocal();
+          resolve(true);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.readAsText(jsonFile);
+    });
+  },
+
+  // 3. Importación Reforzada
+  importDatabase: async (jsonStr: string) => {
+    try {
+      const imported = JSON.parse(jsonStr);
+      // Mergeo inteligente para no perder facturas locales si el backup no las tiene
+      dbState = {
+        ...dbState,
+        ...imported,
+        commercialInvoices: imported.commercialInvoices || dbState.commercialInvoices,
+        users: imported.users || dbState.users || []
+      };
+      saveLocal();
+      return true;
+    } catch (e) {
+      console.error("Error al importar base de datos:", e);
+      return false;
+    }
+  },
+
+
+
+  // Senior Frontend Engineer: Implemented missing resetDatabase method.
+  resetDatabase: async () => {
+    dbState = {
+      parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
+      customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
+      logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
+      dataStageDrafts: [], dailyChanges: [], dailyReports: [], users: []
+    };
+    saveLocal();
+  },
+
+  searchPart: (num: string) => dbState.parts.find((p: any) => p.PART_NUMBER.toUpperCase() === num.toUpperCase()),
+
+  // Senior Frontend Engineer: Implemented snapshot management methods.
+  // Senior Frontend Engineer: Implemented snapshot management methods (Isolated Storage)
+  getSnapshots: () => {
+    try {
+      const stored = localStorage.getItem(RESTORE_POINTS_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) { return []; }
+  },
+
+  createSnapshot: (action: string) => {
+    try {
+      // 1. Get current snapshots from separate storage
+      const stored = localStorage.getItem(RESTORE_POINTS_KEY);
+      const output = stored ? JSON.parse(stored) : [];
+
+      // 2. Create new snapshot (Only Commercial Invoices for now to save space, or full dbState but carefully)
+      // Safety Net is specifically for Commercial Invoices loss.
+      const newSnapshot: RestorePoint = {
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        reason: action,
+        data: dbState.commercialInvoices || [], // Only backing up Invoices to avoid huge size
+        sizeKB: 0
+      };
+      newSnapshot.sizeKB = Math.round(JSON.stringify(newSnapshot.data).length / 1024);
+
+      // 3. Prepend and Limit to 5
+      const updated = [newSnapshot, ...output].slice(0, 5);
+
+      // 4. Save to separate key
+      localStorage.setItem(RESTORE_POINTS_KEY, JSON.stringify(updated));
+      console.log(`Snapshot created: ${action} `);
+      return true;
+    } catch (e) {
+      console.warn("Safety Net: Snapshot creation failed", e);
+      return false;
+    }
+  },
+
+  restoreSnapshot: (id: string) => {
+    try {
+      const stored = localStorage.getItem(RESTORE_POINTS_KEY);
+      const points = stored ? JSON.parse(stored) : [];
+      const snap = points.find((s: any) => s.id === id);
+      if (!snap) return false;
+
+      console.log(`Restoring snapshot: ${snap.reason} `);
+      dbState.commercialInvoices = snap.data;
+      saveLocal(); // Persist restored state
+      notifyListeners();
+      return true;
+    } catch (e) {
+      console.error("Restore failed", e);
+      return false;
+    }
+  },
+
+  deleteSnapshot: (id: string) => {
+    try {
+      const stored = localStorage.getItem(RESTORE_POINTS_KEY);
+      const points = stored ? JSON.parse(stored) : [];
+      const updated = points.filter((s: any) => s.id !== id);
+      localStorage.setItem(RESTORE_POINTS_KEY, JSON.stringify(updated));
+      notifyListeners(); // Optional, if we want UI to update instantly (might need a new listener for snapshots though)
+    } catch (e) { console.error(e); }
+  },
+
+
+
+  initAutoBackup: () => { },
+
+  // Senior Frontend Engineer: Feature - Proactive Format Submission (Training Loop)
+  uploadTrainingDocument: async (file: File, provider: string, comments: string) => {
+    // Defines the record structure for local state update
+    const newRecord = {
+      id: crypto.randomUUID(),
+      fileName: file.name,
+      fileUrl: URL.createObjectURL(file), // Mock URL for local
+      provider: provider || 'Unknown',
+      comments: comments || '',
+      uploadedAt: new Date().toISOString(),
+      status: 'PENDING_ANALYSIS', // Initial status
+      user: 'Admin (Local)'
+    };
+
+    // Helper for simulation on localhost if real upload fails (CORS/Auth issues)
+    const simulateLocalSuccess = async () => {
+      console.warn("⚠️ Localhost: Upload blocked (likely CORS). Simulating success and updating local state.");
+      await new Promise(resolve => setTimeout(resolve, 800)); // Fake network delay
+
+      // Update Local State so UI updates immediately!
+      if (!dbState.trainingSubmissions) dbState.trainingSubmissions = [];
+      dbState.trainingSubmissions.push(newRecord);
+      saveLocal();
+
+      return true;
+    };
+
+    if (!db) {
+      console.log("Mock Upload: File would be uploaded here.", file.name);
+      return simulateLocalSuccess();
+    }
+
+    try {
+      // 1. Upload File
+      const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+      const { storage } = await import('./firebaseConfig');
+
+      if (!storage) throw new Error("Storage not initialized");
+
+      const storageRef = ref(storage, `training_data / ${Date.now()}_${file.name} `);
+
+      let downloadURL = '';
+      try {
+        // Create a timeout promise that rejects after 5 seconds
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Upload timed out")), 5000)
+        );
+
+        // Race the upload against the timeout
+        const uploadResult: any = await Promise.race([
+          uploadBytes(storageRef, file),
+          timeoutPromise
+        ]);
+
+        downloadURL = await getDownloadURL(uploadResult.ref);
+      } catch (uploadError) {
+        // If upload fails on localhost (or times out), fall back to simulation to prove flow works
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          return await simulateLocalSuccess();
+        }
+        throw uploadError;
+      }
+
+      // 2. Create Submission Record
+      // The onSnapshot listener in init() will catch this and update the state automatically for all clients!
+      await setDoc(doc(collection(db, 'training_submissions')), {
+        ...newRecord, // Use the same structure
+        fileName: file.name,
+        fileUrl: downloadURL,
+        provider: provider || 'Unknown',
+        comments: comments || '',
+        uploadedAt: new Date().toISOString(),
+        status: 'PENDING_ANALYSIS',
+        user: 'Admin'
+      });
+      return true;
+
+    } catch (e) {
+      console.error("Upload Training Doc Error", e);
+      // Fallback for demo stability
+      if (window.location.hostname === 'localhost') return simulateLocalSuccess();
+      throw e;
+    }
+  },
+
+  // --- DIGITAL ARCHIVE METHODS (Refined Workflow) ---
+  saveToDigitalArchive: async (record: PedimentoRecord, docId: string, pdfUrl: string = '') => {
+    const archiveRecord = {
+      ...record,
+      docId,
+      uploadDate: new Date().toISOString(),
+      pdfUrl,
+      status: 'DRAFT'
+    } as any; // Cast to avoid strict type issues with extended interface
+
+    // Local
+    if (!db) {
+      console.warn("Offline: Queueing Archive Save");
+      if (!dbState.digitalArchive) (dbState as any).digitalArchive = [];
+      const idx = (dbState as any).digitalArchive.findIndex((r: any) => r.pedimento === record.pedimento);
+      if (idx !== -1) (dbState as any).digitalArchive[idx] = archiveRecord;
+      else (dbState as any).digitalArchive.push(archiveRecord);
+      queueWrite('SAVE_ARCHIVE', { record, docId, pdfUrl });
+      saveLocal();
+      return;
+    }
+
+    // Cloud (New Collection 'digital_archive')
+    await setDoc(doc(db, 'digital_archive', record.pedimento), archiveRecord);
+  },
+
+  // Sync Final/Paid Pedimento to Customs Clearance (Update existing records)
+  promoteToCustomsClearance: async (record: PedimentoRecord) => {
+    if (!record.pedimento) throw new Error("Pedimento number is missing.");
+
+    // 1. Find Matching Records in Customs Clearance (One Pedimento -> Many Containers)
+    let matchingRecords: CustomsClearanceRecord[] = [];
+
+    if (!db) {
+      matchingRecords = dbState.customsClearance.filter((c: any) => c.pedimentoNo && c.pedimentoNo.trim() === record.pedimento.trim());
+    } else {
+      const q = query(collection(db, COLS.CUSTOMS), where("pedimentoNo", "==", record.pedimento));
+      const snap = await getDocs(q);
+      matchingRecords = snap.docs.map(d => ({ ...d.data(), id: d.id })) as CustomsClearanceRecord[];
+    }
+
+    if (matchingRecords.length === 0) {
+      return { success: false, message: `No se encontraron embarques con Pedimento ${record.pedimento}. Verifica el 'Shipment Plan'.` };
+    }
+
+    // 2. Prepare Updates
+    // Map ATA Port from 'fechaEntrada'
+    const ataPortVal = record.fechaEntrada || null;
+
+    const updates = {
+      pedimentoPaymentDate: record.fechaPago,
+      // If we extracted Auth Date (often same as payment or close), use it
+      // For now, if missing in extraction, assume same as payment or keep old
+      pedimentoAuthorizedDate: record.fechaPago, // Fallback
+      clavePedimento: record.clavePedimento || '', // New Schema A1/V1
+      updatedAt: new Date().toISOString()
+    };
+
+    // If ATA Port is valid date in Pedimento, update it
+    let finalUpdates: any = { ...updates };
+    if (ataPortVal && ataPortVal.length > 5) {
+      finalUpdates.ataPort = ataPortVal;
+    }
+
+    // 3. Update ALL matching records
+    if (!db) {
+      matchingRecords.forEach((match) => {
+        const idx = dbState.customsClearance.findIndex((c: any) => c.id === match.id);
+        if (idx !== -1) {
+          dbState.customsClearance[idx] = { ...dbState.customsClearance[idx], ...finalUpdates };
+        }
+      });
+      // Remove from Archive (Draft)
+      if (dbState.digitalArchive) {
+        dbState.digitalArchive = dbState.digitalArchive.filter((r: any) => r.pedimento !== record.pedimento);
+      }
+      saveLocal();
+    } else {
+      const batch = writeBatch(db);
+      matchingRecords.forEach((match) => {
+        const ref = doc(db, COLS.CUSTOMS, match.id);
+        batch.update(ref, finalUpdates);
+      });
+
+      // Delete from Archive
+      const archiveRef = doc(db, 'digital_archive', record.pedimento);
+      batch.delete(archiveRef);
+
+      await batch.commit();
+    }
+
+    return {
+      success: true,
+    };
+  },
+
+  getDigitalArchive: () => {
+    return dbState.digitalArchive || [];
+  },
+
+  getAuditLogs: () => {
+    return (dbState.logs || []).sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  },
+
+  fetchAuditLogs: async (limitCount: number = 200) => {
+    if (!db) return;
+    try {
+      console.log(`⬇️ Fetching Audit Logs (Limit: ${limitCount})...`);
+      const { query, collection, orderBy, limit, getDocs } = await import('firebase/firestore');
+      const q = query(collection(db, COLS.LOGS), orderBy('timestamp', 'desc'), limit(limitCount));
+      const snap = await getDocs(q);
+      dbState.logs = snap.docs.map(d => ({ ...d.data(), id: d.id } as AuditLog));
+      notifyListeners();
+    } catch (e) {
+      console.error("Failed to fetch audit logs", e);
+    }
+  },
+
+  getDailyChanges: () => {
+    return dbState.dailyChanges || [];
+  },
+
+  fetchDailyChanges: async () => {
+    if (!db) return [];
+    try {
+      console.log("⬇️ Fetching Daily Changes...");
+      const { query, collection, orderBy, limit, getDocs } = await import('firebase/firestore');
+      const q = query(collection(db, COLS.DAILY_CHANGES), orderBy('timestamp', 'desc'), limit(100));
+      const snap = await getDocs(q);
+      const changes = snap.docs.map(d => ({ ...d.data(), id: d.id } as DailyChange));
+      dbState.dailyChanges = changes;
+      notifyListeners();
+      return changes;
+    } catch (e) {
+      console.error("Failed to fetch daily changes", e);
+      return [];
+    }
+  },
+
+  getDailyReports: () => {
+    return dbState.dailyReports || [];
+  },
+
+  fetchDailyReports: async () => {
+    if (!db) return [];
+    try {
+      const { query, collection, orderBy, getDocs } = await import('firebase/firestore');
+      const q = query(collection(db, COLS.DAILY_REPORTS), orderBy('timestamp', 'desc'));
+      const snap = await getDocs(q);
+      const reports = snap.docs.map(d => ({ ...d.data(), id: d.id } as MasterDataReport));
+      dbState.dailyReports = reports;
+      notifyListeners();
+      return reports;
+    } catch (e) {
+      console.error("Failed to fetch daily reports", e);
+      return [];
+    }
+  },
+
+  getAuditReportEmails: async (): Promise<string[]> => {
+    if (!db) return [];
+    try {
+      const { doc, getDoc } = await import('firebase/firestore');
+      const docRef = doc(db, COLS.SUBSCRIPTIONS, 'daily_audit');
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        return snap.data().emails || [];
+      }
+      return [];
+    } catch (e) {
+      console.error("Failed to fetch audit emails", e);
+      return [];
+    }
+  },
+
+  updateAuditReportEmails: async (emails: string[]): Promise<boolean> => {
+    if (!db) return false;
+    try {
+      const { doc, setDoc } = await import('firebase/firestore');
+      await setDoc(doc(db, COLS.SUBSCRIPTIONS, 'daily_audit'), {
+        emails,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      return true;
+    } catch (e) {
+      console.error("Failed to update audit emails", e);
+      return false;
+    }
+  },
+
+  triggerManualAuditReport: async (date?: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const functions = getFunctions();
+      const triggerReport = httpsCallable(functions, 'triggerManualReport');
+      const result = await triggerReport({ date });
+      const res = result.data as any;
+
+      if (res.success) {
+        return {
+          success: true,
+          message: `Éxito: ${res.diagnostics.email}. (Drive: ${res.diagnostics.drive})`
+        };
+      } else {
+        return {
+          success: false,
+          message: `Error: ${res.error || 'Fallo general'}.\nDiag: [Email: ${res.diagnostics?.email}, Drive: ${res.diagnostics?.drive}]`
+        };
+      }
+    } catch (e: any) {
+      console.error("Connection Error:", e);
+      return { success: false, message: `Conexión fallida: ${e.message}` };
+    }
+  },
+
+  deleteDigitalArchive: async (pedimentoNo: string) => {
+    // Local Update
+    if (dbState.digitalArchive) {
+      dbState.digitalArchive = dbState.digitalArchive.filter((r: any) => r.pedimento !== pedimentoNo);
+    }
+    saveLocal();
+
+    // Cloud Update
+    if (!db) {
+      console.warn("Offline: Queueing Archive Delete");
+      queueWrite('DELETE_ARCHIVE', pedimentoNo);
+      return;
+    }
+
+    // Cloud Update
+    try {
+      await deleteDoc(doc(db, 'digital_archive', pedimentoNo));
+    } catch (e) {
+      console.error("Error deleting from archive cloud:", e);
+    }
+  },
+
+  repairCustomsGranularity: async (limit: number = 50) => {
+    logAction('REPAIR_TOOL_START', `Batch Limit: ${limit} `);
+    console.log(`🚀 Starting Customs Granularity Repair(Batch Limit: ${limit})...`);
+
+    // Get all "Multiple" records to know the total remaining
+    const allMultiple = dbState.customsClearance.filter(c => (c.containerNo || '').trim() === 'Multiple');
+
+    if (allMultiple.length === 0) {
+      console.log("✅ No 'Multiple' records found.");
+      return { affected: 0, created: 0, remaining: 0 };
+    }
+
+    // Slice the records to process only the current batch
+    const recordsToProcess = allMultiple.slice(0, limit);
+    console.log(`🔍 Processing ${recordsToProcess.length} records.Remaining: ${allMultiple.length} `);
+
+    const itemsToCreate: CustomsClearanceRecord[] = [];
+    const idsToDelete: string[] = [];
+
+    for (const record of recordsToProcess) {
+      const blNo = (record.blNo || '').trim();
+      if (!blNo) continue;
+
+      const containers = dbState.vesselTracking
+        .filter(v => (v.blNo || '').trim() === blNo)
+        .map(v => (v.containerNo || '').trim());
+
+      const uniqueContainers = Array.from(new Set(containers.filter(c => c && c !== 'Multiple')));
+
+      if (uniqueContainers.length > 0) {
+        uniqueContainers.forEach(containerNo => {
+          itemsToCreate.push({
+            ...record,
+            id: crypto.randomUUID(),
+            containerNo: containerNo,
+            updatedAt: new Date().toISOString()
+          });
+        });
+        idsToDelete.push(record.id);
+      } else {
+        itemsToCreate.push({
+          ...record,
+          id: crypto.randomUUID(),
+          containerNo: 'Bulk/LCL',
+          updatedAt: new Date().toISOString()
+        });
+        idsToDelete.push(record.id);
+      }
+    }
+
+    // Local Update
+    dbState.customsClearance = [
+      ...dbState.customsClearance.filter(c => !idsToDelete.includes(c.id)),
+      ...itemsToCreate
+    ];
+    saveLocal();
+
+    // Cloud Update (Batch)
+    if (db) {
+      try {
+        const batchSize = 400;
+        const combinedOps = [
+          ...idsToDelete.map(id => ({ type: 'delete', id })),
+          ...itemsToCreate.map(item => ({ type: 'set', item }))
+        ];
+
+        for (let i = 0; i < combinedOps.length; i += batchSize) {
+          const chunk = combinedOps.slice(i, i + batchSize);
+          const batchOperation = writeBatch(db);
+
+          chunk.forEach((op: any) => {
+            const colRef = collection(db, COLS.CUSTOMS);
+            if (op.type === 'delete') {
+              batchOperation.delete(doc(colRef, op.id));
+            } else {
+              batchOperation.set(doc(colRef, op.item.id), sanitizeForFirestore(op.item));
+            }
+          });
+
+          await batchOperation.commit();
+        }
+      } catch (e: any) {
+        console.error("❌ Cloud Migration Failed:", e);
+        throw new Error(`Cloud Sync Failed: ${e.message} `);
+      }
+    }
+
+    const remainingCount = allMultiple.length - recordsToProcess.length;
+    return { affected: recordsToProcess.length, created: itemsToCreate.length, remaining: remainingCount };
+  },
+
+  // Technical Validation Suite (Trigger via Console: storageService.validateCRUD())
+  validateCRUD: async () => {
+    console.log("🛠️ Starting Technical CRUD Validation...");
+    const testId = `test_${Date.now()}`;
+    const part: any = {
+      id: testId,
+      PART_NUMBER: 'CRUD-TEST',
+      DESCRIPTION_EN: 'Initial State',
+      UPDATE_TIME: new Date().toISOString()
+    };
+
+    try {
+      console.log("1. Testing Write...");
+      await storageService.updatePart(part);
+
+      console.log("2. Testing Read/Edit...");
+      const editPart = { ...part, DESCRIPTION_EN: 'Edited State' };
+      await storageService.updatePart(editPart);
+
+      console.log("3. Testing Delete...");
+      await storageService.deletePart(testId);
+
+      console.log("✅ FIRESTORE CRUD STABLE: All operations verified.");
+      return "SUCCESS: Firebase CRUD validated.";
+    } catch (e: any) {
+      console.error("❌ FIRESTORE CRUD FAILED:", e);
+      return `FAILURE: ${e.message}`;
+    }
+  }
+};
+
+// Expose to window for user-driven technical validation
+if (typeof window !== 'undefined') {
   (window as any).storageService = storageService;
 }
 

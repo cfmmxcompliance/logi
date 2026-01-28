@@ -116,7 +116,7 @@ export const DatabaseView = () => {
             status: 'loading',
             title: 'Enmienda Masiva',
             message: `Actualizando ${selectedIds.size} registros...`,
-            progress: 50
+            progress: 5
         });
 
         try {

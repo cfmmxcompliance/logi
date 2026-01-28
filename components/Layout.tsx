@@ -4,6 +4,36 @@ import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settin
 import { useAuth } from '../context/AuthContext.tsx';
 import { ConnectionStatus } from './ConnectionStatus.tsx';
 import { UserRole } from '../types.ts';
+import { storageService } from '../services/storageService.ts';
+
+const SyncIndicator = () => {
+  const [syncing, setSyncing] = React.useState(false);
+
+  React.useEffect(() => {
+    // Poll or subscribe to check sync status
+    const check = () => {
+      // @ts-ignore
+      if (typeof storageService.isBackgroundSyncing === 'function') {
+        // @ts-ignore
+        setSyncing(storageService.isBackgroundSyncing());
+      }
+    };
+
+    // Subscribe to storage updates
+    // @ts-ignore
+    const unsub = storageService.subscribe(check);
+    return () => { if (unsub) unsub(); };
+  }, []);
+
+  if (!syncing) return null;
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold border border-indigo-100 animate-pulse">
+      <div className="animate-spin rounded-full h-3 w-3 border-2 border-indigo-200 border-t-indigo-600"></div>
+      SYNCING...
+    </div>
+  );
+};
 
 const SidebarItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => {
   const location = useLocation();
@@ -129,6 +159,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <h2 className="text-lg font-semibold text-slate-700">CFMoto Import/Export Control</h2>
           <div className="flex items-center space-x-4">
             <ConnectionStatus />
+            <SyncIndicator />
             <div className={`px-3 py-1 rounded-full text-xs font-bold border ${user?.role === 'Admin' ? 'bg-red-50 text-red-600 border-red-200' :
               user?.role === 'Editor' ? 'bg-blue-50 text-blue-600 border-blue-200' :
                 'bg-slate-50 text-slate-600 border-slate-200'

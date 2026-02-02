@@ -14,7 +14,10 @@ const firebaseConfig = {
     measurementId: "G-01VXE7L5C3"
 };
 
-const GEMINI_API_KEY = "AIzaSyBtq7F036fqPBZ_cWtWsLBb8VT3cRq6KtM";
+import dotenv from 'dotenv';
+dotenv.config();
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);

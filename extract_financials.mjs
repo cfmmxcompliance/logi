@@ -2,10 +2,12 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { google } from 'googleapis';
 import { GoogleGenAI } from "@google/genai";
+import dotenv from 'dotenv';
+dotenv.config();
 
 // --- CONFIGURATION ---
 const SERVICE_ACCOUNT_KEY_FILE = 'functions/service-account.json';
-const GEMINI_API_KEY = "AIzaSyCecQI8jFglWgIQxaDK3OFWbfpmKOR-bYw"; // Updated by user 2026-02-02
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 const firebaseConfig = {
     apiKey: "AIzaSyDEezg2uRbLKAfkGcXt1x0p0KamaTKAaBU",
@@ -43,12 +45,16 @@ async function extractWithGemini(fileBuffer, fileName, mimeType) {
     - dta (Number, Custom Duty)
     - igi (Number, General Import Tax)
     - prv (Number, Prevalidation)
-    - cnt (Number, CNT / Cuota Compensatoria if any)
+    - ivaPrv (Number, VAT on Prevalidation, usually 16% of PRV)
+    - cnt (Number, CNT / Cuota Compensatoria / Fee)
+    - otrosCargos (Number, Sum of other fees like DTA/IGI/etc if not listed elsewhere)
     - fechaPago (String, look for "Fecha de Pago")
     - fechaEntrada (String, look for "Fecha de Entrada")
     - supplierName (String, the main vendor/proveedor/vendedor)
-    - supplierTaxId (String, Tax ID/Tax Number of supplier)
+    - supplierTaxId (String, Tax ID/Tax Number of supplier / RFC Proveedor)
     - banco (String, Bank Name / Institucion Bancaria)
+    - lineaCaptura (String, Reference / Linea de Captura / Referencia)
+    - clavePedimento (String, Regimen/Clave, e.g., A1, V1, AF)
     
     If a value is missing, use 0 for numbers and "" for strings.
     `;
@@ -69,13 +75,17 @@ async function extractWithGemini(fileBuffer, fileName, mimeType) {
     try {
         const response = await genAI.models.generateContent({
             model: 'gemini-2.0-flash',
-            contents: { parts },
-            config: {
-                responseMimeType: 'application/json'
-            }
+            contents: { parts }
         });
 
-        const text = response.text || "{}";
+        // Use response.text() as a method if it fails as property
+        let text = "";
+        try {
+            text = (typeof response.text === 'function') ? await response.text() : response.text;
+        } catch (inner) {
+            text = response.response?.text() || "{}";
+        }
+
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(jsonStr);
         return Array.isArray(parsed) ? parsed[0] : parsed;
@@ -141,13 +151,36 @@ async function startExtraction() {
             const mimeType = targetItem.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'text/xml';
             const fins = await extractWithGemini(buffer, targetItem.name, mimeType);
 
-            if (fins && (fins.montoPagado > 0 || fins.iva > 0 || fins.supplierName)) {
-                await updateDoc(doc(db, 'electronic_dossiers', d.id), { financials: fins });
-                const totalStr = typeof fins.montoPagado === 'number' ? fins.montoPagado.toLocaleString() : fins.montoPagado;
-                console.log(`   ✅ Saved: Total=$${totalStr}, IVA=$${fins.iva}, Prov=${fins.supplierName?.substring(0, 20)}...`);
-                successCount++;
+            if (fins) {
+                const existingFins = data.financials || {};
+                const mergedFins = { ...existingFins };
+                let changesCount = 0;
+
+                Object.keys(fins).forEach(key => {
+                    const newVal = fins[key];
+                    const oldVal = existingFins[key];
+
+                    // SAFE MERGE: Only update if the current field is missing or zero
+                    const isEmpty = !oldVal || oldVal === 0 || oldVal === "0" || oldVal === "";
+                    const hasNewData = newVal !== undefined && newVal !== null && newVal !== 0 && newVal !== "";
+
+                    if (isEmpty && hasNewData) {
+                        mergedFins[key] = newVal;
+                        changesCount++;
+                    }
+                });
+
+                if (changesCount > 0) {
+                    await updateDoc(doc(db, 'electronic_dossiers', d.id), { financials: mergedFins });
+                    console.log(`   ✅ Merged: +${changesCount} fields. [Prov=${fins.supplierName?.substring(0, 15)}...]`);
+                    successCount++;
+                } else {
+                    const missingInExisting = Object.keys(fins).filter(k => !existingFins[k]);
+                    console.log(`   ℹ️ No merge. AI found: ${Object.keys(fins).join(',')}. Existing missing: ${missingInExisting.join(',')}`);
+                    successCount++;
+                }
             } else {
-                console.log(`   ⚠️ AI returned empty/zero data. (Raw: ${JSON.stringify(fins)})`);
+                console.log(`   ⚠️ AI returned null.`);
                 failCount++;
             }
 

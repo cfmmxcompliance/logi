@@ -3,8 +3,11 @@ import { getFirestore, collection, getDocs, updateDoc, doc, query, where } from 
 import { google } from 'googleapis';
 import { GoogleGenAI } from "@google/genai";
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 const SERVICE_ACCOUNT_KEY_FILE = 'functions/service-account.json';
-const GEMINI_API_KEY = "AIzaSyCecQI8jFglWgIQxaDK3OFWbfpmKOR-bYw";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 const firebaseConfig = {
     apiKey: "AIzaSyDEezg2uRbLKAfkGcXt1x0p0KamaTKAaBU",
@@ -33,15 +36,23 @@ async function extractWithGemini(fileBuffer, fileName, mimeType) {
     RETURN ONLY RAW JSON.
     
     Fields to Extract:
-    - pedimentoNum
-    - montoPagado
-    - valorAduana (Also look for "Valor Aduana", "Valor en Aduana", "Valor Comercial", "Valor Dolares" - prioritize Valor Aduana)
-    - iva
-    - dta
-    - igi
-    - prv
-    - fechaPago
-    - banco (Bank Name)
+    - pedimentoNum (String, full 15 digits if available, else 7)
+    - montoPagado (Number, Total Efectivo at bottom)
+    - valorAduana (Number, Merchandise Value / Valor Aduana)
+    - iva (Number, VAT)
+    - dta (Number, Custom Duty)
+    - igi (Number, General Import Tax)
+    - prv (Number, Prevalidation)
+    - ivaPrv (Number, VAT on Prevalidation, usually 16% of PRV)
+    - cnt (Number, CNT / Cuota Compensatoria / Fee)
+    - otrosCargos (Number, Sum of other fees like DTA/IGI/etc if not listed elsewhere)
+    - fechaPago (String, look for "Fecha de Pago")
+    - fechaEntrada (String, look for "Fecha de Entrada")
+    - supplierName (String, the main vendor/proveedor/vendedor)
+    - supplierTaxId (String, Tax ID/Tax Number of supplier / RFC Proveedor)
+    - banco (String, Bank Name / Institucion Bancaria)
+    - lineaCaptura (String, Reference / Linea de Captura / Referencia)
+    - clavePedimento (String, Regimen/Clave, e.g., A1, V1, AF)
     `;
 
     const parts = [{ text: prompt }];
@@ -74,10 +85,10 @@ async function extractWithGemini(fileBuffer, fileName, mimeType) {
 }
 
 async function debugExtraction() {
-    console.log("🚀 STARTING DEBUG EXTRACTION FOR 6000871...");
+    console.log("🚀 STARTING DEBUG EXTRACTION FOR 6100038...");
 
     const snap = await getDocs(collection(db, 'electronic_dossiers'));
-    const d = snap.docs.find(doc => doc.data().numPedimento.replace(/\s+/g, '').includes("6000871"));
+    const d = snap.docs.find(doc => doc.data().numPedimento.replace(/\s+/g, '').includes("6100038"));
 
     if (!d) {
         console.log("Dossier not found");

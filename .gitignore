@@ -28,3 +28,5 @@ logimaster-cfmoto-a59f54d6641a.json
 check_firestore.cjs
 scripts/fix_json.js
 functions/.env
+.env
+*.env

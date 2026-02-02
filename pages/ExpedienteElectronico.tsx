@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
-import { FolderOpen, Search, Download, ExternalLink, RefreshCw, FileText, CheckCircle2, Clock, AlertCircle, FileSpreadsheet } from 'lucide-react';
+import { FolderOpen, Search, Download, ExternalLink, RefreshCw, FileText, CheckCircle2, Clock, AlertCircle, FileSpreadsheet, Zap, Trash2 } from 'lucide-react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { storageService } from '../services/storageService';
 import { DataStageReport, PedimentoRecord } from '../types';
@@ -70,9 +69,31 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
         };
     }, []);
 
-    const filteredDossiers = dossiers.filter(d =>
-        d.numPedimento.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredDossiers = dossiers
+        .filter(d => {
+            if (!searchTerm.trim()) return true;
+            const searchTerms = searchTerm.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
+
+            const pedNo = (d.numPedimento || "").toLowerCase();
+            const financials = (d as any).financials || {};
+            const supplier = (financials.supplierName || "").toLowerCase();
+            const importer = (financials.importerName || "").toLowerCase();
+            const bank = (financials.banco || "").toLowerCase();
+            const lc = (financials.lineaCaptura || "").toLowerCase();
+
+            return searchTerms.some(term => {
+                return pedNo.includes(term) ||
+                    supplier.includes(term) ||
+                    importer.includes(term) ||
+                    bank.includes(term) ||
+                    lc.includes(term);
+            });
+        })
+        .sort((a, b) => {
+            if (a.numPedimento.includes('POR_CLASIFICAR') && !b.numPedimento.includes('POR_CLASIFICAR')) return 1;
+            if (!a.numPedimento.includes('POR_CLASIFICAR') && b.numPedimento.includes('POR_CLASIFICAR')) return -1;
+            return a.numPedimento.localeCompare(b.numPedimento);
+        });
 
     const handleSyncSelectedReport = async () => {
         if (!selectedReportId || !config) return;
@@ -183,17 +204,45 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
 
         try {
             const XLSX = await import('xlsx');
-            const dataToExport = dossiers.map(d => {
+
+            // 1. DEDUPLICAR por Numero de Pedimento antes de exportar
+            // Esto evita que si hay registros duplicados en Firestore/LocalState, salgan doble en el Excel
+            const uniqueDossierMap = new Map<string, any>();
+
+            dossiers.forEach(d => {
+                const pedNo = d.numPedimento?.replace(/\s+/g, '') || "SIN_PEDIMENTO";
+
+                // Omitir "POR_CLASIFICAR" del reporte financiero ya que no tienen impuestos válidos/completos
+                if (pedNo.includes('POR_CLASIFICAR')) return;
+
+                // Si ya existe, preferimos el que tenga más datos (status Complete o financials)
+                const existing = uniqueDossierMap.get(pedNo);
+                if (!existing || (!existing.financials && d.financials)) {
+                    uniqueDossierMap.set(pedNo, d);
+                }
+            });
+
+            const dataToExport = Array.from(uniqueDossierMap.values()).map(d => {
                 const fins = (d as any).financials || {};
                 const fixedAssets = d.isFixedAsset || (d.numPedimento?.startsWith("24") || fins.clavePedimento === "AF") ? "Yes" : "No";
 
+                // Ensure 15 digits for audit and format with spaces if requested
+                let fullPed = fins.pedimentoNum || d.numPedimento || "";
+                if (fullPed.length === 7) fullPed = `26163471${fullPed}`;
+
+                // Format: "26  16  3471  8001234"
+                let formattedPed = fullPed;
+                if (fullPed.length === 15) {
+                    formattedPed = `${fullPed.slice(0, 2)}  ${fullPed.slice(2, 4)}  ${fullPed.slice(4, 8)}  ${fullPed.slice(8)}`;
+                }
+
                 return {
-                    "Pedimento Number": fins.pedimentoNum || d.numPedimento || "",
+                    "Pedimento Number": formattedPed,
                     "Monto Pagado": fins.montoPagado || 0,
                     "Referencia Ampliada": fins.lineaCaptura || "",
-                    "Fiscal ID": fins.supplierTaxId || "91330100757206158J",
-                    "Supplier Name": fins.supplierName || "ZHEJIANG CFMOTO POWER CO.,LTD",
-                    "Country": fins.supplierCountry || "CN",
+                    "Fiscal ID": fins.supplierTaxId || "",
+                    "Supplier Name": fins.supplierName || "",
+                    "Country": fins.supplierCountry || "",
                     "Fixed Assets (Yes/No)": fixedAssets,
                     "Merchandise Custom Value": fins.valorAduana || 0,
                     "Prevalidation VAT": fins.ivaPrv || 0,
@@ -205,6 +254,7 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
                     "Payed - Pedimento": fins.montoPagado || 0,
                     "Payment Date": formatDateMMDDYYYY(fins.fechaPago),
                     "Entry Date": formatDateYYYYMMDD(fins.fechaEntrada),
+                    "OTROS": fins.otrosCargos || 0,
                     "DIFERENCIA": 0,
                     "CLAVE": fins.clavePedimento || "",
                     "Bank Name": fins.banco || ""
@@ -214,10 +264,81 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
             const worksheet = XLSX.utils.json_to_sheet(dataToExport);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Financials");
-            XLSX.writeFile(workbook, `VUCEM_Financial_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+            const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([wbout], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `VUCEM_Financial_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
         } catch (e) {
             console.error("Export Error", e);
             alert("Error al generar Excel: " + e);
+        }
+    };
+
+    const handleCSVExport = () => {
+        if (dossiers.length === 0) {
+            alert("No hay datos para exportar");
+            return;
+        }
+
+        try {
+            // 1. Headers (Exactly what the user needs for traceability)
+            const headers = [
+                'PEDIMENTO', 'DOCS DETECTADOS', 'ESTATUS', 'ULTIMA ACTUALIZACION',
+                'MONTO PAGADO', 'LC', 'RFC PROVEEDOR', 'NOMBRE PROVEEDOR', 'BANCO'
+            ];
+
+            // 2. Data Rows with sanitization
+            const csvRows = dossiers.map(d => {
+                const fins = (d as any).financials || {};
+
+                const esc = (val: any) => {
+                    if (val === null || val === undefined) return '';
+                    const str = String(val).trim();
+                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                        return `"${str.replace(/"/g, '""')}"`;
+                    }
+                    return str;
+                };
+
+                return [
+                    esc(d.numPedimento),
+                    esc(d.items?.length || 0),
+                    esc(d.status || 'Pending'),
+                    esc(d.updatedAt || ''),
+                    fins.montoPagado || 0,
+                    esc(fins.lineaCaptura || ''),
+                    esc(fins.supplierTaxId || ''),
+                    esc(fins.supplierName || ''),
+                    esc(fins.banco || '')
+                ].join(',');
+            });
+
+            // 3. Build with BOM for Excel
+            const csvContent = '\uFEFF' + headers.join(',') + '\n' + csvRows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+
+            const timestamp = new Date().toISOString().slice(0, 10);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Digital_Dossier_Export_${timestamp}.csv`);
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Clean up
+            setTimeout(() => window.URL.revokeObjectURL(url), 100);
+
+        } catch (e) {
+            console.error("CSV Export Error", e);
+            alert("Error al generar CSV: " + e);
         }
     };
 
@@ -259,10 +380,13 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
             } catch (err: any) {
                 console.error(`Error reprocesando ${pedimentoNo}:`, err);
                 failCount++;
-                const msg = err.message || JSON.stringify(err);
+                const msg = err.code ? `[${err.code}] ${err.message}` : (err.message || "Error desconocido");
                 errorDetails.push(`- ${pedimentoNo}: ${msg}`);
             }
         }
+
+        // Dar tiempo al usuario para leer el mensaje final
+        await new Promise(r => setTimeout(r, 2000));
 
         setSyncing(false);
         setSyncStats({ current: 0, total: 0, status: '' });
@@ -275,6 +399,84 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
         }
 
         alert(finalMsg);
+    };
+
+    const handleFixAllUnclassified = async () => {
+        const unclassified = dossiers.filter(d => d.numPedimento.includes('POR_CLASIFICAR'));
+        if (unclassified.length === 0) {
+            alert("No hay expedientes sin clasificar.");
+            return;
+        }
+
+        if (!window.confirm(`¿Deseas intentar reubicar automáticamente los ${unclassified.length} expedientes sin clasificar usando búsqueda por nombre y sufijo?`)) return;
+
+        setSyncing(true);
+        let successCount = 0;
+        let failCount = 0;
+
+        for (let i = 0; i < unclassified.length; i++) {
+            const dossier = unclassified[i];
+            setSyncStats({ current: i + 1, total: unclassified.length, status: `Relocalizando ${dossier.numPedimento}...` });
+            try {
+                await vucemAutomation.reprocessDossier(dossier.numPedimento, (msg: string) => {
+                    setSyncStats(s => ({ ...s, status: msg }));
+                });
+                successCount++;
+            } catch (err: any) {
+                console.error(`Error relocalizando ${dossier.numPedimento}:`, err);
+                failCount++;
+                const msg = err.code ? `[${err.code}] ${err.message}` : (err.message || "Error desconocido");
+                if (setSyncStats) setSyncStats(s => ({ ...s, status: `❌ Error en ${dossier.numPedimento}: ${msg}` }));
+            }
+        }
+
+        setSyncing(false);
+        setSyncStats({ current: 0, total: 0, status: '' });
+        alert(`✅ Proceso finalizado.\nRelocalizados con éxito: ${successCount}\nPermanece sin identificar: ${failCount}`);
+    };
+
+    const handleDeleteDossier = async (pedimentoNo: string) => {
+        if (!window.confirm(`¿Estás SEGURO de eliminar el expediente ${pedimentoNo}? Se borrarán los registros de Firebase y los archivos de Drive.`)) return;
+
+        setSyncing(true);
+        try {
+            await vucemAutomation.deleteDossier(pedimentoNo, (msg) => {
+                setSyncStats({ current: 1, total: 1, status: msg });
+            });
+            alert("Expediente eliminado con éxito.");
+        } catch (err: any) {
+            console.error("Error al eliminar:", err);
+            alert(`Error al eliminar: ${err.message}`);
+        } finally {
+            setSyncing(false);
+            setSyncStats({ current: 0, total: 0, status: '' });
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.size === 0 || syncing) return;
+        const ids = Array.from(selectedIds) as string[];
+
+        if (!window.confirm(`¿Estás SEGURO de eliminar los ${ids.length} expedientes seleccionados? Esta acción es irreversible y borrará los archivos de Drive.`)) return;
+
+        setSyncing(true);
+        let count = 0;
+        for (const id of ids) {
+            try {
+                setSyncStats({ current: count + 1, total: ids.length, status: `Eliminando ${id}...` });
+                await vucemAutomation.deleteDossier(id, (msg) => {
+                    setSyncStats(s => ({ ...s, status: `[${count + 1}/${ids.length}] ${msg}` }));
+                });
+                count++;
+            } catch (err: any) {
+                console.error(`Error eliminando ${id}:`, err);
+            }
+        }
+
+        setSyncing(false);
+        setSyncStats({ current: 0, total: 0, status: '' });
+        setSelectedIds(new Set());
+        alert(`✅ Proceso finalizado. Eliminados: ${count}`);
     };
 
     const handleReprocess = async (pedimentoNo: string) => {
@@ -292,6 +494,8 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
             console.error("Error al reprocesar:", err);
             alert(`❌ Error al reprocesar: ${err.message || "Error desconocido"}`);
         } finally {
+            // Delay para visibilidad del mensaje final
+            await new Promise(r => setTimeout(r, 1500));
             setReprocessingId(null);
             setSyncStats({ current: 0, total: 2, status: '' });
         }
@@ -473,15 +677,48 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
                             Reporte Financiero
                         </button>
 
-                        {selectedIds.size > 0 && (
+                        <button
+                            onClick={handleCSVExport}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 transition-all border border-indigo-200"
+                            title="Exportar listado de expedientes en formato CSV (Compatible con Excel)"
+                            disabled={dossiers.length === 0}
+                        >
+                            <Download size={18} />
+                            Exportar CSV
+                        </button>
+
+
+                        {dossiers.some(d => d.numPedimento.includes('POR_CLASIFICAR')) && (
                             <button
-                                onClick={handleBulkReprocess}
+                                onClick={handleFixAllUnclassified}
                                 disabled={syncing}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-100 transition-all animate-in slide-in-from-right-4"
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-100 transition-all border border-orange-400"
+                                title="Intenta mover archivos de POR_CLASIFICAR a sus expedientes reales usando el nombre del archivo"
                             >
-                                <RefreshCw size={18} className={syncing ? 'animate-spin' : ''} />
-                                Reprocesar Selección ({selectedIds.size})
+                                <Zap size={18} className={syncing ? 'animate-pulse' : ''} />
+                                Corregir Clasificaciones
                             </button>
+                        )}
+
+                        {selectedIds.size > 0 && (
+                            <div className="flex gap-2 animate-in slide-in-from-right-4">
+                                <button
+                                    onClick={handleBulkReprocess}
+                                    disabled={syncing}
+                                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-100 transition-all"
+                                >
+                                    <RefreshCw size={18} className={syncing ? 'animate-spin' : ''} />
+                                    Reprocesar Selección ({selectedIds.size})
+                                </button>
+                                <button
+                                    onClick={handleBulkDelete}
+                                    disabled={syncing}
+                                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-100 transition-all"
+                                >
+                                    <Trash2 size={18} />
+                                    Eliminar Selección ({selectedIds.size})
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -491,13 +728,14 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <StatCard label="Total Expedientes" value={dossiers.length} icon={FolderOpen} color="blue" />
                 <StatCard label="Documentos en Drive" value={dossiers.reduce((acc, d) => acc + (d.items?.length || 0), 0)} icon={FileText} color="indigo" />
-                <StatCard label="Última Sincronización" value="Hoy 09:42 AM" icon={Clock} color="slate" />
-                <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+
+                {/* Clock Removed, Search Expanded */}
+                <div className="md:col-span-2 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
                             type="text"
-                            placeholder="Buscar por pedimento..."
+                            placeholder="Buscar por pedimento, cliente, banco..."
                             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -511,7 +749,7 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-slate-50 border-b border-slate-200">
-                            <th className="px-6 py-4 w-10">
+                            <th className="px-3 py-4 w-10">
                                 <input
                                     type="checkbox"
                                     className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
@@ -519,10 +757,14 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
                                     onChange={handleSelectAll}
                                 />
                             </th>
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Pedimento</th>
+                            {/* MULTI COLUMN HEADERS */}
+                            <th className="px-3 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Año</th>
+                            <th className="px-3 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Adu</th>
+                            <th className="px-3 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Pat</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Pedimento</th>
+
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Documentos Detectados</th>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Estatus</th>
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Última Actualización</th>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Acciones</th>
                         </tr>
                     </thead>
@@ -530,82 +772,137 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
                         {loading ? (
                             Array(5).fill(0).map((_, i) => (
                                 <tr key={i} className="animate-pulse">
-                                    <td colSpan={5} className="px-6 py-4 h-16 bg-slate-50/50"></td>
+                                    <td colSpan={8} className="px-6 py-4 h-16 bg-slate-50/50"></td>
                                 </tr>
                             ))
                         ) : filteredDossiers.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="px-6 py-20 text-center">
+                                <td colSpan={8} className="px-6 py-20 text-center">
                                     <div className="flex flex-col items-center gap-2 text-slate-400">
                                         <AlertCircle size={48} />
                                         <p className="font-medium text-lg text-slate-500">No se encontraron expedientes</p>
-                                        <p className="text-sm">Inicia una sincronización desde VUCEM o carga un archivo Data Stage.</p>
+                                        <p className="text-sm">Inicia una sincronización o carga datos.</p>
                                     </div>
                                 </td>
                             </tr>
                         ) : (
-                            filteredDossiers.map((dossier) => (
-                                <tr key={dossier.id} className={`hover:bg-slate-50/80 transition-colors group ${selectedIds.has(dossier.numPedimento) ? 'bg-blue-50/50' : ''}`}>
-                                    <td className="px-6 py-4 text-center">
-                                        <input
-                                            type="checkbox"
-                                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                                            checked={selectedIds.has(dossier.numPedimento)}
-                                            onChange={() => toggleSelect(dossier.numPedimento)}
-                                        />
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className="font-mono font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">
-                                            {dossier.numPedimento}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex gap-1.5 overflow-x-auto max-w-[300px] scrollbar-hide">
-                                            {dossier.items?.map((item, idx) => (
-                                                <a
-                                                    key={idx}
-                                                    href={item.url}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    title={item.name}
-                                                    className="p-2 bg-slate-100 hover:bg-blue-100 text-slate-500 hover:text-blue-600 rounded-lg transition-all flex-shrink-0"
-                                                >
-                                                    <FileText size={16} />
-                                                </a>
-                                            ))}
-                                            {(!dossier.items || dossier.items.length === 0) && (
-                                                <span className="text-xs text-slate-400 italic">Sin archivos</span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <DossierStatusBadge items={dossier.items || []} />
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-slate-500">
-                                        {new Date(dossier.lastUpdate).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            {/* REPROCESS BUTTON */}
-                                            <button
-                                                onClick={() => handleReprocess(dossier.numPedimento)}
-                                                disabled={!!reprocessingId || syncing}
-                                                className={`p-2 rounded-lg transition-all ${reprocessingId === dossier.numPedimento ? 'text-blue-600 bg-blue-50 animate-pulse' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
-                                                title="Reprocesar (Extraer datos nuevamente desde Drive)"
-                                            >
-                                                <RefreshCw size={18} className={reprocessingId === dossier.numPedimento ? 'animate-spin' : ''} />
-                                            </button>
+                            filteredDossiers.map((dossier) => {
+                                // Fallback logic if meta is missing (e.g. manually added ones)
+                                const fullP = (dossier.numPedimento?.length === 15) ? dossier.numPedimento : `26163471${dossier.numPedimento}`; // default old behavior if unknown
+                                const displayYear = dossier.meta_year || (fullP.length === 15 ? fullP.slice(0, 2) : "??");
+                                const displayAdu = dossier.meta_aduana || (fullP.length === 15 ? fullP.slice(2, 4) : "??");
+                                const displayPat = dossier.meta_patente || (fullP.length === 15 ? fullP.slice(4, 8) : "????");
+                                const displayPed = fullP.length === 15 ? fullP.slice(8) : dossier.numPedimento;
 
-                                            <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Ver en Drive">
-                                                <ExternalLink size={18} />
-                                            </button>
-                                            <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Descargar Offline">
-                                                <Download size={18} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
+                                return (
+                                    <tr key={dossier.id} className={`hover:bg-slate-50/80 transition-colors group ${selectedIds.has(dossier.numPedimento) ? 'bg-blue-50/50' : ''}`}>
+                                        <td className="px-3 py-4 text-center">
+                                            <input
+                                                type="checkbox"
+                                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                checked={selectedIds.has(dossier.numPedimento)}
+                                                onChange={() => toggleSelect(dossier.numPedimento)}
+                                            />
+                                        </td>
+                                        {/* MULTI COLUMN ROWS */}
+                                        <td className="px-3 py-4 text-center text-slate-600 font-medium">{displayYear}</td>
+                                        <td className="px-3 py-4 text-center text-slate-600 font-medium">{displayAdu}</td>
+                                        <td className="px-3 py-4 text-center text-slate-600 font-medium">{displayPat}</td>
+
+                                        <td className="px-6 py-4">
+                                            <span className="font-mono font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg whitespace-nowrap">
+                                                {displayPed}
+                                            </span>
+                                        </td>
+
+                                        {/* ... rest of columns ... */}
+                                        <td className="px-6 py-4">
+                                            <div className="flex gap-1.5 overflow-x-auto max-w-[300px] scrollbar-hide py-1">
+                                                {([...(dossier.items || [])].sort((a, b) => {
+                                                    const typeA = vucemAutomation.getDocType(a.name);
+                                                    const typeB = vucemAutomation.getDocType(b.name);
+                                                    const order = ['PED-C', 'PED-S', 'FACT', 'BL', 'MBL', 'HBL', 'ACUSE', 'EDOC', 'XML'];
+                                                    return order.indexOf(typeA) - order.indexOf(typeB);
+                                                })).map((item, idx) => {
+                                                    const type = vucemAutomation.getDocType(item.name);
+                                                    const colors: Record<string, string> = {
+                                                        'PED-C': 'bg-blue-600 text-white',
+                                                        'PED-S': 'bg-sky-500 text-white',
+                                                        'FACT': 'bg-emerald-500 text-white',
+                                                        'BL': 'bg-indigo-500 text-white',
+                                                        'MBL': 'bg-indigo-600 text-white',
+                                                        'HBL': 'bg-indigo-400 text-white',
+                                                        'ACUSE': 'bg-amber-100 text-amber-700 border border-amber-200',
+                                                        'XML': 'bg-slate-100 text-slate-500',
+                                                        'EDOC': 'bg-purple-50 text-purple-600 border border-purple-100'
+                                                    };
+                                                    return (
+                                                        <a
+                                                            key={idx}
+                                                            href={item.url}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            title={item.name}
+                                                            className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-tighter transition-all flex-shrink-0 flex items-center justify-center min-w-[36px] shadow-sm hover:scale-105 ${colors[type] || 'bg-slate-100 text-slate-600'}`}
+                                                        >
+                                                            {type}
+                                                        </a>
+                                                    );
+                                                })}
+                                                {(!dossier.items || dossier.items.length === 0) && (
+                                                    <span className="text-xs text-slate-400 italic">Sin archivos</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <DossierStatusBadge items={dossier.items || []} />
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                {/* Action buttons same as before */}
+                                                <button
+                                                    onClick={() => handleReprocess(dossier.numPedimento)}
+                                                    disabled={!!reprocessingId || syncing}
+                                                    className={`p-2 rounded-lg transition-all ${reprocessingId === dossier.numPedimento ? 'text-blue-600 bg-blue-50 animate-pulse' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
+                                                    title="Reprocesar"
+                                                >
+                                                    <RefreshCw size={18} className={reprocessingId === dossier.numPedimento ? 'animate-spin' : ''} />
+                                                </button>
+
+                                                <button
+                                                    onClick={() => dossier.items?.[0] && window.open(`https://drive.google.com/drive/folders/${dossier.items[0].driveId.split('/')[0]}`, '_blank')}
+                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                    title="Ver en Drive"
+                                                >
+                                                    <ExternalLink size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        const XLSX = await import('xlsx');
+                                                        const data = dossier.items.map(it => ({ Nombre: it.name, Link: it.url }));
+                                                        const ws = XLSX.utils.json_to_sheet(data);
+                                                        const wb = XLSX.utils.book_new();
+                                                        XLSX.utils.book_append_sheet(wb, ws, "Archivos");
+                                                        XLSX.writeFile(wb, `Expediente_${dossier.numPedimento}.xlsx`);
+                                                    }}
+                                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                    title="Descargar Relación"
+                                                >
+                                                    <Download size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteDossier(dossier.numPedimento)}
+                                                    disabled={syncing}
+                                                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                                    title="Eliminar Expediente"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>
@@ -627,9 +924,24 @@ const StatCard: React.FC<{ label: string, value: string | number, icon: any, col
 );
 
 const DossierStatusBadge: React.FC<{ items: DossierItem[] }> = ({ items }) => {
-    // Basic logic: if has > 2 items (Pedimento + COVE + Acuse), it's basically complete
-    const count = items.length;
-    if (count === 0) return <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-tighter">Vacío</span>;
-    if (count < 3) return <span className="px-2.5 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 justify-center"><Clock size={10} /> Parcial</span>;
+    // Intelligent Status: Checks for specific required document types
+    const types = new Set(items.map(i => vucemAutomation.getDocType(i.name)));
+    const hasPedimento = types.has('PED-C') || types.has('PED-S');
+    const hasXml = types.has('XML');
+    const hasAcuse = types.has('ACUSE') || types.has('EDOC'); // EDOC often acts as proof too
+
+    const isEmpry = items.length === 0;
+    const isComplete = hasPedimento && hasXml && hasAcuse;
+
+    if (isEmpry) return <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-tighter">Vacío</span>;
+    if (!isComplete) {
+        return (
+            <div className="flex flex-col gap-0.5 items-center">
+                <span className="px-2.5 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 justify-center">
+                    <Clock size={10} /> Parcial
+                </span>
+            </div>
+        );
+    }
     return <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 justify-center"><CheckCircle2 size={10} /> Completo</span>;
 };

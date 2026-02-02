@@ -82,12 +82,19 @@ export const DailyAudit = () => {
             const worksheet = XLSX.utils.json_to_sheet(formattedData, { header: CSV_ORDER_KEYS });
             const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
             const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
+            link.href = url;
             link.setAttribute('download', filename);
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
+
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+                if (document.body.contains(link)) {
+                    document.body.removeChild(link);
+                }
+            }, 3000); // 3s delay for robust cleanup
         } catch (e) {
             console.error('Error generating CSV:', e);
             alert('Error al generar el archivo CSV.');

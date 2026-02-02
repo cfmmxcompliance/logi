@@ -224,7 +224,7 @@ export const DataStage = () => {
                 }
 
                 await storageService.updateSupplier({
-                    id: crypto.randomUUID(),
+                    id: Date.now().toString(36) + Math.random().toString(36).substring(2),
                     name: name,
                     type: 'Other',
                     contactName: 'Imported from DataStage',

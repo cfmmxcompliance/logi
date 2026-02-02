@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { downloadFile } from '../utils/fileHelpers.ts';
 import { storageService } from '../services/storageService.ts';
 import { geminiService } from '../services/geminiService.ts';
 import { PreAlertRecord, UserRole } from '../types.ts';
@@ -335,15 +336,13 @@ export const PreAlerts = () => {
         const timestamp = new Date().toISOString().slice(0, 10);
         const filename = `pre_alerts_export_${filter ? 'filtered_' : 'all_'}${timestamp}.csv`;
 
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        if (link.download !== undefined) {
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', filename);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const handleDownloadTemplate = () => {
@@ -351,10 +350,13 @@ export const PreAlerts = () => {
         const exampleRow = "CFORCE 600,SEA,COSU12345678,2024-05-01,2024-05-02,Shanghai,2024-06-15,,,Manzanillo,INV-2024-001";
         const csvContent = headerRow + '\n' + exampleRow;
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'pre_alert_template.csv';
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'pre_alert_template.csv');
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
     };
 
     // CSV Import Logic

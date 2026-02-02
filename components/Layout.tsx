@@ -69,7 +69,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-6 px-2 space-y-2">
+        <nav className="flex-1 overflow-y-auto py-6 px-2 space-y-2 min-h-0">
           {user?.role === UserRole.ADMIN && (
             <SidebarItem to="/" icon={LayoutDashboard} label={sidebarOpen ? "Dashboard" : ""} />
           )}

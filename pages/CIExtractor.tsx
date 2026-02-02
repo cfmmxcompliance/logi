@@ -6,7 +6,6 @@ import { storageService } from '../services/storageService.ts';
 import { CommercialInvoiceItem, RawMaterialPart, VesselTrackingRecord } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useNotification } from '../context/NotificationContext.tsx';
-import { downloadFile } from '../utils/fileHelpers.ts';
 import { LOGO_BASE64 } from '../src/constants/logo.ts';
 
 
@@ -28,7 +27,7 @@ const applyMasterDataToItems = (
                 ...item,
                 spanishDescription: match.DESCRIPCION_ES?.trim() || item.spanishDescription,
                 hts: match.HTSMX?.trim() || item.hts,
-                rb: match.R8?.trim() || item.rb,
+                rb: match.R8?.trim() || (['FALTA', 'N/A', 'NA', 'NO APLICA'].includes(item.rb?.toString().toUpperCase() || '') ? '' : item.rb),
                 um: match.UMC?.trim() || item.um,
                 // Only overwrite netWeight if Master Data has it defined (>0)
                 // If Invoice has weight but Master Data is 0, keep Invoice weight (safest assumption)
@@ -129,11 +128,17 @@ const InvoiceRow = React.memo(({
     // Lógica auxiliar visual (extraída del render inline para velocidad)
     const getStatusIcons = () => {
         // R8 Logic
+        const r8Code = masterPart?.R8?.toString().trim().toUpperCase() || '';
         const r8Desc = masterPart?.DESCRIPCION_R8?.toString().trim().toUpperCase() || '';
         const itemDesc = item.spanishDescription?.toString().trim().toUpperCase() || '';
-        const itemRb = item.rb?.toString().trim() || '';
+
+        let itemRb = item.rb?.toString().trim().toUpperCase() || '';
+        // Treat FALTA/NA as empty for comparison (User Request: "cuando no aplica")
+        if (['FALTA', 'N/A', 'NA', 'NO APLICA'].includes(itemRb)) itemRb = '';
+
         const isTextMatch = r8Desc && itemDesc && (r8Desc.includes(itemDesc) || itemDesc.includes(r8Desc));
-        const isR8Match = isTextMatch || (!itemRb && !r8Desc);
+        const isCodeMatch = r8Code && (itemRb === r8Code);
+        const isR8Match = !r8Code || !itemRb || isCodeMatch || isTextMatch;
 
         // Price Logic
         const estPrice = Number(masterPart?.ESTIMATED || 0);
@@ -255,6 +260,7 @@ const InvoiceRow = React.memo(({
 
             <td className="p-4 text-slate-600">{item.model}</td>
             <td className="p-4 text-slate-600 max-w-xs truncate" title={item.englishName}>{item.englishName}</td>
+
             <td className="p-4 text-slate-600 max-w-xs truncate" title={item.spanishDescription}>
                 {item.spanishDescription ? <span className="uppercase">{item.spanishDescription}</span> : <span className="px-2 py-1 bg-red-100 text-red-600 text-xs font-bold">MISSING</span>}
             </td>
@@ -640,7 +646,8 @@ export const CIExtractor: React.FC = () => {
         // 1. Prepare Updates
         const updatedItem = {
             ...diffItem,
-            spanishDescription: resolvedDescription
+            spanishDescription: resolvedDescription,
+            rb: diffMasterPart?.R8 || diffItem.rb
         };
 
         const promises: Promise<any>[] = [];
@@ -1466,21 +1473,21 @@ export const CIExtractor: React.FC = () => {
 
     // Helper to check R8 Mismatch
     const checkR8Mismatch = (item: CommercialInvoiceItem) => {
-        // PERF: Ensure O(1) lookup matches the map key normalization
         const normalizedPartNo = String(item.partNo || '').trim();
         const masterPart = masterDataMap[normalizedPartNo];
+        const r8Code = masterPart?.R8?.toString().trim().toUpperCase() || '';
         const r8Desc = masterPart?.DESCRIPCION_R8?.toString().trim().toUpperCase() || '';
         const itemDesc = item.spanishDescription?.toString().trim().toUpperCase() || '';
-        const itemRb = item.rb?.toString().trim() || '';
 
-        // 1. Description Match (Relaxed)
+        let itemRb = item.rb?.toString().trim().toUpperCase() || '';
+        // Treat FALTA/NA as empty for comparison (Matches getStatusIcons)
+        if (['FALTA', 'N/A', 'NA', 'NO APLICA'].includes(itemRb)) itemRb = '';
+
         const isTextMatch = r8Desc && itemDesc && (r8Desc.includes(itemDesc) || itemDesc.includes(r8Desc));
+        const isCodeMatch = r8Code && (itemRb === r8Code);
+        const isR8Match = !r8Code || !itemRb || isCodeMatch || isTextMatch;
 
-        // 2. Both Empty Case
-        const isBothEmpty = !itemRb && !r8Desc;
-
-        // Return true if mismatch (Red X)
-        return !(isTextMatch || isBothEmpty);
+        return !isR8Match; // Return true if mismatch (Red X)
     };
 
     // Memory Optimized Filter Logic
@@ -2487,17 +2494,23 @@ export const CIExtractor: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     {/* Row 1: Master Data Content (Full Width) */}
                                     <div className="col-span-2 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                                        <p className="text-xs font-bold text-slate-500 uppercase mb-2">Master Data R8 Description (Reference)</p>
+                                        <p className="text-xs font-bold text-slate-500 uppercase mb-2">Master Data R8 (Reference)</p>
                                         <div className="text-sm font-medium text-slate-800 bg-white p-3 rounded border border-slate-100 max-h-32 overflow-y-auto font-mono whitespace-pre-wrap">
-                                            {diffMasterPart?.DESCRIPCION_R8 || <span className="text-slate-400 italic">Not Found in Master Data</span>}
+                                            {diffMasterPart ? (
+                                                <>
+                                                    <div className="text-slate-600 text-xs">{diffMasterPart.DESCRIPCION_R8 || 'No Description'}</div>
+                                                </>
+                                            ) : (
+                                                <span className="text-slate-400 italic">Not Found in Master Data</span>
+                                            )}
                                         </div>
                                     </div>
 
                                     {/* Row 2: Comparison Side-by-Side */}
                                     <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                                        <p className="text-xs font-bold text-slate-500 uppercase mb-2">File R8 (RB)</p>
+                                        <p className="text-xs font-bold text-slate-500 uppercase mb-2">File R8 (R8)</p>
                                         <p className="text-sm font-medium text-slate-800 break-words">
-                                            {diffItem.rb || <span className="text-slate-400 italic">Empty</span>}
+                                            {diffItem.rb || diffMasterPart?.R8 || <span className="text-slate-400 italic">Empty</span>}
                                         </p>
                                     </div>
                                     <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -2524,7 +2537,7 @@ export const CIExtractor: React.FC = () => {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center justify-between">
-                                            <span>Master Data R8</span>
+                                            <span>Master Data R8 Description</span>
                                             <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Edits Database</span>
                                         </label>
                                         <textarea
@@ -2532,7 +2545,7 @@ export const CIExtractor: React.FC = () => {
                                             rows={4}
                                             value={resolvedR8Description}
                                             onChange={(e) => setResolvedR8Description(e.target.value)}
-                                            placeholder="Edit Master Data R8..."
+                                            placeholder="R8 Description..."
                                             disabled={!diffMasterPart}
                                         />
                                         {!diffMasterPart && <p className="text-xs text-red-400 mt-1">Part not found in DB</p>}

@@ -2,7 +2,15 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { storageService, isQuotaError } from '../services/storageService.ts';
 import { RawMaterialPart, UserRole } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
-import { Download, Plus, Save, X, Trash2, Edit2, Edit3, FileSpreadsheet, FileDown, ChevronLeft, ChevronRight, Search, RefreshCcw, Database, AlertTriangle, Filter } from 'lucide-react';
+import { Download, Plus, Save, X, Trash2, Edit2, Edit3, FileSpreadsheet, FileDown, ChevronLeft, ChevronRight, Search, RefreshCcw, RefreshCw, RotateCcw, Database, AlertTriangle, Filter, Trash, CornerDownRight, ArrowUpRight } from 'lucide-react';
+
+interface QueryCondition {
+    id: string;
+    column: keyof RawMaterialPart;
+    operator: string;
+    type: 'string' | 'number' | 'boolean';
+    input: string;
+}
 import { parseCSV } from '../utils/csvHelpers.ts';
 import * as XLSX from 'xlsx';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
@@ -93,6 +101,7 @@ export const DatabaseView = () => {
     }, []);
 
     const isMDLoading = storageService.isMasterDataLoading();
+    const isBackgroundSyncing = storageService.isBackgroundSyncing();
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 50;
@@ -176,42 +185,70 @@ export const DatabaseView = () => {
 
     // --- MASS QUERY STATE ---
     const [isMassQueryOpen, setIsMassQueryOpen] = useState(false);
-    const [massQueryInput, setMassQueryInput] = useState('');
-    const [massQuerySet, setMassQuerySet] = useState<Set<string> | null>(null);
-    const [massQueryColumn, setMassQueryColumn] = useState<keyof RawMaterialPart>('PART_NUMBER');
+    const [massQueryConditions, setMassQueryConditions] = useState<QueryCondition[]>([
+        { id: 'initial', column: 'PART_NUMBER', operator: 'in', type: 'string', input: '' }
+    ]);
+    const [activeMassQuery, setActiveMassQuery] = useState<QueryCondition[] | null>(null);
 
     const handleApplyMassQuery = () => {
-        if (!massQueryInput.trim()) {
-            setMassQuerySet(null);
-            setIsMassQueryOpen(false);
-            return;
-        }
+        // Filter out empty conditions - unless operator is 'empty' or 'not_empty'
+        const valid = massQueryConditions.filter(c =>
+            c.operator === 'empty' ||
+            c.operator === 'not_empty' ||
+            c.input.trim().length > 0
+        );
 
-        const tokens = massQueryInput
-            .split(/[\n,;]+/) // Split by newline, comma, semicolon
-            .map(t => t.trim())
-            .filter(t => t.length > 0);
-
-        if (tokens.length === 0) {
-            setMassQuerySet(null);
+        if (valid.length === 0) {
+            setActiveMassQuery(null);
         } else {
-            setMassQuerySet(new Set(tokens));
+            setActiveMassQuery(valid);
         }
         setIsMassQueryOpen(false);
         setCurrentPage(1);
     };
 
     const handleClearMassQuery = () => {
-        setMassQuerySet(null);
-        setMassQueryInput('');
-        setMassQueryColumn('PART_NUMBER');
+        setActiveMassQuery(null);
+        setMassQueryConditions([
+            { id: Math.random().toString(), column: 'PART_NUMBER', operator: 'in', type: 'string', input: '' }
+        ]);
+        setIsMassQueryOpen(false);
+        setCurrentPage(1);
+    };
+
+    const addCondition = () => {
+        setMassQueryConditions([
+            ...massQueryConditions,
+            { id: Math.random().toString(), column: 'PART_NUMBER', operator: 'in', type: 'string', input: '' }
+        ]);
+    };
+
+    const removeCondition = (id: string) => {
+        if (massQueryConditions.length === 1) return;
+        setMassQueryConditions(massQueryConditions.filter(c => c.id !== id));
+    };
+
+    const updateCondition = (id: string, updates: Partial<QueryCondition>) => {
+        setMassQueryConditions(massQueryConditions.map(c =>
+            c.id === id ? { ...c, ...updates } : c
+        ));
+    };
+
+    const handleClearAllFilters = () => {
+        setSearchTerm('');
+        setActiveMassQuery(null);
+        setMassQueryConditions([
+            { id: Math.random().toString(), column: 'PART_NUMBER', operator: 'in', type: 'string', input: '' }
+        ]);
+        setActiveFilters(new Set());
+        setCurrentPage(1);
     };
 
     const [duplicateModal, setDuplicateModal] = useState<{
         isOpen: boolean;
         newItems: RawMaterialPart[];
         conflictingItems: RawMaterialPart[];
-        existingMap: Record<string, string>; // PartNo -> ID
+        existingMap: Record<string, string[]>; // PartNo -> IDs[]
     }>({ isOpen: false, newItems: [], conflictingItems: [], existingMap: {} });
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -521,7 +558,7 @@ export const DatabaseView = () => {
                     // Batch limit is handled by storageService.upsertParts
 
                     if (window.confirm(`Found ${parsedParts.length} parts. Proceed to Sync? (Existing parts with same Part Number will be updated)`)) {
-                        proceedWithUpload(parsedParts);
+                        await proceedWithUpload(parsedParts);
                     } else {
                         setProcState(INITIAL_PROCESSING_STATE);
                     }
@@ -644,6 +681,15 @@ export const DatabaseView = () => {
                             idx = fileHeaders.findIndex(h => h.toUpperCase().replace(/[^A-Z0-9]/g, '').includes(target));
                         }
 
+                        // 3. Robust Identity Match (Special for PART_NUMBER)
+                        if (idx === -1 && key === 'PART_NUMBER') {
+                            const variations = ['PARTNO', 'PN', 'CODE', 'CODIGO', 'NUMERO', 'PARTNUM'];
+                            idx = fileHeaders.findIndex(h => {
+                                const clean = h.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                                return variations.some(v => clean === v || clean.includes(v));
+                            });
+                        }
+
                         if (idx !== -1) mapIndices[key] = idx;
                     });
 
@@ -698,38 +744,38 @@ export const DatabaseView = () => {
 
                     if (parsedParts.length === 0) throw new Error("No data found to import.");
 
-                    // 4. DUPLICATE CHECK logic
-                    // Fetch latest parts to be sure
-                    const currentParts = storageService.getParts();
-                    const existingMap: Record<string, string> = {};
-                    currentParts.forEach(p => {
-                        if (p.PART_NUMBER) existingMap[p.PART_NUMBER] = p.id;
-                    });
+                    // 4. DUPLICATE CHECK logic (GUARENTEED CLOUD SYNC)
+                    setProcState(prev => ({ ...prev, progress: 60, message: 'Verifying with Cloud...' }));
+
+                    const partNumbers = parsedParts.map(p => p.PART_NUMBER);
+                    const cloudMap = await storageService.validatePartsExistInCloud(partNumbers);
 
                     const newItems: RawMaterialPart[] = [];
                     const conflictingItems: RawMaterialPart[] = [];
+                    const existingMap: Record<string, string[]> = {};
 
                     parsedParts.forEach(p => {
-                        if (existingMap[p.PART_NUMBER]) {
+                        const standardPN = p.PART_NUMBER.toString().toUpperCase().trim();
+                        const cloudIds = cloudMap.get(standardPN);
+
+                        if (cloudIds && cloudIds.length > 0) {
+                            existingMap[standardPN] = cloudIds;
                             conflictingItems.push(p);
                         } else {
-                            // New items need defaults mixed in
                             newItems.push({ ...emptyPart, ...p });
                         }
                     });
 
                     if (conflictingItems.length > 0) {
-                        // Open Resolution Modal
                         setDuplicateModal({
                             isOpen: true,
                             newItems,
                             conflictingItems,
                             existingMap
                         });
-                        setProcState(INITIAL_PROCESSING_STATE); // Close loading modal
+                        setProcState(INITIAL_PROCESSING_STATE);
                     } else {
-                        // No duplicates, proceed directly
-                        proceedWithUpload(newItems);
+                        await proceedWithUpload(newItems);
                     }
 
                 } catch (err: any) {
@@ -762,63 +808,124 @@ export const DatabaseView = () => {
             progress: 0
         });
 
-        // @ts-ignore
-        await storageService.upsertParts(itemsToUpload, (p) => {
-            setProcState(prev => ({ ...prev, progress: p * 100 }));
-        });
+        try {
+            await storageService.upsertParts(itemsToUpload, (p) => {
+                setProcState(prev => ({ ...prev, progress: p * 100 }));
+            });
 
-        setProcState({
-            isOpen: true,
-            status: 'success',
-            title: 'Import Successful',
-            message: `Successfully imported items.`,
-            progress: 100
-        });
+            console.log(`✅ ${itemsToUpload.length} items successfully sent to Firestore.`);
 
-        setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 2000);
-        setDuplicateModal({ isOpen: false, newItems: [], conflictingItems: [], existingMap: {} });
+            // FORCE HARD SYNC: Wipe local and re-fetch to guarantee mirror state
+            setProcState(prev => ({ ...prev, message: 'Finalizing sync with cloud...' }));
+            await storageService.loadMasterData(true);
+
+            setProcState({
+                isOpen: true,
+                status: 'success',
+                title: 'Import Successful',
+                message: `Successfully imported ${itemsToUpload.length} items. All ghosts removed and cloud state synchronized.`,
+                progress: 100
+            });
+
+            setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 2000);
+            setDuplicateModal({ isOpen: false, newItems: [], conflictingItems: [], existingMap: {} });
+        } catch (err: any) {
+            console.error("Save failed:", err);
+            setProcState({
+                isOpen: true,
+                status: 'error',
+                title: 'Error Saving Data',
+                message: err.message || 'An unexpected error occurred while saving records.',
+                progress: 0
+            });
+        }
     };
 
-    const handleResolveDuplicates = (action: 'replace' | 'skip') => {
+    const handleResolveDuplicates = async (action: 'replace' | 'skip') => {
         const { newItems, conflictingItems, existingMap } = duplicateModal;
         let finalUploadList = [...newItems];
 
         if (action === 'replace') {
-            // Check: map duplicate items to their EXISTING IDs so we overwrite them
-            const updates = conflictingItems.map(p => {
-                const existingId = existingMap[p.PART_NUMBER];
-                const existingRec = storageService.getParts().find(ep => ep.id === existingId) || emptyPart;
-
-                // MERGE: Existing Record + New Logic (Partial) -> Full Record
-                // This ensures we don't wipe fields that are missing in the CSV
-                return {
-                    ...existingRec,
-                    ...p,
-                    id: existingId, // Ensure ID is preserved
-                    UPDATE_TIME: new Date().toISOString()
-                };
+            setProcState({
+                isOpen: true,
+                status: 'loading',
+                title: 'Atomic Overwrite',
+                message: 'Cleaning up existing records from cloud...',
+                progress: 20
             });
-            finalUploadList = [...finalUploadList, ...updates];
+
+            // GURANTEED OVERWRITE: Delete ALL existing records found for these part numbers
+            const idsToDelete: string[] = [];
+            conflictingItems.forEach(p => {
+                const ids = existingMap[p.PART_NUMBER] || [];
+                idsToDelete.push(...ids);
+            });
+
+            if (idsToDelete.length > 0) {
+                await storageService.deleteParts(idsToDelete);
+            }
+
+            // After deletion, treat all items as new
+            finalUploadList = [...finalUploadList, ...conflictingItems.map(p => ({ ...emptyPart, ...p }))];
         }
         // If 'skip', we just upload 'newItems' and ignore 'conflictingItems'
 
-        proceedWithUpload(finalUploadList);
+        await proceedWithUpload(finalUploadList);
     };
 
     const filteredParts = useMemo(() => {
         let result = parts;
 
-        // 0. Mass Query (Priority) - If active, strict filter by selected Column
-        if (massQuerySet) {
+        // 0. Mass Query (Priority) - If active, strict filter by multiple conditions
+        if (activeMassQuery && activeMassQuery.length > 0) {
             result = result.filter(p => {
-                // Use strict check against the selected column
-                // Ensure value is converted to string for matching
-                const val = String((p as any)[massQueryColumn] || '').trim();
-                return massQuerySet.has(val);
+                // Must satisfy ALL conditions (AND logic)
+                return activeMassQuery.every(cond => {
+                    const rawVal = (p as any)[cond.column];
+
+                    // Special operators that don't need input
+                    if (cond.operator === 'empty') {
+                        return rawVal === null || rawVal === undefined || String(rawVal).trim() === '';
+                    }
+                    if (cond.operator === 'not_empty') {
+                        return rawVal !== null && rawVal !== undefined && String(rawVal).trim() !== '';
+                    }
+
+                    const inputLines = cond.input.split(/[\n,;]+/).map(t => t.trim()).filter(t => t.length > 0);
+                    if (inputLines.length === 0) return true;
+
+                    // Helper to cast based on selected type
+                    const cast = (val: any) => {
+                        if (cond.type === 'number') return parseFloat(String(val || '0')) || 0;
+                        if (cond.type === 'boolean') {
+                            const s = String(val).toLowerCase();
+                            return s === 'true' || s === 'yes' || s === 'y' || s === 's' || s === 'si' || s === 'n' || s === 'no' ? (s === 'true' || s === 'yes' || s === 'y' || s === 's' || s === 'si') : false;
+                        }
+                        return String(val || '').trim();
+                    };
+
+                    const itemVal = cast(rawVal);
+
+                    if (cond.operator === 'in') {
+                        const set = new Set(inputLines.map(l => l.trim()));
+                        return set.has(String(rawVal || '').trim());
+                    }
+
+                    const targetVal = cast(inputLines[0]);
+
+                    switch (cond.operator) {
+                        case '==': return itemVal === targetVal;
+                        case '!=': return itemVal !== targetVal;
+                        case '>': return itemVal > targetVal;
+                        case '>=': return itemVal >= targetVal;
+                        case '<': return itemVal < targetVal;
+                        case '<=': return itemVal <= targetVal;
+                        case 'contains': return String(itemVal).toLowerCase().includes(String(targetVal).toLowerCase());
+                        case 'not_contains': return !String(itemVal).toLowerCase().includes(String(targetVal).toLowerCase());
+                        default: return true;
+                    }
+                });
             });
-            // If Mass Query is active, we usually ignore global search or column filters? 
-            // Or allow them to refine the mass list?
-            // Let's allow them to refine. (e.g. Mass Query 100 items -> Then search "Bolt" within those)
         }
 
         // 1. Column Filters (Has Data)
@@ -841,26 +948,38 @@ export const DatabaseView = () => {
 
         if (!searchTerm) return result;
 
-        // 2. Global Search
+        // 2. Multi-Token Search (Hybrid OR/AND)
+        // Group by comma (OR), within group split by space (AND)
+        // Example: "Bolt, 10mm Steel" -> (Bolt) OR (10mm AND Steel)
+        const groups = searchTerm.split(',').map(g => g.trim().toLowerCase()).filter(g => g.length > 0);
 
-        // 1. Split by comma for multi-search (OR logic)
-        // Example: "Bolt, Screw" -> Show items matching "Bolt" OR "Screw" in ANY column
-        const tokens = searchTerm.split(',').map(t => t.trim().toLowerCase()).filter(t => t.length > 0);
-
-        if (tokens.length === 0) return parts;
+        if (groups.length === 0) return result;
 
         return result.filter(p => {
-            // Match if ALL tokens are found in ANY column (AND Logic)
-            // Example: "Bolt, 10mm" -> Requires row to have "Bolt" AND "10mm" (in same or different columns)
-            return tokens.every(token => {
-                return CSV_ORDER_KEYS.some(key => {
-                    const val = (p as any)[key];
-                    if (val === null || val === undefined) return false;
-                    return String(val).toLowerCase().includes(token);
+            // Match if ANY "comma-separated group" is satisfied
+            return groups.some(group => {
+                const tokens = group.split(/\s+/).filter(t => t.length > 0);
+                if (tokens.length === 0) return false;
+
+                // Satisfy group if ALL tokens match SOMETHING in this row
+                return tokens.every(token => {
+                    // 1. Search in standard columns (High priority/performance)
+                    const matchesStandard = CSV_ORDER_KEYS.some(key => {
+                        const val = (p as any)[key];
+                        if (val === null || val === undefined) return false;
+                        return String(val).toLowerCase().includes(token);
+                    });
+                    if (matchesStandard) return true;
+
+                    // 2. Defensive check: Search in ALL object values (Robustness against key mismatches)
+                    return Object.entries(p).some(([key, val]) => {
+                        if (val === null || val === undefined || typeof val === 'object') return false;
+                        return String(val).toLowerCase().includes(token);
+                    });
                 });
             });
         });
-    }, [parts, searchTerm, activeFilters, massQuerySet, massQueryColumn]);
+    }, [parts, searchTerm, activeFilters, activeMassQuery]);
 
     // --- NEW EXPORT FUNCTIONALITY ---
     const handleExportFiltered = () => {
@@ -921,50 +1040,129 @@ export const DatabaseView = () => {
         <div className="space-y-6">
             <ProcessingModal state={procState} onClose={() => setProcState(INITIAL_PROCESSING_STATE)} />
 
-            {/* Mass Query Modal */}
+            {/* Mass Query Modal (Advanced Query Builder) */}
             {isMassQueryOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[80vh]">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
                         <div className="bg-slate-50 p-6 border-b border-slate-100 flex justify-between items-center">
                             <div>
                                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                                     <Database size={20} className="text-indigo-600" />
-                                    Mass Query
+                                    Advanced Query Builder
                                 </h3>
-                                <p className="text-xs text-slate-500 mt-1">Paste a list of values to filter by a specific column.</p>
+                                <p className="text-xs text-slate-500 mt-1">Combine multiple filters to find specific records in Master Data.</p>
                             </div>
                             <button onClick={() => setIsMassQueryOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
                         </div>
-                        <div className="p-6 flex-1 flex flex-col gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Target Column</label>
-                                <select
-                                    className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500"
-                                    value={massQueryColumn}
-                                    onChange={(e) => setMassQueryColumn(e.target.value as keyof RawMaterialPart)}
-                                >
-                                    {CSV_ORDER_KEYS.map(key => (
-                                        <option key={key} value={key}>{key}</option>
-                                    ))}
-                                </select>
-                            </div>
 
-                            <div className="flex-1 flex flex-col">
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Values (One per line or comma-separated)</label>
-                                <textarea
-                                    className="w-full flex-1 border border-slate-300 rounded-lg p-3 font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none min-h-[200px]"
-                                    placeholder={`Example:\nValue 1\nValue 2\nValue 3...`}
-                                    value={massQueryInput}
-                                    onChange={(e) => setMassQueryInput(e.target.value)}
-                                />
-                            </div>
-                            <div className="flex justify-end gap-3">
+                        <div className="p-6 flex-1 overflow-y-auto space-y-6">
+                            {massQueryConditions.map((cond, index) => (
+                                <div key={cond.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 relative group animate-in slide-in-from-top-2 duration-200">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
+                                            {index + 1}
+                                        </div>
+                                        <div className="h-px flex-1 bg-slate-200"></div>
+                                        {massQueryConditions.length > 1 && (
+                                            <button
+                                                onClick={() => removeCondition(cond.id)}
+                                                className="text-slate-400 hover:text-red-500 transition-colors"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Column</label>
+                                            <select
+                                                className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500"
+                                                value={cond.column}
+                                                onChange={(e) => updateCondition(cond.id, { column: e.target.value as keyof RawMaterialPart })}
+                                            >
+                                                {CSV_ORDER_KEYS.map(key => (
+                                                    <option key={key} value={key}>{key}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Operator</label>
+                                            <select
+                                                className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500"
+                                                value={cond.operator}
+                                                onChange={(e) => updateCondition(cond.id, { operator: e.target.value })}
+                                            >
+                                                <option value="in">(in) in list</option>
+                                                <option value="==">(==) equal to</option>
+                                                <option value="!=">(!=) not equal to</option>
+                                                <option value="contains">contains</option>
+                                                <option value="not_contains">not contains</option>
+                                                <option value="empty">is empty / null</option>
+                                                <option value="not_empty">is NOT empty</option>
+                                                <option value=">">( {'>'} ) greater than</option>
+                                                <option value=">=">( {'>='} ) greater or equal</option>
+                                                <option value="<">( {'<'} ) less than</option>
+                                                <option value="<=">( {'<='} ) less or equal</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data Type</label>
+                                            <select
+                                                className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:bg-slate-50"
+                                                value={cond.type}
+                                                disabled={cond.operator === 'empty' || cond.operator === 'not_empty'}
+                                                onChange={(e) => updateCondition(cond.id, { type: e.target.value as any })}
+                                            >
+                                                <option value="string">String (Text)</option>
+                                                <option value="number">Number</option>
+                                                <option value="boolean">Boolean (Y/N/Boolean)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                            {cond.operator === 'empty' || cond.operator === 'not_empty'
+                                                ? 'Value (Not required for this operator)'
+                                                : cond.operator === 'in' ? 'Values (One per line or comma-separated)' : 'Target Value'
+                                            }
+                                        </label>
+                                        <textarea
+                                            className="w-full border border-slate-300 rounded-lg p-3 font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none min-h-[80px] disabled:bg-slate-100 disabled:cursor-not-allowed"
+                                            placeholder={cond.operator === 'empty' || cond.operator === 'not_empty' ? "N/A" : cond.operator === 'in' ? "Example:\nValue 1\nValue 2" : "Enter value..."}
+                                            value={cond.operator === 'empty' || cond.operator === 'not_empty' ? '' : cond.input}
+                                            disabled={cond.operator === 'empty' || cond.operator === 'not_empty'}
+                                            onChange={(e) => updateCondition(cond.id, { input: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+
+                            <button
+                                onClick={addCondition}
+                                className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 font-medium"
+                            >
+                                <Plus size={18} /> Add Another Condition
+                            </button>
+                        </div>
+
+                        <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+                            <button
+                                onClick={handleClearMassQuery}
+                                className="text-red-600 hover:text-red-700 font-medium text-sm flex items-center gap-1"
+                            >
+                                <RotateCcw size={16} /> Reset All
+                            </button>
+                            <div className="flex gap-3">
                                 <button onClick={() => setIsMassQueryOpen(false)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-medium">Cancel</button>
                                 <button
                                     onClick={handleApplyMassQuery}
-                                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium shadow-sm transition-colors flex items-center gap-2"
+                                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium shadow-lg shadow-indigo-200 transition-all flex items-center gap-2"
                                 >
-                                    <Search size={16} /> Apply Filter
+                                    <Search size={16} /> Apply Complex Filter
                                 </button>
                             </div>
                         </div>
@@ -988,16 +1186,16 @@ export const DatabaseView = () => {
                     {/* Mass Query Button */}
                     <button
                         onClick={() => setIsMassQueryOpen(true)}
-                        className={`flex items-center gap-2 px-4 py-2 border rounded-lg shadow-sm transition-colors ${massQuerySet
+                        className={`flex items-center gap-2 px-4 py-2 border rounded-lg shadow-sm transition-colors ${activeMassQuery && activeMassQuery.length > 0
                             ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold'
                             : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
-                        title="Paste a list of part numbers to filter"
+                        title="Open Advanced Query Builder"
                     >
-                        <Database size={16} /> {massQuerySet ? `Query Active: ${massQueryColumn} (${massQuerySet.size})` : 'Mass Query'}
+                        <Database size={16} /> {activeMassQuery && activeMassQuery.length > 0 ? `Query Active (${activeMassQuery.length})` : 'Mass Query'}
                     </button>
 
-                    {massQuerySet && (
+                    {activeMassQuery && activeMassQuery.length > 0 && (
                         <button
                             onClick={handleClearMassQuery}
                             className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 text-red-600 rounded-lg hover:bg-red-100 shadow-sm transition-colors"
@@ -1091,15 +1289,49 @@ export const DatabaseView = () => {
                         <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
                         <input
                             type="text"
-                            placeholder="Search any column (comma separate for multiple)..."
+                            placeholder="Search (use comma for multiple, space for AND)..."
                             value={searchTerm}
                             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                             className="pl-9 pr-4 py-2 w-full border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
-                    <div className="text-sm text-slate-500 flex items-center gap-2">
-                        <Database size={14} className="text-slate-400" />
-                        Count: <span className="font-bold text-slate-700">{filteredParts.length.toLocaleString()}</span>
+
+                    {(searchTerm || activeFilters.size > 0 || (activeMassQuery && activeMassQuery.length > 0)) && (
+                        <button
+                            onClick={handleClearAllFilters}
+                            className="flex items-center gap-2 px-3 py-2 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 text-xs font-bold transition-all"
+                        >
+                            <RotateCcw size={14} /> Clear All Filters
+                        </button>
+                    )}
+
+                    <div className="flex-1"></div>
+
+                    <div className="text-sm text-slate-500 flex items-center gap-3">
+                        <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full border border-slate-200">
+                            <Database size={14} className="text-slate-400" />
+                            <span className="font-medium text-slate-500">Total:</span>
+                            <span className="font-bold text-slate-700">{parts.length.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full border border-blue-100">
+                            <Filter size={14} className="text-blue-400" />
+                            <span className="font-medium text-blue-600">Filtered:</span>
+                            <span className="font-bold text-blue-800">{filteredParts.length.toLocaleString()}</span>
+                        </div>
+                        {isBackgroundSyncing ? (
+                            <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 rounded-full border border-amber-100 animate-pulse">
+                                <RotateCcw size={14} className="text-amber-500 animate-spin" />
+                                <span className="text-xs font-bold text-amber-700">Syncing...</span>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => storageService.loadMasterData(true)}
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all"
+                                title="Repair / Force Full Sync from Cloud"
+                            >
+                                <RotateCcw size={14} />
+                            </button>
+                        )}
                     </div>
                 </div>
 

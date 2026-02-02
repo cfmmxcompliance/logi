@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { downloadFile } from '../utils/fileHelpers.ts';
 import { storageService } from '../services/storageService.ts';
 import { CustomsClearanceRecord, UserRole } from '../types.ts';
 import { Plus, Search, FileDown, ClipboardCheck, FileSpreadsheet, Edit2, X, Save, Trash2, AlertTriangle, Plane, Anchor } from 'lucide-react';
@@ -253,15 +254,18 @@ export const CustomsClearance = () => {
         const timestamp = new Date().toISOString().slice(0, 10);
         const filename = `customs_clearance_export_${filter ? 'filtered_' : 'all_'}${timestamp}.csv`;
 
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        if (link.download !== undefined) {
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', filename);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            if (document.body.contains(link)) {
+                document.body.removeChild(link);
+            }
+        }, 3000);
     };
 
     const handleDownloadTemplate = () => {
@@ -272,10 +276,14 @@ export const CustomsClearance = () => {
         }).join(',');
         const csvContent = headerRow + '\n' + exampleRow;
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'customs_clearance_template.csv';
+        link.href = url;
+        link.setAttribute('download', 'customs_clearance_template.csv');
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
     };
 
     const handleBulkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

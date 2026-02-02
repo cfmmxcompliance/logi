@@ -132,7 +132,7 @@ export const Suppliers = () => {
             // Create new
             const quote: Quotation = {
                 ...newQuote,
-                id: crypto.randomUUID(),
+                id: Date.now().toString(36) + Math.random().toString(36).substring(2),
                 lastUpdated: new Date().toISOString().split('T')[0]
             };
             updatedSupplier = {

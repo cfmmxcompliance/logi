@@ -1,4 +1,6 @@
 const functions = require("firebase-functions");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { setGlobalOptions } = require("firebase-functions/v2");
 const MX_TIMEZONE = 'America/Mexico_City';
 const admin = require("firebase-admin");
 const { stringify } = require("csv-stringify/sync");
@@ -7,8 +9,20 @@ const nodemailer = require("nodemailer");
 const path = require("path");
 require("dotenv").config(); // Load environment variables
 
+setGlobalOptions({ region: "us-central1" });
+
+// Set global options for v2 functions
+setGlobalOptions({ region: "us-central1" });
+
 admin.initializeApp();
 const db = admin.firestore();
+
+console.log("🚀 Functions Initialized. Env Check:", {
+    hasClientId: !!process.env.GOOGLE_CLIENT_ID,
+    hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+    hasRefreshToken: !!process.env.GOOGLE_REFRESH_TOKEN,
+    hasEmailPass: !!process.env.EMAIL_PASSWORD
+});
 
 function getMXDate(isoString) {
     if (!isoString) return null;
@@ -230,21 +244,157 @@ async function getOrCreatePedimentoFolder(drive, parentId, pedimentoNo) {
 }
 
 /**
- * CLOUD FUNCTION: Save VUCEM Document to Drive (v1)
+ * CLOUD FUNCTION: Save VUCEM Document to Drive (v2 with CORS)
  */
-exports.saveFileToExpediente = functions.https.onCall(async (data, context) => {
+exports.saveFileToExpediente = onCall({
+    cors: true,
+    memory: "512MiB",
+    timeoutSeconds: 120
+}, async (request) => {
+    const { data } = request;
     const { pedimentoNo, fileName, fileBase64, mimeType } = data;
+    console.log(`[START-V2] saveFileToExpediente | Pedimento: ${pedimentoNo} | File: ${fileName} | Size: ${fileBase64?.length || 0}`);
 
     if (!pedimentoNo || !fileName || !fileBase64) {
+        console.error("❌ [VAL_ERROR] Missing required fields");
         throw new functions.https.HttpsError("invalid-argument", "Missing required fields.");
     }
 
     try {
+        console.log("🚙 [DRIVE_INIT] Initializing Google Drive Client...");
         const drive = getDriveClient();
-        const pedimentoFolderId = await getOrCreatePedimentoFolder(drive, CONFIG.EXPEDIENTE_FOLDER_ID, pedimentoNo);
+        if (!drive) throw new Error("Failed to initialize Drive client object");
 
+        console.log(`📂 [FOLDER_CHECK] Searching for folder: ${pedimentoNo} in Parent: ${CONFIG.EXPEDIENTE_FOLDER_ID}`);
+        const pedimentoFolderId = await getOrCreatePedimentoFolder(drive, CONFIG.EXPEDIENTE_FOLDER_ID, pedimentoNo);
+        console.log(`✅ [FOLDER_CHECK] Found/Created Folder ID: ${pedimentoFolderId}`);
+
+        console.log("📄 [BUFFER] Converting base64 to buffer...");
         const buffer = Buffer.from(fileBase64, 'base64');
         const fileMetadata = { name: fileName, parents: [pedimentoFolderId] };
+        const media = {
+            mimeType: mimeType || 'application/pdf',
+            body: require('stream').Readable.from(buffer)
+        };
+
+        console.log("📤 [DRIVE_UPLOAD] Sending to Drive API...");
+        const file = await drive.files.create({
+            resource: fileMetadata,
+            media: media,
+            fields: 'id, webViewLink'
+        });
+        console.log(`✅ [DRIVE_UPLOAD] Upload Success! File ID: ${file.data.id}`);
+
+        console.log(`🗄️ [FIRESTORE] indexing ${pedimentoNo}...`);
+        const dossierRef = db.collection("electronic_dossiers").doc(pedimentoNo);
+        const dossierDoc = await dossierRef.get();
+        const fileInfo = {
+            name: fileName,
+            driveId: file.data.id,
+            url: file.data.webViewLink,
+            createdAt: new Date().toISOString()
+        };
+
+        if (dossierDoc.exists) {
+            const currentItems = dossierDoc.data().items || [];
+            const filteredItems = currentItems.filter(it => it.name !== fileName);
+            await dossierRef.update({
+                items: [...filteredItems, fileInfo],
+                lastUpdate: new Date().toISOString()
+            });
+        } else {
+            await dossierRef.set({
+                numPedimento: pedimentoNo,
+                items: [fileInfo],
+                createdAt: new Date().toISOString(),
+                lastUpdate: new Date().toISOString()
+            });
+        }
+        console.log("✅ [FIRESTORE] Indexing complete");
+
+        return { success: true, fileId: file.data.id, url: file.data.webViewLink };
+
+    } catch (err) {
+        console.error("🔥 [CRITICAL_ERROR] v2 failed:", err);
+        const detail = err.response?.data?.error_description || err.response?.data?.error?.message || err.message || "Unknown error";
+        console.error("🔥 [ERROR_DETAIL]:", detail);
+        throw new functions.https.HttpsError("internal", `Server Error: ${detail}`);
+    }
+});
+
+/**
+ * CLOUD FUNCTION: Get File from Drive as Base64 (v2)
+ */
+exports.getFileFromDriveV2 = onCall({
+    cors: true,
+    memory: "512MiB",
+    timeoutSeconds: 120
+}, async (request) => {
+    const { data } = request;
+    const { fileId } = data;
+    if (!fileId) throw new HttpsError("invalid-argument", "Missing fileId.");
+
+    try {
+        const drive = getDriveClient();
+        console.log(`[V2-DOWNLOAD] Fetching fileId: ${fileId}`);
+        const response = await drive.files.get({
+            fileId: fileId,
+            alt: 'media'
+        }, { responseType: 'stream' });
+
+        return new Promise((resolve, reject) => {
+            const chunks = [];
+            response.data.on('data', (chunk) => chunks.push(chunk));
+            response.data.on('end', () => {
+                const buffer = Buffer.concat(chunks);
+                const base64 = buffer.toString('base64');
+                console.log(`[V2-DOWNLOAD] Success. Base64 length: ${base64.length}`);
+                resolve({ success: true, fileBase64: base64 });
+            });
+            response.data.on('error', (err) => {
+                console.error("[V2-DOWNLOAD] Stream Error:", err);
+                reject(new HttpsError("internal", `Stream Error: ${err.message}`));
+            });
+        });
+    } catch (err) {
+        console.error("[V2-DOWNLOAD] Crash:", err);
+        throw new HttpsError("internal", `Drive API Fail: ${err.message}`);
+    }
+});
+
+/**
+ * CLOUD FUNCTION: Manual Trigger for Report (v1)
+ */
+exports.triggerManualReport = functions.https.onCall(async (data, context) => {
+    return await runFullReportProcess(data?.date);
+});
+
+/**
+ * CLOUD FUNCTION v2: Save File To Drive with explicit CORS and 512MiB memory
+ */
+exports.saveFileToDriveV2 = onCall({
+    cors: true,
+    memory: "512MiB",
+    timeoutSeconds: 120
+}, async (request) => {
+    const { data } = request;
+    const { pedimentoNo, fileName, fileBase64, mimeType } = data;
+
+    console.log(`[V2-START] Pedimento: ${pedimentoNo} | File: ${fileName}`);
+
+    if (!pedimentoNo || !fileName || !fileBase64) {
+        throw new functions.https.HttpsError("invalid-argument", "Missing data.");
+    }
+
+    try {
+        const drive = getDriveClient();
+        console.log("🚙 Drive Client Ready. checking folder...");
+
+        const folderId = await getOrCreatePedimentoFolder(drive, CONFIG.EXPEDIENTE_FOLDER_ID, pedimentoNo);
+
+        console.log("📤 Uploading...");
+        const buffer = Buffer.from(fileBase64, 'base64');
+        const fileMetadata = { name: fileName, parents: [folderId] };
         const media = {
             mimeType: mimeType || 'application/pdf',
             body: require('stream').Readable.from(buffer)
@@ -256,6 +406,7 @@ exports.saveFileToExpediente = functions.https.onCall(async (data, context) => {
             fields: 'id, webViewLink'
         });
 
+        console.log("✅ Drive Success. Indexing in Firestore...");
         const dossierRef = db.collection("electronic_dossiers").doc(pedimentoNo);
         const dossierDoc = await dossierRef.get();
         const fileInfo = {
@@ -266,8 +417,10 @@ exports.saveFileToExpediente = functions.https.onCall(async (data, context) => {
         };
 
         if (dossierDoc.exists) {
+            const currentItems = dossierDoc.data().items || [];
+            const filteredItems = currentItems.filter(it => it.name !== fileName);
             await dossierRef.update({
-                items: admin.firestore.FieldValue.arrayUnion(fileInfo),
+                items: [...filteredItems, fileInfo],
                 lastUpdate: new Date().toISOString()
             });
         } else {
@@ -280,60 +433,32 @@ exports.saveFileToExpediente = functions.https.onCall(async (data, context) => {
         }
 
         return { success: true, fileId: file.data.id, url: file.data.webViewLink };
-
     } catch (err) {
-        console.error("DRIVE_UPLOAD_ERROR:", err);
+        console.error("🔥 Error v2:", err);
         throw new functions.https.HttpsError("internal", err.message);
     }
 });
-
 /**
- * CLOUD FUNCTION: Get File from Drive as Base64 (v1)
+ * CLOUD FUNCTION: Delete File from Drive (v2)
  */
-exports.getFileFromDrive = functions.https.onCall(async (data, context) => {
+exports.deleteFileFromDriveV2 = onCall({
+    cors: true,
+    memory: "128MiB",
+    timeoutSeconds: 30
+}, async (request) => {
+    const { data } = request;
     const { fileId } = data;
-    if (!fileId) throw new functions.https.HttpsError("invalid-argument", "Missing fileId.");
+    if (!fileId) throw new HttpsError("invalid-argument", "Missing fileId.");
 
     try {
         const drive = getDriveClient();
-        const response = await drive.files.get({
-            fileId: fileId,
-            alt: 'media'
-        }, { responseType: 'stream' });
-
-        return new Promise((resolve, reject) => {
-            const chunks = [];
-            response.data.on('data', (chunk) => chunks.push(chunk));
-            response.data.on('end', () => {
-                const buffer = Buffer.concat(chunks);
-                const base64 = buffer.toString('base64');
-                resolve({ success: true, fileBase64: base64 });
-            });
-            response.data.on('error', (err) => {
-                reject(new functions.https.HttpsError("internal", `Stream Error: ${err.message}`));
-            });
-        });
+        console.log(`[V2-DELETE] Deleting fileId: ${fileId}`);
+        await drive.files.delete({ fileId: fileId });
+        return { success: true };
     } catch (err) {
-        console.error("DRIVE_DOWNLOAD_ERROR:", err.message);
-        throw new functions.https.HttpsError("aborted", `Drive API Fail: ${err.message}`);
+        console.error("[V2-DELETE] Error:", err.message);
+        // We return success even if not found to allow cleanup to proceed
+        if (err.code === 404) return { success: true, warning: 'File not found' };
+        throw new HttpsError("internal", `Drive Delete Fail: ${err.message}`);
     }
 });
-
-/**
- * CLOUD FUNCTION: Manual Trigger for Report (v1)
- */
-exports.triggerManualReport = functions.https.onCall(async (data, context) => {
-    return await runFullReportProcess(data?.date);
-});
-
-/**
- * CLOUD FUNCTION: Scheduled Daily Report (1:00 AM Mexico City)
- * Uses v1 (legacy) to avoid EventArc/PubSub identity issues
- */
-exports.dailyReportLogimaster = functions
-    .pubsub.schedule("0 1 * * *")
-    .timeZone(MX_TIMEZONE)
-    .onRun(async (context) => {
-        console.log("Running scheduled daily report...");
-        return await runFullReportProcess();
-    });

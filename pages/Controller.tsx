@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { storageService } from '../services/storageService.ts';
 import { CostRecord, Supplier, Shipment } from '../types.ts';
@@ -366,34 +365,44 @@ export const Controller = () => {
     }, [shipments, costs, suppliers, filterPartner, filterType, dateRange]);
 
     const handleUpdateStatus = async (item: any, newStatus: 'Paid' | 'Pending') => {
-        if (item.isVirtual) {
-            const newRecord: CostRecord = {
-                id: crypto.randomUUID(),
-                shipmentId: item.shipmentId,
-                type: 'Freight',
-                amount: item.amount,
-                currency: 'USD',
-                provider: item.provider,
-                description: 'Freight Cost',
-                date: item.invoiceDate,
-                status: newStatus,
-                paymentDate: newStatus === 'Paid' ? new Date().toISOString().split('T')[0] : undefined,
-                invoiceNo: '',
-                uuid: '',
-                comments: '',
-            };
-            setCosts(prev => [...prev, newRecord]);
-            await storageService.updateCost(newRecord);
-        } else {
-            const cost = costs.find(c => c.id === item.id);
-            if (!cost) return;
-            const updated = {
-                ...cost,
-                status: newStatus,
-                paymentDate: newStatus === 'Paid' ? new Date().toISOString().split('T')[0] : undefined
-            };
-            setCosts(prev => prev.map(c => c.id === item.id ? updated : c));
-            await storageService.updateCost(updated);
+        try {
+            if (item.isVirtual) {
+                const newRecord: CostRecord = {
+                    id: Date.now().toString(36) + Math.random().toString(36).substring(2),
+                    shipmentId: item.shipmentId,
+                    type: 'Freight',
+                    amount: item.amount,
+                    currency: 'USD',
+                    provider: item.provider,
+                    description: 'Freight Cost',
+                    date: item.invoiceDate,
+                    status: newStatus,
+                    paymentDate: newStatus === 'Paid' ? new Date().toISOString().split('T')[0] : undefined,
+                    invoiceNo: '',
+                    uuid: '',
+                    comments: '',
+                };
+                await storageService.updateCost(newRecord);
+                setCosts(prev => [...prev, newRecord]);
+            } else {
+                const cost = costs.find(c => c.id === item.id);
+                if (!cost) return;
+                const updated = {
+                    ...cost,
+                    status: newStatus,
+                    paymentDate: newStatus === 'Paid' ? new Date().toISOString().split('T')[0] : undefined
+                };
+                await storageService.updateCost(updated);
+                setCosts(prev => prev.map(c => c.id === item.id ? updated : c));
+            }
+        } catch (error: any) {
+            console.error("Failed to update status:", error);
+            showNotification('Error', error.message || "Failed to save changes. Please check connection.", 'error');
+            // Revert optimistic update if needed, but here we waited for await so state isn't dirty yet (mostly).
+            // Actually above I put setCosts AFTER await for the first one, but AFTER for the second one?
+            // Wait, for `item.isVirtual`, I did await THEN setCosts.
+            // For `else`, I did await THEN setCosts.
+            // So state is safe.
         }
     };
 
@@ -411,11 +420,12 @@ export const Controller = () => {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.setAttribute('href', url);
+        link.href = url;
         link.setAttribute('download', 'Expenses_Template.csv');
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
     };
 
     const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -441,7 +451,7 @@ export const Controller = () => {
             if (!amount && !invoice) continue;
 
             const newRecord: CostRecord = {
-                id: crypto.randomUUID(),
+                id: Date.now().toString(36) + Math.random().toString(36).substring(2),
                 shipmentId: '',
                 type: 'Other',
                 amount: amount,
@@ -464,9 +474,14 @@ export const Controller = () => {
             );
 
             if (!isDuplicate) {
-                await storageService.updateCost(newRecord);
-                newRecords.push(newRecord);
-                importedCount++;
+                try {
+                    await storageService.updateCost(newRecord);
+                    newRecords.push(newRecord);
+                    importedCount++;
+                } catch (e: any) {
+                    console.error("Import failed for row", i, e);
+                    showNotification('Error', `Row ${i} failed: ${e.message}`, 'error');
+                }
             }
         }
 
@@ -474,8 +489,8 @@ export const Controller = () => {
             setCosts(prev => [...prev, ...newRecords]);
             showNotification('Success', `Successfully imported ${importedCount} records.`, 'success');
             e.target.value = '';
-        } else {
-            showNotification('Warning', "No valid records found in CSV.", 'warning');
+        } else if (importedCount === 0) {
+            showNotification('Warning', "No valid records imported (All duplicates or failed).", 'warning');
         }
     };
 
@@ -579,11 +594,16 @@ export const Controller = () => {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.setAttribute('href', url);
+        link.href = url;
         link.setAttribute('download', fullFilename);
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            if (document.body.contains(link)) {
+                document.body.removeChild(link);
+            }
+        }, 3000);
 
         showNotification('Export Ready', `Report '${fullFilename}' downloaded successfully.`, 'success');
     };
@@ -743,7 +763,7 @@ export const Controller = () => {
                     return false;
                 });
 
-                const validId = targetReplacementId || existingCost?.id || crypto.randomUUID();
+                const validId = targetReplacementId || existingCost?.id || (Date.now().toString(36) + Math.random().toString(36).substring(2));
 
                 // 6. Resolve Effective Shipment (Self-Healing Linkage)
                 // Prioritize the BL we already have in DB (if any) or the new one
@@ -1138,7 +1158,7 @@ export const Controller = () => {
                 }
             }
         });
-    };
+    }
 
     return (
         <div className="space-y-6">

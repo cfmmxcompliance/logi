@@ -1,0 +1,7 @@
+--uuid:99219b15-8ab0-470d-baf6-3171f8e01cc2
+Content-Id: <rootpart*99219b15-8ab0-470d-baf6-3171f8e01cc2@example.jaxws.sun.com>
+Content-Type: application/xop+xml;charset=utf-8;type="text/xml"
+Content-Transfer-Encoding: binary
+
+<?xml version='1.0' encoding='UTF-8'?><env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/"><env:Header/><env:Body><env:Fault><faultcode>env:Server</faultcode><faultstring>Unknown exception, internal system processing error.</faultstring></env:Fault></env:Body></env:Envelope>
+--uuid:99219b15-8ab0-470d-baf6-3171f8e01cc2--

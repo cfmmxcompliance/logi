@@ -549,7 +549,12 @@ export const geminiService = {
             "salida": "OPT (Look for 'SALIDA' or 'SAL'. Extract code e.g. 7)"
           },
           "importador": { "rfc": "REQ", "nombre": "OPT", "domicilio": "OPT" },
-          "proveedor": { "idFiscal": "OPT", "nombre": "OPT", "domicilio": "OPT" },
+          "proveedor": { 
+            "idFiscal": "OPT (Exact numeric/alphanumeric code found in the ID.Fiscal box)", 
+            "nombre": "OPT", 
+            "domicilio": "OPT",
+            "vinculacion": "OPT (Look for SI/NO in the VINCULACION column)"
+          },
           "fechas": { "entrada": "YYYY-MM-DD", "pago": "YYYY-MM-DD" },
           "valores": { "valorDolares": "0", "valorAduana": "0", "precioPagado": "0", "fletes": "0", "seguros": "0", "embalajes": "0", "otrosIncrementables": "0" },
           "tasasNivelPedimento": [ { "clave": "STR", "tasa": "STR", "tipoTasa": "STR (CVE. T. TASA e.g. 1, 4)" } ],
@@ -616,8 +621,23 @@ export const geminiService = {
            - **REGIMEN**: Look for "REGIMEN" (e.g. "IMD", "A1").
            - **TIPO DE CAMBIO**: Look for "T.C.", "TIPO CAMBIO". Example: "17.97920".
            - **PESO BRUTO**: Look for "PESO BRUTO", "P. BRUTO". 'B.W.'. Example: "9328.000". Extract ONLY numeric (remove 'KG', 'LBS').
+           - **VALOR ADUANA**: Look for the literal header "VALOR ADUANA:". The value is usually found to the right of this label.
 
-        2.1 **TRANSPORTE / BL (Important)**:
+          2.0 **PROVEEDOR O COMPRADOR (Critical)**:
+            - **PHYSICAL ANCHOR**: Look for the literal header "DATOS DEL PROVEEDOR O COMPRADOR".
+            - Everything BELOW this header and ABOVE "NUMERO/TIPO/ESTADO" (Containers) belongs to the SUPPLIER.
+            - **ID. FISCAL**: Extract from the FIRST small box on the left.
+            - **NAME**: Extract from the "NOMBRE, DENOMINACION..." column.
+            - **VINCULACION**: Look at the far right for 'SI' or 'NO'.
+            - **STRICT PROHIBITION**: Do NOT use data from the "IMPORTADOR" or "AGENTE ADUANAL" sections for these fields.
+
+         2.0.1 **IMPORTADOR (Critical)**:
+            - **PHYSICAL ANCHOR**: Look for the literal header "IMPORTADOR". 
+            - This is usually at the TOP LEFT of the document.
+            - **RFC**: Extract the Mexican tax ID (usually 12-13 characters).
+            - **STRICT PROHIBITION**: Do NOT use data from the "PROVEEDOR" or "AGENTE ADUANAL" sections for these fields.
+
+         2.1 **TRANSPORTE / BL (Important)**:
            - Look for 'MEDIOS DE TRANSPORTE'.
            - **IDENTIFICACION**: Look for "NUMERO (GUIA/ORDEN EMBARQUE)/ID", "GUIA", "BL".
            - Extract the code (e.g. "EGLV143574068432").
@@ -690,6 +710,14 @@ export const geminiService = {
                 - Col 4 is **FORMA PAGO** (often "0"). Extract this as 'formaPago'.
                 - Col 5 (LAST) is **IMPORTE** (e.g. 17). Extract this as 'importe'.
               - **FIX**: Ensure 'formaPago' gets the 4th col value (e.g. "0") and 'importe' gets the 5th (e.g. "17").
+
+            - **CUADRO DE LIQUIDACION (Crucial for Totals)**:
+              - **TABLE STRUCTURE**: "CONCEPTO | F.P. | IMPORTE".
+              - **CRITICAL**: IGNORE the middle column (**F.P.**). It is usually "0".
+              - **IMPORTE**: Extract the amount from the **THIRD** column (last one of the triad).
+              - **VAT (IVA)**: Look for "I.V.A.". 
+              - **NEVER ZERO**: For 'A1' operations, IVA is almost never 0. 
+              - If the extracted IVA is 0 but the Total Effective is high, you likely missed a column. Look for the largest number in the row (the IMPORTE).
 
         INPUT TEXT:
         ${chunkText.substring(0, 30000)} // Chunk Safety Limit
@@ -1076,7 +1104,7 @@ export const geminiService = {
    * FAST EXTRACTION (For ZIP Ingestion)
    * Focuses exclusively on Page 1 - Cuadro de Liquidación for maximum speed.
    */
-  async fastExtractPedimento(base64Data: string): Promise<any> {
+  async fastExtractPedimento(base64Data: string, fileName: string = ""): Promise<any> {
     const ai = getClient();
 
     let targetBase64 = base64Data;
@@ -1106,6 +1134,8 @@ export const geminiService = {
       3. THE BOTTOM AREA (For Bank Seal and Institute).
       4. IDENTIFIERS (Look for 'AF' or 'ACTIVO FIJO').
       
+      HINT: The filename is "${fileName}". This might contain the pedimento number or document type clues.
+      
       IDENTIFY IF THIS IS A PEDIMENTO OR COVE.
       
       IF PEDIMENTO:
@@ -1114,8 +1144,11 @@ export const geminiService = {
       For each concept (IGI, IVA, DTA, etc.), the **Correct Payment Amount** is ALWAYS the **LARGEST NUMBER** in that text row.
       
       **INSTRUCTIONS**:
-      1. **Find "I.V.A."** row. Scan all numbers in that line (e.g. "16", "0", "45000"). **Pick 45000** (The Max).
-      2. **Find "IGI"** row. Scan extracted nums (e.g. "0", "6892"). **Pick 6892** (The Max).
+      1. **COLUMN MAPPING**: The table has 3 columns: (**CONCEPTO** | **F.P.** | **IMPORTE**).
+      2. **STRICT RULE**: **IGNORE** the middle column (**F.P.**). It's just a code (usually 0).
+      3. **VALUE EXTRACTION**: The financial value is ALWAYS the **IMPORTE** (the 3rd and last column of the section).
+      4. **Find "I.V.A."** row. Scan and pick the **IMPORTE** (Last column).
+      5. **Find "IGI"** row. Scan and pick the **IMPORTE**.
       3. **Find "DTA"** row. Scan nums (e.g. "462"). **Pick 462**.
       4. **Find "PRV"** row. Scan nums (e.g. "0", "330"). **Pick 330**.
       5. **Find "IVA/PRV"** row. Scan nums (e.g. "0", "53"). **Pick 53**.
@@ -1129,12 +1162,15 @@ export const geminiService = {
       - IVA (Value Added Tax)
       - PRV (Prevalidation)
       - CNT (Contraprestación)
+      - CNT (Contraprestación)
       - IVA/PRV (VAT on Prevalidation)
+      - **REC/MUL (Recargos/Multas/Otros)**: Look for any other rows in the liquidacion table with codes like "REC", "MUL", or generic "OTROS". Sum these up.
 
       **CRITICAL BUSINESS RULES (STRICT ENFORCEMENT)**:
       - **PRV**: IF value is 0, SEARCH the "Certificación" or "Pago Electrónico" areas at the bottom. It is NEVER 0 for valid entries.
       - **IVA/PRV**: IF you extract anything less than 53 (like 16), it is INCORRECT. Look specifically for the 53 value near the PRV line. 
       - **IVA**: This is usually the **LARGEST** amount in the list (after Total). If your IVA is small (like 462), you probably picked DTA by mistake. CHECK AGAIN.
+      - **IVA NEVER ZERO**: For 'A1' imports (Standard), IVA is almost **ALWAYS** greater than zero. If the "I.V.A." row seems to have 0, search for a larger number elsewhere (possibly in the last column of that same row).
       - **IGI**: Use 0 ONLY if explicitly stated as 0 or the row is empty, but double check the right-side columns.
       
       **SELF-CORRECTION (SUM CHECK)**:
@@ -1149,7 +1185,16 @@ export const geminiService = {
         **FORMAT**: MUST be YYYY-MM-DD. If year is 2 digits (e.g. 24), use 2024.
       - fechaEntrada (Entry date - look for 'FECHA ENTRADA' or similar). 
         **FORMAT**: MUST be YYYY-MM-DD.
-      - Importador RFC and Name.
+      - **Importador** (Mexican Entity): Look for header "IMPORTADOR". Extract RFC and Name.
+      - **Proveedor** (Foreign Entity): Look for header "DATOS DEL PROVEEDOR O COMPRADOR".
+        - ID Fiscal: Found in the first box on the left.
+        - Name and Address: Found in adjacent columns.
+      - **STRICT ENTITY SEPARATION**:
+        - NEVER swap Importer and Supplier.
+        - NEVER use the Customs Agent name ("AGENTE ADUANAL") for either field.
+        - The Importer is usually a Mexican entity with a Mexican RFC.
+        - The Supplier is the foreign company selling the goods.
+      - **VALOR ADUANA** (Customs Value): Look for the literal header "VALOR ADUANA:". It is usually in the middle section of the header area. Extract the number next to it.
       - valorAduana (Total Customs Value).
       - Is Fixed Asset? (Check if 'AF' appears in Identifiers or 'ACTIVO FIJO' is mentioned).
       
@@ -1188,14 +1233,16 @@ export const geminiService = {
           "prv": 0,
           "ivaPrv": 0,
           "cnt": 0,
+          "otrosCargos": 0,
           "valorAduana": 0
         },
-        "importador": { "nombre": "...", "rfc": "..." }
+        "importador": { "nombre": "...", "rfc": "..." },
+        "proveedor": { "idFiscal": "...", "nombre": "...", "domicilio": "..." }
       }
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-pro',
+      model: 'gemini-2.0-flash',
       contents: {
         parts: [{ inlineData: { mimeType: 'application/pdf', data: targetBase64 } }, { text: prompt }]
       },

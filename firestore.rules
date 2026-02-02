@@ -12,21 +12,28 @@ service cloud.firestore {
     }
 
     // 2. Business Data (EMERGENCY: Allowed read to restore visibility)
-    match /parts/{docId} { allow read: if true; allow write: if true; }
-    match /shipments/{docId} { allow read: if true; allow write: if true; }
-    match /vessel_tracking/{docId} { allow read: if true; allow write: if true; }
-    match /equipment_tracking/{docId} { allow read: if true; allow write: if true; }
-    match /customs_clearance/{docId} { allow read: if true; allow write: if true; }
-    match /pre_alerts/{docId} { allow read: if true; allow write: if true; }
-    match /commercial_invoices/{docId} { allow read: if true; allow write: if true; }
-    match /suppliers/{docId} { allow read: if true; allow write: if true; }
-    match /logistics/{docId} { allow read: if true; allow write: if true; }
-    
-    // 3. System Data
+    match /parts/{docId} { allow read, write: if true; }
+    match /shipments/{docId} { allow read, write: if true; }
+    match /vessel_tracking/{docId} { allow read, write: if true; }
+    match /equipment_tracking/{docId} { allow read, write: if true; }
+    match /customs_clearance/{docId} { allow read, write: if true; }
+    match /pre_alerts/{docId} { allow read, write: if true; }
+    match /commercial_invoices/{docId} { allow read, write: if true; }
+    match /costs/{docId} { allow read, write: if true; }
+    match /electronic_dossiers/{docId} { allow read, write: if true; }
+    match /data_stage_drafts/{docId} { allow read, write: if true; }
+    match /snapshots/{docId} { allow read, write: if true; }
+    match /data_stage_reports/{docId} { allow read, write: if true; }
+    match /training_submissions/{docId} { allow read, write: if true; }
+    match /audit_subscriptions/{docId} { allow read, write: if true; }
+    match /suppliers/{docId} { allow read, write: if true; }
+    match /logistics/{docId} { allow read, write: if true; }
+    match /users/{docId} { allow read, write: if true; }
     match /logs/{docId} { allow read, write: if true; }
     match /daily_changes/{docId} { allow read, write: if true; }
     match /master_data_reports/{docId} { allow read, write: if true; }
-    match /system_metadata/{docId} { allow read: if true; allow write: if true; } // Metadata public read ok? Parts version needs to be read by everyone? Maybe.
+    match /system_metadata/{docId} { allow read, write: if true; }
+    match /electronic_dossiers_v2/{docId} { allow read, write: if true; }
 
     // 4. Default Block (Catch-all)
     match /{document=**} {

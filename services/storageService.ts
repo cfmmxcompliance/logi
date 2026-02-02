@@ -1,10 +1,9 @@
 import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
-  collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc, arrayUnion, increment, limit
+  collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc, arrayUnion, increment, limit, startAfter
 } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { downloadFile } from '../utils/fileHelpers.ts';
 import { indexedDbService } from './indexedDbService.ts';
 
 const COLS = {
@@ -83,32 +82,89 @@ const sanitizeForFirestore = (obj: any): any => {
 };
 
 const saveLocal = (skipParts = false) => {
-  // 1. Decouple Parts for High-Capacity Performance
-  const { parts, ...lightState } = dbState;
+  // 1. Decouple ALL heavy collections for High-Capacity Performance
+  // We EXCLUDE these from localStorage to stay under the 5MB quota
+  const {
+    parts,
+    commercialInvoices,
+    logs,
+    snapshots,
+    dataStageReports,
+    shipments,
+    vesselTracking,
+    equipmentTracking,
+    customsClearance,
+    preAlerts,
+    costs,
+    logistics,
+    suppliers,
+    dailyChanges,
+    dailyReports,
+    users,
+    dataStageDrafts,
+    trainingSubmissions,
+    ...lightState
+  } = dbState;
 
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(lightState));
+  try {
+    // Only save minimal non-operational state to localStorage ('logimaster_db')
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(lightState));
+  } catch (e: any) {
+    if (isQuotaError(e)) {
+      console.warn("[Storage] LocalStorage quota exceeded. Non-essential state not saved.");
+      // We don't throw here to avoid crashing the save flow
+    }
+  }
 
-  // 2. Persist Parts to IndexedDB
-  // OPTIMIZATION: Only save parts if not explicitly skipped (e.g. during bulk updates where we handled it incrementally)
+  // 2. Persist Heavy Collections to IndexedDB (Direct Storage)
   if (!skipParts && dbState.parts.length > 0) {
     indexedDbService.saveParts(dbState.parts);
   }
 
-  // 3. Robust backup for Commercial Invoices
+  // Save the rest of the operational state to 'app_state' store
+  const operationalData = {
+    id: 'current_state',
+    shipments: dbState.shipments,
+    vesselTracking: dbState.vesselTracking,
+    equipmentTracking: dbState.equipmentTracking,
+    customsClearance: dbState.customsClearance,
+    preAlerts: dbState.preAlerts,
+    costs: dbState.costs,
+    logistics: dbState.logistics,
+    suppliers: dbState.suppliers,
+    dailyChanges: dbState.dailyChanges,
+    dailyReports: dbState.dailyReports,
+    users: dbState.users,
+    trainingSubmissions: dbState.trainingSubmissions
+  };
+  indexedDbService.saveData('app_state', [operationalData]);
+
   if (dbState.commercialInvoices && dbState.commercialInvoices.length > 0) {
-    localStorage.setItem(INVOICES_BACKUP_KEY, JSON.stringify(dbState.commercialInvoices));
+    indexedDbService.saveInvoices(dbState.commercialInvoices);
   }
 
-  // Persist Queue
-  if (pendingWrites.length > 0) {
-    localStorage.setItem(PENDING_WRITES_KEY, JSON.stringify(pendingWrites));
+  if (dbState.logs && dbState.logs.length > 0) {
+    // Only save last 500 logs to IDB to avoid bloat there too
+    indexedDbService.saveLogs(dbState.logs.slice(-500));
   }
+
+  if (dbState.dataStageReports && dbState.dataStageReports.length > 0) {
+    indexedDbService.saveData('datastage_reports', dbState.dataStageReports);
+  }
+
+  // 3. Persist Queue to IDB
+  if (pendingWrites.length > 0) {
+    indexedDbService.saveData('sync_queue', pendingWrites);
+    // Explicitly remove from localStorage to free up space
+    localStorage.removeItem(PENDING_WRITES_KEY);
+  }
+
   notifyListeners();
 };
 
 const queueWrite = (action: PendingWrite['action'], data: any) => {
   const write: PendingWrite = {
-    id: crypto.randomUUID(),
+    id: generateId(),
     action,
     data,
     timestamp: new Date().toISOString()
@@ -144,7 +200,7 @@ const processSyncQueue = async () => {
         case 'DELETE_VESSEL': await storageService.deleteVesselTrackings(task.data); break;
         case 'DELETE_EQUIPMENT': await storageService.deleteEquipmentTrackings(task.data); break;
         case 'DELETE_CUSTOMS': await storageService.deleteCustomsClearances(task.data); break;
-        case 'UPSERT_SUPPLIER': await storageService.upsertSupplier(task.data); break;
+        case 'UPSERT_SUPPLIER': await storageService.updateSupplier(task.data); break;
         case 'DELETE_SUPPLIER': await storageService.deleteSupplier(task.data); break;
         case 'UPSERT_LOGISTICS': await storageService.upsertLogistics(task.data); break;
         case 'DELETE_LOGISTICS': await storageService.deleteLogistics(task.data); break;
@@ -162,7 +218,7 @@ const processSyncQueue = async () => {
 
       // Success: Remove from queue
       pendingWrites = pendingWrites.filter(w => w.id !== task.id);
-      localStorage.setItem(PENDING_WRITES_KEY, JSON.stringify(pendingWrites));
+      await indexedDbService.saveData('sync_queue', pendingWrites);
     } catch (e) {
       // Keep in queue until success
     }
@@ -176,7 +232,7 @@ const logAction = async (action: string, details: string) => {
     const user = userStr ? JSON.parse(userStr) : { name: 'Anonymous/System' };
 
     const logEntry: AuditLog = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       timestamp: new Date().toISOString(),
       action,
       details,
@@ -212,8 +268,8 @@ const syncVesselDataToOthers = async (vesselData: VesselTrackingRecord) => {
     saveLocal();
   }
 };
-
-
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const generateId = () => crypto.randomUUID();
 
 export const storageService = {
   // CORE METHODS
@@ -248,53 +304,100 @@ export const storageService = {
     unsubscribers = [];
 
     if (!db) {
-      // Offline / No-DB Mode
+      // Offline / No-DB Mode: Hydrate EVERYTHING from IndexedDB
       const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (localData) {
         try {
-          dbState = JSON.parse(localData);
+          dbState = { ...dbState, ...JSON.parse(localData) };
         } catch (e) {
           console.error("Failed to parse local storage", e);
         }
       }
 
-      // Load Separated Reports (Offline)
       try {
-        const separateReports = localStorage.getItem(COLS.DATA_STAGE_REPORTS);
-        if (separateReports) {
-          const parsedReports = JSON.parse(separateReports);
-          if (Array.isArray(parsedReports) && parsedReports.length > 0) {
-            const existingIds = new Set(dbState.dataStageReports.map((r: any) => r.id));
-            parsedReports.forEach((r: any) => {
-              if (!existingIds.has(r.id)) dbState.dataStageReports.push(r);
-            });
-          }
+        await indexedDbService.init();
+
+        // Load App State (Shipments, Tracking, etc.)
+        const appStates = await indexedDbService.getAllData('app_state');
+        const currentState = appStates.find(s => s.id === 'current_state');
+        if (currentState) {
+          dbState = { ...dbState, ...currentState };
+          // Remove the id from dbState
+          delete (dbState as any).id;
         }
-      } catch (e) { console.warn("Error loading separate reports", e); }
+
+        // Load Parts, Invoices, logs
+        dbState.parts = await indexedDbService.getAllParts();
+        dbState.commercialInvoices = await indexedDbService.getAllInvoices();
+        dbState.logs = await indexedDbService.getAllLogs();
+        dbState.dataStageReports = await indexedDbService.getAllData('datastage_reports');
+
+        console.log("📡 Offline Mode: Hydrated all data from IndexedDB");
+      } catch (e) {
+        console.warn("Offline hydration failed", e);
+      }
 
       notifyListeners();
       return;
     }
 
-    // 1. Load Local State First (Cache)
+    // 1. Load Local State First (Cache - Minimal)
     const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (localData) {
       try {
-        dbState = JSON.parse(localData);
+        dbState = { ...dbState, ...JSON.parse(localData) };
       } catch (e) {
         console.error("Corrupt LocalDB, resetting.", e);
         dbState.parts = [];
       }
     }
 
-    // 2. MASTER DATA (Initial Hydration from IDB)
+    // 2. HYDRATE HEAVY DATA FROM INDEXEDDB
     try {
       await indexedDbService.init();
+
+      // Load App State (Shipments, Tracking, etc.)
+      const appStates = await indexedDbService.getAllData('app_state');
+      const currentState = appStates.find(s => s.id === 'current_state');
+      if (currentState) {
+        dbState = { ...dbState, ...currentState };
+        delete (dbState as any).id;
+      }
+
+      // Parts
       const localParts = await indexedDbService.getAllParts();
       if (localParts.length > 0) {
         dbState.parts = localParts;
         console.log(`📦 Pre-loaded ${dbState.parts.length} parts from IndexedDB`);
+        notifyListeners(); // Ensure UI knows about pre-loaded parts
       }
+
+      // Invoices
+      const localInvoices = await indexedDbService.getAllInvoices();
+      if (localInvoices.length > 0) {
+        dbState.commercialInvoices = localInvoices;
+        console.log(`🧾 Pre-loaded ${dbState.commercialInvoices.length} invoices from IndexedDB`);
+      }
+
+      // Logs
+      const localLogs = await indexedDbService.getAllLogs();
+      if (localLogs.length > 0) {
+        dbState.logs = localLogs;
+      }
+
+      // DataStage Reports
+      const localReports = await indexedDbService.getAllData('datastage_reports');
+      if (localReports.length > 0) {
+        dbState.dataStageReports = localReports;
+      }
+
+      // Sync Queue
+      const queue = await indexedDbService.getAllData('sync_queue');
+      if (queue.length > 0) {
+        pendingWrites = queue;
+        console.log(`🔄 Pre-loaded ${pendingWrites.length} queued writes from IndexedDB`);
+      }
+
     } catch (e) {
       console.warn("IndexedDB hydration failed", e);
     }
@@ -320,6 +423,30 @@ export const storageService = {
         notifyListeners();
       }));
 
+      // [NEW] Incremental Parts Listener (Real-time sync for Master Data)
+      const qParts = query(collection(db, COLS.PARTS), orderBy('UPDATE_TIME', 'desc'), limit(50));
+      unsubscribers.push(onSnapshot(qParts, (snap) => {
+        let changed = false;
+        let newParts = [...dbState.parts];
+        snap.docChanges().forEach(change => {
+          const data = { ...change.doc.data(), id: change.doc.id } as RawMaterialPart;
+          const standardPN = (data.PART_NUMBER || '').toString().toUpperCase().trim();
+
+          if (change.type === 'added' || change.type === 'modified') {
+            newParts = newParts.filter(p => p.id !== data.id && (p.PART_NUMBER || '').toString().toUpperCase().trim() !== standardPN);
+            newParts.push(data);
+            changed = true;
+          } else if (change.type === 'removed') {
+            newParts = newParts.filter(p => p.id !== data.id);
+            changed = true;
+          }
+        });
+        if (changed) {
+          dbState.parts = newParts;
+          notifyListeners();
+        }
+      }));
+
       // 4. REAL-TIME LISTENERS (Optimized based on Role and Weight)
       Object.entries(COLS).forEach(([key, colName]) => {
         // (A) Skip Meta / Master Data (Handled manually above)
@@ -333,9 +460,9 @@ export const storageService = {
           if (key !== 'SUPPLIERS' && key !== 'LOGISTICS' && key !== 'DAILY_CHANGES' && key !== 'DAILY_REPORTS') return;
         }
 
-        // (D) Editor / Operator Optimization: Skip heavy collections on boot
+        // (D) Editor / Operator Optimization: Shared critical operational data
         if (role === UserRole.EDITOR || role === UserRole.OPERATOR) {
-          if (key === 'COSTS' || key === 'DATA_STAGE_REPORTS' || key === 'SNAPSHOTS' || key === 'USERS') return;
+          if (key === 'SNAPSHOTS' || key === 'DATA_STAGE_REPORTS') return;
         }
 
         // (D) Skip items handled by specialized listeners above
@@ -395,24 +522,7 @@ export const storageService = {
       console.error("Initialization Sync failed", e);
     }
 
-    // Finally, handle commercial invoices hybrid load
-    let invoicesLoaded = false;
-    if (dbState.commercialInvoices && dbState.commercialInvoices.length > 0) {
-      invoicesLoaded = true;
-    }
-
-    if (!invoicesLoaded) {
-      const backupData = localStorage.getItem(INVOICES_BACKUP_KEY);
-      if (backupData) {
-        try {
-          const parsedBackup = JSON.parse(backupData);
-          if (Array.isArray(parsedBackup)) {
-            dbState.commercialInvoices = parsedBackup;
-            notifyListeners();
-          }
-        } catch (e) { }
-      }
-    }
+    // Invoices are loaded via IndexedDB hydrate in Step 2 or via onSnapshot
   },
 
   getParts: () => dbState.parts || [],
@@ -420,102 +530,171 @@ export const storageService = {
   isMasterDataLoading: () => isMDLoading,
   isBackgroundSyncing: () => isBackgroundSyncing,
 
-  loadMasterData: async () => {
-    console.log("DEBUG: loadMasterData called. db exists?", !!db, "isMDLoading?", isMDLoading);
-
-    if (!db || isMDLoading) {
-      console.warn("DEBUG: loadMasterData ABORTED due to missing DB or already loading.");
-      return;
-    }
+  loadMasterData: async (force: boolean = false) => {
+    if (!db || isMDLoading) return;
 
     try {
       isMDLoading = true;
       notifyListeners();
 
-      const migrationKey = 'logimaster_md_migrated_v2';
-      const isMigrated = localStorage.getItem(migrationKey) === 'true';
-
-      // 1. HYDRATE FROM INDEXEDDB (Cold Start/Reset)
-      if (dbState.parts.length === 0) {
-        console.log("💾 Hydrating Master Data from IndexedDB...");
+      // 1. HYDRATE FROM INDEXEDDB
+      if (dbState.parts.length < 10) {
         const localParts = await indexedDbService.getAllParts();
         if (localParts.length > 0) {
           dbState.parts = localParts;
           notifyListeners();
         }
+        notifyListeners();
       }
 
-      // 2. BACKGROUND SYNC (Non-Blocking)
-      // Allow UI to render immediately with whatever we Hydrated in Step 1.
       isMDLoading = false;
       notifyListeners();
 
-      // Trigger Cloud Sync in Background (Promise not awaited by UI)
+      // 2. BACKGROUND SYNC (Bidirectional cleanup)
       (async () => {
         try {
           isBackgroundSyncing = true;
           notifyListeners();
-          console.log("☁️ Triggering Background Master Data Sync...");
+
           const partsSnap = await getDocs(collection(db, COLS.PARTS));
           const cloudParts = partsSnap.docs.map(d => {
             const data = d.data();
             return {
               ...data,
               id: d.id,
+              PART_NUMBER: (data.PART_NUMBER || data.PartNo || data.PARTNUMBER || '').toString().toUpperCase().trim(),
               UPDATE_TIME: data.UPDATE_TIME || '1970-01-01T00:00:00.000Z'
             } as RawMaterialPart;
-          });
+          }).filter(p => !!p.PART_NUMBER);
 
-          // ROBUST SYNC CHECK: O(N) Map comparison
-          // We must verify that EVERY item matches, triggering update if ANY timestamp differs.
-          let needsUpdate = false;
+          const cloudIds = new Set(cloudParts.map(p => p.id));
+          // 1. Get Delta Sync (Only what changed since last load)
+          const lastSyncTime = localStorage.getItem('last_parts_sync_time') || '1970-01-01T00:00:00.000Z';
+          const qRecent = query(collection(db, COLS.PARTS), where('UPDATE_TIME', '>', lastSyncTime));
+          const recentSnap = await getDocs(qRecent);
 
-          if (cloudParts.length !== dbState.parts.length) {
-            needsUpdate = true;
-          } else {
-            const localMap = new Map(dbState.parts.map(p => [p.id, p]));
-            for (const cloudP of cloudParts) {
-              const localP = localMap.get(cloudP.id);
-              if (!localP || localP.UPDATE_TIME !== cloudP.UPDATE_TIME) {
-                needsUpdate = true;
-                break;
+          let updatedParts = [...dbState.parts];
+          let recentData = recentSnap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
+
+          if (recentData.length > 0) {
+            console.log(`[Sync] Found ${recentData.length} recent changes.`);
+            recentData.forEach(cloudP => {
+              const standardPN = (cloudP.PART_NUMBER || '').toString().toUpperCase().trim();
+              // Kill all local ghosts of this PN
+              updatedParts = updatedParts.filter(p =>
+                p.id !== cloudP.id &&
+                (p.PART_NUMBER || '').toString().toUpperCase().trim() !== standardPN
+              );
+              updatedParts.push(cloudP);
+            });
+            localStorage.setItem('last_parts_sync_time', new Date().toISOString());
+          }
+
+          // 2. COUNTER DISCREPANCY CHECK (Fixing the 50 vs 12K issue)
+          const localCount = updatedParts.length;
+          const cloudCount = cloudIds.size;
+
+          // Trigger full sync if:
+          // 1. Force is true
+          // 2. Local count is significantly more than cloud (legacy fix)
+          // 3. Local count is significantly LESS than cloud (the current bug)
+          // 4. Local count is zero but cloud has data
+          const needsFullSync = force ||
+            localCount > 15000 ||
+            (cloudCount > 100 && localCount < (cloudCount * 0.8)) ||
+            (localCount === 0 && cloudCount > 0);
+
+          if (needsFullSync) {
+            console.log(`[Sync] Discrepancy detected (Local: ${localCount}, Cloud: ${cloudCount}) or forced. Refreshing full state...`);
+
+            // If we already have cloudParts from step 1, we can just use those instead of re-fetching in batches
+            // unless the collection is so gargantuan that we prefer the batched memory management.
+            // For 12K-20K, cloudParts is already in memory from line 559.
+
+            if (cloudParts.length > 0) {
+              dbState.parts = cloudParts;
+              await indexedDbService.clearParts();
+              await indexedDbService.saveParts(cloudParts);
+            } else {
+              // Fallback to batched logic if cloudParts was somehow lost or empty but ids exist
+              let allCloud: RawMaterialPart[] = [];
+              let lastVisible = null;
+              let hasMore = true;
+              const BATCH_SIZE = 2000;
+
+              while (hasMore) {
+                let qAll = lastVisible
+                  ? query(collection(db, COLS.PARTS), orderBy('UPDATE_TIME', 'desc'), startAfter(lastVisible), limit(BATCH_SIZE))
+                  : query(collection(db, COLS.PARTS), orderBy('UPDATE_TIME', 'desc'), limit(BATCH_SIZE));
+
+                const batchSnap = await getDocs(qAll);
+                const batchData = batchSnap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
+                allCloud = [...allCloud, ...batchData];
+                if (batchSnap.docs.length < BATCH_SIZE) hasMore = false;
+                else lastVisible = batchSnap.docs[batchSnap.docs.length - 1];
               }
+              dbState.parts = allCloud;
+              await indexedDbService.clearParts();
+              await indexedDbService.saveParts(allCloud);
             }
+
+            localStorage.setItem('last_parts_sync_time', new Date().toISOString());
+            console.log(`[Sync] Full state synchronization complete. Total items: ${dbState.parts.length}`);
+          } else if (recentData.length > 0) {
+            dbState.parts = updatedParts;
+            await indexedDbService.saveParts(recentData);
           }
 
-          if (needsUpdate) {
-            console.log(`🔄 Differences found. Updating Local Store (${dbState.parts.length} -> ${cloudParts.length})...`);
-            dbState.parts = cloudParts;
-            await indexedDbService.clearParts();
-            await indexedDbService.saveParts(cloudParts);
-            notifyListeners(); // Update UI with fresh data
-            console.log("✅ Background Sync Complete.");
-          } else {
-            console.log("✅ Local Data is up to date (Background Check).");
-            // DEBUG: User sees empty table?
-            if (dbState.parts.length === 0) {
-              alert("⚠️ ALERTA: La nube respondió con 0 registros.\nSi esto es Producción, verifica permisos o la conexión.");
-            }
-          }
+          notifyListeners();
         } catch (err: any) {
           console.error("⚠️ Background Sync Failed:", err);
-          alert(`⛔ ERROR DE SINCRONIZACIÓN:\n\n${err.message || err}`);
-          // Silent fail, keep using local data
         } finally {
           isBackgroundSyncing = false;
           notifyListeners();
         }
       })();
-
     } catch (e: any) {
       console.error("Master Data Init failed", e);
-      // Don't throw, just let UI use whatever it has
     } finally {
-      // Ensure loading state is cleared in case of immediate error
       isMDLoading = false;
       notifyListeners();
     }
   },
+
+  /**
+   * DIRECT CLOUD CHECK: Bypasses local state to find actual records in Firestore.
+   * This is used during bulk upload to eliminate "ghost" interference.
+   */
+  validatePartsExistInCloud: async (partNumbers: string[]): Promise<Map<string, string[]>> => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+
+    const results = new Map<string, string[]>(); // PART_NUMBER -> [id1, id2, ...]
+    const fieldsToSearch = ["PART_NUMBER", "PartNo", "PARTNUMBER", "PartNumber", "pn"];
+    const cleanNumbers = partNumbers.map(n => n.toString().toUpperCase().trim()).filter(n => !!n);
+    const CHUNK_SIZE = 30;
+
+    for (const field of fieldsToSearch) {
+      for (let i = 0; i < cleanNumbers.length; i += CHUNK_SIZE) {
+        const chunk = cleanNumbers.slice(i, i + CHUNK_SIZE);
+        const q = query(collection(db, COLS.PARTS), where(field, "in", chunk));
+        const snap = await getDocs(q);
+
+        snap.docs.forEach(doc => {
+          const data = doc.data();
+          const docVal = (data[field] || '').toString().toUpperCase().trim();
+          if (docVal) {
+            const existing = results.get(docVal) || [];
+            if (!existing.includes(doc.id)) {
+              results.set(docVal, [...existing, doc.id]);
+            }
+          }
+        });
+      }
+    }
+
+    return results;
+  },
+
 
   getShipments: () => dbState.shipments || [],
   getVesselTracking: () => dbState.vesselTracking || [],
@@ -529,9 +708,9 @@ export const storageService = {
 
   // --- SUPPLIERS CRUD ---
   // --- SUPPLIERS CRUD ---
-  upsertSupplier: async (record: Supplier) => {
+  updateSupplier: async (record: Supplier) => {
     const updated = { ...record, updatedAt: new Date().toISOString() };
-    const id = record.id || crypto.randomUUID();
+    const id = record.id || generateId();
 
     if (!db) throw new Error("Sin conexión a Internet.");
     await setDoc(doc(db, COLS.SUPPLIERS, id), sanitizeForFirestore({ ...updated, id }));
@@ -540,6 +719,8 @@ export const storageService = {
     const idx = dbState.suppliers.findIndex((s: any) => s.id === id);
     if (idx !== -1) dbState.suppliers[idx] = { ...updated, id };
     else dbState.suppliers.push({ ...updated, id });
+    notifyListeners();
+    saveLocal();
   },
 
   deleteSupplier: async (id: string) => {
@@ -548,12 +729,14 @@ export const storageService = {
 
     // Update Local
     dbState.suppliers = dbState.suppliers.filter((s: any) => s.id !== id);
+    notifyListeners();
+    saveLocal();
   },
 
   // --- LOGISTICS CRUD ---
   upsertLogistics: async (record: any) => {
     const updated = { ...record, updatedAt: new Date().toISOString() };
-    const id = record.id || crypto.randomUUID();
+    const id = record.id || generateId();
 
     if (!db) throw new Error("Sin conexión a Internet.");
     await setDoc(doc(db, COLS.LOGISTICS, id), sanitizeForFirestore({ ...updated, id }));
@@ -562,6 +745,8 @@ export const storageService = {
     const idx = dbState.logistics.findIndex((l: any) => l.id === id);
     if (idx !== -1) dbState.logistics[idx] = { ...updated, id };
     else dbState.logistics.push({ ...updated, id });
+    notifyListeners();
+    saveLocal();
   },
 
   deleteLogistics: async (id: string) => {
@@ -570,6 +755,8 @@ export const storageService = {
 
     // Update Local
     dbState.logistics = dbState.logistics.filter((l: any) => l.id !== id);
+    notifyListeners();
+    saveLocal();
   },
 
   // --- USER MANAGEMENT CRUD ---
@@ -584,6 +771,8 @@ export const storageService = {
     const idx = dbState.users.findIndex((u: any) => u.email === id);
     if (idx !== -1) dbState.users[idx] = { ...dbState.users[idx], ...updated };
     else dbState.users.push(updated);
+    notifyListeners();
+    saveLocal();
   },
 
   deleteUser: async (email: string) => {
@@ -592,18 +781,22 @@ export const storageService = {
 
     // Update Local
     dbState.users = dbState.users.filter((u: any) => u.email !== email);
+    notifyListeners();
+    saveLocal();
   },
   getDataStageReports: () => dbState.dataStageReports || [],
   getInvoiceItems: () => dbState.commercialInvoices || [],
 
   updateCost: async (cost: CostRecord) => {
-    const id = cost.id || crypto.randomUUID();
+    const id = cost.id || generateId();
     if (!db) throw new Error("Sin conexión a Internet.");
     await setDoc(doc(db, COLS.COSTS, id), sanitizeForFirestore(cost));
 
     // Update Local
     const idx = dbState.costs.findIndex((c: any) => c.id === id);
     if (idx !== -1) dbState.costs[idx] = { ...cost, id }; else dbState.costs.push({ ...cost, id });
+    notifyListeners();
+    saveLocal();
   },
 
   deleteCost: async (id: string) => {
@@ -612,6 +805,8 @@ export const storageService = {
 
     // Update Local
     dbState.costs = dbState.costs.filter((c: any) => c.id !== id);
+    notifyListeners();
+    saveLocal();
   },
 
   deleteCosts: async (ids: string[]) => {
@@ -624,6 +819,8 @@ export const storageService = {
 
     // Update Local
     dbState.costs = dbState.costs.filter((c: any) => !ids.includes(c.id));
+    notifyListeners();
+    saveLocal();
   },
 
   // Commercial Invoices CRUD (Cloud-Enabled & Direct Write)
@@ -685,10 +882,12 @@ export const storageService = {
     try {
       await setDoc(doc(db, COLS.INVOICES, item.id), sanitizeForFirestore(item));
 
-      // Update Local State AFTER success
-      const idx = dbState.commercialInvoices.findIndex((i: any) => i.id === item.id);
+      // Update Local State    // Local update (Enforce Immutability)
+      const idx = (dbState.commercialInvoices || []).findIndex((i: any) => i.id === item.id);
       if (idx !== -1) {
-        dbState.commercialInvoices[idx] = item;
+        const newInvoices = [...(dbState.commercialInvoices || [])];
+        newInvoices[idx] = item;
+        dbState.commercialInvoices = newInvoices;
         notifyListeners();
       }
     } catch (e) {
@@ -746,6 +945,8 @@ export const storageService = {
     await deleteDoc(doc(db, COLS.INVOICES, id));
 
     dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => i.id !== id);
+    notifyListeners();
+    saveLocal();
   },
 
   deleteInvoiceItems: async (ids: string[]) => {
@@ -767,6 +968,8 @@ export const storageService = {
     }
 
     dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => !ids.includes(i.id));
+    notifyListeners();
+    saveLocal();
   },
 
   deleteAutoLearnedInvoices: async () => {
@@ -808,22 +1011,50 @@ export const storageService = {
   seedDatabase: async () => { },
 
   updatePart: async (part: RawMaterialPart) => {
-    const id = part.id || crypto.randomUUID();
-    const data = { ...part, id, UPDATE_TIME: new Date().toISOString() };
-
     if (!db) throw new Error("Sin conexión a Internet.");
 
+    const id = part.id || part.PART_NUMBER || generateId();
+    const standardPN = (part.PART_NUMBER || '').toString().toUpperCase().trim();
+    const data = { ...part, id, PART_NUMBER: standardPN, UPDATE_TIME: new Date().toISOString() };
+
     try {
-      // 2. Sync Cloud
-      await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(data));
+      const batch = writeBatch(db);
 
-      // 1. Sync Local State Immediately
-      const idx = dbState.parts.findIndex((p: any) => p.id === id);
-      if (idx !== -1) dbState.parts[idx] = data; else dbState.parts.push(data);
+      // --- GHOST EXTERMINATOR ---
+      // Search for any record with the same Part Number but DIFFERENT ID
+      const ghosts = dbState.parts.filter(p =>
+        p.PART_NUMBER.toString().toUpperCase().trim() === standardPN &&
+        p.id !== id
+      );
+
+      if (ghosts.length > 0) {
+        console.log(`[Ghost Exterminator] Found ${ghosts.length} ghosts for ${standardPN}. Deleting...`);
+        ghosts.forEach(g => {
+          batch.delete(doc(db, COLS.PARTS, g.id));
+        });
+      }
+
+      // Save the actual part
+      batch.set(doc(db, COLS.PARTS, id), sanitizeForFirestore(data));
+      await batch.commit();
+
+      // --- SYNC LOCAL STATE ---
+      // 1. Remove ghosts from memory
+      let newParts = dbState.parts.filter(p => !ghosts.some(g => g.id === p.id));
+
+      // 2. Update or Add the current part
+      const idx = newParts.findIndex((p: any) => p.id === data.id);
+      if (idx !== -1) newParts[idx] = data; else newParts.push(data);
+
+      dbState.parts = newParts;
       notifyListeners();
+      saveLocal();
 
-      // Sync IndexedDB (Atomic)
+      // Sync IndexedDB
       await indexedDbService.putPart(data);
+      if (ghosts.length > 0) {
+        await Promise.all(ghosts.map(g => indexedDbService.deletePart(g.id)));
+      }
 
       // 3. Record change for Daily Automation
       try {
@@ -834,7 +1065,7 @@ export const storageService = {
           timestamp: new Date().toISOString(),
           action: 'UPDATE',
           user: 'System',
-          partNumbers: arrayUnion(part.PART_NUMBER || 'N/A'),
+          partNumbers: arrayUnion(standardPN),
           count: increment(1),
           reported: false
         }, { merge: true });
@@ -946,9 +1177,14 @@ export const storageService = {
     // Actually patchPart implies partial update.
     try {
       await setDoc(doc(db, COLS.PARTS, id), sanitizeForFirestore(updates), { merge: true });
-      // Local
+      // Local (Immutable)
       const idx = dbState.parts.findIndex((p: any) => p.id === id);
-      if (idx !== -1) dbState.parts[idx] = { ...dbState.parts[idx], ...updates };
+      if (idx !== -1) {
+        const newParts = [...dbState.parts];
+        newParts[idx] = { ...newParts[idx], ...updates };
+        dbState.parts = newParts;
+        notifyListeners();
+      }
     } catch (e) {
       console.warn("Patch Part failed", e);
     }
@@ -999,35 +1235,76 @@ export const storageService = {
   upsertParts: async (parts: RawMaterialPart[], onProgress?: (p: number) => void) => {
     if (!db) throw new Error("Sin conexión a Internet.");
 
-    const CHUNK_SIZE = 200;
+    const CHUNK_SIZE = 100;
     const total = parts.length;
+    const timestamp = new Date().toISOString();
 
-    for (let i = 0; i < total; i += CHUNK_SIZE) {
-      const chunk = parts.slice(i, i + CHUNK_SIZE);
+    // 1. PRE-ASSIGN IDs & PREPARE DATA
+    const preparedParts = parts.map(p => {
+      const id = p.id || generateId();
+      const rawPN = (p.PART_NUMBER || (p as any).PartNo || (p as any).PARTNUMBER || '').toString();
+      const partNumber = rawPN.toUpperCase().trim();
+      return { ...p, id, PART_NUMBER: partNumber, UPDATE_TIME: timestamp };
+    }).filter(p => !!p.PART_NUMBER);
+
+    console.log(`[Ghost Exterminator] Preparing ${preparedParts.length} parts for bulk upload with deep clean.`);
+
+    for (let i = 0; i < preparedParts.length; i += CHUNK_SIZE) {
+      const chunk = preparedParts.slice(i, i + CHUNK_SIZE);
       const batch = writeBatch(db);
 
+      const chunkPNs = chunk.map(p => p.PART_NUMBER);
+      const chunkIDs = new Set(chunk.map(p => p.id));
+
+      // Find ghosts for this chunk
+      const ghostIdsForChunk = new Set<string>();
+      dbState.parts.forEach(p => {
+        const standardPN = p.PART_NUMBER.toString().toUpperCase().trim();
+        if (chunkPNs.includes(standardPN) && !chunkIDs.has(p.id)) {
+          ghostIdsForChunk.add(p.id);
+        }
+      });
+
+      if (ghostIdsForChunk.size > 0) {
+        console.log(`[Ghost Exterminator] Found ${ghostIdsForChunk.size} ghosts in chunk. Deleting from Cloud...`);
+        ghostIdsForChunk.forEach(gid => {
+          batch.delete(doc(db, COLS.PARTS, gid));
+        });
+      }
+
+      // Upload Chunk
       chunk.forEach((p) => {
-        const id = p.id || crypto.randomUUID();
-        const partRef = doc(db, COLS.PARTS, id);
-        batch.set(partRef, sanitizeForFirestore({ ...p, id, UPDATE_TIME: new Date().toISOString() }));
+        batch.set(doc(db, COLS.PARTS, p.id), sanitizeForFirestore(p));
       });
 
       await batch.commit();
 
-      // Local
-      const dataChunk: any[] = [];
-      chunk.forEach(p => {
-        const id = p.id || crypto.randomUUID();
-        const data = { ...p, id, UPDATE_TIME: new Date().toISOString() };
-        dataChunk.push(data);
-        const idx = dbState.parts.findIndex(lp => lp.PART_NUMBER === p.PART_NUMBER);
-        if (idx !== -1) dbState.parts[idx] = data;
-        else dbState.parts.push(data);
-      });
-      await indexedDbService.saveParts(dataChunk);
+      // --- LOCAL SYNC ---
+      // 1. Filter out deleted ghosts from memory
+      let newLocalParts = dbState.parts.filter(p => !ghostIdsForChunk.has(p.id));
 
-      if (onProgress) onProgress(Math.min((i + CHUNK_SIZE) / total * 100, 100) / 100);
+      // 2. Standard Upsert Logic
+      chunk.forEach(p => {
+        const idx = newLocalParts.findIndex(ip => ip.id === p.id);
+        if (idx !== -1) {
+          newLocalParts[idx] = p;
+        } else {
+          // Double check for same PN in case pre-sync was stale
+          const pnIdx = newLocalParts.findIndex(ip => ip.PART_NUMBER === p.PART_NUMBER);
+          if (pnIdx !== -1) newLocalParts[pnIdx] = p; else newLocalParts.push(p);
+        }
+      });
+
+      dbState.parts = newLocalParts;
+      await indexedDbService.saveParts(chunk);
+      if (ghostIdsForChunk.size > 0) {
+        await Promise.all(Array.from(ghostIdsForChunk).map(gid => indexedDbService.deletePart(gid)));
+      }
+
+      notifyListeners();
+      if (onProgress) onProgress(Math.min((i + CHUNK_SIZE), total) / total);
     }
+
     notifyListeners();
     saveLocal();
     storageService.bumpPartsVersion();
@@ -1037,7 +1314,7 @@ export const storageService = {
     if (!db) throw new Error("Sin conexión a Internet.");
     const batch = writeBatch(db);
     items.forEach((item, idx) => {
-      const id = item.id || crypto.randomUUID();
+      const id = item.id || generateId();
       batch.set(doc(db, COLS.SHIPMENTS, id), sanitizeForFirestore({ ...item, id }));
     });
     await batch.commit();
@@ -1051,14 +1328,14 @@ export const storageService = {
     if (!db) throw new Error("Sin conexión a Internet.");
     const batch = writeBatch(db);
     items.forEach((item, idx) => {
-      const id = item.id || crypto.randomUUID();
+      const id = item.id || generateId();
       const cleanItem = { ...item, id, blNo: item.blNo ? String(item.blNo).trim() : '' };
       batch.set(doc(db, COLS.VESSEL_TRACKING, id), sanitizeForFirestore(cleanItem));
     });
     await batch.commit();
 
     // Local
-    const cleanItems = items.map(i => ({ ...i, id: i.id || crypto.randomUUID(), blNo: i.blNo ? String(i.blNo).trim() : '' }));
+    const cleanItems = items.map(i => ({ ...i, id: i.id || generateId(), blNo: i.blNo ? String(i.blNo).trim() : '' }));
     dbState.vesselTracking = [...dbState.vesselTracking, ...cleanItems];
     notifyListeners();
   },
@@ -1067,7 +1344,7 @@ export const storageService = {
     if (!db) throw new Error("Sin conexión a Internet.");
     const batch = writeBatch(db);
     items.forEach((item) => {
-      const id = item.id || crypto.randomUUID();
+      const id = item.id || generateId();
       batch.set(doc(db, COLS.EQUIPMENT, id), sanitizeForFirestore({ ...item, id }));
     });
     await batch.commit();
@@ -1079,13 +1356,13 @@ export const storageService = {
     if (!db) throw new Error("Sin conexión a Internet.");
     const batch = writeBatch(db);
     items.forEach((item) => {
-      const id = item.id || crypto.randomUUID();
+      const id = item.id || generateId();
       const cleanItem = { ...item, id, blNo: item.blNo ? String(item.blNo).trim() : '' };
       batch.set(doc(db, COLS.CUSTOMS, id), sanitizeForFirestore(cleanItem));
     });
     await batch.commit();
 
-    const cleanItems = items.map(i => ({ ...i, id: i.id || crypto.randomUUID(), blNo: i.blNo ? String(i.blNo).trim() : '' }));
+    const cleanItems = items.map(i => ({ ...i, id: i.id || generateId(), blNo: i.blNo ? String(i.blNo).trim() : '' }));
     dbState.customsClearance = [...dbState.customsClearance, ...cleanItems];
     notifyListeners();
   },
@@ -1094,7 +1371,7 @@ export const storageService = {
     if (!db) throw new Error("Sin conexión a Internet.");
     const batch = writeBatch(db);
     items.forEach((item) => {
-      const id = item.id || crypto.randomUUID();
+      const id = item.id || generateId();
       batch.set(doc(db, COLS.PRE_ALERTS, id), sanitizeForFirestore({ ...item, id }));
     });
     await batch.commit();
@@ -1104,7 +1381,7 @@ export const storageService = {
 
   upsertDataStageReport: async (report: DataStageReport) => {
     if (!db) throw new Error("Sin conexión a Internet.");
-    const id = report.id || crypto.randomUUID();
+    const id = report.id || generateId();
     const finalReport = { ...report, id };
     await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, id), sanitizeForFirestore(finalReport));
 
@@ -1115,7 +1392,7 @@ export const storageService = {
   updateShipment: async (shipment: Shipment) => {
     if (!db) throw new Error("Sin conexión a Internet.");
     const record = { ...shipment, updatedAt: new Date().toISOString() };
-    const id = record.id || crypto.randomUUID();
+    const id = record.id || generateId();
     await setDoc(doc(db, COLS.SHIPMENTS, id), sanitizeForFirestore({ ...record, id }));
 
     const idx = dbState.shipments.findIndex((s: any) => s.id === id);
@@ -1149,7 +1426,7 @@ export const storageService = {
 
   updateEquipmentTracking: async (record: EquipmentTrackingRecord) => {
     const updated = { ...record, updatedAt: new Date().toISOString() };
-    const id = updated.id || crypto.randomUUID();
+    const id = updated.id || generateId();
     if (!db) throw new Error("Sin conexión a Internet.");
 
     await setDoc(doc(db, COLS.EQUIPMENT, id), sanitizeForFirestore(updated));
@@ -1175,7 +1452,7 @@ export const storageService = {
 
   updateCustomsClearance: async (record: CustomsClearanceRecord, silent: boolean = false) => {
     const updated = { ...record, updatedAt: new Date().toISOString() };
-    const id = updated.id || crypto.randomUUID();
+    const id = updated.id || generateId();
 
     if (!silent) {
       logAction('CUSTOMS_UPDATE', `Pedimento: ${updated.pedimentoNo} | Container: ${updated.containerNo}`);
@@ -1215,20 +1492,23 @@ export const storageService = {
     }
     await batch.commit();
 
-    // Local Sync
-    const idx = dbState.customsClearance.findIndex((c: any) => c.id === id);
+    // Local Sync (Enforce Immutability)
+    const newCustoms = [...dbState.customsClearance];
+    const idx = newCustoms.findIndex((c: any) => c.id === id);
     if (idx !== -1) {
-      dbState.customsClearance[idx] = { ...updated, id };
+      newCustoms[idx] = { ...updated, id };
       if (updated.blNo) {
-        dbState.customsClearance.forEach((c: any, i: number) => {
+        newCustoms.forEach((c: any, i: number) => {
           if (c.blNo === updated.blNo && c.id !== id) {
-            dbState.customsClearance[i] = { ...c, ...sharedFields };
+            newCustoms[i] = { ...c, ...sharedFields };
           }
         });
       }
     } else {
-      dbState.customsClearance.push({ ...updated, id });
+      newCustoms.push({ ...updated, id });
     }
+    dbState.customsClearance = newCustoms;
+    notifyListeners();
   },
 
   deleteCustomsClearance: async (id: string) => {
@@ -1326,7 +1606,7 @@ export const storageService = {
   },
   updateVesselTracking: async (record: VesselTrackingRecord) => {
     const updated = { ...record, updatedAt: new Date().toISOString() };
-    const id = updated.id || crypto.randomUUID();
+    const id = updated.id || generateId();
 
     if (!db) throw new Error("Sin conexión a Internet.");
 
@@ -1391,7 +1671,7 @@ export const storageService = {
 
   updatePreAlert: async (record: PreAlertRecord) => {
     const updated = { ...record, updatedAt: new Date().toISOString() };
-    const id = record.id || crypto.randomUUID();
+    const id = record.id || generateId();
     if (!db) throw new Error("Sin conexión a Internet.");
     await setDoc(doc(db, COLS.PRE_ALERTS, id), sanitizeForFirestore(updated));
 
@@ -1504,7 +1784,7 @@ export const storageService = {
 
   addCost: async (cost: CostRecord) => {
     const updated = { ...cost, updatedAt: new Date().toISOString() };
-    const id = cost.id || crypto.randomUUID();
+    const id = cost.id || generateId();
     if (!db) throw new Error("Sin conexión a Internet.");
     await setDoc(doc(db, COLS.COSTS, id), sanitizeForFirestore({ ...updated, id }));
 
@@ -1646,6 +1926,7 @@ export const storageService = {
             subBatch.set(doc(db, COLS.CUSTOMS, item.id), sanitizeForFirestore(item));
           });
           await subBatch.commit();
+          await sleep(500); // Throttling: Wait 500ms between batches
         }
       } catch (e: any) {
         console.error("DataStage Sync Cloud Error:", e);
@@ -1736,46 +2017,15 @@ export const storageService = {
     saveLocal();
   },
   saveDraftDataStage: async (session: DataStageSession) => {
-    // 1. Try LocalStorage (Speed)
-    // 1. Try LocalStorage (Speed)
+    // 1. Try IndexedDB (Direct Storage)
     try {
-      const payload = JSON.stringify(session);
-      if (payload.length > 4000000) { // 4MB Limit Safety
-        console.warn("Draft too large for LocalStorage (" + (payload.length / 1024 / 1024).toFixed(2) + " MB). Saving Lean Draft only.");
-        throw new Error("Payload too large"); // Trigger fallback to lean
-      }
-      localStorage.setItem(DRAFT_DATA_STAGE_KEY, payload);
+      await indexedDbService.saveData('datastage_drafts', [session]);
     } catch (e) {
-      console.warn("Draft LocalStorage Full. Clearing old Reports to make space...");
-      try {
-        // Try to free space from Reports to save the Draft (Priority: Current Work > Old History)
-        let localReports = JSON.parse(localStorage.getItem(COLS.DATA_STAGE_REPORTS) || '[]');
-        while (localReports.length > 0) {
-          localReports.pop(); // Remove oldest
-          localStorage.setItem(COLS.DATA_STAGE_REPORTS, JSON.stringify(localReports));
-          try {
-            localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(session));
-            console.log("Draft saved after clearing history.");
-            return; // Success
-          } catch (retryErr) {
-            // Continue loop
-          }
-        }
-        // If reports empty and still fails, try lean draft
-        throw e;
-      } catch (e2) {
-        console.warn("Still full even after clearing history. Attempting lean save...");
-        try {
-          const leanSession = {
-            ...session,
-            rawFiles: session.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
-          };
-          localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(leanSession));
-        } catch (e3) {
-          console.error("Local persistence failed completely", e3);
-        }
-      }
+      console.error("Local persistence failed", e);
     }
+
+    // Explicitly remove from localStorage to free space
+    localStorage.removeItem(DRAFT_DATA_STAGE_KEY);
 
     // 2. Sync to Cloud (Unlimited* Storage)
     if (db) {
@@ -1839,9 +2089,22 @@ export const storageService = {
   },
 
   getDraftDataStage: async (): Promise<DataStageSession | null> => {
-    // 1. Get Local Data (Fast/Offline)
-    const localStr = localStorage.getItem(DRAFT_DATA_STAGE_KEY);
-    const localDraft: DataStageSession | null = localStr ? JSON.parse(localStr) : null;
+    // 1. Get Local Data (IndexedDB)
+    const drafts = await indexedDbService.getAllData('datastage_drafts');
+    let localDraft: DataStageSession | null = drafts.length > 0 ? drafts[0] : null;
+
+    // Check localStorage fallback for legacy users
+    if (!localDraft) {
+      const localStr = localStorage.getItem(DRAFT_DATA_STAGE_KEY);
+      if (localStr) {
+        try {
+          localDraft = JSON.parse(localStr);
+          // Migrate to IDB
+          await indexedDbService.saveData('datastage_drafts', [localDraft as any]);
+          localStorage.removeItem(DRAFT_DATA_STAGE_KEY);
+        } catch (e) { }
+      }
+    }
 
     // 2. Try Cloud (If available)
     if (db) {
@@ -1868,19 +2131,15 @@ export const storageService = {
                 }
               } catch (err) {
                 console.error("Failed to hydrate draft from storage", err);
-                // Fallback to local if hydration fails but local exists? 
-                // Or return empty to avoid inconsistency.
-                // If hydration fails, we probably shouldn't return a broken empty draft.
                 if (localDraft) return localDraft;
               }
             }
 
-            localStorage.setItem(DRAFT_DATA_STAGE_KEY, JSON.stringify(finalDraft));
+            // Persist locally to IDB
+            await indexedDbService.saveData('datastage_drafts', [finalDraft]);
             return finalDraft;
           } else {
             console.log("Using Local Draft (Newer or Equal)");
-            // Determine if we should push local to cloud? 
-            // Maybe, but let's just return local for speed and safety.
             return localDraft;
           }
         }
@@ -1893,6 +2152,7 @@ export const storageService = {
   },
 
   clearDraftDataStage: async () => {
+    await indexedDbService.clearStore('datastage_drafts');
     localStorage.removeItem(DRAFT_DATA_STAGE_KEY);
     if (db) {
       try {
@@ -1995,35 +2255,36 @@ export const storageService = {
 
   // Senior Frontend Engineer: Implemented snapshot management methods.
   // Senior Frontend Engineer: Implemented snapshot management methods (Isolated Storage)
-  getSnapshots: () => {
+  getSnapshots: async () => {
     try {
-      const stored = localStorage.getItem(RESTORE_POINTS_KEY);
-      return stored ? JSON.parse(stored) : [];
+      return await indexedDbService.getAllData('restore_points');
     } catch (e) { return []; }
   },
 
-  createSnapshot: (action: string) => {
+  createSnapshot: async (action: string) => {
     try {
-      // 1. Get current snapshots from separate storage
-      const stored = localStorage.getItem(RESTORE_POINTS_KEY);
-      const output = stored ? JSON.parse(stored) : [];
+      // 1. Get current snapshots from IDB
+      const output = await indexedDbService.getAllData('restore_points');
 
-      // 2. Create new snapshot (Only Commercial Invoices for now to save space, or full dbState but carefully)
-      // Safety Net is specifically for Commercial Invoices loss.
+      // 2. Create new snapshot (Only Commercial Invoices for now to save space)
       const newSnapshot: RestorePoint = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         timestamp: new Date().toISOString(),
         reason: action,
-        data: dbState.commercialInvoices || [], // Only backing up Invoices to avoid huge size
+        data: dbState.commercialInvoices || [],
         sizeKB: 0
       };
       newSnapshot.sizeKB = Math.round(JSON.stringify(newSnapshot.data).length / 1024);
 
-      // 3. Prepend and Limit to 5
-      const updated = [newSnapshot, ...output].slice(0, 5);
+      // 3. Prepend and Limit to 10 (Higher capacity in IDB)
+      const updated = [newSnapshot, ...output].slice(0, 10);
 
-      // 4. Save to separate key
-      localStorage.setItem(RESTORE_POINTS_KEY, JSON.stringify(updated));
+      // 4. Save to IDB
+      await indexedDbService.saveData('restore_points', updated);
+
+      // Cleanup legacy localStorage
+      localStorage.removeItem(RESTORE_POINTS_KEY);
+
       console.log(`Snapshot created: ${action} `);
       return true;
     } catch (e) {
@@ -2032,16 +2293,15 @@ export const storageService = {
     }
   },
 
-  restoreSnapshot: (id: string) => {
+  restoreSnapshot: async (id: string) => {
     try {
-      const stored = localStorage.getItem(RESTORE_POINTS_KEY);
-      const points = stored ? JSON.parse(stored) : [];
+      const points = await indexedDbService.getAllData('restore_points');
       const snap = points.find((s: any) => s.id === id);
       if (!snap) return false;
 
       console.log(`Restoring snapshot: ${snap.reason} `);
       dbState.commercialInvoices = snap.data;
-      saveLocal(); // Persist restored state
+      saveLocal();
       notifyListeners();
       return true;
     } catch (e) {
@@ -2050,13 +2310,12 @@ export const storageService = {
     }
   },
 
-  deleteSnapshot: (id: string) => {
+  deleteSnapshot: async (id: string) => {
     try {
-      const stored = localStorage.getItem(RESTORE_POINTS_KEY);
-      const points = stored ? JSON.parse(stored) : [];
+      const points = await indexedDbService.getAllData('restore_points');
       const updated = points.filter((s: any) => s.id !== id);
-      localStorage.setItem(RESTORE_POINTS_KEY, JSON.stringify(updated));
-      notifyListeners(); // Optional, if we want UI to update instantly (might need a new listener for snapshots though)
+      await indexedDbService.saveData('restore_points', updated);
+      notifyListeners();
     } catch (e) { console.error(e); }
   },
 
@@ -2068,7 +2327,7 @@ export const storageService = {
   uploadTrainingDocument: async (file: File, provider: string, comments: string) => {
     // Defines the record structure for local state update
     const newRecord = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       fileName: file.name,
       fileUrl: URL.createObjectURL(file), // Mock URL for local
       provider: provider || 'Unknown',
@@ -2408,6 +2667,8 @@ export const storageService = {
       const blNo = (record.blNo || '').trim();
       if (!blNo) continue;
 
+      const clave = (record.clavePedimento || 'A1').trim();
+
       const containers = dbState.vesselTracking
         .filter(v => (v.blNo || '').trim() === blNo)
         .map(v => (v.containerNo || '').trim());
@@ -2418,7 +2679,7 @@ export const storageService = {
         uniqueContainers.forEach(containerNo => {
           itemsToCreate.push({
             ...record,
-            id: crypto.randomUUID(),
+            id: `${blNo}-${containerNo}-${clave}`,
             containerNo: containerNo,
             updatedAt: new Date().toISOString()
           });
@@ -2427,7 +2688,7 @@ export const storageService = {
       } else {
         itemsToCreate.push({
           ...record,
-          id: crypto.randomUUID(),
+          id: `${blNo}-Bulk/LCL-${clave}`,
           containerNo: 'Bulk/LCL',
           updatedAt: new Date().toISOString()
         });
@@ -2465,6 +2726,8 @@ export const storageService = {
           });
 
           await batchOperation.commit();
+          console.log(`[REPAIR] Committed batch of ${chunk.length} items.`);
+          await sleep(500); // Throttling: Wait 500ms between batches
         }
       } catch (e: any) {
         console.error("❌ Cloud Migration Failed:", e);

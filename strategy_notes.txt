@@ -1,0 +1,13 @@
+
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { VucemAutomation } from './services/vucem/vucemAutomation'; // Assuming this can be imported in Node context with some polyfills if needed, or I might need to mock parts of it. 
+// Actually, vucemAutomation is a class that depends on browser APIs (like DOMParser, fetch, etc.) which might not work in Node directly without polyfills.
+// However, I can use the same logic if I adapt it or if I run it in the browser.
+// Running in browser is safer for vucemAutomation.
+
+// BETTER STRATEGY: Create a script that adds a "Reprocess All" button to the UI for the user to click,
+// OR create a temporary Node script that uses a SIMPLIFIED version of the logic to update Firestore directly.
+
+// Given the complexity of vucemAutomation (PDF parsing, Gemini API, heavy logic), it's best to run it in the client context where it's already working.
+// So I will modify ExpedienteElectronico.tsx to add a temporary "🚨 REPROCESAR TODO" button.

@@ -12,6 +12,11 @@ export const SmartDocs = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [syncStats, setSyncStats] = useState({ current: 0, total: 0, status: '' });
+  const [replacementMode, setReplacementMode] = useState<'replace' | 'skip' | 'replaceAll' | 'skipAll' | null>(null);
+
+  // Para evitar "hacerse bolas" en loops asíncronos con estado stale
+  const batchActionRef = useRef<'replaceAll' | 'skipAll' | null>(null);
+  const abortIngestionRef = useRef(false);
 
   // Correction State
   const [extractedItems, setExtractedItems] = useState<(ExtractedInvoiceItem & { matchedPart?: RawMaterialPart })[]>([]);
@@ -22,20 +27,20 @@ export const SmartDocs = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleZipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setLoading(true);
+  const handleZipUpload = async (file: File, zipIndex?: number, totalZips?: number) => {
     setError('');
+    // No reseteamos batchActionRef aquí para que la decisión persista entre ZIPs de la misma carga
     setSyncStats({ current: 0, total: 0, status: 'Iniciando descompresión...' });
+    const batchPrefix = (zipIndex !== undefined && totalZips !== undefined) ? `[Carpeta ${zipIndex + 1}/${totalZips}] ` : '';
+    console.log(`${batchPrefix}📦 ZIP Processing:`, file.name);
 
     try {
       const JSZip = (await import('jszip')).default;
       const zip = await JSZip.loadAsync(file);
       const files = Object.keys(zip.files).filter(name => !zip.files[name].dir && !name.includes('__MACOSX'));
 
-      setSyncStats({ current: 0, total: files.length, status: `Detectados ${files.length} archivos.` });
+      console.log(`${batchPrefix}📂 ZIP cargado. Detectados ${files.length} archivos relevantes.`);
+      setSyncStats({ current: 0, total: files.length, status: `${batchPrefix}Detectados ${files.length} archivos.` });
 
       let processed = 0;
       for (const filename of files) {
@@ -43,22 +48,25 @@ export const SmartDocs = () => {
           const nameOnly = filename.split('/').pop() || filename;
           const lowerName = nameOnly.toLowerCase();
 
-          // FILTER: Only process PDFs if they match specific keywords
+          // FILTER: Only process PDFs if they match specific keywords or naming conventions
           if (lowerName.endsWith('.pdf')) {
+            // Naming convention: P (complete) vs PS (simplified)
+            const startsWithP = lowerName.match(/^p\d+/);
+            const startsWithPS = lowerName.match(/^ps\d+/);
+
+            // Keywords
             const isNormal = lowerName.includes('normal') || lowerName.includes('norm') || lowerName.includes('completo') || lowerName.includes('extendido');
             const isSimplified = lowerName.includes('simplificado') || lowerName.includes('simp') || lowerName.endsWith('s.pdf') || lowerName.includes(' -s');
 
-            if (isSimplified && !isNormal) {
-              console.log(`⏩ Saltando PDF simplificado: ${nameOnly}`);
-              continue; // Skip simplified as requested
-            }
-
-            if (!isNormal && !isSimplified) {
-              // Safety: If it doesn't match normal but isn't explicitly simplified, 
-              // we follow Alex's rule: only process if it says normal/norm/completo/extendido.
-              console.log(`⏩ Saltando archivo no solicitado: ${nameOnly}`);
+            // Logic:
+            // 1. If it has PS prefix or is explicitly simplified, skip it
+            if (startsWithPS || (isSimplified && !startsWithP)) {
+              setSyncStats(prev => ({ ...prev, status: `${batchPrefix}⏩ Saltando versión simplificada: ${nameOnly}` }));
+              await new Promise(r => setTimeout(r, 600));
               continue;
             }
+
+            // Otherwise, we process ALL PDFs in a Digital Dossier (COVES, ACUSES, etc)
           }
 
           const content = await zip.files[filename].async('uint8array');
@@ -66,9 +74,34 @@ export const SmartDocs = () => {
           setSyncStats(prev => ({ ...prev, current: processed + 1, status: `Procesando ${nameOnly}...` }));
 
           // Race with 60s timeout - FAIL FAST
-          const fileProcessPromise = vucemAutomation.processLocalFile(nameOnly, content, (msg) => {
-            setSyncStats(prev => ({ ...prev, status: msg }));
-          });
+          const fileProcessPromise = vucemAutomation.processLocalFile(
+            nameOnly,
+            content,
+            (msg) => setSyncStats(prev => ({ ...prev, status: msg })),
+            async (fName, pedNo) => {
+              // Priority 1: Check the Ref (it's always fresh in async loops)
+              if (batchActionRef.current === 'replaceAll') return 'replaceAll';
+              if (batchActionRef.current === 'skipAll') return 'skipAll';
+
+              const choice = window.confirm(`El archivo "${fName}" ya existe en el pedimento ${pedNo}.\n\n¿Deseas REEMPLAZARLO?\n(Aceptar = Reemplazar, Cancelar = Saltar)`);
+
+              if (choice) {
+                if (window.confirm(`¿Deseas REEMPLAZAR TODOS los duplicados que se encuentren en esta CARGA MASIVA?`)) {
+                  batchActionRef.current = 'replaceAll';
+                  setReplacementMode('replaceAll'); // Para UI
+                  return 'replaceAll';
+                }
+                return 'replace';
+              } else {
+                if (window.confirm(`¿Deseas SALTAR TODOS los duplicados que se encuentren en esta CARGA MASIVA?`)) {
+                  batchActionRef.current = 'skipAll';
+                  setReplacementMode('skipAll'); // Para UI
+                  return 'skipAll';
+                }
+                return 'skip';
+              }
+            }
+          );
 
           const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error(`Tiempo agotado (60s) en: ${nameOnly}`)), 60000)
@@ -84,28 +117,45 @@ export const SmartDocs = () => {
           return; // STOP THE ENTIRE PROCESS
         }
       }
-      alert(`✅ Ingesta completada. Se procesaron los ${processed} archivos correctamente.`);
+      return processed;
     } catch (err: any) {
       setError('Error al procesar el archivo ZIP: ' + err.message);
     } finally {
       setLoading(false);
       setSyncStats({ current: 0, total: 0, status: '' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const fileType = file.type || 'image/jpeg';
+    const files = Array.from(e.target.files || []) as File[];
+    if (files.length === 0) return;
 
     setLoading(true);
     setError('');
 
     if (activeTab === 'ingestion') {
-      handleZipUpload(e);
+      batchActionRef.current = null;
+      let totalFilesProcessed = 0;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        try {
+          const processedCount = await handleZipUpload(file, i, files.length);
+          totalFilesProcessed += (processedCount || 0);
+        } catch (err: any) {
+          console.error(`Error procesando ZIP ${file.name}:`, err);
+          setError(prev => `${prev}\nError en ${file.name}: ${err.message}`);
+        }
+      }
+      setLoading(false);
+      setSyncStats({ current: 0, total: 0, status: '' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      alert(`✅ INGESTA MASIVA FINALIZADA.\nSe procesaron ${files.length} carpetas y un total de ${totalFilesProcessed} archivos.`);
       return;
     }
+
+    const file = files[0];
+    const fileType = file.type || 'image/jpeg';
 
     // Convert to Base64
     const reader = new FileReader();
@@ -162,26 +212,37 @@ export const SmartDocs = () => {
     doc.save("corrected_invoice.pdf");
   };
 
-  const saveCosts = () => {
+  const saveCosts = async () => {
     if (!selectedShipmentId) {
       alert("Please select a shipment to attach costs to.");
       return;
     }
-    extractedCosts.forEach(cost => {
-      storageService.addCost({
-        id: '',
-        shipmentId: selectedShipmentId,
-        type: cost.type,
-        amount: cost.amount,
-        currency: cost.currency,
-        provider: 'Unknown Provider', // Would extract from doc in real app
-        description: cost.description,
-        date: new Date().toISOString(),
-        status: 'Pending'
-      });
-    });
-    alert("Costs saved to database successfully!");
-    setExtractedCosts([]);
+
+    setLoading(true);
+    try {
+      const promises = extractedCosts.map(cost =>
+        storageService.addCost({
+          id: '',
+          shipmentId: selectedShipmentId,
+          type: cost.type,
+          amount: cost.amount,
+          currency: cost.currency,
+          provider: 'Unknown Provider',
+          description: cost.description,
+          date: new Date().toISOString(),
+          status: 'Pending'
+        })
+      );
+
+      await Promise.all(promises);
+      alert("Costs saved to database successfully!");
+      setExtractedCosts([]);
+    } catch (e: any) {
+      console.error("Failed to save costs", e);
+      alert(`Error saving costs: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -244,6 +305,7 @@ export const SmartDocs = () => {
             ref={fileInputRef}
             className="hidden"
             accept={activeTab === 'ingestion' ? '.zip' : 'image/*,.pdf'}
+            multiple={activeTab === 'ingestion'}
             onChange={handleFileUpload}
           />
 

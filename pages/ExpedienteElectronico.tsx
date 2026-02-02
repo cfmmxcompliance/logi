@@ -236,16 +236,23 @@ export const ExpedienteElectronico: React.FC<Props> = ({ setActiveTab }) => {
                     formattedPed = `${fullPed.slice(0, 2)}  ${fullPed.slice(2, 4)}  ${fullPed.slice(4, 8)}  ${fullPed.slice(8)}`;
                 }
 
+                const ivaPrv = fins.ivaPrv || (Math.round((fins.prv || 0) * 0.16)) || 0;
+
+                let country = fins.supplierCountry || "";
+                if (!country && (fins.supplierName || "").toUpperCase().includes("CFMOTO")) country = "CN";
+                if (!country && (fins.supplierName || "").toUpperCase().includes("ZHEJIANG")) country = "CN";
+                if (!country && (fins.supplierName || "").toUpperCase().includes("MEXICO")) country = "MX";
+
                 return {
                     "Pedimento Number": formattedPed,
                     "Monto Pagado": fins.montoPagado || 0,
                     "Referencia Ampliada": fins.lineaCaptura || "",
                     "Fiscal ID": fins.supplierTaxId || "",
                     "Supplier Name": fins.supplierName || "",
-                    "Country": fins.supplierCountry || "",
+                    "Country": country,
                     "Fixed Assets (Yes/No)": fixedAssets,
                     "Merchandise Custom Value": fins.valorAduana || 0,
-                    "Prevalidation VAT": fins.ivaPrv || 0,
+                    "Prevalidation VAT": ivaPrv,
                     "Import VAT": fins.iva || 0,
                     "Prevalidation (PRV)": fins.prv || 0,
                     "Custom Duties (DTA)": fins.dta || 0,

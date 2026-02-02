@@ -85,10 +85,10 @@ async function extractWithGemini(fileBuffer, fileName, mimeType) {
 }
 
 async function debugExtraction() {
-    console.log("🚀 STARTING DEBUG EXTRACTION FOR 6100038...");
+    console.log("🚀 STARTING DEBUG EXTRACTION FOR 6000092...");
 
     const snap = await getDocs(collection(db, 'electronic_dossiers'));
-    const d = snap.docs.find(doc => doc.data().numPedimento.replace(/\s+/g, '').includes("6100038"));
+    const d = snap.docs.find(doc => doc.data().numPedimento.includes("6100103"));
 
     if (!d) {
         console.log("Dossier not found");

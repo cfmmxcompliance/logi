@@ -45,16 +45,16 @@ async function extractWithGemini(fileBuffer, fileName, mimeType) {
     - dta (Number, Custom Duty)
     - igi (Number, General Import Tax)
     - prv (Number, Prevalidation)
-    - ivaPrv (Number, VAT on Prevalidation, usually 16% of PRV)
-    - cnt (Number, CNT / Cuota Compensatoria / Fee)
-    - otrosCargos (Number, Sum of other fees like DTA/IGI/etc if not listed elsewhere)
-    - fechaPago (String, look for "Fecha de Pago")
-    - fechaEntrada (String, look for "Fecha de Entrada")
-    - supplierName (String, the main vendor/proveedor/vendedor)
-    - supplierTaxId (String, Tax ID/Tax Number of supplier / RFC Proveedor)
-    - banco (String, Bank Name / Institucion Bancaria)
-    - lineaCaptura (String, Reference / Linea de Captura / Referencia)
-    - clavePedimento (String, Regimen/Clave, e.g., A1, V1, AF)
+    - ivaPrv (Number, VAT on Prevalidation)
+    - cnt (Number, CNT / Cuota Compensatoria)
+    - otrosCargos (Number, Sum of other fees)
+    - fechaPago (String, YYYY-MM-DD or DD/MM/YYYY)
+    - fechaEntrada (String, YYYY-MM-DD or DD/MM/YYYY)
+    - supplierName (String, the main vendor)
+    - supplierTaxId (String, Tax ID of supplier)
+    - banco (String, Bank Name / Institucion Bancaria. DO NOT MISS THIS.)
+    - lineaCaptura (String, Reference / Linea de Captura. IGNORE "NO APLICA" - if only "NO APLICA" exists, return "")
+    - clavePedimento (String, The 2-character Clave, e.g., IN, A1, V1. IMPORTANT: "ITE" is the REGIMEN, not the Clave. If Regimen is ITE, the Clave is usually IN. Only return 2-character codes.)
     
     If a value is missing, use 0 for numbers and "" for strings.
     `;
@@ -160,11 +160,15 @@ async function startExtraction() {
                     const newVal = fins[key];
                     const oldVal = existingFins[key];
 
-                    // SAFE MERGE: Only update if the current field is missing or zero
+                    // TARGETED CORRECTION: Define what needs to be fixed even if not empty
+                    const isBadClave = key === 'clavePedimento' && (oldVal === 'ITE' || oldVal === 'R1' || oldVal?.length > 2);
+                    const isBadLC = key === 'lineaCaptura' && (oldVal?.includes('NO APLICA') || oldVal?.includes('SIN PAGO'));
+                    const isMissingBank = key === 'banco' && (!oldVal || oldVal === '0' || oldVal === '');
+
                     const isEmpty = !oldVal || oldVal === 0 || oldVal === "0" || oldVal === "";
                     const hasNewData = newVal !== undefined && newVal !== null && newVal !== 0 && newVal !== "";
 
-                    if (isEmpty && hasNewData) {
+                    if ((isEmpty || isBadClave || isBadLC || isMissingBank) && hasNewData) {
                         mergedFins[key] = newVal;
                         changesCount++;
                     }

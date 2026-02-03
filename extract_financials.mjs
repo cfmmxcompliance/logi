@@ -39,13 +39,13 @@ async function extractWithGemini(fileBuffer, fileName, mimeType) {
     
     Fields to Extract:
     - pedimentoNum (String, full 15 digits if available, else 7)
-    - montoPagado (Number, Total Efectivo at bottom)
+    - montoPagado (Number, Total Efectivo at bottom. CRITICAL FOR R1: If "DIFERENCIAS DE CONTRIBUCIONES A NIVEL PEDIMENTO" table exists, take the total from "DIFERENCIAS TOTALES" / "EFECTIVO" in that table. Ignore the main total.)
     - valorAduana (Number, Merchandise Value / Valor Aduana)
-    - iva (Number, VAT)
-    - dta (Number, Custom Duty)
-    - igi (Number, General Import Tax)
-    - prv (Number, Prevalidation)
-    - ivaPrv (Number, VAT on Prevalidation)
+    - iva (Number, VAT. CRITICAL FOR R1: If "DIFERENCIAS..." table exists, look for IVA there. IF NOT FOUND IN DIFFERENCE TABLE, RETURN 0. DO NOT, under any circumstances, take the value from the main table.)
+    - dta (Number, Custom Duty. CRITICAL FOR R1: If "DIFERENCIAS..." table exists, look for DTA there. IF NOT FOUND IN DIFFERENCE TABLE, RETURN 0.)
+    - igi (Number, General Import Tax. CRITICAL FOR R1: If "DIFERENCIAS..." table exists, look for IGI there. IF NOT FOUND IN DIFFERENCE TABLE, RETURN 0.)
+    - prv (Number, Prevalidation. Check "DIFERENCIA" for R1. If not found, 0.)
+    - ivaPrv (Number, VAT on Prevalidation. Check "DIFERENCIA" for R1. If not found, 0.)
     - cnt (Number, CNT / Cuota Compensatoria)
     - otrosCargos (Number, Sum of other fees)
     - fechaPago (String, YYYY-MM-DD or DD/MM/YYYY)
@@ -161,14 +161,21 @@ async function startExtraction() {
                     const oldVal = existingFins[key];
 
                     // TARGETED CORRECTION: Define what needs to be fixed even if not empty
-                    const isBadClave = key === 'clavePedimento' && (oldVal === 'ITE' || oldVal === 'R1' || oldVal?.length > 2);
+                    const isBadClave = key === 'clavePedimento' && (oldVal === 'ITE' || oldVal?.length > 2);
                     const isBadLC = key === 'lineaCaptura' && (oldVal?.includes('NO APLICA') || oldVal?.includes('SIN PAGO'));
                     const isMissingBank = key === 'banco' && (!oldVal || oldVal === '0' || oldVal === '');
 
-                    const isEmpty = !oldVal || oldVal === 0 || oldVal === "0" || oldVal === "";
-                    const hasNewData = newVal !== undefined && newVal !== null && newVal !== 0 && newVal !== "";
+                    // R1 LOGIC: If the NEW data says it's R1, we might need to update the amounts because previous extraction might have taken the full amount instead of difference.
+                    // We trust the new extraction instructions to get the "DIFERENCIAS" values.
+                    const isR1Update = fins.clavePedimento === 'R1' && (key === 'montoPagado' || key === 'iva' || key === 'dta' || key === 'igi' || key === 'prv');
 
-                    if ((isEmpty || isBadClave || isBadLC || isMissingBank) && hasNewData) {
+                    const isEmpty = !oldVal || oldVal === 0 || oldVal === "0" || oldVal === "";
+
+                    // CRITICAL FIX: For R1 updates, 0 is a valid value (it means "No extra payment"). 
+                    // So we must allow 0 if isR1Update is true.
+                    const hasNewData = (newVal !== undefined && newVal !== null && newVal !== "") && (isR1Update ? true : newVal !== 0);
+
+                    if ((isEmpty || isBadClave || isBadLC || isMissingBank || isR1Update) && hasNewData) {
                         mergedFins[key] = newVal;
                         changesCount++;
                     }

@@ -39,13 +39,13 @@ async function extractWithGemini(fileBuffer, fileName, mimeType) {
     
     Fields to Extract:
     - pedimentoNum (String, full 15 digits if available, else 7)
-    - montoPagado (Number, Total Efectivo at bottom. CRITICAL FOR R1: If "DIFERENCIAS DE CONTRIBUCIONES A NIVEL PEDIMENTO" table exists, take the total from "DIFERENCIAS TOTALES" / "EFECTIVO" in that table. Ignore the main total.)
+    - montoPagado (Number, Total Efectivo at bottom. CRITICAL FOR R1: If "DIFERENCIAS DE CONTRIBUCIONES A NIVEL PEDIMENTO" table exists, take the total from "DIFERENCIAS TOTALES" / "EFECTIVO". It MUST match the sum of differences.)
     - valorAduana (Number, Merchandise Value / Valor Aduana)
-    - iva (Number, VAT. CRITICAL FOR R1: If "DIFERENCIAS..." table exists, look for IVA there. IF NOT FOUND IN DIFFERENCE TABLE, RETURN 0. DO NOT, under any circumstances, take the value from the main table.)
-    - dta (Number, Custom Duty. CRITICAL FOR R1: If "DIFERENCIAS..." table exists, look for DTA there. IF NOT FOUND IN DIFFERENCE TABLE, RETURN 0.)
-    - igi (Number, General Import Tax. CRITICAL FOR R1: If "DIFERENCIAS..." table exists, look for IGI there. IF NOT FOUND IN DIFFERENCE TABLE, RETURN 0.)
-    - prv (Number, Prevalidation. Check "DIFERENCIA" for R1. If not found, 0.)
-    - ivaPrv (Number, VAT on Prevalidation. Check "DIFERENCIA" for R1. If not found, 0.)
+    - iva (Number, VAT. CRITICAL FOR R1: Check "DIFERENCIAS..." table for row "IVA" or "IMPUESTO AL VALOR AGREGADO". If found, return difference. If NOT found, Return 0. Warning: Do NOT confuse DTA with IVA.)
+    - dta (Number, Custom Duty. CRITICAL FOR R1: Check "DIFERENCIAS..." table for row "DTA" or "DERECHO DE TRAMITE ADUANERO". If found, return difference. Hint: Values like 444, 408 are typically DTA.)
+    - igi (Number, General Import Tax. CRITICAL FOR R1: Check "DIFERENCIAS..." table for row "IGI" or "IMPUESTO GENERAL DE IMPORTACION". If found, return difference. Return 0 otherwise.)
+    - prv (Number, Prevalidation. Check "DIFERENCIAS..." table. Look for "PRV" or "PREVALIDACION". If not listed, RETURN 0.)
+    - ivaPrv (Number, VAT on Prevalidation. Check "DIFERENCIAS..." table for "IVA/PRV". If not listed, RETURN 0.)
     - cnt (Number, CNT / Cuota Compensatoria)
     - otrosCargos (Number, Sum of other fees)
     - fechaPago (String, YYYY-MM-DD or DD/MM/YYYY)
@@ -87,8 +87,36 @@ async function extractWithGemini(fileBuffer, fileName, mimeType) {
         }
 
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(jsonStr);
-        return Array.isArray(parsed) ? parsed[0] : parsed;
+        let parsed = JSON.parse(jsonStr);
+        parsed = Array.isArray(parsed) ? parsed[0] : parsed;
+
+        // --- R1 SANITIZER ---
+        // Gemini sometimes "hallucinates" the old taxes (e.g. IVA) even when instructed to look at the Differences table.
+        // If we represent a Difference, the Sum of Taxes MUST equal the Monto Pagado.
+        if (parsed && parsed.clavePedimento === 'R1' && parsed.montoPagado > 0) {
+            const d = parsed.dta || 0;
+            const i = parsed.iva || 0;
+            const g = parsed.igi || 0;
+            const sum = d + i + g;
+
+            // If the sum of major taxes exceeds the total by a margin (e.g. 10 pesos), we have a ghost value.
+            if (sum > parsed.montoPagado + 5) {
+                console.log(`   🧹 R1 Sanitizer triggered for ${fileName}: Sum(${sum}) > Total(${parsed.montoPagado}). Cleaning...`);
+
+                // Heuristic: If one tax equals the total, it's the winner.
+                if (Math.abs(d - parsed.montoPagado) < 5) {
+                    parsed.iva = 0;
+                    parsed.igi = 0;
+                    console.log("      -> Kept DTA, zeroed IVA/IGI.");
+                } else if (Math.abs(i - parsed.montoPagado) < 5) {
+                    parsed.dta = 0;
+                    parsed.igi = 0;
+                    console.log("      -> Kept IVA, zeroed DTA/IGI.");
+                }
+            }
+        }
+
+        return parsed;
     } catch (e) {
         console.error("   🧠 Gemini Error:", e.message);
         return null;

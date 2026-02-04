@@ -26,6 +26,7 @@ const applyMasterDataToItems = (
             return {
                 ...item,
                 spanishDescription: match.DESCRIPCION_ES?.trim() || item.spanishDescription,
+                englishName: match.DESCRIPTION_EN?.trim() || item.englishName,
                 hts: match.HTSMX?.trim() || item.hts,
                 rb: match.R8?.trim() || (['FALTA', 'N/A', 'NA', 'NO APLICA'].includes(item.rb?.toString().toUpperCase() || '') ? '' : item.rb),
                 um: match.UMC?.trim() || item.um,
@@ -273,10 +274,10 @@ const InvoiceRow = React.memo(({
                 {isEditing ? <input type="text" value={editValues.um || ''} onChange={e => setEditValues({ ...editValues, um: e.target.value })} className="w-16 px-2 py-1 border rounded uppercase" /> : (item.um || <span className="text-red-600 font-bold">MISSING</span>)}
             </td>
             <td className="p-4 text-right font-mono">
-                {isEditing ? <input type="number" step="0.01" value={editValues.netWeight || 0} onChange={e => setEditValues({ ...editValues, netWeight: Number(e.target.value) })} className="w-20 px-2 py-1 border rounded text-right" /> : (item.netWeight ? item.netWeight.toFixed(2) : <span className="text-red-600">MISSING</span>)}
+                {isEditing ? <input type="number" step="0.001" value={editValues.netWeight || 0} onChange={e => setEditValues({ ...editValues, netWeight: Number(e.target.value) })} className="w-20 px-2 py-1 border rounded text-right" /> : (item.netWeight ? item.netWeight.toFixed(3) : <span className="text-red-600">MISSING</span>)}
             </td>
             <td className="p-4 text-right font-mono text-slate-600">
-                {isEditing ? ((editValues.qty || 0) * (editValues.netWeight || 0)).toFixed(2) : ((item.qty || 0) * (item.netWeight || 0)).toFixed(2)}
+                {isEditing ? ((editValues.qty || 0) * (editValues.netWeight || 0)).toFixed(3) : ((item.qty || 0) * (item.netWeight || 0)).toFixed(3)}
             </td>
             <td className="p-4 text-right font-mono">
                 {isEditing ? <input type="number" step="0.01" value={editValues.unitPrice || 0} onChange={e => setEditValues({ ...editValues, unitPrice: Number(e.target.value) })} className="w-24 px-2 py-1 border rounded text-right" /> : `$${item.unitPrice.toFixed(2)}`}
@@ -797,14 +798,16 @@ export const CIExtractor: React.FC = () => {
 
                         // Map Columns
                         // @ts-ignore
-                        const headers = (data[headerRowIndex] as any[]).map(String);
+                        // Map Columns
+                        // @ts-ignore
+                        const headers = Array.from(data[headerRowIndex] as any[] || []).map(cell => String(cell || '').trim());
                         const colMap: Record<string, number> = {};
                         const requiredCols = ['ITEM', 'MODEL', 'PART NO', 'ENGLISH NAME', 'SPANISH DESCRIPTION', 'HTS', 'PROSEC', 'RB', 'QTY', 'UM', 'NETWEIGHT', 'UNIT PRICE', 'TOTAL AMOUNT', 'REGIMEN'];
 
                         requiredCols.forEach(col => {
-                            let idx = headers.findIndex(h => h.toUpperCase().replace('.', '').trim() === col.replace('.', '').trim());
+                            let idx = headers.findIndex(h => (h || '').toUpperCase().replace('.', '').trim() === col.replace('.', '').trim());
                             if (idx === -1) {
-                                const hUpper = headers.map(h => h.toUpperCase());
+                                const hUpper = headers.map(h => (h || '').toUpperCase());
                                 if (col === 'SPANISH DESCRIPTION') idx = hUpper.findIndex(h => h.includes('DESCRIP') && h.includes('ES'));
                                 else if (col === 'ENGLISH NAME') idx = hUpper.findIndex(h => h.includes('ENGLISH') || h.includes('NAME'));
                                 else if (col === 'UNIT PRICE') {
@@ -931,20 +934,39 @@ export const CIExtractor: React.FC = () => {
 
                         if (newItems.length > 0) {
                             // Fix: Define ID detection Regex
+                            // Support Standard Containers (ABCD1234567) AND Courier Tracking (DHL 123..., FedEx 123...)
                             const containerRegex = /[A-Z]{4}\d{7}/;
-                            const match = file.name.match(containerRegex);
+                            const dhlRegex = /DHL\s+(\d+)/i;
+                            const fedexRegex = /FedEx\s+(\d+)/i;
 
-                            if (match) {
-                                // CASE A: Container Found -> SAFE SAVE
-                                const targetContainerNo = match[0];
+                            let targetContainerNo = '';
+                            let matchType = '';
+
+                            const matchContainer = file.name.match(containerRegex);
+                            const matchDHL = file.name.match(dhlRegex);
+                            const matchFedEx = file.name.match(fedexRegex);
+
+                            if (matchDHL) {
+                                targetContainerNo = matchDHL[1]; // Capture group 1 (digits)
+                                matchType = 'DHL';
+                            } else if (matchFedEx) {
+                                targetContainerNo = matchFedEx[1]; // Capture group 1 (digits)
+                                matchType = 'FedEx';
+                            } else if (matchContainer) {
+                                targetContainerNo = matchContainer[0];
+                                matchType = 'Standard';
+                            }
+
+                            if (targetContainerNo) {
+                                // CASE A: Container/Tracking Found -> SAFE SAVE
 
                                 // Check for duplicates
                                 if (items.some(i => i.containerNo === targetContainerNo)) {
-                                    errors.push(`${file.name}: Container ${targetContainerNo} already exists.`);
+                                    errors.push(`${file.name}: ${matchType} Tracking ${targetContainerNo} already exists.`);
                                 } else {
                                     const itemsWithContainer = newItems.map(i => ({ ...i, containerNo: targetContainerNo }));
-                                    await storageService.addInvoiceItems(itemsWithContainer);
-                                    importCount += itemsWithContainer.length;
+                                    const addedCount = await storageService.addInvoiceItems(itemsWithContainer);
+                                    importCount += (typeof addedCount === 'number' ? addedCount : itemsWithContainer.length);
                                 }
                             } else {
                                 // CASE B: No Container -> DO NOT SAVE YET
@@ -956,9 +978,9 @@ export const CIExtractor: React.FC = () => {
                             errors.push(`${file.name}: No valid items found.`);
                         }
                         resolve();
-                    } catch (err) {
-                        console.error(err);
-                        errors.push(`${file.name}: Parse error.`);
+                    } catch (err: any) {
+                        console.error('CIExtractor Process Error:', err);
+                        errors.push(`${file.name}: ${err.message || 'Unknown Parse Error'}`);
                         resolve();
                     }
                 };
@@ -973,6 +995,8 @@ export const CIExtractor: React.FC = () => {
         if (importCount > 0) {
             loadData();
             showNotification('Safe Upload', `Successfully persisted ${importCount} items to Cloud.`, 'success');
+        } else if (files.length > 0 && pendingAggregate.length === 0) {
+            showNotification('Ignored', 'All items were duplicates and have been skipped.', 'warning');
         }
 
         if (pendingAggregate.length > 0) {
@@ -1261,6 +1285,180 @@ export const CIExtractor: React.FC = () => {
         }, 3000);
     };
 
+    // Memory Optimized Filter Logic
+
+
+    const handleSelectRow = (id: string) => {
+        setSelectedIds(prev => {
+            const newSelected = new Set(prev);
+            if (newSelected.has(id)) newSelected.delete(id);
+            else newSelected.add(id);
+            return newSelected;
+        });
+    };
+
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const confirmBulkDelete = async () => {
+        try {
+            setIsDeleting(true);
+            const idsToDelete = Array.from(selectedIds);
+
+            // Optimistic Update: Remove immediately from UI
+            setItems(prev => prev.filter(i => !selectedIds.has(i.id)));
+            setSelectedIds(new Set()); // Clear selection immediately
+            setBulkDeleteModal(false); // Close modal immediately
+
+            await storageService.deleteInvoiceItems(idsToDelete as string[]);
+
+            showNotification('Deleted', `Deleted ${idsToDelete.length} items.`, 'success');
+        } catch (error) {
+            console.error(error);
+            showNotification('Error', 'Failed to delete items. Please try again.', 'error');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+
+    const handleDelete = async (id: string) => {
+        if (confirm("Are you sure you want to delete this item?")) {
+            // Optimistic Update: Remove immediately from UI
+            setItems(prev => prev.filter(i => i.id !== id));
+
+            try {
+                await storageService.deleteInvoiceItem(id);
+                showNotification('Deleted', "Item deleted.", 'success');
+            } catch (error) {
+                console.error(error);
+                // Revert or Sync on error
+                loadData();
+                showNotification('Error', 'Failed to delete item.', 'error');
+            }
+        }
+    };
+
+    const confirmContainerInput = async () => {
+        if (!tempContainerNo) {
+            showNotification('Input Required', "Please enter a Container/Guide Number.", 'warning');
+            return;
+        }
+
+        // Duplicate Check (Logic from User)
+        const exists = items.some(i => i.containerNo === tempContainerNo);
+        if (exists) {
+            if (!confirm(`Container ${tempContainerNo} already contains data. Merge items?`)) return;
+        }
+
+        // Assign Container and SAVE NOW (First time persistence)
+        const itemsWithContainer = pendingFileItems.map(i => ({
+            ...i,
+            containerNo: tempContainerNo,
+            // Natural key for persistence if missing (should already be there from consolidation)
+            id: i.id || `${i.invoiceNo}-${i.partNo}-${i.qty}-${tempContainerNo}`
+        }));
+
+        await storageService.addInvoiceItems(itemsWithContainer);
+
+        loadData(); // REFRESH UI
+        showNotification('Import Successful', `Successfully imported ${itemsWithContainer.length} items to ${tempContainerNo}.`, 'success');
+
+        setPendingFileItems([]);
+        setTempContainerNo('');
+        setShowContainerModal(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const [showErrorsOnly, setShowErrorsOnly] = useState(false);
+
+    // Helper to check R8 Mismatch
+    const checkR8Mismatch = (item: CommercialInvoiceItem) => {
+        const normalizedPartNo = String(item.partNo || '').trim();
+        const masterPart = masterDataMap[normalizedPartNo];
+        const r8Code = masterPart?.R8?.toString().trim().toUpperCase() || '';
+        const r8Desc = masterPart?.DESCRIPCION_R8?.toString().trim().toUpperCase() || '';
+        const itemDesc = item.spanishDescription?.toString().trim().toUpperCase() || '';
+
+        let itemRb = item.rb?.toString().trim().toUpperCase() || '';
+        // Treat FALTA/NA as empty for comparison (Matches getStatusIcons)
+        if (['FALTA', 'N/A', 'NA', 'NO APLICA'].includes(itemRb)) itemRb = '';
+
+        const isTextMatch = r8Desc && itemDesc && (r8Desc.includes(itemDesc) || itemDesc.includes(r8Desc));
+        const isCodeMatch = r8Code && (itemRb === r8Code);
+        const isR8Match = !r8Code || !itemRb || isCodeMatch || isTextMatch;
+
+        return !isR8Match; // Return true if mismatch (Red X)
+    };
+
+    // Memory Optimized Filter Logic
+    const filteredItems = React.useMemo(() => {
+        // CPU Optimization: Calculate terms ONCE
+        const terms = deferredSearchTerm ? deferredSearchTerm.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0) : [];
+
+        const hasSearch = terms.length > 0;
+
+        return items.filter(i => {
+            if (showMissingOnly) {
+                const hasMissingData = !i.regimen || !i.hts || !i.spanishDescription || !i.um;
+                if (!hasMissingData) return false;
+            }
+
+            if (showErrorsOnly) {
+                if (!checkR8Mismatch(i)) return false;
+            }
+
+            if (showSensibleOnly) {
+                const partNo = String(i.partNo || '').trim();
+                const masterPart = masterDataMap[partNo];
+                const strVal = masterPart?.SENSIBLE ? String(masterPart.SENSIBLE).trim().toUpperCase() : '';
+                const isNotSensible = strVal === 'N' || strVal === '';
+                if (isNotSensible) return false;
+            }
+
+            if (showNoDBOnly) {
+                const partNo = String(i.partNo || '').trim();
+                if (masterDataMap[partNo]) return false;
+            }
+
+            if (showPricesOnly) {
+                const partNo = String(i.partNo || '').trim();
+                const masterPart = masterDataMap[partNo];
+                if (!masterPart) {
+                    // Keep
+                } else {
+                    const remarks = masterPart.REMARKS?.toString().toLowerCase() || '';
+                    const estimatedPrice = Number(masterPart.ESTIMATED || 0);
+                    const itemPrice = parseFloat(String(i.unitPrice || '0'));
+                    const isUndervalued = estimatedPrice > 0 && itemPrice < estimatedPrice;
+                    const isLegacyError = (estimatedPrice === 0 && remarks.includes('price')) && !i.priceVerified;
+                    if (!(isUndervalued || isLegacyError)) return false;
+                }
+            }
+
+            if (!hasSearch) return true;
+
+            // Optimized Search: Pre-compute searchable string for the row
+            const normalize = (str: any) => String(str || '').toLowerCase();
+            const rowSearchStr = `
+                ${normalize(i.invoiceNo)} 
+                ${normalize(i.partNo)} 
+                ${normalize(i.model)} 
+                ${normalize(i.englishName)} 
+                ${normalize(i.spanishDescription)} 
+                ${normalize(i.hts)} 
+                ${normalize(i.regimen)} 
+                ${normalize(i.containerNo)}
+                ${normalize(i.um)}
+                ${normalize(i.incoterm)}
+                ${normalize(i.item)}
+                ${normalize(invoiceToBLMap[i.invoiceNo])}
+            `;
+
+            // AND Condition: ALL terms (from comma split) must match somewhere in this row
+            return terms.every(term => rowSearchStr.includes(term));
+        });
+    }, [items, deferredSearchTerm, showMissingOnly, showErrorsOnly, showSensibleOnly, showNoDBOnly, showPricesOnly, masterDataMap]);
+
     const handleSplitAndExport = () => {
         const sourceItems = filteredItems;
         if (sourceItems.length === 0) return;
@@ -1399,165 +1597,6 @@ export const CIExtractor: React.FC = () => {
         }
     };
 
-    const handleSelectRow = (id: string) => {
-        setSelectedIds(prev => {
-            const newSelected = new Set(prev);
-            if (newSelected.has(id)) newSelected.delete(id);
-            else newSelected.add(id);
-            return newSelected;
-        });
-    };
-
-    const [isDeleting, setIsDeleting] = useState(false);
-
-    const confirmBulkDelete = async () => {
-        try {
-            setIsDeleting(true);
-            await storageService.deleteInvoiceItems(Array.from(selectedIds));
-            // loadData() triggered by subscription
-            showNotification('Deleted', `Deleted ${selectedIds.size} items.`, 'success');
-            setSelectedIds(new Set());
-            setBulkDeleteModal(false);
-        } catch (error) {
-            console.error(error);
-            showNotification('Error', 'Failed to delete items. Please try again.', 'error');
-        } finally {
-            setIsDeleting(false);
-        }
-    };
-
-    const handleDelete = async (id: string) => {
-        if (confirm("Are you sure you want to delete this item?")) {
-            try {
-                await storageService.deleteInvoiceItem(id);
-                showNotification('Deleted', "Item deleted.", 'success');
-            } catch (error) {
-                console.error(error);
-                showNotification('Error', 'Failed to delete item.', 'error');
-            }
-        }
-    };
-
-    const confirmContainerInput = async () => {
-        if (!tempContainerNo) {
-            showNotification('Input Required', "Please enter a Container/Guide Number.", 'warning');
-            return;
-        }
-
-        // Duplicate Check (Logic from User)
-        const exists = items.some(i => i.containerNo === tempContainerNo);
-        if (exists) {
-            if (!confirm(`Container ${tempContainerNo} already contains data. Merge items?`)) return;
-        }
-
-        // Assign Container and SAVE NOW (First time persistence)
-        const itemsWithContainer = pendingFileItems.map(i => ({
-            ...i,
-            containerNo: tempContainerNo,
-            // Natural key for persistence if missing (should already be there from consolidation)
-            id: i.id || `${i.invoiceNo}-${i.partNo}-${i.qty}-${tempContainerNo}`
-        }));
-
-        await storageService.addInvoiceItems(itemsWithContainer);
-
-        loadData(); // REFRESH UI
-        showNotification('Import Successful', `Successfully imported ${itemsWithContainer.length} items to ${tempContainerNo}.`, 'success');
-
-        setPendingFileItems([]);
-        setTempContainerNo('');
-        setShowContainerModal(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-
-    const [showErrorsOnly, setShowErrorsOnly] = useState(false);
-
-    // Helper to check R8 Mismatch
-    const checkR8Mismatch = (item: CommercialInvoiceItem) => {
-        const normalizedPartNo = String(item.partNo || '').trim();
-        const masterPart = masterDataMap[normalizedPartNo];
-        const r8Code = masterPart?.R8?.toString().trim().toUpperCase() || '';
-        const r8Desc = masterPart?.DESCRIPCION_R8?.toString().trim().toUpperCase() || '';
-        const itemDesc = item.spanishDescription?.toString().trim().toUpperCase() || '';
-
-        let itemRb = item.rb?.toString().trim().toUpperCase() || '';
-        // Treat FALTA/NA as empty for comparison (Matches getStatusIcons)
-        if (['FALTA', 'N/A', 'NA', 'NO APLICA'].includes(itemRb)) itemRb = '';
-
-        const isTextMatch = r8Desc && itemDesc && (r8Desc.includes(itemDesc) || itemDesc.includes(r8Desc));
-        const isCodeMatch = r8Code && (itemRb === r8Code);
-        const isR8Match = !r8Code || !itemRb || isCodeMatch || isTextMatch;
-
-        return !isR8Match; // Return true if mismatch (Red X)
-    };
-
-    // Memory Optimized Filter Logic
-    const filteredItems = React.useMemo(() => {
-        // CPU Optimization: Calculate terms ONCE
-        const terms = deferredSearchTerm ? deferredSearchTerm.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0) : [];
-
-        const hasSearch = terms.length > 0;
-
-        return items.filter(i => {
-            if (showMissingOnly) {
-                const hasMissingData = !i.regimen || !i.hts || !i.spanishDescription || !i.um;
-                if (!hasMissingData) return false;
-            }
-
-            if (showErrorsOnly) {
-                if (!checkR8Mismatch(i)) return false;
-            }
-
-            if (showSensibleOnly) {
-                const partNo = String(i.partNo || '').trim();
-                const masterPart = masterDataMap[partNo];
-                const strVal = masterPart?.SENSIBLE ? String(masterPart.SENSIBLE).trim().toUpperCase() : '';
-                const isNotSensible = strVal === 'N' || strVal === '';
-                if (isNotSensible) return false;
-            }
-
-            if (showNoDBOnly) {
-                const partNo = String(i.partNo || '').trim();
-                if (masterDataMap[partNo]) return false;
-            }
-
-            if (showPricesOnly) {
-                const partNo = String(i.partNo || '').trim();
-                const masterPart = masterDataMap[partNo];
-                if (!masterPart) {
-                    // Keep
-                } else {
-                    const remarks = masterPart.REMARKS?.toString().toLowerCase() || '';
-                    const estimatedPrice = Number(masterPart.ESTIMATED || 0);
-                    const itemPrice = parseFloat(String(i.unitPrice || '0'));
-                    const isUndervalued = estimatedPrice > 0 && itemPrice < estimatedPrice;
-                    const isLegacyError = (estimatedPrice === 0 && remarks.includes('price')) && !i.priceVerified;
-                    if (!(isUndervalued || isLegacyError)) return false;
-                }
-            }
-
-            if (!hasSearch) return true;
-
-            // Optimized Search: Pre-compute searchable string for the row
-            const normalize = (str: any) => String(str || '').toLowerCase();
-            const rowSearchStr = `
-                ${normalize(i.invoiceNo)} 
-                ${normalize(i.partNo)} 
-                ${normalize(i.model)} 
-                ${normalize(i.englishName)} 
-                ${normalize(i.spanishDescription)} 
-                ${normalize(i.hts)} 
-                ${normalize(i.regimen)} 
-                ${normalize(i.containerNo)}
-                ${normalize(i.um)}
-                ${normalize(i.incoterm)}
-                ${normalize(i.item)}
-                ${normalize(invoiceToBLMap[i.invoiceNo])}
-            `;
-
-            // AND Condition: ALL terms (from comma split) must match somewhere in this row
-            return terms.every(term => rowSearchStr.includes(term));
-        });
-    }, [items, deferredSearchTerm, showMissingOnly, showErrorsOnly, showSensibleOnly, showNoDBOnly, showPricesOnly, masterDataMap]);
 
     const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
     const displayedItems = filteredItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -2109,7 +2148,7 @@ export const CIExtractor: React.FC = () => {
                                                     step="0.01"
                                                 />
                                             ) : (
-                                                item.netWeight ? item.netWeight.toFixed(2) : (
+                                                item.netWeight ? item.netWeight.toFixed(3) : (
                                                     <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
                                                         MISSING
                                                     </span>
@@ -2118,9 +2157,9 @@ export const CIExtractor: React.FC = () => {
                                         </td>
                                         <td className="p-4 text-right font-mono font-medium text-slate-600">
                                             {editingId === item.id ? (
-                                                ((editValues.qty || 0) * (editValues.netWeight || 0)).toFixed(2)
+                                                ((editValues.qty || 0) * (editValues.netWeight || 0)).toFixed(3)
                                             ) : (
-                                                ((item.qty || 0) * (item.netWeight || 0)).toFixed(2)
+                                                ((item.qty || 0) * (item.netWeight || 0)).toFixed(3)
                                             )}
                                         </td>
                                         <td className="p-4 text-right font-mono">

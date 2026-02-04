@@ -30,7 +30,7 @@ const auth = new google.auth.GoogleAuth({
 });
 const drive = google.drive({ version: 'v3', auth });
 
-async function extractWithGemini(fileBuffer, fileName, mimeType) {
+async function extractWithGemini(fileBuffer, fileName, mimeType, existingClave) {
     const prompt = `
     You are a specialized data extractor for Mexican Customs Documents (Pedimentos).
     Extract specific financial metadata from the provided Document (${fileName}).
@@ -83,35 +83,63 @@ async function extractWithGemini(fileBuffer, fileName, mimeType) {
         try {
             text = (typeof response.text === 'function') ? await response.text() : response.text;
         } catch (inner) {
-            text = response.response?.text() || "{}";
+            // Parse with context
+            // The original instruction had `result.response.text()` and `data.financials?.clavePedimento`
+            // `result` and `data` are not defined here. Assuming `response` is the Gemini response object
+            // and `existingClavePedimento` is the argument passed to this function.
+            return await parseGeminiResponse(response.response?.text() || "{}", fileName, existingClave);
         }
 
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        let parsed = JSON.parse(jsonStr);
-        parsed = Array.isArray(parsed) ? parsed[0] : parsed;
+        let parsed = await parseGeminiResponse(text, fileName, existingClave);
+        if (!parsed) return null; // If parsing failed in parseGeminiResponse
 
-        // --- R1 SANITIZER ---
-        // Gemini sometimes "hallucinates" the old taxes (e.g. IVA) even when instructed to look at the Differences table.
-        // If we represent a Difference, the Sum of Taxes MUST equal the Monto Pagado.
-        if (parsed && parsed.clavePedimento === 'R1' && parsed.montoPagado > 0) {
-            const d = parsed.dta || 0;
-            const i = parsed.iva || 0;
-            const g = parsed.igi || 0;
-            const sum = d + i + g;
+        // --- R1 SANITIZER (AGGRESSIVE) ---
+        // User confirmed: R1s should NOT have PRV, IVA_PRV, or Others unless specifically part of the difference.
+        // Also, DTA often equals the Total.
+        if (parsed && parsed.clavePedimento === 'R1') {
+            const originalTotal = parsed.montoPagado;
 
-            // If the sum of major taxes exceeds the total by a margin (e.g. 10 pesos), we have a ghost value.
-            if (sum > parsed.montoPagado + 5) {
-                console.log(`   🧹 R1 Sanitizer triggered for ${fileName}: Sum(${sum}) > Total(${parsed.montoPagado}). Cleaning...`);
+            // 1. Force Clean Prevalidation & Others (User: "no aplican")
+            parsed.prv = 0;
+            parsed.ivaPrv = 0;
+            parsed.otrosCargos = 0;
+            parsed.cnt = 0;
 
-                // Heuristic: If one tax equals the total, it's the winner.
-                if (Math.abs(d - parsed.montoPagado) < 5) {
-                    parsed.iva = 0;
-                    parsed.igi = 0;
-                    console.log("      -> Kept DTA, zeroed IVA/IGI.");
-                } else if (Math.abs(i - parsed.montoPagado) < 5) {
-                    parsed.dta = 0;
-                    parsed.igi = 0;
-                    console.log("      -> Kept IVA, zeroed DTA/IGI.");
+            console.log(`   🧹 R1 Sanitizer (Aggressive): Wiped PRV, IVA_PRV, OTROS, CNT for ${fileName}`);
+
+            // 2. Resolve Taxes Sum vs Total
+            // If DTA is close to Total, assume DTA is the only tax.
+            if (parsed.dta > 0 && Math.abs(parsed.dta - parsed.montoPagado) < 5) {
+                parsed.iva = 0;
+                parsed.igi = 0;
+                console.log("      -> DTA matches Total. Zeroed IVA/IGI.");
+            }
+            // If IVA is close to Total
+            else if (parsed.iva > 0 && Math.abs(parsed.iva - parsed.montoPagado) < 5) {
+                parsed.dta = 0;
+                parsed.igi = 0;
+                console.log("      -> IVA matches Total. Zeroed DTA/IGI.");
+            }
+
+            // 3. STRICT SUM RULE: For R1 Differences, Total MUST equal Sum of Taxes.
+            // (We already wiped invalid taxes like PRV/IVA_PRV above).
+            const finalSum = (parsed.dta || 0) + (parsed.iva || 0) + (parsed.igi || 0) + (parsed.cnt || 0) + (parsed.otrosCargos || 0) + (parsed.prv || 0) + (parsed.ivaPrv || 0);
+
+            console.log(`      -> R1 Check: Total(${parsed.montoPagado}) vs Sum(${finalSum})`);
+
+            if (Math.abs(parsed.montoPagado - finalSum) > 5 && finalSum > 0) {
+                console.log(`      -> Strict Rule: Overwriting Total with Sum (${finalSum}).`);
+                parsed.montoPagado = finalSum;
+            } else if (Math.abs(parsed.montoPagado - finalSum) > 5 && finalSum === 0) {
+                // If Sum is 0 (no difference taxes found), but Total is huge...
+                // It implies we found NO differences. 
+                // If the file IS an R1, and we found nothing...
+                // Maybe we should trust the Total if it's small? 
+                // But correct R1 behavior is Total = Sum. 
+                // If Sum=0, Total should be 0 (Virtual R1?).
+                if (parsed.montoPagado > 5000) {
+                    console.log(`      -> Total(${parsed.montoPagado}) is huge but Sum is 0. Wiping Total.`);
+                    parsed.montoPagado = 0;
                 }
             }
         }
@@ -129,12 +157,20 @@ async function startExtraction() {
     const snap = await getDocs(collection(db, 'electronic_dossiers'));
     console.log(`Found ${snap.size} dossiers.`);
 
+    // TARGETED BATCH: Force re-process these specific R1s reported by user
+    const targets = ['6100109', '6100108', '6100106', '6100105', '6100104', '6100610', '6100107', '6100103', '6100025', '6000042', '6000050', '6000092'];
+
     let successCount = 0;
     let failCount = 0;
 
     for (const d of snap.docs) {
         const data = d.data();
-        // FORCE MODE: No skip check.
+        const pNum = data.numPedimento || ""; // ensure string
+
+        // CHECK IF IN TARGET LIST
+        const isTarget = targets.some(t => pNum.includes(t));
+
+        if (!isTarget) continue; // Skip others for speed
 
         const items = data.items || [];
 
@@ -177,7 +213,7 @@ async function startExtraction() {
             });
 
             const mimeType = targetItem.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'text/xml';
-            const fins = await extractWithGemini(buffer, targetItem.name, mimeType);
+            const fins = await extractWithGemini(buffer, targetItem.name, mimeType, data.financials?.clavePedimento);
 
             if (fins) {
                 const existingFins = data.financials || {};
@@ -195,7 +231,7 @@ async function startExtraction() {
 
                     // R1 LOGIC: If the NEW data says it's R1, we might need to update the amounts because previous extraction might have taken the full amount instead of difference.
                     // We trust the new extraction instructions to get the "DIFERENCIAS" values.
-                    const isR1Update = fins.clavePedimento === 'R1' && (key === 'montoPagado' || key === 'iva' || key === 'dta' || key === 'igi' || key === 'prv');
+                    const isR1Update = fins.clavePedimento === 'R1' && (key === 'montoPagado' || key === 'iva' || key === 'dta' || key === 'igi' || key === 'prv' || key === 'ivaPrv' || key === 'cnt' || key === 'otrosCargos');
 
                     const isEmpty = !oldVal || oldVal === 0 || oldVal === "0" || oldVal === "";
 
@@ -234,3 +270,22 @@ async function startExtraction() {
 }
 
 startExtraction();
+
+async function parseGeminiResponse(text, fileName, existingClave) {
+    try {
+        if (!text) return null;
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        let parsed = JSON.parse(jsonStr);
+        parsed = Array.isArray(parsed) ? parsed[0] : parsed;
+
+        // Context Awareness: Trust DB if it says R1
+        if (existingClave === 'R1' && parsed.clavePedimento !== 'R1') {
+            parsed.clavePedimento = 'R1';
+        }
+
+        return parsed;
+    } catch (e) {
+        console.error("   🧠 Parsing Error:", e.message);
+        return null;
+    }
+}

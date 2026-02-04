@@ -873,6 +873,8 @@ export const storageService = {
     // Update Local State AFTER successful Cloud Write
     dbState.commercialInvoices = [...(dbState.commercialInvoices || []), ...uniqueNewItems];
     notifyListeners();
+
+    return uniqueNewItems.length;
   },
 
   updateInvoiceItem: async (item: CommercialInvoiceItem) => {

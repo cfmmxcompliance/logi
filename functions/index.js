@@ -1,5 +1,6 @@
 const functions = require("firebase-functions");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const MX_TIMEZONE = 'America/Mexico_City';
 const admin = require("firebase-admin");
@@ -461,4 +462,18 @@ exports.deleteFileFromDriveV2 = onCall({
         if (err.code === 404) return { success: true, warning: 'File not found' };
         throw new HttpsError("internal", `Drive Delete Fail: ${err.message}`);
     }
+});
+
+/**
+ * CLOUD FUNCTION: Daily Report Scheduler
+ * Runs every day at 6:00 AM Mexico City time
+ */
+exports.dailyReportSchedule = onSchedule({
+    schedule: "every day 01:00",
+    timeZone: MX_TIMEZONE,
+    retryCount: 3,
+    memory: "512MiB"
+}, async (event) => {
+    console.log("⏰ Daily Report Triggered via Schedule");
+    await runFullReportProcess();
 });

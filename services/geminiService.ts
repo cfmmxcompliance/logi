@@ -471,7 +471,7 @@ export const geminiService = {
         `;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.0-flash-exp',
           contents: {
             parts: [{ inlineData: { mimeType: 'application/pdf', data: chunk.base64 } }, { text: prompt }]
           },
@@ -724,7 +724,7 @@ export const geminiService = {
       `;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.0-flash-exp',
           contents: { parts: [{ text: prompt }] },
           config: { responseMimeType: 'application/json' }
         });
@@ -825,7 +825,7 @@ export const geminiService = {
     `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.0-flash-exp',
         contents: {
           parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
         },
@@ -893,7 +893,7 @@ export const geminiService = {
       const primaryError = e1.message || e1.toString();
       await new Promise(resolve => setTimeout(resolve, 2000));
       try {
-        return await tryModel('gemini-2.0-flash');
+        return await tryModel('gemini-2.0-flash-exp');
       } catch (e2: any) {
         console.error("All Shipping Doc Models Failed", e2);
         const fallbackError = e2.message || e2.toString();
@@ -995,7 +995,7 @@ export const geminiService = {
         while (attempt < maxAttempts) {
           try {
             const result = await client.models.generateContent({
-              model: 'gemini-2.0-flash',
+              model: 'gemini-2.0-flash-exp',
               contents: { parts: [{ inlineData: { mimeType: 'application/pdf', data: chunk.base64 } }, { text: prompt }] },
               config: { responseMimeType: 'application/json', maxOutputTokens: 8192 }
             });
@@ -1275,7 +1275,7 @@ export const geminiService = {
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.0-flash-exp',
       contents: {
         parts: [{ inlineData: { mimeType: 'application/pdf', data: targetBase64 } }, { text: prompt }]
       },

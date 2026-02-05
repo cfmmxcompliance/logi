@@ -1059,7 +1059,12 @@ export const geminiService = {
         Do not output markdown code blocks, just the JSON.
       `;
 
-      const response = await ai.models.generateContent({
+      // Timeout wrapper to prevent hangs
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Timeout: ${modelName} took too long.`)), 30000)
+      );
+
+      const apiPromise = ai.models.generateContent({
         model: modelName,
         contents: {
           parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
@@ -1067,6 +1072,7 @@ export const geminiService = {
         config: { responseMimeType: 'application/json' }
       });
 
+      const response: any = await Promise.race([apiPromise, timeoutPromise]);
       return JSON.parse(cleanJson(response.text || '{}'));
     };
 

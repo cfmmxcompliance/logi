@@ -860,15 +860,16 @@ export const geminiService = {
     - model: Model numbers/SKUs.
 
     CRITICAL INSTRUCTIONS:
-    1. **CONTAINERS ARE THE MOST IMPORTANT FIELD.**
-       - Look for column headers: "Container No", "Equipment", "Unit No", "Marks & Numbers".
-       - SCAM THE ENTIRE DOC for patterns like "ABCD1234567" (4 Letters + 7 Numbers).
-       - If containers are listed in the "Description" or "Marks" column, EXTRACT THEM ALL.
-       - Extract size (e.g. 40HC, 20GP, 45HQ) if available nearby.
-    2. If multiple dates exist, use the most prominent ETD/ETA.
-    3. Ensure Container Numbers are alphanumeric (Standard Format: 4 letters + 7 numbers).
+    1. **EXTRACT THE BOOKING / BL NUMBER.**
+       - Look for "B/L No", "Booking Ref", "Bill of Lading", "Waybill Number".
+       - Must include the carrier prefix (e.g. EGLV, COSU, MAEU, HLCU).
+       - Example: "EGLV143574071475" (Letters + Numbers).
+    2. **EXTRACT ALL CONTAINERS.**
+       - Scan the ENTIRE document for standard container patterns (4 Letters + 7 Numbers, e.g. TGBU6578012).
+       - Check "Marks & Numbers", "Description", and "Container No" columns.
+       - Do not miss containers listed in the body text or description.
+    3. If multiple dates exist, use the most prominent ETD/ETA.
     4. Do NOT hallucinate. If a field is missing, return null.
-    4. FOR BILL OF LADING: ALWAYS INCLUDE THE 4-LETTER PREFIX.
   `;
 
     const tryModel = async (modelName: string) => {
@@ -885,18 +886,18 @@ export const geminiService = {
     };
 
     try {
-      console.log("Attempting Shipping Doc Extraction with gemini-2.0-flash...");
-      return await tryModel('gemini-2.0-flash');
-    } catch (e2: any) {
-      console.warn("Gemini 2.0 Flash Failed. Falling back to 1.5 Flash...", e2);
-      const primaryError = e2.message || e2.toString();
+      console.log("Attempting Shipping Doc Extraction with gemini-1.5-flash (Stable)...");
+      return await tryModel('gemini-1.5-flash');
+    } catch (e1: any) {
+      console.warn("Gemini 1.5 Flash Failed. Falling back to 2.0 Flash (Experimental)...", e1);
+      const primaryError = e1.message || e1.toString();
       await new Promise(resolve => setTimeout(resolve, 2000));
       try {
-        return await tryModel('gemini-1.5-flash');
-      } catch (e1: any) {
-        console.error("All Shipping Doc Models Failed", e1);
-        const fallbackError = e1.message || e1.toString();
-        throw new Error(`Shipping Data Extraction Failed.\n\nPrimary (2.0): ${primaryError}\n\nFallback (1.5): ${fallbackError}`);
+        return await tryModel('gemini-2.0-flash');
+      } catch (e2: any) {
+        console.error("All Shipping Doc Models Failed", e2);
+        const fallbackError = e2.message || e2.toString();
+        throw new Error(`Shipping Data Extraction Failed.\n\nPrimary (1.5): ${primaryError}\n\nFallback (2.0): ${fallbackError}`);
       }
     }
   },

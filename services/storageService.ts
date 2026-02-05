@@ -2368,17 +2368,8 @@ export const storageService = {
 
       let downloadURL = '';
       try {
-        // Create a timeout promise that rejects after 60 seconds (increased from 5s)
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Upload timed out")), 60000)
-        );
-
-        // Race the upload against the timeout
-        const uploadResult: any = await Promise.race([
-          uploadBytes(storageRef, file),
-          timeoutPromise
-        ]);
-
+        // Remove artificial timeout. Let Firebase SDK handle network/availability.
+        const uploadResult = await uploadBytes(storageRef, file);
         downloadURL = await getDownloadURL(uploadResult.ref);
       } catch (uploadError) {
         // If upload fails on localhost (or times out), fall back to simulation to prove flow works

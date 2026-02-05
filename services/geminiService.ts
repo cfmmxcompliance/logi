@@ -859,10 +859,15 @@ export const geminiService = {
     - poNumber: PO Number.
     - model: Model numbers/SKUs.
 
-    CRITICAL: 
-    1. If multiple dates exist, use the most prominent ETD/ETA.
-    2. Ensure Container Numbers are alphanumeric (Standard Format: 4 letters + 7 numbers).
-    3. Do NOT hallucinate. If a field is missing, return null.
+    CRITICAL INSTRUCTIONS:
+    1. **CONTAINERS ARE THE MOST IMPORTANT FIELD.**
+       - Look for column headers: "Container No", "Equipment", "Unit No", "Marks & Numbers".
+       - SCAM THE ENTIRE DOC for patterns like "ABCD1234567" (4 Letters + 7 Numbers).
+       - If containers are listed in the "Description" or "Marks" column, EXTRACT THEM ALL.
+       - Extract size (e.g. 40HC, 20GP, 45HQ) if available nearby.
+    2. If multiple dates exist, use the most prominent ETD/ETA.
+    3. Ensure Container Numbers are alphanumeric (Standard Format: 4 letters + 7 numbers).
+    4. Do NOT hallucinate. If a field is missing, return null.
     4. FOR BILL OF LADING: ALWAYS INCLUDE THE 4-LETTER PREFIX.
   `;
 

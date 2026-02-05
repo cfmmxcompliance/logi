@@ -812,8 +812,9 @@ export const CIExtractor: React.FC = () => {
                                 if (col === 'SPANISH DESCRIPTION') idx = hUpper.findIndex(h => h.includes('DESCRIP') && h.includes('ES'));
                                 else if (col === 'ENGLISH NAME') idx = hUpper.findIndex(h => h.includes('ENGLISH') || h.includes('NAME'));
                                 else if (col === 'UNIT PRICE') {
-                                    idx = hUpper.findIndex(h => h.includes('PRICE'));
+                                    idx = hUpper.findIndex(h => h.includes('PRICE') && !h.includes('TOTAL')); // Avoid "TOTAL PRICE"
                                     if (idx === -1) idx = hUpper.findIndex(h => h.includes('UNIT') && h.includes('USD'));
+                                    if (idx === -1) idx = hUpper.findIndex(h => h === 'PRICE(USD)'); // Specific match for common template
                                 } else if (col === 'TOTAL AMOUNT') {
                                     if (idx === -1) idx = hUpper.findIndex(h => h.includes('TOTAL') && h.includes('USD'));
                                     if (idx === -1) idx = hUpper.findIndex(h => h.includes('AMOUNT') && h.includes('USD'));
@@ -826,8 +827,24 @@ export const CIExtractor: React.FC = () => {
                             if (idx !== -1) colMap[col] = idx;
                         });
 
+
                         // Metadata (Invoice, Date)
                         let invoiceNo = '';
+                        // Try mapping
+                        let invIdx = headers.findIndex(h => h.includes('INVOICE') || h === 'FACTURA' || h === 'NO. DE FACTURA');
+                        if (invIdx !== -1) {
+                            invoiceNo = String((data[headerRowIndex + 1] || [])[invIdx] || '').trim();
+                        }
+
+                        // Fallback: Filename based Invoice detection
+                        // Pattern: CI-{INVOICE}_for_{CONTAINER}.xlsx
+                        if ((!invoiceNo || invoiceNo.length < 3 || invoiceNo === 'UNKNOWN') && file.name.includes('CI-')) {
+                            const ciMatch = file.name.match(/CI-([^_]+)/); // Matches content between CI- and _
+                            if (ciMatch && ciMatch[1]) {
+                                invoiceNo = ciMatch[1];
+                                console.log("Extracted Invoice from Filename:", invoiceNo);
+                            }
+                        }
                         let invoiceDate = new Date().toISOString().split('T')[0];
                         for (let r = 0; r < headerRowIndex; r++) {
                             // @ts-ignore

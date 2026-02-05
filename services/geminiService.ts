@@ -1080,16 +1080,24 @@ export const geminiService = {
     try {
       console.log("Attempting Structure Analysis with gemini-2.0-flash-exp...");
       return await tryModel('gemini-2.0-flash-exp');
-    } catch (e2) {
+    } catch (e2: any) {
       console.warn("Gemini 2.0 Flash Exp Failed. Falling back to 1.5 Flash...", e2);
+
+      const primaryError = e2.message || e2.toString();
+
       // Wait 2 seconds to let Rate Limit bucket cool down
       await new Promise(resolve => setTimeout(resolve, 2000));
+
       try {
         return await tryModel('gemini-1.5-flash');
-      } catch (e1) {
+      } catch (e1: any) {
         console.error("All Structure Analysis Models Failed", e1);
-        // Propagate REAL error to UI for debugging
-        throw new Error(`Analysis Failed: ${(e1 as Error).message}`);
+
+        const fallbackError = e1.message || e1.toString();
+
+        // Propagate FULL error chain for debugging
+        // This answers the user request to "throw the error to debug"
+        throw new Error(`Analysis Failed.\n\nPrimary (2.0): ${primaryError}\n\nFallback (1.5): ${fallbackError}`);
       }
     }
   },

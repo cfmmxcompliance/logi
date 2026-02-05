@@ -50,9 +50,10 @@ const consolidateItems = (
     const map = new Map<string, CommercialInvoiceItem>();
 
     rawItems.forEach(row => {
-        // Key includes Description now (Normalized)
-        const descKey = (row.spanishDescription || '').trim().toUpperCase().replace(/\s+/g, ' ');
-        const key = `${row.partNo}|${row.unitPrice}|${row.invoiceNo}|${row.regimen}|${descKey}`;
+        // Key includes ONLY invariant fields for identification (Part, Price, Invoice)
+        // Description and Regimen are metadata that can be updated, so they shouldn't trigger a new ID.
+        // This enforces DETERMINISTIC IDs -> "Same Part + Same Invoice + Same Price = Same Item".
+        const key = `${String(row.partNo).trim().toUpperCase()}|${Number(row.unitPrice).toFixed(6)}|${String(row.invoiceNo).trim().toUpperCase()}`;
 
         const masterPart = masterPartsMap.get(row.partNo);
         // Handle both old (number) and new (object) map values for safety

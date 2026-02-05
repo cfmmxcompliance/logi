@@ -841,9 +841,8 @@ export const geminiService = {
 
   // Senior Frontend Engineer: High accuracy extraction using gemini-3-flash-preview.
   async parseShippingDocument(base64Data: string, mimeType: string = 'image/jpeg'): Promise<ExtractedShippingDoc> {
-    try {
-      const ai = getClient();
-      const prompt = `
+    const ai = getClient();
+    const prompt = `
     Analyze this shipping document (Bill of Lading, AWB, or Arrival Notice) EXPERTLY.
     Extract the following data into a strict JSON object:
 
@@ -867,18 +866,33 @@ export const geminiService = {
     4. FOR BILL OF LADING: ALWAYS INCLUDE THE 4-LETTER PREFIX.
   `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents: {
-          parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
-        },
+    const tryModel = async (modelName: string) => {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Timeout: ${modelName} took too long.`)), 30000)
+      );
+      const apiPromise = ai.models.generateContent({
+        model: modelName,
+        contents: { parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }] },
         config: { responseMimeType: 'application/json' }
       });
-
+      const response: any = await Promise.race([apiPromise, timeoutPromise]);
       return JSON.parse(cleanJson(response.text || '{}')) as ExtractedShippingDoc;
-    } catch (error) {
-      console.error("Gemini BL/AWB Parse Error", error);
-      throw new Error("Failed to extract shipping data");
+    };
+
+    try {
+      console.log("Attempting Shipping Doc Extraction with gemini-2.0-flash...");
+      return await tryModel('gemini-2.0-flash');
+    } catch (e2: any) {
+      console.warn("Gemini 2.0 Flash Failed. Falling back to 1.5 Flash...", e2);
+      const primaryError = e2.message || e2.toString();
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      try {
+        return await tryModel('gemini-1.5-flash');
+      } catch (e1: any) {
+        console.error("All Shipping Doc Models Failed", e1);
+        const fallbackError = e1.message || e1.toString();
+        throw new Error(`Shipping Data Extraction Failed.\n\nPrimary (2.0): ${primaryError}\n\nFallback (1.5): ${fallbackError}`);
+      }
     }
   },
 

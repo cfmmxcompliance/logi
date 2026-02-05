@@ -2368,9 +2368,9 @@ export const storageService = {
 
       let downloadURL = '';
       try {
-        // Create a timeout promise that rejects after 5 seconds
+        // Create a timeout promise that rejects after 60 seconds (increased from 5s)
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Upload timed out")), 5000)
+          setTimeout(() => reject(new Error("Upload timed out")), 60000)
         );
 
         // Race the upload against the timeout

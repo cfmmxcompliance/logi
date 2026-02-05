@@ -826,14 +826,18 @@ export const storageService = {
   // Commercial Invoices CRUD (Cloud-Enabled & Direct Write)
   addInvoiceItems: async (newItems: CommercialInvoiceItem[]) => {
     // 1. Deduplication (using local state as cache)
+    // FIX: Exclude HTS from unique key to prevent duplicates when Master Data adds/changes HTS
+    const normalize = (val: any) => String(val || '').trim().toUpperCase();
+
     const existingKeys = new Set(
       (dbState.commercialInvoices || []).map(
-        (i: any) => `${i.invoiceNo}-${i.partNo}-${i.qty}-${i.hts || ''}`
+        (i: any) => `${normalize(i.invoiceNo)}-${normalize(i.partNo)}-${Number(i.qty || 0).toFixed(4)}`
       )
     );
 
     const uniqueNewItems = newItems.filter(item => {
-      const key = `${item.invoiceNo}-${item.partNo}-${item.qty}-${item.hts || ''}`;
+      // Logic: If Invoice + Part + Qty matches, it's likely the same line.
+      const key = `${normalize(item.invoiceNo)}-${normalize(item.partNo)}-${Number(item.qty || 0).toFixed(4)}`;
       return !existingKeys.has(key);
     });
 

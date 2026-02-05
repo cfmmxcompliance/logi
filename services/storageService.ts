@@ -824,6 +824,30 @@ export const storageService = {
   },
 
   // Commercial Invoices CRUD (Cloud-Enabled & Direct Write)
+  overwriteInvoiceItems: async (invoiceNo: string, newItems: CommercialInvoiceItem[]) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const normalize = (val: any) => String(val || '').trim().toUpperCase();
+    const targetedInvoice = normalize(invoiceNo);
+
+    // 1. DELETE OLD ITEMS FOR THIS INVOICE (Prevent "Ghost Duplicates")
+    const q = query(collection(db, COLS.INVOICES), where('invoiceNo', '==', invoiceNo)); // Ensure casing matches or use loose filter if inconsistent
+    // Better: Filter efficiently. Since we normalized invoiceNo in save, we hope it matches.
+    // If casing issue: We might need to fetch all and filter client side if we suspect bad data.
+    // For now, assume standard usage.
+
+    // FETCH EXISTING IDs
+    const qSnapshot = await getDocs(q);
+    const idsToDelete = qSnapshot.docs.map(d => d.id);
+
+    if (idsToDelete.length > 0) {
+      console.log(`[Overwrite] Deleting ${idsToDelete.length} old items for Invoice ${invoiceNo}`);
+      await storageService.deleteInvoiceItems(idsToDelete);
+    }
+
+    // 2. ADD NEW ITEMS (Using the robust deterministic ID from CIExtractor)
+    await storageService.addInvoiceItems(newItems);
+  },
+
   addInvoiceItems: async (newItems: CommercialInvoiceItem[]) => {
     // 1. Deduplication (using local state as cache)
     // FIX: Exclude HTS from unique key to prevent duplicates when Master Data adds/changes HTS

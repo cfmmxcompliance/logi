@@ -966,8 +966,21 @@ export const CIExtractor: React.FC = () => {
                                     errors.push(`${file.name}: ${matchType} Tracking ${targetContainerNo} already exists.`);
                                 } else {
                                     const itemsWithContainer = newItems.map(i => ({ ...i, containerNo: targetContainerNo }));
-                                    const addedCount = await storageService.addInvoiceItems(itemsWithContainer);
-                                    importCount += (typeof addedCount === 'number' ? addedCount : itemsWithContainer.length);
+
+                                    // FORCE OVERWRITE: Delete old items first, then add new ones.
+                                    // Extract invoice number from the first item (all items in this batch belong to the same invoice/file)
+                                    const targetInvoice = itemsWithContainer[0]?.invoiceNo || 'UNKNOWN';
+
+                                    if (targetInvoice && targetInvoice !== 'UNKNOWN') {
+                                        await storageService.overwriteInvoiceItems(targetInvoice, itemsWithContainer);
+                                    } else {
+                                        // Fallback if no invoice found (should not happen in valid files)
+                                        console.warn("No invoice number found for overwrite logic, defaulting to append.");
+                                        await storageService.addInvoiceItems(itemsWithContainer);
+                                    }
+
+                                    // Since we overwrite, count is just the new length
+                                    importCount += itemsWithContainer.length;
                                 }
                             } else {
                                 // CASE B: No Container -> DO NOT SAVE YET

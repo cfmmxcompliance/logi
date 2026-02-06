@@ -722,14 +722,22 @@ export const PreAlerts = () => {
         setProcState({
             isOpen: true,
             status: 'loading',
-            title: 'Analyzing Structure',
-            message: 'Asking AI to identify all visible fields...',
-            progress: 30
+            title: 'Uploading Document',
+            message: 'Sending file to storage...',
+            progress: 0
         });
 
         try {
             // 1. Upload for record (Silent)
             await storageService.uploadTrainingDocument(formatSub.file, formatSub.provider, formatSub.comments);
+
+            // Update Progress after Upload
+            setProcState(prev => ({
+                ...prev,
+                title: 'Analyzing Structure',
+                message: 'Asking AI to identify all visible fields...',
+                progress: 30
+            }));
 
             // 2. Perform Analysis
             const base64 = await new Promise<string>((resolve) => {

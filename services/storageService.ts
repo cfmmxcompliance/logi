@@ -2439,10 +2439,19 @@ export const storageService = {
 
       let downloadURL = '';
       try {
-        // Remove artificial timeout. Let Firebase SDK handle network/availability.
-        const uploadResult = await uploadBytes(storageRef, file);
+        // TIMEOUT WRAPPER for Upload (45s Max)
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Upload timed out (45s limit). Check internet connection.")), 45000)
+        );
+
+        const uploadResult: any = await Promise.race([
+          uploadBytes(storageRef, file),
+          timeoutPromise
+        ]);
+
         downloadURL = await getDownloadURL(uploadResult.ref);
       } catch (uploadError) {
+        console.error("Upload Failed:", uploadError);
         // If upload fails on localhost (or times out), fall back to simulation to prove flow works
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
           return await simulateLocalSuccess();

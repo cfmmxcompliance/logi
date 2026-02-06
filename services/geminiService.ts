@@ -471,7 +471,7 @@ export const geminiService = {
         `;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.0-flash',
           contents: {
             parts: [{ inlineData: { mimeType: 'application/pdf', data: chunk.base64 } }, { text: prompt }]
           },
@@ -724,7 +724,7 @@ export const geminiService = {
       `;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.0-flash',
           contents: { parts: [{ text: prompt }] },
           config: { responseMimeType: 'application/json' }
         });
@@ -825,7 +825,7 @@ export const geminiService = {
     `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.0-flash',
         contents: {
           parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
         },
@@ -887,27 +887,17 @@ export const geminiService = {
 
 
     try {
-      console.log("Attempting Shipping Doc Extraction with gemini-1.5-flash (Stable)...");
-      const result = await tryModel('gemini-1.5-flash');
+      console.log("Attempting Shipping Doc Extraction with gemini-2.0-flash...");
+      const result = await tryModel('gemini-2.0-flash');
 
-      // VALIDATION: If 1.5 misses critical fields, throw error to force Fallback (2.0)
       if (!result.bookingNo || (result.containers || []).length === 0) {
-        console.warn("Gemini 1.5 returned incomplete data (Missing BL or Containers). Forcing Fallback.");
         throw new Error("Incomplete Extraction: Missing BL or Containers");
       }
       return result;
 
     } catch (e1: any) {
-      console.warn("Gemini 1.5 Flash Failed. Falling back to 2.0 Flash (Experimental)...", e1);
-      const primaryError = e1.message || e1.toString();
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      try {
-        return await tryModel('gemini-2.0-flash-exp');
-      } catch (e2: any) {
-        console.error("All Shipping Doc Models Failed", e2);
-        const fallbackError = e2.message || e2.toString();
-        throw new Error(`Shipping Data Extraction Failed.\n\nPrimary (1.5): ${primaryError}\n\nFallback (2.0): ${fallbackError}`);
-      }
+      console.error("Shipping Doc Extraction Failed", e1);
+      throw new Error(`Shipping Data Extraction Failed: ${e1.message}`);
     }
   },
 
@@ -918,7 +908,7 @@ export const geminiService = {
       const fullPrompt = `Analyze this Mexican Customs data summary and provide an executive summary in Spanish. ${summary}. Context: ${promptContext}`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-2.0-flash',
         contents: { parts: [{ text: fullPrompt }] }
       });
 
@@ -1004,7 +994,7 @@ export const geminiService = {
         while (attempt < maxAttempts) {
           try {
             const result = await client.models.generateContent({
-              model: 'gemini-2.0-flash-exp',
+              model: 'gemini-2.0-flash',
               contents: { parts: [{ inlineData: { mimeType: 'application/pdf', data: chunk.base64 } }, { text: prompt }] },
               config: { responseMimeType: 'application/json', maxOutputTokens: 8192 }
             });
@@ -1105,28 +1095,13 @@ export const geminiService = {
       return JSON.parse(cleanJson(response.text || '{}'));
     };
 
-    // Retry Logic: Try 1.5 Flash (Stable) -> 2.0 Flash (Experimental) -> Fail
+    // Simplified Logic: Use verified 2.0 Flash
     try {
-      console.log("Attempting Structure Analysis with gemini-1.5-flash (Stable)...");
-      return await tryModel('gemini-1.5-flash');
+      console.log("Attempting Structure Analysis with gemini-2.0-flash...");
+      return await tryModel('gemini-2.0-flash');
     } catch (e1: any) {
-      console.warn("Gemini 1.5 Flash Failed. Falling back to 2.0 Flash Exp...", e1);
-
-      const primaryError = e1.message || e1.toString();
-
-      // Wait 2 seconds to let Rate Limit bucket cool down
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      try {
-        return await tryModel('gemini-2.0-flash-exp');
-      } catch (e2: any) {
-        console.error("All Structure Analysis Models Failed", e2);
-
-        const fallbackError = e2.message || e2.toString();
-
-        // Propagate FULL error chain for debugging
-        throw new Error(`Analysis Failed.\n\nPrimary (1.5): ${primaryError}\n\nFallback (2.0): ${fallbackError}`);
-      }
+      console.error("Structure Analysis Failed", e1);
+      throw new Error(`Analysis Failed: ${e1.message}`);
     }
   },
 
@@ -1284,7 +1259,7 @@ export const geminiService = {
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.0-flash',
       contents: {
         parts: [{ inlineData: { mimeType: 'application/pdf', data: targetBase64 } }, { text: prompt }]
       },

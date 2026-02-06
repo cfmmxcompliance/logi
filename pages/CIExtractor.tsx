@@ -1490,9 +1490,10 @@ export const CIExtractor: React.FC = () => {
         });
     }, [items, deferredSearchTerm, showMissingOnly, showErrorsOnly, showSensibleOnly, showNoDBOnly, showPricesOnly, masterDataMap]);
 
-    const handleSplitAndExport = () => {
-        // FORCE FRESH FETCH to avoid stale closure / ghost data issues
-        const freshData = storageService.getInvoiceItems();
+    const handleSplitAndExport = async () => {
+        // FORCE FRESH FETCH FROM CLOUD to avoid stale closure / ghost data issues
+        showNotification('Syncing...', "Verifying data with Cloud DB...", 'info');
+        const freshData = await storageService.refreshInvoices();
 
         let sourceItems = freshData;
 
@@ -1839,6 +1840,35 @@ export const CIExtractor: React.FC = () => {
                             title="Export filtered results to CSV"
                         >
                             <FileDown size={18} /> CSV
+                        </button>
+                        <button
+                            onClick={async () => {
+                                // Logic: Find unique containers in current view
+                                const containers = Array.from(new Set(items.map(i => i.containerNo).filter(Boolean)));
+                                if (containers.length === 0) {
+                                    showNotification('Error', "No containers found.", 'error');
+                                    return;
+                                }
+
+                                const target = containers.length === 1 ? containers[0] : (prompt(`Multiple containers found (${containers.length}).\nType the Container Number to DELETE ALL items for:`) || '');
+
+                                if (!target) return;
+
+                                if (confirm(`⚠️ DANGER: Are you sure you want to DELETE ALL items for container '${target}'?\n\nThis will ignore all filters and wipe the container completely from the database.\n\nThis cannot be undone.`)) {
+                                    try {
+                                        await storageService.deleteContainer(target as string);
+                                        showNotification('Success', `Container ${target} deleted.`, 'success');
+                                        loadData();
+                                    } catch (e) {
+                                        console.error(e);
+                                        showNotification('Error', "Failed to delete container.", 'error');
+                                    }
+                                }
+                            }}
+                            className="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-100 transition-colors shadow-sm text-sm font-medium"
+                            title="Delete ENTIRE Container (Ignores Filters)"
+                        >
+                            <Trash2 size={18} /> Delete Container
                         </button>
                         <button
                             onClick={() => fileInputRef.current?.click()}

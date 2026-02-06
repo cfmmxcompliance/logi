@@ -958,15 +958,17 @@ export const storageService = {
   },
 
   refreshInvoices: async () => {
-    if (!db) return;
+    if (!db) return [];
     try {
       console.log("⬇️ Fetching Commercial Invoices (On-Demand)...");
       const snap = await getDocs(collection(db, COLS.INVOICES));
       dbState.commercialInvoices = snap.docs.map(d => ({ ...d.data(), id: d.id } as CommercialInvoiceItem));
       // saveLocal(); // Can skip saving entire DB to disk on every refresh for speed
       notifyListeners();
+      return dbState.commercialInvoices;
     } catch (e) {
       console.error("Failed to refresh invoices", e);
+      return [];
     }
   },
 
@@ -1000,6 +1002,33 @@ export const storageService = {
     dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => !ids.includes(i.id));
     notifyListeners();
     saveLocal();
+  },
+
+  deleteContainer: async (containerNo: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    if (!containerNo) throw new Error("Container number is required.");
+
+    console.log(`🗑️ Deleting ALL items for container: ${containerNo}`);
+
+    // Query Cloud to match ALL items (even hidden ones)
+    const q = query(collection(db, COLS.INVOICES), where("containerNo", "==", containerNo.trim()));
+    const snap = await getDocs(q);
+    const ids = snap.docs.map(d => d.id);
+
+    // Force delete local matches too just in case of lag
+    const normalize = (s: string) => String(s || '').trim().toUpperCase();
+    const localIds = dbState.commercialInvoices
+      .filter(i => normalize(i.containerNo) === normalize(containerNo))
+      .map(i => i.id);
+
+    const allIds = Array.from(new Set([...ids, ...localIds]));
+
+    if (allIds.length > 0) {
+      await storageService.deleteInvoiceItems(allIds);
+      console.log(`✅ Deleted ${allIds.length} items for container ${containerNo}`);
+    } else {
+      console.log("No items found to delete.");
+    }
   },
 
   deleteAutoLearnedInvoices: async () => {

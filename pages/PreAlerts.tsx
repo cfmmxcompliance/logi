@@ -3,7 +3,7 @@ import { downloadFile } from '../utils/fileHelpers.ts';
 import { storageService } from '../services/storageService.ts';
 import { geminiService } from '../services/geminiService.ts';
 import { PreAlertRecord, UserRole } from '../types.ts';
-import { Plus, Search, FileDown, Bell, FileSpreadsheet, Edit2, X, Save, Trash2, AlertTriangle, Upload, FileText, CheckCircle, Plane, Anchor, Container, RefreshCw } from 'lucide-react';
+import { Plus, Search, FileDown, Bell, FileSpreadsheet, Edit2, X, Save, Trash2, AlertTriangle, Upload, FileText, CheckCircle, Plane, Anchor, Container } from 'lucide-react';
 import { parseCSV } from '../utils/csvHelpers.ts';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -753,7 +753,8 @@ export const PreAlerts = () => {
                 reader.readAsDataURL(formatSub.file!);
             });
 
-            const result = await geminiService.analyzeDocumentStructure(base64, formatSub.file.type || 'application/pdf');
+            const mimeType = formatSub.file.type || (formatSub.file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+            const result = await geminiService.analyzeDocumentStructure(base64, mimeType);
 
             setProcState({
                 isOpen: true,
@@ -1170,9 +1171,6 @@ export const PreAlerts = () => {
                                     </td>
                                     <td className="px-3 py-2 border-r border-slate-100 sticky left-[40px] bg-white hover:bg-slate-50 flex items-center gap-2 z-10">
                                         <button onClick={() => handleEdit(r)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"><Edit2 size={14} /></button>
-                                        <button onClick={() => handleSyncDates(r)} className="text-emerald-600 hover:text-emerald-800 p-1 rounded hover:bg-emerald-50" title="Sync dates to Tracking/Customs">
-                                            <RefreshCw size={14} />
-                                        </button>
                                         {isAdmin && (
                                             <button onClick={() => initiateDelete(r.id)} className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50">
                                                 <Trash2 size={14} />

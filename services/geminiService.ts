@@ -1096,11 +1096,27 @@ export const geminiService = {
         contents: {
           parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
         },
-        config: { responseMimeType: 'application/json' }
+        config: {
+          responseMimeType: 'application/json',
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+          ] as any
+        }
       });
 
       const response: any = await Promise.race([apiPromise, timeoutPromise]);
-      return JSON.parse(cleanJson(response.text || '{}'));
+      let text = "{}";
+      try {
+        if (typeof response.text === 'function') text = response.text();
+        else if (response.response && typeof response.response.text === 'function') text = response.response.text();
+        else text = response.text || "{}";
+      } catch (err) {
+        console.warn("Gemini Text Extraction Internal Warn:", err);
+      }
+      return JSON.parse(cleanJson(text));
     };
 
     // Simplified Logic: Use verified 2.0 Flash
@@ -1271,11 +1287,23 @@ export const geminiService = {
       contents: {
         parts: [{ inlineData: { mimeType: 'application/pdf', data: targetBase64 } }, { text: prompt }]
       },
-      config: { responseMimeType: 'application/json' }
+      config: {
+        responseMimeType: 'application/json',
+        safetySettings: [
+          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+        ] as any
+      }
     });
 
     try {
-      const text = response.text || '{}';
+      let text = "{}";
+      if (typeof response.text === 'function') text = response.text();
+      else if (response.response && typeof response.response.text === 'function') text = response.response.text();
+      else text = response.text || "{}";
+
       const cleaned = cleanJson(text);
       return JSON.parse(cleaned);
     } catch (e) {

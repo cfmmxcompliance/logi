@@ -451,6 +451,11 @@ export const geminiService = {
 
       console.log(`Created ${chunks.length} chunks for forensic analysis.`);
 
+      // TIMEOUT SAFETY (120s for multi-chunk forensic)
+      const forensicTimeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Forensic Extraction Timed Out (120s limit)")), 120000)
+      );
+
       // 3. Process Chunks in Parallel
       const processChunk = async (chunk: typeof chunks[0], index: number) => {
         const ai = getClient();
@@ -488,7 +493,10 @@ export const geminiService = {
         return { index, text: response.text || "" };
       };
 
-      const results = await Promise.all(chunks.map((chunk, idx) => processChunk(chunk, idx)));
+      const results = await Promise.race([
+        Promise.all(chunks.map((chunk, idx) => processChunk(chunk, idx))),
+        forensicTimeout
+      ]);
 
       // 4. Concatenate Results in Order
       const fullText = results
@@ -874,7 +882,7 @@ export const geminiService = {
 
     const tryModel = async (modelName: string) => {
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Timeout: ${modelName} took too long.`)), 30000)
+        setTimeout(() => reject(new Error(`Timeout: ${modelName} took too long.`)), 90000)
       );
       const apiPromise = ai.models.generateContent({
         model: modelName,
@@ -1080,7 +1088,7 @@ export const geminiService = {
 
       // Timeout wrapper to prevent hangs
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Timeout: ${modelName} took too long.`)), 30000)
+        setTimeout(() => reject(new Error(`Timeout: ${modelName} took too long.`)), 90000)
       );
 
       const apiPromise = ai.models.generateContent({

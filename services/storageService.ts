@@ -65,16 +65,18 @@ export const isQuotaError = (e: any): boolean => {
 const sanitizeForFirestore = (obj: any): any => {
   if (obj === undefined) return null;
   if (obj === null) return null;
+
+  // CRITICAL: Handle NaN (which Firestore rejects)
+  if (typeof obj === 'number' && Number.isNaN(obj)) {
+    console.warn("Detected NaN during sanitization, converting to null.");
+    return null;
+  }
+
   if (Array.isArray(obj)) return obj.map(sanitizeForFirestore);
   if (typeof obj === 'object' && !(obj instanceof Date)) {
     const newObj: any = {};
     Object.keys(obj).forEach(key => {
-      const val = obj[key];
-      if (val === undefined) {
-        newObj[key] = null;
-      } else {
-        newObj[key] = sanitizeForFirestore(val);
-      }
+      newObj[key] = sanitizeForFirestore(obj[key]);
     });
     return newObj;
   }
@@ -2397,7 +2399,12 @@ export const storageService = {
   initAutoBackup: () => { },
 
   // Senior Frontend Engineer: Feature - Proactive Format Submission (Training Loop)
-  uploadTrainingDocument: async (file: File, provider: string, comments: string) => {
+  async uploadTrainingDocument(
+    file: File,
+    provider: string,
+    comments: string,
+    onProgress?: (progress: number) => void
+  ): Promise<string> {
     // Defines the record structure for local state update
     const newRecord = {
       id: generateId(),
@@ -2420,7 +2427,7 @@ export const storageService = {
       dbState.trainingSubmissions.push(newRecord);
       saveLocal();
 
-      return true;
+      return newRecord.fileUrl; // Return mock URL for local simulation
     };
 
     if (!db) {
@@ -2429,27 +2436,36 @@ export const storageService = {
     }
 
     try {
-      // 1. Upload File
-      const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+      // 1. Upload File (Resumable for better reliability & progress)
+      const { ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage');
       const { storage } = await import('./firebaseConfig');
 
       if (!storage) throw new Error("Storage not initialized");
 
-      const storageRef = ref(storage, `training_data / ${Date.now()}_${file.name} `);
+      // CLEAN PATH (No spaces)
+      const storageRef = ref(storage, `training_data/${Date.now()}_${file.name}`);
 
       let downloadURL = '';
+
+      // TIMEOUT SAFETY NET (90s)
+      const timeoutPromise = new Promise<void>((_, reject) =>
+        setTimeout(() => reject(new Error("Upload timed out (90s limit). Check internet connection.")), 90000)
+      );
+
+      // Perform Upload
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      // Attach Progress Listener
+      if (onProgress) {
+        uploadTask.on('state_changed', (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          onProgress(Math.round(progress));
+        });
+      }
+
       try {
-        // TIMEOUT WRAPPER for Upload (45s Max)
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Upload timed out (45s limit). Check internet connection.")), 45000)
-        );
-
-        const uploadResult: any = await Promise.race([
-          uploadBytes(storageRef, file),
-          timeoutPromise
-        ]);
-
-        downloadURL = await getDownloadURL(uploadResult.ref);
+        await Promise.race([uploadTask, timeoutPromise]);
+        downloadURL = await getDownloadURL(storageRef);
       } catch (uploadError) {
         console.error("Upload Failed:", uploadError);
         // If upload fails on localhost (or times out), fall back to simulation to prove flow works
@@ -2471,7 +2487,7 @@ export const storageService = {
         status: 'PENDING_ANALYSIS',
         user: 'Admin'
       });
-      return true;
+      return downloadURL;
 
     } catch (e) {
       console.error("Upload Training Doc Error", e);

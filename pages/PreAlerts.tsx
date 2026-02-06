@@ -722,14 +722,21 @@ export const PreAlerts = () => {
         setProcState({
             isOpen: true,
             status: 'loading',
-            title: 'Uploading Document',
+            title: 'Uploading Document (v2.2)',
             message: 'Sending file to storage...',
             progress: 0
         });
 
         try {
             // 1. Upload for record (Silent)
-            await storageService.uploadTrainingDocument(formatSub.file, formatSub.provider, formatSub.comments);
+            await storageService.uploadTrainingDocument(
+                formatSub.file,
+                formatSub.provider,
+                formatSub.comments,
+                (progress) => {
+                    setProcState(prev => ({ ...prev, progress: Math.min(progress, 29) })); // Cap at 29% until analysis starts
+                }
+            );
 
             // Update Progress after Upload
             setProcState(prev => ({

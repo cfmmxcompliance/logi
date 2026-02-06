@@ -63,23 +63,13 @@ const consolidateItems = (
         const existing = map.get(key);
         if (existing) {
             existing.qty += row.qty;
-            // Accumulate weight only if not from Master Data (if from Master, we re-calc at the end or it stays per unit? 
-            // Actually, existing logic implies if it HAS master weight, we use unit weight * qty.
-            // If it behaves like "use Excel weight if Master missing", we accumulate row.netWeight.
-            if (!hasMasterWeight) {
-                existing.netWeight += (row.netWeight || 0);
-            }
+            // netWeight (Unit Weight) stays the same for compressed items.
             existing.totalAmount = existing.qty * existing.unitPrice;
         } else {
             // Initial weight: If master exists, it's Unit Weight. If not, it's Total Line Weight from Excel? 
             // Wait, usually Master Data = Unit Weight. Excel = Total Weight.
             // Let's stick to previous logic: `Number(masterWeight)` was likely Unit Weight.
-            const initialWeight = hasMasterWeight ? Number(masterWeight) * row.qty : (row.netWeight || 0);
-            // Wait, previous code was: `const initialWeight = hasMasterWeight ? Number(masterWeight) : (row.netWeight || 0);`
-            // If that was Unit Weight, logic seems flawed for "Total NetWeight" column unless we multiply later.
-            // Let's restore EXACT previous behavior but fixing the NaN issue.
-
-            const curWeight = hasMasterWeight ? Number(masterWeight) : (row.netWeight || 0);
+            const initialWeight = hasMasterWeight ? Number(masterWeight) : (row.netWeight || 0);
 
             const cleanKey = key.replace(/[^a-zA-Z0-9|]/g, '-');
             map.set(key, {
@@ -806,7 +796,12 @@ export const CIExtractor: React.FC = () => {
                         const requiredCols = ['ITEM', 'MODEL', 'PART NO', 'ENGLISH NAME', 'SPANISH DESCRIPTION', 'HTS', 'PROSEC', 'RB', 'QTY', 'UM', 'NETWEIGHT', 'UNIT PRICE', 'TOTAL AMOUNT', 'REGIMEN'];
 
                         requiredCols.forEach(col => {
-                            let idx = headers.findIndex(h => (h || '').toUpperCase().replace('.', '').trim() === col.replace('.', '').trim());
+                            let idx = headers.findIndex(h => {
+                                const normalizedHeader = (h || '').toUpperCase().replace(/[^A-Z]/g, '').trim();
+                                const normalizedCol = col.replace(/[^A-Z]/g, '').trim();
+                                return normalizedHeader === normalizedCol;
+                            });
+
                             if (idx === -1) {
                                 const hUpper = headers.map(h => (h || '').toUpperCase());
                                 if (col === 'SPANISH DESCRIPTION') idx = hUpper.findIndex(h => h.includes('DESCRIP') && h.includes('ES'));
@@ -814,7 +809,7 @@ export const CIExtractor: React.FC = () => {
                                 else if (col === 'UNIT PRICE') {
                                     idx = hUpper.findIndex(h => h.includes('PRICE') && !h.includes('TOTAL')); // Avoid "TOTAL PRICE"
                                     if (idx === -1) idx = hUpper.findIndex(h => h.includes('UNIT') && h.includes('USD'));
-                                    if (idx === -1) idx = hUpper.findIndex(h => h === 'PRICE(USD)'); // Specific match for common template
+                                    if (idx === -1) idx = hUpper.findIndex(h => (h === 'PRICE(USD)' || h === 'UNIT PRICE'));
                                 } else if (col === 'TOTAL AMOUNT') {
                                     if (idx === -1) idx = hUpper.findIndex(h => h.includes('TOTAL') && h.includes('USD'));
                                     if (idx === -1) idx = hUpper.findIndex(h => h.includes('AMOUNT') && h.includes('USD'));
@@ -822,6 +817,8 @@ export const CIExtractor: React.FC = () => {
                                     idx = hUpper.findIndex(h => h === 'UM' || h === 'U.M.' || h === 'U-M' || h === 'U/M');
                                 } else if (col === 'RB') {
                                     idx = hUpper.findIndex(h => h === 'RB' || h === 'R8');
+                                } else if (col === 'NETWEIGHT') {
+                                    idx = hUpper.findIndex(h => h.includes('NET') && h.includes('WEIGHT'));
                                 }
                             }
                             if (idx !== -1) colMap[col] = idx;
@@ -914,7 +911,7 @@ export const CIExtractor: React.FC = () => {
                             // If Master Data is missing, use Excel value (fallback).
                             const finalNetWeight = (partData?.NETWEIGHT && Number(partData.NETWEIGHT) > 0)
                                 ? Number(partData.NETWEIGHT)
-                                : excelNetWeight;
+                                : isNaN(excelNetWeight) ? 0 : excelNetWeight;
                             const fileRb = row[colMap['RB']] || '';
                             const finalRb = fileRb ? fileRb : (partData?.R8 || '');
 
@@ -1011,7 +1008,13 @@ export const CIExtractor: React.FC = () => {
                         resolve();
                     } catch (err: any) {
                         console.error('CIExtractor Process Error:', err);
-                        errors.push(`${file.name}: ${err.message || 'Unknown Parse Error'}`);
+
+                        let msg = err.message || 'Unknown Parse Error';
+                        if (msg.includes('Failed to fetch dynamically imported module')) {
+                            msg = "New version detected. Please REFRESH the page to update internal components.";
+                        }
+
+                        errors.push(`${file.name}: ${msg}`);
                         resolve();
                     }
                 };

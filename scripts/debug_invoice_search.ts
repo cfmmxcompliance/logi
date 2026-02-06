@@ -1,6 +1,6 @@
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, query, limit, orderBy } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, query, where, limit } from 'firebase/firestore';
 
 const firebaseConfig = {
     apiKey: "AIzaSyDEezg2uRbLKAfkGcXt1x0p0KamaTKAaBU",
@@ -15,43 +15,48 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 async function search() {
-    console.log("--- BROAD SEARCH IN COMMERCIAL_INVOICES ---");
+    const TERM = "WHSU20666";
+    console.log(`Searching DEEP for "${TERM}"...`);
 
+    // 1. Check 'shipments' (Shipment Plan) - Check 'containers' ARRAY
+    console.log("\n--- Checking 'shipments' (array-contains) ---");
     try {
-        // Just get 100 random docs (default order) and check them
-        const q = query(collection(db, 'commercial_invoices'), limit(100));
+        const q = query(collection(db, 'shipments'), where('containers', 'array-contains', TERM));
         const snap = await getDocs(q);
-
-        console.log(`Fetched ${snap.size} documents.`);
-
-        const target = "TEMU";
-        let foundCount = 0;
-
-        snap.forEach(d => {
-            const data = d.data();
-            const str = JSON.stringify(data).toUpperCase();
-            if (str.includes(target)) {
-                console.log(`\nMATCH FOUND in Doc ID: ${d.id}`);
-                console.log("InvoiceNo:", data.invoiceNo);
-                console.log("ContainerNo:", data.containerNo);
-                console.log("PartNo:", data.partNo);
-                foundCount++;
-            }
-        });
-
-        if (foundCount === 0) {
-            console.log("\nNo matches for 'TEMU' in the sample of 100 documents.");
-            console.log("Sample Invoice Numbers seen:");
-            const sampleInvoices = new Set();
-            snap.forEach(d => sampleInvoices.add(d.data().invoiceNo));
-            console.log(Array.from(sampleInvoices).slice(0, 10)); // Show unique invoices
+        if (!snap.empty) {
+            console.log(`FOUND in Shipment Plan! ID: ${snap.docs[0].id}`);
+            console.log(JSON.stringify(snap.docs[0].data(), null, 2));
         } else {
-            console.log(`\nTotal Matches: ${foundCount}`);
+            console.log("Not found in Shipments (Exact). checking brute force...");
+            // Brute force check first 100 shipments
+            const q2 = query(collection(db, 'shipments'), limit(100));
+            const snap2 = await getDocs(q2);
+            let found = false;
+            snap2.forEach(d => {
+                const data = d.data();
+                const str = JSON.stringify(data);
+                if (str.includes("WHSU") && str.includes("20666")) {
+                    console.log(`FOUND FUZZY MATCH in Shipment ${d.id}`);
+                    console.log(data);
+                    found = true;
+                }
+            });
+            if (!found) console.log("Not found in Shipments (Fuzzy).");
         }
+    } catch (e) { console.error("Error Shipments:", e); }
 
-    } catch (e) {
-        console.error("Error:", e);
-    }
+    // 2. Check 'customs_clearance'
+    console.log("\n--- Checking 'customs_clearance' ---");
+    try {
+        const q = query(collection(db, 'customs_clearance'), where('containerNo', '==', TERM));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+            console.log(`FOUND in Customs! ID: ${snap.docs[0].id}`);
+            console.log(JSON.stringify(snap.docs[0].data(), null, 2));
+        } else {
+            console.log("Not found in Customs.");
+        }
+    } catch (e) { console.error("Error Customs:", e); }
 
     process.exit(0);
 }

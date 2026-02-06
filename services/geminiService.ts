@@ -885,9 +885,18 @@ export const geminiService = {
       return JSON.parse(cleanJson(response.text || '{}')) as ExtractedShippingDoc;
     };
 
+
     try {
       console.log("Attempting Shipping Doc Extraction with gemini-1.5-flash (Stable)...");
-      return await tryModel('gemini-1.5-flash');
+      const result = await tryModel('gemini-1.5-flash');
+
+      // VALIDATION: If 1.5 misses critical fields, throw error to force Fallback (2.0)
+      if (!result.bookingNo || (result.containers || []).length === 0) {
+        console.warn("Gemini 1.5 returned incomplete data (Missing BL or Containers). Forcing Fallback.");
+        throw new Error("Incomplete Extraction: Missing BL or Containers");
+      }
+      return result;
+
     } catch (e1: any) {
       console.warn("Gemini 1.5 Flash Failed. Falling back to 2.0 Flash (Experimental)...", e1);
       const primaryError = e1.message || e1.toString();

@@ -3,13 +3,25 @@ import * as xlsx from 'xlsx';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const filePath = path.resolve(process.cwd(), 'CI-26CFMABTT28019_for_TEMU5746560.xlsx');
+const fileName = 'CI-25CFMABTTP117_for_WHL089G506198.xlsx';
+const filePath = path.resolve(process.cwd(), fileName);
 
 if (!fs.existsSync(filePath)) {
     console.error("File not found:", filePath);
     process.exit(1);
 }
 
+// 1. Check Filename Regex (Container Logic)
+console.log("--- Filename Analysis ---");
+const containerRegex = /[A-Z]{4}\d{7}/;
+const dhlRegex = /DHL\s+(\d+)/i;
+const fedexRegex = /FedEx\s+(\d+)/i;
+
+const matchContainer = fileName.match(containerRegex);
+console.log(`Filename: ${fileName}`);
+console.log(`Match Standard Container:`, matchContainer ? matchContainer[0] : "NO MATCH");
+
+// 2. Parse Content
 try {
     const buffer = fs.readFileSync(filePath);
     const wb = xlsx.read(buffer, { type: 'buffer' });
@@ -17,9 +29,10 @@ try {
     const ws = wb.Sheets[wsname];
     const data: any[][] = xlsx.utils.sheet_to_json(ws, { header: 1 });
 
-    console.log(`Loaded Excel. Rows: ${data.length}`);
+    console.log(`\n--- Content Analysis ---`);
+    console.log(`Rows: ${data.length}`);
 
-    // Mimic CIExtractor Header Detection
+    // Mimic Header Detection
     let headerRowIndex = -1;
     for (let i = 0; i < Math.min(data.length, 30); i++) {
         const rowStr = (data[i] || []).join(' ').toUpperCase();
@@ -31,34 +44,37 @@ try {
     }
 
     if (headerRowIndex === -1) {
-        console.error("Could not find header row (ITEM + PART).");
-        process.exit(1);
-    }
+        console.error("FAIL: Could not find header row (ITEM + PART).");
+    } else {
+        // Mimic Column Mapping (Updated Logic)
+        const headers = (data[headerRowIndex] as any[]).map(c => String(c).toUpperCase().trim());
+        const getColIndex = (predicate: (h: string) => boolean) => headers.findIndex(predicate);
 
-    // Mimic Column Mapping
-    const headerRow = data[headerRowIndex].map(c => String(c).toUpperCase().trim());
-    const getColIndex = (keywords: string[]) => headerRow.findIndex(h => keywords.some(k => h.includes(k)));
+        const colMap = {
+            invoiceNo: getColIndex(h => h.includes('INVOICE') || h === 'FACTURA' || h === 'NO. DE FACTURA'), // Strict
+            partNo: getColIndex(h => (h.replace('.', '').trim() === 'PART NO')),
+            unitPrice: getColIndex(h => (h.includes('PRICE') && !h.includes('TOTAL')) || (h.includes('UNIT') && h.includes('USD')) || h === 'PRICE(USD)')
+        };
 
-    const colMap = {
-        invoiceNo: getColIndex(['INVOICE', 'FACTURA', 'NO.']),
-        partNo: getColIndex(['PART', 'MATERIAL']),
-        description: getColIndex(['DESC', 'NAME', 'COMMODITY']),
-        qty: getColIndex(['QTY', 'QUANTITY', 'PIECES']),
-        unitPrice: getColIndex(['UNIT PRICE', 'PRICE/UNIT', 'PRECIO']),
-        totalAmount: getColIndex(['TOTAL', 'AMOUNT', 'VALOR']),
-        poNumber: getColIndex(['PO', 'ORDER', 'PURCHASE']),
-        currency: getColIndex(['CURR', 'MONEDA'])
-    };
+        console.log("Column Mapping:", colMap);
 
-    console.log("Column Mapping:", colMap);
+        // Check Invoice Extraction Logic
+        let invoiceNo = '';
+        if (colMap.invoiceNo !== -1) {
+            invoiceNo = String((data[headerRowIndex + 1] || [])[colMap.invoiceNo] || '').trim();
+            console.log("Invoice from Column:", invoiceNo);
+        } else {
+            console.log("Invoice Column NOT found.");
+        }
 
-    // Parse one item to see result
-    if (data.length > headerRowIndex + 1) {
-        const row = data[headerRowIndex + 1];
-        console.log("First Data Row:", row);
-
-        const invoiceNo = colMap.invoiceNo > -1 ? String(row[colMap.invoiceNo] || '').trim() : 'UNKNOWN';
-        console.log("Extracted InvoiceNo:", invoiceNo);
+        // Filename Fallback
+        if ((!invoiceNo || invoiceNo.length < 3) && fileName.includes('CI-')) {
+            const ciMatch = fileName.match(/CI-([^_]+)/);
+            if (ciMatch && ciMatch[1]) {
+                invoiceNo = ciMatch[1];
+                console.log("Invoice from Filename (Fallback):", invoiceNo);
+            }
+        }
     }
 
 } catch (e) {

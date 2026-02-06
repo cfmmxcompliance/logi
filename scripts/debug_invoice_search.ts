@@ -1,6 +1,6 @@
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, query, where, limit } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, query, where } from 'firebase/firestore';
 
 const firebaseConfig = {
     apiKey: "AIzaSyDEezg2uRbLKAfkGcXt1x0p0KamaTKAaBU",
@@ -15,48 +15,50 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 async function search() {
-    const TERM = "WHSU20666";
-    console.log(`Searching DEEP for "${TERM}"...`);
+    const TERM = "DRYU9550150";
+    console.log(`Searching for "${TERM}" across ALL logical collections...`);
 
-    // 1. Check 'shipments' (Shipment Plan) - Check 'containers' ARRAY
-    console.log("\n--- Checking 'shipments' (array-contains) ---");
+    // 1. Check commercial_invoices (Items)
+    console.log("\n--- Checking 'commercial_invoices' (ITEMS) ---");
     try {
-        const q = query(collection(db, 'shipments'), where('containers', 'array-contains', TERM));
+        const q = query(collection(db, 'commercial_invoices'), where('containerNo', '==', TERM));
+        const itemsSnapshot = await getDocs(q);
+
+        if (itemsSnapshot.empty) {
+            console.log("No items found matching containerNo == " + TERM);
+        } else {
+            console.log(`FOUND ${itemsSnapshot.size} items in Commercial Invoices!`);
+            console.log(itemsSnapshot.docs[0].data());
+        }
+    } catch (error) {
+        console.error("Error querying commercial_invoices:", error);
+    }
+
+    // 2. Check 'equipment_tracking' (containerNo)
+    console.log("\n--- Checking 'equipment_tracking' ---");
+    try {
+        const q = query(collection(db, 'equipment_tracking'), where('containerNo', '==', TERM));
         const snap = await getDocs(q);
         if (!snap.empty) {
-            console.log(`FOUND in Shipment Plan! ID: ${snap.docs[0].id}`);
+            console.log(`FOUND in Equipment! ID: ${snap.docs[0].id}`);
             console.log(JSON.stringify(snap.docs[0].data(), null, 2));
         } else {
-            console.log("Not found in Shipments (Exact). checking brute force...");
-            // Brute force check first 100 shipments
-            const q2 = query(collection(db, 'shipments'), limit(100));
-            const snap2 = await getDocs(q2);
-            let found = false;
-            snap2.forEach(d => {
-                const data = d.data();
-                const str = JSON.stringify(data);
-                if (str.includes("WHSU") && str.includes("20666")) {
-                    console.log(`FOUND FUZZY MATCH in Shipment ${d.id}`);
-                    console.log(data);
-                    found = true;
-                }
-            });
-            if (!found) console.log("Not found in Shipments (Fuzzy).");
+            console.log("Not found in Equipment.");
         }
-    } catch (e) { console.error("Error Shipments:", e); }
+    } catch (e) { console.error("Error Equip:", e); }
 
-    // 2. Check 'customs_clearance'
-    console.log("\n--- Checking 'customs_clearance' ---");
+    // 3. Check 'vessel_tracking' (containerNo)
+    console.log("\n--- Checking 'vessel_tracking' ---");
     try {
-        const q = query(collection(db, 'customs_clearance'), where('containerNo', '==', TERM));
+        const q = query(collection(db, 'vessel_tracking'), where('containerNo', '==', TERM));
         const snap = await getDocs(q);
         if (!snap.empty) {
-            console.log(`FOUND in Customs! ID: ${snap.docs[0].id}`);
+            console.log(`FOUND in Vessel Tracking! ID: ${snap.docs[0].id}`);
             console.log(JSON.stringify(snap.docs[0].data(), null, 2));
         } else {
-            console.log("Not found in Customs.");
+            console.log("Not found in Vessel Tracking.");
         }
-    } catch (e) { console.error("Error Customs:", e); }
+    } catch (e) { console.error("Error Vessel:", e); }
 
     process.exit(0);
 }

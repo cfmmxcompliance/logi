@@ -1491,8 +1491,29 @@ export const CIExtractor: React.FC = () => {
     }, [items, deferredSearchTerm, showMissingOnly, showErrorsOnly, showSensibleOnly, showNoDBOnly, showPricesOnly, masterDataMap]);
 
     const handleSplitAndExport = () => {
-        const sourceItems = filteredItems;
-        if (sourceItems.length === 0) return;
+        // FORCE FRESH FETCH to avoid stale closure / ghost data issues
+        const freshData = storageService.getInvoiceItems();
+
+        let sourceItems = freshData;
+
+        // Re-apply critical filters if active (e.g. search)
+        if (searchTerm) {
+            const lowerTerm = searchTerm.toLowerCase();
+            sourceItems = sourceItems.filter(i =>
+                JSON.stringify(i).toLowerCase().includes(lowerTerm) // Simplified robust search
+            );
+        }
+
+        // Apply same filters as UI if needed, but usually export wants EVERYTHING visible
+        // We will respect the 'filteredItems' logic by re-filtering if needed, 
+        // OR just default to "All Loaded Items" if the user wants to export what is "in the DB"
+        // User complaint: "Csvs salian con datos duplicados... recien cargado y recien borrado"
+        // This implies the EXPORT had lines that were DELETED. Fresh fetch fixes this.
+
+        if (sourceItems.length === 0) {
+            showNotification('Export Info', "No data found in database.", 'warning');
+            return;
+        }
 
         // Split logic - Re-indexing items for each group
         const a1Items = sourceItems

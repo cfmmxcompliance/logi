@@ -1728,14 +1728,28 @@ export const storageService = {
     }
   },
 
+  refreshPreAlerts: async () => {
+    if (!db) return [];
+    try {
+      console.log("⬇️ Fetching PreAlerts (On-Demand)...");
+      const snap = await getDocs(collection(db, COLS.PRE_ALERTS));
+      dbState.preAlerts = snap.docs.map(d => ({ ...d.data(), id: d.id } as PreAlertRecord));
+      notifyListeners();
+      return dbState.preAlerts;
+    } catch (e) {
+      console.error("Failed to refresh PreAlerts", e);
+      return [];
+    }
+  },
+
   updatePreAlert: async (record: PreAlertRecord) => {
-    const updated = { ...record, updatedAt: new Date().toISOString() };
+    const updatedRecord = { ...record, updatedAt: new Date().toISOString() };
     const id = record.id || generateId();
     if (!db) throw new Error("Sin conexión a Internet.");
-    await setDoc(doc(db, COLS.PRE_ALERTS, id), sanitizeForFirestore(updated));
+    await setDoc(doc(db, COLS.PRE_ALERTS, id), sanitizeForFirestore(updatedRecord));
 
     const idx = dbState.preAlerts.findIndex((p: any) => p.id === id);
-    if (idx !== -1) dbState.preAlerts[idx] = { ...updated, id }; else dbState.preAlerts.push({ ...updated, id });
+    if (idx !== -1) dbState.preAlerts[idx] = { ...updatedRecord, id }; else dbState.preAlerts.push({ ...updatedRecord, id });
   },
 
   deletePreAlert: async (id: string) => {

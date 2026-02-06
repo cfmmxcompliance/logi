@@ -442,6 +442,9 @@ export const PreAlerts = () => {
 
     // AI Document Upload Logic (BL / AWB) - STEP 1: Analysis (Batch Support)
     const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Force Fresh Data Fetch! (Bulletproof Cache)
+        await storageService.refreshPreAlerts();
+
         const fileList = e.target.files;
         if (!fileList || fileList.length === 0) return;
 
@@ -472,9 +475,9 @@ export const PreAlerts = () => {
         });
 
         for (const file of files) {
-            // 4MB limit check
+            // 15MB limit check (Increased from 4MB)
             // @ts-ignore
-            if (file.size > 4 * 1024 * 1024) {
+            if (file.size > 15 * 1024 * 1024) {
                 batchResults.push({
                     file,
                     preAlert: {} as any,

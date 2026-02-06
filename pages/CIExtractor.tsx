@@ -1430,7 +1430,7 @@ export const CIExtractor: React.FC = () => {
 
         return items.filter(i => {
             if (showMissingOnly) {
-                const hasMissingData = !i.regimen || !i.hts || !i.spanishDescription || !i.um;
+                const hasMissingData = !i.regimen || !i.hts || !i.spanishDescription || !i.um || !i.netWeight;
                 if (!hasMissingData) return false;
             }
 

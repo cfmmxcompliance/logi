@@ -34,6 +34,7 @@ const applyMasterDataToItems = (
                 // If Invoice has weight but Master Data is 0, keep Invoice weight (safest assumption)
                 netWeight: (match.NETWEIGHT && Number(match.NETWEIGHT) > 0) ? Number(match.NETWEIGHT) : (item.netWeight || 0),
                 regimen: match.REGIMEN?.trim() || item.regimen,
+                prosec: match.PROSEC?.toString().trim() || item.prosec,
                 // Correction of PartNo casing/trimming
                 partNo: match.PART_NUMBER?.trim() || item.partNo
             };
@@ -315,7 +316,7 @@ export const CIExtractor: React.FC = () => {
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
-    const ITEMS_PER_PAGE = 50;
+    const [itemsPerPage, setItemsPerPage] = useState(50);
 
     // Sync Reset
     useEffect(() => {
@@ -1485,13 +1486,14 @@ export const CIExtractor: React.FC = () => {
                 ${normalize(i.um)}
                 ${normalize(i.incoterm)}
                 ${normalize(i.item)}
+                ${normalize((i as any).bl || '')}
                 ${normalize(invoiceToBLMap[i.invoiceNo])}
+                ${normalize(i.rb)}
             `;
-
             // AND Condition: ALL terms (from comma split) must match somewhere in this row
             return terms.every(term => rowSearchStr.includes(term));
         });
-    }, [items, deferredSearchTerm, showMissingOnly, showErrorsOnly, showSensibleOnly, showNoDBOnly, showPricesOnly, masterDataMap]);
+    }, [items, deferredSearchTerm, showMissingOnly, showErrorsOnly, showSensibleOnly, showNoDBOnly, showPricesOnly, masterDataMap, invoiceToBLMap]);
 
     const handleSplitAndExport = async () => {
         // FORCE FRESH FETCH FROM CLOUD to avoid stale closure / ghost data issues
@@ -1589,6 +1591,7 @@ export const CIExtractor: React.FC = () => {
                 const normalizedPart = String(item.partNo || '').trim();
                 const masterPart = masterDataMap[normalizedPart];
                 const r8Value = item.rb || (masterPart?.R8 || '');
+                const prosecValue = item.prosec || (masterPart?.PROSEC || '');
 
                 // Función auxiliar para escapar comas y comillas (Excel Standard)
                 const esc = (val: any) => {
@@ -1610,7 +1613,7 @@ export const CIExtractor: React.FC = () => {
                     esc(item.englishName),
                     esc(item.spanishDescription), // Asegura descripciones limpias
                     esc(item.hts),
-                    esc(item.prosec),
+                    esc(prosecValue),
                     esc(r8Value),
                     item.qty || 0,
                     esc(item.um),
@@ -1654,133 +1657,119 @@ export const CIExtractor: React.FC = () => {
     };
 
 
-    const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
-    const displayedItems = filteredItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+    const displayedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
-        <div className="flex flex-col h-[calc(100vh-140px)] gap-4">
+        <div className="flex flex-col h-[calc(100vh-85px)] gap-2">
             {/* Rigid Layout Container */}
-            {/* Header and Stats */}
-            <div className="flex justify-between items-start">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Commercial Invoices</h1>
-                    <p className="text-slate-500">Manage and split commercial invoices by regimen</p>
-                </div>
-                <div className="flex gap-4">
-                    {/* Stats Cards */}
-                    <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 text-center min-w-[100px]">
-                        <p className="text-xs text-slate-500 uppercase font-bold">Total Items</p>
-                        <p className="text-xl font-bold text-blue-600">{stats.totalItems}</p>
-                    </div>
-                    <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 text-center min-w-[100px]">
-                        <p className="text-xs text-slate-500 uppercase font-bold">Standard</p>
-                        <p className="text-xl font-bold text-emerald-600">{stats.inCount}</p>
-                    </div>
-                    <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 text-center min-w-[100px]">
-                        <p className="text-xs text-slate-500 uppercase font-bold">A1 Regimen</p>
-                        <p className="text-xl font-bold text-purple-600">{stats.a1Count}</p>
-                    </div>
-                </div>
-            </div >
-
+            {/* Header Area (Gray Background) */}
             {/* Actions Toolbar */}
             < div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4" >
-                {/* Row 1: Search Bar */}
-                < div className="relative w-full" >
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                        ref={searchInputRef}
-                        type="text"
-                        placeholder="Search by Invoice, Part No, or Model..."
-                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700"
-                        onChange={(e) => handleSearch(e.target.value)}
-                        defaultValue=""
-                    />
+                {/* Compact Toolbar: Title | Search | Filters */}
+                <div className="flex flex-col md:flex-row gap-4 items-center">
 
-                    {/* Clear Filters Button (New) */}
-                    {(showMissingOnly || showErrorsOnly || showSensibleOnly || showNoDBOnly || showPricesOnly || searchTerm) && (
-                        <button
-                            onClick={() => {
-                                setShowMissingOnly(false);
-                                setShowErrorsOnly(false);
-                                setShowSensibleOnly(false);
-                                setShowNoDBOnly(false);
-                                setShowPricesOnly(false);
-                                setSearchTerm('');
-                                if (searchInputRef.current) searchInputRef.current.value = '';
-                            }}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-red-500 underline font-bold bg-white px-2 py-1 rounded shadow-sm opacity-90 hover:opacity-100"
-                        >
-                            Clear Filters ({filteredItems.length}/{items.length})
-                        </button>
-                    )}
-                </div >
+                    {/* Title (Integrated) */}
+                    <h1 className="text-xl font-bold text-slate-800 whitespace-nowrap shrink-0 mr-2">
+                        Commercial Invoices
+                    </h1>
 
-                {/* Row 2: Actions & Filters */}
-                < div className="flex flex-wrap gap-3 items-center justify-between" >
-                    <div className="flex items-center gap-3 flex-wrap">
-                        {/* Filters */}
-                        <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
+                    {/* Left: Search (Flexible) */}
+                    <div className="relative w-full md:flex-1 min-w-[200px]">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                            ref={searchInputRef}
+                            type="text"
+                            placeholder="Search..."
+                            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700 text-sm"
+                            onChange={(e) => handleSearch(e.target.value)}
+                            defaultValue=""
+                        />
+                        {/* Clear Filters Button */}
+                        {(showMissingOnly || showErrorsOnly || showSensibleOnly || showNoDBOnly || showPricesOnly || searchTerm) && (
+                            <button
+                                onClick={() => {
+                                    setShowMissingOnly(false);
+                                    setShowErrorsOnly(false);
+                                    setShowSensibleOnly(false);
+                                    setShowNoDBOnly(false);
+                                    setShowPricesOnly(false);
+                                    setSearchTerm('');
+                                    if (searchInputRef.current) searchInputRef.current.value = '';
+                                }}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-red-500 underline font-bold bg-white px-2 py-1 rounded shadow-sm opacity-90 hover:opacity-100"
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Right: Filters (Fixed) */}
+                    <div className="w-auto flex-none flex items-center justify-end gap-2 overflow-x-auto">
+                        <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-200">
                             <button
                                 onClick={() => setShowErrorsOnly(!showErrorsOnly)}
-                                className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showErrorsOnly
+                                className={`px-2 py-1.5 rounded-md flex items-center gap-1 transition-all text-xs font-bold ${showErrorsOnly
                                     ? 'bg-red-500 text-white shadow-sm'
                                     : 'text-slate-600 hover:bg-white hover:shadow-sm'
                                     }`}
                                 title="Show Only R8 Mismatches"
                             >
-                                <AlertCircle size={16} />
-                                R8 Errors
+                                <AlertCircle size={14} /> R8
                             </button>
-                            <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                            <div className="w-px h-3 bg-slate-300 mx-1"></div>
                             <button
                                 onClick={() => setShowMissingOnly(!showMissingOnly)}
-                                className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showMissingOnly
+                                className={`px-2 py-1.5 rounded-md flex items-center gap-1 transition-all text-xs font-bold ${showMissingOnly
                                     ? 'bg-amber-500 text-white shadow-sm'
                                     : 'text-slate-600 hover:bg-white hover:shadow-sm'
                                     }`}
                                 title="Show Missing Data"
                             >
-                                <AlertCircle size={16} />
-                                Missing Info
+                                <AlertCircle size={14} /> Missing
                             </button>
-                            <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                            <div className="w-px h-3 bg-slate-300 mx-1"></div>
                             <button
                                 onClick={() => setShowPricesOnly(!showPricesOnly)}
-                                className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showPricesOnly
+                                className={`px-2 py-1.5 rounded-md flex items-center gap-1 transition-all text-xs font-bold ${showPricesOnly
                                     ? 'bg-rose-500 text-white shadow-sm'
                                     : 'text-slate-600 hover:bg-white hover:shadow-sm'
                                     }`}
                                 title="Show Items with Estimate Price"
                             >
-                                <AlertCircle size={16} />
-                                Prices
+                                <AlertCircle size={14} /> Prices
                             </button>
-                            <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                            <div className="w-px h-3 bg-slate-300 mx-1"></div>
                             <button
                                 onClick={() => setShowSensibleOnly(!showSensibleOnly)}
-                                className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showSensibleOnly
+                                className={`px-2 py-1.5 rounded-md flex items-center gap-1 transition-all text-xs font-bold ${showSensibleOnly
                                     ? 'bg-rose-500 text-white shadow-sm'
                                     : 'text-slate-600 hover:bg-white hover:shadow-sm'
                                     }`}
                                 title="Show Items marked as Sensible (!= N)"
                             >
-                                <AlertCircle size={16} />
-                                Sens
+                                <AlertCircle size={14} /> Sens
                             </button>
-                            <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                            <div className="w-px h-3 bg-slate-300 mx-1"></div>
                             <button
                                 onClick={() => setShowNoDBOnly(!showNoDBOnly)}
-                                className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${showNoDBOnly
+                                className={`px-2 py-1.5 rounded-md flex items-center gap-1 transition-all text-xs font-bold ${showNoDBOnly
                                     ? 'bg-rose-500 text-white shadow-sm'
                                     : 'text-slate-600 hover:bg-white hover:shadow-sm'
                                     }`}
                                 title="Show Items missing from DB"
                             >
-                                <AlertCircle size={16} />
-                                DB
+                                <AlertCircle size={14} /> DB
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                {/* Row 2: Actions & Filters */}
+                < div className="flex flex-wrap gap-3 items-center justify-between" >
+                    <div className="flex items-center gap-3 flex-wrap">
+                        {/* Old filters removed, replaced by compact inline above */}
+                        <div className="hidden"></div>
 
                         {/* Selection Actions */}
                         {selectedIds.size > 0 && (isAdmin || isEditor) && (
@@ -1921,15 +1910,15 @@ export const CIExtractor: React.FC = () => {
                                 <th className="p-4 text-center">Estimated</th>
                                 <th className="p-4 text-center">Sensible</th>
                                 <th className="p-4 text-center">NDB</th>
-                                <th className="p-4">Invoice No</th>
+                                <th className="p-4 min-w-[150px]">Invoice No</th>
                                 <th className="p-4">BL</th>
                                 <th className="p-4">Container/Guide</th>
                                 <th className="p-4">Date</th>
                                 <th className="p-4">Regimen</th>
                                 <th className="p-4">Incoterm</th>
                                 <th className="p-4">HTS</th>
-                                <th className="p-4">Part No</th>
-                                <th className="p-4">Model</th>
+                                <th className="p-4 min-w-[300px]">Part No</th>
+                                <th className="p-4 min-w-[200px]">Model</th>
                                 <th className="p-4">English Name</th>
                                 <th className="p-4">Desc (ES)</th>
                                 <th className="p-4 text-right">Qty</th>
@@ -1956,7 +1945,7 @@ export const CIExtractor: React.FC = () => {
                                         <InvoiceRow
                                             key={item.id}
                                             item={item}
-                                            index={(currentPage - 1) * ITEMS_PER_PAGE + index}
+                                            index={(currentPage - 1) * itemsPerPage + index}
                                             isSelected={selectedIds.has(item.id)}
                                             onSelect={handleSelectRow}
                                             isEditing={editingId === item.id}
@@ -1969,7 +1958,8 @@ export const CIExtractor: React.FC = () => {
                                             masterPart={masterPart}
                                             onOpenDiff={handleOpenDiffModal}
                                             onOpenEst={handleOpenEstModal}
-                                            blNo={invoiceToBLMap[item.invoiceNo]}
+                                            // Fix: Read BL from DB first, then fallback to map lookup
+                                            blNo={(item as any).bl || invoiceToBLMap[item.invoiceNo]}
                                         />
                                     );
                                     /*
@@ -2021,19 +2011,19 @@ export const CIExtractor: React.FC = () => {
                                                         </button>
                                                     );
                                                 }
-    
+     
                                                 const r8Desc = masterPart?.DESCRIPCION_R8?.toString().trim().toUpperCase() || '';
                                                 const itemDesc = item.spanishDescription?.toString().trim().toUpperCase() || '';
                                                 const itemRb = item.rb?.toString().trim() || '';
-    
+     
                                                 // 1. Description Match (Relaxed)
                                                 const isTextMatch = r8Desc && itemDesc && (r8Desc.includes(itemDesc) || itemDesc.includes(r8Desc));
-    
+     
                                                 // 2. Both Empty Case (Not R8 in file AND Not R8 in Master Data)
                                                 const isBothEmpty = !itemRb && !r8Desc;
-    
+     
                                                 const isMatch = isTextMatch || isBothEmpty;
-    
+     
                                                 return isMatch ? (
                                                     <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
                                                 ) : (
@@ -2063,18 +2053,18 @@ export const CIExtractor: React.FC = () => {
                                                         </button>
                                                     );
                                                 }
-    
+     
                                                 const remarks = masterPart?.REMARKS?.toString().toLowerCase() || '';
                                                 const estimatedPrice = Number(masterPart?.ESTIMATED || 0);
                                                 const itemPrice = parseFloat(String(item.unitPrice || '0'));
-    
+     
                                                 // Logic:
                                                 // Strictly Numeric:
                                                 // - Bad if Estimated > 0 AND Item Price < Estimated.
                                                 // - Otherwise Good (Green).
-    
+     
                                                 const isPriceIssue = estimatedPrice > 0 && itemPrice < estimatedPrice;
-    
+     
                                                 return isPriceIssue ? (
                                                     <button
                                                         onClick={() => handleOpenEstModal(item)}
@@ -2094,12 +2084,12 @@ export const CIExtractor: React.FC = () => {
                                                 if (!masterPart) {
                                                     return <X size={20} className="text-red-500 mx-auto" strokeWidth={3} title="Part Not Found" />;
                                                 }
-    
+     
                                                 const strVal = masterPart?.SENSIBLE ? String(masterPart.SENSIBLE).trim().toUpperCase() : '';
                                                 // If "N" OR Empty -> Green Check (Assuming empty means not sensible if part exists)
                                                 // Else (e.g. "Y") -> Red X
                                                 const isNotSensible = strVal === 'N' || strVal === '';
-    
+     
                                                 // If "N" (Not Sensible) -> Green Check
                                                 // Else -> Red X
                                                 return isNotSensible ? (
@@ -2259,7 +2249,7 @@ export const CIExtractor: React.FC = () => {
                                             ) : `$${item.unitPrice.toFixed(2)}`}
                                         </td>
                                         <td className="p-4 text-right font-mono font-medium">${((item.qty || 0) * (item.unitPrice || 0)).toFixed(2)}</td>
-    
+     
                                     </tr>
                                     */
                                 })
@@ -2268,6 +2258,89 @@ export const CIExtractor: React.FC = () => {
                     </table>
                 </div>
             </div >
+
+            {/* Compact Pagination Bar at Bottom */}
+            <div className="flex flex-col md:flex-row justify-between items-center bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm text-xs mt-auto">
+
+                {/* Left: Record Range */}
+                <div className="text-slate-500 font-medium">
+                    Showing <span className="font-bold text-slate-800">{(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredItems.length)}</span> of <span className="font-bold text-slate-800">{filteredItems.length}</span>
+                </div>
+
+                {/* Dynamic Sums (BL / Container) */}
+                {(() => {
+                    // 1. Calculate Total Weight
+                    const totalWeight = filteredItems.reduce((sum, item) => sum + ((item.netWeight || 0) * (item.qty || 0)), 0);
+
+                    // 2. Detect Context
+                    const uniqueBLs = new Set(filteredItems.map(i => (i as any).bl || invoiceToBLMap[i.invoiceNo]).filter(Boolean));
+                    const uniqueContainers = new Set(filteredItems.map(i => i.containerNo).filter(Boolean));
+
+                    const isSingleBL = uniqueBLs.size === 1 && searchTerm;
+                    const isSingleContainer = uniqueContainers.size === 1 && searchTerm;
+
+                    if (!isSingleBL && !isSingleContainer) return null;
+
+                    return (
+                        <div className="flex items-center gap-4 ml-4">
+                            {isSingleBL && (
+                                <span className="text-slate-500 font-bold text-xs uppercase">
+                                    BLSum: <span className="text-blue-600">{totalWeight.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</span>
+                                </span>
+                            )}
+                            {isSingleContainer && (
+                                <span className="text-slate-500 font-bold text-xs uppercase">
+                                    ContainerSum: <span className="text-purple-600">{totalWeight.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</span>
+                                </span>
+                            )}
+                        </div>
+                    );
+                })()}
+
+                {/* Center: Integrated Stats */}
+                <div className="flex items-center gap-4 bg-slate-50 px-3 py-1 rounded-md border border-slate-100">
+                    <span className="text-slate-500 font-bold">Total: <span className="text-blue-600">{stats.totalItems}</span></span>
+                    <span className="w-px h-3 bg-slate-300"></span>
+                    <span className="text-slate-500 font-bold">Standard: <span className="text-emerald-600">{stats.inCount}</span></span>
+                    <span className="w-px h-3 bg-slate-300"></span>
+                    <span className="text-slate-500 font-bold">A1: <span className="text-purple-600">{stats.a1Count}</span></span>
+                </div>
+
+                {/* Right: Controls (Selector + Buttons) */}
+                <div className="flex items-center gap-2">
+                    {/* Limit Selector (Left of Previous) */}
+                    <select
+                        value={itemsPerPage}
+                        onChange={(e) => {
+                            setItemsPerPage(Number(e.target.value));
+                            setCurrentPage(1);
+                        }}
+                        className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded focus:ring-blue-500 focus:border-blue-500 block p-1.5 font-medium cursor-pointer"
+                    >
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                        <option value={500}>500</option>
+                    </select>
+
+                    <div className="flex items-center border border-slate-200 rounded-md overflow-hidden">
+                        <button
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1.5 text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed border-r border-slate-200 font-medium"
+                        >
+                            Previous
+                        </button>
+                        <button
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1.5 text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             {/* Bulk Delete Modal */}
             {

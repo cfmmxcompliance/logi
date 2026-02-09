@@ -53,19 +53,31 @@ export const DailyAudit = () => {
             // Ensure DB is loaded (Hydration Safety)
             if (storageService.getParts().length === 0) await storageService.loadMasterData();
 
-            // Filter strictly by the modification timestamp (Converted to MX Time)
-            rawData = storageService.getParts().filter(p => {
-                if (!p.UPDATE_TIME) return false;
-                try {
-                    const pDate = new Date(p.UPDATE_TIME).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
-                    return pDate === date;
-                } catch (e) { return false; }
-            });
+            // FIXED LOGIC: Priority to Part Numbers from the Change Record
+            // This ensures we find the parts even if they were updated AGAIN on a later date.
+            if (specificChange && specificChange.partNumbers && specificChange.partNumbers.length > 0) {
+                const targetPNs = new Set(specificChange.partNumbers.map(p => String(p).trim().toUpperCase()));
+                rawData = storageService.getParts().filter(p => {
+                    const pAny = p as any;
+                    const pName = (p.PART_NUMBER || pAny.PartNo || '').toString().trim().toUpperCase();
+                    return targetPNs.has(pName);
+                });
+            } else {
+                // Fallback: Filter strictly by the modification timestamp (Converted to MX Time)
+                // This is only for legacy records or aggregated views without specific PN lists
+                rawData = storageService.getParts().filter(p => {
+                    if (!p.UPDATE_TIME) return false;
+                    try {
+                        const pDate = new Date(p.UPDATE_TIME).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+                        return pDate === date;
+                    } catch (e) { return false; }
+                });
+            }
             filename = `MD_Changes_${date}.csv`;
         }
 
         if (rawData.length === 0) {
-            alert('No se pudieron obtener los datos para el reporte. \n\nPosible causa: Su perfil (Agente) no tiene permisos de lectura sobre el "Master Data" (Colección: parts). Contacte al Administrador.');
+            alert('No se encontraron registros para generar el reporte.\n\nPosible causa:\n1. Los items fueron eliminados del Master Data.\n2. No hay cambios registrados compatibles con la versión actual.');
             return;
         }
 

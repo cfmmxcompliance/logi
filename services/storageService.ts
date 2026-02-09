@@ -1209,11 +1209,13 @@ export const storageService = {
     try {
       const d = new Date();
       const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+      const affectedPNs = ids.map(id => dbState.parts.find(p => p.id === id)?.PART_NUMBER).filter(Boolean);
       setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
         id: dateStr,
         timestamp: new Date().toISOString(),
         action: 'UPDATE_MASSIVE_DIRECT',
         count: increment(total),
+        partNumbers: arrayUnion(...affectedPNs),
         reported: false
       }, { merge: true }).catch(err => console.warn("Log failed", err));
     } catch (e) { }
@@ -1368,6 +1370,25 @@ export const storageService = {
 
     notifyListeners();
     saveLocal();
+    // 3. Record change for Daily Automation (Upsert)
+    try {
+      const d = new Date();
+      const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+      // Upsert parts already have PNs standard
+      const uniquePNs = Array.from(new Set(preparedParts.map(p => p.PART_NUMBER)));
+
+      await setDoc(doc(db, COLS.DAILY_CHANGES, dateStr), {
+        id: dateStr,
+        timestamp: new Date().toISOString(),
+        action: 'UPSERT_MASSIVE',
+        user: 'System (Import)',
+        partNumbers: arrayUnion(...uniquePNs),
+        count: increment(uniquePNs.length),
+        reported: false
+      }, { merge: true });
+
+    } catch (e) { console.warn("Log upsert failed", e); }
+
     storageService.bumpPartsVersion();
   },
 
@@ -1483,6 +1504,13 @@ export const storageService = {
     // Local
     dbState.vesselTracking = dbState.vesselTracking.filter((v: any) => !ids.includes(v.id));
     // No saveLocal necessary immediately if strict, but good for UI consistency
+  },
+
+  deleteVesselTracking: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.VESSEL_TRACKING, id));
+    dbState.vesselTracking = dbState.vesselTracking.filter((v: any) => v.id !== id);
+    saveLocal();
   },
 
   updateEquipmentTracking: async (record: EquipmentTrackingRecord) => {
@@ -1625,6 +1653,8 @@ export const storageService = {
           containerSize: cont.size || '',
           modelCode: record.model,
           invoiceNo: record.invoiceNo,
+          packages: record.packages,
+          grossWeight: record.grossWeight,
           etd: record.etd,
           etaPort: record.eta,
           updatedAt: new Date().toISOString()
@@ -1855,6 +1885,119 @@ export const storageService = {
       });
       saveLocal();
     }
+  },
+
+  repairEGLVPreAlerts: async () => {
+    const state = storageService.getLocalState();
+    const preAlerts = state.preAlerts || [];
+    const vesselTracking = state.vesselTracking || [];
+
+    const eglvPreAlerts = preAlerts.filter(p => p.bookingAbw?.toUpperCase().startsWith('EGLV'));
+    let updatedCount = 0;
+
+    for (const p of eglvPreAlerts) {
+      let mainChanged = false;
+      const updatedP = { ...p };
+
+      // 1. Pre-alert: ETD = ATA
+      if (updatedP.ata && updatedP.etd !== updatedP.ata) {
+        updatedP.etd = updatedP.ata;
+        mainChanged = true;
+      }
+
+      if (mainChanged) {
+        await storageService.updatePreAlert(updatedP);
+        updatedCount++;
+      }
+
+      // 2. Vessel Tracking: ETA Port = ATA Port & ETD = PreAlert ATA
+      const linkedVT = vesselTracking.filter(t => t.blNo === p.bookingAbw);
+      for (const t of linkedVT) {
+        let vtChanged = false;
+        const updatedVT = { ...t };
+
+        if (updatedVT.ataPort && updatedVT.etaPort !== updatedVT.ataPort) {
+          updatedVT.etaPort = updatedVT.ataPort;
+          vtChanged = true;
+        }
+
+        if (updatedP.ata && updatedVT.etd !== updatedP.ata) {
+          updatedVT.etd = updatedP.ata;
+          vtChanged = true;
+        }
+
+        if (vtChanged) {
+          await storageService.updateVesselTracking(updatedVT);
+          updatedCount++;
+        }
+      }
+    }
+
+    return updatedCount;
+  },
+
+  syncEvergreenPreAlertsInfo: async () => {
+    const EVERGREEN_DATA = [
+      { "Booking Number": "143559711345", "Packages": "19 PACKAGES", "Total Gross Weight": "8,019.000 KGS" },
+      { "Booking Number": "143574071408", "Packages": "26 PACKAGES", "Total Gross Weight": "11,644.000 KGS" },
+      { "Booking Number": "143574069012", "Packages": "8 PACKAGES", "Total Gross Weight": "4,757.000 KGS" },
+      { "Booking Number": "143559588446", "Packages": "12 PACKAGES", "Total Gross Weight": "11,807.000 KGS" },
+      { "Booking Number": "143559589141", "Packages": "6 PACKAGES", "Total Gross Weight": "4,233.000 KGS" },
+      { "Booking Number": "143574070070", "Packages": "12 PACKAGES", "Total Gross Weight": "11,386.000 KGS" },
+      { "Booking Number": "143559711337", "Packages": "11 PACKAGES", "Total Gross Weight": "8,007.000 KGS" },
+      { "Booking Number": "143574071165", "Packages": "12 PACKAGES", "Total Gross Weight": "11,442.000 KGS" },
+      { "Booking Number": "143574068432", "Packages": "8 PACKAGES", "Total Gross Weight": "4,755.000 KGS" },
+      { "Booking Number": "143574069373", "Packages": "29 PACKAGES", "Total Gross Weight": "13,685.000 KGS" },
+      { "Booking Number": "143674060033", "Packages": "10 PACKAGES", "Total Gross Weight": "9,797.000 KGS" },
+      { "Booking Number": "143559688106", "Packages": "11 PACKAGES", "Total Gross Weight": "13,170.000 KGS" },
+      { "Booking Number": "143559589132", "Packages": "9 PACKAGES", "Total Gross Weight": "4,557.000 KGS" },
+      { "Booking Number": "143559711205", "Packages": "25 PACKAGES", "Total Gross Weight": "14,325.000 KGS" },
+      { "Booking Number": "143574069349", "Packages": "16 PACKAGES", "Total Gross Weight": "12,195.000 KGS" },
+      { "Booking Number": "143559688203", "Packages": "12 PACKAGES", "Total Gross Weight": "12,008.000 KGS" },
+      { "Booking Number": "143574070363", "Packages": "12 PACKAGES", "Total Gross Weight": "10,821.000 KGS" },
+      { "Booking Number": "143574071254", "Packages": "14 PACKAGES", "Total Gross Weight": "10,806.000 KGS" },
+      { "Booking Number": "143574070100", "Packages": "9 PACKAGES", "Total Gross Weight": "2,773.000 KGS" },
+      { "Booking Number": "143559688220", "Packages": "28 PACKAGES", "Total Gross Weight": "14,283.000 KGS" },
+      { "Booking Number": "143574070096", "Packages": "23 PACKAGES", "Total Gross Weight": "9,057.000 KGS" },
+      { "Booking Number": "143559689064", "Packages": "10 PACKAGES", "Total Gross Weight": "8,174.000 KGS" },
+      { "Booking Number": "143574070495", "Packages": "24 PACKAGES", "Total Gross Weight": "10,496.000 KGS" }
+    ];
+
+    const state = storageService.getLocalState();
+    const preAlerts = state.preAlerts || [];
+    let updatedCount = 0;
+
+    for (const item of EVERGREEN_DATA) {
+      const bl = `EGLV${item["Booking Number"]}`;
+      const record = preAlerts.find(p => p.bookingAbw === bl);
+
+      if (record) {
+        const weight = parseFloat(item["Total Gross Weight"].replace(/,/g, '').replace(' KGS', ''));
+
+        // Only update if missing or different (to avoid redundancy)
+        // But user wants to sync specifically, so let's overwrite if different
+        // Normalizing packages string for comparison might be tricky if format differs. 
+        // "19 PACKAGES" vs "19" -> logic below handles direct replacement
+
+        let changed = false;
+        const updated = { ...record };
+
+        if (!record.packages || record.packages !== item.Packages) {
+          updated.packages = item.Packages;
+          changed = true;
+        }
+        if (!record.grossWeight || record.grossWeight !== weight) {
+          updated.grossWeight = weight;
+          changed = true;
+        }
+
+        if (changed) {
+          await storageService.updatePreAlert(updated);
+          updatedCount++;
+        }
+      }
+    }
+    return updatedCount;
   },
 
   addCost: async (cost: CostRecord) => {

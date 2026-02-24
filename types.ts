@@ -437,21 +437,47 @@ export interface CommercialInvoiceItem {
   item: string;
   model: string;
   partNo: string;
-  englishName: string;
-  spanishDescription: string;
-  hts: string;
-  prosec: string;
-  rb: string;
+  englishName?: string;
+  spanishDescription?: string;
+  hts?: string;
+  prosec?: string;
+  rb?: string;
   qty: number;
-  um: string;
-  netWeight: number;
+  um?: string;
+  netWeight?: number;
   unitPrice: number;
   totalAmount: number;
-  regimen: string;
+  regimen?: string;
   containerNo?: string;
   incoterm?: string;
   currency?: string;
   priceVerified?: boolean;
+  // Custom CFDI Fields
+  vin?: string;
+  engine?: string;
+  pesoNetokg?: number;
+  pesoBrutokg?: number;
+  valAgregado?: number;
+  unidad?: string;
+  rawDescripcion?: string;
+  uuid?: string;
+}
+
+export interface XMLCIRecord {
+  id: string; // Same as UUID or InvoiceNo-FiscalID
+  idFiscal: string;
+  nombre: string;
+  domicilio: string;
+  vinculacion: string; // "SI" or "NO"
+  invoiceNo: string;
+  fecha: string; // YYYY-MM-DD
+  incoterm: string;
+  moneda: string;
+  valMonFact: number;
+  factorMoneda: number;
+  valDolares: number;
+  uuid: string;
+  updatedAt?: string;
 }
 
 export interface MasterDataReport {
@@ -508,9 +534,11 @@ export interface StorageState {
   dataStageReports: DataStageReport[];
   trainingSubmissions: any[];
   commercialInvoices: CommercialInvoiceItem[];
+  cfdiInvoices?: CommercialInvoiceItem[]; // Isolated XML Extraction Collection
   dataStageDrafts?: DataStageSession[];
   digitalArchive?: DigitalArchiveRecord[]; // New: Unpaid Pedimentos
   dailyChanges: DailyChange[];
   dailyReports?: MasterDataReport[];
   users: User[];
+  xmlCI?: XMLCIRecord[];
 }

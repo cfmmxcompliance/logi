@@ -1,0 +1,1046 @@
+DICCIONARIO DE DATOS CAMPOS
+WEB SERVICE –INFORMACIÓN DE VALOR Y
+COMERCIALIZACIÓN A QUE SE REFIERE EL
+ART. 59-A DE LA LEY ADUANERA PARA
+PEDIMENTOS CON CLAVE F2.
+
+Mayo 2019
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+
+Actualizaciones
+Fecha
+28-09-15
+
+Cambios
+Publicación
+
+15-12-15
+
+Se agrega las columnas de formato y longitud.
+Se incorporan los campos de subdivisión y fecha de expedición del documento.
+
+2-05-19
+
+Se modifica la columna de en País cuando hay varios proveedores o vendedores.
+
+Página 2 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+Nota.- Los campos marcados con * son obligatorios
+CAMPO EN EL
+PORTAL
+
+TAG EN EL XML
+
+FORMATO
+
+LONGITUD
+
+Clave de usuario de Ventanilla Única (Generalmente es el RFC de la persona Física o Moral), este
+Tag junto con “Password”, sirven para validar las credenciales en el WebServices y están basados
+en el estándar WS Security.
+
+Username *
+
+Contraseña cifrada que recibe el usuario vía correo electrónico después de haberse registrado en
+el portal de Ventanilla Única y este Tag junto con “Username” sirven para validar las credenciales
+en el WebServices y están basados en el estándar WS Security.
+
+Password *
+
+Acuse electrónico generado como Acuse Valor original, este Tag se declara solo en caso de que
+se desee registrar una adenda.
+
+e-document *
+
+Tipo de Operación *
+
+Patente
+Agente
+Apoderado
+Aduanal
+
+del
+o
+
+tipoOperacion *
+
+patenteAduanal
+
+DESCRIPCIÓN
+
+MAXIMA
+
+Numérico
+
+8
+
+Alfanumérico
+4
+
+Campo numérico que sirve para identificar el tipo de operación
+Para el XML se debe declarar.
+TOCE.IMP (Importación)
+En caso del Portal es un catálogo.
+
+Número de patente o autorización. Este campo alfanumérico, opcional, sirve para
+habilitar a un Agente o Apoderado Aduanal para consultar la información de valor y
+comercialización y que esta figura con su propia e.firma pueda generar adendas al
+mismo.
+En importación deberá existir el encargo conferido vigente.
+Campo opcional
+
+Página 3 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+CAMPO EN EL
+PORTAL
+
+TAG EN EL XML
+
+Número de la
+Factura
+o
+Documento que numeroFactura
+ampara el valor Original *
+comercial de las
+mercancías.*
+
+Relación
+Facturas *
+
+de
+
+FORMATO
+
+LONGITUD
+
+DESCRIPCIÓN
+
+MAXIMA
+
+Alfanumérico
+
+numeroRelacionF Numérico
+acturas *
+
+36
+
+4
+
+Número del folio de la factura o de identificación del documento que exprese el valor
+comercial de las mercancías o número generado a la relación de facturas.
+
+Este campo se obtiene automáticamente tanto en el Portal como en el WebService,
+por lo que no debe declararse, sin embargo, para el WebService este campo debe
+declararse en la cadena original.
+0 = No es Relación de Facturas.
+1= Es Relación de Facturas.
+Campo que sirve para indicar que la información de valor y comercialización tendrá o
+no subdivisión:
+0=Sin subdivisión.
+
+Subdivisión*
+
+Subdivisión *
+
+Numérico
+
+1
+
+1= Con subdivisión.
+En caso de ser relación de factura en cada comprobante de valor se indicará.
+Campo numérico, obligatorio.
+
+Página 4 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+CAMPO EN EL
+PORTAL
+
+TAG EN EL XML
+
+FORMATO
+
+LONGITUD
+
+DESCRIPCIÓN
+
+MAXIMA
+
+Fecha de expedición de la factura, relación de facturas o documento que exprese el
+valor comercial de la mercancía original, con el formato YYYY-MM-DDTMM:SS
+Fecha
+expedición
+documento
+valor *
+
+de
+de
+FechaExpedición* Alfanumérico
+de
+
+10
+
+.
+
+Campo alfanumérico, obligatorio.
+Campo que sirve para indicar que la factura o comprobante que expresa el valor de las
+mercancías funge o no como certificado de origen toda vez que contiene una
+declaración de conformidad con los tratados de libre comercio.
+
+Certificado de
+Origen *
+
+certificadoOrigen Numérico
+*
+
+1
+
+0 = No contiene una declaración / No Funge como certificado de origen
+1= Si contiene declaración / Si Funge como certificado de origen
+Derivado de la excepción de certificados de Origen de los Tratados de Libre Comercio
+que ha celebrado México con diversos países como: Costa Rica, Bolivia, Nicaragua,
+Chile, Israel, El Salvador, Guatemala y Honduras, Uruguay, América del Norte, Acuerdo
+con Japón y los que apliquen.
+En caso de ser una relación de facturas este campo se declarará en cada factura.
+
+Página 5 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+
+CAMPO EN EL
+PORTAL
+
+TAG EN EL XML
+
+FORMATO
+
+LONGITUD
+
+DESCRIPCIÓN
+
+MAXIMA
+
+Número de
+Exportador
+autorizado
+
+numeroExportad Alfanumérico
+orAutorizado
+
+Observaciones
+
+Observaciones
+
+RFC Consulta
+
+rfcConsulta
+
+Alfanumérico
+
+Alfanumérico
+
+50
+
+1000
+
+13
+
+Número de exportador autorizado, conforme al artículo 22 del Anexo 1 del Tratado de
+Libre Comercio con la Asociación Europea y a la Decisión de la Comunidad Europea.
+En caso de ser una relación de facturas este campo se declarará en cada factura.
+Campo opcional.
+Campo opcional, para ingresar alguna información adicional, como alguna
+declaración, que debe incluir la información de valor y comercialización conforme a la
+normatividad aplicable.
+Este campo es opcional y sirve para habilitar RFC´s de usuarios dando privilegios a
+estos de consultar la información de valor y comercialización que se está registrando.
+
+Página 6 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+Bloque de información para la declaración de los datos generales del Proveedor o
+Vendedor de las mercancías.
+Se deberá enviar un solo bloque por archivo, en caso de que el comprobante amparé
+una relación de facturas podrán declararse tantos como sea necesario.
+
+DATOS GENERALES DEL EMISOR DEL COMPROBANTE
+
+CAMPO EN EL
+PORTAL
+
+TAG EN EL XML
+
+FORMATO
+
+LONGITUD
+
+DESCRIPCIÓN
+
+MAXIMA
+
+Carácter para identificar el tipo de Identificador del proveedor o vendedor de las
+mercancías
+Tipo
+de
+Tipoidentificador*
+Identificador*
+
+0 Tax Id
+Numérico
+
+1
+
+1 RFC
+2 CURP
+3 Sin Tax Id
+Obligatorio, a la importación deberá declararse el número 3 ó 0.
+Dato que servirá para ingresar Tax id / RFC /CURP
+
+Identificador*
+
+Identificación*
+
+Alfanumérico
+
+50
+
+En importación debe ser Tax Id, si es Sin Tax ID se deberá indicar IA VARIOS. Solo
+cuando sea más de un proveedor o vendedor.
+
+Apellido
+Paterno del
+vendedor
+
+apellidoPaterno
+
+Carácter
+
+200
+
+Apellido Paterno del proveedor o vendedor
+Opcional
+
+Página 7 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+CAMPO EN EL
+PORTAL
+Apellido
+Materno del
+vendedor
+
+TAG EN EL XML
+
+ApellidoMaterno
+
+FORMATO
+
+LONGITUD
+
+DESCRIPCIÓN
+
+MAXIMA
+
+Apellido Materno del proveedor o vendedor
+Carácter
+
+200
+
+Opcional
+Atributo requerido para definir el nombre o razón social del proveedor o vendedor.
+
+Nombre(s) del
+vendedor
+
+Nombre*
+
+Carácter
+
+200
+
+Obligatorio solamente si se declara el Tipo de Identificador Tax Id o Sin Tax ID.
+IA VARIOS a la importación, solo cuando sea más de un proveedor o vendedor
+Define la avenida, calle, camino o carretera donde se da la ubicación del domicilio
+comercial del Proveedor o vendedor.
+
+Calle
+
+Número
+Exterior
+
+calle*
+
+numeroExterior
+
+Alfanumérico
+
+Alfanumérico
+
+100
+
+55
+
+Obligatorio si se declara Tax Id o Sin Tax ID.
+Se deberá declarar IA VARIOS a la importación. Solo cuando sea más de un
+proveedor o vendedor.
+Número particular en donde se da la ubicación sobre una calle del domicilio del
+proveedor o vendedor, se declara si en el campo tipo de identificador ingresaron
+CURP, tax ID o sin tax ID y solo cuando se tenga información
+Opcional
+
+Número Interior numeroInterior
+
+Alfanumérico
+
+55
+
+Número interior que determina la ubicación sobre una calle del domicilio del
+proveedor o vendedor, se declara si en el campo tipo de identificador ingresaron
+CURP, tax ID o sin tax ID y solo cuando se tenga información
+Opcional
+
+Página 8 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+CAMPO EN EL
+PORTAL
+
+TAG EN EL XML
+
+FORMATO
+
+LONGITUD
+
+DESCRIPCIÓN
+
+MAXIMA
+
+Este atributo sirve para expresar la colonia del domicilio del proveedor o comprador.
+Colonia
+
+Colonia
+
+Alfanumérico
+
+120
+Opcional
+
+Localidad
+
+Municipio
+
+Localidad
+
+Municipio
+
+Alfanumérico
+
+Alfanumérico
+
+120
+
+Atributo que sirve para expresarla ciudad, pueblo o poblado del domicilio del
+proveedor o vendedor.
+
+120
+
+Atributo que sirve para expresar el municipio o alcaldía del domicilio del proveedor
+o vendedor.
+
+Opcional
+
+Opcional
+
+Estado
+
+entidadFederativa
+
+Alfanumérico
+
+30
+
+Atributo que sirve para expresar el estado o entidad federativa del domicilio
+comercial del proveedor o vendedor.
+Opcional
+Atributo que sirve para definir el país del domicilio comercial del proveedor o
+vendedor.
+
+País
+
+País*
+
+Alfanumérico
+
+120
+
+Obligatorio si se declara TaxId o Sin Tax ID, se deberá indicar IA VARIOS.
+En el WS la clave de IA VARIOS es WWW.
+
+Página 9 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+Atributo que sirve para expresar el código postal del domicilio del proveedor o
+vendedor de las mercancías.
+Código postal
+
+codigoPostal
+
+Alfanumérico
+
+12
+
+Opcional
+
+Página 10 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+DATOS
+GENERALES
+COMPROBANTE
+
+CAMPO EN EL
+PORTAL
+
+DEL
+
+TAG EN EL XML
+
+DESTINATARIO
+
+FORMATO
+
+DEL
+
+En el bloque de Destinatario se deberá declara la información a la que se refiere la regla
+3.1.7. fracción II o anexo 22 según sea el caso.
+Obligatorio
+Se deberá enviar un solo bloque por archivo, en caso de que el comprobante amparé
+una relación de facturas podrán declarase tantos como sea necesario.
+
+LONGITUD
+MAXIMA
+
+DESCRIPCIÓN
+Carácter para declarar el tipo de Identificador del destinatario.
+0 Tax Id
+
+Tipo de
+Identificador
+
+1 RFC
+Tipoidentificador*
+
+Numérico
+
+1
+
+2 CURP
+3 Sin Tax Id
+Campo Obligatorio, en Importación 1.
+Dato que servirá para ingresar Tax id / RFC /CURP
+Obligatorio,
+
+Identificador*
+
+Identificación*
+
+Alfanumérico
+
+50
+
+En importación debe ser el RFC
+se deberá indicar IA VARIOS. solo cuando sea más de un destinatario
+
+Página 11 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+CAMPO EN EL
+PORTAL
+
+TAG EN EL XML
+
+FORMATO
+
+LONGITUD
+
+DESCRIPCIÓN
+
+MAXIMA
+Apellido Paterno del destinatario.
+
+Apellido
+Paterno del
+destinatario
+
+ApellidoPaterno
+
+Apellido
+Materno del
+destinatario
+
+ApellidoMaterno
+
+Carácter
+
+200
+Opcional
+Apellido Materno del destinatario.
+
+Carácter
+
+200
+
+Opcional
+Atributo requerido para definir el nombre o razón social del destinatario.
+Obligatorio solamente si se declara el Tipo de Identificador Tax Id o Sin Tax ID.
+
+Nombre(s) del
+destinatario
+
+Calle
+
+Nombre*
+
+calle*
+
+Númer Exterior NumeroExterior
+
+Carácter
+
+Alfanumérico
+
+Alfanumérico
+
+200
+
+100
+
+55
+
+Cuando se declare Tax ID o Sin Tax ID
+se deberá indicar IA VARIOS. solo cuando sea más de un destinatario
+Este atributo requerido sirve para expresar la avenida, calle, camino o carretera del
+domicilio comercial del destinatario.
+Obligatorio si se declara Tax Id o Sin Tax ID.
+
+Este atributo sirve para expresar el número exterior del domicilio comercial del
+destinatario.
+Opcional
+
+Página 12 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+CAMPO EN EL
+PORTAL
+
+TAG EN EL XML
+
+Número Interior NumeroInterior
+
+Colonia
+
+Localidad
+
+Municipio
+
+Estado
+
+Colonia
+
+Localidad
+
+Municipio
+
+entidadFederativa
+
+FORMATO
+
+LONGITUD
+
+DESCRIPCIÓN
+
+MAXIMA
+Alfanumérico
+
+Alfanumérico
+
+Alfanumérico
+
+Alfanumérico
+
+Alfanumérico
+
+55
+
+120
+
+120
+
+120
+
+30
+
+Este atributo sirve para expresar el número interior del domicilio comercial del
+destinatario.
+Opcional
+Este atributo sirve para expresar la colonia del domicilio comercial del destinatario,
+cuando se desea ser más específico en casos de ubicaciones urbanas.
+Opcional
+Atributo que sirve para expresar la ciudad, pueblo o poblado del domicilio comercial
+del destinatario.
+Opcional
+Atributo que sirve para expresar el municipio o alcaldía del domicilio comercial del
+destinatario.
+Opcional.
+Atributo que sirve para expresar el estado o entidad federativa del domicilio
+comercial del destinatario.
+Opcional.
+
+Página 13 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+CAMPO EN EL
+PORTAL
+
+TAG EN EL XML
+
+FORMATO
+
+LONGITUD
+
+DESCRIPCIÓN
+
+MAXIMA
+
+Atributo que sirve para expresar el país del domicilio comercial del destinatario.
+Obligatorio si se declara Tax Id o Sin Tax ID.
+País
+
+País*
+
+Alfanumérico
+
+120
+Cuando se declare Tax ID o Sin Tax ID se deberá indicar IA VARIOS.
+En el WS la clave de IA VARIOS es WWW.
+solo cuando sea más de un destinatario
+
+Código postal
+
+codigoPostal
+
+Alfanumérico
+
+12
+
+Atributo que sirve para expresar el código postal en del domicilio comercial del
+destinatario.
+Opcional.
+
+Página 14 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+
+Bloque de información para la declaración de mercancías
+Obligatorio
+Se deberá enviar tantos bloques como sean necesarios por archivo
+
+MERCANCÍA
+CAMPO EN EL
+PORTAL
+Descripción
+genérica de la
+mercancía*
+
+TAG EN EL XML
+
+FORMATO
+
+LONGITUD
+MAXIMA
+
+descripcionGener Alfanumérico
+ica *
+
+256
+
+DESCRIPCIÓN
+Descripción general de la mercancía. (Ejemplos: lote de material de ensamble,
+lote de racks, separadores o envases, refacciones, vehículos, maquinaria y
+equipo, empaques retornables, misceláneos.)
+Obligatorio
+Clave de la unidad de medida de comercialización de conformidad con el
+catálogo de la OMA.
+
+Clave de la
+unidad de
+claveUnidad
+medida de
+comercialización* Medida *
+
+Numérico
+
+Cantidad de
+unidades de
+medida de
+Cantidad *
+comercialización*
+
+Numérico
+
+30
+
+Obligatorio cuando la mercancía no sea cuantificable se pondrá batch (EJ: batch
+de material de ensamble), cuando la mercancía se puede cuantificar se deberá
+poner piece o unit (EJ: piece de vehículos, tractocamiones )
+
+15,3 (12 enteros, Cantidad de unidades de medida de comercialización.
+punto decimal
+y 3 decimales)
+Obligatorio Cuando se trate de mercancía no cuantificable se deberá poner 1, en
+caso contrario se deberá poner la cantidad de mercancía de la partida.
+
+Página 15 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+CAMPO EN EL
+PORTAL
+
+TAG EN EL XML
+
+FORMATO
+
+LONGITUD
+
+DESCRIPCIÓN
+
+MAXIMA
+
+Valor unitario en la moneda del documento que ampare el valor comercial de la
+mercancía. No puede declararse con valor 0.
+Valor unitario*
+
+valorUnitario *
+
+Numérico
+
+Valor Total *
+
+valorTotal *
+
+Numérico
+
+Tipo de Moneda*
+
+tipoMoneda *
+
+Numérico
+
+16,6 (16 enteros,
+punto decimal Obligatorio, Cuando se trate de mercancía no cuantificable este campo debe ser
+y 6 decimales) igual al valor total.
+16,6 (16 enteros,
+Valor total en la moneda del documento que ampare el valor comercial de la
+punto decimal
+mercancía. No puede declararse con valor 0.
+y 6 decimales
+Obligatorio
+
+2
+
+Tipo de Moneda del comprobante de valor correspondiente al catálogo de la
+OMA.
+Obligatorio
+
+Valor Total en
+Dólares*
+
+valorDolares *
+
+Numérico
+
+16,4
+
+Valor en dólares de la mercancía, conforme al factor de conversión o tipo de
+cambio válido en el momento de transmisión o registro de la información de
+valor y comercialización.
+Obligatorio
+
+Página 16 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+
+DESCRIPCIÓN COMERCIAL DE
+MERCANCÍA
+CAMPO EN EL
+PORTAL
+
+TAG EN EL XML
+
+Marca
+
+Marca
+
+Modelo
+
+Modelo
+
+Sub-modelo
+
+submodelo
+
+FORMATO
+
+LONGITUD
+MAXIMA
+
+DESCRIPCIÓN
+Marca de la mercancía
+
+Alfanumérico
+
+35
+
+Opcional
+
+Alfanumérico
+
+50
+
+Opcional
+
+50
+
+Sub-modelo de la mercancía
+
+Modelo de la mercancía
+
+Alfanumérico
+
+Opcional
+Número de Serie de la mercancía
+
+Número
+Serie
+
+de
+
+numeroSerie
+
+Alfanumérico
+
+25
+
+Obligatorio cuando se indica en el campo “Descripción genérica de la mercancía”
+vehículos
+Opcional en otros casos.
+
+Página 17 de 18
+
+Administración General de Aduanas
+Administración Central de Modernización Aduanera
+Administración de Modernización Aduanera “5”
+Diccionario de Datos Información de Valor y Comercialización-F2
+e.firma
+
+Registros para la declaración de firma electrónica avanzada
+Obligatorio
+Se deberá enviar un solo registro por archivo
+
+CAMPO EN EL PORTAL
+
+FORMATO
+
+LONGITUD
+
+DESCRIPCIÓN
+
+MAXIMA
+Carácter para identificar el tipo de figura que firma el archivo:
+1 Agente Aduanal
+2 Apoderado Aduanal
+
+Tipo de Figura
+
+Alfanumérico
+
+1
+
+3 Mandatario
+4 Exportador
+5 Importador
+Obligatorio
+Firma Electrónica de la Figura que transmite el archivo.
+
+e.firma
+
+Alfanumérico
+
+512
+
+Obligatorio
+
+Número de serie del
+certificado
+
+Alfanumérico
+
+20
+
+Número de Serie del Certificado Digital de la Figura que transmite el archivo.
+Obligatorio
+
+Página 18 de 18
+
+

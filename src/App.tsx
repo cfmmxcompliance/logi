@@ -18,6 +18,8 @@ import { ActionLogs } from '../pages/AuditLogs.tsx';
 import { DailyAudit } from '../pages/DailyAudit.tsx';
 import { DataStage } from '../pages/DataStage.tsx';
 import { CIExtractor } from '../pages/CIExtractor.tsx';
+import { XMLInvoiceExtractor } from '../pages/XMLInvoiceExtractor.tsx';
+import { XMLCI } from '../pages/XMLCI.tsx';
 import CCPBuilder from '../pages/CCPBuilder.tsx';
 import { Controller } from '../pages/Controller.tsx';
 import { Vucem } from '../pages/Vucem.tsx';
@@ -104,6 +106,8 @@ const AppContent = () => {
             <Route path="/equipment-tracking" element={<ProtectedRoute><EquipmentTracking /></ProtectedRoute>} />
             <Route path="/customs-clearance" element={<ProtectedRoute><CustomsClearance /></ProtectedRoute>} />
             <Route path="/commercial-invoices" element={<ProtectedRoute><CIExtractor /></ProtectedRoute>} />
+            <Route path="/xml-invoices" element={<ProtectedRoute><XMLInvoiceExtractor /></ProtectedRoute>} />
+            <Route path="/xml-ci" element={<ProtectedRoute><XMLCI /></ProtectedRoute>} />
             <Route path="/ccp-builder" element={<ProtectedRoute><CCPBuilder /></ProtectedRoute>} />
             <Route path="/data-stage" element={<ProtectedRoute><DataStage /></ProtectedRoute>} />
             <Route path="/controller" element={<ProtectedRoute><Controller /></ProtectedRoute>} />

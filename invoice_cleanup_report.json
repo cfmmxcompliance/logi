@@ -1,0 +1,1979 @@
+{
+  "summary": {
+    "totalDocs": 26494,
+    "uniqueLines": 26315,
+    "duplicateGroups": 179,
+    "docsToDelete": 179
+  },
+  "conflicts": [
+    {
+      "key": "25CFTT406482-4|5HYV-133000-6001-21|1.130000",
+      "keep": "014cace6-d4e8-494a-a126-53ca7a35ad21",
+      "delete": [
+        "1447975e-cbee-4ce2-b908-d27fa5c8eb47"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190012-6000|0.020000",
+      "keep": "0255de45-3dfe-45c0-8b5e-3f0e80210261",
+      "delete": [
+        "891a3ee4-fb96-4e2c-94d5-bd029b01e440"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-060310-6000A|7.750000",
+      "keep": "04d7bc89-2ce7-4caa-8641-6981630bd7fd",
+      "delete": [
+        "4ef4e535-7d15-42e9-872c-35ae0723c37e"
+      ],
+      "quantities": [
+        18,
+        18
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-046008-6000|0.150000",
+      "keep": "06fe5547-9d16-426f-850e-378e0c75bb91",
+      "delete": [
+        "619bf874-518d-439e-8687-f77710f66857"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190029-6000|0.010000",
+      "keep": "08202519-c909-45aa-9869-7283e3369de1",
+      "delete": [
+        "22ca239e-9255-481c-a332-e290953107b7"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190003-6000|0.080000",
+      "keep": "0840bc94-7133-4117-b2f5-dfebd60623fc",
+      "delete": [
+        "1c3c08c1-61e1-4d97-b9a5-07fed3134e1a"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-182410-6000|1.170000",
+      "keep": "087485b9-6d5a-424a-9899-a9097d979da9",
+      "delete": [
+        "8c358c77-cdff-40ae-b269-2fb5530196d2"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-260223-9000|0.050000",
+      "keep": "087c4672-a472-43ed-bbed-423b88fc5958",
+      "delete": [
+        "0f1f30b8-07d6-47fd-ac31-a2d090041ec4"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-020002-6000|0.240000",
+      "keep": "09127db3-9296-4c4e-ab28-8f164d38bde9",
+      "delete": [
+        "518f42a8-1513-45db-bfd2-c02addf419a2"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|7030-221140|0.260000",
+      "keep": "094d6890-d73b-449f-b5ae-86a9e62847ad",
+      "delete": [
+        "dfad08b6-c452-49ba-bccc-19a449660817"
+      ],
+      "quantities": [
+        400,
+        400
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-032160-6000-H1M|19.880000",
+      "keep": "5HYV-032160-6000-H1M|19-88|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "0aa2768c-6223-4a69-91fe-203a34fbb21c"
+      ],
+      "quantities": [
+        160,
+        160
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190027-6000|0.100000",
+      "keep": "0aad56d7-696a-42c1-9753-54d3e004ef9b",
+      "delete": [
+        "4413a252-d075-4d12-92f5-a3ed7c5cd2b7"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-042055-9002|8.080000",
+      "keep": "0bfb13df-b3b9-4cbe-819c-63230742496a",
+      "delete": [
+        "beee0f7f-7819-4743-8daf-ced9d84afcbe"
+      ],
+      "quantities": [
+        40,
+        40
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-030220-6000-H1M|2.220000",
+      "keep": "5HYV-030220-6000-H1M|2-22|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "0c18ed68-cde8-46e2-8361-1e082984a311"
+      ],
+      "quantities": [
+        160,
+        160
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-120103-6000|0.120000",
+      "keep": "0cd570c0-7496-414f-9ab7-c2ded733d37e",
+      "delete": [
+        "1005063e-7260-4936-947b-c363c2fa5fa2"
+      ],
+      "quantities": [
+        300,
+        300
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190018-6000|0.020000",
+      "keep": "0d7d8acb-77c3-44cc-8ddf-fad0859a04c2",
+      "delete": [
+        "2d8a56fa-6741-4e37-a6e6-a70f07e52efb"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5GYV-050620-1001|0.420000",
+      "keep": "0f3fc95b-ca10-49aa-b71b-a0ca3b98563f",
+      "delete": [
+        "ce6a9d05-9a74-4803-887a-48bb69daba5a"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5BWV-040016-5000|0.020000",
+      "keep": "100c8c8e-383b-42f4-b693-dd2b0299e720",
+      "delete": [
+        "692c42c0-7061-4bdf-bb72-3b617a8a5295"
+      ],
+      "quantities": [
+        2100,
+        2100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-355300-9001|6.550000",
+      "keep": "10fb820c-d1af-4c33-92e2-d39984a93bdb",
+      "delete": [
+        "e6d79e5c-3234-4bb3-9ab1-c92b20206c69"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190006-6000|0.010000",
+      "keep": "120e420d-768a-4670-aec3-49c0dcb8be30",
+      "delete": [
+        "432da750-93be-41c7-bde0-d0637d326e9c"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190011-1H00|0.150000",
+      "keep": "144850cc-da95-4b0f-80d9-65e2d4ea2184",
+      "delete": [
+        "54799526-1ba7-4285-afd2-18aee11dc183"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|8010-150003|0.030000",
+      "keep": "147ad16c-c6fe-4203-a895-be2cedec9c35",
+      "delete": [
+        "bd2b12e2-b491-42fd-b27b-6ff24dc36939"
+      ],
+      "quantities": [
+        2800,
+        2800
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-182050-6000|2.400000",
+      "keep": "1523e67d-8707-426f-99e3-5141026e347f",
+      "delete": [
+        "da03c28f-97bc-4af6-b2ba-3c35de1096a8"
+      ],
+      "quantities": [
+        25,
+        25
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-046003-9000|0.010000",
+      "keep": "166d8058-5697-478d-a4df-c852e62a22c7",
+      "delete": [
+        "7bf5393b-c1ce-4100-a555-4e0b61aefa83"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5BWV-040008-5000|0.030000",
+      "keep": "17047c09-ccd0-4391-9c9d-02de0c159919",
+      "delete": [
+        "785fe20d-c2d9-41c9-baf0-4c7e09397758"
+      ],
+      "quantities": [
+        6000,
+        6000
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221204-6000-H1M|0.280000",
+      "keep": "5HYV-221204-6000-H1M|0-28|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "1745da17-c9b8-4924-aed8-63095631c9cd"
+      ],
+      "quantities": [
+        160,
+        160
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-070203-6000|0.230000",
+      "keep": "1916876c-bbd5-4678-8b3d-c881c18c3f7a",
+      "delete": [
+        "afe5b402-eaa0-4db4-bd84-13c3fb3e4b5f"
+      ],
+      "quantities": [
+        2000,
+        2000
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190007-6000-12|0.020000",
+      "keep": "19ea2df7-2153-4646-bc7e-78ebaf2374cf",
+      "delete": [
+        "60062165-d46a-4592-93ca-87d594b9143e"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|30006-102070810|0.100000",
+      "keep": "1a8daf8f-d9ee-4c2f-9152-88e1910bc887",
+      "delete": [
+        "cf838e24-34a6-49b8-b87c-85bcaff1536e"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-200200-6000|3.790000",
+      "keep": "1b92bf14-f7eb-4e88-89f1-c5eb91683f24",
+      "delete": [
+        "a6dcd5c6-e491-46ef-8295-48007af4130f"
+      ],
+      "quantities": [
+        60,
+        60
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|0000-000014|0.020000",
+      "keep": "1c004ade-1770-466c-944d-54766803e31e",
+      "delete": [
+        "78ca9bf8-35ce-4dc0-9f77-f54dc5776e12"
+      ],
+      "quantities": [
+        1300,
+        1300
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-200100-6000|3.790000",
+      "keep": "1d2867cc-1d83-404f-9d0a-9a02e9905bd5",
+      "delete": [
+        "277cd891-6c04-4610-bfe6-dc5592139408"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-223022-6000-0RT00|3.590000",
+      "keep": "1da85890-b7e6-46d2-a4c6-60a0ccfd9c5a",
+      "delete": [
+        "6924cd7e-5263-4023-babd-788514af2b1f"
+      ],
+      "quantities": [
+        20,
+        20
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|6KM0-180004|0.190000",
+      "keep": "1eb4f6e1-746b-4d94-b7a8-1326ab88459a",
+      "delete": [
+        "2be76058-9cc9-49e5-9f41-3a0d7f932fd7"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-032220-6000-H1M|6.060000",
+      "keep": "5HYV-032220-6000-H1M|6-06|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "1edbe4c7-ca5d-4b0f-b23c-972cf50fc51a"
+      ],
+      "quantities": [
+        160,
+        160
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-131100-6000-20|1.510000",
+      "keep": "1edde7bd-6484-4b89-93c1-976f129b12bf",
+      "delete": [
+        "a5832ae4-edb6-4d89-9df1-b8583175f137"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-182500-6000|2.720000",
+      "keep": "1f127b19-3224-4267-9133-5af95689e341",
+      "delete": [
+        "2c297848-9127-4f9c-987b-7e6871c514cc"
+      ],
+      "quantities": [
+        20,
+        20
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-102200-6000A|4.800000",
+      "keep": "2157fa73-8e14-4d38-b69a-1aaa176ef75b",
+      "delete": [
+        "2ed11bd2-483e-4147-a89b-ece0366c54d4"
+      ],
+      "quantities": [
+        51,
+        51
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190011-6000|0.020000",
+      "keep": "21a99483-7922-4c79-bde9-abff7a43caab",
+      "delete": [
+        "a3cfc95c-b068-4204-ad6b-03badbc70de3"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|30801-02005|0.010000",
+      "keep": "246c435e-c08d-499e-a1d0-82fb211d00c5",
+      "delete": [
+        "77e26d16-acdc-4264-89aa-cf9d5dda0258"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|3121400|0.060000",
+      "keep": "2479e830-9097-4ba5-b841-3c869afbd19f",
+      "delete": [
+        "38d19066-a8b2-4d17-8ace-db93ab9d0ca6"
+      ],
+      "quantities": [
+        1200,
+        1200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|30006-080020870|0.040000",
+      "keep": "2509f532-1cdd-4ef8-b97c-466d6ffbffe1",
+      "delete": [
+        "bd59abc1-60c7-4e96-a606-2f04816a65e1"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-107300-6000|1.940000",
+      "keep": "26592edf-946d-45f1-a19f-77e6fd6fd488",
+      "delete": [
+        "5567c363-56fb-4a3c-b099-bda687ce3e37"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|0NYV-112000-3000|9.460000",
+      "keep": "265f2017-025a-4d43-97c3-b36e5f6554e1",
+      "delete": [
+        "ab7cc282-3066-4e22-b0b0-098a4485ca34"
+      ],
+      "quantities": [
+        56,
+        56
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|30206-060570|0.090000",
+      "keep": "2668df8f-33ce-4831-aac0-b351d186a3c8",
+      "delete": [
+        "bb68e940-e42f-48ea-81e5-e367bc06c934"
+      ],
+      "quantities": [
+        500,
+        500
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5BWV-040018-5000|0.030000",
+      "keep": "27378b01-4b69-44b1-85ea-6206dbc2ed5c",
+      "delete": [
+        "6c4c4730-37bf-4bae-8ce7-bea8e66e899a"
+      ],
+      "quantities": [
+        300,
+        300
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-260221-9000|0.030000",
+      "keep": "2b5162f3-d5e6-41ee-9b91-fa7fa0b96a11",
+      "delete": [
+        "59becdad-8c15-472f-a674-b85bce6344f3"
+      ],
+      "quantities": [
+        900,
+        900
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221090-6000-H1M|0.530000",
+      "keep": "5HYV-221090-6000-H1M|0-53|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "2bab4ec1-830e-47a8-b1bc-02c86783df6f"
+      ],
+      "quantities": [
+        80,
+        80
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|8010-000004|0.040000",
+      "keep": "2da888e4-ca91-4818-9442-54f60893701a",
+      "delete": [
+        "4335479f-a601-43fe-a9b2-25398a2e4ca1"
+      ],
+      "quantities": [
+        400,
+        400
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-002011-6001|2.800000",
+      "keep": "2dc11987-4bf5-4985-a6d1-49aa42632c22",
+      "delete": [
+        "70c22be2-de9d-47cd-a7cd-f254716405c3"
+      ],
+      "quantities": [
+        15,
+        15
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|SN1V-691100-1301-11|43.180000",
+      "keep": "2f35c10f-7c3e-4d06-a691-e5af1cefd28b",
+      "delete": [
+        "c6552123-7ad2-409d-a4e5-5934806d760b"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-237080-6000-H1M|0.560000",
+      "keep": "5HYV-237080-6000-H1M|0-56|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "2f4072a9-8df4-4400-98ea-6070324b4daf"
+      ],
+      "quantities": [
+        80,
+        80
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-046006-9000|0.360000",
+      "keep": "3118034e-4b1b-45f6-b4c0-02c643a22151",
+      "delete": [
+        "b6252b58-4a82-4a89-9a97-5367f7032bea"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|TBT070|8.050000",
+      "keep": "31ceaf80-0817-493d-a7da-9d56300d7b7f",
+      "delete": [
+        "a01fcbb3-1651-4092-875a-86f643f4a1ad"
+      ],
+      "quantities": [
+        3,
+        3
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-131100-6001-22|1.220000",
+      "keep": "3235985a-c4cb-4b90-8f1a-2c23e164fc1f",
+      "delete": [
+        "4b464b46-6ccb-46d4-aa8f-5ce2c334adcd"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190004-6000|0.070000",
+      "keep": "3271ff1d-0476-49ba-94ee-00b464bb60bd",
+      "delete": [
+        "b44580dc-c1dd-496f-b623-b9c0b17ae4e3"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-355090-9000|1.230000",
+      "keep": "33313d68-7b24-42e5-a824-c1273a933e9a",
+      "delete": [
+        "d5ee7b61-de14-4b0f-bceb-6feb72b31229"
+      ],
+      "quantities": [
+        40,
+        40
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|9010-000105|0.170000",
+      "keep": "34994002-81fd-4eee-b1db-e6069f7d091e",
+      "delete": [
+        "efc984e2-ee33-4977-a883-f1198978d042"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-041043-6001-0RT00|3.960000",
+      "keep": "35d999ea-c9b2-4de9-a378-3abd8c719cb8",
+      "delete": [
+        "bf0d733b-5399-4ab6-8e24-12f5fff36fc7"
+      ],
+      "quantities": [
+        40,
+        40
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221070-6000-H1M|0.240000",
+      "keep": "5HYV-221070-6000-H1M|0-24|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "3695dac3-0508-4fd1-a19d-10c9a7cf720e"
+      ],
+      "quantities": [
+        160,
+        160
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190008-6000|0.350000",
+      "keep": "371dfca1-ce92-4f01-9107-3842244faa4f",
+      "delete": [
+        "9916794e-9536-46cf-9444-c4e14f76306f"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HY0-222010|0.190000",
+      "keep": "38626b0d-cd07-4e1b-92f2-736b629a3dbb",
+      "delete": [
+        "8b6af044-0edd-4116-8c6b-bf9a7694db3b"
+      ],
+      "quantities": [
+        600,
+        600
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-031033-6000-H1M|5.850000",
+      "keep": "5HYV-031033-6000-H1M|5-85|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "3943f2f4-2fa1-417d-8b5d-e3e000639ca3"
+      ],
+      "quantities": [
+        160,
+        160
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|30102-080025810|0.030000",
+      "keep": "399b072d-1220-4654-8946-654ff2863b5a",
+      "delete": [
+        "c91e4ec8-5ea6-435b-9458-7a15bfe412a6"
+      ],
+      "quantities": [
+        400,
+        400
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-120100-6000A|35.250000",
+      "keep": "3a197d9e-a8b7-4579-b1f7-ca7f7361779d",
+      "delete": [
+        "d0cf392e-da44-453f-b899-deb1ef3f87ae"
+      ],
+      "quantities": [
+        56,
+        56
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5BWV-150510-5300|3.370000",
+      "keep": "3a1a2cf1-c0d5-4822-90b9-dc0d2df31c02",
+      "delete": [
+        "cf6a7a79-75de-4e05-90a2-4846ceaafe37"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-134000-6000-22|0.720000",
+      "keep": "3a522571-2197-4a4c-ac98-b36b3271e3ab",
+      "delete": [
+        "fc92896d-9d9b-4358-af2f-819bed5e1159"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-046004-9000|0.030000",
+      "keep": "3b5decf2-a8c7-4664-b964-c9abff16dc7a",
+      "delete": [
+        "b30fdba7-b8b7-4ead-ad07-954b0e21ebeb"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-046001-9000|0.290000",
+      "keep": "3b733dfd-e1dc-43ed-9282-0b358e5322bd",
+      "delete": [
+        "f9a1b79b-d363-49b7-877e-56033db2494f"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-355080-9000|3.090000",
+      "keep": "3b7d2744-9824-4c24-956a-198f983cc60c",
+      "delete": [
+        "a167152b-853f-46d6-8da6-9157b383e478"
+      ],
+      "quantities": [
+        40,
+        40
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-110001-1F00|0.360000",
+      "keep": "3cdadd7c-2f50-4a6d-87fc-fd66026a9960",
+      "delete": [
+        "48af3e20-a5aa-41a9-b65f-cc5e369cb341"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-050660-6000|2.600000",
+      "keep": "3da392fe-d966-49dd-b881-e5713df89328",
+      "delete": [
+        "b2f55cc1-df10-49bf-a8ab-c4746699bac1"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|703A-200103|0.100000",
+      "keep": "3dc178b6-df20-4cb6-8d14-e4f71fac688a",
+      "delete": [
+        "44cfb1bb-c99c-48a0-abce-f99dbd94da54"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-260213-9001|11.060000",
+      "keep": "3e39760d-601b-4357-ad1c-11f207e5a56e",
+      "delete": [
+        "6a70955f-aab6-4a8b-91dd-71d2ed09c5a3"
+      ],
+      "quantities": [
+        20,
+        20
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-188003-6000|0.060000",
+      "keep": "3e91260a-0aa4-453c-93e1-02a65d5c8735",
+      "delete": [
+        "f83fc6b9-6669-42c8-b5d0-268a750d9002"
+      ],
+      "quantities": [
+        300,
+        300
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-131200-6000-20|1.410000",
+      "keep": "3eccbde7-0f23-45fd-b66c-5c7eb469c2f7",
+      "delete": [
+        "5e6105db-e35b-4aaf-a27d-9521e67cbd68"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5ASV-190001-6000|1.470000",
+      "keep": "3ef22d48-b300-495c-a005-fb3a27a71a38",
+      "delete": [
+        "a7f4fdd7-8fc3-4457-b002-617d24d8c7a9"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-354300-9001|0.680000",
+      "keep": "3f18ab1f-627e-4804-bed4-6ca4715225a0",
+      "delete": [
+        "dfa52d89-cd66-411a-bc30-786158b7b7bf"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|30102-060016810|0.020000",
+      "keep": "41e07015-f928-4ee9-9724-c51683c91974",
+      "delete": [
+        "f98d1540-4f85-471c-889e-bb36147d7fa7"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5BWV-156905-5000-M1|1.380000",
+      "keep": "44506c24-56bd-4e22-a620-60662cd0773c",
+      "delete": [
+        "d514f244-986b-448a-b98f-00ae089b1545"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-131200-6001-22|1.470000",
+      "keep": "4521a75f-d4d4-4186-9e9e-9498384134a7",
+      "delete": [
+        "9b579d6d-644e-499b-9526-eb00fc459291"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190040-6000|0.420000",
+      "keep": "45e588be-848f-4cd4-9da9-eda1c4d824da",
+      "delete": [
+        "95ea5e56-4dbe-4f20-801e-29a9ba65f9e4"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-132000-6000-20|1.870000",
+      "keep": "45e794af-5027-4ef6-9d7a-8559e66b3a43",
+      "delete": [
+        "f85ad5f2-a48c-4186-a411-4de04419a7cd"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-060110-6000A|7.750000",
+      "keep": "46bd2e34-653f-4f93-9344-7aee40a8fad1",
+      "delete": [
+        "9f7a51ff-d233-4d56-adac-0b3d695f9a85"
+      ],
+      "quantities": [
+        99,
+        99
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-002003-6000|1.630000",
+      "keep": "46f72440-75db-4883-b7bc-b172f539b32d",
+      "delete": [
+        "a93a9f0d-c52d-468d-9991-414aa2deef27"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221107-6001-H1M|0.810000",
+      "keep": "5HYV-221107-6001-H1M|0-81|25CFTT177746|IN|PARTES-DE-LA-CARROCERIA-PARA-VEHICULOS-AUTOMOTORES",
+      "delete": [
+        "47b659ec-23e1-4bb8-8ef9-b3059e6f67d4"
+      ],
+      "quantities": [
+        320,
+        320
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-030062-6000|0.080000",
+      "keep": "4846ad93-1eee-410d-bf4c-3a5f28afce2e",
+      "delete": [
+        "687ccde0-a07b-4c85-b7a1-e6c9390af464"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190030-6000|0.510000",
+      "keep": "49b2a612-6dc3-4639-b6d3-a87df6c09de6",
+      "delete": [
+        "c2ff9d26-c16e-4c03-b79a-979d34b567a4"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|30006-060016870|0.020000",
+      "keep": "4ae7005f-5990-4eee-aaac-f15d952d392f",
+      "delete": [
+        "e5b73d1a-0cbf-4d3c-953d-97f2a82eef2c"
+      ],
+      "quantities": [
+        400,
+        400
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190025-6000|0.010000",
+      "keep": "4b330e55-b41a-4fa4-a9c1-ecd83839f5fe",
+      "delete": [
+        "aa718fd4-5e88-4c6f-ab8d-6167ad1dbb89"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|9010-310001|0.210000",
+      "keep": "4b7e65fd-15ed-4d33-88fd-0dcfbedffd47",
+      "delete": [
+        "64f7fbc1-cc2c-487f-be17-6f5f20919bae"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|703V-200102-1400|0.220000",
+      "keep": "4c75cf20-5248-429e-a8a5-3fc0ec300127",
+      "delete": [
+        "70397b30-11ec-45b7-8848-119bcce529b5"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-352101-9000|0.710000",
+      "keep": "4de8ae4a-bf88-4838-99ea-223dee6f24d3",
+      "delete": [
+        "896b9368-65ac-4bf4-8ead-60bc9c6dba7c"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|7030-150005|0.050000",
+      "keep": "4e18d81f-33b7-4f34-967e-8489dd5f590a",
+      "delete": [
+        "90b16a3e-8448-4e3f-808c-5cb6e3faa65a"
+      ],
+      "quantities": [
+        4100,
+        4100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190009-6000|0.080000",
+      "keep": "4ff1635b-c333-4919-a74a-8e4bcf4d9334",
+      "delete": [
+        "d493e6c8-59e6-4e45-ab84-9446ab3e96ab"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-134000-6000-20|0.730000",
+      "keep": "51753bfa-160b-4f8d-8f1a-80df57d5c74b",
+      "delete": [
+        "e4e59202-01ca-4189-9848-fd224449f96e"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-360005-6000|0.170000",
+      "keep": "52330b74-c688-4aa5-ad8e-19090f0bb47d",
+      "delete": [
+        "7cee6f1b-4925-42b7-bf49-9ea3919a3593"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-170500-6000-10|226.670000",
+      "keep": "52735d32-1be1-46bb-8e5f-c4121f9319c0",
+      "delete": [
+        "9711b08d-92dd-43df-a8ec-2bcd7856310b"
+      ],
+      "quantities": [
+        8,
+        8
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-169540-6000|1.870000",
+      "keep": "53d404f9-87dd-4369-9b13-f1d482935c9e",
+      "delete": [
+        "9fcbd6ea-c378-4b4e-bad9-a3180b4259bc"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-030520-6000-H1M|0.180000",
+      "keep": "5HYV-030520-6000-H1M|0-18|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "5679e1b5-b19c-4f64-931f-e9fb7e56d0e8"
+      ],
+      "quantities": [
+        160,
+        160
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-046005-9000|0.360000",
+      "keep": "571bde69-a97c-4f36-b8e2-b948f8b34028",
+      "delete": [
+        "b93a0980-6b84-4e02-a1d7-eadd0e31d55a"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190010-4100-10|0.180000",
+      "keep": "58115c1a-106d-44ab-9fbe-ce76f5e522c7",
+      "delete": [
+        "e9220e6d-f308-43ff-a2be-6854306f5655"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-030240-6000-H1M|1.150000",
+      "keep": "5HYV-030240-6000-H1M|1-15|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "76bd67c0-adaf-460c-991e-59344e0fb514"
+      ],
+      "quantities": [
+        320,
+        320
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-030530-6000-H1M|0.360000",
+      "keep": "5HYV-030530-6000-H1M|0-36|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "770ba2cb-d415-4752-857c-168ebd12570c"
+      ],
+      "quantities": [
+        160,
+        160
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-030540-6000-H1M|0.720000",
+      "keep": "5HYV-030540-6000-H1M|0-72|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "f4bdd090-be3e-46cb-b9e3-38c267ed083e"
+      ],
+      "quantities": [
+        120,
+        120
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-031047-6000-H1M|3.150000",
+      "keep": "5HYV-031047-6000-H1M|3-15|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "accacc5f-2e69-4d2d-9f26-be60e8a5b782"
+      ],
+      "quantities": [
+        63,
+        63
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-031305-6000-H1M|6.300000",
+      "keep": "5HYV-031305-6000-H1M|6-3|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "e24f4d4b-5258-489b-9f5e-d7be7f5c8d3c"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-032010-6001-H1M|22.050000",
+      "keep": "5HYV-032010-6001-H1M|22-05|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "751c9c3a-8f54-4a19-8a97-a20832249ddf"
+      ],
+      "quantities": [
+        60,
+        60
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-032020-6001-H1M|21.980000",
+      "keep": "5HYV-032020-6001-H1M|21-98|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "e9427e10-a67f-4c5e-9105-434eaecfa2e1"
+      ],
+      "quantities": [
+        10,
+        10
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-032150-6001-H1M|23.880000",
+      "keep": "5HYV-032150-6001-H1M|23-88|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "7f736dc3-4aff-469f-83eb-2b9f027bbda3"
+      ],
+      "quantities": [
+        73,
+        73
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-032230-6000-H1M|6.070000",
+      "keep": "5HYV-032230-6000-H1M|6-07|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "87778288-1b46-40b1-884a-163d07202e90"
+      ],
+      "quantities": [
+        160,
+        160
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-07Z0AA-6000|61.350000",
+      "keep": "5HYV-07Z0AA-6000|61-35|25CFTT177746|IN|RIN-CON-NEUMATICO",
+      "delete": [
+        "818c5223-5ee1-43fd-b635-6d36c38a99cf"
+      ],
+      "quantities": [
+        32,
+        32
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-11Z0AA-6000|73.460000",
+      "keep": "5HYV-11Z0AA-6000|73-46|25CFTT177746|IN|RIN-CON-NEUMATICO",
+      "delete": [
+        "83347541-8bb3-4f6e-824a-21572531be08"
+      ],
+      "quantities": [
+        32,
+        32
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221030-6001-H1M|2.110000",
+      "keep": "5HYV-221030-6001-H1M|2-11|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "a32aa746-8548-43da-ba18-bb8b878767c2"
+      ],
+      "quantities": [
+        160,
+        160
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221050-6002-H1M|1.260000",
+      "keep": "5HYV-221050-6002-H1M|1-26|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "755a5841-26a5-40a1-98e2-541d378571a5"
+      ],
+      "quantities": [
+        160,
+        160
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221060-6001-H1M|1.340000",
+      "keep": "5HYV-221060-6001-H1M|1-34|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "74f2eb6a-c720-4fe6-9924-2c7f36c358fc"
+      ],
+      "quantities": [
+        160,
+        160
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221080-6000-H1M|0.530000",
+      "keep": "5HYV-221080-6000-H1M|0-53|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "92840dad-2dfa-460c-87b4-f040c3ca0945"
+      ],
+      "quantities": [
+        80,
+        80
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221102-6001-H1M|1.180000",
+      "keep": "5HYV-221102-6001-H1M|1-18|25CFTT177746|IN|PARTES-DE-LA-CARROCERIA-PARA-VEHICULOS-AUTOMOTORES",
+      "delete": [
+        "e4cad249-3a3e-4325-85c1-48837ee15040"
+      ],
+      "quantities": [
+        640,
+        640
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221104-6000-H1M|0.150000",
+      "keep": "5HYV-221104-6000-H1M|0-15|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "f17265ab-2f7a-434c-a662-d856957eb6a6"
+      ],
+      "quantities": [
+        320,
+        320
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221106-6000-H1M|0.490000",
+      "keep": "5HYV-221106-6000-H1M|0-49|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "b786078a-b582-4a85-bc91-9100567d944e"
+      ],
+      "quantities": [
+        80,
+        80
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221108-6000-H1M|0.650000",
+      "keep": "5HYV-221108-6000-H1M|0-65|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "74971b62-6a32-49b0-923c-ee5251acd73e"
+      ],
+      "quantities": [
+        320,
+        320
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221109-6001-H1M|0.180000",
+      "keep": "5HYV-221109-6001-H1M|0-18|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "da8b548f-6f00-44f7-bcd7-0ff8e9befadf"
+      ],
+      "quantities": [
+        160,
+        160
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221110-6000-H1M|0.300000",
+      "keep": "5HYV-221110-6000-H1M|0-3|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "a412bd2d-e329-442f-877d-a82684a75f77"
+      ],
+      "quantities": [
+        160,
+        160
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-221230-6000-H1M|0.110000",
+      "keep": "5HYV-221230-6000-H1M|0-11|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "f439c0fe-24b2-42bd-9515-c2891fc4b56f"
+      ],
+      "quantities": [
+        320,
+        320
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-235030-6000-H1M|0.480000",
+      "keep": "5HYV-235030-6000-H1M|0-48|25CFTT177746|IN|PARTE-PARA-CARROCERIA",
+      "delete": [
+        "da3457ba-74d8-4eaf-b450-15c1b0bc9097"
+      ],
+      "quantities": [
+        40,
+        40
+      ]
+    },
+    {
+      "key": "25CFTT177746|5HYV-237000-6000-44|0.020000",
+      "keep": "5HYV-237000-6000-44|0-02|25CFTT177746|IN|PARTES-DE-LA-CARROCERIA-PARA-VEHICULOS-AUTOMOTORES",
+      "delete": [
+        "5ff57834-538c-4ca9-bea5-0ed873046a40"
+      ],
+      "quantities": [
+        320,
+        320
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-041042-6000-0RT00|10.380000",
+      "keep": "5bd77900-be09-4527-8387-ac3da4a8f62a",
+      "delete": [
+        "c0549021-5428-4011-a5b3-9c1699877ca5"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-182540-6001|0.790000",
+      "keep": "5beca91f-66dd-4368-9043-ac4b40dbe065",
+      "delete": [
+        "802f1800-80ff-46ad-9189-a9691da98a13"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-132000-6000-21|2.010000",
+      "keep": "5bfed614-8602-45fa-8914-9471faf5ddc5",
+      "delete": [
+        "ff22ec25-5757-4293-af11-fd61ffd11a70"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-060410-6000A|20.060000",
+      "keep": "5fcc1455-cebd-4e80-896b-b61fb9996720",
+      "delete": [
+        "910ab411-a8d4-4385-980f-3448f08b67ad"
+      ],
+      "quantities": [
+        16,
+        16
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-353530-9001-0HQ00|4.080000",
+      "keep": "5ffbae0c-d93a-41bc-91b6-f0fb20f3bcd9",
+      "delete": [
+        "906354c0-bb14-4b6e-ab3e-becadcf0364b"
+      ],
+      "quantities": [
+        144,
+        144
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|TBT054|53.300000",
+      "keep": "61fcc4fc-76db-4ff4-a5df-cf3ed3b4f1c1",
+      "delete": [
+        "6f0b10c1-5469-4b76-aa45-eed409fc32ef"
+      ],
+      "quantities": [
+        5,
+        5
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190026-6000|0.060000",
+      "keep": "62734077-95d0-415e-9a44-862a2646023a",
+      "delete": [
+        "8a0d8726-7af3-4e66-b300-5b4c555d0248"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|Q890-310000-40001|97.490000",
+      "keep": "69f7b174-5630-408c-9040-c6f93280bee3",
+      "delete": [
+        "7de0a7d3-4a60-4f78-a35b-adec637d71a2"
+      ],
+      "quantities": [
+        72,
+        72
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|9AWV-315001-8000|0.110000",
+      "keep": "6af3e382-f3eb-41cf-b28b-8fdbd7c426a5",
+      "delete": [
+        "de7045e0-193d-47a6-902d-43671f476105"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-050801A|35.180000",
+      "keep": "6b094741-5a65-4591-a6e2-9469c8ba967c",
+      "delete": [
+        "b51e892d-aabd-40d3-bc23-fc53195cb28a"
+      ],
+      "quantities": [
+        64,
+        64
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-016100-6000|11.590000",
+      "keep": "6b32dc09-881f-4ed0-b85f-771ca266b9b5",
+      "delete": [
+        "985f25ea-9498-4037-9af0-6eda595c04d8"
+      ],
+      "quantities": [
+        40,
+        40
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5190-160230-00002|0.100000",
+      "keep": "6ce11a48-9f56-43f5-a55b-274421c2daef",
+      "delete": [
+        "c700775e-9c38-4da2-b8aa-95bdcb3959cf"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-182510-6000|1.270000",
+      "keep": "6f7b0e7f-e21c-4b5a-98bc-e59967d5181a",
+      "delete": [
+        "eb202d96-df1f-4276-a473-a503317aa760"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|9AWV-060610-8000|0.400000",
+      "keep": "7343f7d3-bf18-432f-8e50-100fc153cca3",
+      "delete": [
+        "81b59dde-2c88-4a3d-99d7-7b4977fbca89"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5BWV-040001-5000|0.020000",
+      "keep": "79763aaa-0229-4ac7-9fbe-3b2c7c76fd9d",
+      "delete": [
+        "f1738caa-5f56-4e72-a75b-5120e8984bfc"
+      ],
+      "quantities": [
+        1300,
+        1300
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|9030-220004|0.180000",
+      "keep": "7a80b70d-03bd-44b2-bb3d-1150811cb09f",
+      "delete": [
+        "d6786fca-bd18-4067-ad14-7541e190cbad"
+      ],
+      "quantities": [
+        400,
+        400
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|TBT085|12.320000",
+      "keep": "7dfe0f28-6a98-4dd8-aef8-5e7ee0b30c5d",
+      "delete": [
+        "8700eea9-2e23-4411-a16f-637c68ba14b2"
+      ],
+      "quantities": [
+        4,
+        4
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-150820-6000|71.360000",
+      "keep": "7e82a700-32d7-490a-baa4-5ba34614874c",
+      "delete": [
+        "f53e9517-8b1a-4ec3-b7fd-9e93b26dcfba"
+      ],
+      "quantities": [
+        80,
+        80
+      ]
+    },
+    {
+      "key": "25CFTT177746|TBM056-1|47.520000",
+      "keep": "TBM056-1|47-52|25CFTT177746|A1|EMBALAJE-METALICO",
+      "delete": [
+        "7ed2d97f-d877-42e1-bce3-d8d8351da78e"
+      ],
+      "quantities": [
+        2,
+        2
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5BWV-040006-5000|0.050000",
+      "keep": "7f109609-8fd1-4330-980a-b58eadf563bd",
+      "delete": [
+        "8cea5f19-2636-4b0f-8682-d7708731229b"
+      ],
+      "quantities": [
+        300,
+        300
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-807200-9001-0RT00|247.490000",
+      "keep": "80066392-04c3-41c9-858c-d177fb6785be",
+      "delete": [
+        "b21954dc-4291-4c72-8bc1-0b8125ea1d6c"
+      ],
+      "quantities": [
+        10,
+        10
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|0180-014010|0.030000",
+      "keep": "81d5c3ab-4409-4137-95ec-e75565ce4cf0",
+      "delete": [
+        "b8aba6a1-a359-4285-9f49-4bfd3c3f86d5"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|9010-030005|0.040000",
+      "keep": "84e4cc73-c8b4-44d7-8a8d-677405771c82",
+      "delete": [
+        "a5d09e0c-d977-40a8-9364-9d7334d50b68"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|30006-102080110|0.150000",
+      "keep": "86c06092-7c37-4d0f-a52b-de1be7d3aded",
+      "delete": [
+        "a03752d0-31d1-47f9-916b-636476f92cb6"
+      ],
+      "quantities": [
+        150,
+        150
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-19TA01-4100-12|0.060000",
+      "keep": "8a617649-7283-474a-8edd-94f4a09981c1",
+      "delete": [
+        "e94995cf-87de-4ecc-a891-849941569496"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-805103-9001|0.190000",
+      "keep": "8ace264c-5fa9-42e0-9e97-3b8dc49a56b9",
+      "delete": [
+        "93d9e57a-ad57-47f4-bdf7-692b3af983a1"
+      ],
+      "quantities": [
+        400,
+        400
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-352103-9000|0.870000",
+      "keep": "8ae89abe-51e2-4935-9db3-902b238e1a19",
+      "delete": [
+        "8dd201b5-c725-44ad-aeca-3a803a2536a5"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190005-6000|0.010000",
+      "keep": "8d911d30-b150-4a20-9c17-3f8755ea95e2",
+      "delete": [
+        "9d025b80-8ae4-4376-87f7-f1259b235ab5"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-043045-6001|0.130000",
+      "keep": "8dc4dad8-8ce6-4db5-94cc-43779ea3c71f",
+      "delete": [
+        "f8ea148f-ceac-4149-8955-397c54cf8d8b"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-187002-6000|0.140000",
+      "keep": "8e7c961b-a945-4be3-b2de-b9abd46bde4c",
+      "delete": [
+        "de24209e-4de3-48e6-8a7d-1d9b54962bef"
+      ],
+      "quantities": [
+        800,
+        800
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5BWV-040007-5000|0.030000",
+      "keep": "8f6faf87-9140-4b10-a8f2-dab6b77de8e7",
+      "delete": [
+        "b3fad478-564f-4423-aa80-4116099a11a2"
+      ],
+      "quantities": [
+        6300,
+        6300
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-450120-6000|5.790000",
+      "keep": "937a89b9-0fad-4655-b5f9-3ed13d188c39",
+      "delete": [
+        "af6ca1c8-7790-46a1-8e0e-f38ea32e31cb"
+      ],
+      "quantities": [
+        34,
+        34
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|9DS#-150009-6100-M1|0.060000",
+      "keep": "94276f58-413f-4743-9516-b0abd72a4c66",
+      "delete": [
+        "ec8f8fe3-7eb4-4425-b153-048a6d80319e"
+      ],
+      "quantities": [
+        900,
+        900
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-220012-6000|0.220000",
+      "keep": "95d40f86-9e05-43f6-b9e4-b839a2400221",
+      "delete": [
+        "f6295649-edff-4802-a253-36b0094db4c5"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-200100-4100|2.770000",
+      "keep": "95d82d01-66ec-4b2b-81e0-ce7821096163",
+      "delete": [
+        "fd2965fa-89a8-4f61-8128-776bf07c7440"
+      ],
+      "quantities": [
+        10,
+        10
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-169080-6000|4.510000",
+      "keep": "95e93bae-78d7-46d5-ac2c-6a2af4220612",
+      "delete": [
+        "bcf91bfe-6df6-4f96-96f6-372aacbe4831"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-354100-9001-0DT00|6.890000",
+      "keep": "989a3fbc-15b2-425c-a418-fbaa941e0593",
+      "delete": [
+        "a822b1c6-831d-4738-95d6-5e22cc2ce730"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-050500-6001|25.560000",
+      "keep": "98f63f24-27c2-4f2e-9b4c-86fe3e8d01f9",
+      "delete": [
+        "d2ae976e-b538-4ce5-b31c-69c55908e6d4"
+      ],
+      "quantities": [
+        80,
+        80
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|9060-100009|0.430000",
+      "keep": "997ec6b8-da0a-4a36-8a22-ddd0df25ead0",
+      "delete": [
+        "ec04e495-3545-41ad-9d33-2d16bd2ee484"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-133000-6000-20|1.380000",
+      "keep": "9a4ba8e5-2f04-4590-8406-1721847e4941",
+      "delete": [
+        "d0447291-816f-498d-9987-ce072aa338ae"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-220002-6000|0.370000",
+      "keep": "9b7f67fb-7070-48ff-a18e-eecf393fdf92",
+      "delete": [
+        "ad750a77-a47e-4ad0-b96f-9f01a39be1a1"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|0180-015003|0.020000",
+      "keep": "9fd7b0a0-d317-4171-b228-f9c2e604a2bf",
+      "delete": [
+        "db79539e-540e-4785-963c-a55fef7219cd"
+      ],
+      "quantities": [
+        600,
+        600
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190002-4100-12|0.080000",
+      "keep": "a7525f65-139a-48cd-8e53-f14a3d3237c4",
+      "delete": [
+        "c73c6235-5d97-486b-be95-a3286d8072e4"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5BWV-348002-5002|0.220000",
+      "keep": "b0e7b973-5528-47bf-a77f-1f29d36015f2",
+      "delete": [
+        "c41a017d-e6ad-4067-8b7d-c188c5216279"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-807100-9001-0RT00|247.490000",
+      "keep": "b15f7dc1-169f-4752-982b-9abbfd97918a",
+      "delete": [
+        "ddb032ed-0392-4484-9c9a-e2fcffed49f9"
+      ],
+      "quantities": [
+        10,
+        10
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-231101-6001-0BP00|4.890000",
+      "keep": "b4850d23-77cb-47e0-9724-af7f795d001c",
+      "delete": [
+        "e736a44b-0ba6-4932-8eb5-faf35904abd6"
+      ],
+      "quantities": [
+        48,
+        48
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-045701-4101|1.280000",
+      "keep": "b549fc9c-7d4b-44ee-852c-7b7c1e2a3d9e",
+      "delete": [
+        "bfc4d41c-9687-4617-a9e4-f140180a54a7"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-220011-6000|0.200000",
+      "keep": "c006d21e-4abf-44e1-91cb-8dac492d2bd2",
+      "delete": [
+        "f3547fc3-967f-4bb2-9a91-f5ce116c4b20"
+      ],
+      "quantities": [
+        200,
+        200
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-045001-6001|0.020000",
+      "keep": "c068d047-b82e-46e9-add1-bfc8dbd67448",
+      "delete": [
+        "d2bea31a-6f3f-46e3-ae39-de6ffd337a07"
+      ],
+      "quantities": [
+        400,
+        400
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5SYV-169480-8300|7.420000",
+      "keep": "c23eb899-b090-46ee-94ad-cd20a01099ca",
+      "delete": [
+        "f18465b1-244e-48f3-a500-39567acc0b4d"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-050210-6000A|16.780000",
+      "keep": "d27b64cb-ea9e-4354-97a3-1e0c881ae097",
+      "delete": [
+        "fc2ff482-0398-429f-a800-85efab1a2c5a"
+      ],
+      "quantities": [
+        90,
+        90
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|5HYV-190015-4100|0.050000",
+      "keep": "e63cc45f-1771-43be-a262-06eb841e6446",
+      "delete": [
+        "e7f85729-660e-4de7-a1fa-4d01d535f481"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    },
+    {
+      "key": "25CFTT406482-4|9060-152100|1.250000",
+      "keep": "e985c297-b588-47fe-8678-5c177f24441a",
+      "delete": [
+        "fec6b389-d749-4912-acbb-3fbcda7b248a"
+      ],
+      "quantities": [
+        100,
+        100
+      ]
+    }
+  ]
+}

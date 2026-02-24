@@ -34,6 +34,7 @@ service cloud.firestore {
     match /master_data_reports/{docId} { allow read, write: if true; }
     match /system_metadata/{docId} { allow read, write: if true; }
     match /electronic_dossiers_v2/{docId} { allow read, write: if true; }
+    match /cfdi_invoices/{docId} { allow read, write: if true; }
 
     // 4. Default Block (Catch-all)
     match /{document=**} {

@@ -1,0 +1,1311 @@
+   Consulta Data Stage
+Información Pública de Operaciones de Comercio Exterior
+               (Descripción de campos)
+
+
+
+
+                       abril de 2022
+Descripción de los campos
+
+En el presente documento, se encuentra la descripción de los campos (en el orden en
+que aparecen) contenidos en cada archivo (501, 502, 503, etc.)
+En la columna Tipo de Dato, el argumento que está en paréntesis significa la longitud del
+campo, por ejemplo:
+    • CARÁCTER (4), significa que el dato es de tipo CARÁCTER de 4 posiciones de
+       longitud.
+    • NUMÉRICO (14, 3), significa que es un dato numérico de 14 posiciones para la parte
+       entera y 3 posiciones para la parte decimal.
+    • ENTERO (2), significa que es un dato entero de 2 posiciones.
+    • FECHA, significa que es un campo de fecha y el número de posiciones depende
+       de la aplicación con que se abra el archivo.
+
+501 Datos generales
+
+ Núm.             Campos                         Descripción             Tipo de Dato
+                                       Número de patente del agente
+   1.   Patente Aduanal                                                 CARÁCTER (4)
+                                       aduanal.
+                                       El número asignado por el agente
+   2.   Número de Pedimento                                             CARÁCTER (7)
+                                       o apoderado aduanal.
+
+                                       Conforme al Apéndice 1 del Anexo
+        Clave de sección aduanera de
+   3.                                  22 de las Reglas Generales de      CARÁCTER (3)
+        despacho
+                                       Comercio Exterior (RGCE).
+
+                                       1 – Importación.
+   4.   Clave de tipo de operación                                      CARÁCTER (1)
+                                       2 – Exportación.
+                                       Conforme al Apéndice 2 del Anexo
+   5.   Clave de documento                                              CARÁCTER (3)
+                                       22 de las RGCE.
+        Clave de sección aduanera de   Conforme al Apéndice 1 del Anexo
+   6.                                                                   CARÁCTER (3)
+        entrada                        22 de las RGCE.
+                                       CURP del importador/exportador
+   7.   CURP del contribuyente         que efectué la operación de CARÁCTER (18)
+                                       comercio exterior.
+                                    Del importador/exportador que
+   8.   RFC                         efectúe la operación de comercio CARÁCTER (13)
+                                    exterior.
+                                    Del agente aduanal, mandatario
+                                    del agente aduanal o del
+        CURP del agente o apoderado
+   9.                               apoderado aduanal que firma el CARÁCTER (18)
+        aduanal
+                                    pedimento correspondiente a la
+                                    operación de comercio exterior.
+                                       Tipo de cambio del peso
+                                                                              NÚMERICO
+10.    Tipo de cambio                  mexicano con respecto al dólar de
+                                                                              (9,5)
+                                       los Estados Unidos de América.
+                                       Importe de fletes descrito por el      NUMÉRICO
+ 11.   Total de fletes
+                                       agente aduanal.                        (12,0)
+                                       De acuerdo al artículo 56 fracción I   NUMÉRICO
+12.    Total de seguros
+                                       de la Ley Aduanera.                    (12,0)
+                                       Importe en moneda nacional del
+                                       total de empaques y embalajes
+                                       de la mercancía, siempre y
+                                                                              NUMÉRICO
+13.    Total de embalajes              cuando no estén comprendidos
+                                                                              (12,0)
+                                       dentro     del     precio    pagado,
+                                       conforme al artículo 65, fracción I,
+                                       inciso b) y c) de la Ley Aduanera.
+                                       Importe en moneda nacional del
+                                       total     de      las     cantidades
+                                                                              NUMÉRICO
+14.    Total de otros incrementables   correspondientes a los conceptos
+                                                                              (12,0)
+                                       que deben incrementarse al
+                                       precio pagado.
+                                       Importe de deducibles descritos        NUMÉRICO
+15.    Total de otros deducibles
+                                       por el agente aduanal.                 (12,0)
+                                                                              NUMÉRICO
+16.    Peso bruto de la mercancía      Peso bruto de la mercancía.
+                                                                              (14,3)
+       Clave del medio de transporte  Conforme al Apéndice 3 del Anexo
+17.                                                                           ENTERO (2)
+       de salida                      22 de las RGCE.
+       Clave del medio de transporte  Conforme al Apéndice 3 del Anexo
+18.                                                                           ENTERO (2)
+       de arribo                      22 de las RGCE.
+       Clave de medio de transporte   Conforme al Apéndice 3 del Anexo
+19.                                                                           ENTERO (2)
+       de entrada o salida            22 de las RGCE.
+       Clave de destino de la         Conforme al Apéndice 15 del
+20.                                                                           ENTERO (2)
+       mercancía                      Anexo 22 de las RGCE.
+                                      Nombre, denominación o razón
+                                      social     del    importador   o        CARÁCTER
+21.    Nombre del contribuyente
+                                      exportador, tal como lo haya            (120)
+                                      manifestado para efectos del RFC.
+       Calle   del    domicilio   del Calle del domicilio de                  CARÁCTER
+22.
+       contribuyente                  contribuyente.                          (80)
+       Número interior del domicilio Número interior del domicilio del
+23.                                                                           CARÁCTER (10)
+       del contribuyente              contribuyente.
+       Número exterior del domicilio Número exterior del domicilio del
+24.                                                                           CARÁCTER (10)
+       del contribuyente              contribuyente
+       Código postal del domicilio Código postal del domicilio del
+25.                                                                           CARÁCTER (10)
+       del contribuyente              contribuyente.
+       Municipio/Ciudad del           Municipio/Ciudad del domicilio          CARÁCTER
+26.
+       domicilio del contribuyente    del contribuyente.                      (80)
+        Clave de entidad federativa
+                                           Clave de entidad federativa del
+ 27.    del       domicilio         del                                    CARÁCTER (3)
+                                           domicilio del contribuyente.
+        contribuyente
+        Clave de país del domicilio del    Clave de país del domicilio del
+ 28.                                                                            CARÁCTER (3)
+        contribuyente                      contribuyente.
+                                          1. Pedimento Normal.
+                                          2. Pedimento de Rectificación.
+                                          3. Previo de consolidado.
+                                          4. Pedimento de tránsito.
+                                          5. Informe     de    la   Industria
+                                               Automotriz.
+ 29.    Clave de tipo de pedimento         6. Pedimento      Complementario ENTERO (2)
+                                               (303).
+                                           7. Pedimento Desistido.
+                                           8. Pedimento Reservado.
+                                           9. Rectificación
+                                          10. Complementario.
+                                           11. Pedimento de Tránsito.
+                                           Fecha de recepción de
+ 30.    Fecha de Recepción                                                      FECHA
+                                           pedimento.
+                                           Fecha     de   pago   de   las
+                                           contribuciones     y    cuotas
+  31.   Fecha de pago real                                                      FECHA
+                                           compensatorias o medidas de
+                                           transición.
+
+502 Transporte de las mercancías
+
+Núm.               Campos                            Descripción                Tipo de Dato
+                                          Número de patente del agente
+  1.    Patente Aduanal                                                      CARÁCTER (4)
+                                          aduanal.
+                                          El número asignado por el
+  2.    Número de pedimento                                                  CARÁCTER (7)
+                                          agente o apoderado aduanal.
+        Clave de sección aduanera de      Conforme al Apéndice 1 del
+  3.                                                                         CARÁCTER (3)
+        despacho                          Anexo 22 de las RGCE.
+  4.    RFC del transportista             RFC del transportista.             CARÁCTER (13)
+  5.    CURP del transportista            Cuando sea persona física.         CARÁCTER (18)
+        Nombre o razón social del         Tal y como se haya manifestado
+  6.                                                                         CARÁCTER
+        transportista                     para efectos del RFC.
+                                          Conforme al Apéndice 4 del
+  7.    Clave de país del transporte                                         CARÁCTER (3)
+                                          Anexo 22 de las RGCE.
+                                          Identificación del transporte
+  8.    Identificador del transporte      que introduce las mercancías a     CARÁCTER (17)
+                                          territorio nacional.
+                                      De las contribuciones y cuotas
+  9.    Fecha de pago real            compensatorias o medidas de FECHA
+                                      transición.
+
+503 Guías
+
+ Núm.             Campos                        Descripción           Tipo de Dato
+                                       Número de patente del agente
+   1.   Patente Aduanal                                             CARÁCTER (4)
+                                       aduanal.
+                                       El número asignado por el
+  2.    Número de pedimento                                              CARÁCTER (7)
+                                       agente o apoderado aduanal.
+        Clave de sección aduanera de Conforme al Apéndice 1 del
+  3.                                                                     CARÁCTER (3)
+        despacho                     Anexo 22 de las RGCE.
+                                     El o los números de la(s) guía(s)
+                                     aérea(s), manifiesto(s) de los
+  4.    Número de guía o manifiesto                                      CARÁCTER (20)
+                                     números     de    orden      del
+                                     conocimiento(s) de embarque.
+                                     Tipo de guía (M) Master o (H)
+  5.    Clave de tipo de guía                                            CARÁCTER (1)
+                                     House.
+                                     Fecha de pago de las
+                                     contribuciones     y      cuotas
+  6.    Fecha de pago real                                               FECHA
+                                     compensatorias o medidas de
+                                     transición.
+
+504 Contenedores
+
+ Núm.             Campos                        Descripción           Tipo de Dato
+                                       Número de patente del agente
+   1.   Patente Aduanal                                             CARÁCTER (4)
+                                       aduanal.
+                                       El número asignado por el
+  2.    Número de pedimento                                              CARÁCTER (7)
+                                       agente o apoderado aduanal.
+        Clave de sección aduanera de Conforme al Apéndice 1 del
+  3.                                                                     CARÁCTER (3)
+        despacho                     Anexo 22 de las RGCE.
+                                     Las letras y números de los
+                                     contenedores,     carros    de
+  4.    Número del contenedor                                            CARÁCTER (12)
+                                     ferrocarril    o       número
+                                     económico del vehículo.
+                                     Conforme al Apéndice 10 del
+  5.    Clave de tipo de contenedor                                      ENTERO (2)
+                                     Anexo 22 de las RGCE.
+                                     Fecha de pago de las
+                                     contribuciones     y    cuotas
+  6.    Fecha de pago real                                               FECHA
+                                     compensatorias o medidas de
+                                     transición.
+505 Facturas
+
+ Núm.             Campos                         Descripción           Tipo de Dato
+  1.                                    Número de patente del agente
+        Patente Aduanal                                              CARÁCTER (4)
+                                        aduanal.
+   2.                                   El número asignado por el
+        Número de pedimento             agente o apoderado aduanal.  CARÁCTER (7)
+
+   3.   Clave de sección aduanera de Conforme al Apéndice 1 del
+                                                                          CARÁCTER (3)
+        despacho                     Anexo 22 de las RGCG.
+  4.                                 Fecha en que se realizó la
+        Fecha de Facturación                                              FECHA
+                                     facturación.
+   5.                                Número de cada una de las
+                                     facturas    comerciales que
+        Número de la Factura                                              CARÁCTER (15)
+                                     ampare cada una de las
+                                     mercancías.
+  6.                                 Conforme al Apéndice 14 del
+        Clave de término de la
+                                     Anexo 22 de las RGCE.                CARÁCTER (3)
+        facturación
+  7.                                    Conforme al Apéndice 5 del
+        Clave    de   moneda      de
+                                        Anexo 22 de las RGCE.             CARÁCTER (3)
+        facturación
+  8.                                  Valor    en    dólares    de  la
+        Valor en dólares                                               NUMÉRICO (14,2)
+                                      mercancía.
+  9.    Valor en moneda extranjera    Valor en moneda extranjera de
+                                                                       NUMÉRICO (14,2)
+                                      la mercancía.
+ 10.    Clave de país de facturación. Conforme al Apéndice 4 del
+                                                                       CARÁCTER (3)
+                                      Anexo 22 de las RGCE.
+  11.   Clave de entidad federativa Descrita por el agente aduanal.
+                                                                       CARÁCTER (3)
+        de la facturación
+  12.   Identificación    fiscal  del Identificación     fiscal    del
+                                                                       CARÁCTER (17)
+        proveedor                     proveedor.
+  13.                                 Nombre,      denominación     o
+                                      razón social del proveedor de
+        Proveedor de la mercancía     las     mercancías      o    del CARÁCTER (120)
+                                      comprador de las mercancías.
+
+ 14.    Calle   del    domicilio del    Calle   del    domicilio    del
+                                                                          CARÁCTER (80)
+        proveedor                       proveedor.
+  15.   Número interior del domicilio   Número interior del domicilio
+                                                                          CARÁCTER (10)
+        del proveedor                   del proveedor.
+  16.   Número        exterior   del    Número exterior del domicilio
+                                                                          CARÁCTER (10)
+        domicilio del proveedor         del proveedor.
+  17.   Código postal del domicilio     Código postal del domicilio del
+                                                                          CARÁCTER (10)
+        del proveedor                   proveedor.
+ 18.    Municipio/Ciudad          del Municipio/Ciudad del domicilio
+                                                                     CARÁCTER (80)
+        domicilio del proveedor       del proveedor.
+  19.                                 De las contribuciones y cuotas
+        Fecha de pago real            compensatorias o medidas de FECHA
+                                      transición.
+
+
+506 Fechas del pedimento
+
+Núm.               Campos                       Descripción             Tipo de Dato
+ 1.                                  Número de patente del agente
+        Patente Aduanal                                               CARÁCTER (4)
+                                     aduanal.
+  2.                                 El número asignado por el
+        Número de pedimento                                           CARÁCTER (7)
+                                     agente o apoderado aduanal
+  3.    Clave de sección aduanera de Conforme al Apéndice del Anexo
+                                                                      CARÁCTER (3)
+        despacho                     22 de las RGCE.
+  4.                                 Descripción del tipo de fecha
+                                     del que se trate, conforme a las
+                                     siguientes opciones:
+
+                                     1.   ENTRADA: Fecha de entrada a
+                                          territorio nacional.
+                                     2.   PAGO: Fecha de pago de las
+                                          contribuciones        y    cuotas
+                                          compensatorias o medidas de
+                                          transición.
+                                     3.   EXTRACCIÓN:          Fecha     de
+                                          extracción del Depósito Fiscal.
+                                     4.   PRESENTACIÓN:          Fecha   de
+                                          presentación.
+        Clave de tipo de fecha.      5.   IMP.     EUA/CAN:      Fecha   de ENTERO (2)
+                                          importación a Estados Unidos o
+                                          Canadá       (Únicamente     para
+                                          pedimentos complementarios
+                                          con clave CT cuando se pruebe
+                                          con la prueba suficiente)
+                                     6.   ORIGINAL: Fecha de pago del
+                                          pedimento original (para los
+                                          casos del régimen de insumo y
+                                          para regulación de mercancías,
+                                          excepto desperdicios).
+
+                                     Seguido de cada descripción,
+                                     deberá declararse la fecha con el
+                                     siguiente formato: DD/MM/AAAA.
+  5.                                 Fecha en que se efectuó la
+        Fecha de operación                                               FECHA
+                                     operación.
+  6.    Fecha de validación o pago   Fecha de validación o pago real
+                                                                         FECHA
+        real
+507 Casos del pedimento
+
+ Núm.              Campos                     Descripción           Tipo de Dato
+                                     Número de patente del agente
+   1.   Patente Aduanal                                           CARÁCTER (4)
+                                     aduanal
+                                     El número asignado por el
+  2.    Número de pedimento                                       CARÁCTER (7)
+                                     agente o apoderado aduanal
+        Clave de sección aduanera de Conforme al Apéndice 1 del
+  3.                                                              CARÁCTER (3)
+        despacho                     Anexo 22 de las RGCE.
+                                     Conforme al Apéndice 8 del
+                                     Anexo 22 de las RGCE y
+  4.    Clave de caso                marcado en la columna de        CARÁCTER (2)
+                                     “NIVEL” de dicho Apéndice con
+                                     la clave “G”.
+                                     Clave      que    define      el
+                                     identificador         aplicable,
+                                     conforme al Apéndice 8 del
+  5.    Identificador del caso       Anexo 22 y marcado en la CARÁCTER (20)
+                                     columna de “NIVEL” de dicho
+                                     Apéndice con la clave
+                                     “G”.
+  6.    Clave de tipo de pedimento   Clave de tipo de pedimento.     ENTERO (2)
+                                     Debe        declararse     el
+  7.    Complemento del caso         complemento del identificador CARÁCTER (30)
+                                     que aplica.
+        Fecha de validación o pago
+  8.                               Fecha de validación o pago real. FECHA
+        real
+
+508 Cuentas aduaneras de garantía del pedimento
+
+ Núm.              Campos                       Descripción            Tipo de Dato
+                                     Número de patente del agente
+   1.   Patente Aduanal                                              CARÁCTER (4)
+                                     aduanal.
+                                     El número asignado por el
+  2.    Número de pedimento                                          CARÁCTER (7)
+                                     agente o apoderado aduanal.
+        Clave de sección aduanera de Conforme al Apéndice del Anexo
+  3.                                                                 CARÁCTER (3)
+        despacho                     22 de las RGCE.
+                                     Clave de la institución emisora
+                                     de la constancia de depósito en
+                                     la cuenta, autorizada por la
+  4.    Clave de institución emisora                                 ENTERO (2)
+                                     SHCP para emitir cuentas
+                                     aduaneras, conforme al Anexo
+                                     22.
+                                   Número de cuenta de garantía
+ 5.   Número de cuenta             asignada por la institución         ENTERO (17)
+                                   emisora.
+                                   Folio correspondiente a la
+                                   constancia de depósito en la
+ 6.   Folio de la constancia                                           CARÁCTER (17)
+                                   Cuenta Aduanera y Cuenta
+                                   Aduanera de Garantía.
+                                   La fecha de constancia emitida
+ 7.   Fecha de la constancia                                           FECHA
+                                   por la institución emisora.
+                                   Clave que especifica si el valor
+                                   en aduana está influido por
+                                   vinculaciones        comerciales,
+                                   financieras o de otra clase,
+                                   conforme a las siguientes
+8.    Clave de tipo de cuenta      opciones:                          ENTERO (2)
+                                   0 Cuenta Aduanera aplicable al
+                                       pedimento.
+                                   1 Cuenta         Aduanera       de
+                                       Garantía (hasta antes del
+                                       21/04/2008).
+                                   Clave del tipo de garantía que se
+                                   utiliza, conforme a las siguientes
+                                   opciones:
+
+                                   Clave/Descripción
+                                   1 Depósito.
+                                   2 Fideicomiso.
+ 9.   Clave de garantía            3 Línea de crédito.                 ENTERO (2)
+                                   4 Cuenta referenciada (depósito
+                                      referenciado).
+                                   5 Prenda.
+                                   6 Hipoteca.
+                                   7 Títulos valor.
+                                   8 Carteras de créditos del propio
+                                      contribuyente.
+10.   Valor unitario del título El valor unitario del título.        NUMÉRICO (14,4)
+                                El importe total que ampara la
+11.   Total de la garantía                                           NUMÉRICO (14,2)
+                                constancia.
+      Cantidad en unidades de Cantidad       en    unidades       de
+12.                                                                  NUMÉRICO (14,4)
+      medida del pecio estimado medida del pecio estimado.
+13.   Títulos asignados         Títulos asignados.                   NUMÉRICO (11,4)
+                                Fecha     de     pago      de    las
+                                contribuciones        y       cuotas
+14.   Fecha de pago real                                             FECHA
+                                compensatorias o medidas de
+                                transición.
+509 Tasas del pedimento
+
+ Núm.            Campos                       Descripción           Tipo de Dato
+                                     Número de patente del agente
+   1.   Patente Aduanal                                           CARÁCTER (4)
+                                     aduanal.
+                                     El número asignado por el
+  2.    Número de pedimento                                           CARÁCTER (7)
+                                     agente o apoderado aduanal.
+        Clave de sección aduanera de Conforme al Apéndice 1 del
+  3.                                                                  CARÁCTER (3)
+        despacho                     Anexo 22 de las RGCE
+                                     Conforme al Apéndice 12 del
+  4.    Clave de contribución                                         ENTERO (2)
+                                     Anexo 22 de las RGCE
+                                     Importe de la tasa de la
+  5.    Tasa de contribución                                          NUMÉRICO (10,5)
+                                     contribución.
+                                     Conforme al Apéndice 18 del
+  6.    Clave de tipo de la tasa                                      ENTERO (2)
+                                     Anexo 22 de las RGCE.
+  7.    Clave de tipo de pedimento   Clave de tipo de pedimento       ENTERO (2)
+                                     Fecha de pago de las
+                                     contribuciones   y   cuotas
+  8.    Fecha de pago real                                            FECHA
+                                     compensatorias o medidas de
+                                     transición.
+
+
+
+
+510 Contribuciones del pedimento
+
+ Núm.             Campos                       Descripción              Tipo de Dato
+                                     Número de patente del agente
+   1.   Patente Aduanal                                               CARÁCTER (4)
+                                     aduanal.
+                                     El número asignado por el
+  2.    Número de pedimento                                           CARÁCTER (7)
+                                     agente o apoderado aduanal.
+        Clave de sección aduanera de Conforme al Apéndice 1 del
+  3.                                                                  CARÁCTER (3)
+        despacho                     Anexo 22 de las RGCE.
+                                     Conforme al Apéndice 12 del
+  4.    Clave de contribución                                         ENTERO (2)
+                                     Anexo 22 de las RGCE.
+                                     Conforme al Apéndice 13 del
+  5.    Clave de forma de pago                                        ENTERO (2)
+                                     Anexo 22 de las RGCE.
+  6.    Importe del pago             Importe del pago.                NUMÉRICO (12,0)
+  7.    Clave de tipo de pedimento   Clave de tipo de pedimento       ENTERO (2)
+                                     De las contribuciones y cuotas
+  8.    Fecha de pago real           compensatorias o medidas de      FECHA
+                                     transición.
+511 Observaciones del pedimento
+
+ Núm.              Campos                        Descripción           Tipo de Dato
+                                        Número de patente del agente
+   1.   Patente Aduanal                                              CARÁCTER (4)
+                                        aduanal.
+                                        El número asignado por el
+  2.    Número de pedimento                                              CARÁCTER (7)
+                                        agente o apoderado aduanal.
+        Clave de sección aduanera de Conforme al Apéndice 1 del
+  3.                                                                CARÁCTER (3)
+        despacho                     Anexo 22 de las RGCE.
+                                     El número consecutivo de las
+  4.    Secuencia de la observación                                 ENTERO (3)
+                                     observaciones.
+                                     Las observaciones aplicables a
+  5.    Observaciones                                               CARÁCTER (120)
+                                     nivel pedimento.
+  6.    Clave de tipo de pedimento      Clave de tipo de pedimento.      ENTERO (2)
+        Fecha de validación o de pago Fecha de validación o de pago
+  7.                                                                FECHA
+        real                          real.
+
+512 Descargos de mercancías.
+
+ Núm.             Campos                         Descripción           Tipo de Dato
+                                        Número de patente del agente
+   1.   Patente Aduanal                                              CARÁCTER (4)
+                                        aduanal.
+                                        El número asignado por el
+  2.    Número de pedimento                                              CARÁCTER (7)
+                                        agente o apoderado aduanal.
+        Clave de sección aduanera de Conforme al Apéndice 1 del
+  3.                                                                     CARÁCTER (3)
+        despacho                     Anexo 22 de las RGCE.
+                                     Número de patente del agente
+  4.    Patente aduanal original                                         ENTERO (4)
+                                     aduanal original.
+        Número      de     pedimento
+  5.                                 Número de pedimento original.       ENTERO (7)
+        original
+                                     Clave de la ADUANA/SECCIÓN
+        Clave de sección aduanera de en la que se origina el tránsito,
+  6.                                                                     CARÁCTER (3)
+        despacho original.           conforme al Anexo 22 de las
+                                     RGCE.
+                                     Conforme al Apéndice 2 del
+  7.    Clave de documento original Anexo 22 de las RGCE en la           CARÁCTER (3)
+                                     fecha de operación original.
+                                     Fecha en que se efectuó la
+  8.    Fecha de operación original                                      FECHA
+                                     operación original.
+  9.    Fracción arancelaria original   Fracción arancelaria original.   CARÁCTER (8)
+        Clave de unidad de medida       Conforme al Apéndice 7 del
+  10.                                                                 ENTERO (2)
+        original                        Anexo 22 de las RGCE.
+        Cantidad    de   mercancía      Cantidad      de    mercancía
+  11.                                                                 NUMÉRICO (15,3)
+        descargada                      descargada.
+  12.   Clave de tipo de pedimento      Clave de tipo de pedimento.         ENTERO (2)
+                                        Fecha    de    pago   de    las
+                                        contribuciones     y   cuotas
+  13.   Fecha de pago real                                                  FECHA
+                                        compensatorias o medidas de
+                                        transición.
+
+520 Destinatarios de la mercancía.
+
+ Núm.             Campos                         Descripción           Tipo de Dato
+                                        Número de patente del agente
+   1.   Patente Aduanal                                              CARÁCTER (4)
+                                        aduanal.
+                                        El número asignado por el
+   2.   Número de pedimento                                                 CARÁCTER (7)
+                                        agente o apoderado aduanal.
+        Clave de sección aduanera de    Conforme al Apéndice 1 del
+   3.                                                                       CARÁCTER (3)
+        despacho                        Anexo 22 de las RGCE.
+        Identificación   fiscal  del    La clave de identificación fiscal
+  4.                                                                        CARÁCTER (17)
+        destinatario                    del destinatario.
+                                        Nombre,      denominación      o
+        Nombre del destinatario de la
+   5.                                   razón social del destinatario de    CARÁCTER (120)
+        mercancía.
+                                        las mercancías.
+        Calle   del    domicilio    del Calle    del    domicilio     del
+   6.                                                                       CARÁCTER (80)
+        destinatario                    destinatario.
+        Número interior del domicilio   Número interior de domicilio
+   7.                                                                       CARÁCTER (10)
+        del destinatario                del destinatario.
+        Número exterior del domicilio   Número exterior de domicilio
+  8.                                                                        CARÁCTER (10)
+        del destinatario                del destinatario.
+        Código postal del domicilio     Código postal del domicilio del
+   9.                                                                       CARÁCTER (10)
+        del destinatario                destinatario.
+        Municipio/Ciudad            del Municipio/Ciudad del domicilio
+  10.                                                                       CARÁCTER (80)
+        domicilio del destinatario      del destinatario.
+        Clave de país del domicilio del
+  11.                                   Apéndice 4 del Anexo 22.            CARÁCTER (3)
+        destinatario.
+                                        Fecha    de   pago    de  las
+                                        contribuciones    y    cuotas
+  12.   Fecha de pago real                                                  FECHA
+                                        compensatorias o medidas de
+                                        transición.
+551 Partidas
+
+ Núm.              Campos                       Descripción           Tipo de Dato
+                                       Número de patente del agente
+   1.   Patente Aduanal                                             CARÁCTER (4)
+                                       aduanal.
+                                       El número asignado por el
+   2.   Número de pedimento                                                 CARÁCTER (7)
+                                       agente o apoderado aduanal.
+        Clave de sección aduanera de Conforme al Apéndice 1 del
+   3.                                                           CARÁCTER (3)
+        despacho                     Anexo 22 de las RGCE.
+
+                                       Aplicable a la mercancía
+  4.    Fracción arancelaria                                                CARÁCTER (8)
+                                       conforme a la TIGIE.
+
+        Secuencia de la        fracción Número de la secuencia de la
+   5.                                                                ENTERO (5)
+        arancelaria                     fracción en el pedimento.
+        Subdivisión de la      fracción
+   6.                                   Clave de la subdivisión.     ENTERO (8)
+        arancelaria
+   7.   Descripción de la mercancía    Descripción de la mercancía.         CARÁCTER (250)
+  8.    Precio unitario                Importe del precio unitario.         NUMÉRICO (15,5)
+                                       El valor en aduana de la
+                                       mercancía        expresado      en
+                                       moneda            nacional       y
+   9.   Valor en aduana                determinado conforme a lo            NUMÉRICO (12,0)
+                                       dispuesto en el Título Tercero,
+                                       Capítulo III, Sección Primera de
+                                       la Ley Aduanera.
+                                       Valor en moneda nacional que
+                                       corresponda a la mercancía, sin
+                                       incluir fletes ni seguros ni otros
+                                       conceptos.
+  10.   Valor comercial                                                     NUMÉRICO (12,0)
+                                  Tratándose de exportación se
+                                  deberá    declarar  el   valor
+                                  comercial.
+                                  Valor en dólares de la
+  11.   Valor en dólares          mercancía descrita por el                 NUMÉRICO (14,2)
+                                  agente aduanal.
+                                  Cantidad    de     mercancías
+        Cantidad de mercancías en conforme a la unidad de
+  12.   unidades de medida        medida de comercialización de             NUMÉRICO (15,3)
+        comercial                 acuerdo a lo señalado en la
+                                  factura.
+                                Cantidad     de     mercancías
+                                conforme a la unidad de
+      Clave de unidad de medida medida de comercialización de
+13.                                                                       ENTERO (2)
+      comercial                 acuerdo a lo señalado en la
+                                factura, conforme al Apéndice
+                                7 del Anexo 22.
+      Cantidad de mercancía en Cantidad        correspondiente
+14.   unidades de medida de la conforme a la unidad de                    NUMÉRICO (15,3)
+      tarifa                    medida de la TIGIE.
+      Clave de unidad de        Conforme al Apéndice 7 del
+15.                                                                       ENTERO (2)
+      medida de la tarifa       Anexo 22 de las RGCE.
+16.   Valor agregado            Anexo 22 de las RGCE                      NUMÉRICO (12,0)
+                                Conforme a las siguientes
+                                opciones:
+
+                                       Clave/Descripción
+17.   Clave de vinculación             0 No existe vinculación.           ENTERO (2)
+                                       1 Si existe vinculación y no
+                                          afecta el valor en aduana.
+                                       2 Si existe vinculación y afecta
+                                          el valor en aduana.
+      Clave     de método   de         Conforme al Apéndice 11 del
+18.                                                                       ENTERO (2)
+      valorización                     Anexo 22 de las RGCE.
+      Código de la mercancía o         Código de la mercancía o
+19.                                                                       CARÁCTER (20)
+      producto                         producto.
+      Marca de la mercancía o          Marca de la mercancía o
+20.                                                                       CARÁCTER (80)
+      producto                         producto.
+      Modelo de la mercancía o         Modelo de la mercancía o
+21.                                                                       CARÁCTER (80)
+      producto                         producto.
+                                       Conforme al Apéndice 4 del
+22.   Clave de país Origen/Destino                                        CARÁCTER (3)
+                                       Anexo 22 de las RGCE.
+      Clave de país                    Conforme al Apéndice 4 del
+23.                                                                       CARÁCTER (3)
+      Comprador/Vendedor               Anexo 22 de las RGCE.
+      Clave de entidad federativa de   Entidad federativa descrita por
+24.                                                                       CARÁCTER (3)
+      origen                           el agente aduanal.
+      Clave de entidad federativa de   Entidad federativa descrita por
+25.                                                                       CARÁCTER (3)
+      destino                          el agente aduanal.
+      Clave de entidad    federativa   Entidad federativa descrita por
+26.                                                                       CARÁCTER (3)
+      del comprador                    el agente aduanal.
+      Clave de entidad federativa      Entidad federativa descrita por
+27.                                                                       CARÁCTER (3)
+      del vendedor                     el agente aduanal.
+                                       1- Importación.
+28.   Clave de tipo de operación                                          CARÁCTER (1)
+                                       2- Exportación
+                                       Conforme al Apéndice 2 del
+29.   Clave de documento                                                  CARÁCTER (3)
+                                       Anexo 22 de las RGCE.
+                                      Fecha    de   pago de    las
+                                      contribuciones   y   cuotas
+ 30.    Fecha de pago real                                               FECHA
+                                      compensatorias o medidas de
+                                      transición.
+
+552 Mercancías
+
+ Núm.             Campos                       Descripción           Tipo de Dato
+                                      Número de patente del agente
+   1.   Patente Aduanal                                            CARÁCTER (4)
+                                      aduanal.
+                                      El número asignado por el
+  2.    Número de pedimento                                              CARÁCTER (7)
+                                      agente o apoderado aduanal.
+        Clave de sección aduanera de Conforme al Apéndice 1 del
+  3.                                                            CARÁCTER (3)
+        despacho                     Anexo 22 de las RGCE.
+
+                                      Aplicable a la mercancía
+  4.    Fracción arancelaria                                             CARÁCTER (8)
+                                      conforme a la TIGIE.
+
+        Secuencia de      la fracción Número de la secuencia de la
+  5.                                                                     ENTERO (5)
+        arancelaria                   fracción en el pedimento.
+                                      El VIN (Número                de
+                                      Identificación Vehicular) o el
+  6.    VIN o número de serie                                            CARÁCTER (17)
+                                      número de serie de las
+                                      mercancías.
+  7.    Kilometraje del vehículo      Kilometraje del vehículo.          ENTERO (12)
+                                      Fecha     de    pago   de    las
+                                      contribuciones     y      cuotas
+  8.    Fecha de pago real                                               FECHA
+                                      compensatorias o medidas de
+                                      transición.
+
+553 Permiso de la partida
+
+ Núm.             Campos                       Descripción           Tipo de Dato
+                                      Número de patente del agente
+   1.   Patente Aduanal                                            CARÁCTER (4)
+                                      aduanal.
+                                      El número asignado por el
+  2.    Número de pedimento                                              CARÁCTER (7)
+                                      agente o apoderado aduanal.
+        Clave de sección aduanera de Conforme al Apéndice 1 del
+  3.                                                            CARÁCTER (3)
+        despacho                     Anexo 22 de las RGCE.
+
+                                      Aplicable a la mercancía
+  4.    Fracción arancelaria                                             CARÁCTER (8)
+                                      conforme a la TIGIE.
+        Secuencia de      la fracción Número de la secuencia de la
+   5.                                                                     ENTERO (5)
+        arancelaria                   fracción en el pedimento.
+                                      Conforme al Apéndice 9 del
+   6.   Clave de permiso                                                  CARÁCTER (2)
+                                      Anexo 22 de las RGCE.
+   7.   Firma de descargo             La firma electrónica.               CARÁCTER (17)
+                                      El número del permiso o
+  8.    Número del permiso                                                CARÁCTER (17)
+                                      autorización.
+                                      Valor comercial en dólares de la
+   9.   Valor comercial en dólares                                        NUMÉRICO (14,2)
+                                      mercancía.
+        Cantidad de mercancía en Cantidad             correspondiente
+  10.   unidades de medida de la conforme a la unidad de                  NUMÉRICO (15,3)
+        tarifa                        medida de la TIGIE.
+                                      Fecha     de    pago    de   las
+                                      contribuciones      y    cuotas
+  11.   Fecha de pago real                                                FECHA
+                                      compensatorias o medidas de
+                                      transición.
+
+554 Casos de la partida
+
+ Núm.             Campos                       Descripción           Tipo de Dato
+                                      Número de patente del agente
+   1.   Patente Aduanal                                            CARÁCTER (4)
+                                      aduanal.
+                                      El número asignado por el
+   2.   Número de pedimento                                               CARÁCTER (7)
+                                      agente o apoderado aduanal.
+        Clave de sección aduanera Conforme al Apéndice 1 del
+   3.                                                        CARÁCTER (3)
+        de despacho               Anexo 22 de las RGCE.
+
+                                      Aplicable   a   la   mercancía
+  4.    Fracción arancelaria                                              CARÁCTER (8)
+                                      conforme a la TIGIE.
+
+        Secuencia de      la  fracción Número de la secuencia de la
+   5.                                                                     ENTERO (5)
+        arancelaria                    fracción en el pedimento.
+                                       Conforme al apéndice 8 del
+   6.   Clave de caso                                                     CARÁCTER (2)
+                                       Anexo 22 de las RGCE.
+                                       Conforme al Apéndice 8 del
+                                       Anexo 22 de las RGCE y
+   7.   Identificador del caso         marcado en la columna de           CARÁCTER (20)
+                                       “NIVEL” de dicho apéndice con
+                                       la clave “P”.
+                                       Conforme al Apéndice 8 del
+                                       Anexo 22 de las RGCE y marcado
+  8.    Complemento del caso                                              CARÁCTER (30)
+                                       en la columna de “NIVEL” de
+                                       dicho apéndice con la clave “P”.
+                                     Fecha     de   pago de   las
+                                     contribuciones    y  cuotas
+  9.    Fecha de pago real                                           FECHA
+                                     compensatorias o medidas de
+                                     transición.
+
+555 Cuentas aduaneras de garantía de la partida
+
+ Núm.             Campos                      Descripción           Tipo de Dato
+                                     Número de patente del agente
+   1.   Patente Aduanal                                           CARÁCTER (4)
+                                     aduanal.
+                                     El número asignado por el
+  2.    Número de pedimento                                      CARÁCTER (7)
+                                     agente o apoderado aduanal.
+
+        Clave de sección aduanera    Conforme al Apéndice 1 del
+  3.                                                                  CARÁCTER (3)
+        de despacho                  Anexo 22 de las RGCE.
+
+
+                                     Aplicable   a   la   mercancía
+  4.    Fracción arancelaria                                        CARÁCTER (8)
+                                     conforme a la TIGIE.
+
+        Secuencia de      la  fracción Número de la secuencia de la
+  5.                                                                   ENTERO (5)
+        arancelaria                    fracción en el pedimento.
+                                       Clave de la institución emisora
+                                       de la constancia de depósito en
+                                       la cuenta, autorizada por la
+  6.    Clave de institución emisora                                   ENTERO (2)
+                                       SHCP para emitir cuentas
+                                       aduaneras, conforme al Anexo
+                                       22.
+                                     Número de cuenta aduanera y
+                                     cuenta aduanera de garantía,
+  7.    Número de cuenta                                              ENTERO (17)
+                                     asignada por la institución
+                                     emisora.
+                                     Folio correspondiente a la
+  8.    Folio de la constancia       constancia de depósito en la CARÁCTER (17)
+                                     cuenta de garantía.
+                                     La fecha de constancia emitida
+  9.    Fecha de la constancia                                      FECHA
+                                     por la institución emisora.
+                                     Clave del tipo de garantía que
+                                     se utiliza, conforme a las
+                                     siguientes opciones:
+
+                                   Clave/Descripción
+                                   1 Depósito.
+                                   2 Fideicomiso.
+  10.   Clave de garantía          3 Línea de crédito.                  ENTERO (2)
+                                   4 Cuenta referenciada
+                                      (depósito referenciado).
+                                   5 Prenda.
+                                   6 Hipoteca.
+                                   7 Títulos valor.
+                                   8 Carteras de créditos del
+                                      propio contribuyente.
+  11.   Valor unitario del título  Valor unitario del título.           NUMÉRICO (14,4)
+                                   El importe total que ampara la
+  12.   Total de la garantía                                            NUMÉRICO (14,2)
+                                   constancia.
+        Cantidad en unidades de Cantidad en unidades de
+  13.                                                                   NUMÉRICO (14,4)
+        medida del precio estimado medida del precio estimado.
+  14.   Títulos asignados          Títulos asignados                    NUMÉRICO (11,4)
+                                   Fecha     de    pago       de  las
+                                   contribuciones        y     cuotas
+  15.   Fecha de pago real                                              FECHA
+                                   compensatorias o medidas de
+                                   transición.
+
+556 Tasas de las contribuciones de la partida
+
+ Núm.             Campos                      Descripción          Tipo de Dato
+                                     Número de patente del agente
+   1.   Patente Aduanal                                           CARÁCTER (4)
+                                     aduanal.
+                                     El número asignado por el
+   2.   Número de pedimento                                             CARÁCTER (7)
+                                     agente o apoderado aduanal.
+        Clave de sección aduanera de Conforme al Apéndice 1 del
+   3.                                                           CARÁCTER (3)
+        despacho                     Anexo 22 de las RGCE.
+
+                                     Aplicable   a   la   mercancía
+  4.    Fracción arancelaria                                            CARÁCTER (8)
+                                     conforme a la TIGIE.
+
+        Secuencia de      la  fracción Número de la secuencia de la
+   5.                                                               ENTERO (5)
+        arancelaria                    fracción en el pedimento.
+                                       Conforme al apéndice 12 del
+   6.   Clave de contribución                                       ENTERO (2)
+                                       Anexo 22 de las RGCE.
+   7.   Tasa de la contribución        Tasa de la contribución      NUMÉRICO (10,5)
+                                     Conforme al apéndice 18 del
+  8.    Clave de tipo de la tasa                                   ENTERO (2)
+                                     Anexo 22 de las RGCE.
+                                     Fecha     de   pago   de  las
+                                     contribuciones    y    cuotas
+  9.    Fecha de pago real                                         FECHA
+                                     compensatorias o medidas de
+                                     transición.
+
+557 Contribuciones de la partida
+
+ Núm.             Campos                      Descripción           Tipo de Dato
+                                     Número de patente del agente
+  1.    Patente Aduanal                                           CARÁCTER (4)
+                                     aduanal.
+                                     El número asignado por el
+  2.    Número de pedimento                                            CARÁCTER (7)
+                                     agente o apoderado aduanal.
+        Clave de sección aduanera de Conforme al Apéndice 1 del
+  3.                                                            CARÁCTER (3)
+        despacho                     Anexo 22 de las RGCE.
+
+                                     Aplicable a la mercancía
+  4.    Fracción arancelaria                                           CARÁCTER (8)
+                                     conforme a la TIGIE.
+
+        Secuencia de      la fracción Número de la secuencia de la
+  5.                                                                   ENTERO (5)
+        arancelaria                   fracción en el pedimento.
+                                      Conforme al Apéndice 12 del
+  6.    Clave de contribución                                          ENTERO (2)
+                                      Anexo 22 de las RGCE.
+                                      Conforme al Apéndice 13, Anexo
+  7.    Clave de forma de pago                                         ENTERO (2)
+                                      22 de las RGCE.
+  8.    Importe de pago               Importe de pago.                 NUMÉRICO (12,0)
+                                      Fecha     de    pago  de   las
+                                      contribuciones     y    cuotas
+  9.    Fecha de pago real                                             FECHA
+                                      compensatorias o medidas de
+                                      transición.
+
+558 Observaciones de la partida
+
+ Núm.             Campos                      Descripción           Tipo de Dato
+                                     Número de patente del agente
+  1.    Patente Aduanal                                           CARÁCTER (4)
+                                     aduanal.
+                                     El número asignado por el
+  2.    Número de pedimento                                            CARÁCTER (7)
+                                     agente o apoderado aduanal.
+        Clave de sección aduanera Conforme al Apéndice 1 del
+  3.                                                         CARÁCTER (3)
+        de despacho               Anexo 22 de las RGCE.
+                                      Aplicable a la mercancía
+  4.     Fracción arancelaria                                           CARÁCTER (8)
+                                      conforme a la TIGIE.
+
+         Secuencia de     la fracción Número de la secuencia de la
+  5.                                                                    ENTERO (5)
+         arancelaria                  fracción en el pedimento.
+                                      El número consecutivo de las
+  6.     Secuencia de la observación                                    ENTERO (3)
+                                      observaciones.
+                                      Las observaciones aplicables a
+  7.     Observaciones                                                  CARÁCTER (120)
+                                      nivel partida.
+                                      Fecha     de    pago  de   las
+                                      contribuciones      y   cuotas
+  8.     Fecha de pago real                                             FECHA
+                                      compensatorias o medidas de
+                                      transición.
+
+701 Rectificaciones
+
+Núm.              Campos                      Descripción               Tipo de Dato
+                                     Número de la patente del agente
+ 1.    Patente Aduanal                                                CARÁCTER (4)
+                                     aduanal.
+                                    El número asignado por el
+ 2.    Número de pedimento          agente o apoderado aduanal.      CARÁCTER (7)
+
+       Clave de sección aduanera de Conforme al Apéndice 1 del Anexo
+ 3.                                                                  CARÁCTER (3)
+       despacho                     22 de las RGCE.
+
+                                    Conforme al Apéndice 2 del
+ 4.    Clave de documento                                      CARÁCTER (3)
+                                    Anexo 22 de las RGCE.
+
+                                    Fecha     de   pago de   las
+                                    contribuciones    y   cuotas
+ 5.    Fecha de pago                                             FECHA
+                                    compensatorias o medidas de
+                                    transición.
+       Número      de     pedimento Número de pedimento anterior.
+ 6.                                                                    CARÁCTER (7)
+       anterior
+                                    Número de patente del agente
+ 7.    Patente aduanal anterior                                       CARÁCTER (4)
+                                    aduanal anterior.
+                                    Clave de la ADUANA/SECCIÓN
+       Clave de sección aduanera de en la que se origina el tránsito,
+ 8.                                                                   CARÁCTER (3)
+       despacho anterior            conforme al Apéndice 1 del
+                                    Anexo 22 de las RGCE.
+                                    Conforme al Apéndice 2 de
+ 9.    Clave de documento anterior Anexo 22 de las RGCE en la CARÁCTER (3)
+                                    fecha de la operación anterior.
+     Fecha de operación           Fecha en que se efectuó la
+ 10.                                                                FECHA
+     anterior                     operación anterior.
+     Número      de    pedimento Número de pedimento original.
+ 11.                                                                CARÁCTER (7)
+     original
+                                  Número de patente del agente
+ 12. Patente aduanal original                                       CARÁCTER (4)
+                                  aduanal original.
+                                  Clave de la ADUANA/SECCIÓN
+                                  en la que se origina el tránsito,
+     Clave de sección aduanera de
+ 13.
+     despacho original            conforme al Apéndice 1 del CARÁCTER (3)
+                                  Anexo 22 de las RGCE.
+
+                                    Fecha     de   pago de   las
+                                    contribuciones    y   cuotas
+ 14. Fecha de pago real                                          FECHA
+                                    compensatorias o medidas de
+                                    transición.
+
+702 Diferencias de contribuciones del pedimento
+
+Núm.             Campos                       Descripción              Tipo de Dato
+                                     Número de patente      agente
+ 1.    Patente Aduanal                                               CARÁCTER (4)
+                                     aduanal.
+                                    El número asignado por el
+ 2.    Número de pedimento                                      CARÁCTER (7)
+                                    agente o apoderado aduanal.
+       Clave de sección aduanera de Conforme al Apéndice 1 del
+ 3.                                                             CARÁCTER (3)
+       despacho                     Anexo 22 de las RGCE.
+                                    Conforme al Apéndice 12 del
+ 4.    Clave de contribución                                    ENTERO (2)
+                                    Anexo 22 de las RGCE.
+                                    Conforme al Apéndice 13 del
+ 5.    Clave de forma de pago                                   ENTERO (2)
+                                    Anexo 22 de las RGCE.
+ 6.    Importe del pago             Importe del pago.           ENTERO (12)
+ 7.    Clave de tipo de pedimento   Clave de tipo de pedimento.      ENTERO (2)
+                                    Fecha     de   pago de   las
+                                    contribuciones    y   cuotas
+ 8.    Fecha de pago real                                        FECHA
+                                    compensatorias o medidas de
+                                    transición.
+
+Selección automatizada
+
+ Núm.             Campos                      Descripción           Tipo de Dato
+                                     Número de patente del agente
+  1.    Patente Aduanal                                           CARÁCTER (4)
+                                     aduanal.
+                                      El número asignado por el
+  2.     Número de pedimento                                      CARÁCTER (7)
+                                      agente o apoderado aduanal.
+         Clave de sección aduanera de Conforme al Apéndice 1 del
+  3.                                                              CARÁCTER (3)
+         despacho                     Anexo 22.de las RGCE.
+
+  4.     Consecutivo de la remesa       Consecutivo de la remesa.         ENTERO (5)
+
+         Número     de      selección 1 Primera selección
+  5.                                                                      ENTERO (2)
+         automatizada                 2 Segunda selección
+         Fecha de           selección Fecha de            selección
+  6.                                                                      FECHA
+         automatizada                 automatizada.
+         Hora      de        elección Hora       de        elección
+  7.                                                                      CARÁCTER (10)
+         automatizada                 automatizada.
+                                      0 Rojo
+  8.     Semáforo fiscal                                                  ENTERO (2)
+                                      1 Verde
+                                        Conforme al Apéndice 2, del
+  9.     Clave de documento                                               CARÁCTER (3)
+                                        Anexo 22 de las RGCE.
+                                        1 Importación
+  10.    Clave de tipo de operación                                       CARÁCTER (1)
+                                        2 Exportación
+
+Incidencias del reconocimiento aduanero
+
+Núm.              Campos                         Descripción               Tipo de Dato
+                                        Número de patente del agente
+ 1.     Patente Aduanal                                                   CARÁCTER (4)
+                                        aduanal.
+                                        El número asignado por el
+ 2.     Número de pedimento                                               CARÁCTER (7)
+                                        agente o apoderado aduanal.
+         Clave de sección aduanera de Conforme al Apéndice 1 del
+ 3.                                                              CARÁCTER (3)
+         despacho                     Anexo 22 de las RGCE.
+
+ 4.      Consecutivo de la remesa       Consecutivo de la remesa.         ENTERO (2)
+
+         Número     de      selección 1 Primera selección
+ 5.                                   2 Segunda selección                 ENTERO (2)
+         automatizada
+         Fecha    de     inicio     del Fecha    de      inicio     del
+ 6.                                                                       FECHA
+         reconocimiento                 reconocimiento.
+         Hora    de     inicio      del Hora    de      inicio      del
+ 7.                                                                       CARÁCTER (10)
+         reconocimiento                 reconocimiento.
+        Fecha de       fin          del Fecha     de        fin     del
+ 8.                                                                       FECHA
+        reconocimiento                  reconocimiento.
+        Hora     de       fin       del Hora     de        fin      del
+ 9.                                                                       CARÁCTER (10)
+        reconocimiento                  reconocimiento.
+                                        Aplicable a la mercancía
+ 10.   Fracción arancelaria                                             CARÁCTER (8)
+                                        conforme a la TIGIE.
+
+       Secuencia     de   la    fracción Número de la secuencia de la
+ 11.                                                                  ENTERO (5)
+       arancelaria                       fracción en el pedimento.
+                                        Conforme al Apéndice 2, del
+ 12.   Clave de documento                                               CARÁCTER (3)
+                                        Anexo 22 de las RGCE.
+                                        1 Importación
+ 13.   Clave de tipo de operación                                       CARÁCTER (1)
+                                        2 Exportación
+                                        S- Incidencia simple
+                                        G- Incidencia grave
+ 14.   Grado de la incidencia                                           CARÁCTER (2)
+                                        C- Reconocimiento aduanero
+                                       correcto.
+       Fecha de                selección Fecha      de      selección
+ 15.                                                                    FECHA
+       automatizada                      automatizada.
+
+Procedimiento para el manejo de información.
+
+Hay tablas que tienen información a:
+   • Nivel de pedimento
+   • Nivel partida (Secuencia de la fracción arancelaria)
+
+Tablas con información a nivel de pedimento:
+   • 501 Datos generales
+   • 502 Transporte de las mercancías
+   • 503 Guías
+   • 504 Contenedores
+   • 505 Facturas
+   • 506 Fechas del pedimento
+   • 507 Casos del pedimento
+   • 508 Cuentas aduaneras de garantía del pedimento
+   • 509 Tasas del pedimento
+   • 510 Contribuciones del pedimento
+   • 511 Observaciones del pedimento
+   • 512 Descargos de mercancías.
+   • 520 Destinatarios de la mercancía.
+   • 701 Rectificaciones
+   • 702 Diferencias de contribuciones del pedimento
+   • Selección automatizada
+Tablas con información a nivel de partida (Secuencia de la fracción arancelaria)
+  • 551 Partidas
+  • 552 Mercancías
+  • 553 Permiso de la partida
+  • 554 Casos de la partida
+  • 555 Cuentas aduaneras de garantía de la partida
+  • 556 Tasas de las contribuciones de la partida
+  • 557 Contribuciones de la partida
+  • 558 Observaciones de la partida
+  • Incidencias del reconocimiento aduanero
+
+Para relacionar la información entre las tablas a nivel de pedimentos, es mediante los
+campos Patente aduanal, número de pedimento y clave de sección aduanera de
+despacho.
+
+En cuanto a las tablas a nivel de partida, se relacionan mediante los campos Patente
+aduanal, número de pedimento, clave de sección aduanera de despacho y secuencia de
+la fracción arancelaria.
+
+En el caso de relacionar una tabla a nivel pedimento y una tabla a nivel partida, es
+mediante los campos Patente aduanal, número de pedimento y clave de sección
+aduanera de despacho.
+
+Los archivos base son las tablas 501 Datos Generales y 551 Partidas.
+
+Relación entre dos tablas a nivel de pedimentos:
+  501                                                 505
+
+
+  Patente Aduanal                                     Patente Aduanal
+
+
+
+  Número de Pedimento                                 Número de Pedimento
+
+
+
+  Clave de aduana de despacho                         Clave de aduana de despacho
+
+
+
+Clave de tipo de operación                            Fecha de facturación
+
+
+
+
+Etc.                                                  Etc.
+Relación entre dos tablas a nivel de partida (Secuencia de la fracción arancelaria):
+ 551                                                   553
+
+
+
+
+ Patente Aduanal                                       Patente Aduanal
+
+
+
+ Número de Pedimento                                   Número de Pedimento
+
+
+
+ Clave de aduana de despacho                           Clave de aduana de despacho
+
+
+
+ Secuencia de la fracción                              Secuencia de la fracción
+
+
+
+
+ Subdivisión de la fracción                            Clave de permiso
+
+
+
+
+ Etc.                                                  Etc.
+
+
+
+
+Relación entre una tabla a nivel de pedimento y una tabla a nivel partida (Secuencia de
+la fracción arancelaria):
+
+ 501                                                   551
+
+
+
+
+ Patente Aduanal                                       Patente Aduanal
+
+
+
+ Número de Pedimento                                   Número de Pedimento
+
+
+
+ Clave de aduana de despacho                           Clave de aduana de despacho
+
+
+
+Clave de tipo de operación                             Fracción arancelaria
+
+
+
+
+Clave de documento                                     Secuencia dela fracción
+
+
+
+
+Etc.                                                    Etc.
+
+
+
+
+La información está separada por pipes (|), los archivos se pueden abrir con el block de
+notas de Windows y se pueden exportar a Excel o Access.
+

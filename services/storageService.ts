@@ -1,4 +1,4 @@
-import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole } from '../types.ts';
+import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole, XMLCIRecord } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
   collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc, arrayUnion, increment, limit, startAfter
@@ -11,9 +11,10 @@ const COLS = {
   EQUIPMENT: 'equipment_tracking', CUSTOMS: 'customs_clearance', PRE_ALERTS: 'pre_alerts',
   COSTS: 'costs', LOGS: 'logs', LOGISTICS: 'logistics', SUPPLIERS: 'suppliers',
   SNAPSHOTS: 'snapshots', DATA_STAGE_REPORTS: 'data_stage_reports', USERS: 'users',
-  TRAINING: 'training_submissions', INVOICES: 'commercial_invoices', DRAFTS: 'data_stage_drafts',
+  TRAINING: 'training_submissions', INVOICES: 'commercial_invoices', CFDI_INVOICES: 'cfdi_invoices', DRAFTS: 'data_stage_drafts',
   METADATA: 'system_metadata', DAILY_CHANGES: 'daily_changes', DAILY_REPORTS: 'master_data_reports',
-  SUBSCRIPTIONS: 'audit_subscriptions'
+  SUBSCRIPTIONS: 'audit_subscriptions',
+  XML_CI: 'xml_ci'
 };
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
@@ -36,7 +37,8 @@ let dbState: StorageState = {
   parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
   customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
   logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
-  dataStageDrafts: [], dailyChanges: [], dailyReports: [], users: []
+  dataStageDrafts: [], dailyChanges: [], dailyReports: [], users: [],
+  cfdiInvoices: [], xmlCI: []
 };
 
 let listeners: (() => void)[] = [];
@@ -1004,6 +1006,160 @@ export const storageService = {
     dbState.commercialInvoices = dbState.commercialInvoices.filter((i: any) => !ids.includes(i.id));
     notifyListeners();
     saveLocal();
+  },
+
+  // --- CFDI Invoices CRUD (Isolated XML Extraction) ---
+
+  addCFDIInvoices: async (newItems: CommercialInvoiceItem[]) => {
+    // 1. Deduplication against the new isolated collection
+    const normalize = (val: any) => String(val || '').trim().toUpperCase();
+
+    const existingKeys = new Set(
+      (dbState.cfdiInvoices || []).map(
+        (i: any) => `${normalize(i.invoiceNo)}-${normalize(i.partNo)}-${Number(i.qty || 0).toFixed(4)}`
+      )
+    );
+
+    const uniqueNewItems = newItems.filter(item => {
+      const key = `${normalize(item.invoiceNo)}-${normalize(item.partNo)}-${Number(item.qty || 0).toFixed(4)}`;
+      return !existingKeys.has(key);
+    });
+
+    if (uniqueNewItems.length === 0) return 0;
+    if (!db) throw new Error("Sin conexión a Internet.");
+
+    const chunks = [];
+    for (let i = 0; i < uniqueNewItems.length; i += 400) {
+      chunks.push(uniqueNewItems.slice(i, i + 400));
+    }
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach((item) => {
+        batch.set(doc(db, COLS.CFDI_INVOICES, item.id), sanitizeForFirestore(item));
+      });
+      await batch.commit();
+    }
+
+    try {
+      logAction('XML_CFDI_IMPORT', `Líneas XML extraídas: ${uniqueNewItems.length}`);
+    } catch (e) { }
+
+    dbState.cfdiInvoices = [...(dbState.cfdiInvoices || []), ...uniqueNewItems];
+    notifyListeners();
+
+    return uniqueNewItems.length;
+  },
+
+  addXMLCIRecords: async (newRecords: XMLCIRecord[]) => {
+    if (newRecords.length === 0) return 0;
+    if (!db) throw new Error("Sin conexión a Internet.");
+
+    const batch = writeBatch(db);
+    newRecords.forEach((record) => {
+      batch.set(doc(db, COLS.XML_CI, record.id), sanitizeForFirestore(record));
+    });
+
+    await batch.commit();
+
+    try {
+      logAction('XML_CI_IMPORT', `Facturas XML consolidadas: ${newRecords.length}`);
+    } catch (e) { }
+
+    // Merge in memory
+    const existingIds = new Set((dbState.xmlCI || []).map(r => r.id));
+    const uniqueBatch = newRecords.filter(r => !existingIds.has(r.id));
+    dbState.xmlCI = [...(dbState.xmlCI || []), ...uniqueBatch];
+
+    notifyListeners();
+    return uniqueBatch.length;
+  },
+
+  getXMLCIRecords: async () => {
+    if (!db) return dbState.xmlCI || [];
+    try {
+      const q = query(collection(db, COLS.XML_CI), orderBy('fecha', 'desc'));
+      const snapshot = await getDocs(q);
+      const records = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
+      dbState.xmlCI = records;
+      return records;
+    } catch (e) {
+      console.error("Error fetching XMLCI records", e);
+      return dbState.xmlCI || [];
+    }
+  },
+
+  deleteXMLCIRecord: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.XML_CI, id));
+    dbState.xmlCI = (dbState.xmlCI || []).filter(r => r.id !== id);
+    notifyListeners();
+  },
+
+  deleteXMLCIRecords: async (ids: string[]) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    if (!ids || ids.length === 0) return;
+
+    const chunks = [];
+    for (let i = 0; i < ids.length; i += 400) {
+      chunks.push(ids.slice(i, i + 400));
+    }
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach((id) => {
+        batch.delete(doc(db, COLS.XML_CI, id));
+      });
+      await batch.commit();
+    }
+
+    dbState.xmlCI = (dbState.xmlCI || []).filter(r => !ids.includes(r.id));
+    notifyListeners();
+  },
+
+  getCFDIInvoices: () => dbState.cfdiInvoices || [],
+
+  refreshCFDIInvoices: async () => {
+    if (!db) return [];
+    try {
+      console.log("⬇️ Fetching XML Invoices (On-Demand)...");
+      const snap = await getDocs(collection(db, COLS.CFDI_INVOICES));
+      dbState.cfdiInvoices = snap.docs.map(d => ({ ...d.data(), id: d.id } as CommercialInvoiceItem));
+      notifyListeners();
+      return dbState.cfdiInvoices;
+    } catch (e) {
+      console.error("Failed to refresh CFDI invoices", e);
+      return [];
+    }
+  },
+
+  deleteCFDIInvoice: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.CFDI_INVOICES, id));
+
+    dbState.cfdiInvoices = (dbState.cfdiInvoices || []).filter((i: any) => i.id !== id);
+    notifyListeners();
+  },
+
+  deleteCFDIInvoices: async (ids: string[]) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    if (!ids || ids.length === 0) return;
+
+    const chunks = [];
+    for (let i = 0; i < ids.length; i += 400) {
+      chunks.push(ids.slice(i, i + 400));
+    }
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach((id) => {
+        batch.delete(doc(db, COLS.CFDI_INVOICES, id));
+      });
+      await batch.commit();
+    }
+
+    dbState.cfdiInvoices = (dbState.cfdiInvoices || []).filter((i: any) => !ids.includes(i.id));
+    notifyListeners();
   },
 
   deleteContainer: async (containerNo: string) => {

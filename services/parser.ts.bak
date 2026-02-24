@@ -1,0 +1,524 @@
+import JSZip from 'jszip';
+import { GeneralData, DSInvoiceData, DSItemData, PedimentoRecord, DataStageRecordType, DSProcessingStats, RawFileParsed, DSCoveData, DSDigitalizedData, DSTRANSPORTData, DSGuideData, DSContainerData, DSIdentificador, DSTasa, DSContribucion, DSObservacion } from '../types.ts';
+import { DATA_STAGE_FIELD_NAMES } from '../utils/schemas.ts';
+
+// Helper to safely parse float
+const parseFloatSafe = (val: string): number => {
+  if (!val) return 0;
+  return parseFloat(val) || 0;
+};
+
+const normalizeDate = (d: string): string => {
+  if (!d) return '';
+  // Handle YYYY-MM-DD HH:mm:ss
+  let dt = d.trim().split(' ')[0];
+  const clean = dt.replace(/[/-]/g, '');
+  if (clean.length === 8) {
+    if (clean.startsWith('20')) {
+      // YYYYMMDD
+      return `${clean.substring(0, 4)}-${clean.substring(4, 6)}-${clean.substring(6, 8)}`;
+    } else {
+      // DDMMYYYY
+      return `${clean.substring(4, 8)}-${clean.substring(2, 4)}-${clean.substring(0, 2)}`;
+    }
+  }
+  return dt;
+};
+
+const extractCode = (filename: string): string => {
+  // Removes standard extensions
+  let cleanName = filename.replace(/\.(txt|asc|csv)$/i, '');
+
+  // Try to find 3 digits at the end or after an underscore/dot
+  const match = cleanName.match(/[_.](\d{3})$/) || cleanName.match(/^(\d{3})$/);
+
+  if (match) return match[1];
+
+  // Adjusted fallback: if filename is just "501" (without extension logic above)
+  if (/^\d{3}$/.test(cleanName)) return cleanName;
+
+  // Specific check for _Sel
+  if (cleanName.toUpperCase().endsWith('_SEL') || cleanName.toUpperCase() === 'SEL') return 'Sel';
+
+  return cleanName;
+};
+
+export const processZipFile = async (file: File, onProgress?: (current: number, total: number) => void): Promise<{
+  records: PedimentoRecord[],
+  rawFiles: RawFileParsed[],
+  ds501: GeneralData[],
+  ds502: DSTRANSPORTData[],
+  ds503: DSGuideData[],
+  ds504: DSContainerData[],
+  ds505: DSInvoiceData[],
+  ds551: DSItemData[],
+  ds506: DSCoveData[],
+  ds520: DSDigitalizedData[],
+  ds507: DSIdentificador[],
+  ds509: DSTasa[],
+  ds510: DSContribucion[],
+  ds511: DSObservacion[],
+  dynamicData: Record<string, any[]>,
+  stats: DSProcessingStats
+}> => {
+  const zip = new JSZip();
+  const loadedZip = await zip.loadAsync(file);
+
+  const tempGeneral: GeneralData[] = [];
+  const tempTransport: DSTRANSPORTData[] = [];
+  const tempGuides: DSGuideData[] = [];
+  const tempContainers: DSContainerData[] = [];
+  const tempInvoices: DSInvoiceData[] = [];
+  const tempItems: DSItemData[] = [];
+  const tempCoves: DSCoveData[] = [];
+  const tempDigitalized: DSDigitalizedData[] = [];
+  const tempIdentificadores: DSIdentificador[] = [];
+  const tempTasas: DSTasa[] = [];
+  const tempContribuciones: DSContribucion[] = [];
+  const tempObservaciones: DSObservacion[] = [];
+  const dynamicData: Record<string, any[]> = {};
+
+  const rawFiles: RawFileParsed[] = [];
+  const pedimentoMap = new Map<string, PedimentoRecord>();
+
+  let filesProcessed = 0;
+  const entries = Object.values(loadedZip.files);
+  const CHUNK_SIZE = 5;
+  const totalFiles = entries.length;
+
+  for (let i = 0; i < entries.length; i += CHUNK_SIZE) {
+    const chunk = entries.slice(i, i + CHUNK_SIZE);
+
+    const chunkPromises = chunk.map(async (zipEntry) => {
+      try {
+        if (zipEntry.dir) return;
+
+        const binaryContent = await zipEntry.async('uint8array');
+        const decoder = new TextDecoder('iso-8859-1');
+        const content = decoder.decode(binaryContent);
+        const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
+        const fileName = zipEntry.name;
+        const fileCode = extractCode(fileName);
+
+        const matrix = lines.map(line => line.split('|'));
+
+        let headers: string[] = [];
+        let dataStartIndex = 0;
+
+        // 1. Header Detection (Moved Up)
+        if (lines.length > 0) {
+          const firstLine = lines[0].trim();
+          // Heuristic: If valid pipe-delimited line AND contains letters (not just data)
+          if (firstLine.includes('|') && /[a-zA-Z]/.test(firstLine) && !/^\d+\|/.test(firstLine)) {
+            headers = firstLine.split('|').map(h => h.trim().replace(/['"]/g, ''));
+            console.log(`[Parser] Found headers for ${fileName}:`, headers);
+            dataStartIndex = 1; // Skip header row
+          }
+        }
+
+        // Calculate explicit columns for UI Order
+        let fileColumns: string[] = [];
+        if (headers.length > 0) {
+          fileColumns = headers;
+        } else if (matrix.length > 0) {
+          // Fallback to c0, c1... based on first row width
+          const firstRowWidth = matrix[0].length;
+          fileColumns = Array.from({ length: firstRowWidth }, (_, i) => `c${i}`);
+        }
+
+        if (matrix.length > 0) {
+          const textContent = lines.join(' ');
+          const entities = new Set<string>();
+
+          // Basic Entity Extraction
+          const pedimentoMatches = textContent.match(/\b\d{15}\b|\b\d{7}\b/g);
+          if (pedimentoMatches) pedimentoMatches.forEach(m => entities.add(m));
+          const patenteMatches = textContent.match(/\b\d{4}\b/g);
+          if (patenteMatches) patenteMatches.forEach(m => entities.add(m));
+
+          rawFiles.push({
+            fileName: fileName,
+            code: fileCode,
+            rows: matrix,
+            columns: fileColumns, // Store Order
+            related_entities: Array.from(entities)
+          });
+        }
+
+        // Process Data Rows
+        lines.slice(dataStartIndex).forEach((line, lineIdx) => {
+          if (!line.trim()) return;
+
+          const rawCols = line.split('|').map(c => c.trim().replace(/['"]/g, ''));
+
+          // Basic validation
+          if (rawCols.length < 2) return;
+
+          const isM3 = /^\d{3}$/.test(rawCols[0]) && ['501', '502', '503', '504', '505', '506', '507', '509', '510', '511', '512', '551', '557', '558'].includes(rawCols[0]);
+          const rowCode = isM3 ? rawCols[0] : fileCode;
+
+          // Standardize: Every row should start with its code (index 0)
+          // If the file didn't have the code at start (some specific files), we prepend it
+          // BUT if we are using headers, we should map by INDEX relative to the header
+
+          const fullCols = isM3 ? rawCols : [rowCode, ...rawCols];
+
+          // Internal Linking Identification (Always rely on position 1=Patente, 2=Pedimento if standard M3)
+          // If custom file, we might need to look up "Patente" in headers
+          let pat = '';
+          let ped = '';
+          let sec = '';
+
+          if (headers.length > 0) {
+            // Try to find by name
+            const patIdx = headers.findIndex(h => h.toUpperCase().includes('PATENTE'));
+            const pedIdx = headers.findIndex(h => h.toUpperCase().includes('PEDIMENTO') || h.toUpperCase().includes('PED'));
+            const secIdx = headers.findIndex(h => h.toUpperCase().includes('SECCION'));
+
+            if (patIdx >= 0) pat = rawCols[patIdx];
+            if (pedIdx >= 0) ped = rawCols[pedIdx];
+            if (secIdx >= 0) sec = rawCols[secIdx];
+          }
+
+          // Fallback to standard positions if not found or no headers
+          if (!pat) pat = fullCols[1] || '';
+          if (!ped) ped = fullCols[2] || '';
+          if (!sec) sec = fullCols[3] || '';
+
+          const id = `${pat}-${ped}-${sec}`;
+
+          // Store Data: Dynamic Keys or fallback to cN
+          const recordData: any = {
+            _tipoRegistro: rowCode,
+            _patente: pat,
+            _pedimento: ped,
+            _seccion: sec,
+            _uploadedAt: new Date().toISOString(),
+            _sourceFile: fileName // Link to Metadata
+          };
+
+          if (headers.length > 0) {
+            // Map values to Header Names (Exact user match)
+            headers.forEach((header, idx) => {
+              if (idx < rawCols.length) {
+                recordData[header] = rawCols[idx];
+              }
+            });
+          } else {
+            // Fallback to c0, c1...
+            fullCols.forEach((val, idx) => {
+              recordData[`c${idx}`] = val;
+            });
+          }
+
+
+          if (rowCode === '501') {
+            let fechaEntrada = '';
+            if (headers.length > 0) {
+              const feIdx = headers.findIndex(h => h.toUpperCase().includes('FECHAENTRADA'));
+              if (feIdx >= 0 && feIdx < rawCols.length) fechaEntrada = rawCols[feIdx];
+            }
+            if (!fechaEntrada) {
+              fechaEntrada = fullCols[29] || fullCols[30] || '';
+            }
+
+            let fechaPago = '';
+            if (headers.length > 0) {
+              const fpIdx = headers.findIndex(h => h.toUpperCase().includes('FECHAPAGOREAL') || h.toUpperCase().includes('FECHAPAGO'));
+              if (fpIdx >= 0 && fpIdx < rawCols.length) fechaPago = rawCols[fpIdx];
+            }
+            if (!fechaPago) {
+              fechaPago = fullCols[14] || ''; // M3 Position for Pago
+            }
+
+            const tipoOp = fullCols[4] || (headers.length > 0 ? recordData[headers.find(h => h.toUpperCase().includes('TIPOOPERACION')) || ''] : '1');
+
+            const genData: GeneralData = {
+              ...recordData,
+              fechaEntrada: normalizeDate(fechaEntrada),
+              FechaPagoReal: normalizeDate(fechaPago || fechaEntrada),
+              TipoOperacion: tipoOp || '1'
+            } as any;
+            tempGeneral.push(genData);
+
+            if (!pedimentoMap.get(id)) {
+              pedimentoMap.set(id, {
+                ...genData,
+                id: id,
+                _patente: pat,
+                _pedimento: ped,
+                _seccion: sec,
+                items: [],
+                invoices: [],
+                coves: [],
+                digitalDocuments: [],
+                transporte: [],
+                guias: [],
+                contenedores: [],
+                identificadores: [],
+                tasas: [],
+                contribuciones: [],
+                observaciones: [],
+                totalValueUsd: 0
+              });
+            }
+          } else if (rowCode === '502') {
+            tempTransport.push(recordData);
+          } else if (rowCode === '503') {
+            tempGuides.push(recordData);
+          } else if (rowCode === '504') {
+            tempContainers.push(recordData);
+          } else if (rowCode === '505') {
+            tempInvoices.push(recordData);
+          } else if (rowCode === '551') {
+            tempItems.push(recordData);
+          } else if (rowCode === '506') {
+            tempCoves.push(recordData);
+          } else if (rowCode === '520') {
+            tempDigitalized.push(recordData);
+          } else if (rowCode === '507') {
+            tempIdentificadores.push(recordData);
+          } else if (rowCode === '509') {
+            tempTasas.push(recordData);
+          } else if (rowCode === '510' || rowCode === '557') {
+            tempContribuciones.push(recordData);
+          } else if (rowCode === '511' || rowCode === '558') {
+            tempObservaciones.push(recordData);
+          } else if (rowCode === 'Sel') {
+            const colName = 'dsSel';
+            if (!dynamicData[colName]) dynamicData[colName] = [];
+
+            // Normalize FechaSeleccion to FechaPagoReal for global filtering
+            let fechaSel = '';
+            if (headers.length > 0) {
+              const fsIdx = headers.findIndex(h => h.toUpperCase().includes('FECHASELECCION'));
+              if (fsIdx >= 0 && fsIdx < rawCols.length) fechaSel = rawCols[fsIdx];
+            }
+            if (!fechaSel) fechaSel = fullCols[6] || '';
+
+            recordData.FechaPagoReal = normalizeDate(fechaSel);
+            dynamicData[colName].push(recordData);
+          } else {
+            // Unhandled or Dynamic record types
+            const colName = `ds${rowCode}`;
+            if (!dynamicData[colName]) dynamicData[colName] = [];
+            dynamicData[colName].push(recordData);
+          }
+        });
+
+        filesProcessed++;
+      } catch (err: any) {
+        throw new Error(`Error procesando archivo '${zipEntry.name}': ${err.message}`);
+      }
+    });
+
+    // Update Progress
+    if (onProgress) {
+      onProgress(Math.min(i + CHUNK_SIZE, totalFiles), totalFiles);
+    }
+
+    // Yield to main thread every chunk - Increased delay for stability with binary decoding
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+
+  // --- 2. ENRICHMENT PASS: Propagate Dates and Ops from 501 to sub-records ---
+  const pedInfo = new Map<string, { op: string, date: string }>();
+  tempGeneral.forEach(gen => {
+    const id = `${gen._patente}-${gen._pedimento}-${gen._seccion}`;
+    pedInfo.set(id, {
+      op: gen.TipoOperacion || '1',
+      date: gen.FechaPagoReal || gen.fechaEntrada || ''
+    });
+  });
+
+  // Groups for mass propagation
+  const subArrays = [
+    tempTransport, tempGuides, tempContainers, tempInvoices,
+    tempItems, tempCoves, tempDigitalized, tempIdentificadores,
+    tempTasas, tempContribuciones, tempObservaciones
+  ];
+
+  subArrays.forEach(arr => {
+    arr.forEach(rec => {
+      const id = `${rec._patente}-${rec._pedimento}-${rec._seccion}`;
+      const info = pedInfo.get(id);
+      if (info) {
+        rec.FechaPagoReal = rec.FechaPagoReal ? normalizeDate(rec.FechaPagoReal) : info.date;
+        rec.TipoOperacion = rec.TipoOperacion || info.op;
+        // Legacy compatibility for stats
+        rec.TipoPedimento = info.op;
+      }
+    });
+  });
+
+  // Link data for Dashboard
+  // (pedimentoMap is now partially populated during 501 loop to avoid type mismatches)
+
+  // The previous loop for tempGeneral.forEach(gen => { ... pedimentoMap.set(id, { ...gen, ... }); });
+  // is now redundant because the 501 block already initializes the PedimentoRecord in the map.
+  // We only need to link the sub-records.
+
+  tempInvoices.forEach(inv => {
+    const id = `${inv._patente}-${inv._pedimento}-${inv._seccion}`;
+    const record = pedimentoMap.get(id);
+    if (record) {
+      record.invoices.push(inv);
+    }
+  });
+
+  tempItems.forEach(item => {
+    const id = `${item._patente}-${item._pedimento}-${item._seccion}`;
+    const record = pedimentoMap.get(id);
+    if (record) {
+      record.items.push(item);
+      record.totalValueUsd += (parseFloatSafe(item.c9) || parseFloatSafe(item.c11) || 0);
+    }
+  });
+
+  tempCoves.forEach(cove => {
+    const id = `${cove._patente}-${cove._pedimento}-${cove._seccion}`;
+    const record = pedimentoMap.get(id);
+    if (record) {
+      record.coves.push(cove);
+    }
+  });
+
+  tempDigitalized.forEach(doc => {
+    const id = `${doc._patente}-${doc._pedimento}-${doc._seccion}`;
+    const record = pedimentoMap.get(id);
+    if (record) {
+      record.digitalDocuments.push(doc);
+    }
+  });
+
+  tempTransport.forEach(trans => {
+    const id = `${trans._patente}-${trans._pedimento}-${trans._seccion}`;
+    const record = pedimentoMap.get(id);
+    if (record) record.transporte.push(trans);
+  });
+
+  tempGuides.forEach(guide => {
+    const id = `${guide._patente}-${guide._pedimento}-${guide._seccion}`;
+    const record = pedimentoMap.get(id);
+    if (record) record.guias.push(guide);
+  });
+
+  tempContainers.forEach(cont => {
+    const id = `${cont._patente}-${cont._pedimento}-${cont._seccion}`;
+    const record = pedimentoMap.get(id);
+    if (record) record.contenedores.push(cont);
+  });
+
+  tempIdentificadores.forEach(ident => {
+    const id = `${ident._patente}-${ident._pedimento}-${ident._seccion}`;
+    const record = pedimentoMap.get(id);
+    if (record) record.identificadores.push(ident);
+  });
+
+  tempTasas.forEach(tasa => {
+    const id = `${tasa._patente}-${tasa._pedimento}-${tasa._seccion}`;
+    const record = pedimentoMap.get(id);
+    if (record) record.tasas.push(tasa);
+  });
+
+  tempContribuciones.forEach(cont => {
+    const id = `${cont._patente}-${cont._pedimento}-${cont._seccion}`;
+    const record = pedimentoMap.get(id);
+    if (record) record.contribuciones.push(cont);
+  });
+
+  tempObservaciones.forEach(obs => {
+    const id = `${obs._patente}-${obs._pedimento}-${obs._seccion}`;
+    const record = pedimentoMap.get(id);
+    if (record) record.observaciones.push(obs);
+  });
+
+  // --- 3. FINAL PASS: Ensure ALL Files act as Records (Zero Criteria) ---
+  // The user wants "Everything" visible, even if it didn't parse as a valid 501.
+  rawFiles.forEach(file => {
+    // Check if this file "belongs" to an existing record? 
+    // It's hard to know for sure without parsing, but we can check if its code/name matches.
+    // SIMPLER: Create a record for ANY file that isn't implicitly part of a known pedimento context?
+
+    // Actually, the best way to show "Everything" is to ensure every file is associated with at least ONE record.
+    // But if we just want a "List of Files", the Dashboard has a "Raw Files" view.
+    // The user likely means they want to see a ROW in the main table for "Orphan" files.
+
+    // Let's create a "Dummy" Pedimento for files that didn't trigger a 501 creation?
+    // No, that might clutter. 
+    // Wait, the user said "haya o no haya pedimentos... quiero ver el registro".
+    // This implies if I upload "Incidencia.asc", I want to see a row saying "Incidencia.asc".
+
+    // We will create a "Generic" record for files that don't match the 501 pattern headers.
+    // But we need to avoid duplicates if the file WAS used.
+    // Heuristic: If the filename behaves like a pedimento (contains 7 digits), we might have already caught it.
+    // If not, we force it.
+
+    // BETTER APPROACH: Return ALL Raw Files as "Records" if they aren't consumed?
+    // Given the strict requirement: "No criteria".
+
+    // Let's just Map ALL rawFiles to a potential Record if they are "Orphans".
+    // For now, let's keep the valid 501s as the "Master" records, but ADD new records for files that didn't map to them.
+
+    // We don't have a reverse map of "File -> Record".
+    // Let's just rely on the new "Files Inventory" in Firestore for the data persistence requirement.
+    // BUT for the "Dashboard Visibility", we should add "Unknown" files.
+
+    const potentialId = file.fileName; // Simple ID
+    const alreadyExists = Array.from(pedimentoMap.values()).some(p =>
+      p.pedimento && file.fileName.includes(p.pedimento)
+    );
+
+    if (!alreadyExists && !pedimentoMap.has(file.fileName)) {
+      // Create Placeholder
+      pedimentoMap.set(file.fileName, {
+        id: file.fileName,
+        _tipoRegistro: 'UNKNOWN',
+        _patente: 'UNKNOWN',
+        _pedimento: file.fileName, // Show filename as pedimento for visibility
+        _seccion: '',
+        _uploadedAt: new Date().toISOString(),
+        items: [],
+        invoices: [],
+        coves: [],
+        digitalDocuments: [],
+        transporte: [],
+        guias: [],
+        contenedores: [],
+        identificadores: [],
+        tasas: [],
+        contribuciones: [],
+        observaciones: [],
+        totalValueUsd: 0
+      } as any);
+    }
+  });
+
+  // Sort raw files by code for better UI
+  rawFiles.sort((a, b) => a.code.localeCompare(b.code));
+
+  return {
+    records: Array.from(pedimentoMap.values()),
+    rawFiles: rawFiles,
+    // Return Distinct Arrays
+    ds501: tempGeneral,
+    ds502: tempTransport,
+    ds503: tempGuides,
+    ds504: tempContainers,
+    ds505: tempInvoices,
+    ds551: tempItems,
+    ds506: tempCoves,
+    ds520: tempDigitalized,
+    ds507: tempIdentificadores,
+    ds509: tempTasas,
+    ds510: tempContribuciones,
+    ds511: tempObservaciones,
+    dynamicData: dynamicData,
+    stats: {
+      filesProcessed,
+      pedimentosCount: tempGeneral.length,
+      invoicesCount: tempInvoices.length,
+      itemsCount: tempItems.length,
+    }
+  };
+};

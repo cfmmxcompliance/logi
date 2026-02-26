@@ -1493,21 +1493,31 @@ export const CIExtractor: React.FC = () => {
                 // Robust date parsing (assuming DD/MM/YYYY or YYYY-MM-DD from system)
                 const parseDate = (d: string) => {
                     if (!d) return 0;
+                    let parsedDate: Date;
                     if (d.includes('/')) {
                         const parts = d.split('/');
                         if (parts.length === 3) {
                             // Try DD/MM/YYYY
-                            if (parts[2].length === 4) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`).getTime();
+                            if (parts[2].length === 4) parsedDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
                             // Try YYYY/MM/DD
-                            if (parts[0].length === 4) return new Date(d).getTime();
+                            else if (parts[0].length === 4) parsedDate = new Date(d);
+                            else parsedDate = new Date(d);
+                        } else {
+                            parsedDate = new Date(d);
                         }
+                    } else {
+                        parsedDate = new Date(d);
                     }
-                    return new Date(d).getTime();
+                    const time = parsedDate.getTime();
+                    return isNaN(time) ? 0 : time;
                 };
 
                 const itemTime = parseDate(itemDateStr);
-                if (startDate && itemTime < new Date(startDate).getTime()) return false;
-                if (endDate && itemTime > new Date(endDate).getTime()) return false;
+                const startTime = startDate ? new Date(startDate).getTime() : 0;
+                const endTime = endDate ? new Date(endDate).getTime() : Infinity;
+
+                if (startDate && itemTime < startTime) return false;
+                if (endDate && itemTime > endTime) return false;
             }
 
             // Advanced Query Builder Filter (Optimized)
@@ -1781,14 +1791,14 @@ export const CIExtractor: React.FC = () => {
 
                     <button
                         onClick={() => setShowQueryBuilder(true)}
-                        className={`p-2 rounded-lg border transition-all flex items-center gap-2 text-sm font-bold shadow-sm ${queryConditions.length > 0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
+                        className={`p-2 rounded-lg border transition-all flex items-center gap-2 text-sm font-bold shadow-sm ${(queryConditions.length > 0 || startDate || endDate) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
                         title="Advanced Query Builder"
                     >
                         <Plus size={18} />
                         <span className="hidden lg:inline">Advanced Query</span>
-                        {queryConditions.length > 0 && (
+                        {(queryConditions.length > 0 || startDate || endDate) && (
                             <span className="bg-white text-blue-600 px-1.5 py-0.5 rounded-full text-[10px]">
-                                {queryConditions.length}
+                                {queryConditions.length + (startDate || endDate ? 1 : 0)}
                             </span>
                         )}
                     </button>
@@ -2821,7 +2831,11 @@ export const CIExtractor: React.FC = () => {
                         {/* Footer */}
                         <div className="p-6 border-t border-slate-100 flex items-center justify-between bg-white">
                             <button
-                                onClick={() => setQueryConditions([])}
+                                onClick={() => {
+                                    setQueryConditions([]);
+                                    setStartDate('');
+                                    setEndDate('');
+                                }}
                                 className="text-slate-400 hover:text-red-500 font-bold text-sm transition-colors px-4 py-2 hover:bg-red-50 rounded-lg"
                             >
                                 Reset All

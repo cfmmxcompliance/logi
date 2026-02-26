@@ -1436,6 +1436,19 @@ export const CIExtractor: React.FC = () => {
 
         const hasSearch = terms.length > 0;
 
+        // Pre-calculate condition sets for O(1) performance in Mass Query
+        const activeQueryConditions = queryConditions
+            .filter(c => c.value && c.value.trim().length > 0)
+            .map(c => {
+                if (c.operator === 'in_list') {
+                    const listItems = c.value.split(/[\n,;\t]+/)
+                        .map((s: string) => s.trim().toLowerCase())
+                        .filter((s: string) => s.length > 0);
+                    return { ...c, set: new Set(listItems) };
+                }
+                return c;
+            });
+
         return items.filter(i => {
             if (showMissingOnly) {
                 const hasMissingData = !i.regimen || !i.hts || !i.spanishDescription || !i.um || !i.netWeight;
@@ -1497,9 +1510,9 @@ export const CIExtractor: React.FC = () => {
                 if (endDate && itemTime > new Date(endDate).getTime()) return false;
             }
 
-            // Advanced Query Builder Filter
-            if (queryConditions.length > 0) {
-                const results = queryConditions.every(condition => {
+            // Advanced Query Builder Filter (Optimized)
+            if (activeQueryConditions.length > 0) {
+                const results = activeQueryConditions.every(condition => {
                     const { column, operator, value } = condition;
                     if (!value) return true;
 
@@ -1515,9 +1528,8 @@ export const CIExtractor: React.FC = () => {
 
                     if (operator === 'contains') return itemValue.includes(targetValue);
                     if (operator === 'equals') return itemValue === targetValue;
-                    if (operator === 'in_list') {
-                        const list = value.split('\n').map((s: string) => s.trim().toLowerCase()).filter((s: string) => s.length > 0);
-                        return list.includes(itemValue);
+                    if (operator === 'in_list' && (condition as any).set) {
+                        return ((condition as any).set as Set<string>).has(itemValue.trim());
                     }
                     return true;
                 });
@@ -2750,7 +2762,14 @@ export const CIExtractor: React.FC = () => {
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Values</label>
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase">Values</label>
+                                                    {cond.operator === 'in_list' && cond.value && (
+                                                        <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                                                            {cond.value.split(/[\n,;\t]+/).filter((s: string) => s.trim()).length} items
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 {cond.operator === 'in_list' ? (
                                                     <textarea
                                                         value={cond.value}
@@ -2759,9 +2778,9 @@ export const CIExtractor: React.FC = () => {
                                                             newConds[idx].value = e.target.value;
                                                             setQueryConditions(newConds);
                                                         }}
-                                                        placeholder="Enter values (one per line)..."
-                                                        rows={3}
-                                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none resize-none font-mono"
+                                                        placeholder="Enter values (separated by line, comma, semicolon or tab)..."
+                                                        rows={6}
+                                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none resize-y font-mono min-h-[120px]"
                                                     />
                                                 ) : (
                                                     <input
@@ -2773,7 +2792,7 @@ export const CIExtractor: React.FC = () => {
                                                             setQueryConditions(newConds);
                                                         }}
                                                         placeholder="Enter value..."
-                                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
                                                     />
                                                 )}
                                             </div>

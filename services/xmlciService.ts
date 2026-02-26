@@ -33,6 +33,8 @@ export const xmlciService = {
                 emisorDomicilio = `${calle} ${nExt}, CP ${cp}, ${mnpio} ${edo}`.trim();
             }
 
+            const currency = (comprobante.getAttribute("Moneda") || "USD").toUpperCase();
+
             const record: XMLCIRecord = {
                 id: uuid || `${invoiceNo}-${emisorRfc}`,
                 idFiscal: emisorRfc,
@@ -44,8 +46,8 @@ export const xmlciService = {
                 incoterm: extractedIncoterm,
                 moneda: currency,
                 valMonFact: totalVal,
-                factorMoneda: exchangeRate,
-                valDolares: currency.toUpperCase() === 'USD' ? totalVal : (totalVal / (exchangeRate || 1)),
+                factorMoneda: exchangeRate || 1,
+                valDolares: currency === 'USD' ? totalVal : (totalVal / (exchangeRate || 1)),
                 uuid: uuid,
                 updatedAt: new Date().toISOString()
             };

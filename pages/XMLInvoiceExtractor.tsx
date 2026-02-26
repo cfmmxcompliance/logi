@@ -314,7 +314,7 @@ export const XMLInvoiceExtractor: React.FC = () => {
                 const uuid = timbreFiscal?.getAttribute("UUID") || "";
 
                 // --- XMLCI (Cascading Population) ---
-                xmlciService.extractAndSave(xmlDoc, invoiceNo, date, currency, uuid).catch(e => console.error("Cascading XMLCI failed", e));
+                await xmlciService.extractAndSave(xmlDoc, invoiceNo, date, currency, uuid);
 
                 for (let i = 0; i < conceptos.length; i++) {
                     const concepto = conceptos[i];

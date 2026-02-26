@@ -11,7 +11,7 @@ const COLS = {
   EQUIPMENT: 'equipment_tracking', CUSTOMS: 'customs_clearance', PRE_ALERTS: 'pre_alerts',
   COSTS: 'costs', LOGS: 'logs', LOGISTICS: 'logistics', SUPPLIERS: 'suppliers',
   SNAPSHOTS: 'snapshots', DATA_STAGE_REPORTS: 'data_stage_reports', USERS: 'users',
-  TRAINING: 'training_submissions', INVOICES: 'commercial_invoices', CFDI_INVOICES: 'cfdi_invoices', DRAFTS: 'data_stage_drafts',
+  TRAINING: 'training_submissions', INVOICES: 'commercial_invoices', CFDI_INVOICES: 'cfdi_invoices',
   METADATA: 'system_metadata', DAILY_CHANGES: 'daily_changes', DAILY_REPORTS: 'master_data_reports',
   SUBSCRIPTIONS: 'audit_subscriptions',
   XML_CI: 'xml_ci'
@@ -21,7 +21,6 @@ const LOCAL_STORAGE_KEY = 'logimaster_db';
 const INVOICES_BACKUP_KEY = 'logimaster_invoices_backup';
 const PARTS_BACKUP_KEY = 'logimaster_parts_backup';
 const RESTORE_POINTS_KEY = 'logimaster_restore_points';
-const DRAFT_DATA_STAGE_KEY = 'logimaster_datastage_draft';
 const PENDING_WRITES_KEY = 'logimaster_sync_queue';
 
 interface PendingWrite {
@@ -37,7 +36,7 @@ let dbState: StorageState = {
   parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
   customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
   logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
-  dataStageDrafts: [], dailyChanges: [], dailyReports: [], users: [],
+  dailyChanges: [], dailyReports: [], users: [],
   cfdiInvoices: [], xmlCI: []
 };
 
@@ -105,7 +104,6 @@ const saveLocal = (skipParts = false) => {
     dailyChanges,
     dailyReports,
     users,
-    dataStageDrafts,
     trainingSubmissions,
     ...lightState
   } = dbState;
@@ -485,7 +483,7 @@ export const storageService = {
           if (key === 'EQUIPMENT') stateKey = 'equipmentTracking';
           if (key === 'TRAINING') stateKey = 'trainingSubmissions';
           if (key === 'INVOICES') stateKey = 'commercialInvoices';
-          if (key === 'DRAFTS') stateKey = 'dataStageDrafts';
+          if (key === 'XML_CI') stateKey = 'xmlCI';
 
           console.log(`[Sync] Attaching listener for ${key} -> dbState.${stateKey}`);
 
@@ -1066,10 +1064,11 @@ export const storageService = {
       logAction('XML_CI_IMPORT', `Facturas XML consolidadas: ${newRecords.length}`);
     } catch (e) { }
 
-    // Merge in memory
-    const existingIds = new Set((dbState.xmlCI || []).map(r => r.id));
+    // Merge in memory safely
+    const existing = dbState.xmlCI || [];
+    const existingIds = new Set(existing.map(r => r.id));
     const uniqueBatch = newRecords.filter(r => !existingIds.has(r.id));
-    dbState.xmlCI = [...(dbState.xmlCI || []), ...uniqueBatch];
+    dbState.xmlCI = [...existing, ...uniqueBatch];
 
     notifyListeners();
     return uniqueBatch.length;
@@ -2310,7 +2309,7 @@ export const storageService = {
     }
 
     logAction('DATASTAGE_SYNC_COMPLETE', `Successfully synced ${itemsToSave.length} customs records from DataStage`);
-    return { added, updated, skipped, cloudStatus: 'success' };
+    return { added, updated, skipped, cloudStatus, errorMsg };
   },
 
   saveDataStageReport: async (report: DataStageReport, onProgress?: (percent: number) => void, originalFile?: File, preUploadedUrl?: string) => {
@@ -2390,148 +2389,15 @@ export const storageService = {
     dbState.dataStageReports = dbState.dataStageReports.filter((r: any) => r.id !== id);
     saveLocal();
   },
-  saveDraftDataStage: async (session: DataStageSession) => {
-    // 1. Try IndexedDB (Direct Storage)
-    try {
-      await indexedDbService.saveData('datastage_drafts', [session]);
-    } catch (e) {
-      console.error("Local persistence failed", e);
-    }
-
-    // Explicitly remove from localStorage to free space
-    localStorage.removeItem(DRAFT_DATA_STAGE_KEY);
-
-    // 2. Sync to Cloud (Unlimited* Storage)
-    if (db) {
-      try {
-        // Firestore has 1MB limit per document too!
-        // We might need to be careful here. If rawFiles are huge, Firestore will also fail.
-        // For now, let's try.
-        await setDoc(doc(db, COLS.DRAFTS, 'current_session'), session);
-      } catch (e) {
-        console.warn("Failed to sync draft to cloud", e);
-        // If Document too large, try saving without rawFiles
-        try {
-          const leanSession = {
-            ...session,
-            rawFiles: session.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
-          };
-          await setDoc(doc(db, COLS.DRAFTS, 'current_session'), leanSession);
-        } catch (e2) {
-          console.warn("Lean draft also failed. Attempting Storage Upload (Unlimited Size)...", e2);
-
-          try {
-            // 3. STORAGE FALLBACK FOR DRAFTS
-            const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-            const { storage } = await import('./firebaseConfig');
-
-            if (!storage) throw new Error("Storage not initialized");
-
-            const jsonString = JSON.stringify(session);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            // Use a fixed path for current_session to overwrite properly
-            const storagePath = `drafts / current_session_${Date.now()}.json`;
-            const storageRef = ref(storage, storagePath);
-
-            // Timeout 120s
-            const uploadPromise = uploadBytes(storageRef, blob);
-            const timeoutPromise = new Promise((_, reject) =>
-              setTimeout(() => reject(new Error("Timeout: La subida del borrador tardó demasiado.")), 120000)
-            );
-
-            await Promise.race([uploadPromise, timeoutPromise]);
-            const downloadURL = await getDownloadURL(storageRef);
-
-            // Save "Pointer" to Firestore
-            const pointerSession: DataStageSession = {
-              ...session,
-              records: [],
-              rawFiles: [],
-              storageUrl: downloadURL
-            } as any; // Cast safely if type check strictness varies
-
-            await setDoc(doc(db, COLS.DRAFTS, 'current_session'), pointerSession);
-            console.log("Saved large draft via Storage Link:", downloadURL);
-
-          } catch (e3) {
-            console.error("Critical: Failed to save draft via Storage fallback.", e3);
-            // Silent fail for drafts to not block UI, but log it.
-          }
-        }
-      }
-    }
-  },
-
-  getDraftDataStage: async (): Promise<DataStageSession | null> => {
-    // 1. Get Local Data (IndexedDB)
-    const drafts = await indexedDbService.getAllData('datastage_drafts');
-    let localDraft: DataStageSession | null = drafts.length > 0 ? drafts[0] : null;
-
-    // Check localStorage fallback for legacy users
-    if (!localDraft) {
-      const localStr = localStorage.getItem(DRAFT_DATA_STAGE_KEY);
-      if (localStr) {
-        try {
-          localDraft = JSON.parse(localStr);
-          // Migrate to IDB
-          await indexedDbService.saveData('datastage_drafts', [localDraft as any]);
-          localStorage.removeItem(DRAFT_DATA_STAGE_KEY);
-        } catch (e) { }
-      }
-    }
-
-    // 2. Try Cloud (If available)
-    if (db) {
-      try {
-        const snap = await getDoc(doc(db, COLS.DRAFTS, 'current_session'));
-        if (snap.exists()) {
-          const cloudDraft = snap.data() as DataStageSession;
-
-          // Conflict Resolution: Use the latest
-          const localTime = localDraft?.timestamp ? new Date(localDraft.timestamp).getTime() : 0;
-          const cloudTime = cloudDraft.timestamp ? new Date(cloudDraft.timestamp).getTime() : 0;
-
-          if (cloudTime > localTime) {
-            console.log("Using Cloud Draft (Newer)");
-
-            // HYDRATE IF POINTER
-            let finalDraft = cloudDraft;
-            if ((cloudDraft as any).storageUrl && cloudDraft.records.length === 0) {
-              try {
-                console.log("Hydrating draft from storage...", (cloudDraft as any).storageUrl);
-                const res = await fetch((cloudDraft as any).storageUrl);
-                if (res.ok) {
-                  finalDraft = await res.json();
-                }
-              } catch (err) {
-                console.error("Failed to hydrate draft from storage", err);
-                if (localDraft) return localDraft;
-              }
-            }
-
-            // Persist locally to IDB
-            await indexedDbService.saveData('datastage_drafts', [finalDraft]);
-            return finalDraft;
-          } else {
-            console.log("Using Local Draft (Newer or Equal)");
-            return localDraft;
-          }
-        }
-      } catch (e) {
-        console.warn("Cloud draft fetch failed", e);
-      }
-    }
-
-    return localDraft;
-  },
-
   clearDraftDataStage: async () => {
-    await indexedDbService.clearStore('datastage_drafts');
-    localStorage.removeItem(DRAFT_DATA_STAGE_KEY);
+    try {
+      await indexedDbService.clearStore('datastage_drafts');
+    } catch (e) { }
+
     if (db) {
       try {
-        await deleteDoc(doc(db, COLS.DRAFTS, 'current_session'));
-      } catch (e) { console.error(e); }
+        await deleteDoc(doc(db, 'data_stage_drafts', 'current_session'));
+      } catch (e) { }
     }
   },
 
@@ -2620,7 +2486,7 @@ export const storageService = {
       parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
       customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
       logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
-      dataStageDrafts: [], dailyChanges: [], dailyReports: [], users: []
+      dailyChanges: [], dailyReports: [], users: []
     };
     saveLocal();
   },
@@ -2631,7 +2497,8 @@ export const storageService = {
   // Senior Frontend Engineer: Implemented snapshot management methods (Isolated Storage)
   getSnapshots: async () => {
     try {
-      return await indexedDbService.getAllData('restore_points');
+      const data = await indexedDbService.getAllData('restore_points');
+      return Array.isArray(data) ? data : [];
     } catch (e) { return []; }
   },
 

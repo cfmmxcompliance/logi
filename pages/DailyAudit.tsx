@@ -170,7 +170,7 @@ export const DailyAudit = () => {
     }, [changes, reports]);
 
     return (
-        <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50">
             <header className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">

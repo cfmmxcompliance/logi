@@ -535,7 +535,6 @@ export interface StorageState {
   trainingSubmissions: any[];
   commercialInvoices: CommercialInvoiceItem[];
   cfdiInvoices?: CommercialInvoiceItem[]; // Isolated XML Extraction Collection
-  dataStageDrafts?: DataStageSession[];
   digitalArchive?: DigitalArchiveRecord[]; // New: Unpaid Pedimentos
   dailyChanges: DailyChange[];
   dailyReports?: MasterDataReport[];

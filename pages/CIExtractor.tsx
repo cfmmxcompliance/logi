@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useDeferredValue } from 'react';
 // import ExcelJS from 'exceljs'; // REMOVED: Dynamic Import
 // import * as XLSX_Basic from 'xlsx/dist/xlsx.mini.min.js'; // REMOVED: Dynamic Import
-import { Upload, FileDown, Search, Plus, Trash2, Edit2, X, Check, FileSpreadsheet, AlertCircle, FileText, CheckCircle, Save, Repeat, History, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Upload, FileDown, Search, Plus, Trash2, Edit2, X, Check, FileSpreadsheet, AlertCircle, FileText, CheckCircle, Save, Repeat, History, RotateCcw, AlertTriangle, Calendar, Database } from 'lucide-react';
 import { storageService } from '../services/storageService.ts';
 import { CommercialInvoiceItem, RawMaterialPart, VesselTrackingRecord } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -338,6 +338,10 @@ export const CIExtractor: React.FC = () => {
     const [showPricesOnly, setShowPricesOnly] = useState(false);
     const [amendmentMatches, setAmendmentMatches] = useState<Record<string, RawMaterialPart>>({});
     const [masterDataMap, setMasterDataMap] = useState<Record<string, RawMaterialPart>>({});
+    const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
+    const [showQueryBuilder, setShowQueryBuilder] = useState(false);
+    const [queryConditions, setQueryConditions] = useState<any[]>([]);
 
     const [stats, setStats] = useState({
         totalItems: 0,
@@ -1470,6 +1474,56 @@ export const CIExtractor: React.FC = () => {
                 }
             }
 
+            // Date Range Filter
+            if (startDate || endDate) {
+                const itemDateStr = i.date || '';
+                // Robust date parsing (assuming DD/MM/YYYY or YYYY-MM-DD from system)
+                const parseDate = (d: string) => {
+                    if (!d) return 0;
+                    if (d.includes('/')) {
+                        const parts = d.split('/');
+                        if (parts.length === 3) {
+                            // Try DD/MM/YYYY
+                            if (parts[2].length === 4) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`).getTime();
+                            // Try YYYY/MM/DD
+                            if (parts[0].length === 4) return new Date(d).getTime();
+                        }
+                    }
+                    return new Date(d).getTime();
+                };
+
+                const itemTime = parseDate(itemDateStr);
+                if (startDate && itemTime < new Date(startDate).getTime()) return false;
+                if (endDate && itemTime > new Date(endDate).getTime()) return false;
+            }
+
+            // Advanced Query Builder Filter
+            if (queryConditions.length > 0) {
+                const results = queryConditions.every(condition => {
+                    const { column, operator, value } = condition;
+                    if (!value) return true;
+
+                    // Support for BL lookup if column is 'bl'
+                    let itemValue = '';
+                    if (column === 'bl') {
+                        itemValue = String((i as any).bl || invoiceToBLMap[i.invoiceNo] || '').toLowerCase();
+                    } else {
+                        itemValue = String((i as any)[column] || '').toLowerCase();
+                    }
+
+                    const targetValue = value.toLowerCase();
+
+                    if (operator === 'contains') return itemValue.includes(targetValue);
+                    if (operator === 'equals') return itemValue === targetValue;
+                    if (operator === 'in_list') {
+                        const list = value.split('\n').map((s: string) => s.trim().toLowerCase()).filter((s: string) => s.length > 0);
+                        return list.includes(itemValue);
+                    }
+                    return true;
+                });
+                if (!results) return false;
+            }
+
             if (!hasSearch) return true;
 
             // Optimized Search: Pre-compute searchable string for the row
@@ -1489,11 +1543,17 @@ export const CIExtractor: React.FC = () => {
                 ${normalize((i as any).bl || '')}
                 ${normalize(invoiceToBLMap[i.invoiceNo])}
                 ${normalize(i.rb)}
+                ${normalize(i.qty)}
+                ${normalize(i.unitPrice)}
+                ${normalize(i.totalAmount)}
+                ${normalize(i.netWeight)}
+                ${normalize(i.prosec)}
+                ${normalize(i.date)}
             `;
             // AND Condition: ALL terms (from comma split) must match somewhere in this row
             return terms.every(term => rowSearchStr.includes(term));
         });
-    }, [items, deferredSearchTerm, showMissingOnly, showErrorsOnly, showSensibleOnly, showNoDBOnly, showPricesOnly, masterDataMap, invoiceToBLMap]);
+    }, [items, deferredSearchTerm, showMissingOnly, showErrorsOnly, showSensibleOnly, showNoDBOnly, showPricesOnly, masterDataMap, invoiceToBLMap, startDate, endDate, queryConditions]);
 
     const handleSplitAndExport = async () => {
         // FORCE FRESH FETCH FROM CLOUD to avoid stale closure / ghost data issues
@@ -1686,7 +1746,7 @@ export const CIExtractor: React.FC = () => {
                             defaultValue=""
                         />
                         {/* Clear Filters Button */}
-                        {(showMissingOnly || showErrorsOnly || showSensibleOnly || showNoDBOnly || showPricesOnly || searchTerm) && (
+                        {(showMissingOnly || showErrorsOnly || showSensibleOnly || showNoDBOnly || showPricesOnly || searchTerm || startDate || endDate || queryConditions.length > 0) && (
                             <button
                                 onClick={() => {
                                     setShowMissingOnly(false);
@@ -1695,6 +1755,9 @@ export const CIExtractor: React.FC = () => {
                                     setShowNoDBOnly(false);
                                     setShowPricesOnly(false);
                                     setSearchTerm('');
+                                    setStartDate('');
+                                    setEndDate('');
+                                    setQueryConditions([]);
                                     if (searchInputRef.current) searchInputRef.current.value = '';
                                 }}
                                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-red-500 underline font-bold bg-white px-2 py-1 rounded shadow-sm opacity-90 hover:opacity-100"
@@ -1703,6 +1766,20 @@ export const CIExtractor: React.FC = () => {
                             </button>
                         )}
                     </div>
+
+                    <button
+                        onClick={() => setShowQueryBuilder(true)}
+                        className={`p-2 rounded-lg border transition-all flex items-center gap-2 text-sm font-bold shadow-sm ${queryConditions.length > 0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
+                        title="Advanced Query Builder"
+                    >
+                        <Plus size={18} />
+                        <span className="hidden lg:inline">Advanced Query</span>
+                        {queryConditions.length > 0 && (
+                            <span className="bg-white text-blue-600 px-1.5 py-0.5 rounded-full text-[10px]">
+                                {queryConditions.length}
+                            </span>
+                        )}
+                    </button>
 
                     {/* Right: Filters (Fixed) */}
                     <div className="w-auto flex-none flex items-center justify-end gap-2 overflow-x-auto">
@@ -2569,6 +2646,177 @@ export const CIExtractor: React.FC = () => {
                     </div>
                 )
             }
+            {/* Advanced Query Builder Modal */}
+            {showQueryBuilder && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        {/* Header */}
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-blue-50 text-blue-600 rounded-xl shadow-sm border border-blue-100">
+                                    <Database size={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-slate-800">Advanced Query Builder</h2>
+                                    <p className="text-sm text-slate-500">Combine multiple filters to find specific records in Master Data.</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowQueryBuilder(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Date Range Pre-filter */}
+                        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex flex-wrap items-center gap-4">
+                            <div className="flex items-center gap-3">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                    <Calendar size={14} /> Date Range
+                                </span>
+                                <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
+                                    <input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="bg-transparent border-none text-sm text-slate-600 focus:outline-none focus:ring-0 p-0"
+                                    />
+                                    <span className="text-slate-300">to</span>
+                                    <input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="bg-transparent border-none text-sm text-slate-600 focus:outline-none focus:ring-0 p-0"
+                                    />
+                                </div>
+                                {(startDate || endDate) && (
+                                    <button
+                                        onClick={() => { setStartDate(''); setEndDate(''); }}
+                                        className="text-[10px] text-red-500 hover:text-red-700 font-bold uppercase"
+                                    >
+                                        Clear Dates
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-6 max-h-[60vh] overflow-y-auto space-y-4 bg-slate-50/30">
+                            {queryConditions.length === 0 ? (
+                                <div className="text-center py-10 text-slate-400">
+                                    <Database size={48} className="mx-auto mb-4 opacity-20" />
+                                    <p>No filters added yet. Click "+ Add Condition" to start.</p>
+                                </div>
+                            ) : (
+                                queryConditions.map((cond, idx) => (
+                                    <div key={idx} className="flex gap-4 items-start bg-white p-4 rounded-xl border border-slate-200 shadow-sm transition-all hover:border-blue-200">
+                                        <div className="flex-1 space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Column</label>
+                                                    <select
+                                                        value={cond.column}
+                                                        onChange={(e) => {
+                                                            const newConds = [...queryConditions];
+                                                            newConds[idx].column = e.target.value;
+                                                            setQueryConditions(newConds);
+                                                        }}
+                                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    >
+                                                        <option value="partNo">No. Parte</option>
+                                                        <option value="invoiceNo">No. Factura</option>
+                                                        <option value="bl">BL</option>
+                                                        <option value="containerNo">Contenedor</option>
+                                                        <option value="hts">HTS</option>
+                                                        <option value="regimen">Regimen</option>
+                                                        <option value="incoterm">Incoterm</option>
+                                                        <option value="englishName">English Name</option>
+                                                        <option value="spanishDescription">Spanish Description</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Operator</label>
+                                                    <select
+                                                        value={cond.operator}
+                                                        onChange={(e) => {
+                                                            const newConds = [...queryConditions];
+                                                            newConds[idx].operator = e.target.value;
+                                                            setQueryConditions(newConds);
+                                                        }}
+                                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    >
+                                                        <option value="contains">Contains</option>
+                                                        <option value="equals">Equals</option>
+                                                        <option value="in_list">In List (line separated)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Values</label>
+                                                {cond.operator === 'in_list' ? (
+                                                    <textarea
+                                                        value={cond.value}
+                                                        onChange={(e) => {
+                                                            const newConds = [...queryConditions];
+                                                            newConds[idx].value = e.target.value;
+                                                            setQueryConditions(newConds);
+                                                        }}
+                                                        placeholder="Enter values (one per line)..."
+                                                        rows={3}
+                                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none resize-none font-mono"
+                                                    />
+                                                ) : (
+                                                    <input
+                                                        type="text"
+                                                        value={cond.value}
+                                                        onChange={(e) => {
+                                                            const newConds = [...queryConditions];
+                                                            newConds[idx].value = e.target.value;
+                                                            setQueryConditions(newConds);
+                                                        }}
+                                                        placeholder="Enter value..."
+                                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                const newConds = queryConditions.filter((_, i) => i !== idx);
+                                                setQueryConditions(newConds);
+                                            }}
+                                            className="mt-6 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+
+                            <button
+                                onClick={() => setQueryConditions([...queryConditions, { column: 'partNo', operator: 'contains', value: '' }])}
+                                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-bold text-sm bg-blue-50/50 px-4 py-3 rounded-xl border border-blue-100 border-dashed w-full justify-center transition-all hover:bg-blue-50"
+                            >
+                                <Plus size={18} /> Add Condition
+                            </button>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-6 border-t border-slate-100 flex items-center justify-between bg-white">
+                            <button
+                                onClick={() => setQueryConditions([])}
+                                className="text-slate-400 hover:text-red-500 font-bold text-sm transition-colors px-4 py-2 hover:bg-red-50 rounded-lg"
+                            >
+                                Reset All
+                            </button>
+                            <button
+                                onClick={() => setShowQueryBuilder(false)}
+                                className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:scale-95 flex items-center gap-2"
+                            >
+                                Apply Query
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* --- ESTIMATED PRICE RESOLUTION MODAL --- */}
             {showEstModal && estItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">

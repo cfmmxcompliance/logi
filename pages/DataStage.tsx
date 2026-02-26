@@ -27,28 +27,6 @@ export const DataStage = () => {
         });
 
         // 2. Load Draft Session (Persistence active view) - ASYNC NOW
-        const loadDraft = async () => {
-            try {
-                // AUTO-RECOVERY TRIGGER (Critical Fix)
-                const recovered = await storageService.recoverLocalData();
-                if (recovered > 0) {
-                    // Force refresh reports if recovery happened
-                    setSavedReports(storageService.getDataStageReports());
-                    // We don't alert here to be "silent" as requested, or maybe a subtle toast?
-                    console.log(`Silent Recovery: ${recovered} items rescued.`);
-                }
-
-                const draft = await storageService.getDraftDataStage();
-                if (draft && draft.records.length > 0) {
-                    setData(draft.records);
-                    setRawFiles(draft.rawFiles);
-                    setCurrentFileName(draft.fileName);
-                }
-            } catch (e) {
-                console.error("Error loading draft", e);
-            }
-        };
-        loadDraft();
 
         return unsub;
     }, []);
@@ -151,14 +129,6 @@ export const DataStage = () => {
 
             setSaveStatus("");
 
-            // Background draft (Save the FULL STATE)
-            storageService.saveDraftDataStage({
-                records: finalCombinedRecords,
-                rawFiles: finalRawFiles,
-                fileName: fileName, // Or summary name? Keep last filename for context or update? Keep simple.
-                timestamp: new Date().toISOString()
-            }).catch(console.warn);
-
         } catch (err: any) {
             console.error(err);
             setSaveStatus("");
@@ -258,7 +228,7 @@ export const DataStage = () => {
                 }
             }
 
-            const { added, updated, skipped, cloudStatus, errorMsg } = result;
+            const { added, updated, skipped, cloudStatus, errorMsg } = result as any;
 
             if (cloudStatus === 'failed') {
                 alert(
@@ -399,13 +369,7 @@ export const DataStage = () => {
                 setRawFiles(finalRawFiles);
                 setCurrentFileName(report.name);
 
-                // Also update current session draft so it persists if page reloads
-                await storageService.saveDraftDataStage({
-                    records: finalRecords,
-                    rawFiles: finalRawFiles,
-                    fileName: report.name,
-                    timestamp: new Date().toISOString()
-                });
+                // Session update removed (Purge DRAFTS)
             } catch (e) {
                 console.error(e);
                 alert("Error cargando reporte.");

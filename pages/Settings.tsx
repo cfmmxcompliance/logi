@@ -126,7 +126,7 @@ export const Settings = () => {
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="text-xs text-slate-400 font-mono">
-                                    Count: {systemUsers.length}
+                                    Count: {systemUsers?.length || 0}
                                 </div>
                                 <button
                                     onClick={async () => {
@@ -181,7 +181,7 @@ export const Settings = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {systemUsers.map((u, i) => (
+                                    {systemUsers?.map((u, i) => (
                                         <tr key={u.email || u.username} className="hover:bg-slate-50">
                                             <td className="px-6 py-3 font-mono text-slate-600">
                                                 <span>{u.username}</span>
@@ -302,11 +302,11 @@ export const Settings = () => {
                     </div>
 
                     <div className="p-0">
-                        {snapshots.length === 0 ? (
+                        {(snapshots?.length || 0) === 0 ? (
                             <div className="p-8 text-center text-slate-400">No restore points available. Create one to get started.</div>
                         ) : (
                             <div className="divide-y divide-slate-100">
-                                {snapshots.map((snap) => (
+                                {snapshots?.map((snap) => (
                                     <div key={snap.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                                         <div>
                                             <div className="font-medium text-slate-800">{snap.reason}</div>
@@ -393,10 +393,10 @@ export const Settings = () => {
                             </div>
 
                             <div className="space-y-2">
-                                {reportEmails.length === 0 ? (
+                                {(reportEmails?.length || 0) === 0 ? (
                                     <p className="text-slate-400 text-sm italic py-4 text-center">No hay correos registrados para el reporte diario.</p>
                                 ) : (
-                                    reportEmails.map((email, idx) => (
+                                    reportEmails?.map((email, idx) => (
                                         <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold uppercase">

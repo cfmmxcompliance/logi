@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { FileText, Search, Download, RefreshCw, Trash2, Filter, ChevronDown, Database, X, Plus, AlertCircle } from 'lucide-react';
+import { FileText, Search, Download, RefreshCw, Trash2, Filter, ChevronDown, Database, X, Plus, AlertCircle, Calendar } from 'lucide-react';
 import { storageService } from '../services/storageService.ts';
 import { XMLCIRecord } from '../types.ts';
 import { useNotification } from '../context/NotificationContext.tsx';
@@ -80,8 +80,12 @@ export const XMLCI: React.FC = () => {
         document.body.style.cursor = 'default';
     }, [onMouseMove]);
 
+    const [syncing, setSyncing] = useState(false);
+    const [stats, setStats] = useState({ xmlci: 0, cfdi: 0 });
+
     useEffect(() => {
         loadRecords();
+        checkDiagnostics();
     }, []);
 
     const loadRecords = async () => {
@@ -97,10 +101,89 @@ export const XMLCI: React.FC = () => {
         }
     };
 
+    const checkDiagnostics = async () => {
+        try {
+            const xmlciData = await storageService.getXMLCIRecords();
+            const cfdiData = await storageService.refreshCFDIInvoices();
+            setStats({ xmlci: xmlciData.length, cfdi: cfdiData.length });
+        } catch (e) {
+            console.error("Diagnostic check failed", e);
+        }
+    };
+
+    const handleSync = async () => {
+        setSyncing(true);
+        try {
+            const count = await storageService.reconstructXMLCIFromCFDI();
+            showNotification('Éxito', `Se han reconstruido ${count} registros de resumen.`, 'success');
+            await loadRecords();
+            await checkDiagnostics();
+        } catch (error: any) {
+            console.error("Sync error:", error);
+            const msg = error.message || 'Falló la sincronización.';
+            showNotification('Error', `Error: ${msg}`, 'error');
+        } finally {
+            setSyncing(false);
+        }
+    };
+
     const filteredRecords = useMemo(() => {
         return records.filter(r => {
-            if (startDate && r.fecha < startDate) return false;
-            if (endDate && r.fecha > endDate) return false;
+            if (startDate || endDate) {
+                const itemDateStr = r.fecha || '';
+                const parseToISO = (d: any) => {
+                    if (!d) return '';
+                    if (typeof d === 'object' && d.seconds !== undefined) {
+                        try {
+                            return new Date(d.seconds * 1000).toISOString().split('T')[0];
+                        } catch (e) { return ''; }
+                    }
+                    let clean = String(d).trim();
+                    if (!clean || clean === '[object Object]') return '';
+
+                    // Handle 'Jan-17th,2026' or similar (English months with ordinal suffixes)
+                    if (/[a-zA-Z]/.test(clean)) {
+                        let normalized = clean
+                            .replace(/-/g, ' ')
+                            .replace(/,/g, ' ')
+                            .replace(/(\d+)(st|nd|rd|th)/i, '$1') // 17th -> 17
+                            .replace(/\s+/g, ' ')
+                            .trim();
+                        try {
+                            const date = new Date(normalized);
+                            if (!isNaN(date.getTime())) return date.toISOString().split('T')[0];
+                        } catch (e) { }
+                    }
+
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
+                    const separator = clean.includes('/') ? '/' : clean.includes('-') ? '-' : null;
+                    if (separator) {
+                        const parts = clean.split(separator).map(p => p.trim());
+                        if (parts.length === 3) {
+                            if (parts[0].length === 4) return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+                            if (parts[2].length === 4) {
+                                let day = parts[0], month = parts[1];
+                                const p0 = parseInt(parts[0]), p1 = parseInt(parts[1]);
+                                if (p1 > 12 && p0 <= 12) { month = parts[0]; day = parts[1]; }
+                                return `${parts[2]}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                            }
+                        }
+                    }
+                    try {
+                        const date = new Date(clean);
+                        if (!isNaN(date.getTime())) return date.toISOString().split('T')[0];
+                    } catch (e) { }
+                    return '';
+                };
+
+                const itemISO = parseToISO(itemDateStr);
+                if (itemISO) {
+                    if (startDate && itemISO < startDate) return false;
+                    if (endDate && itemISO > endDate) return false;
+                } else if (startDate || endDate) {
+                    return false;
+                }
+            }
 
             if (searchTerm.trim()) {
                 const searchValues = searchTerm.split(',').map(v => v.trim().toLowerCase()).filter(v => v !== '');
@@ -269,7 +352,7 @@ export const XMLCI: React.FC = () => {
     const handleBulkDelete = async () => {
         if (selectedIds.size === 0) return;
         try {
-            const idsToDelete = Array.from(selectedIds);
+            const idsToDelete = Array.from(selectedIds) as string[];
             await storageService.deleteXMLCIRecords(idsToDelete);
             setRecords(prev => prev.filter(r => !selectedIds.has(r.id)));
             setSelectedIds(new Set());
@@ -294,6 +377,23 @@ export const XMLCI: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    {stats.cfdi > 0 && stats.xmlci === 0 && (
+                        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 px-4 py-2 rounded-xl text-amber-700 animate-pulse">
+                            <AlertCircle size={18} />
+                            <div className="text-xs">
+                                <p className="font-bold">Datos Detectados</p>
+                                <p>Tienes {stats.cfdi} registros en CFDI que no se ven aquí.</p>
+                            </div>
+                            <button
+                                onClick={handleSync}
+                                disabled={syncing}
+                                className="ml-2 bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                            >
+                                {syncing ? 'Sincronizando...' : 'Sincronizar'}
+                            </button>
+                        </div>
+                    )}
+
                     {selectedIds.size > 0 && (
                         <>
                             <button
@@ -312,6 +412,15 @@ export const XMLCI: React.FC = () => {
                             </button>
                         </>
                     )}
+
+                    <button
+                        onClick={handleSync}
+                        disabled={syncing}
+                        className={`p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 ${syncing ? 'animate-spin text-blue-600 bg-blue-50' : ''}`}
+                        title="Forzar Sincronización (Consolidar)"
+                    >
+                        <RefreshCw className="w-5 h-5" />
+                    </button>
 
                     <button
                         onClick={loadRecords}
@@ -353,32 +462,28 @@ export const XMLCI: React.FC = () => {
                         Query Builder {appliedConditions.length > 0 && `(${appliedConditions.length})`}
                     </button>
 
-                    <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
-                        <div className="flex items-center gap-2 px-3 py-1">
-                            <span className="text-xs font-bold text-slate-400 uppercase">Desde</span>
-                            <input
-                                type="date"
-                                className="bg-transparent border-none text-sm text-slate-600 focus:ring-0 outline-none p-0 cursor-pointer"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                            />
-                        </div>
-                        <div className="w-px h-4 bg-slate-300"></div>
-                        <div className="flex items-center gap-2 px-3 py-1">
-                            <span className="text-xs font-bold text-slate-400 uppercase">Hasta</span>
-                            <input
-                                type="date"
-                                className="bg-transparent border-none text-sm text-slate-600 focus:ring-0 outline-none p-0 cursor-pointer"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                            />
-                        </div>
+                    <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20">
+                        <Calendar size={14} className="text-slate-400" />
+                        <input
+                            type="date"
+                            className="bg-transparent border-none text-xs text-slate-600 focus:ring-0 outline-none p-0 cursor-pointer"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                        />
+                        <span className="text-slate-300 text-[10px] font-bold uppercase">to</span>
+                        <input
+                            type="date"
+                            className="bg-transparent border-none text-xs text-slate-600 focus:ring-0 outline-none p-0 cursor-pointer"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                        />
                         {(startDate || endDate) && (
                             <button
                                 onClick={() => { setStartDate(''); setEndDate(''); }}
-                                className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                                className="text-[10px] text-red-500 hover:text-red-700 font-bold ml-1 transition-colors"
+                                title="Clear Dates"
                             >
-                                <X size={14} />
+                                <X size={12} />
                             </button>
                         )}
                     </div>

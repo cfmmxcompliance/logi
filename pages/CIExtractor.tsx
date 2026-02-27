@@ -1487,37 +1487,62 @@ export const CIExtractor: React.FC = () => {
                 }
             }
 
-            // Date Range Filter
+            // Date Range Filter (Robust ISO Comparison)
             if (startDate || endDate) {
                 const itemDateStr = i.date || '';
-                // Robust date parsing (assuming DD/MM/YYYY or YYYY-MM-DD from system)
-                const parseDate = (d: string) => {
-                    if (!d) return 0;
-                    let parsedDate: Date;
-                    if (d.includes('/')) {
-                        const parts = d.split('/');
-                        if (parts.length === 3) {
-                            // Try DD/MM/YYYY
-                            if (parts[2].length === 4) parsedDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                            // Try YYYY/MM/DD
-                            else if (parts[0].length === 4) parsedDate = new Date(d);
-                            else parsedDate = new Date(d);
-                        } else {
-                            parsedDate = new Date(d);
-                        }
-                    } else {
-                        parsedDate = new Date(d);
+                const parseToISO = (d: any) => {
+                    if (!d) return '';
+                    if (typeof d === 'object' && d.seconds !== undefined) {
+                        try {
+                            return new Date(d.seconds * 1000).toISOString().split('T')[0];
+                        } catch (e) { return ''; }
                     }
-                    const time = parsedDate.getTime();
-                    return isNaN(time) ? 0 : time;
+                    let clean = String(d).trim();
+                    if (!clean || clean === '[object Object]') return '';
+
+                    // Handle 'Jan-17th,2026' or similar (English months with ordinal suffixes)
+                    if (/[a-zA-Z]/.test(clean)) {
+                        let normalized = clean
+                            .replace(/-/g, ' ')
+                            .replace(/,/g, ' ')
+                            .replace(/(\d+)(st|nd|rd|th)/i, '$1') // 17th -> 17
+                            .replace(/\s+/g, ' ')
+                            .trim();
+                        try {
+                            const date = new Date(normalized);
+                            if (!isNaN(date.getTime())) return date.toISOString().split('T')[0];
+                        } catch (e) { }
+                    }
+
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
+                    const separator = clean.includes('/') ? '/' : clean.includes('-') ? '-' : null;
+                    if (separator) {
+                        const parts = clean.split(separator).map(p => p.trim());
+                        if (parts.length === 3) {
+                            if (parts[0].length === 4) return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+                            if (parts[2].length === 4) {
+                                let day = parts[0], month = parts[1];
+                                const p0 = parseInt(parts[0]), p1 = parseInt(parts[1]);
+                                if (p1 > 12 && p0 <= 12) { month = parts[0]; day = parts[1]; }
+                                return `${parts[2]}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                            }
+                        }
+                    }
+                    try {
+                        const date = new Date(clean);
+                        if (!isNaN(date.getTime())) return date.toISOString().split('T')[0];
+                    } catch (e) { }
+                    return '';
                 };
 
-                const itemTime = parseDate(itemDateStr);
-                const startTime = startDate ? new Date(startDate).getTime() : 0;
-                const endTime = endDate ? new Date(endDate).getTime() : Infinity;
-
-                if (startDate && itemTime < startTime) return false;
-                if (endDate && itemTime > endTime) return false;
+                const itemISO = parseToISO(itemDateStr);
+                if (itemISO) {
+                    if (startDate && itemISO < startDate) return false;
+                    if (endDate && itemISO > endDate) return false;
+                } else if (startDate || endDate) {
+                    // If we have a filter but couldn't parse the item date, hide it to be safe
+                    return false;
+                }
             }
 
             // Advanced Query Builder Filter (Optimized)
@@ -1789,16 +1814,42 @@ export const CIExtractor: React.FC = () => {
                         )}
                     </div>
 
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20">
+                        <Calendar size={14} className="text-slate-400" />
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="bg-transparent border-none text-xs text-slate-600 focus:outline-none focus:ring-0 p-0 cursor-pointer"
+                        />
+                        <span className="text-slate-300 text-[10px] font-bold uppercase">to</span>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="bg-transparent border-none text-xs text-slate-600 focus:outline-none focus:ring-0 p-0 cursor-pointer"
+                        />
+                        {(startDate || endDate) && (
+                            <button
+                                onClick={() => { setStartDate(''); setEndDate(''); }}
+                                className="text-[10px] text-red-500 hover:text-red-700 font-bold ml-1 transition-colors"
+                                title="Clear Dates"
+                            >
+                                <X size={12} />
+                            </button>
+                        )}
+                    </div>
+
                     <button
                         onClick={() => setShowQueryBuilder(true)}
-                        className={`p-2 rounded-lg border transition-all flex items-center gap-2 text-sm font-bold shadow-sm ${(queryConditions.length > 0 || startDate || endDate) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
+                        className={`p-2 rounded-lg border transition-all flex items-center gap-2 text-sm font-bold shadow-sm ${(queryConditions.length > 0) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
                         title="Advanced Query Builder"
                     >
                         <Plus size={18} />
                         <span className="hidden lg:inline">Advanced Query</span>
-                        {(queryConditions.length > 0 || startDate || endDate) && (
+                        {(queryConditions.length > 0) && (
                             <span className="bg-white text-blue-600 px-1.5 py-0.5 rounded-full text-[10px]">
-                                {queryConditions.length + (startDate || endDate ? 1 : 0)}
+                                {queryConditions.length}
                             </span>
                         )}
                     </button>
@@ -1904,9 +1955,9 @@ export const CIExtractor: React.FC = () => {
                         <button
                             onClick={async () => {
                                 try {
-                                    const count = await storageService.refreshInvoices();
+                                    const results = await storageService.refreshInvoices();
                                     loadData(); // Re-sort and render
-                                    showNotification('Synced', `Refreshed ${count} items from Cloud.`, 'success');
+                                    showNotification('Synced', `Refreshed ${results.length} items from Cloud.`, 'success');
                                 } catch (e: any) {
                                     console.error("Sync Error:", e);
                                     showNotification('Error', `Sync failed: ${e.message || 'Unknown error'}`, 'error');
@@ -2688,37 +2739,7 @@ export const CIExtractor: React.FC = () => {
                             </button>
                         </div>
 
-                        {/* Date Range Pre-filter */}
-                        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex flex-wrap items-center gap-4">
-                            <div className="flex items-center gap-3">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                                    <Calendar size={14} /> Date Range
-                                </span>
-                                <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
-                                    <input
-                                        type="date"
-                                        value={startDate}
-                                        onChange={(e) => setStartDate(e.target.value)}
-                                        className="bg-transparent border-none text-sm text-slate-600 focus:outline-none focus:ring-0 p-0"
-                                    />
-                                    <span className="text-slate-300">to</span>
-                                    <input
-                                        type="date"
-                                        value={endDate}
-                                        onChange={(e) => setEndDate(e.target.value)}
-                                        className="bg-transparent border-none text-sm text-slate-600 focus:outline-none focus:ring-0 p-0"
-                                    />
-                                </div>
-                                {(startDate || endDate) && (
-                                    <button
-                                        onClick={() => { setStartDate(''); setEndDate(''); }}
-                                        className="text-[10px] text-red-500 hover:text-red-700 font-bold uppercase"
-                                    >
-                                        Clear Dates
-                                    </button>
-                                )}
-                            </div>
-                        </div>
+
 
                         {/* Body */}
                         <div className="p-6 max-h-[60vh] overflow-y-auto space-y-4 bg-slate-50/30">

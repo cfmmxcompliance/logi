@@ -313,6 +313,28 @@ export const XMLInvoiceExtractor: React.FC = () => {
                 const timbreFiscal = xmlDoc.getElementsByTagName("tfd:TimbreFiscalDigital")[0] || xmlDoc.getElementsByTagName("TimbreFiscalDigital")[0];
                 const uuid = timbreFiscal?.getAttribute("UUID") || "";
 
+                const emisorRfc = emisor.getAttribute("Rfc") || "";
+                const emisorNombre = emisor.getAttribute("Nombre") || "";
+
+                // Attempt to find Domicilio for emisor
+                let emisorDomicilio = comprobante.getAttribute("LugarExpedicion") || "MÉXICO";
+                const domFiscal = xmlDoc.getElementsByTagName("cfdi:DomicilioFiscal")[0];
+                if (domFiscal) {
+                    const calle = domFiscal.getAttribute("calle") || "";
+                    const nExt = domFiscal.getAttribute("noExterior") || "";
+                    const cp = domFiscal.getAttribute("codigoPostal") || "";
+                    const mnpio = domFiscal.getAttribute("municipio") || "";
+                    const edo = domFiscal.getAttribute("estado") || "";
+                    emisorDomicilio = `${calle} ${nExt}, CP ${cp}, ${mnpio} ${edo}`.trim();
+                }
+
+                // Find Incoterm (Complemento Comercio Exterior)
+                let extractedIncoterm = "FCA";
+                const cce = xmlDoc.getElementsByTagName("cce11:ComercioExterior")[0] || xmlDoc.getElementsByTagName("cce20:ComercioExterior")[0];
+                if (cce) {
+                    extractedIncoterm = cce.getAttribute("Incoterm") || "FCA";
+                }
+
                 // --- XMLCI (Cascading Population) ---
                 await xmlciService.extractAndSave(xmlDoc, invoiceNo, date, currency, uuid);
 
@@ -364,7 +386,12 @@ export const XMLInvoiceExtractor: React.FC = () => {
                         valAgregado: parseNum(extractedAddedValue),
                         unidad: unidad,
                         rawDescripcion: rawDescripcion,
-                        uuid: uuid
+                        uuid: uuid,
+                        // [NEW] Vendor Metadata
+                        vendorName: emisorNombre,
+                        vendorRfc: emisorRfc,
+                        vendorAddress: emisorDomicilio,
+                        incoterm: extractedIncoterm
                     };
 
                     newItems.push(newItem);

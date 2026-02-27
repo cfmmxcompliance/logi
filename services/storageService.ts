@@ -1053,12 +1053,23 @@ export const storageService = {
     if (newRecords.length === 0) return 0;
     if (!db) throw new Error("Sin conexión a Internet.");
 
-    const batch = writeBatch(db);
-    newRecords.forEach((record) => {
-      batch.set(doc(db, COLS.XML_CI, record.id), sanitizeForFirestore(record));
-    });
+    // Chunk records into sets of 400 to avoid Firestore batch limits (500)
+    const chunks = [];
+    for (let i = 0; i < newRecords.length; i += 400) {
+      chunks.push(newRecords.slice(i, i + 400));
+    }
 
-    await batch.commit();
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach((record) => {
+        if (!record.id) {
+          console.error("Missing ID for record:", record);
+          return;
+        }
+        batch.set(doc(db, COLS.XML_CI, record.id), sanitizeForFirestore(record));
+      });
+      await batch.commit();
+    }
 
     try {
       logAction('XML_CI_IMPORT', `Facturas XML consolidadas: ${newRecords.length}`);
@@ -1114,6 +1125,62 @@ export const storageService = {
 
     dbState.xmlCI = (dbState.xmlCI || []).filter(r => !ids.includes(r.id));
     notifyListeners();
+  },
+
+  reconstructXMLCIFromCFDI: async () => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+
+    // Ensure we have the latest items in memory
+    await storageService.refreshCFDIInvoices();
+    const items = dbState.cfdiInvoices || [];
+    if (items.length === 0) return 0;
+
+    try {
+      // Group items by invoiceNo and vendorRfc (or UUID if available)
+      const invoiceGroups = new Map<string, CommercialInvoiceItem[]>();
+      items.forEach(item => {
+        // Sanitize groupKey: document IDs cannot contain slashes
+        let rawKey = item.uuid || `${item.invoiceNo}-${item.vendorRfc || 'unknown'}`;
+        const groupKey = rawKey.replace(/\//g, '_');
+
+        if (!invoiceGroups.has(groupKey)) invoiceGroups.set(groupKey, []);
+        invoiceGroups.get(groupKey)?.push(item);
+      });
+
+      const newRecords: XMLCIRecord[] = [];
+      invoiceGroups.forEach((groupItems, key) => {
+        const first = groupItems[0];
+        const totalVal = groupItems.reduce((sum, i) => sum + (i.totalAmount || 0), 0);
+        // Safely find existing factor or default to 1
+        const existing = (dbState.xmlCI || []).find(r => r.id === key);
+        const safeFactor = (existing as any)?.factorMoneda || 1;
+
+        newRecords.push({
+          id: key,
+          idFiscal: first.vendorRfc || '',
+          nombre: first.vendorName || 'Desconocido',
+          domicilio: first.vendorAddress || 'Desconocido',
+          vinculacion: "SI",
+          invoiceNo: first.invoiceNo || 'N/A',
+          fecha: first.date || new Date().toISOString().split('T')[0],
+          incoterm: first.incoterm || 'FCA',
+          moneda: first.currency || 'USD',
+          valMonFact: totalVal,
+          factorMoneda: safeFactor,
+          valDolares: (first.currency === 'USD') ? totalVal : (totalVal / safeFactor),
+          uuid: first.uuid || '',
+          updatedAt: new Date().toISOString()
+        });
+      });
+
+      if (newRecords.length > 0) {
+        await storageService.addXMLCIRecords(newRecords);
+      }
+      return newRecords.length;
+    } catch (error) {
+      console.error("Critical error in reconstructXMLCIFromCFDI:", error);
+      throw error;
+    }
   },
 
   getCFDIInvoices: () => dbState.cfdiInvoices || [],
@@ -2137,12 +2204,14 @@ export const storageService = {
         let changed = false;
         const updated = { ...record };
 
-        if (!record.packages || record.packages !== item.Packages) {
-          updated.packages = item.Packages;
+        const pkgs = parseInt(String(item.Packages).replace(/\D/g, '')) || 0;
+
+        if (!record.packages || record.packages !== pkgs) {
+          (updated as any).packages = pkgs;
           changed = true;
         }
         if (!record.grossWeight || record.grossWeight !== weight) {
-          updated.grossWeight = weight;
+          (updated as any).grossWeight = weight;
           changed = true;
         }
 

@@ -201,6 +201,8 @@ export interface PreAlertRecord {
   arrivalCity: string;
   invoiceNo: string;
   processed: boolean;
+  packages?: number;
+  grossWeight?: number;
   linkedContainers?: string[];
   updatedAt?: string;
 }
@@ -461,6 +463,10 @@ export interface CommercialInvoiceItem {
   unidad?: string;
   rawDescripcion?: string;
   uuid?: string;
+  // Metadata for consolidation
+  vendorName?: string;
+  vendorRfc?: string;
+  vendorAddress?: string;
 }
 
 export interface XMLCIRecord {

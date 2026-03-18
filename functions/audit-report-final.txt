@@ -1,0 +1,180 @@
+=== EXHAUSTIVE AUDIT REPORT ===
+
+TOTAL RENAMED (SUCCESS): 123
+TOTAL UNRENAMED (FAILED): 13
+
+=== DETAILS OF UNRENAMED FOLDERS ===
+
+Folder: MC0341-26 (inside DIPC26CFM050 BL EGLV143659509513)
+Contents: 
+      - MC0341-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0341-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0341-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - Expense Account MC0341-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - RESUMEN DE CUENTA DE GASTOS - 开票 - CFMOTO - 0050- MC0341-26.pdf (File)
+--------------------------------------------------
+Folder: MC0472-26, MC0555-26 & MC0556-26 (inside DIPC26CFM057 BL EGLV143659509921)
+Contents: 
+      - MC0472-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0472-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0472-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - Expense Account MC0472-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - RESUMEN DE CUENTA DE GASTOS - 开票 - CFM-57-MC0472.pdf (File)
+--------------------------------------------------
+Folder: MC0482-26 (inside DIPC26CFM060 BL COSU6441407410)
+Contents: 
+      - MC0483-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0482-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0483-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0482-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0483-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0482-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - Expense Account MC0482-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - RESUMEN DE CUENTA DE GASTOS - 开票 - 60 - MC0482-26.pdf (File)
+--------------------------------------------------
+Folder: MC0484-26 (inside DIPC26CFM060 BL COSU6441407410)
+Contents: 
+      - MC0485-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0484-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0485-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0484-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0485-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0484-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - Expense Account MC0484-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - RESUMEN DE CUENTA DE GASTOS - 开票 - 60 - MC0484-26.pdf (File)
+--------------------------------------------------
+Folder: MC0098-26 (inside DIPC26CFM018 BL 031F605855)
+Contents: 
+      - MC0098-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0098-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0098-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - Expense Account  MC0098-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - RESUMEN DE CUENTA DE GASTOS - 开票 - CFMOTO - 018 - MC0098-26.pdf (File)
+--------------------------------------------------
+Folder: MC0185-26 (inside DIPC26CFM017 BL EGLV143559688271)
+Contents: 
+      - MC0186-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0185-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0186-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0185-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - Expense Account MC0185-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - RESUMEN DE CUENTA DE GASTOS - 开票 - CFMOTO - 0017- MC0185-26.pdf (File)
+--------------------------------------------------
+Folder: MC0409-26 (inside DIPC26CFM061 BL EGLV143559689005)
+Contents: 
+      - MC0410-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0409-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0410-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0409-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - Expense account MC0409-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - RESUMEN DE CUENTA DE GASTOS -  开票 - CFM 061 - MC0409-26.pdf (File)
+--------------------------------------------------
+Folder: MC0411-26 (inside DIPC26CFM061 BL EGLV143559689005)
+Contents: 
+      - MC0412-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0411-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0412-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0411-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - Expense account MC0411-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - RESUMEN DE CUENTA DE GASTOS -  开票 - CFM 061 - MC0411-26.pdf (File)
+--------------------------------------------------
+Folder: MC0413-26 (inside DIPC26CFM061 BL EGLV143559689005)
+Contents: 
+      - MC0414-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0413-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0414-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0413-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - Expense account MC0413-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - RESUMEN DE CUENTA DE GASTOS -  开票 - CFM 061 - MC0413-26.pdf (File)
+--------------------------------------------------
+Folder: MC0415-26 (inside DIPC26CFM061 BL EGLV143559689005)
+Contents: 
+      - MC0416-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0415-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0416-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0415-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - Expense account MC0415-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - RESUMEN DE CUENTA DE GASTOS -  开票 - CFM 061 - MC0415-26.pdf (File)
+--------------------------------------------------
+Folder: MC0419-26 (inside DIPC26CFM061 BL EGLV143559689005)
+Contents: 
+      - MC0420-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0419-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0420-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0419-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - Expense account MC0419-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - RESUMEN DE CUENTA DE GASTOS -  开票 - CFM 061 - MC0419-26.pdf (File)
+--------------------------------------------------
+Folder: MC0417-26_ (inside DIPC26CFM061 BL EGLV143559689005)
+Contents: [EMPTY FOLDER]
+--------------------------------------------------
+Folder: MC0219-26 (inside DIPC26CFM021 BL EGLV143559688921)
+Contents: 
+      - MC0220-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0219-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0220-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - MC0219-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - Expense Accounrt MC0219-26.zip (File)
+         --> ⚠️ CONTAINS UNEXTRACTED ZIP
+      - RESUMEN DE CUENTA DE GASTOS - 开票 - CFMOTO - 021 - MC0219-26.pdf (File)
+--------------------------------------------------

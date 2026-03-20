@@ -170,7 +170,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </div>
           </div>
         </header>
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-8 pb-0">
+        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto p-8 pb-0">
           {children}
         </div>
       </main>

@@ -244,6 +244,36 @@ const InvoiceRow = React.memo(({
                 {item.hts || <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse">MISSING</span>}
             </td>
 
+            {/* CLAVESAT */}
+            <td className="p-4 text-slate-600 font-mono text-xs">
+                {masterPart?.CLAVESAT !== undefined && masterPart?.CLAVESAT !== null && masterPart?.CLAVESAT !== ''
+                    ? String(masterPart.CLAVESAT)
+                    : <span className="text-slate-300">—</span>}
+            </td>
+
+            {/* IGI DUTY */}
+            <td className="p-4 text-slate-600 font-mono text-xs">
+                {masterPart?.IGI_DUTY !== undefined && masterPart?.IGI_DUTY !== null && masterPart?.IGI_DUTY !== ''
+                    ? String(masterPart.IGI_DUTY)
+                    : <span className="text-slate-300">—</span>}
+            </td>
+
+            {/* PROSEC */}
+            <td className="p-4 text-slate-600 font-mono text-xs">
+                {(() => {
+                    const v = masterPart?.PROSEC ?? item.prosec;
+                    return v !== undefined && v !== null && v !== '' ? String(v) : <span className="text-slate-300">—</span>;
+                })()}
+            </td>
+
+            {/* R8 */}
+            <td className="p-4 text-slate-600 font-mono text-xs">
+                {(() => {
+                    const v = masterPart?.R8 ?? item.rb;
+                    return v !== undefined && v !== null && v !== '' ? String(v) : <span className="text-slate-300">—</span>;
+                })()}
+            </td>
+
             {/* Part No */}
             <td className="p-4 text-slate-600">
                 {isEditing ? (
@@ -2067,6 +2097,10 @@ export const CIExtractor: React.FC = () => {
                                 <th className="p-4">Regimen</th>
                                 <th className="p-4">Incoterm</th>
                                 <th className="p-4">HTS</th>
+                                <th className="p-4">CLAVESAT</th>
+                                <th className="p-4">IGI DUTY</th>
+                                <th className="p-4">PROSEC</th>
+                                <th className="p-4">R8</th>
                                 <th className="p-4 min-w-[300px]">Part No</th>
                                 <th className="p-4 min-w-[200px]">Model</th>
                                 <th className="p-4">English Name</th>
@@ -2315,6 +2349,41 @@ export const CIExtractor: React.FC = () => {
                                                     MISSING
                                                 </span>
                                             )}
+                                        </td>
+                                        <td className="p-4 text-slate-600 font-mono text-xs">
+                                            {(() => {
+                                                const masterPart = masterDataMap[String(item.partNo || '').trim()];
+                                                const clavesat = masterPart?.CLAVESAT;
+                                                const igi = masterPart?.IGI_DUTY;
+                                                const prosec = masterPart?.PROSEC ?? item.prosec;
+                                                const r8 = masterPart?.R8 ?? item.rb;
+                                                return (
+                                                    <>
+                                                        <span>{clavesat || <span className="text-slate-300">—</span>}</span>
+                                                    </>
+                                                );
+                                            })()}
+                                        </td>
+                                        <td className="p-4 text-slate-600 font-mono text-xs">
+                                            {(() => {
+                                                const masterPart = masterDataMap[String(item.partNo || '').trim()];
+                                                const v = masterPart?.IGI_DUTY;
+                                                return v !== undefined && v !== null && v !== '' ? String(v) : <span className="text-slate-300">—</span>;
+                                            })()}
+                                        </td>
+                                        <td className="p-4 text-slate-600 font-mono text-xs">
+                                            {(() => {
+                                                const masterPart = masterDataMap[String(item.partNo || '').trim()];
+                                                const v = masterPart?.PROSEC ?? item.prosec;
+                                                return v !== undefined && v !== null && v !== '' ? String(v) : <span className="text-slate-300">—</span>;
+                                            })()}
+                                        </td>
+                                        <td className="p-4 text-slate-600 font-mono text-xs">
+                                            {(() => {
+                                                const masterPart = masterDataMap[String(item.partNo || '').trim()];
+                                                const v = masterPart?.R8 ?? item.rb;
+                                                return v !== undefined && v !== null && v !== '' ? String(v) : <span className="text-slate-300">—</span>;
+                                            })()}
                                         </td>
                                         <td className="p-4 text-slate-600">
                                             {editingId === item.id ? (

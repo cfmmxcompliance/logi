@@ -32,6 +32,18 @@ export const XMLInvoiceExtractor: React.FC = () => {
     const [appliedConditions, setAppliedConditions] = useState<QueryCondition[]>([]);
     const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
+    // Duplicate Detection State
+    const [duplicateModal, setDuplicateModal] = useState<{
+        duplicates: { uuid: string; invoiceNo: string; itemCount: number }[];
+        resolve: (approved: string[]) => void;
+    } | null>(null);
+    const [approvedUUIDs, setApprovedUUIDs] = useState<Set<string>>(new Set());
+
+    // VIN/MOTOR Conflict State
+    const [vinMotorConflictModal, setVinMotorConflictModal] = useState<{
+        conflicts: { vin?: string; engine?: string; invoiceNo: string; existingInvoiceNo: string }[];
+    } | null>(null);
+
     // Selection State
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
@@ -161,14 +173,21 @@ export const XMLInvoiceExtractor: React.FC = () => {
     };
 
     const totals = useMemo(() => {
-        return filteredItems.reduce((acc, item: any) => {
+        const modelos = new Set<string>();
+        const partes = new Set<string>();
+        const facturas = new Set<string>();
+        const sums = filteredItems.reduce((acc, item: any) => {
             acc.qty += item.qty || 0;
             acc.total += item.totalAmount || 0;
             acc.pesoNeto += parseNum(item.pesoNetokg ?? item.pesoNeto);
             acc.pesoBruto += parseNum(item.pesoBrutokg ?? item.pesoBruto);
             acc.valAgregado += parseNum(item.valAgregado);
+            if (item.model) modelos.add(String(item.model).trim());
+            if (item.partNo) partes.add(String(item.partNo).trim());
+            if (item.invoiceNo) facturas.add(String(item.invoiceNo).trim());
             return acc;
         }, { qty: 0, total: 0, pesoNeto: 0, pesoBruto: 0, valAgregado: 0 });
+        return { ...sums, modelos: modelos.size, partes: partes.size, facturas: facturas.size };
     }, [filteredItems]);
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -275,6 +294,14 @@ export const XMLInvoiceExtractor: React.FC = () => {
         }
     };
 
+    // Returns list of UUIDs the user approved to overwrite
+    const askAboutDuplicates = (dups: { uuid: string; invoiceNo: string; itemCount: number }[]): Promise<string[]> => {
+        return new Promise((resolve) => {
+            setApprovedUUIDs(new Set());
+            setDuplicateModal({ duplicates: dups, resolve });
+        });
+    };
+
     const processFiles = async (files: File[]) => {
         const xmlFiles = files.filter((f: File) => f.name.toLowerCase().endsWith('.xml'));
 
@@ -286,6 +313,12 @@ export const XMLInvoiceExtractor: React.FC = () => {
         setUploading(true);
         let count = 0;
         const newItems: CommercialInvoiceItem[] = [];
+
+        // Build a map of existing UUIDs for fast duplicate lookup
+        const existingUUIDs = new Set(items.map(i => (i as any).uuid).filter(Boolean));
+
+        // Parse all files first, then check for duplicates
+        const parsedFiles: { uuid: string; invoiceNo: string; fileItems: CommercialInvoiceItem[]; xmlDoc: Document }[] = [];
 
         for (const file of xmlFiles) {
             try {
@@ -316,7 +349,6 @@ export const XMLInvoiceExtractor: React.FC = () => {
                 const emisorRfc = emisor.getAttribute("Rfc") || "";
                 const emisorNombre = emisor.getAttribute("Nombre") || "";
 
-                // Attempt to find Domicilio for emisor
                 let emisorDomicilio = comprobante.getAttribute("LugarExpedicion") || "MÉXICO";
                 const domFiscal = xmlDoc.getElementsByTagName("cfdi:DomicilioFiscal")[0];
                 if (domFiscal) {
@@ -328,23 +360,19 @@ export const XMLInvoiceExtractor: React.FC = () => {
                     emisorDomicilio = `${calle} ${nExt}, CP ${cp}, ${mnpio} ${edo}`.trim();
                 }
 
-                // Find Incoterm (Complemento Comercio Exterior)
                 let extractedIncoterm = "FCA";
                 const cce = xmlDoc.getElementsByTagName("cce11:ComercioExterior")[0] || xmlDoc.getElementsByTagName("cce20:ComercioExterior")[0];
                 if (cce) {
                     extractedIncoterm = cce.getAttribute("Incoterm") || "FCA";
                 }
 
-                // --- XMLCI (Cascading Population) ---
-                await xmlciService.extractAndSave(xmlDoc, invoiceNo, date, currency, uuid);
-
+                const fileItems: CommercialInvoiceItem[] = [];
                 for (let i = 0; i < conceptos.length; i++) {
                     const concepto = conceptos[i];
                     const partNoRaw = concepto.getAttribute("NoIdentificacion") || `ITEM-${i + 1}`;
                     const descripcion = concepto.getAttribute("Descripcion") || "Sin descripción";
                     const qtyStr = concepto.getAttribute("Cantidad") || "1";
                     const unitPriceStr = concepto.getAttribute("ValorUnitario") || "0";
-
                     const qty = parseFloat(qtyStr);
                     const unitPrice = parseFloat(unitPriceStr);
                     const totalAmount = qty * unitPrice;
@@ -367,38 +395,113 @@ export const XMLInvoiceExtractor: React.FC = () => {
                     const rawDescripcion = concepto.getAttribute("Descripcion") || "";
                     const cleanDescription = descripcion.split(/[(]|VIN|MODELO|Val\./i)[0].trim();
 
-                    const newItem: CommercialInvoiceItem = {
+                    fileItems.push({
                         id: extractedVin || `${uuid}-${i}` || `${invoiceNo}-${partNoRaw}-${i}`,
-                        invoiceNo,
-                        date,
-                        item: String(i + 1),
-                        model: extractedModel,
-                        partNo: partNoRaw,
-                        spanishDescription: cleanDescription,
-                        qty,
-                        unitPrice,
-                        totalAmount,
-                        currency,
-                        vin: extractedVin,
-                        engine: extractedEngine,
+                        invoiceNo, date, item: String(i + 1), model: extractedModel,
+                        partNo: partNoRaw, spanishDescription: cleanDescription,
+                        qty, unitPrice, totalAmount, currency,
+                        vin: extractedVin, engine: extractedEngine,
                         pesoNetokg: parseNum(extractedNetWeight),
                         pesoBrutokg: parseNum(extractedGrossWeight),
                         valAgregado: parseNum(extractedAddedValue),
-                        unidad: unidad,
-                        rawDescripcion: rawDescripcion,
-                        uuid: uuid,
-                        // [NEW] Vendor Metadata
-                        vendorName: emisorNombre,
-                        vendorRfc: emisorRfc,
-                        vendorAddress: emisorDomicilio,
-                        incoterm: extractedIncoterm
-                    };
-
-                    newItems.push(newItem);
+                        unidad, rawDescripcion, uuid,
+                        vendorName: emisorNombre, vendorRfc: emisorRfc,
+                        vendorAddress: emisorDomicilio, incoterm: extractedIncoterm
+                    });
                 }
-                count++;
+
+                parsedFiles.push({ uuid, invoiceNo, fileItems, xmlDoc });
             } catch (err) {
                 console.error(`Error procesando ${(file as any).name}:`, err);
+            }
+        }
+
+        // --- DUPLICATE DETECTION ---
+        const duplicates = parsedFiles
+            .filter(f => f.uuid && existingUUIDs.has(f.uuid))
+            .map(f => ({ uuid: f.uuid, invoiceNo: f.invoiceNo, itemCount: f.fileItems.length }));
+
+        let approvedToOverwrite: string[] = [];
+        if (duplicates.length > 0) {
+            setUploading(false); // pause spinner while user decides
+            approvedToOverwrite = await askAboutDuplicates(duplicates);
+            setDuplicateModal(null);
+            setUploading(true);
+        }
+        // --- VIN / MOTOR CONFLICT CHECK (for non-duplicate XMLs) ---
+        // Build lookup maps from existing items
+        const existingVINs = new Map<string, string>(); // vin -> invoiceNo
+        const existingEngines = new Map<string, string>(); // engine -> invoiceNo
+        items.forEach((it: any) => {
+            if (it.vin && it.uuid && !existingUUIDs.has(it.uuid)) {
+                existingVINs.set(String(it.vin).trim().toUpperCase(), it.invoiceNo || '');
+            }
+            if (it.engine && it.uuid && !existingUUIDs.has(it.uuid)) {
+                existingEngines.set(String(it.engine).trim().toUpperCase(), it.invoiceNo || '');
+            }
+        });
+
+        // Check new (non-UUID-duplicate) XMLs for VIN/MOTOR collisions
+        const vinMotorConflicts: { vin?: string; engine?: string; invoiceNo: string; existingInvoiceNo: string }[] = [];
+        const blockedUUIDs = new Set<string>(); // files that can't be uploaded due to VIN/MOTOR collision
+
+        for (const parsed of parsedFiles) {
+            const isDuplicate = parsed.uuid && existingUUIDs.has(parsed.uuid);
+            if (isDuplicate) continue; // already handled above
+
+            for (const fi of parsed.fileItems) {
+                const vin = fi.vin ? String(fi.vin).trim().toUpperCase() : '';
+                const engine = (fi as any).engine ? String((fi as any).engine).trim().toUpperCase() : '';
+
+                if (vin && existingVINs.has(vin)) {
+                    vinMotorConflicts.push({ vin: fi.vin, invoiceNo: parsed.invoiceNo, existingInvoiceNo: existingVINs.get(vin) || '?' });
+                    blockedUUIDs.add(parsed.uuid);
+                }
+                if (engine && existingEngines.has(engine)) {
+                    // Only add if not already listed for this parsed file
+                    if (!vinMotorConflicts.some(c => c.engine === fi.engine && c.invoiceNo === parsed.invoiceNo)) {
+                        vinMotorConflicts.push({ engine: (fi as any).engine, invoiceNo: parsed.invoiceNo, existingInvoiceNo: existingEngines.get(engine) || '?' });
+                    }
+                    blockedUUIDs.add(parsed.uuid);
+                }
+            }
+        }
+
+        if (vinMotorConflicts.length > 0) {
+            setUploading(false);
+            setVinMotorConflictModal({ conflicts: vinMotorConflicts });
+            // Wait for user to close modal — no approval, just informational block
+            await new Promise<void>(resolve => {
+                const check = setInterval(() => {
+                    // Resolved when modal state is cleared by the close button
+                }, 200);
+                // Store cleanup in a ref so close button can resolve it
+                (window as any).__vinMotorConflictResolve = () => { clearInterval(check); resolve(); };
+            });
+            setVinMotorConflictModal(null);
+            // If ALL files are blocked, abort
+            const nonBlockedFiles = parsedFiles.filter(p => !blockedUUIDs.has(p.uuid) && !existingUUIDs.has(p.uuid));
+            if (nonBlockedFiles.length === 0 && approvedToOverwrite.length === 0) {
+                showNotification('Bloqueado', 'No se guardó ningún archivo debido a conflictos de VIN/Motor.', 'error');
+                return;
+            }
+            setUploading(true);
+        }
+
+        for (const parsed of parsedFiles) {
+            const isDuplicate = parsed.uuid && existingUUIDs.has(parsed.uuid);
+            const isVinMotorBlocked = blockedUUIDs.has(parsed.uuid);
+            if ((isDuplicate && !approvedToOverwrite.includes(parsed.uuid)) || isVinMotorBlocked) {
+                // Skip: either a non-approved duplicate or a VIN/MOTOR conflict
+                continue;
+            }
+            try {
+                await xmlciService.extractAndSave(parsed.xmlDoc, parsed.invoiceNo,
+                    parsed.fileItems[0]?.date || '', parsed.fileItems[0]?.currency || 'USD', parsed.uuid);
+                newItems.push(...parsed.fileItems);
+                count++;
+            } catch (err) {
+                console.error(`Error guardando ${parsed.invoiceNo}:`, err);
             }
         }
 
@@ -416,6 +519,8 @@ export const XMLInvoiceExtractor: React.FC = () => {
                 showNotification('Error', 'Se extrajeron los datos pero falló el guardado automático remoto.', 'error');
                 setItems(prev => [...prev, ...newItems]);
             }
+        } else if (duplicates.length > 0 && approvedToOverwrite.length === 0) {
+            showNotification('Descartado', 'No se guardó ningún archivo (todos eran duplicados no aprobados).', 'warning');
         } else {
             showNotification('Error', 'No se pudo extraer información de los archivos seleccionados.', 'error');
         }
@@ -751,28 +856,133 @@ export const XMLInvoiceExtractor: React.FC = () => {
             </div>
 
             {/* Sticky Totals Footer */}
-            <div className="bg-blue-600 px-8 py-3 flex-shrink-0 z-20 flex justify-end items-center gap-10 text-white shadow-[0_-4px_20px_rgba(37,99,235,0.2)]">
-                <div className="flex flex-col items-end">
-                    <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Peso Neto KG Total</span>
-                    <span className="text-sm font-mono font-bold leading-none">{totals.pesoNeto.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            <div className="bg-blue-600 px-8 py-3 flex-shrink-0 z-20 flex justify-between items-center text-white shadow-[0_-4px_20px_rgba(37,99,235,0.2)]">
+                {/* Left: Counts */}
+                <div className="flex items-center gap-6">
+                    <div className="flex flex-col items-start">
+                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Modelos</span>
+                        <span className="text-sm font-mono font-bold leading-none">{(totals as any).modelos ?? 0}</span>
+                    </div>
+                    <div className="flex flex-col items-start">
+                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">No. Parte</span>
+                        <span className="text-sm font-mono font-bold leading-none">{(totals as any).partes ?? 0}</span>
+                    </div>
+                    <div className="flex flex-col items-start">
+                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Facturas</span>
+                        <span className="text-sm font-mono font-bold leading-none">{(totals as any).facturas ?? 0}</span>
+                    </div>
                 </div>
-                <div className="flex flex-col items-end">
-                    <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Peso Bruto KG Total</span>
-                    <span className="text-sm font-mono font-bold leading-none">{totals.pesoBruto.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                </div>
-                <div className="flex flex-col items-end">
-                    <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Val. Agregado</span>
-                    <span className="text-sm font-mono font-bold leading-none">{totals.valAgregado.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                </div>
-                <div className="flex flex-col items-end">
-                    <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Cantidad</span>
-                    <span className="text-sm font-mono font-bold leading-none">{totals.qty.toLocaleString('en-US')}</span>
-                </div>
-                <div className="flex flex-col items-end border-l border-blue-400/50 pl-10 ml-2">
-                    <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Monto Total</span>
-                    <span className="text-xl font-mono font-black leading-none">${totals.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                {/* Right: Totals */}
+                <div className="flex items-center gap-10">
+                    <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Peso Neto KG Total</span>
+                        <span className="text-sm font-mono font-bold leading-none">{totals.pesoNeto.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Peso Bruto KG Total</span>
+                        <span className="text-sm font-mono font-bold leading-none">{totals.pesoBruto.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Val. Agregado</span>
+                        <span className="text-sm font-mono font-bold leading-none">{totals.valAgregado.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Cantidad</span>
+                        <span className="text-sm font-mono font-bold leading-none">{totals.qty.toLocaleString('en-US')}</span>
+                    </div>
+                    <div className="flex flex-col items-end border-l border-blue-400/50 pl-10 ml-2">
+                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Monto Total</span>
+                        <span className="text-xl font-mono font-black leading-none">${totals.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
                 </div>
             </div>
+
+            {/* VIN/MOTOR Conflict Modal (hard block - no overwrite option) */}
+            {vinMotorConflictModal && (
+                <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="bg-red-600 px-6 py-5 flex items-center gap-4">
+                            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                                <AlertCircle size={22} className="text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-black text-white">Datos Duplicados Detectados</h3>
+                                <p className="text-red-100 text-xs mt-0.5">El XML contiene VINs o Motores que ya existen en la Base de Datos. El archivo no será guardado.</p>
+                            </div>
+                        </div>
+                        <div className="p-5 space-y-2 max-h-64 overflow-y-auto">
+                            {vinMotorConflictModal.conflicts.map((c, i) => (
+                                <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-red-50 border border-red-200">
+                                    <X size={15} className="text-red-500 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        {c.vin && <p className="font-bold text-slate-800 text-sm">VIN: <span className="font-mono">{c.vin}</span></p>}
+                                        {c.engine && <p className="font-bold text-slate-800 text-sm">Motor: <span className="font-mono">{c.engine}</span></p>}
+                                        <p className="text-slate-500 text-xs mt-0.5">Factura entrante: <span className="font-semibold">{c.invoiceNo}</span></p>
+                                        <p className="text-red-500 text-xs">Ya existe en: <span className="font-semibold">{c.existingInvoiceNo}</span></p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="px-5 pb-5">
+                            <button
+                                onClick={() => {
+                                    if ((window as any).__vinMotorConflictResolve) {
+                                        (window as any).__vinMotorConflictResolve();
+                                        delete (window as any).__vinMotorConflictResolve;
+                                    }
+                                    setVinMotorConflictModal(null);
+                                }}
+                                className="w-full px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors text-sm"
+                            >
+                                Entendido — Descartar XML
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Duplicate Detection Modal */}
+            {duplicateModal && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="bg-amber-500 px-6 py-5 flex items-center gap-4">
+                            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                                <AlertCircle size={22} className="text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-black text-white">XMLs Duplicados Detectados</h3>
+                                <p className="text-amber-100 text-xs mt-0.5">Los siguientes archivos ya existen en la Base de Datos. ¿Deseas sobreescribirlos?</p>
+                            </div>
+                        </div>
+                        <div className="p-5 space-y-2 max-h-64 overflow-y-auto">
+                            {duplicateModal.duplicates.map(dup => (
+                                <div key={dup.uuid} className="flex items-start gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
+                                    <AlertCircle size={15} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-slate-800 text-sm">{dup.invoiceNo}</p>
+                                        <p className="text-slate-400 font-mono text-[10px] truncate">{dup.uuid}</p>
+                                        <p className="text-slate-500 text-xs mt-0.5">{dup.itemCount} concepto(s)</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="px-5 pb-5 flex gap-3">
+                            <button
+                                onClick={() => duplicateModal.resolve([])}
+                                className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors text-sm"
+                            >
+                                Cancelar (Descartar)
+                            </button>
+                            <button
+                                onClick={() => duplicateModal.resolve(duplicateModal.duplicates.map(d => d.uuid))}
+                                className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors shadow-lg shadow-amber-200 text-sm"
+                            >
+                                Aceptar (Sobreescribir)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Bulk Delete Modal */}
             {isBulkDeleteModalOpen && (

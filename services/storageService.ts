@@ -44,6 +44,8 @@ let listeners: (() => void)[] = [];
 let unsubscribers: (() => void)[] = [];
 let isMDLoading = false;
 let isBackgroundSyncing = false;
+let isRefreshingInvoices = false;
+let lastInvoicesRefresh = 0;
 
 const notifyListeners = () => listeners.forEach(l => l());
 
@@ -959,18 +961,28 @@ export const storageService = {
     notifyListeners();
   },
 
-  refreshInvoices: async () => {
+  refreshInvoices: async (force = false) => {
     if (!db) return [];
+    
+    const now = Date.now();
+    if (!force && dbState.commercialInvoices.length > 0 && (now - lastInvoicesRefresh < 30000)) {
+      return dbState.commercialInvoices;
+    }
+
+    if (isRefreshingInvoices) return dbState.commercialInvoices;
+
     try {
-      console.log("⬇️ Fetching Commercial Invoices (On-Demand)...");
+      isRefreshingInvoices = true;
       const snap = await getDocs(collection(db, COLS.INVOICES));
       dbState.commercialInvoices = snap.docs.map(d => ({ ...d.data(), id: d.id } as CommercialInvoiceItem));
-      // saveLocal(); // Can skip saving entire DB to disk on every refresh for speed
+      lastInvoicesRefresh = Date.now();
       notifyListeners();
       return dbState.commercialInvoices;
     } catch (e) {
       console.error("Failed to refresh invoices", e);
-      return [];
+      return dbState.commercialInvoices;
+    } finally {
+      isRefreshingInvoices = false;
     }
   },
 

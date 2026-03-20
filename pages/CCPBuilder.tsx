@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileDown, Search, Truck, Container } from 'lucide-react';
 import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
 import { storageService } from '../services/storageService';
 import { CommercialInvoiceItem, RawMaterialPart } from '../types';
 
@@ -11,6 +10,7 @@ export default function CCPBuilder() {
     const [containerToBL, setContainerToBL] = useState<Record<string, string>>({});
     const [containers, setContainers] = useState<string[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [itemCountsMap, setItemCountsMap] = useState<Record<string, number>>({});
 
     // Modal State
     const [showModal, setShowModal] = useState(false);
@@ -18,93 +18,74 @@ export default function CCPBuilder() {
     const [selectedContainer, setSelectedContainer] = useState<string | null>(null);
 
     useEffect(() => {
+        // Initial load
         loadData();
-    }, []);
 
-    const loadData = async () => {
-        // Trigger Lazy Load of Master Data + refresh invoices
-        await Promise.all([
-            storageService.loadMasterData(),
-            storageService.refreshInvoices()
-        ]);
+        // Subscribe to all changes in storageService (Master Data sync, Invoices sync, etc)
+        const unsubscribe = storageService.subscribe(() => {
+            const items = storageService.getInvoiceItems();
+            const parts = storageService.getParts();
+            const shipments = storageService.getShipments();
+            const preAlerts = storageService.getPreAlerts();
+            const vesselTracking = storageService.getVesselTracking();
 
-        const items = storageService.getInvoiceItems();
-        const parts = storageService.getParts();
-        const shipments = storageService.getShipments();
-        const preAlerts = storageService.getPreAlerts();
-        const vesselTracking = storageService.getVesselTracking();
-        const customs = storageService.getCustomsClearance();
-
-        // Map Container -> BL (Aggregating from all sources)
-        // Priority: PreAlerts (Freshest) > VesselTracking > Customs > Shipments
-        const blMap: Record<string, string> = {};
-
-        // 1. Shipments (Base)
-        shipments.forEach(s => {
-            s.containers.forEach(c => blMap[c] = s.blNo);
-        });
-
-        // 2. Customs (Middle)
-        customs.forEach(c => {
-            if (c.blNo) {
-                // Customs doesn't always have container list explicitly separated? 
-                // Assuming logic needs to match container to BL. 
-                // Actually Customs is 1:1 usually? No, it's per Pedimento which has BL.
-                // We need container context. If not present, skip.
-            }
-        });
-
-        // 2. Vessel Tracking (Operational)
-        vesselTracking.forEach(vt => {
-            if (vt.blNo) {
-                // VT usually is per container if tracked individually, but structure is Record. 
-                // Let's check type. VesselTrackingRecord has `containerNo`?
-                // Let's check types.ts if needed, but assuming structure:
-                // If VT is one record per container:
+            // Re-map BLs
+            const blMap: Record<string, string> = {};
+            shipments.forEach(s => s.containers.forEach(c => blMap[c] = s.blNo));
+            vesselTracking.forEach(vt => {
                 // @ts-ignore
-                if (vt.containerNo) blMap[vt.containerNo] = vt.blNo;
-            }
-        });
-
-        // 3. Pre-Alerts (Highest Priority - contains the 'EGLV' fixes)
-        preAlerts.forEach(pa => {
-            if (pa.bookingAbw) {
-                // Check 'containers' array or 'linkedContainers'
-                if ((pa as any).containers && Array.isArray((pa as any).containers)) {
-                    (pa as any).containers.forEach((c: any) => {
+                if (vt.blNo && vt.containerNo) blMap[vt.containerNo] = vt.blNo;
+            });
+            preAlerts.forEach(pa => {
+                if (pa.bookingAbw) {
+                    const containers = (pa as any).containers || pa.linkedContainers || [];
+                    containers.forEach((c: any) => {
                         const cNum = typeof c === 'string' ? c : c.containerNo;
                         if (cNum) blMap[cNum] = pa.bookingAbw;
                     });
                 }
-                if (pa.linkedContainers && Array.isArray(pa.linkedContainers)) {
-                    pa.linkedContainers.forEach(c => blMap[c] = pa.bookingAbw);
-                }
-            }
+            });
+
+            // Re-map Master Data
+            const map: Record<string, RawMaterialPart> = {};
+            parts.forEach(part => {
+                if (part.PART_NUMBER) map[part.PART_NUMBER] = part;
+            });
+
+            // Calculate Counts & Containers
+            const counts: Record<string, number> = {};
+            items.forEach(i => {
+                if (i.containerNo) counts[i.containerNo] = (counts[i.containerNo] || 0) + 1;
+            });
+
+            // Batch update all states to minimize re-renders
+            setContainerToBL(blMap);
+            setMasterDataMap(map);
+            setAllItems(items);
+            setItemCountsMap(counts);
+            setContainers(Object.keys(counts).sort());
         });
 
-        setContainerToBL(blMap);
+        return () => unsubscribe();
+    }, []);
 
-        const map: Record<string, RawMaterialPart> = {};
-        parts.forEach(part => {
-            if (part.PART_NUMBER) {
-                map[part.PART_NUMBER] = part;
-            }
-        });
-
-        setAllItems(items);
-        setMasterDataMap(map);
-
-        const uniqueContainers = Array.from(new Set(items.map(i => i.containerNo).filter(Boolean))).sort();
-        setContainers(uniqueContainers);
+    const loadData = async () => {
+        // Trigger Lazy Refresh from Storage/Cloud (much faster)
+        await Promise.all([
+            storageService.loadMasterData(),
+            storageService.refreshInvoices()
+        ]);
     };
 
     const handleGenerateClick = (container: string) => {
-        // Pre-fill pedimento from data if possible, or leave empty for user override
-        const containerItems = allItems.filter(i => i.containerNo === container);
-        const distinctPedimentos = Array.from(new Set(containerItems.map(i => i.pedimento).filter(Boolean))).join(', ');
-        const linkedBL = containerToBL[container] || '';
+        // Find pedimento and BL from Customs Clearance data
+        const customs = storageService.getCustomsClearance();
+        const containerCustoms = customs.find(c => c.containerNo === container);
 
-        setManualData({ pedimento: distinctPedimentos, bl: linkedBL });
+        const linkedPedimento = containerCustoms?.pedimentoNo || '';
+        const linkedBL = containerToBL[container] || containerCustoms?.blNo || '';
+
+        setManualData({ pedimento: linkedPedimento, bl: linkedBL });
         setSelectedContainer(container);
         setShowModal(true);
     };
@@ -112,13 +93,25 @@ export default function CCPBuilder() {
     const handleConfirmGenerate = async () => {
         if (!selectedContainer) return;
 
-        const containerItems = allItems.filter(i => i.containerNo === selectedContainer);
-        if (containerItems.length === 0) return;
+        // Capture data from state before closing modal
+        const container = selectedContainer;
+        const ped = manualData.pedimento;
+        const bl = manualData.bl;
+
+        setShowModal(false);
+        setSelectedContainer(null);
 
         try {
-            await generateCCPExcel(selectedContainer, containerItems, manualData.pedimento, manualData.bl);
-            setShowModal(false);
-            setSelectedContainer(null);
+            // Re-fetch LATEST items from storage to ensure we have the most up-to-date data
+            // (in case a background sync finished while the modal was open)
+            const latestItems = storageService.getInvoiceItems().filter(i => i.containerNo === container);
+
+            if (latestItems.length === 0) {
+                alert("No items found for this container.");
+                return;
+            }
+
+            await generateCCPExcel(container, latestItems, ped, bl);
         } catch (error) {
             console.error("Error generating CCP:", error);
             alert("Failed to generate Excel file.");
@@ -163,7 +156,6 @@ export default function CCPBuilder() {
         const sheet = workbook.addWorksheet('CCP');
 
         // --- Layout Setup matching Reference File ---
-        // --- Layout Setup matching Reference File ---
         sheet.columns = [
             { width: 20 }, // A: Client Label Start
             { width: 10 }, // B: Client Label End
@@ -177,162 +169,131 @@ export default function CCPBuilder() {
             { width: 8 },  // J: RFC Value / Service Val End
             { width: 18 }, // K: Date Label
             { width: 8 }  // L: Date Label / Service Val Start -End
-
         ];
 
         // Set Row 1 Height (User Request: "alto 63")
         sheet.getRow(1).height = 63;
 
-        // --- ROW 1: Client ---
         // --- ROW 1: HEADER STRIP (Client, Address, RFC, Date) ---
-        // 1. Client
         sheet.mergeCells('A1:B1');
         setCell(sheet, 'A1', 'Cliente a quien se factura: Razon social', 'label', { horizontal: 'center' });
         sheet.mergeCells('C1:E1');
         setCell(sheet, 'C1', 'EAGLE EXPRESS CARGO SA DE CV', 'value');
 
-        // 2. Domicilio
-        // F1 Label
         setCell(sheet, 'F1', 'Domicilio (completo)', 'label', { horizontal: 'center' });
-        // G1:H1 Value
         sheet.mergeCells('G1:H1');
         setCell(sheet, 'G1', 'NORTE 176, NO. 441, COL. MOCTEZUMA 2A SECCION, DEL. VENUSTIANO CARRANZA, CDMX, CP: 15530', 'value', { wrapText: true });
 
-        // 3. RFC
-        // I1 Label
         setCell(sheet, 'I1', 'RFC', 'label', { horizontal: 'center' });
-        // J1 Value
         setCell(sheet, 'J1', 'EEC1406167F9', 'value');
 
-        // 4. Date
-        // K1 Label
         setCell(sheet, 'K1', 'Fecha:', 'label', { horizontal: 'center' });
-        // L1 Value (Mapped to L instead of L:M)
-        setCell(sheet, 'L1', new Date().toLocaleDateString('es-MX'), 'value', { horizontal: 'center' });
 
-        // --- RIGHT SIDE BLOCK (Service Info) Moved to Rows 3-10 ---
-        // Header
-        sheet.mergeCells('F3:I3'); // Spanning G-L (Address Val Start to Date Val)
+        // Replicate logic from CIExtractor: Use date from data or current ISO date
+        const emissionDate = items[0]?.date || new Date().toISOString().split('T')[0];
+        setCell(sheet, 'L1', emissionDate, 'value', { horizontal: 'center' });
+
+        sheet.mergeCells('F3:I3');
         setCell(sheet, 'F3', 'Tipo de Servicio', 'header');
 
-        // Labels & Values Table
-        // Use manual inputs instead of auto-calculated
         const serviceRows = [
             { l: 'Nacional', v: '-' },
             { l: 'Internacional', v: 'IM' },
             { l: 'Distancia Recorrida (kms)', v: '-' },
-            { l: 'No. de pedimento', v: manualPedimento }, // H7
+            { l: 'No. de pedimento', v: manualPedimento },
             { l: 'Nombre del ejecutivo', v: 'AGUSTIN SANTILLAN' },
             { l: 'Referencia', v: '-' },
-            { l: 'BL', v: manualBL },  // H10
+            { l: 'BL', v: manualBL },
             { l: 'Servicio', v: 'FLETE TERRESTRE' },
         ];
 
-        let startRow = 4; // Data starts at Row 4
+        let startRow = 4;
         serviceRows.forEach((row, idx) => {
             const r = startRow + idx;
             sheet.mergeCells(`F${r}:G${r}`);
             setCell(sheet, `F${r}`, row.l, 'label', { horizontal: 'left' });
-
             sheet.mergeCells(`H${r}:I${r}`);
             setCell(sheet, `H${r}`, row.v, 'value');
         });
 
-        // --- ORIGIN / DESTINATION BLOCK (Rows 13-27) ---
-        // Headers Row 13 - Dark Grey
         sheet.mergeCells('A13:G13');
         setCell(sheet, 'A13', 'Datos de Origen de la Mercancía (SSA,OCUPA,CONTECON, TIMSA, ETC)', 'header');
         sheet.mergeCells('H13:L13');
         setCell(sheet, 'H13', 'Datos de Destino de la Mercancía (dirección de entrega)', 'header');
 
-        // Row 14: RFCs
         sheet.mergeCells('A14:C14'); setCell(sheet, 'A14', 'RFC Remitente', 'label');
-        sheet.mergeCells('D14:G14'); setCell(sheet, 'D14', '', 'value'); // Empty value
+        sheet.mergeCells('D14:G14'); setCell(sheet, 'D14', '', 'value');
         sheet.mergeCells('H14:I14'); setCell(sheet, 'H14', 'RFC Destinatario', 'label');
         sheet.mergeCells('J14:L14'); setCell(sheet, 'J14', 'CMP220712ND9', 'value');
 
-        // Row 15: Names
         sheet.mergeCells('A15:C15'); setCell(sheet, 'A15', 'Nombre remitente', 'label');
         sheet.mergeCells('D15:G15'); setCell(sheet, 'D15', 'TERMINAL TIMSA', 'value');
         sheet.mergeCells('H15:I15'); setCell(sheet, 'H15', 'Nombre destinatario', 'label');
         sheet.mergeCells('J15:L15'); setCell(sheet, 'J15', 'CFMOTO MEXICO POWER, S. DE R.L. DE C.V.', 'value');
 
-        // Row 16: Foreign ID
-        sheet.getRow(16).height = 31; // User Request: "alto 31"
+        sheet.getRow(16).height = 31;
         sheet.mergeCells('A16:C16'); setCell(sheet, 'A16', 'Número de identificación o registro fiscal (Num RegId Trib) remitente extranjero', 'label');
         sheet.mergeCells('D16:G16'); setCell(sheet, 'D16', '', 'value');
         sheet.mergeCells('H16:I16'); setCell(sheet, 'H16', 'Número de identificación o registro fiscal (Num RegId Trib) destinatario extranjero', 'label');
         sheet.mergeCells('J16:L16'); setCell(sheet, 'J16', 'CMP220712ND9', 'value');
 
-        // Row 17: Country
-        sheet.getRow(17).height = 31; // User Request: "alto 31"
+        sheet.getRow(17).height = 31;
         sheet.mergeCells('A17:C17'); setCell(sheet, 'A17', 'País de Residencia Fiscal (remitente extranjero)', 'label');
         sheet.mergeCells('D17:G17'); setCell(sheet, 'D17', '', 'value');
         sheet.mergeCells('H17:I17'); setCell(sheet, 'H17', 'País de Residencia Fiscal (destinatario extranjero)', 'label');
         sheet.mergeCells('J17:L17'); setCell(sheet, 'J17', 'México', 'value');
 
-        // Row 18: Street
         sheet.mergeCells('A18:C18'); setCell(sheet, 'A18', 'Calle', 'label');
         sheet.mergeCells('D18:G18'); setCell(sheet, 'D18', '', 'value');
         sheet.mergeCells('H18:I18'); setCell(sheet, 'H18', 'Calle', 'label');
         sheet.mergeCells('J18:L18'); setCell(sheet, 'J18', 'CALLE TECNOLOGIA', 'value');
 
-        // Row 19: Exterior No
         sheet.mergeCells('A19:C19'); setCell(sheet, 'A19', 'No exterior', 'label');
         sheet.mergeCells('D19:G19'); setCell(sheet, 'D19', '', 'value');
         sheet.mergeCells('H19:I19'); setCell(sheet, 'H19', 'No exterior', 'label');
         sheet.mergeCells('J19:L19'); setCell(sheet, 'J19', '107', 'value');
 
-        // Row 20: Interior No
         sheet.mergeCells('A20:C20'); setCell(sheet, 'A20', 'No interior', 'label');
         sheet.mergeCells('D20:G20'); setCell(sheet, 'D20', '', 'value');
         sheet.mergeCells('H20:I20'); setCell(sheet, 'H20', 'No interior', 'label');
         sheet.mergeCells('J20:L20'); setCell(sheet, 'J20', '', 'value');
 
-        // Row 21: Colonia
-        sheet.getRow(21).height = 31; // User Request: "alto 31"
+        sheet.getRow(21).height = 31;
         sheet.mergeCells('A21:C21'); setCell(sheet, 'A21', 'Colonia *', 'label');
         sheet.mergeCells('D21:G21'); setCell(sheet, 'D21', '', 'value');
         sheet.mergeCells('H21:I21'); setCell(sheet, 'H21', 'Colonia *', 'label');
         sheet.mergeCells('J21:L21'); setCell(sheet, 'J21', 'VYNMSA APODACA INDUSTRIAL PARK APODACA', 'value');
 
-        // Row 22: Localidad
         sheet.mergeCells('A22:C22'); setCell(sheet, 'A22', 'Localidad *', 'label');
         sheet.mergeCells('D22:G22'); setCell(sheet, 'D22', '', 'value');
         sheet.mergeCells('H22:I22'); setCell(sheet, 'H22', 'Localidad *', 'label');
         sheet.mergeCells('J22:L22'); setCell(sheet, 'J22', '', 'value');
 
-        // Row 23: Referencia
         sheet.mergeCells('A23:C23'); setCell(sheet, 'A23', 'Referencia', 'label');
         sheet.mergeCells('D23:G23'); setCell(sheet, 'D23', '', 'value');
         sheet.mergeCells('H23:I23'); setCell(sheet, 'H23', 'Referencia', 'label');
         sheet.mergeCells('J23:L23'); setCell(sheet, 'J23', '', 'value');
 
-        // Row 24: Municipio
         sheet.mergeCells('A24:C24'); setCell(sheet, 'A24', 'Municipio *', 'label');
         sheet.mergeCells('D24:G24'); setCell(sheet, 'D24', '', 'value');
         sheet.mergeCells('H24:I24'); setCell(sheet, 'H24', 'Municipio *', 'label');
         sheet.mergeCells('J24:L24'); setCell(sheet, 'J24', 'APODACA', 'value');
 
-        // Row 25: Estado
         sheet.mergeCells('A25:C25'); setCell(sheet, 'A25', 'Estado *', 'label');
         sheet.mergeCells('D25:G25'); setCell(sheet, 'D25', '', 'value');
         sheet.mergeCells('H25:I25'); setCell(sheet, 'H25', 'Estado *', 'label');
         sheet.mergeCells('J25:L25'); setCell(sheet, 'J25', 'NUEVO LEÓN', 'value');
 
-        // Row 26: Pais
         sheet.mergeCells('A26:C26'); setCell(sheet, 'A26', 'País *', 'label');
         sheet.mergeCells('D26:G26'); setCell(sheet, 'D26', '', 'value');
         sheet.mergeCells('H26:I26'); setCell(sheet, 'H26', 'País *', 'label');
         sheet.mergeCells('J26:L26'); setCell(sheet, 'J26', 'MÉXICO', 'value');
 
-        // Row 27: CP
         sheet.mergeCells('A27:C27'); setCell(sheet, 'A27', 'C.P. *', 'label');
         sheet.mergeCells('D27:G27'); setCell(sheet, 'D27', '', 'value');
         sheet.mergeCells('H27:I27'); setCell(sheet, 'H27', 'C.P. *', 'label');
         sheet.mergeCells('J27:L27'); setCell(sheet, 'J27', '66628', 'value');
 
-        // --- ROW 31: TABLE HEADERS (Exact Strings) ---
         const headerRowIdx = 31;
         const headers = [
             'No. Contenedor',
@@ -353,59 +314,72 @@ export default function CCPBuilder() {
             const cell = sheet.getCell(headerRowIdx, idx + 1);
             cell.value = h;
             cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 9 };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF333333' } }; // Dark Grey/Black per image
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF333333' } };
             cell.alignment = { wrapText: true, horizontal: 'center', vertical: 'middle' };
             cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
         });
         sheet.getRow(headerRowIdx).height = 120;
 
-        // --- DATA FILL (Row 32+) ---
-        let currentRow = 32;
-        items.forEach(item => {
-            const masterData = masterDataMap[item.partNo];
-
-            // A: Container
-            sheet.getCell(`A${currentRow}`).value = item.containerNo;
-
-            // B: SAT Code (From Master Data)
-            // Logic: CIExtractor Part No -> Master Data PART_NUMBER -> CLAVESAT
-            sheet.getCell(`B${currentRow}`).value = masterData?.CLAVESAT || '';
-
-            // C: Description
-            sheet.getCell(`C${currentRow}`).value = item.spanishDescription;
-
-            // D: Quantity
-            sheet.getCell(`D${currentRow}`).value = item.qty;
-
-            // E: Unit (Always H87 per user request)
-            sheet.getCell(`E${currentRow}`).value = 'H87';
-
-            // F-I: NA (Hardcoded)
-            sheet.getCell(`F${currentRow}`).value = 'NA';
-            sheet.getCell(`G${currentRow}`).value = 'NA';
-            sheet.getCell(`H${currentRow}`).value = 'NA';
-            sheet.getCell(`I${currentRow}`).value = 'NA';
-
-            // J: Weight (Calculation: MasterData NETWEIGHT * Invoice Qty)
-            const weightCalc = (masterData?.NET_WEIGHT || 0) * (item.qty || 0);
-            sheet.getCell(`J${currentRow}`).value = weightCalc > 0 ? weightCalc : (item.netWeight || 0);
-
-            // K: Value (Qty * UnitPrice)
-            sheet.getCell(`K${currentRow}`).value = (item.qty || 0) * (item.unitPrice || 0);
-
-            // L: Currency
-            sheet.getCell(`L${currentRow}`).value = item.currency || 'USD';
-
-            currentRow++;
+        // Re-fetch latest master data to ensure zero-latency accuracy
+        const latestParts = storageService.getParts();
+        const latestMap: Record<string, RawMaterialPart> = {};
+        latestParts.forEach(p => {
+            if (p.PART_NUMBER) latestMap[p.PART_NUMBER] = p;
         });
 
-        // Generate
+        // Prepare rows for bulk insertion (much faster than individual getCell)
+        const rowsToInsert = items.map(item => {
+            const masterData = latestMap[item.partNo];
+            const weightCalc = (masterData?.NETWEIGHT || 0) * (item.qty || 0);
+            return [
+                item.containerNo,
+                masterData?.CLAVESAT || '',
+                item.spanishDescription || masterData?.DESCRIPCION_ES || '',
+                item.qty,
+                'H87',
+                'NA', 'NA', 'NA', 'NA',
+                weightCalc > 0 ? weightCalc : (item.netWeight || 0),
+                (item.qty || 0) * (item.unitPrice || 0),
+                item.currency || 'USD'
+            ];
+        });
+        sheet.addRows(rowsToInsert);
+
+        const lastRowIdx = 32 + items.length - 1;
+        for (let r = 32; r <= lastRowIdx; r++) {
+            const row = sheet.getRow(r);
+            row.eachCell({ includeEmpty: false }, (cell) => {
+                cell.font = { name: 'Arial', size: 9 };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            });
+        }
+
         const buffer = await workbook.xlsx.writeBuffer();
+        const safeContainer = (containerNo || 'CCP').replace(/[^a-zA-Z0-9]/g, '_');
+
+        // Match CIExtractor logic: append date suffix
+        const filename = `CCP_${safeContainer}_${emissionDate}.xlsx`;
+
+        // Using native anchor tag download to avoid Chrome UUID bug
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        saveAs(blob, `CCP ${containerNo}.xlsx`);
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+
+        // Cleanup with small delay
+        setTimeout(() => {
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        }, 150);
     };
 
-    const filteredContainers = containers.filter(c => c.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredContainers = React.useMemo(() => 
+        containers.filter(c => c.toLowerCase().includes(searchTerm.toLowerCase())),
+    [containers, searchTerm]);
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -454,7 +428,7 @@ export default function CCPBuilder() {
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
-                                            {allItems.filter(i => i.containerNo === container).length} Items
+                                            {itemCountsMap[container] || 0} Items
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-right">

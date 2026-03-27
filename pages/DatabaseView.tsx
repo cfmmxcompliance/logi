@@ -912,38 +912,49 @@ export const DatabaseView = () => {
                         return rawVal !== null && rawVal !== undefined && String(rawVal).trim() !== '';
                     }
 
-                    const inputLines = cond.input.split(/[\n,;]+/).map(t => t.trim()).filter(t => t.length > 0);
+                    // Split robustly by newline, carriage return, comma, semicolon or tab, ignoring standard spaces within values
+                    const inputLines = cond.input.split(/[\r\n,;\t]+/).map(t => t.trim()).filter(t => t.length > 0);
                     if (inputLines.length === 0) return true;
+
+                    const normalizeStrict = (s: any) => String(s || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+                    if (cond.operator === 'in') {
+                        const set = new Set(inputLines.map(l => normalizeStrict(l)));
+                        return set.has(normalizeStrict(rawVal));
+                    }
 
                     // Helper to cast based on selected type
                     const cast = (val: any) => {
                         if (cond.type === 'number') return parseFloat(String(val || '0')) || 0;
                         if (cond.type === 'boolean') {
-                            const s = String(val).toLowerCase();
+                            const s = normalizeStrict(val);
                             return s === 'true' || s === 'yes' || s === 'y' || s === 's' || s === 'si' || s === 'n' || s === 'no' ? (s === 'true' || s === 'yes' || s === 'y' || s === 's' || s === 'si') : false;
                         }
-                        return String(val || '').trim();
+                        return cond.type === 'string' ? normalizeStrict(val) : String(val || '').trim();
                     };
 
                     const itemVal = cast(rawVal);
 
-                    if (cond.operator === 'in') {
-                        const set = new Set(inputLines.map(l => l.trim()));
-                        return set.has(String(rawVal || '').trim());
-                    }
+                    const matchesLine = (lineStr: string) => {
+                        const targetVal = cast(lineStr);
+                        switch (cond.operator) {
+                            case '==': return itemVal === targetVal;
+                            case '!=': return itemVal !== targetVal;
+                            case '>': return itemVal > targetVal;
+                            case '>=': return itemVal >= targetVal;
+                            case '<': return itemVal < targetVal;
+                            case '<=': return itemVal <= targetVal;
+                            case 'contains': return String(itemVal).includes(String(targetVal));
+                            case 'not_contains': return !String(itemVal).includes(String(targetVal));
+                            default: return true;
+                        }
+                    };
 
-                    const targetVal = cast(inputLines[0]);
-
-                    switch (cond.operator) {
-                        case '==': return itemVal === targetVal;
-                        case '!=': return itemVal !== targetVal;
-                        case '>': return itemVal > targetVal;
-                        case '>=': return itemVal >= targetVal;
-                        case '<': return itemVal < targetVal;
-                        case '<=': return itemVal <= targetVal;
-                        case 'contains': return String(itemVal).toLowerCase().includes(String(targetVal).toLowerCase());
-                        case 'not_contains': return !String(itemVal).toLowerCase().includes(String(targetVal).toLowerCase());
-                        default: return true;
+                    // Distribute logic securely across array dimensions natively
+                    if (cond.operator === '!=' || cond.operator === 'not_contains') {
+                        return inputLines.every(matchesLine); // AND for negatives
+                    } else {
+                        return inputLines.some(matchesLine); // OR for positives
                     }
                 });
             });
@@ -970,32 +981,38 @@ export const DatabaseView = () => {
         if (!searchTerm) return result;
 
         // 2. Multi-Token Search (Hybrid OR/AND)
-        // Group by comma (OR), within group split by space (AND)
-        // Example: "Bolt, 10mm Steel" -> (Bolt) OR (10mm AND Steel)
-        const groups = searchTerm.split(',').map(g => g.trim().toLowerCase()).filter(g => g.length > 0);
+        // Group by comma/newline/tab (OR), within group split by space (AND)
+        // This natively supports Excel column copy-paste parsing
+        const groups = searchTerm.split(/[\n,;\t]+/).map(g => g.trim()).filter(g => g.length > 0);
 
         if (groups.length === 0) return result;
 
-        return result.filter(p => {
-            // Match if ANY "comma-separated group" is satisfied
-            return groups.some(group => {
-                const tokens = group.split(/\s+/).filter(t => t.length > 0);
-                if (tokens.length === 0) return false;
+        // Helper to remove accents and lowercases for robust matching
+        const normalize = (s: any) => String(s || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-                // Satisfy group if ALL tokens match SOMETHING in this row
-                return tokens.every(token => {
+        const normalizedGroups = groups.map(g => ({
+            tokens: g.split(/\s+/).filter(t => t.length > 0).map(t => normalize(t))
+        }));
+
+        return result.filter(p => {
+            // Match if ANY "pasted row/comma group" matches (OR logic across lines)
+            return normalizedGroups.some(group => {
+                if (group.tokens.length === 0) return false;
+
+                // Satisfy group if ALL space-separated tokens match SOMETHING in this row (AND logic within line)
+                return group.tokens.every(token => {
                     // 1. Search in standard columns (High priority/performance)
                     const matchesStandard = CSV_ORDER_KEYS.some(key => {
                         const val = (p as any)[key];
                         if (val === null || val === undefined) return false;
-                        return String(val).toLowerCase().includes(token);
+                        return normalize(val).includes(token);
                     });
                     if (matchesStandard) return true;
 
                     // 2. Defensive check: Search in ALL object values (Robustness against key mismatches)
                     return Object.entries(p).some(([key, val]) => {
                         if (val === null || val === undefined || typeof val === 'object') return false;
-                        return String(val).toLowerCase().includes(token);
+                        return normalize(val).includes(token);
                     });
                 });
             });

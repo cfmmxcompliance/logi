@@ -173,20 +173,36 @@ export function evaluateCondition(val: any, cond: QueryCondition): boolean {
     const sTarget = String(target);
     const numTarget = Number(target);
 
-    switch (cond.operator) {
-        case 'empty': return sVal.trim() === '' || val == null;
-        case 'not_empty': return sVal.trim() !== '' && val != null;
-        case '==': 
-            if (cond.type === 'number') return numVal === numTarget;
-            return sVal.toLowerCase() === sTarget.toLowerCase();
-        case '!=': 
-             if (cond.type === 'number') return numVal !== numTarget;
-             return sVal.toLowerCase() !== sTarget.toLowerCase();
-        case 'contains': return sVal.toLowerCase().includes(sTarget.toLowerCase());
-        case 'not_contains': return !sVal.toLowerCase().includes(sTarget.toLowerCase());
-        case 'in':
-            const targets = target.split(/[\n,\t\s]+/).map(t => t.trim().toLowerCase()).filter(t => t);
-            return targets.includes(sVal.toLowerCase());
-        default: return true;
+    if (cond.operator === 'empty') return sVal.trim() === '' || val == null;
+    if (cond.operator === 'not_empty') return sVal.trim() !== '' && val != null;
+
+    const inputLines = target.split(/[\r\n,;\t]+/).map(t => t.trim()).filter(t => t);
+    if (inputLines.length === 0) return true;
+
+    if (cond.operator === 'in') {
+        const targets = inputLines.map(t => t.toLowerCase());
+        return targets.includes(sVal.toLowerCase());
+    }
+
+    const matchesLine = (line: string) => {
+        const sTarget = String(line);
+        const numTarget = Number(line);
+        switch (cond.operator) {
+            case '==': 
+                if (cond.type === 'number') return numVal === numTarget;
+                return sVal.toLowerCase() === sTarget.toLowerCase();
+            case '!=': 
+                if (cond.type === 'number') return numVal !== numTarget;
+                return sVal.toLowerCase() !== sTarget.toLowerCase();
+            case 'contains': return sVal.toLowerCase().includes(sTarget.toLowerCase());
+            case 'not_contains': return !sVal.toLowerCase().includes(sTarget.toLowerCase());
+            default: return true;
+        }
+    };
+
+    if (cond.operator === '!=' || cond.operator === 'not_contains') {
+        return inputLines.every(matchesLine);
+    } else {
+        return inputLines.some(matchesLine);
     }
 }

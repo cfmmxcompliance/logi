@@ -215,6 +215,8 @@ export const Settings = () => {
                                                         <option value={UserRole.EDITOR}>Editor</option>
                                                         <option value={UserRole.AGENT}>Agent</option>
                                                         <option value={UserRole.OPERATOR}>Operator</option>
+                                                        <option value={UserRole.EXPO}>Expo</option>
+                                                        <option value={UserRole.CARRIER}>Carrier</option>
                                                         <option value={UserRole.VIEWER}>Viewer</option>
                                                         <option value={UserRole.PENDING}>Pending</option>
                                                     </select>

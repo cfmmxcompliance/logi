@@ -1125,3 +1125,5 @@ export const XMLInvoiceExtractor: React.FC = () => {
         </div>
     );
 };
+
+export default XMLInvoiceExtractor;

@@ -17,9 +17,19 @@ import { Login } from '../pages/Login.tsx';
 import { ActionLogs } from '../pages/AuditLogs.tsx';
 import { DailyAudit } from '../pages/DailyAudit.tsx';
 import { DataStage } from '../pages/DataStage.tsx';
+import { Carriers } from '../pages/Carriers.tsx';
+import { TransportLines } from '../pages/TransportLines.tsx';
+import { Drivers } from '../pages/Drivers.tsx';
 import { CIExtractor } from '../pages/CIExtractor.tsx';
 import { XMLInvoiceExtractor } from '../pages/XMLInvoiceExtractor.tsx';
 import { XMLCI } from '../pages/XMLCI.tsx';
+import { Models } from '../pages/Models';
+import { Cajas } from '../pages/Cajas.tsx';
+import { AsignacionesDiarias } from '../pages/AsignacionesDiarias.tsx';
+import { Apendice10 } from '../pages/Apendice10.tsx';
+import { CaptureModule } from '../pages/CaptureModule.tsx';
+import { ShippingSchedules } from '../pages/ShippingSchedules.tsx';
+import { PricingMatrix } from '../pages/PricingMatrix.tsx';
 import CCPBuilder from '../pages/CCPBuilder.tsx';
 import { Controller } from '../pages/Controller.tsx';
 import { Vucem } from '../pages/Vucem.tsx';
@@ -46,6 +56,18 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
     const isAgentAllowedPath = location.pathname === '/database' || location.pathname === '/daily-audit';
     if (user?.role === UserRole.AGENT && !isAgentAllowedPath) {
         return <Navigate to="/database" replace />;
+    }
+
+    // Carrier constraints
+    if (user?.role === UserRole.CARRIER) {
+        const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/asignaciones-diarias'];
+        if (!allowed.includes(location.pathname)) return <Navigate to="/transport-lines" replace />;
+    }
+
+    // Expo constraints
+    if (user?.role === UserRole.EXPO) {
+        const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/models', '/pricing-matrix', '/shipping-schedules', '/asignaciones-diarias'];
+        if (!allowed.includes(location.pathname)) return <Navigate to="/shipping-schedules" replace />;
     }
 
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
@@ -112,6 +134,18 @@ const AppContent = () => {
             <Route path="/data-stage" element={<ProtectedRoute><DataStage /></ProtectedRoute>} />
             <Route path="/controller" element={<ProtectedRoute><Controller /></ProtectedRoute>} />
             <Route path="/vucem" element={<ProtectedRoute><Vucem /></ProtectedRoute>} />
+            <Route path="/models" element={<ProtectedRoute><Models /></ProtectedRoute>} />
+            <Route path="/shipping-schedules" element={<ProtectedRoute><ShippingSchedules /></ProtectedRoute>} />
+            <Route path="/pricing-matrix" element={<ProtectedRoute><PricingMatrix /></ProtectedRoute>} />
+            <Route path="/cajas" element={<ProtectedRoute><Cajas /></ProtectedRoute>} />
+            <Route path="/asignaciones-diarias" element={<ProtectedRoute><AsignacionesDiarias /></ProtectedRoute>} />
+            {import.meta.env.DEV && (
+               <Route path="/macro" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EDITOR, UserRole.AGENT, UserRole.CONTROLLER, UserRole.EXPO]}><CaptureModule /></ProtectedRoute>} />
+            )}
+            <Route path="/apendice10" element={<ProtectedRoute><Apendice10 /></ProtectedRoute>} />
+            <Route path="/carriers" element={<ProtectedRoute><Carriers /></ProtectedRoute>} />
+            <Route path="/transport-lines" element={<ProtectedRoute><TransportLines /></ProtectedRoute>} />
+            <Route path="/drivers" element={<ProtectedRoute><Drivers /></ProtectedRoute>} />
             <Route path="/expediente-electronico" element={
                 <ProtectedRoute>
                     <ExpedienteElectronico setActiveTab={(tab) => {

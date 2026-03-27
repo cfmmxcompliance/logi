@@ -36,6 +36,15 @@ service cloud.firestore {
     match /electronic_dossiers_v2/{docId} { allow read, write: if true; }
     match /cfdi_invoices/{docId} { allow read, write: if true; }
     match /xml_ci/{docId} { allow read, write: if true; }
+    match /models/{docId} { allow read, write: if true; }
+    match /carriers/{docId} { allow read, write: if true; }
+    match /drivers/{docId} { allow read, write: if true; }
+    match /cajas/{docId} { allow read, write: if true; }
+    match /transport_lines/{docId} { allow read, write: if true; }
+    match /pricing_matrix/{docId} { allow read, write: if true; }
+    match /shipping_schedules/{docId} { allow read, write: if true; }
+    match /apendice10/{docId} { allow read, write: if true; }
+    match /asignacion_cajas/{docId} { allow read, write: if true; }
 
     // 4. Default Block (Catch-all)
     match /{document=**} {

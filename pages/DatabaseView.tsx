@@ -112,6 +112,27 @@ export const DatabaseView = () => {
     const [bulkDeleteModal, setBulkDeleteModal] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+    const [summaryModal, setSummaryModal] = useState<{isOpen: boolean, column: keyof RawMaterialPart | '', data: {val: string, count: number}[], totalCount: number}>({isOpen: false, column: '', data: [], totalCount: 0});
+
+    const handleOpenSummary = (key: keyof RawMaterialPart) => {
+        const frequencyMap: Record<string, number> = {};
+        filteredParts.forEach(p => {
+            let val = (p as any)[key];
+            val = (val === null || val === undefined || String(val).trim() === '') ? '(Vacío)' : String(val).trim();
+            frequencyMap[val] = (frequencyMap[val] || 0) + 1;
+        });
+        const data = Object.entries(frequencyMap)
+            .map(([val, count]) => ({ val, count }))
+            .sort((a, b) => b.count - a.count);
+        
+        setSummaryModal({
+            isOpen: true,
+            column: key,
+            data,
+            totalCount: filteredParts.length
+        });
+    };
+
     // --- BULK EDIT STATE ---
     const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
     const [bulkEditField, setBulkEditField] = useState<keyof RawMaterialPart | ''>('');
@@ -1417,6 +1438,35 @@ export const DatabaseView = () => {
                                 </tr>
                             ))}
                         </tbody>
+                        <tfoot className="bg-slate-800 text-white font-bold text-xs sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                            <tr>
+                                {canDelete && <td className="px-3 py-3 border-r border-slate-700 bg-slate-900 sticky left-0 z-30 text-center">T</td>}
+                                {(canEdit || canDelete) ? <td className="px-3 py-3 border-r border-slate-700 bg-slate-800 z-20 whitespace-nowrap text-blue-300">Total Filtered</td> : null}
+                                {CSV_ORDER_KEYS.map(key => {
+                                    let content: string | number = '';
+                                    if (['NETWEIGHT', 'ESTIMATED'].includes(key)) {
+                                        const sum = filteredParts.reduce((acc, p) => acc + (Number(p[key]) || 0), 0);
+                                        content = sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                        if (key === 'ESTIMATED') content = `$${content} USD`;
+                                    } else if (['IGI_DUTY'].includes(key)) {
+                                        content = '-';
+                                    } else {
+                                        const unique = new Set(filteredParts.map(p => (p as any)[key]).filter(v => v !== null && v !== undefined && v !== ''));
+                                        content = `${unique.size} Dist.`;
+                                    }
+                                    return (
+                                        <td 
+                                            key={key} 
+                                            className="px-3 py-3 border-r border-slate-700 whitespace-nowrap text-center tracking-wide text-[11px] text-blue-100 cursor-pointer hover:bg-slate-700 transition-colors"
+                                            onClick={() => handleOpenSummary(key as keyof RawMaterialPart)}
+                                            title="Click para ver desglose de frecuencias"
+                                        >
+                                            {content}
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
 
@@ -1617,6 +1667,49 @@ export const DatabaseView = () => {
                                     className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Apply Change
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* SUMMARY AGGREGATION MODAL */}
+                {summaryModal.isOpen && (
+                    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-200">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
+                            <div className="bg-slate-50 p-5 border-b border-slate-100 flex justify-between items-center">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                        <Filter size={18} className="text-blue-600" />
+                                        Desglose: {summaryModal.column}
+                                    </h3>
+                                    <p className="text-xs text-slate-500 mt-1">Análisis de frecuencias en vista filtrada</p>
+                                </div>
+                                <button onClick={() => setSummaryModal({ ...summaryModal, isOpen: false })} className="text-slate-400 hover:text-slate-600">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-0">
+                                <div className="p-3 bg-white border-b border-slate-100 flex items-center text-sm font-medium text-slate-600 sticky top-0 z-10 shadow-sm">
+                                    <span className="flex-1">Valor Encontrado</span>
+                                    <span className="w-20 text-right">Frecuencia</span>
+                                </div>
+                                <ul className="divide-y divide-slate-100">
+                                    <li className="p-3 flex items-center gap-3 hover:bg-slate-50 transition-colors text-sm font-bold bg-slate-50/50">
+                                        <div className="flex-1 text-slate-700 truncate">Σ Total Registros Evaluados</div>
+                                        <div className="w-20 text-right font-mono text-blue-600">{summaryModal.totalCount}</div>
+                                    </li>
+                                    {summaryModal.data.map((item, idx) => (
+                                        <li key={idx} className="p-3 flex items-center gap-3 hover:bg-slate-50 transition-colors text-sm">
+                                            <div className="flex-1 text-slate-700 truncate" title={item.val}>{item.val}</div>
+                                            <div className="w-20 text-right font-mono text-slate-500 bg-slate-100 rounded px-2 py-0.5">{item.count}</div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <div className="p-4 bg-slate-50 border-t border-slate-100 text-center">
+                                <button onClick={() => setSummaryModal({ ...summaryModal, isOpen: false })} className="px-6 py-2.5 bg-blue-600 text-white rounded-xl shadow-sm shadow-blue-500/30 font-bold hover:bg-blue-700 w-full transition-colors">
+                                    Cerrar Desglose
                                 </button>
                             </div>
                         </div>

@@ -1299,10 +1299,7 @@ export const geminiService = {
     });
 
     try {
-      let text = "{}";
-      if (typeof response.text === 'function') text = response.text();
-      else if (response.response && typeof response.response.text === 'function') text = response.response.text();
-      else text = response.text || "{}";
+      let text = response.text || "{}";
 
       const cleaned = cleanJson(text);
       return JSON.parse(cleaned);

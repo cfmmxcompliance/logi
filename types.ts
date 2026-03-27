@@ -21,6 +21,8 @@ export enum UserRole {
   AGENT = 'Agent',       // External Agent: Master Data view only
   OPERATOR = 'Operator', // Same as Editor (User requested alias)
   CONTROLLER = 'Controller', // Finance & Expense Control
+  EXPO = 'Expo',         // Exporter partner
+  CARRIER = 'Carrier',   // Transport/Shipping partner
   VIEWER = 'Viewer',      // Read only
   PENDING = 'Pending'     // Default for new signups
 }

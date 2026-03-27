@@ -25,5 +25,11 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "scripts",
+    "src/debug_storage.ts",
+    "forensic_analysis.ts"
+  ]
 }

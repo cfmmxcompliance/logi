@@ -763,6 +763,35 @@ export const storageService = {
     saveLocal();
   },
 
+  saveLogisticsData: async (records: any[], onProgress?: (progress: number) => void) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const chunks = [];
+    for (let i = 0; i < records.length; i += 400) {
+      chunks.push(records.slice(i, i + 400));
+    }
+
+    let processed = 0;
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach((record) => {
+        const id = record.id || generateId();
+        const updated = { ...record, id, updatedAt: new Date().toISOString() };
+        batch.set(doc(db, COLS.LOGISTICS, id), sanitizeForFirestore(updated));
+
+        // Update Local
+        const idx = dbState.logistics.findIndex((l: any) => l.id === id);
+        if (idx !== -1) dbState.logistics[idx] = updated;
+        else dbState.logistics.push(updated);
+      });
+      await batch.commit();
+      
+      processed += chunk.length;
+      if (onProgress) onProgress((processed / records.length) * 100);
+    }
+    notifyListeners();
+    saveLocal();
+  },
+
   // --- USER MANAGEMENT CRUD ---
   upsertUser: async (user: any) => {
     const id = user.email;

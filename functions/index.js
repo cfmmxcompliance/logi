@@ -477,3 +477,100 @@ exports.dailyReportSchedule = onSchedule({
     console.log("⏰ Daily Report Triggered via Schedule");
     await runFullReportProcess();
 });
+
+/**
+ * CLOUD FUNCTION: Send Master Data Publication Email
+ */
+exports.sendPublicationEmail = onCall({
+    cors: true,
+    memory: "256MiB",
+    timeoutSeconds: 30
+}, async (request) => {
+    const { data } = request;
+    const { items } = data;
+
+    if (!items || !items.length) {
+        throw new functions.https.HttpsError("invalid-argument", "No items provided.");
+    }
+
+    try {
+        const htsRef = items[0].HTS_SerialNo || "Variados";
+        
+        const tableRows = items.map(p => `
+            <tr>
+                <td style="padding: 8px; border: 1px solid #ddd;">${p.PART_NUMBER || ''}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${p.REGIMEN || ''}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${p.DESCRIPCION_ES || ''}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${p.UMC || ''}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${p.HTSMX || ''}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${p.HTS_SerialNo || ''}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${p.CLAVESAT || ''}</td>
+            </tr>
+        `).join('');
+
+        const htmlBody = `
+            <div style="font-family: Arial, sans-serif; color: #333;">
+                <h2 style="color: #4F46E5;">Alerta: Nuevos ítems agregados a Base de Datos</h2>
+                <p>Se han publicado formalmente los siguientes ${items.length} registros en el Master Data:</p>
+                <table style="border-collapse: collapse; width: 100%; font-size: 13px;">
+                    <thead style="background-color: #f1f5f9; text-align: left; color: #1e293b;">
+                        <tr>
+                            <th style="padding: 10px 8px; border: 1px solid #ddd;">PART_NUMBER</th>
+                            <th style="padding: 10px 8px; border: 1px solid #ddd;">REGIMEN</th>
+                            <th style="padding: 10px 8px; border: 1px solid #ddd;">DESCRIPCION_ES</th>
+                            <th style="padding: 10px 8px; border: 1px solid #ddd;">UMC</th>
+                            <th style="padding: 10px 8px; border: 1px solid #ddd;">HTSMX</th>
+                            <th style="padding: 10px 8px; border: 1px solid #ddd;">HTS_SerialNo</th>
+                            <th style="padding: 10px 8px; border: 1px solid #ddd;">CLAVESAT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+                <p style="margin-top: 25px; font-size: 12px; color: #94a3b8;">
+                    <strong>Logimaster Compliance Engine</strong><br/>
+                    Este reporte fue generado y despachado automáticamente de forma transaccional.
+                </p>
+            </div>
+        `;
+
+        // Fetch dynamic subscriptions from Firebase
+        const settingsSnap = await db.collection("audit_subscriptions").doc("daily_audit").get();
+        let dbRecipients = [];
+        if (settingsSnap.exists && settingsSnap.data().emails?.length > 0) {
+            dbRecipients = settingsSnap.data().emails;
+        }
+
+        // Merge Core Recipients + DB Subscribers smoothly (avoid duplicates)
+        const combinedRecipients = Array.from(new Set([
+            "jorge.melendez@cfmoto.com", 
+            "jesus.hernandez@cfmoto.com",
+            ...dbRecipients
+        ]));
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: CONFIG.SENDER_EMAIL,
+                pass: process.env.EMAIL_PASSWORD
+            }
+        });
+
+        const mailOptions = {
+            from: `"Logimaster Database" <${CONFIG.SENDER_EMAIL}>`,
+            to: combinedRecipients.join(', '),
+            cc: CONFIG.SENDER_EMAIL,
+            subject: `Alerta: Nuevos items agregados a la Base de Datos - HTS Ref: ${htsRef}`,
+            html: htmlBody
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ Publication email sent manually via UI for ${items.length} items.`);
+
+        return { success: true };
+    } catch (err) {
+        console.error("🔥 Error sending publication email:", err);
+        throw new functions.https.HttpsError("internal", err.message);
+    }
+});

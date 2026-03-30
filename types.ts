@@ -24,7 +24,8 @@ export enum UserRole {
   EXPO = 'Expo',         // Exporter partner
   CARRIER = 'Carrier',   // Transport/Shipping partner
   VIEWER = 'Viewer',      // Read only
-  PENDING = 'Pending'     // Default for new signups
+  PENDING = 'Pending',    // Default for new signups
+  HANDHELD_USER = 'Handheld User' // Operario de piso con scanner
 }
 
 export interface User {
@@ -548,4 +549,34 @@ export interface StorageState {
   dailyReports?: MasterDataReport[];
   users: User[];
   xmlCI?: XMLCIRecord[];
+}
+
+export interface SelloRecord {
+  id?: string;
+  fechaAsignacion: string; // YYYY-MM-DD
+  asignacionCajaId: string;
+  numeroCaja: string;
+  selloAsignado: string;
+  usuario: string; // email of the user who assigned it
+  fechaHoraRegistro?: string; // Local time string for easy reading in DB
+  fotoUrl?: string; // URL of the photo for auditing
+  fotoBase64?: string; // Compressed image saved directly into the database
+  createdAt?: string;
+}
+
+export interface LiberacionRecord {
+  id?: string;
+  fechaLiberacion: string; // YYYY-MM-DD
+  asignacionCajaId: string;
+  numeroCaja: string;
+  selloValidado: string;
+  coincideConOriginal: boolean;
+  usuario: string; // email of the user who closed the box
+  fechaHoraRegistro?: string; // Local time string
+  fotos: {
+    cajaUrl?: string; // URL in Google Drive
+    puertasUrl?: string; // URL in Google Drive
+    selloUrl?: string; // URL in Google Drive
+  };
+  createdAt?: string;
 }

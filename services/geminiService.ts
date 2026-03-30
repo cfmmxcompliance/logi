@@ -1307,5 +1307,47 @@ export const geminiService = {
       console.error("Gemini Fast Extraction JSON Parse Error:", e, response.text);
       return { type: 'UNKNOWN' };
     }
+  },
+
+  // Senior Frontend Engineer: Dedicated Method for Handheld Seal Extraction (Image to Text)
+  async extractSelloNumber(base64Image: string): Promise<string> {
+    try {
+      console.log("Starting Sello Extraction from Image...");
+      const ai = getClient();
+      const prompt = `
+        You are an industrial logistics AI. 
+        Your task is to extract the SEAL NUMBER (Número de Sello/Candado) from this photo.
+        - The seal number is usually a highly visible alphanumeric code printed on a plastic or metal security seal.
+        - Ignore background text, container numbers, or irrelevant labels unless you are absolutely sure it is the seal.
+        - Return ONLY the exact alphanumeric string. Do not include spaces or prefixes like "SEAL:" or "No.".
+        - If you cannot definitively find a seal number, return "NO_DETECTADO".
+      `;
+
+      // Handheld devices usually upload JPEG images.
+      const mimeType = 'image/jpeg'; 
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: {
+          parts: [{ inlineData: { mimeType, data: base64Image } }, { text: prompt }]
+        },
+        config: {
+          responseMimeType: 'text/plain',
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+          ] as any
+        }
+      });
+
+      const extractedText = response.text?.trim() || "NO_DETECTADO";
+      console.log("Sello Extracted:", extractedText);
+      return extractedText;
+    } catch (error) {
+      console.error("Gemini Sello Extraction Error:", error);
+      throw error;
+    }
   }
 };

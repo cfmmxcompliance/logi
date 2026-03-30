@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { storageService, isQuotaError } from '../services/storageService.ts';
 import { RawMaterialPart, UserRole } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
-import { Download, Plus, Save, X, Trash2, Edit2, Edit3, FileSpreadsheet, FileDown, ChevronLeft, ChevronRight, Search, RefreshCcw, RefreshCw, RotateCcw, Database, AlertTriangle, Filter, Trash, CornerDownRight, ArrowUpRight } from 'lucide-react';
+import { Download, Plus, Save, X, Trash2, Edit2, Edit3, FileSpreadsheet, FileDown, ChevronLeft, ChevronRight, Search, RefreshCcw, RefreshCw, RotateCcw, Database, AlertTriangle, Filter, Trash, CornerDownRight, ArrowUpRight, Send } from 'lucide-react';
 
 interface QueryCondition {
     id: string;
@@ -14,6 +14,7 @@ interface QueryCondition {
 import { parseCSV } from '../utils/csvHelpers.ts';
 import * as XLSX from 'xlsx';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const emptyPart: RawMaterialPart = {
     id: '',
@@ -410,6 +411,48 @@ export const DatabaseView = () => {
                 status: 'error',
                 title: 'Error de Eliminación Masiva',
                 message: e.message || 'Error al eliminar múltiples registros.',
+                progress: 0
+            });
+        }
+    };
+
+    const handlePublishItems = async () => {
+        if (selectedIds.size === 0) return;
+        
+        const itemsToPublish = parts.filter(p => selectedIds.has(p.id));
+        
+        setProcState({
+            isOpen: true,
+            status: 'loading',
+            title: 'Publicando Items',
+            message: `Enviando alerta por correo para ${itemsToPublish.length} registros...`,
+            progress: 30
+        });
+
+        try {
+            const functions = getFunctions();
+            const sendEmailFn = httpsCallable(functions, 'sendPublicationEmail');
+            
+            await sendEmailFn({ items: itemsToPublish });
+            
+            setProcState({
+                isOpen: true,
+                status: 'success',
+                title: 'Correo Enviado',
+                message: `Se ha enviado la alerta de publicación corporativa exitosamente.`,
+                progress: 100
+            });
+            
+            setSelectedIds(new Set()); // Clear selection
+            setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 4000);
+            
+        } catch (error: any) {
+            console.error("Publication Error:", error);
+            setProcState({
+                isOpen: true,
+                status: 'error',
+                title: 'Error de Publicación',
+                message: error.message || 'Error al conectar con el servidor de correo.',
                 progress: 0
             });
         }
@@ -1268,6 +1311,17 @@ export const DatabaseView = () => {
                             className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm hover:bg-amber-100 transition-all font-medium animate-in fade-in slide-in-from-left-2"
                         >
                             <Edit3 size={16} /> Bulk Amendment ({selectedIds.size})
+                        </button>
+                    )}
+
+                    {/* Publish / Send Email Alert Button */}
+                    {selectedIds.size > 0 && (
+                        <button
+                            onClick={handlePublishItems}
+                            className="bg-blue-600 border border-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md shadow-blue-200 hover:bg-blue-700 hover:shadow-lg transition-all font-medium animate-in fade-in slide-in-from-left-2"
+                            title="Enviar alerta de nuevos ítems al corporativo por correo"
+                        >
+                            <Send size={16} /> Publicar ({selectedIds.size})
                         </button>
                     )}
 

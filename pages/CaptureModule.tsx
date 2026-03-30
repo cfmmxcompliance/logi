@@ -2,16 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { FileDown, UploadCloud, Truck, FileCheck, CheckCircle2, XCircle, ChevronRight, PackageOpen, Info, Anchor, Calendar, DatabaseZap, AlertTriangle } from 'lucide-react';
 import { shippingService } from '../services/shippingService';
 import { expoService } from '../services/expoService';
-import { carrierService } from '../services/carrierService';
-import { transportLineService } from '../services/transportLineService';
-import { cajaService } from '../services/cajaService';
-import { driverService } from '../services/driverService';
+import { asignacionCajaService } from '../services/asignacionCajaService';
 import { ShippingModel } from '../types/shipping';
 import { ExpoModel } from '../types/expo';
-import { CarrierModel } from '../types/carrier';
-import { TransportLineModel } from '../types/transportLine';
-import { CajaModel } from '../types/caja';
-import { DriverModel } from '../types/driver';
+import { AsignacionCajaModel } from '../types/asignacionCaja';
 
 type CaptureStep = 'INFO_ENVIO' | 'VIN_LIST' | 'LOGISTICA' | 'LAYOUT_ADUANAL';
 
@@ -19,11 +13,12 @@ export const CaptureModule: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<CaptureStep>('INFO_ENVIO');
   const [schedules, setSchedules] = useState<ShippingModel[]>([]);
   const [boms, setBoms] = useState<ExpoModel[]>([]);
+  const [asignaciones, setAsignaciones] = useState<AsignacionCajaModel[]>([]);
 
   useEffect(() => {
      shippingService.getAllSchedules().then(setSchedules).catch(console.error);
      expoService.getAllExpos().then(setBoms).catch(console.error);
-     carrierService.getAllCarriers().then(setCarriersList).catch(console.error);
+     asignacionCajaService.getAllAsignaciones().then(setAsignaciones).catch(console.error);
   }, []);
 
   // INFO ENVÍO STATE
@@ -37,31 +32,7 @@ export const CaptureModule: React.FC = () => {
   const [enrichedPayload, setEnrichedPayload] = useState<any[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // LOGISTICS STATE
-  const [logistics, setLogistics] = useState({
-      carrierScac: '',
-      transportLine: '',
-      caja: '',
-      driver: '',
-  });
-
-  const [carriersList, setCarriersList] = useState<CarrierModel[]>([]);
-  const [linesList, setLinesList] = useState<TransportLineModel[]>([]);
-  const [cajasList, setCajasList] = useState<CajaModel[]>([]);
-  const [driversList, setDriversList] = useState<DriverModel[]>([]);
-
-  // CASCADING FETCH
-  useEffect(() => {
-      if (logistics.carrierScac) {
-          transportLineService.getTransportLinesByCarrier(logistics.carrierScac).then(setLinesList);
-          cajaService.getCajasByCarrier(logistics.carrierScac).then(setCajasList);
-          driverService.getDriversByCarrier(logistics.carrierScac).then(setDriversList);
-      } else {
-          setLinesList([]);
-          setCajasList([]);
-          setDriversList([]);
-      }
-  }, [logistics.carrierScac]);
+  // END OF STATE
 
   const generateEnrichedPayload = () => {
       const enriched = vinPayload.map(v => {
@@ -115,8 +86,20 @@ export const CaptureModule: React.FC = () => {
 
                       const vinStr = model.vinno || model.vin || '';
                       if (vinStr) {
+                          let parsedOutdate = model.outdate || model.out || '';
+                          if (parsedOutdate) {
+                              const d = new Date(parsedOutdate);
+                              if (!isNaN(d.getTime())) {
+                                  let year = d.getFullYear();
+                                  let month = String(d.getMonth() + 1).padStart(2, '0');
+                                  let day = String(d.getDate()).padStart(2, '0');
+                                  parsedOutdate = `${year}-${month}-${day}`;
+                              }
+                          }
+
                           parsedRecords.push({
                               containerNo: model.containerno || model.container || '',
+                              outDate: parsedOutdate,
                               sealNo: model.sealno || model.seal || '',
                               modelo: model.modelo || model.model || '',
                               vin: vinStr,
@@ -309,6 +292,8 @@ export const CaptureModule: React.FC = () => {
                                 <thead className="bg-slate-100 border-b border-slate-200 text-slate-500 font-bold uppercase sticky top-0">
                                    <tr>
                                       <th className="px-4 py-3">Contenedor</th>
+                                      <th className="px-4 py-3 text-center">Asig. Caja (Match)</th>
+                                      <th className="px-4 py-3">Outdate</th>
                                       <th className="px-4 py-3">VIN</th>
                                       <th className="px-4 py-3">Modelo</th>
                                       <th className="px-4 py-3">Color</th>
@@ -317,9 +302,23 @@ export const CaptureModule: React.FC = () => {
                                    </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                   {vinPayload.slice(0, 100).map((v, i) => (
+                                   {vinPayload.slice(0, 100).map((v, i) => {
+                                       const isAsigMatch = asignaciones.some(a => String(a.numeroCaja).trim().toUpperCase() === String(v.containerNo).trim().toUpperCase() && String(a.fecha).trim() === String(v.outDate).trim());
+                                       return (
                                        <tr key={i} className="hover:bg-white text-slate-700">
                                           <td className="px-4 py-2 font-mono text-cyan-700">{v.containerNo}</td>
+                                          <td className="px-4 py-2 text-center">
+                                              {isAsigMatch ? (
+                                                  <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mx-auto" title="Caja asignada correctamente">
+                                                      <CheckCircle2 size={12} />
+                                                  </div>
+                                              ) : (
+                                                  <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center text-red-600 mx-auto" title="Falta o no coincide Asignación Diaria">
+                                                      <XCircle size={12} />
+                                                  </div>
+                                              )}
+                                          </td>
+                                          <td className="px-4 py-2 font-mono text-slate-500">{v.outDate}</td>
                                           <td className="px-4 py-2 font-mono font-bold">{v.vin}</td>
                                           <td className="px-4 py-2">{v.modelo}</td>
                                           <td className="px-4 py-2">{v.color}</td>
@@ -337,10 +336,11 @@ export const CaptureModule: React.FC = () => {
                                               )}
                                           </td>
                                        </tr>
-                                   ))}
+                                       );
+                                   })}
                                    {vinPayload.length > 100 && (
                                        <tr>
-                                           <td colSpan={6} className="text-center py-4 text-slate-400 font-medium">... y {vinPayload.length - 100} vehículos más</td>
+                                           <td colSpan={8} className="text-center py-4 text-slate-400 font-medium">... y {vinPayload.length - 100} vehículos más</td>
                                        </tr>
                                    )}
                                 </tbody>
@@ -418,43 +418,8 @@ export const CaptureModule: React.FC = () => {
                      </div>
                  )}
 
-                 {/* ECOSYSTEM LOGISTICS MULTI-SELECTOR */}
-                 <div className="bg-white p-6 rounded-xl border border-slate-200 mt-2 mb-6">
-                     <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><Truck size={18}/> Parametrización Logística Terrestre</h3>
-                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                         <div>
-                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Carrier SCAC</label>
-                             <select className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-purple-500 text-sm" value={logistics.carrierScac} onChange={e => setLogistics({...logistics, carrierScac: e.target.value, transportLine: '', caja: '', driver: ''})}>
-                                 <option value="">Seleccionar SCAC...</option>
-                                 {carriersList.map(c => <option key={c.codigo} value={c.codigo}>{c.codigo} - {c.nombreCorto || c.razonSocial}</option>)}
-                             </select>
-                         </div>
-                         <div>
-                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Línea de Transporte</label>
-                             <select disabled={!logistics.carrierScac} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-purple-500 text-sm disabled:opacity-50" value={logistics.transportLine} onChange={e => setLogistics({...logistics, transportLine: e.target.value})}>
-                                 <option value="">Seleccionar Línea...</option>
-                                 {linesList.map(l => <option key={l.transportLineId || l.id} value={l.transportLineId || l.id}>{l.nombreSubLinea || l.razonSocial}</option>)}
-                             </select>
-                         </div>
-                         <div>
-                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Contenedor / Caja</label>
-                             <select disabled={!logistics.carrierScac} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-purple-500 text-sm disabled:opacity-50" value={logistics.caja} onChange={e => setLogistics({...logistics, caja: e.target.value})}>
-                                 <option value="">Seleccionar Caja...</option>
-                                 {cajasList.map(c => <option key={c.NumeroCaja} value={c.NumeroCaja}>{c.NumeroCaja} - {c.TipoCaja}</option>)}
-                             </select>
-                         </div>
-                         <div>
-                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Chofer Asignado</label>
-                             <select disabled={!logistics.carrierScac} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-purple-500 text-sm disabled:opacity-50" value={logistics.driver} onChange={e => setLogistics({...logistics, driver: e.target.value})}>
-                                 <option value="">Seleccionar Chofer...</option>
-                                 {driversList.map(d => <option key={d.driverId} value={d.driverId}>{d.nombre}</option>)}
-                             </select>
-                         </div>
-                     </div>
-                 </div>
-
                  <div className="mt-auto flex justify-end items-center pt-6 border-t border-slate-100 gap-4">
-                     <button disabled={!logistics.carrierScac || !logistics.caja || !logistics.driver || enrichedPayload.some(v => !v.bomFound)} className="bg-green-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-green-500/30 hover:bg-green-700 transition-all flex items-center gap-2 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed">
+                     <button disabled={enrichedPayload.some(v => !v.bomFound)} className="bg-green-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-green-500/30 hover:bg-green-700 transition-all flex items-center gap-2 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed">
                         Validar Entorno Aduanal <ChevronRight size={18} />
                      </button>
                  </div>

@@ -1,4 +1,4 @@
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzPgz2WNzA5phXnjfyznnHb0a46bg8CPZLWNYRW1D6bXfbvw9-seafFFmMtLbdag3v8Nw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbysoVhtCCGKLs4YeNkMO_7--oggbRBaVn3-8plInsV3z9N66OtxBBawaVUy3TKDit0aFA/exec';
 
 // Deprecated but kept for compatibility - No execution needed
 export const initGoogleDrive = async () => { console.log("Google Drive via GAS (No Init Needed)"); };
@@ -31,16 +31,20 @@ const fileToBase64 = (file: File): Promise<string> => {
 };
 
 // Upload via Google App Script (No Login Required for User)
-export const uploadFileToDrive = async (file: File, description: string = ''): Promise<DriveFileResult> => {
+export const uploadFileToDrive = async (file: File, description: string = '', folderId?: string): Promise<DriveFileResult> => {
     try {
         const base64Content = await fileToBase64(file);
 
-        const payload = {
+        const payload: any = {
             filename: file.name,
             mimeType: file.type,
             bytes: base64Content,
             description: description
         };
+
+        if (folderId) {
+            payload.folderId = folderId;
+        }
 
         const response = await fetch(GAS_URL, {
             method: 'POST',

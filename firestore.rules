@@ -45,6 +45,8 @@ service cloud.firestore {
     match /shipping_schedules/{docId} { allow read, write: if true; }
     match /apendice10/{docId} { allow read, write: if true; }
     match /asignacion_cajas/{docId} { allow read, write: if true; }
+    match /sellos/{docId} { allow read, write: if true; }
+    match /liberacionesCaja/{docId} { allow read, write: if true; }
 
     // 4. Default Block (Catch-all)
     match /{document=**} {

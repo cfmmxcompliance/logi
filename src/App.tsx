@@ -34,6 +34,9 @@ import CCPBuilder from '../pages/CCPBuilder.tsx';
 import { Controller } from '../pages/Controller.tsx';
 import { Vucem } from '../pages/Vucem.tsx';
 import { ExpedienteElectronico } from '../pages/ExpedienteElectronico';
+import { HandheldHome } from '../pages/HandheldHome.tsx';
+import { HandheldSellos } from '../pages/HandheldSellos.tsx';
+import { HandheldLiberacion } from '../pages/HandheldLiberacion.tsx';
 import { storageService } from '../services/storageService.ts';
 import { trackingService } from '../services/trackingService.ts';
 import { AuthProvider, useAuth } from '../context/AuthContext.tsx';
@@ -58,6 +61,20 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
         return <Navigate to="/database" replace />;
     }
 
+    // Handheld constraints (Bidirectional)
+    const isHandheldPath = location.pathname.startsWith('/m/');
+    if (user?.role === UserRole.HANDHELD_USER) {
+        // Handheld users must be on /m/...
+        if (!isHandheldPath) {
+            return <Navigate to="/m/home" replace />;
+        }
+    } else if (user?.role) {
+        // Non-Handheld (Desktop) users cannot access /m/...
+        if (isHandheldPath) {
+            return <Navigate to="/" replace />;
+        }
+    }
+
     // Carrier constraints
     if (user?.role === UserRole.CARRIER) {
         const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/asignaciones-diarias'];
@@ -72,6 +89,10 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
         return <Navigate to="/" replace />;
+    }
+
+    if (user?.role === UserRole.HANDHELD_USER) {
+        return <>{children}</>;
     }
 
     return <Layout>{children}</Layout>;
@@ -162,6 +183,11 @@ const AppContent = () => {
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/audit-logs" element={<ProtectedRoute><ActionLogs /></ProtectedRoute>} />
             <Route path="/daily-audit" element={<ProtectedRoute><DailyAudit /></ProtectedRoute>} />
+
+            {/* Handheld Routes */}
+            <Route path="/m/home" element={<ProtectedRoute><HandheldHome /></ProtectedRoute>} />
+            <Route path="/m/sellos" element={<ProtectedRoute><HandheldSellos /></ProtectedRoute>} />
+            <Route path="/m/liberacion" element={<ProtectedRoute><HandheldLiberacion /></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

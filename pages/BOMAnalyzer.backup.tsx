@@ -3,9 +3,8 @@ import * as XLSX from 'xlsx';
 import {
   Terminal, FileSpreadsheet, AlertTriangle,
   XCircle, Download, ChevronRight, Cpu, RefreshCw, Trash2,
-  AlertCircle, FileSearch, Zap, BarChart3, BookOpen, CheckCircle2, Copy
+  AlertCircle, FileSearch, Zap, BarChart3, BookOpen, CheckCircle2
 } from 'lucide-react';
-
 
 // ────────────────────────────────────────────────────────────────────────────
 // Types
@@ -51,7 +50,7 @@ interface CatalogValidation {
   modelsWithoutBOM: { modelo: string; products: string[] }[];
 }
 
-type Step = 'idle' | 'loaded' | 'diagnosed' | 'normalized' | 'deduped' | 'cloned' | 'crossed' | 'done';
+type Step = 'idle' | 'loaded' | 'diagnosed' | 'normalized' | 'deduped' | 'crossed' | 'done';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -142,86 +141,30 @@ export const BOMAnalyzer: React.FC = () => {
     setLineCounter(0);
   };
 
-  // ── Read Excel File (Standard & CI) ────────────────────────────────────
-  const parseExcelOrCI = (file: File): Promise<BomRow[]> => {
+  // ── Read Excel File ────────────────────────────────────────────────────
+  const parseExcel = (file: File): Promise<BomRow[]> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
           const wb = XLSX.read(data, { type: 'array' });
-          const rows: BomRow[] = [];
-          
-          for (const sheetName of wb.SheetNames) {
-            const ws = wb.Sheets[sheetName];
-            const json: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
-            
-            let headerRow = -1;
-            let isCI = false;
-            
-            for (let i = 0; i < Math.min(json.length, 30); i++) {
-              if(!json[i]) continue;
-              const rstr = json[i].map(c => String(c || '').toUpperCase()).join(' ');
-              if (rstr.includes('ESTILO') && rstr.includes('INSUMO')) {
-                headerRow = i;
-                isCI = false;
-                break;
-              }
-              if (rstr.includes('PART') && (rstr.includes('QTY') || rstr.includes('PRICE') || rstr.includes('QUANTITY'))) {
-                headerRow = i;
-                isCI = true;
-                break;
-              }
-            }
-            
-            if (headerRow === -1) continue;
-            
-            const hdrs = json[headerRow].map(h => String(h || '').trim().toUpperCase());
-            const col = (name: string) => hdrs.findIndex(h => h.includes(name));
-            
-            if (isCI) {
-              const modelIdx = col('MODEL');
-              const partIdx = hdrs.findIndex(h => h.includes('PART'));
-              const qtyIdx = col('QTY') >= 0 ? col('QTY') : col('QUANTITY');
-              const umIdx = col('U-M') >= 0 ? col('U-M') : col('UM');
-              
-              for (let i = headerRow + 1; i < json.length; i++) {
-                const r = json[i];
-                if (!r || r.length === 0) continue;
-                const part = String(r[partIdx] || '').trim();
-                const model = modelIdx >= 0 ? String(r[modelIdx] || '').trim() : '';
-                if (!part || part.length < 4 || part.toUpperCase().includes('TOTAL')) continue;
-                
-                rows.push({
-                  ESTILO: model || 'UNKNOWN_MODEL',
-                  INSUMO: part,
-                  CANTIDAD: Number(r[qtyIdx] || 0),
-                  MERMA: 0,
-                  UNIDAD: String(r[umIdx] || 'PZA').trim(),
-                  BOM: 'BOM_DESDE_CI',
-                  FECHAINI: null,
-                  FECHAFIN: null
-                });
-              }
-            } else {
-              const objJson: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: null });
-              for(const r of objJson) {
-                if(!r['INSUMO']) continue;
-                rows.push({
-                  ESTILO: String(r['ESTILO'] ?? '').trim(),
-                  INSUMO: String(r['INSUMO'] ?? '').trim(),
-                  CANTIDAD: Number(r['CANTIDAD'] ?? 0),
-                  MERMA: Number(r['MERMA'] ?? 0),
-                  UNIDAD: String(r['UNIDAD'] ?? 'PZA').trim(),
-                  BOM: String(r['BOM'] ?? '').trim(),
-                  FECHAINI: r['FECHAINI'] != null ? String(r['FECHAINI']) : null,
-                  FECHAFIN: r['FECHAFIN'] != null ? String(r['FECHAFIN']) : null,
-                });
-              }
-            }
-          }
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const json: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: null });
+          const rows: BomRow[] = json.map(r => ({
+            ESTILO: String(r['ESTILO'] ?? '').trim(),
+            INSUMO: String(r['INSUMO'] ?? '').trim(),
+            CANTIDAD: Number(r['CANTIDAD'] ?? 0),
+            MERMA: Number(r['MERMA'] ?? 0),
+            UNIDAD: String(r['UNIDAD'] ?? 'PZA').trim(),
+            BOM: String(r['BOM'] ?? '').trim(),
+            FECHAINI: r['FECHAINI'] != null ? String(r['FECHAINI']) : null,
+            FECHAFIN: r['FECHAFIN'] != null ? String(r['FECHAFIN']) : null,
+          })).filter(r => r.INSUMO);
           resolve(rows);
-        } catch (err) { reject(err); }
+        } catch (err) {
+          reject(err);
+        }
       };
       reader.onerror = reject;
       reader.readAsArrayBuffer(file);
@@ -256,44 +199,38 @@ export const BOMAnalyzer: React.FC = () => {
   };
 
   // ── Step 1: Load BOM ───────────────────────────────────────────────────
-  const handleBOMFiles = async (files: File[]) => {
-    if (files.length === 0) return;
+  const handleBOMFile = async (file: File) => {
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
+      addLine('error', `❌ Formato no soportado: ${file.name} — usa .xlsx o .xls`);
+      return;
+    }
     setProcessing(true);
     clearTerminal();
     addLine('header', '══════════════════════════════════════════════════');
-    addLine('cmd', `> ANALIZADOR MULTI-BOM & CI v2.0`);
+    addLine('cmd', `> ANALIZADOR DE BOM v1.0 — LOGIMASTER`);
     addLine('header', '══════════════════════════════════════════════════');
     addBlank();
-    addLine('cmd', `> [STEP 1] Cargando ${files.length} archivo(s)...`);
+    addLine('cmd', `> [STEP 1] Cargando archivo: ${file.name}`);
 
     try {
-      let allRows: BomRow[] = [];
-      for (const file of files) {
-        if (!file.name.match(/\.(xlsx|xls)$/i)) {
-          addLine('warn', `  Saltando ${file.name} (formato inválido)`);
-          continue;
-        }
-        const fileRows = await parseExcelOrCI(file);
-        allRows = [...allRows, ...fileRows];
-        addLine('info', `  + ${file.name} (${fileRows.length} filas)`);
-      }
+      const rows = await parseExcel(file);
+      setRawRows(rows);
+      setFileName(file.name);
 
-      setRawRows(allRows);
-      setFileName(files.length > 1 ? `${files.length} archivos agrupados` : files[0].name);
+      const estilos = [...new Set(rows.map(r => r.ESTILO))];
+      const insumos = [...new Set(rows.map(r => r.INSUMO))];
 
-      const estilos = [...new Set(allRows.map(r => r.ESTILO))].filter(Boolean);
-      const insumos = [...new Set(allRows.map(r => r.INSUMO))];
-
-      addLine('ok', `✓ Carga completada exitosamente`);
-      addLine('info', `  Registros totales  : ${allRows.length}`);
+      addLine('ok', `✓ Archivo cargado exitosamente`);
+      addLine('info', `  Registros totales  : ${rows.length}`);
       addLine('info', `  Insumos únicos     : ${insumos.length}`);
       addLine('info', `  Estilos detectados : ${estilos.length}`);
-      if(estilos.length > 0 && estilos.length < 10) addLine('info', `  Estilos            : ${estilos.join(', ')}`);
+      addLine('info', `  Hoja               : Sheet1`);
+      addLine('info', `  Columnas: ESTILO, INSUMO, CANTIDAD, MERMA, UNIDAD, BOM, FECHAINI, FECHAFIN`);
       addBlank();
 
       setStep('loaded');
     } catch (err) {
-      addLine('error', `❌ Error cargando archivos: ${String(err)}`);
+      addLine('error', `❌ Error al leer el archivo: ${String(err)}`);
     }
     setProcessing(false);
   };
@@ -390,9 +327,8 @@ export const BOMAnalyzer: React.FC = () => {
 
     const byInsumo: Record<string, BomRow[]> = {};
     normalizedRows.forEach(r => {
-      const k = `${r.ESTILO}||${r.INSUMO}`;
-      if (!byInsumo[k]) byInsumo[k] = [];
-      byInsumo[k].push(r);
+      if (!byInsumo[r.INSUMO]) byInsumo[r.INSUMO] = [];
+      byInsumo[r.INSUMO].push(r);
     });
 
     const uniqueInsumos = Object.keys(byInsumo);
@@ -426,7 +362,7 @@ export const BOMAnalyzer: React.FC = () => {
     setConflicts(conflicts2x);
 
     if (conflicts2x.length === 0) {
-      const all = [...singles, ...autoMerge].sort((a, b) => (`${a.ESTILO}||${a.INSUMO}`).localeCompare(`${b.ESTILO}||${b.INSUMO}`));
+      const all = [...singles, ...autoMerge].sort((a, b) => a.INSUMO.localeCompare(b.INSUMO));
       setDedupedRows(all);
       setStep('deduped');
       addLine('ok', `✓ Deduplicación completa. ${all.length} insumos únicos.`);
@@ -456,81 +392,10 @@ export const BOMAnalyzer: React.FC = () => {
       ...c.records[0],
       CANTIDAD: c.chosen!,
     }));
-    const all = [...dedupedRows, ...resolved].sort((a, b) => (`${a.ESTILO}||${a.INSUMO}`).localeCompare(`${b.ESTILO}||${b.INSUMO}`));
+    const all = [...dedupedRows, ...resolved].sort((a, b) => a.INSUMO.localeCompare(b.INSUMO));
     setDedupedRows(all);
     setConflicts([]);
     addLine('ok', `✓ ${resolved.length} conflictos resueltos. Total: ${all.length} insumos únicos.`);
-    addBlank();
-  };
-
-  // ── Step 4.5: Auto-Clone Variants ──────────────────────────────────────
-  const runCloneVariants = () => {
-    if (Object.keys(productCatalog).length === 0) {
-      addLine('error', '❌ Carga el Catálogo de Productos primero para clonar variantes.');
-      addBlank();
-      return;
-    }
-    addLine('cmd', `> [STEP 5] GENERADOR AUTOMÁTICO DE VARIANTES`);
-    addLine('header', '──────────────────────────────────────────────────');
-
-    const source = dedupedRows.length > 0 ? dedupedRows : normalizedRows;
-    const bomEstilos = Array.from(new Set(source.map(r => r.ESTILO)));
-    
-    // Group catalog
-    const byModel: Record<string, string[]> = {};
-    for (const [p, m] of Object.entries(productCatalog) as [string, string][]) {
-      if (!byModel[m]) byModel[m] = [];
-      byModel[m].push(p);
-    }
-    
-    const COLOR_RE = /-0(ET|RE|YG|BM|K1|RT|HJ|YD|BQ|D0|PG|P8|RM)0{1,2}/i;
-    const getColor = (pn: string) => {
-      const m = pn.match(/^[A-Z]\d{2}[A-Z]{3}\d([A-Z0-9]{2})/);
-      return m ? m[1] : null;
-    };
-    
-    let clonedRows: BomRow[] = [];
-    let totalClonesObj = 0;
-    
-    for (const estilo of bomEstilos as string[]) {
-      const baseParts = source.filter(r => r.ESTILO === estilo);
-      const modelo = productCatalog[estilo];
-      
-      if (!modelo) continue;
-      
-      const targets = byModel[modelo].filter(t => t !== estilo && !bomEstilos.includes(t));
-      if (targets.length === 0) continue;
-      
-      addLine('info', `  Base ${estilo} (${modelo}) → Clonando ${targets.length} variantes...`);
-      
-      for (const target of targets) {
-        const targetColor = getColor(target) || 'ET';
-        let substCount = 0;
-        const newRows = baseParts.map(r => {
-          let newInsumo = r.INSUMO;
-          if (COLOR_RE.test(r.INSUMO)) {
-            newInsumo = r.INSUMO.replace(COLOR_RE, (match, g1) => 
-               match.replace(g1.toUpperCase(), targetColor.toUpperCase())
-                    .replace(g1.toLowerCase(), targetColor.toLowerCase())
-            );
-            if (newInsumo !== r.INSUMO) substCount++;
-          }
-          return { ...r, ESTILO: target, INSUMO: newInsumo, BOM: 'CLON_AUTOMATICO' };
-        });
-        clonedRows = [...clonedRows, ...newRows];
-        totalClonesObj++;
-        addLine('ok', `    ✓ ${target} (Color: ${targetColor}) → ${substCount} sust.`);
-      }
-    }
-    
-    if (totalClonesObj > 0) {
-      setDedupedRows([...source, ...clonedRows]);
-      addLine('ok', `✓ ${totalClonesObj} BOMs autogenerados vinculando variantes.`);
-    } else {
-      addLine('warn', `⚠ No hay variantes para clonar, estilos cubiertos.`);
-    }
-    
-    setStep('cloned');
     addBlank();
   };
 
@@ -730,11 +595,11 @@ export const BOMAnalyzer: React.FC = () => {
     if (target === 'master') setMasterDragging(false);
     else if (target === 'catalog') setCatalogDragging(false);
     else setDragging(false);
-    const files = Array.from(e.dataTransfer.files) as File[];
-    if (!files.length) return;
-    if (target === 'master') handleMasterFile(files[0]);
-    else if (target === 'catalog') handleCatalogFile(files[0]);
-    else handleBOMFiles(files);
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    if (target === 'master') handleMasterFile(file);
+    else if (target === 'catalog') handleCatalogFile(file);
+    else handleBOMFile(file);
   }, [rawRows, normalizedRows, dedupedRows, finalRows, productCatalog]); // eslint-disable-line
 
   const onDragOver = (e: React.DragEvent) => { e.preventDefault(); };
@@ -840,24 +705,22 @@ export const BOMAnalyzer: React.FC = () => {
 
           {/* Upload BOM */}
           <div className="space-y-1">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center justify-between">
-              <span>1 · Cargar BOM / CIs</span>
-            </p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">1 · Cargar BOM Excel</p>
             <div
               className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all
                 ${dragging ? 'border-blue-500 bg-blue-900/20' : 'border-slate-700 hover:border-blue-700 hover:bg-slate-800/50'}`}
-              onDrop={e => onDrop(e, 'bom')}
+              onDrop={e => onDrop(e, false)}
               onDragOver={onDragOver}
               onDragEnter={() => setDragging(true)}
               onDragLeave={() => setDragging(false)}
               onClick={() => fileInputRef.current?.click()}
             >
-              <input ref={fileInputRef} type="file" multiple className="hidden" accept=".xlsx,.xls"
-                onChange={e => { if (e.target.files?.length) handleBOMFiles(Array.from(e.target.files)); e.target.value = ''; }} />
+              <input ref={fileInputRef} type="file" className="hidden" accept=".xlsx,.xls"
+                onChange={e => { if (e.target.files?.[0]) handleBOMFile(e.target.files[0]); e.target.value = ''; }} />
               <FileSpreadsheet size={28} className={`mx-auto mb-2 ${fileName ? 'text-emerald-400' : 'text-slate-600'}`} />
               {fileName
                 ? <p className="text-[11px] text-emerald-400 font-bold truncate">{fileName}</p>
-                : <p className="text-[11px] text-slate-500">Drop Multi-BOM o CIs</p>}
+                : <p className="text-[11px] text-slate-500">Drop .xlsx o click</p>}
             </div>
           </div>
 
@@ -867,8 +730,7 @@ export const BOMAnalyzer: React.FC = () => {
             {[
               { label: 'Diagnóstico', icon: FileSearch, fn: runDiagnosis, disabled: step !== 'loaded', active: step === 'loaded' },
               { label: 'Normalizar ESTILO', icon: Zap, fn: runNormalization, disabled: step !== 'diagnosed', active: step === 'diagnosed' },
-              { label: 'Deduplicar / Flat', icon: RefreshCw, fn: runDeduplication, disabled: step !== 'normalized', active: step === 'normalized' },
-              { label: 'Clonar Variantes', icon: Copy, fn: runCloneVariants, disabled: step !== 'deduped', active: step === 'deduped' },
+              { label: 'Deduplicar', icon: RefreshCw, fn: runDeduplication, disabled: step !== 'normalized', active: step === 'normalized' },
             ].map(({ label, icon: Icon, fn, disabled, active }) => (
               <button key={label} onClick={fn} disabled={disabled}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold transition-all
@@ -889,8 +751,7 @@ export const BOMAnalyzer: React.FC = () => {
                 <AlertTriangle size={10} /> {unresolvedCount} conflictos pendientes
               </p>
               {conflicts.map(c => {
-                const actualInsumo = c.insumo.includes('||') ? c.insumo.split('||')[1] : c.insumo;
-                const m = masterMap[actualInsumo];
+                const m = masterMap[c.insumo];
                 const noMasterLoaded = Object.keys(masterMap).length === 0;
                 const descEn = m?.DESCRIPTION_EN || '';
                 const descEs = m?.DESCRIPCION_ES || '';
@@ -905,7 +766,7 @@ export const BOMAnalyzer: React.FC = () => {
                 return (
                   <div key={c.insumo} className="bg-slate-800 rounded-lg p-3 border border-yellow-900/50">
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <p className="text-[10px] text-yellow-400 font-mono font-bold shrink-0">{actualInsumo}</p>
+                      <p className="text-[10px] text-yellow-400 font-mono font-bold shrink-0">{c.insumo}</p>
                       {descLabel && (
                         <p className="text-[10px] text-right shrink-0">
                           {descLabel}

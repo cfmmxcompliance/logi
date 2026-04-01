@@ -34,6 +34,7 @@ import CCPBuilder from '../pages/CCPBuilder.tsx';
 import { Controller } from '../pages/Controller.tsx';
 import { Vucem } from '../pages/Vucem.tsx';
 import { ExpedienteElectronico } from '../pages/ExpedienteElectronico';
+import { BOMAnalyzer } from '../pages/BOMAnalyzer.tsx';
 import { HandheldHome } from '../pages/HandheldHome.tsx';
 import { HandheldSellos } from '../pages/HandheldSellos.tsx';
 import { HandheldLiberacion } from '../pages/HandheldLiberacion.tsx';
@@ -176,6 +177,7 @@ const AppContent = () => {
                 </ProtectedRoute>
             } />
             <Route path="/proforma-validator" element={<ProtectedRoute><ProformaValidator /></ProtectedRoute>} />
+            <Route path="/bom-analyzer" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EDITOR]}><BOMAnalyzer /></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><SmartDocs /></ProtectedRoute>} />
             <Route path="/database" element={<ProtectedRoute><DatabaseView /></ProtectedRoute>} />
             <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />

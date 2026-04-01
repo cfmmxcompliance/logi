@@ -56,8 +56,7 @@ type Step = 'idle' | 'loaded' | 'diagnosed' | 'normalized' | 'deduped' | 'cloned
 // ────────────────────────────────────────────────────────────────────────────
 // Constants
 // ────────────────────────────────────────────────────────────────────────────
-const TARGET_ESTILO = 'U24AMA1ETUSEE';
-
+// ────────────────────────────────────────────────────────────────────────────
 // ────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ────────────────────────────────────────────────────────────────────────────
@@ -310,10 +309,9 @@ export const BOMAnalyzer: React.FC = () => {
     addLine('info', `Estilos únicos: ${estilos.length}`);
     estilos.forEach((e: string) => {
       const hasPoint = e.endsWith('.');
-      const missingU = !e.startsWith('U');
-      const isClean = !hasPoint && !missingU;
+      const isClean = !hasPoint;
       const icon = isClean ? '  ✓' : '  ⚠';
-      const note = hasPoint ? '— tiene punto final' : missingU ? '— falta prefijo "U"' : '— correcto';
+      const note = hasPoint ? '— tiene punto final' : '— correcto';
       addLine(isClean ? 'ok' : 'warn', `${icon}  ${e}  →  ${estiloCount[e]} registros ${note}`);
     });
     addBlank();
@@ -336,6 +334,10 @@ export const BOMAnalyzer: React.FC = () => {
     addLine('info', `Insumos únicos: ${new Set(rawRows.map(r => r.INSUMO)).size}`);
     addLine(dupCombos.length > 0 ? 'warn' : 'ok', `${dupCombos.length > 0 ? '⚠' : '✓'}  Combinaciones ESTILO+INSUMO duplicadas: ${dupCombos.length}`);
     addLine(zeroQty.length > 0 ? 'warn' : 'ok', `${zeroQty.length > 0 ? '⚠' : '✓'}  Registros con CANTIDAD = 0: ${zeroQty.length}`);
+    if (zeroQty.length > 0) {
+      const affectedStyles = Array.from(new Set(zeroQty.map(r => r.ESTILO)));
+      addLine('warn', `    ⚠ Estilos con CANTIDAD 0: ${affectedStyles.join(', ')}`);
+    }
     addLine('warn', `⚠  FECHAINI/FECHAFIN vacías: ${emptyDates}/${rawRows.length}`);
     addLine('info', `   BOM identifier: ${bomVals.join(', ')}`);
 
@@ -358,13 +360,12 @@ export const BOMAnalyzer: React.FC = () => {
 
   // ── Step 3: Normalize ─────────────────────────────────────────────────
   const runNormalization = () => {
-    addLine('cmd', `> [STEP 3] NORMALIZACIÓN DE ESTILO → ${TARGET_ESTILO}`);
+    addLine('cmd', `> [STEP 3] NORMALIZACIÓN DE ESTILOS`);
     addLine('header', '──────────────────────────────────────────────────');
 
     let changed = 0;
     const normalized = rawRows.map(r => {
       let estilo = r.ESTILO.trim().replace(/\.$/, '');
-      if (!estilo.startsWith('U')) estilo = 'U' + estilo;
       if (estilo !== r.ESTILO) changed++;
       return { ...r, ESTILO: estilo };
     });

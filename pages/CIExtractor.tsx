@@ -477,6 +477,35 @@ export const CIExtractor: React.FC = () => {
         return map;
     }, [tracking]);
 
+    const [showPendingBLsModal, setShowPendingBLsModal] = useState(false);
+
+    const pendingBLs = React.useMemo(() => {
+        const uploadedInvoices = new Set(items.map(i => String(i.invoiceNo).trim().toUpperCase()));
+        
+        const pendingMap = new Map<string, { vessel: string, containers: Set<string>, invoices: Set<string> }>();
+        
+        tracking.forEach(t => {
+            if (t.blNo && t.invoiceNo) {
+                const inv = String(t.invoiceNo).trim().toUpperCase();
+                if (!uploadedInvoices.has(inv)) {
+                    if (!pendingMap.has(t.blNo)) {
+                        pendingMap.set(t.blNo, { vessel: t.vessel, containers: new Set(), invoices: new Set() });
+                    }
+                    if (t.containerNo) pendingMap.get(t.blNo)!.containers.add(t.containerNo);
+                    pendingMap.get(t.blNo)!.invoices.add(t.invoiceNo);
+                }
+            }
+        });
+        
+        return Array.from(pendingMap.entries()).map(([blNo, data]) => ({
+            blNo,
+            vessel: data.vessel,
+            containers: Array.from(data.containers),
+            invoices: Array.from(data.invoices)
+        }));
+    }, [items, tracking]);
+
+
 
     // Look up Master Data when Amendments modal opens
     // AUTO RECOVERY ON MOUNT
@@ -1886,6 +1915,16 @@ export const CIExtractor: React.FC = () => {
 
                     {/* Right: Filters (Fixed) */}
                     <div className="w-auto flex-none flex items-center justify-end gap-2 overflow-x-auto">
+                        {pendingBLs.length > 0 && (
+                            <button
+                                onClick={() => setShowPendingBLsModal(true)}
+                                className="px-3 py-1.5 rounded-lg border border-orange-200 bg-orange-50/80 hover:bg-orange-100 text-orange-600 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                                title="BLs en Tracking sin factura cargada"
+                            >
+                                <Database size={14} />
+                                <span className="hidden sm:inline">Pendientes:</span> {pendingBLs.length}
+                            </button>
+                        )}
                         <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-200">
                             <button
                                 onClick={() => setShowErrorsOnly(!showErrorsOnly)}
@@ -2940,6 +2979,50 @@ export const CIExtractor: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* --- PENDING BLs MODAL --- */}
+            {showPendingBLsModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[80vh] overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <Database className="text-orange-500" size={24} /> 
+                                BLs Pendientes de Carga
+                            </h2>
+                            <button onClick={() => setShowPendingBLsModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="p-6 overflow-y-auto bg-slate-50 border-b border-slate-100 flex-1">
+                            {pendingBLs.length === 0 ? (
+                                <p className="text-center text-slate-500 italic py-8">No hay BLs pendientes.</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    <p className="text-sm font-medium text-slate-600 mb-2">
+                                        Los siguientes archivos registrados en Trazabilidad aún no tienen <i>Commercial Invoice</i> asignada en este módulo:
+                                    </p>
+                                    {pendingBLs.map(bl => (
+                                        <div key={bl.blNo} className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                                            <div className="flex justify-between items-start mb-3 border-b border-slate-100 pb-2">
+                                                <div>
+                                                    <h3 className="font-bold text-slate-800 text-base font-mono">BL: {bl.blNo}</h3>
+                                                    <p className="text-sm text-slate-500 font-medium">Buque: {bl.vessel || 'Sin nombre'}</p>
+                                                </div>
+                                                <span className="bg-orange-100 border border-orange-200 text-orange-700 text-[10px] font-bold px-2 py-1.5 rounded-lg uppercase shadow-sm">Falta Carga CI</span>
+                                            </div>
+                                            <div className="text-sm text-slate-600 mt-2 space-y-1">
+                                                <p><span className="font-bold text-slate-700">Invoices Esperadas:</span> <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">{bl.invoices.join(', ')}</span></p>
+                                                <p><span className="font-bold text-slate-700">Contenedores:</span> <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">{bl.containers.length > 0 ? bl.containers.join(', ') : 'No registrados'}</span></p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* --- ESTIMATED PRICE RESOLUTION MODAL --- */}
             {showEstModal && estItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">

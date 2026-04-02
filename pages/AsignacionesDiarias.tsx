@@ -378,7 +378,7 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 font-medium text-orange-800 bg-orange-50/30">Nombre / Transportista</th>
               <th className="p-4 font-medium text-orange-800 bg-orange-50/30">Placas Tracto</th>
               <th className="p-4 font-medium text-purple-800 bg-purple-50/30">Modelo</th>
-              <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">Validador</th>
+              <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">CARGADO</th>
               <th className="p-4 font-medium text-right bg-slate-50">Acciones</th>
             </tr>
           </thead>

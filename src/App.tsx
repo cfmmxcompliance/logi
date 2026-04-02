@@ -71,9 +71,6 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
         }
         
         // Strict segregation
-        if (user?.role === UserRole.HANDHELD_USER && location.pathname === '/m/liberacion') {
-             return <Navigate to="/m/home" replace />;
-        }
         if (user?.role === UserRole.HANDHELD_USER2 && location.pathname === '/m/sellos') {
              return <Navigate to="/m/home" replace />;
         }

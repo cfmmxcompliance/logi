@@ -48,20 +48,18 @@ export const HandheldHome = () => {
                     )}
 
                     {/* Tarjeta de Liberación */}
-                    {user?.role !== UserRole.HANDHELD_USER && (
-                        <button 
-                           onClick={() => navigate('/m/liberacion')}
-                           className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group mt-4"
-                        >
-                           <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] group-hover:scale-105 transition-transform">
-                              <DoorOpen size={32} />
-                           </div>
-                           <div>
-                               <h2 className="text-lg font-bold text-white tracking-tight">Liberación de Caja</h2>
-                               <p className="text-slate-400 text-sm mt-1 font-medium">Cierre Fotográfico 3x</p>
-                           </div>
-                        </button>
-                    )}
+                    <button 
+                       onClick={() => navigate('/m/liberacion')}
+                       className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group mt-4"
+                    >
+                       <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] group-hover:scale-105 transition-transform">
+                          <DoorOpen size={32} />
+                       </div>
+                       <div>
+                           <h2 className="text-lg font-bold text-white tracking-tight">Liberación de Caja</h2>
+                           <p className="text-slate-400 text-sm mt-1 font-medium">Cierre Fotográfico 3x</p>
+                       </div>
+                    </button>
 
                 </div>
 

@@ -110,7 +110,12 @@ export const AsignacionesDiarias: React.FC = () => {
     result.sort((a, b) => {
         const dateTimeA = new Date(`${a.fecha}T${a.horaAsignacion || '00:00'}:00`).getTime();
         const dateTimeB = new Date(`${b.fecha}T${b.horaAsignacion || '00:00'}:00`).getTime();
-        return dateTimeA - dateTimeB;
+        if (dateTimeA !== dateTimeB) return dateTimeA - dateTimeB;
+        
+        // Secondary sort by createdAt to preserve CSV insertion order for identical hours
+        const crA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const crB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return crA - crB;
     });
 
     return result;

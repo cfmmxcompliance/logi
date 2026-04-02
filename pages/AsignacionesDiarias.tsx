@@ -20,6 +20,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [drivers, setDrivers] = useState<DriverModel[]>([]);
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
   const [liberaciones, setLiberaciones] = useState<LiberacionRecord[]>([]);
+  const [importErrors, setImportErrors] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<Partial<AsignacionCajaModel>>({ 
@@ -252,6 +253,8 @@ export const AsignacionesDiarias: React.FC = () => {
 
           setLoading(true);
           let imported = 0;
+          let errors: string[] = [];
+
           for (let i = 1; i < rows.length; i++) {
               const r = rows[i];
               const rawFecha = r[fIdx]?.trim();
@@ -260,10 +263,17 @@ export const AsignacionesDiarias: React.FC = () => {
               const rawDriver = r[dIdx]?.trim().toUpperCase();
               const rawModelo = mIdx !== -1 ? r[mIdx]?.trim().toUpperCase() : '';
 
-              if (!rawFecha || !rawCaja || !rawDriver) continue;
+              if (!rawFecha && !rawCaja && !rawDriver) continue;
+              if (!rawFecha || !rawCaja || !rawDriver) {
+                  errors.push(`Fila ${i + 1}: Faltan datos (Fecha, Caja o Driver)`);
+                  continue;
+              }
 
               const matchCaja = cajas.find(c => c.NumeroCaja.toUpperCase() === rawCaja);
               const matchDriver = drivers.find(d => d.driverId.toUpperCase() === rawDriver);
+
+              if (!matchCaja) errors.push(`Fila ${i + 1}: La Caja "${rawCaja}" no existe en catálogo.`);
+              if (!matchDriver) errors.push(`Fila ${i + 1}: El Driver "${rawDriver}" no existe en catálogo.`);
 
               const carrierPadre = matchCaja ? matchCaja.carrierCodigo : (matchDriver ? matchDriver.carrierCodigo : '');
 
@@ -283,12 +293,18 @@ export const AsignacionesDiarias: React.FC = () => {
               try {
                   await asignacionCajaService.addAsignacion(asig);
                   imported++;
-              } catch(err) {
-                  console.error("Error importing row", r, err);
+              } catch(err: any) {
+                  errors.push(`Fila ${i + 1}: Error al guardar - ${err.message || 'Desconocido'}`);
               }
           }
+          
           if (fileInputRef.current) fileInputRef.current.value = '';
-          alert(`Importación finalizada. ${imported} registros integrados relacionando maestras.`);
+          
+          if (errors.length > 0) {
+              setImportErrors([`Se importaron ${imported} registros con éxito.`, ...errors]);
+          } else {
+              alert(`Importación finalizada. ${imported} registros integrados relacionando maestras.`);
+          }
           loadData();
       };
       reader.readAsText(file);
@@ -546,6 +562,33 @@ export const AsignacionesDiarias: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* CSV Import Errors Modal */}
+      {importErrors && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in">
+              <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                  <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-red-50 text-red-700">
+                      <h2 className="text-lg font-bold flex items-center gap-2">
+                          <XCircle size={20} />
+                          Reporte de Importación
+                      </h2>
+                      <button onClick={() => setImportErrors(null)} className="p-1 hover:bg-red-100 rounded text-red-500">
+                          <XCircle size={20} />
+                      </button>
+                  </div>
+                  <div className="p-6 overflow-y-auto flex-1 space-y-2 font-mono text-sm leading-relaxed">
+                      <div className="text-emerald-600 font-bold mb-4 bg-emerald-50 p-3 rounded border border-emerald-100">{importErrors[0]}</div>
+                      {importErrors.slice(1).map((err, i) => (
+                          <div key={i} className="text-red-600 bg-red-50/50 p-2 rounded border border-red-50 shadow-sm">{err}</div>
+                      ))}
+                  </div>
+                  <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+                      <button onClick={() => setImportErrors(null)} className="px-6 py-2 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300 transition-colors">Cerrar Reporte</button>
+                  </div>
+              </div>
+          </div>
+      )}
+
     </div>
   );
 };

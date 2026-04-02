@@ -286,7 +286,6 @@ export const HandheldSellos = () => {
                     <div className="flex justify-between items-start">
                         <div className="flex flex-col gap-1">
                             <div className="text-2xl font-black tracking-tight text-white flex items-center gap-3 flex-wrap">
-                                <span className="text-slate-500">#{index + 1}</span>
                                 <span className="text-blue-400">{caja.horaAsignacion || '--:--'}</span>
                                 {caja.numeroOperacion && <span className="text-pink-400">{caja.numeroOperacion}</span>}
                                 <span>{caja.numeroCaja}</span>

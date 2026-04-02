@@ -364,7 +364,6 @@ export const HandheldLiberacion = () => {
                         )}
                         
                         <div className="text-3xl font-black font-mono text-white tracking-widest leading-none mb-3 flex items-center gap-3 flex-wrap">
-                            <span className="text-slate-500">#{index + 1}</span>
                             <span className="text-blue-400">{caja.horaAsignacion || '--:--'}</span>
                             {caja.numeroOperacion && <span className="text-pink-400">{caja.numeroOperacion}</span>}
                             <span>{caja.numeroCaja}</span>

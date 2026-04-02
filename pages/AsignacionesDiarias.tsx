@@ -459,7 +459,6 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 w-12 border-r border-slate-100 bg-slate-100 text-center">
                   <input type="checkbox" checked={filteredData.length > 0 && selectedIds.size === filteredData.length} onChange={toggleSelectAll} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
               </th>
-              <th className="p-4 font-medium border-r border-slate-100 bg-slate-100"># Secuencia</th>
               <th className="p-4 font-medium border-r border-slate-100 bg-blue-50/50 whitespace-nowrap">Fecha/Hora</th>
               <th className="p-4 font-medium text-pink-800 bg-pink-50/30 whitespace-nowrap">No. Operación</th>
               <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Número Caja</th>
@@ -481,7 +480,6 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 bg-slate-50/30 border-r border-slate-100 text-center">
                     <input type="checkbox" checked={selectedIds.has(a.id!)} onChange={() => toggleSelectRow(a.id!)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
                 </td>
-                <td className="p-4 font-bold text-slate-400 bg-slate-50/20">{index + 1}</td>
                 <td className="p-4 font-medium text-slate-700 border-r border-slate-100 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                        <span className="flex items-center gap-1.5"><Calendar size={12} className="text-blue-500" /> {a.fecha}</span>

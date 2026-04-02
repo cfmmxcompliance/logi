@@ -20,6 +20,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [drivers, setDrivers] = useState<DriverModel[]>([]);
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
   const [liberaciones, setLiberaciones] = useState<LiberacionRecord[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [importErrors, setImportErrors] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -167,8 +168,46 @@ export const AsignacionesDiarias: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (confirm("¿Seguro que deseas eliminar esta asignación diaria?")) {
       await asignacionCajaService.deleteAsignacion(id);
+      setSelectedIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(id);
+          return newSet;
+      });
       loadData();
     }
+  };
+
+  const handleMassDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (confirm(`¿Seguro que deseas eliminar las ${selectedIds.size} asignaciones seleccionadas?`)) {
+        setLoading(true);
+        try {
+            for (const id of selectedIds) {
+                await asignacionCajaService.deleteAsignacion(id);
+            }
+            setSelectedIds(new Set());
+            loadData();
+        } catch (error) {
+            console.error("Error deleting items", error);
+            alert("Hubo un error borrando algunas asignaciones.");
+            loadData();
+        }
+    }
+  };
+
+  const toggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(new Set(filteredData.map(a => a.id!)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const toggleSelectRow = (id: string) => {
+    const newSec = new Set(selectedIds);
+    if (newSec.has(id)) newSec.delete(id);
+    else newSec.add(id);
+    setSelectedIds(newSec);
   };
 
   const openNew = () => {
@@ -378,6 +417,12 @@ export const AsignacionesDiarias: React.FC = () => {
                 />
              </div>
 
+             {selectedIds.size > 0 && (
+                 <button onClick={handleMassDelete} className="px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg border border-red-200 transition-colors shadow-sm flex items-center text-sm font-bold animate-fade-in" title="Eliminar Seleccionados">
+                    <Trash2 size={16} className="mr-2" /> Borrar ({selectedIds.size})
+                 </button>
+             )}
+
              <button onClick={() => setIsMassQueryOpen(true)} className={`px-4 py-2 flex items-center rounded-lg border text-sm font-medium transition-colors shadow-sm ${activeMassQuery ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}>
                  <Filter size={16} className="mr-2" />
                  Filtros Masivos
@@ -406,6 +451,9 @@ export const AsignacionesDiarias: React.FC = () => {
         <table className="w-full text-left">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
             <tr>
+              <th className="p-4 w-12 border-r border-slate-100 bg-slate-100 text-center">
+                  <input type="checkbox" checked={filteredData.length > 0 && selectedIds.size === filteredData.length} onChange={toggleSelectAll} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+              </th>
               <th className="p-4 font-medium border-r border-slate-100 bg-slate-100"># Secuencia</th>
               <th className="p-4 font-medium border-r border-slate-100 bg-blue-50/50 whitespace-nowrap">Fecha/Hora</th>
               <th className="p-4 font-medium text-pink-800 bg-pink-50/30 whitespace-nowrap">No. Operación</th>
@@ -424,7 +472,10 @@ export const AsignacionesDiarias: React.FC = () => {
             {filteredData.map((a, index) => {
               const hasLiberacion = liberaciones.some(lib => lib.asignacionCajaId === a.id);
               return (
-              <tr key={a.id} className="hover:bg-slate-50 transition-colors">
+              <tr key={a.id} className={`transition-colors ${selectedIds.has(a.id!) ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}>
+                <td className="p-4 bg-slate-50/30 border-r border-slate-100 text-center">
+                    <input type="checkbox" checked={selectedIds.has(a.id!)} onChange={() => toggleSelectRow(a.id!)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                </td>
                 <td className="p-4 font-bold text-slate-400 bg-slate-50/20">{index + 1}</td>
                 <td className="p-4 font-medium text-slate-700 border-r border-slate-100 whitespace-nowrap">
                     <div className="flex items-center gap-2">
@@ -467,9 +518,9 @@ export const AsignacionesDiarias: React.FC = () => {
               );
             })}
             {filteredData.length === 0 && !loading && (
-              <tr><td colSpan={11} className="p-12 text-center text-slate-400">No se encontraron asignaciones diarias en este rango.</td></tr>
+              <tr><td colSpan={12} className="p-12 text-center text-slate-400">No se encontraron asignaciones diarias en este rango.</td></tr>
             )}
-            {loading && <tr><td colSpan={11} className="p-12 text-center text-slate-400">Cargando operación diaria...</td></tr>}
+            {loading && <tr><td colSpan={12} className="p-12 text-center text-slate-400">Cargando operación diaria...</td></tr>}
           </tbody>
         </table>
       </div>

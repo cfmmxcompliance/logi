@@ -12,9 +12,13 @@ import { LiberacionRecord } from '../types';
 import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle } from 'lucide-react';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { parseCSV } from '../utils/csvHelpers';
+import { useAuth } from '../context/AuthContext';
+import { UserRole } from '../types';
 import modelosCaja from '../utils/modelosCaja.json';
 
 export const AsignacionesDiarias: React.FC = () => {
+  const { user } = useAuth();
+  const isEmbarques = user?.role === UserRole.EMBARQUES;
   const [asignaciones, setAsignaciones] = useState<AsignacionCajaModel[]>([]);
   const [cajas, setCajas] = useState<CajaModel[]>([]);
   const [drivers, setDrivers] = useState<DriverModel[]>([]);
@@ -426,7 +430,7 @@ export const AsignacionesDiarias: React.FC = () => {
                 />
              </div>
 
-             {selectedIds.size > 0 && (
+             {!isEmbarques && selectedIds.size > 0 && (
                  <button onClick={handleMassDelete} className="px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg border border-red-200 transition-colors shadow-sm flex items-center text-sm font-bold animate-fade-in" title="Eliminar Seleccionados">
                     <Trash2 size={16} className="mr-2" /> Borrar ({selectedIds.size})
                  </button>
@@ -437,22 +441,28 @@ export const AsignacionesDiarias: React.FC = () => {
                  Filtros Masivos
              </button>
 
-             <button onClick={downloadTemplate} className="px-3 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg border border-slate-300 transition-colors shadow-sm flex items-center text-sm font-medium" title="Plantilla CSV">
-                <FileSpreadsheet size={16} className="text-emerald-600" />
-             </button>
+             {!isEmbarques && (
+               <>
+                 <button onClick={downloadTemplate} className="px-3 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg border border-slate-300 transition-colors shadow-sm flex items-center text-sm font-medium" title="Plantilla CSV">
+                    <FileSpreadsheet size={16} className="text-emerald-600" />
+                 </button>
 
-             <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
-             <button onClick={() => fileInputRef.current?.click()} className="px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-300 transition-colors shadow-sm flex items-center text-sm font-medium" title="Subir CSV">
-                <UploadCloud size={16} className="text-indigo-600" />
-             </button>
+                 <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
+                 <button onClick={() => fileInputRef.current?.click()} className="px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-300 transition-colors shadow-sm flex items-center text-sm font-medium" title="Subir CSV">
+                    <UploadCloud size={16} className="text-indigo-600" />
+                 </button>
+               </>
+             )}
 
              <button onClick={exportCSV} className="px-4 py-2 bg-white text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-300 transition-colors shadow-sm flex items-center text-sm font-medium">
                 <Download size={16} className="mr-2 text-slate-500" /> Exportar
              </button>
 
-             <button onClick={openNew} className="bg-blue-600 text-white px-4 py-2 flex items-center rounded-lg hover:bg-blue-700 shadow-md shadow-blue-500/30 transition-all font-medium text-sm">
-                <Plus size={18} className="mr-2" /> Asignar
-             </button>
+             {!isEmbarques && (
+                 <button onClick={openNew} className="bg-blue-600 text-white px-4 py-2 flex items-center rounded-lg hover:bg-blue-700 shadow-md shadow-blue-500/30 transition-all font-medium text-sm">
+                    <Plus size={18} className="mr-2" /> Asignar
+                 </button>
+             )}
         </div>
       </div>
 
@@ -461,7 +471,7 @@ export const AsignacionesDiarias: React.FC = () => {
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
             <tr>
               <th className="p-4 w-12 border-r border-slate-100 bg-slate-100 text-center">
-                  <input type="checkbox" checked={filteredData.length > 0 && selectedIds.size === filteredData.length} onChange={toggleSelectAll} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                  {!isEmbarques && <input type="checkbox" checked={filteredData.length > 0 && selectedIds.size === filteredData.length} onChange={toggleSelectAll} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
               </th>
               <th className="p-4 font-medium border-r border-slate-100 bg-blue-50/50 whitespace-nowrap">Fecha/Hora</th>
               <th className="p-4 font-medium text-pink-800 bg-pink-50/30 whitespace-nowrap">No. Operación</th>
@@ -474,7 +484,7 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 font-medium text-purple-800 bg-purple-50/30 whitespace-nowrap">Modelo</th>
               <th className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap">Sello Liberación</th>
               <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">CARGADO</th>
-              <th className="p-4 font-medium text-right bg-slate-50">Acciones</th>
+              {!isEmbarques && <th className="p-4 font-medium text-right bg-slate-50">Acciones</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">
@@ -483,7 +493,7 @@ export const AsignacionesDiarias: React.FC = () => {
               return (
               <tr key={a.id} className={`transition-colors ${selectedIds.has(a.id!) ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}>
                 <td className="p-4 bg-slate-50/30 border-r border-slate-100 text-center">
-                    <input type="checkbox" checked={selectedIds.has(a.id!)} onChange={() => toggleSelectRow(a.id!)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                    {!isEmbarques && <input type="checkbox" checked={selectedIds.has(a.id!)} onChange={() => toggleSelectRow(a.id!)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
                 </td>
                 <td className="p-4 font-medium text-slate-700 border-r border-slate-100 whitespace-nowrap">
                     <div className="flex items-center gap-2">
@@ -518,14 +528,16 @@ export const AsignacionesDiarias: React.FC = () => {
                     )}
                 </td>
 
-                <td className="p-4 flex gap-2 justify-end items-center">
-                  <button onClick={() => openEdit(a)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors" title="Editar">
-                    <Edit2 size={16} />
-                  </button>
-                  <button onClick={() => handleDelete(a.id!)} className="p-1.5 text-red-600 hover:bg-red-100 rounded transition-colors" title="Eliminar">
-                    <Trash2 size={16} />
-                  </button>
-                </td>
+                {!isEmbarques && (
+                  <td className="p-4 flex gap-2 justify-end items-center">
+                    <button onClick={() => openEdit(a)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors" title="Editar">
+                      <Edit2 size={16} />
+                    </button>
+                    <button onClick={() => handleDelete(a.id!)} className="p-1.5 text-red-600 hover:bg-red-100 rounded transition-colors" title="Eliminar">
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                )}
               </tr>
               );
             })}

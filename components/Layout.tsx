@@ -128,21 +128,25 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <SidebarItem to="/macro" icon={PackageOpen} label={sidebarOpen ? "Motor de Captura (Macro)" : ""} />
           )}
 
-          {/* Operational Transport -> Admin, Editor, Agent, Controller, Expo, Carrier */}
-          {[UserRole.ADMIN, UserRole.EDITOR, UserRole.AGENT, UserRole.CONTROLLER, UserRole.EXPO, UserRole.CARRIER].includes(user?.role as UserRole) && (
+          {/* Operational Transport -> Admin, Editor, Agent, Controller, Expo, Carrier, Embarques */}
+          {[UserRole.ADMIN, UserRole.EDITOR, UserRole.AGENT, UserRole.CONTROLLER, UserRole.EXPO, UserRole.CARRIER, UserRole.EMBARQUES].includes(user?.role as UserRole) && (
             <>
-              {user?.role !== UserRole.CARRIER && (
+              {user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && (
                   <SidebarItem to="/carriers" icon={Anchor} label={sidebarOpen ? "Carriers" : ""} />
               )}
-              <SidebarItem to="/transport-lines" icon={Truck} label={sidebarOpen ? "Transport Lines" : ""} />
-              <SidebarItem to="/drivers" icon={Users} label={sidebarOpen ? "Drivers" : ""} />
-              <SidebarItem to="/cajas" icon={Container} label={sidebarOpen ? "Cajas" : ""} />
+              {user?.role !== UserRole.EMBARQUES && (
+                <>
+                  <SidebarItem to="/transport-lines" icon={Truck} label={sidebarOpen ? "Transport Lines" : ""} />
+                  <SidebarItem to="/drivers" icon={Users} label={sidebarOpen ? "Drivers" : ""} />
+                  <SidebarItem to="/cajas" icon={Container} label={sidebarOpen ? "Cajas" : ""} />
+                </>
+              )}
               <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? "Asig. Diarias Cajas" : ""} />
             </>
           )}
 
-          {/* Daily Audit: Accessible to Everyone (except Pending, Carrier, Expo) */}
-          {user?.role !== UserRole.PENDING && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && (
+          {/* Daily Audit: Accessible to Everyone (except Pending, Carrier, Expo, Embarques) */}
+          {user?.role !== UserRole.PENDING && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && (
             <SidebarItem to="/daily-audit" icon={Activity} label={sidebarOpen ? "Control de Auditoría" : ""} />
           )}
 

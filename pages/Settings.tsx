@@ -219,6 +219,7 @@ export const Settings = () => {
                                                         <option value={UserRole.CARRIER}>Carrier</option>
                                                         <option value={UserRole.VIEWER}>Viewer</option>
                                                         <option value={UserRole.HANDHELD_USER}>Handheld</option>
+                                                        <option value={UserRole.EMBARQUES}>Embarques</option>
                                                         <option value={UserRole.PENDING}>Pending</option>
                                                     </select>
                                                     {u.role === UserRole.PENDING && (

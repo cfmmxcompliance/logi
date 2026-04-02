@@ -25,7 +25,8 @@ export enum UserRole {
   CARRIER = 'Carrier',   // Transport/Shipping partner
   VIEWER = 'Viewer',      // Read only
   PENDING = 'Pending',    // Default for new signups
-  HANDHELD_USER = 'Handheld User', // Operario de piso con scanner
+  HANDHELD_USER = 'Handheld User', // Operario de piso con scanner (Sello)
+  HANDHELD_USER2 = 'Handheld User 2', // Operario de piso con scanner (Liberacion)
   EMBARQUES = 'Embarques' // Equipo encargado de control de embarques
 }
 

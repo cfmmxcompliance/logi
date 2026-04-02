@@ -64,10 +64,18 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Handheld constraints (Bidirectional)
     const isHandheldPath = location.pathname.startsWith('/m/');
-    if (user?.role === UserRole.HANDHELD_USER) {
+    if (user?.role === UserRole.HANDHELD_USER || user?.role === UserRole.HANDHELD_USER2) {
         // Handheld users must be on /m/...
         if (!isHandheldPath) {
             return <Navigate to="/m/home" replace />;
+        }
+        
+        // Strict segregation
+        if (user?.role === UserRole.HANDHELD_USER && location.pathname === '/m/liberacion') {
+             return <Navigate to="/m/home" replace />;
+        }
+        if (user?.role === UserRole.HANDHELD_USER2 && location.pathname === '/m/sellos') {
+             return <Navigate to="/m/home" replace />;
         }
     } else if (user?.role) {
         // Non-Handheld (Desktop) users cannot access /m/...
@@ -98,7 +106,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
         return <Navigate to="/" replace />;
     }
 
-    if (user?.role === UserRole.HANDHELD_USER) {
+    if (user?.role === UserRole.HANDHELD_USER || user?.role === UserRole.HANDHELD_USER2) {
         return <>{children}</>;
     }
 

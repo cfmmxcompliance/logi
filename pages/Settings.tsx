@@ -218,7 +218,8 @@ export const Settings = () => {
                                                         <option value={UserRole.EXPO}>Expo</option>
                                                         <option value={UserRole.CARRIER}>Carrier</option>
                                                         <option value={UserRole.VIEWER}>Viewer</option>
-                                                        <option value={UserRole.HANDHELD_USER}>Handheld</option>
+                                                        <option value={UserRole.HANDHELD_USER}>Handheld (Sellos)</option>
+                                                        <option value={UserRole.HANDHELD_USER2}>Handheld 2 (Liberación)</option>
                                                         <option value={UserRole.EMBARQUES}>Embarques</option>
                                                         <option value={UserRole.PENDING}>Pending</option>
                                                     </select>

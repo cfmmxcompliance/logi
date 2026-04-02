@@ -257,7 +257,19 @@ export const AsignacionesDiarias: React.FC = () => {
 
           for (let i = 1; i < rows.length; i++) {
               const r = rows[i];
-              const rawFecha = r[fIdx]?.trim();
+              let rawFecha = r[fIdx]?.trim();
+              
+              // Normalizar fechas tipo DD/MM/YYYY que exporta Excel a YYYY-MM-DD
+              if (rawFecha && rawFecha.includes('/')) {
+                  const parts = rawFecha.split('/');
+                  if (parts.length === 3) {
+                      const year = parts[2].length === 4 ? parts[2] : `20${parts[2]}`;
+                      const month = parts[1].padStart(2, '0');
+                      const day = parts[0].padStart(2, '0');
+                      rawFecha = `${year}-${month}-${day}`;
+                  }
+              }
+
               const rawHora = hIdx !== -1 ? r[hIdx]?.trim() : '';
               const rawCaja = r[cIdx]?.trim().toUpperCase();
               const rawDriver = r[dIdx]?.trim().toUpperCase();

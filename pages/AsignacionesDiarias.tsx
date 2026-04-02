@@ -7,7 +7,7 @@ import { AsignacionCajaModel } from '../types/asignacionCaja';
 import { CajaModel } from '../types/caja';
 import { DriverModel } from '../types/driver';
 import { CarrierModel } from '../types/carrier';
-import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle } from 'lucide-react';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { parseCSV } from '../utils/csvHelpers';
 import modelosCaja from '../utils/modelosCaja.json';
@@ -364,6 +364,7 @@ export const AsignacionesDiarias: React.FC = () => {
         <table className="w-full text-left">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
             <tr>
+              <th className="p-4 font-medium border-r border-slate-100 bg-slate-100"># Secuencia</th>
               <th className="p-4 font-medium border-r border-slate-100 bg-blue-50/50">Fecha/Hora</th>
               <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Número Caja</th>
               <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Sub-Línea</th>
@@ -372,12 +373,14 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 font-medium text-orange-800 bg-orange-50/30">Nombre / Transportista</th>
               <th className="p-4 font-medium text-orange-800 bg-orange-50/30">Placas Tracto</th>
               <th className="p-4 font-medium text-purple-800 bg-purple-50/30">Modelo</th>
+              <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">Validador</th>
               <th className="p-4 font-medium text-right bg-slate-50">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">
-            {filteredData.map(a => (
+            {filteredData.map((a, index) => (
               <tr key={a.id} className="hover:bg-slate-50 transition-colors">
+                <td className="p-4 font-bold text-slate-400 bg-slate-50/20">{index + 1}</td>
                 <td className="p-4 font-medium text-slate-700 border-r border-slate-100">
                     <div className="flex flex-col gap-0.5">
                        <span className="flex items-center gap-1.5"><Calendar size={12} className="text-blue-500" /> {a.fecha}</span>
@@ -394,6 +397,10 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium">{a.placasTracto || '-'}</td>
                 <td className="p-4 font-medium text-slate-700">{a.modeloAsignado || '-'}</td>
                 
+                <td className="p-4 text-center">
+                    <XCircle size={18} className="text-red-500 mx-auto" />
+                </td>
+
                 <td className="p-4 flex gap-2 justify-end items-center">
                   <button onClick={() => openEdit(a)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors" title="Editar">
                     <Edit2 size={16} />
@@ -405,9 +412,9 @@ export const AsignacionesDiarias: React.FC = () => {
               </tr>
             ))}
             {filteredData.length === 0 && !loading && (
-              <tr><td colSpan={8} className="p-12 text-center text-slate-400">No se encontraron asignaciones diarias en este rango.</td></tr>
+              <tr><td colSpan={11} className="p-12 text-center text-slate-400">No se encontraron asignaciones diarias en este rango.</td></tr>
             )}
-            {loading && <tr><td colSpan={8} className="p-12 text-center text-slate-400">Cargando operación diaria...</td></tr>}
+            {loading && <tr><td colSpan={11} className="p-12 text-center text-slate-400">Cargando operación diaria...</td></tr>}
           </tbody>
         </table>
       </div>
@@ -493,12 +500,19 @@ export const AsignacionesDiarias: React.FC = () => {
 
               <div className="p-4 bg-purple-50 rounded-xl border border-purple-100 space-y-3">
                  <h3 className="text-xs font-bold text-purple-800 uppercase flex items-center gap-1.5"><Box size={14}/> Producto (Modelo)</h3>
-                 <div>
-                    <select required value={formData.modeloAsignado || ''} onChange={e => setFormData({...formData, modeloAsignado: e.target.value})} className="w-full border border-purple-200 rounded-lg p-2.5 outline-none bg-white shadow-sm focus:ring-2 focus:ring-purple-500">
-                        <option value="" disabled>Seleccionar Modelo...</option>
+                    <select 
+                        multiple
+                        required 
+                        value={formData.modeloAsignado ? formData.modeloAsignado.split(', ') : []} 
+                        onChange={e => {
+                            const selectedValues = Array.from(e.target.selectedOptions, option => (option as HTMLOptionElement).value);
+                            setFormData({...formData, modeloAsignado: selectedValues.join(', ')});
+                        }}
+                        className="w-full border border-purple-200 rounded-lg p-2.5 outline-none bg-white shadow-sm focus:ring-2 focus:ring-purple-500 min-h-[100px]"
+                    >
+                        <option value="" disabled>Seleccionar Modelos (Usa Ctrl/Cmd para varios)...</option>
                         {modelosCaja.map((m: string) => <option key={m} value={m}>{m}</option>)}
                     </select>
-                 </div>
               </div>
 
               <div className="pt-2 flex justify-end gap-3">

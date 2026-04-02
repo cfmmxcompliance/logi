@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { carrierService } from '../services/carrierService';
 import { CarrierModel } from '../types/carrier';
-import { Plus, Edit2, Trash2, Search, Filter } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Filter, Download, UploadCloud, FileSpreadsheet } from 'lucide-react';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
+import { parseCSV } from '../utils/csvHelpers';
 
 export const Carriers: React.FC = () => {
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
@@ -10,6 +11,7 @@ export const Carriers: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<Partial<CarrierModel>>({});
   const [isEditing, setIsEditing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
@@ -96,6 +98,83 @@ export const Carriers: React.FC = () => {
     setShowModal(true);
   };
 
+  const exportCSV = () => {
+      const headers = ["CÓDIGO (SCAC)", "NOMBRE COMERCIAL", "RAZÓN SOCIAL LEGAL"];
+      const rows = filteredCarriers.map(c => [
+          c.codigo,
+          c.nombre,
+          c.razonSocial
+      ]);
+      const csvContent = [headers, ...rows].map(e => e.map(item => `"${(item || '').replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `carriers_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  };
+
+  const downloadTemplate = () => {
+      const headers = ["CÓDIGO (SCAC)", "NOMBRE COMERCIAL", "RAZÓN SOCIAL LEGAL"];
+      const example = ["EGLV", "Evergreen", "Evergreen Marine Corp."];
+      const csvContent = [headers, example].map(e => e.join(",")).join("\n");
+      const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "plantilla_carriers.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+          const text = e.target?.result as string;
+          const rows = parseCSV(text);
+          if (rows.length < 2) return alert("El archivo está vacío o no tiene datos válidos.");
+
+          const headers = rows[0].map(h => h.trim().toUpperCase());
+          const cIdx = headers.findIndex(h => h.includes('CÓDIGO') || h.includes('SCAC'));
+          const nIdx = headers.findIndex(h => h.includes('NOMBRE'));
+          const rIdx = headers.findIndex(h => h.includes('RAZÓN'));
+
+          if (cIdx === -1 || nIdx === -1 || rIdx === -1) {
+              return alert("Estructura inválida. Asegúrate de usar la plantilla descargable.");
+          }
+
+          setLoading(true);
+          let imported = 0;
+          for (let i = 1; i < rows.length; i++) {
+              const r = rows[i];
+              if (!r[cIdx]) continue;
+              
+              const carrier: CarrierModel = {
+                  codigo: r[cIdx].trim().toUpperCase(),
+                  nombre: r[nIdx]?.trim() || '',
+                  razonSocial: r[rIdx]?.trim() || ''
+              };
+
+              try {
+                  await carrierService.addCarrier(carrier);
+                  imported++;
+              } catch(err) {
+                  console.error("Error importing row", r, err);
+              }
+          }
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          alert(`Importación finalizada. ${imported} carriers registrados.`);
+          loadCarriers();
+      };
+      reader.readAsText(file);
+  };
+
   return (
     <div className="p-6 max-w-6xl mx-auto animate-fade-in relative">
       <div className="flex justify-between items-center mb-6">
@@ -122,6 +201,20 @@ export const Carriers: React.FC = () => {
                  <Filter size={16} className="mr-2" />
                  {activeMassQuery ? `Filtros (${activeMassQuery.length})` : 'Mass Query'}
              </button>
+
+             <button onClick={downloadTemplate} className="px-3 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg border border-slate-300 transition-colors shadow-sm flex items-center text-sm font-medium" title="Plantilla CSV">
+                <FileSpreadsheet size={16} className="text-emerald-600" />
+             </button>
+
+             <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
+             <button onClick={() => fileInputRef.current?.click()} className="px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-300 transition-colors shadow-sm flex items-center text-sm font-medium" title="Subir CSV">
+                <UploadCloud size={16} className="text-indigo-600" />
+             </button>
+
+             <button onClick={exportCSV} className="px-4 py-2 bg-white text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-300 transition-colors shadow-sm flex items-center text-sm font-medium">
+                <Download size={16} className="mr-2 text-slate-500" /> Exportar
+             </button>
+
              <button onClick={openNew} className="bg-blue-600 text-white px-4 py-2 flex items-center rounded-lg hover:bg-blue-700 shadow-md shadow-blue-500/30 transition-all font-medium text-sm">
                 <Plus size={18} className="mr-2" /> Agregar Carrier
              </button>

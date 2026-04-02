@@ -20,6 +20,17 @@ export const liberacionService = {
     }
   },
 
+  async getAllLiberaciones(): Promise<LiberacionRecord[]> {
+    if (!db) return [];
+    try {
+      const snapshot = await getDocs(collection(db, COLLECTION_NAME));
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LiberacionRecord));
+    } catch (error) {
+      console.error('Error fetching all liberaciones:', error);
+      return [];
+    }
+  },
+
   async addLiberacion(liberacion: LiberacionRecord): Promise<string> {
     if (!db) throw new Error("Sin conexión a la base de datos (db nulo).");
     try {

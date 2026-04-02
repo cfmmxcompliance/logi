@@ -3,11 +3,13 @@ import { asignacionCajaService } from '../services/asignacionCajaService';
 import { cajaService } from '../services/cajaService';
 import { driverService } from '../services/driverService';
 import { carrierService } from '../services/carrierService';
+import { liberacionService } from '../services/liberacionService';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
 import { CajaModel } from '../types/caja';
 import { DriverModel } from '../types/driver';
 import { CarrierModel } from '../types/carrier';
-import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle } from 'lucide-react';
+import { LiberacionRecord } from '../types';
+import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle } from 'lucide-react';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { parseCSV } from '../utils/csvHelpers';
 import modelosCaja from '../utils/modelosCaja.json';
@@ -17,6 +19,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [cajas, setCajas] = useState<CajaModel[]>([]);
   const [drivers, setDrivers] = useState<DriverModel[]>([]);
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
+  const [liberaciones, setLiberaciones] = useState<LiberacionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<Partial<AsignacionCajaModel>>({ 
@@ -46,16 +49,18 @@ export const AsignacionesDiarias: React.FC = () => {
 
   const loadData = async () => {
     try {
-        const [asigData, cajasData, driversData, carriersData] = await Promise.all([
+        const [asigData, cajasData, driversData, carriersData, liberacionesData] = await Promise.all([
             asignacionCajaService.getAllAsignaciones().catch(() => []),
             cajaService.getAllCajas().catch(() => []),
             driverService.getAllDrivers().catch(() => []),
-            carrierService.getAllCarriers().catch(() => [])
+            carrierService.getAllCarriers().catch(() => []),
+            liberacionService.getAllLiberaciones().catch(() => [])
         ]);
         setAsignaciones(asigData.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()));
         setCajas(cajasData);
         setDrivers(driversData);
         setCarriers(carriersData);
+        setLiberaciones(liberacionesData);
     } catch (e) {
         console.error("Error cargando dependencias de Asignación:", e);
     } finally {
@@ -378,7 +383,9 @@ export const AsignacionesDiarias: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">
-            {filteredData.map((a, index) => (
+            {filteredData.map((a, index) => {
+              const hasLiberacion = liberaciones.some(lib => lib.asignacionCajaId === a.id);
+              return (
               <tr key={a.id} className="hover:bg-slate-50 transition-colors">
                 <td className="p-4 font-bold text-slate-400 bg-slate-50/20">{index + 1}</td>
                 <td className="p-4 font-medium text-slate-700 border-r border-slate-100">
@@ -398,7 +405,15 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 font-medium text-slate-700">{a.modeloAsignado || '-'}</td>
                 
                 <td className="p-4 text-center">
-                    <XCircle size={18} className="text-red-500 mx-auto" />
+                    {hasLiberacion ? (
+                        <div title="Caja Liberada" className="inline-flex items-center justify-center p-1.5 bg-emerald-100 rounded-full shadow-sm border border-emerald-200">
+                           <CheckCircle size={18} className="text-emerald-600" />
+                        </div>
+                    ) : (
+                        <div title="Pendiente de Cierre" className="inline-flex items-center justify-center p-1.5 bg-red-50 rounded-full border border-red-100">
+                           <XCircle size={18} className="text-red-500" />
+                        </div>
+                    )}
                 </td>
 
                 <td className="p-4 flex gap-2 justify-end items-center">
@@ -410,7 +425,8 @@ export const AsignacionesDiarias: React.FC = () => {
                   </button>
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {filteredData.length === 0 && !loading && (
               <tr><td colSpan={11} className="p-12 text-center text-slate-400">No se encontraron asignaciones diarias en este rango.</td></tr>
             )}

@@ -42,6 +42,16 @@ export const HandheldSellos = () => {
       const todasLasCajas = await asignacionCajaService.getAllAsignaciones();
       const cajasParaFecha = todasLasCajas.filter(c => c.fecha === targetDate);
       
+      cajasParaFecha.sort((a, b) => {
+        const dateTimeA = new Date(`${a.fecha}T${a.horaAsignacion || '00:00'}:00`).getTime();
+        const dateTimeB = new Date(`${b.fecha}T${b.horaAsignacion || '00:00'}:00`).getTime();
+        if (dateTimeA !== dateTimeB) return dateTimeA - dateTimeB;
+        
+        const crA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const crB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return crA - crB;
+      });
+      
       const sellosParaFecha = await selloService.getSellosByDate(targetDate);
       
       setCajasDelDia(cajasParaFecha);

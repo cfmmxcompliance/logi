@@ -71,7 +71,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
         }
     } else if (user?.role) {
         // Non-Handheld (Desktop) users cannot access /m/...
-        if (isHandheldPath) {
+        if (isHandheldPath && user?.role !== UserRole.EMBARQUES) {
             return <Navigate to="/" replace />;
         }
     }
@@ -88,11 +88,17 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
         if (!allowed.includes(location.pathname)) return <Navigate to="/shipping-schedules" replace />;
     }
 
+    // Embarques constraints
+    if (user?.role === UserRole.EMBARQUES) {
+        const allowed = ['/asignaciones-diarias', '/m/home', '/m/sellos', '/m/liberacion'];
+        if (!allowed.includes(location.pathname)) return <Navigate to="/asignaciones-diarias" replace />;
+    }
+
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
         return <Navigate to="/" replace />;
     }
 
-    if (user?.role === UserRole.HANDHELD_USER) {
+    if (user?.role === UserRole.HANDHELD_USER || (user?.role === UserRole.EMBARQUES && isHandheldPath)) {
         return <>{children}</>;
     }
 

@@ -363,14 +363,10 @@ export const HandheldLiberacion = () => {
                             </div>
                         )}
                         
-                        <div className="flex justify-between items-end mb-1">
-                             <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 tracking-wider">
-                                <span className="bg-slate-800 px-2 py-0.5 rounded text-white font-mono border border-slate-700">#{index + 1}</span>
-                                <span>{caja.horaAsignacion || '--:--'}</span>
-                             </div>
-                        </div>
-                        <div className="text-3xl font-black font-mono text-white tracking-widest leading-none mb-3">
-                            {caja.numeroCaja}
+                        <div className="text-3xl font-black font-mono text-white tracking-widest leading-none mb-3 flex items-center gap-3 flex-wrap">
+                            <span className="text-slate-500">#{index + 1}</span>
+                            <span className="text-blue-400">{caja.horaAsignacion || '--:--'}</span>
+                            <span>{caja.numeroCaja}</span>
                         </div>
                         <div className="flex gap-2">
                              <span className="bg-slate-700/50 text-slate-300 text-xs px-2.5 py-1 rounded-md font-medium border border-slate-600/50 shrink-0">

@@ -285,11 +285,11 @@ export const HandheldSellos = () => {
                   >
                     <div className="flex justify-between items-start">
                         <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 tracking-wider mb-1">
-                                <span className="bg-slate-700/50 px-2 py-0.5 rounded text-white font-mono">#{index + 1}</span>
-                                <span>{caja.horaAsignacion || '--:--'}</span>
+                            <div className="text-2xl font-black tracking-tight text-white flex items-center gap-3 flex-wrap">
+                                <span className="text-slate-500">#{index + 1}</span>
+                                <span className="text-blue-400">{caja.horaAsignacion || '--:--'}</span>
+                                <span>{caja.numeroCaja}</span>
                             </div>
-                            <div className="text-2xl font-black tracking-tight text-white">{caja.numeroCaja}</div>
                             <div className="text-sm font-medium text-slate-400 flex items-center gap-2">
                                 <span>{caja.carrierCodigo || "SC"}</span> • <span>{caja.placasCaja}</span> 
                             </div>

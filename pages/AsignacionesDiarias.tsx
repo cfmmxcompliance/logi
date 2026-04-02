@@ -191,10 +191,11 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // CSV EXPORT
   const exportCSV = () => {
-      const headers = ["FECHA", "HORA", "NÚMERO CAJA", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO"];
+      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO"];
       const rows = filteredData.map(a => [
           a.fecha,
           a.horaAsignacion || '',
+          a.numeroOperacion || '',
           a.numeroCaja,
           a.subLinea || '',
           a.placasCaja || '',
@@ -216,8 +217,8 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // CSV TEMPLATE
   const downloadTemplate = () => {
-      const headers = ["FECHA", "HORA", "NÚMERO CAJA", "DRIVER ID", "MODELO"];
-      const example = ["2026-03-25", "09:30", "EMCU-123456", "TRANSPORTES SA DE CV", "COMPACTO, SUV"];
+      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "DRIVER ID", "MODELO"];
+      const example = ["2026-03-25", "09:30", "OP-001", "EMCU-123456", "TRANSPORTES SA DE CV", "COMPACTO, SUV"];
       const csvContent = [headers, example].map(e => e.join(",")).join("\n");
       const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -243,6 +244,7 @@ export const AsignacionesDiarias: React.FC = () => {
           const headers = rows[0].map(h => h.trim().toUpperCase());
           const fIdx = headers.findIndex(h => h.includes('FECHA'));
           const hIdx = headers.findIndex(h => h.includes('HORA'));
+          const oIdx = headers.findIndex(h => h.includes('OPERACI'));
           const cIdx = headers.findIndex(h => h.includes('CAJA'));
           const dIdx = headers.findIndex(h => h.includes('DRIVER'));
           const mIdx = headers.findIndex(h => h.includes('MODELO'));
@@ -271,6 +273,7 @@ export const AsignacionesDiarias: React.FC = () => {
               }
 
               const rawHora = hIdx !== -1 ? r[hIdx]?.trim() : '';
+              const rawOperacion = oIdx !== -1 ? r[oIdx]?.trim().toUpperCase() : '';
               const rawCaja = r[cIdx]?.trim().toUpperCase();
               const rawDriver = r[dIdx]?.trim().toUpperCase();
               const rawModelo = mIdx !== -1 ? r[mIdx]?.trim().toUpperCase() : '';
@@ -292,6 +295,7 @@ export const AsignacionesDiarias: React.FC = () => {
               const asig: AsignacionCajaModel = {
                   fecha: rawFecha,
                   horaAsignacion: rawHora || new Date().toTimeString().substring(0, 5),
+                  numeroOperacion: rawOperacion || '',
                   carrierCodigo: carrierPadre,
                   numeroCaja: rawCaja,
                   subLinea: matchCaja ? matchCaja.nombreSubLinea || '' : '',
@@ -404,6 +408,7 @@ export const AsignacionesDiarias: React.FC = () => {
             <tr>
               <th className="p-4 font-medium border-r border-slate-100 bg-slate-100"># Secuencia</th>
               <th className="p-4 font-medium border-r border-slate-100 bg-blue-50/50 whitespace-nowrap">Fecha/Hora</th>
+              <th className="p-4 font-medium text-pink-800 bg-pink-50/30 whitespace-nowrap">No. Operación</th>
               <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Número Caja</th>
               <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Sub-Línea</th>
               <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Placas Caja</th>
@@ -428,6 +433,7 @@ export const AsignacionesDiarias: React.FC = () => {
                     </div>
                 </td>
                 
+                <td className="p-4 font-mono text-pink-700 font-bold tracking-wide whitespace-nowrap">{a.numeroOperacion || '-'}</td>
                 <td className="p-4 font-semibold text-emerald-700 font-mono tracking-wide">{a.numeroCaja}</td>
                 <td className="p-4 text-slate-600">{a.subLinea || '-'}</td>
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium">{a.placasCaja || '-'}</td>
@@ -494,6 +500,10 @@ export const AsignacionesDiarias: React.FC = () => {
                 <div className="flex-1">
                   <label className="block text-xs font-bold text-slate-500 mb-1">Hora (24h)</label>
                   <input type="time" required value={formData.horaAsignacion || ''} onChange={e => setFormData({...formData, horaAsignacion: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-bold text-slate-500 mb-1">No. Operación</label>
+                  <input type="text" value={formData.numeroOperacion || ''} onChange={e => setFormData({...formData, numeroOperacion: e.target.value.toUpperCase()})} placeholder="Opcional" className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-pink-500 outline-none font-mono uppercase" />
                 </div>
               </div>
 

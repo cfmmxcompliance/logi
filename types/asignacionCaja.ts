@@ -4,6 +4,7 @@ export interface AsignacionCajaModel {
   horaAsignacion?: string; // HH:mm
   carrierCodigo?: string;
   numeroCaja: string;
+  numeroOperacion?: string;
   subLinea: string;
   placasCaja: string;
   driverId: string;

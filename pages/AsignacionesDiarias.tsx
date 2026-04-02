@@ -327,7 +327,7 @@ export const AsignacionesDiarias: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto animate-fade-in relative">
+    <div className="p-6 w-full mx-auto animate-fade-in relative">
       <div className="flex justify-between items-center mb-6">
         <div>
            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">

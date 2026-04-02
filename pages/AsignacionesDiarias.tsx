@@ -585,7 +585,7 @@ export const AsignacionesDiarias: React.FC = () => {
                  <div>
                     <select required disabled={!formData.carrierCodigo} value={formData.numeroCaja || ''} onChange={e => handleCajaChange(e.target.value)} className="w-full border border-emerald-200 rounded-lg p-2.5 outline-none bg-white font-mono shadow-sm focus:ring-2 focus:ring-emerald-500 disabled:opacity-50">
                         <option value="" disabled>Seleccionar Número de Caja...</option>
-                        {cajas.filter(c => c.carrierCodigo === formData.carrierCodigo).map(c => <option key={c.NumeroCaja} value={c.NumeroCaja}>{c.NumeroCaja} ({c.nombreSubLinea || 'Sin sublinea'})</option>)}
+                        {cajas.map(c => <option key={c.NumeroCaja} value={c.NumeroCaja}>{c.NumeroCaja} ({c.nombreSubLinea || 'Sin sublinea'}) {c.carrierCodigo !== formData.carrierCodigo && c.carrierCodigo ? `[${c.carrierCodigo}]` : ''}</option>)}
                     </select>
                  </div>
                  <div className="flex gap-3">
@@ -605,7 +605,7 @@ export const AsignacionesDiarias: React.FC = () => {
                  <div>
                     <select required disabled={!formData.carrierCodigo} value={formData.driverId || ''} onChange={e => handleDriverChange(e.target.value)} className="w-full border border-orange-200 rounded-lg p-2.5 outline-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 disabled:opacity-50">
                         <option value="" disabled>Seleccionar Driver ID...</option>
-                        {drivers.filter(d => d.carrierCodigo === formData.carrierCodigo).map(d => <option key={d.driverId} value={d.driverId}>{d.driverId} - {d.nombre}</option>)}
+                        {drivers.map(d => <option key={d.driverId} value={d.driverId}>{d.driverId} - {d.nombre} {d.carrierCodigo !== formData.carrierCodigo && d.carrierCodigo ? `[${d.carrierCodigo}]` : ''}</option>)}
                     </select>
                  </div>
                  <div className="flex gap-3">

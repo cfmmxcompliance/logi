@@ -331,7 +331,7 @@ export const HandheldLiberacion = () => {
                 <p className="text-sm mt-1">No hay cajas asignadas en plataforma para esta fecha.</p>
             </div>
         ) : (
-            cajasDelDia.map(caja => {
+            cajasDelDia.map((caja, index) => {
                 const lib = getLiberacionForCaja(caja.id!);
                 const yaLiberada = !!lib;
                 // Also check if it even has a Sello
@@ -365,7 +365,8 @@ export const HandheldLiberacion = () => {
                         
                         <div className="flex justify-between items-end mb-1">
                              <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 tracking-wider">
-                                CAJA ASIGNADA
+                                <span className="bg-slate-800 px-2 py-0.5 rounded text-white font-mono border border-slate-700">#{index + 1}</span>
+                                <span>{caja.horaAsignacion || '--:--'}</span>
                              </div>
                         </div>
                         <div className="text-3xl font-black font-mono text-white tracking-widest leading-none mb-3">

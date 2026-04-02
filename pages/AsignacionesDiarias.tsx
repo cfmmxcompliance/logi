@@ -403,11 +403,11 @@ export const AsignacionesDiarias: React.FC = () => {
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
             <tr>
               <th className="p-4 font-medium border-r border-slate-100 bg-slate-100"># Secuencia</th>
-              <th className="p-4 font-medium border-r border-slate-100 bg-blue-50/50">Fecha/Hora</th>
+              <th className="p-4 font-medium border-r border-slate-100 bg-blue-50/50 whitespace-nowrap">Fecha/Hora</th>
               <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Número Caja</th>
               <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Sub-Línea</th>
               <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Placas Caja</th>
-              <th className="p-4 font-medium text-orange-800 bg-orange-50/30">Driver ID</th>
+              <th className="p-4 font-medium text-orange-800 bg-orange-50/30 whitespace-nowrap">Driver ID</th>
               <th className="p-4 font-medium text-orange-800 bg-orange-50/30">Nombre / Transportista</th>
               <th className="p-4 font-medium text-orange-800 bg-orange-50/30">Placas Tracto</th>
               <th className="p-4 font-medium text-purple-800 bg-purple-50/30">Modelo</th>
@@ -421,10 +421,10 @@ export const AsignacionesDiarias: React.FC = () => {
               return (
               <tr key={a.id} className="hover:bg-slate-50 transition-colors">
                 <td className="p-4 font-bold text-slate-400 bg-slate-50/20">{index + 1}</td>
-                <td className="p-4 font-medium text-slate-700 border-r border-slate-100">
-                    <div className="flex flex-col gap-0.5">
+                <td className="p-4 font-medium text-slate-700 border-r border-slate-100 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
                        <span className="flex items-center gap-1.5"><Calendar size={12} className="text-blue-500" /> {a.fecha}</span>
-                       {a.horaAsignacion && <span className="text-xs text-slate-400 pl-4">{a.horaAsignacion}</span>}
+                       {a.horaAsignacion && <span className="text-xs text-slate-400 font-mono">| {a.horaAsignacion}</span>}
                     </div>
                 </td>
                 
@@ -432,7 +432,7 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 text-slate-600">{a.subLinea || '-'}</td>
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium">{a.placasCaja || '-'}</td>
                 
-                <td className="p-4 font-mono text-orange-600 font-medium">{a.driverId}</td>
+                <td className="p-4 font-mono text-orange-600 font-medium whitespace-nowrap">{a.driverId}</td>
                 <td className="p-4 font-medium text-slate-800">{a.nombreDriver}</td>
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium">{a.placasTracto || '-'}</td>
                 <td className="p-4 font-medium text-slate-700">{a.modeloAsignado || '-'}</td>

@@ -5,6 +5,7 @@ import {
   XCircle, Download, ChevronRight, Cpu, RefreshCw, Trash2,
   AlertCircle, FileSearch, Zap, BarChart3, BookOpen, CheckCircle2, Copy
 } from 'lucide-react';
+import { storageService } from '../services/storageService.ts';
 
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -306,13 +307,20 @@ export const BOMAnalyzer: React.FC = () => {
     const estiloCount: Record<string, number> = {};
     rawRows.forEach(r => { estiloCount[r.ESTILO] = (estiloCount[r.ESTILO] || 0) + 1; });
 
+    const partsDb = new Set(storageService.getParts().map(p => (p.PART_NUMBER || '').toString().trim().toUpperCase()));
+
     addLine('info', `Estilos únicos: ${estilos.length}`);
     estilos.forEach((e: string) => {
+      const eClean = e.trim().toUpperCase().replace(/\.$/, '');
       const hasPoint = e.endsWith('.');
       const isClean = !hasPoint;
-      const icon = isClean ? '  ✓' : '  ⚠';
-      const note = hasPoint ? '— tiene punto final' : '— correcto';
-      addLine(isClean ? 'ok' : 'warn', `${icon}  ${e}  →  ${estiloCount[e]} registros ${note}`);
+      const inDB = partsDb.has(eClean);
+      
+      const icon = isClean && inDB ? '  ✓' : '  ⚠';
+      const dbMsg = inDB ? '[DB: OK]' : '[DB: NO EXISTE]';
+      const note = hasPoint ? `— tiene punto final ${dbMsg}` : `— formato correcto ${dbMsg}`;
+      
+      addLine(isClean && inDB ? 'ok' : 'warn', `${icon}  ${e}  →  ${estiloCount[e]} registros ${note}`);
     });
     addBlank();
 

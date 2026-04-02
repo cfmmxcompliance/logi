@@ -481,9 +481,9 @@ export const CIExtractor: React.FC = () => {
 
     const pendingBLs = React.useMemo(() => {
         const uploadedInvoices = new Set(items.map(i => String(i.invoiceNo).trim().toUpperCase()));
-        
+
         const pendingMap = new Map<string, { vessel: string, containers: Set<string>, invoices: Set<string> }>();
-        
+
         tracking.forEach(t => {
             if (t.blNo && t.invoiceNo) {
                 const inv = String(t.invoiceNo).trim().toUpperCase();
@@ -496,7 +496,7 @@ export const CIExtractor: React.FC = () => {
                 }
             }
         });
-        
+
         return Array.from(pendingMap.entries()).map(([blNo, data]) => ({
             blNo,
             vessel: data.vessel,
@@ -2986,7 +2986,7 @@ export const CIExtractor: React.FC = () => {
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[80vh] overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                                <Database className="text-orange-500" size={24} /> 
+                                <Database className="text-orange-500" size={24} />
                                 BLs Pendientes de Carga
                             </h2>
                             <button onClick={() => setShowPendingBLsModal(false)} className="text-slate-400 hover:text-slate-600">

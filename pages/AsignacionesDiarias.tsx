@@ -7,9 +7,10 @@ import { AsignacionCajaModel } from '../types/asignacionCaja';
 import { CajaModel } from '../types/caja';
 import { DriverModel } from '../types/driver';
 import { CarrierModel } from '../types/carrier';
-import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box } from 'lucide-react';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { parseCSV } from '../utils/csvHelpers';
+import modelosCaja from '../utils/modelosCaja.json';
 
 export const AsignacionesDiarias: React.FC = () => {
   const [asignaciones, setAsignaciones] = useState<AsignacionCajaModel[]>([]);
@@ -18,12 +19,18 @@ export const AsignacionesDiarias: React.FC = () => {
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState<Partial<AsignacionCajaModel>>({ fecha: new Date().toISOString().split('T')[0] });
+  const [formData, setFormData] = useState<Partial<AsignacionCajaModel>>({ 
+    fecha: new Date().toISOString().split('T')[0],
+    horaAsignacion: new Date().toTimeString().substring(0, 5)
+  });
   const [isEditing, setIsEditing] = useState(false);
 
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [dateRange, setDateRange] = useState({ 
+    start: new Date().toISOString().split('T')[0], 
+    end: new Date().toISOString().split('T')[0] 
+  });
   const [isMassQueryOpen, setIsMassQueryOpen] = useState(false);
   const [queryConditions, setQueryConditions] = useState<QueryCondition[]>([
       { id: '1', column: 'numeroCaja', operator: 'in', type: 'string', input: '' }
@@ -31,7 +38,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [activeMassQuery, setActiveMassQuery] = useState<QueryCondition[] | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const columns = ['fecha', 'numeroCaja', 'subLinea', 'placasCaja', 'driverId', 'nombreDriver', 'placasTracto'];
+  const columns = ['fecha', 'horaAsignacion', 'numeroCaja', 'subLinea', 'placasCaja', 'driverId', 'nombreDriver', 'placasTracto', 'modeloAsignado'];
 
   useEffect(() => {
     loadData();
@@ -91,6 +98,13 @@ export const AsignacionesDiarias: React.FC = () => {
             });
         });
     }
+
+    // Sort combined by date and time (ascending - earliest first)
+    result.sort((a, b) => {
+        const dateTimeA = new Date(`${a.fecha}T${a.horaAsignacion || '00:00'}:00`).getTime();
+        const dateTimeB = new Date(`${b.fecha}T${b.horaAsignacion || '00:00'}:00`).getTime();
+        return dateTimeA - dateTimeB;
+    });
 
     return result;
   }, [asignaciones, searchTerm, dateRange, activeMassQuery]);
@@ -152,28 +166,36 @@ export const AsignacionesDiarias: React.FC = () => {
   };
 
   const openNew = () => {
-      setFormData({ fecha: new Date().toISOString().split('T')[0] });
+      setFormData({ 
+          fecha: new Date().toISOString().split('T')[0],
+          horaAsignacion: new Date().toTimeString().substring(0, 5)
+      });
       setIsEditing(false);
       setShowModal(true);
   };
 
   const openEdit = (record: AsignacionCajaModel) => {
-      setFormData(record);
+      setFormData({
+          ...record,
+          horaAsignacion: record.horaAsignacion || new Date().toTimeString().substring(0, 5)
+      });
       setIsEditing(true);
       setShowModal(true);
   };
 
   // CSV EXPORT
   const exportCSV = () => {
-      const headers = ["FECHA", "NÚMERO CAJA", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO"];
+      const headers = ["FECHA", "HORA", "NÚMERO CAJA", "SUB-LÍNEA", "MODAL C", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO"];
       const rows = filteredData.map(a => [
           a.fecha,
+          a.horaAsignacion || '',
           a.numeroCaja,
           a.subLinea,
           a.placasCaja,
           a.driverId,
           a.nombreDriver,
-          a.placasTracto
+          a.placasTracto,
+          a.modeloAsignado || ''
       ]);
       const csvContent = [headers, ...rows].map(e => e.map(item => `"${(item || '').replace(/"/g, '""')}"`).join(",")).join("\n");
       const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -238,6 +260,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
               const asig: AsignacionCajaModel = {
                   fecha: rawFecha,
+                  horaAsignacion: new Date().toTimeString().substring(0, 5),
                   carrierCodigo: carrierPadre,
                   numeroCaja: rawCaja,
                   subLinea: matchCaja ? matchCaja.nombreSubLinea || '' : '',
@@ -284,7 +307,17 @@ export const AsignacionesDiarias: React.FC = () => {
                 />
              </div>
              
-             <div className="flex items-center bg-white border border-slate-300 rounded-lg px-2 overflow-hidden shadow-sm">
+             <div className="flex items-center bg-white border border-slate-300 rounded-lg pr-2 overflow-hidden shadow-sm">
+                <button 
+                  onClick={() => {
+                    const today = new Date().toISOString().split('T')[0];
+                    setDateRange({ start: today, end: today });
+                  }}
+                  className="bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold px-3 py-2 text-xs border-r border-slate-200 transition-colors h-full"
+                  title="Filtrar por Hoy"
+                >
+                  HOY
+                </button>
                 <Calendar size={14} className="text-slate-400 ml-2" />
                 <input 
                     type="date"
@@ -331,13 +364,14 @@ export const AsignacionesDiarias: React.FC = () => {
         <table className="w-full text-left">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
             <tr>
-              <th className="p-4 font-medium border-r border-slate-100 bg-blue-50/50">Fecha Op.</th>
+              <th className="p-4 font-medium border-r border-slate-100 bg-blue-50/50">Fecha/Hora</th>
               <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Número Caja</th>
               <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Sub-Línea</th>
               <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Placas Caja</th>
               <th className="p-4 font-medium text-orange-800 bg-orange-50/30">Driver ID</th>
               <th className="p-4 font-medium text-orange-800 bg-orange-50/30">Nombre / Transportista</th>
               <th className="p-4 font-medium text-orange-800 bg-orange-50/30">Placas Tracto</th>
+              <th className="p-4 font-medium text-purple-800 bg-purple-50/30">Modelo</th>
               <th className="p-4 font-medium text-right bg-slate-50">Acciones</th>
             </tr>
           </thead>
@@ -345,9 +379,9 @@ export const AsignacionesDiarias: React.FC = () => {
             {filteredData.map(a => (
               <tr key={a.id} className="hover:bg-slate-50 transition-colors">
                 <td className="p-4 font-medium text-slate-700 border-r border-slate-100">
-                    <div className="flex items-center gap-1.5">
-                       <Calendar size={14} className="text-blue-500" />
-                       {a.fecha}
+                    <div className="flex flex-col gap-0.5">
+                       <span className="flex items-center gap-1.5"><Calendar size={12} className="text-blue-500" /> {a.fecha}</span>
+                       {a.horaAsignacion && <span className="text-xs text-slate-400 pl-4">{a.horaAsignacion}</span>}
                     </div>
                 </td>
                 
@@ -358,6 +392,7 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 font-mono text-orange-600 font-medium">{a.driverId}</td>
                 <td className="p-4 font-medium text-slate-800">{a.nombreDriver}</td>
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium">{a.placasTracto || '-'}</td>
+                <td className="p-4 font-medium text-slate-700">{a.modeloAsignado || '-'}</td>
                 
                 <td className="p-4 flex gap-2 justify-end items-center">
                   <button onClick={() => openEdit(a)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors" title="Editar">
@@ -395,9 +430,15 @@ export const AsignacionesDiarias: React.FC = () => {
                 {isEditing ? 'Editar Asignación' : 'Relacionar Caja / Operador'}
             </h2>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">Fecha Operativa</label>
-                <input type="date" required value={formData.fecha || ''} onChange={e => setFormData({...formData, fecha: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Fecha Operativa</label>
+                  <input type="date" required value={formData.fecha || ''} onChange={e => setFormData({...formData, fecha: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Hora (24h)</label>
+                  <input type="time" required value={formData.horaAsignacion || ''} onChange={e => setFormData({...formData, horaAsignacion: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
               </div>
 
               <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 space-y-3">
@@ -447,6 +488,16 @@ export const AsignacionesDiarias: React.FC = () => {
                         <label className="block text-xs text-orange-700 mb-1">Placas Tracto</label>
                         <input disabled value={formData.placasTracto || ''} className="w-full bg-orange-100/50 border-transparent rounded p-2 text-sm text-orange-800 font-mono" placeholder="Auto-completado" />
                     </div>
+                 </div>
+              </div>
+
+              <div className="p-4 bg-purple-50 rounded-xl border border-purple-100 space-y-3">
+                 <h3 className="text-xs font-bold text-purple-800 uppercase flex items-center gap-1.5"><Box size={14}/> Producto (Modelo)</h3>
+                 <div>
+                    <select required value={formData.modeloAsignado || ''} onChange={e => setFormData({...formData, modeloAsignado: e.target.value})} className="w-full border border-purple-200 rounded-lg p-2.5 outline-none bg-white shadow-sm focus:ring-2 focus:ring-purple-500">
+                        <option value="" disabled>Seleccionar Modelo...</option>
+                        {modelosCaja.map((m: string) => <option key={m} value={m}>{m}</option>)}
+                    </select>
                  </div>
               </div>
 

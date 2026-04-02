@@ -131,8 +131,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {/* Operational Transport -> Admin, Editor, Agent, Controller, Expo, Carrier */}
           {[UserRole.ADMIN, UserRole.EDITOR, UserRole.AGENT, UserRole.CONTROLLER, UserRole.EXPO, UserRole.CARRIER].includes(user?.role as UserRole) && (
             <>
-              <SidebarItem to="/carriers" icon={Anchor} label={sidebarOpen ? "Carriers" : ""} />
-              <SidebarItem to="/transport-lines" icon={Truck} label={sidebarOpen ? "Transport Lines" : ""} />
+              {user?.role !== UserRole.CARRIER && (
+                <>
+                  <SidebarItem to="/carriers" icon={Anchor} label={sidebarOpen ? "Carriers" : ""} />
+                  <SidebarItem to="/transport-lines" icon={Truck} label={sidebarOpen ? "Transport Lines" : ""} />
+                </>
+              )}
               <SidebarItem to="/drivers" icon={Users} label={sidebarOpen ? "Drivers" : ""} />
               <SidebarItem to="/cajas" icon={Container} label={sidebarOpen ? "Cajas" : ""} />
               <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? "Asig. Diarias Cajas" : ""} />

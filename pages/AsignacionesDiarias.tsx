@@ -235,19 +235,23 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // CSV EXPORT
   const exportCSV = () => {
-      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO"];
-      const rows = filteredData.map(a => [
-          a.fecha,
-          a.horaAsignacion || '',
-          a.numeroOperacion || '',
-          a.numeroCaja,
-          a.subLinea || '',
-          a.placasCaja || '',
-          a.driverId,
-          a.nombreDriver || '',
-          a.placasTracto || '',
-          a.modeloAsignado || ''
-      ]);
+      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO", "SELLO LIBERACIÓN"];
+      const rows = filteredData.map(a => {
+          const lib = liberaciones.find(l => l.asignacionCajaId === a.id);
+          return [
+              a.fecha,
+              a.horaAsignacion || '',
+              a.numeroOperacion || '',
+              a.numeroCaja,
+              a.subLinea || '',
+              a.placasCaja || '',
+              a.driverId,
+              a.nombreDriver || '',
+              a.placasTracto || '',
+              a.modeloAsignado || '',
+              lib ? lib.selloValidado : ''
+          ];
+      });
       const csvContent = [headers, ...rows].map(e => e.map(item => `"${(item || '').replace(/"/g, '""')}"`).join(",")).join("\n");
       const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -467,7 +471,8 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 font-medium text-orange-800 bg-orange-50/30 whitespace-nowrap">Driver ID</th>
               <th className="p-4 font-medium text-orange-800 bg-orange-50/30">Nombre / Transportista</th>
               <th className="p-4 font-medium text-orange-800 bg-orange-50/30">Placas Tracto</th>
-              <th className="p-4 font-medium text-purple-800 bg-purple-50/30">Modelo</th>
+              <th className="p-4 font-medium text-purple-800 bg-purple-50/30 whitespace-nowrap">Modelo</th>
+              <th className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap">Sello Liberación</th>
               <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">CARGADO</th>
               <th className="p-4 font-medium text-right bg-slate-50">Acciones</th>
             </tr>
@@ -493,9 +498,13 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium">{a.placasCaja || '-'}</td>
                 
                 <td className="p-4 font-mono text-orange-600 font-medium whitespace-nowrap">{a.driverId}</td>
-                <td className="p-4 font-medium text-slate-800">{a.nombreDriver}</td>
-                <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium">{a.placasTracto || '-'}</td>
-                <td className="p-4 font-medium text-slate-700">{a.modeloAsignado || '-'}</td>
+                <td className="p-4 font-medium text-slate-800 whitespace-nowrap">{a.nombreDriver}</td>
+                <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium whitespace-nowrap">{a.placasTracto || '-'}</td>
+                <td className="p-4 font-medium text-slate-700 whitespace-nowrap">{a.modeloAsignado || '-'}</td>
+                
+                <td className="p-4 font-mono text-teal-700 font-bold whitespace-nowrap border-l border-teal-100/50 bg-teal-50/10">
+                    {hasLiberacion ? liberaciones.find(l => l.asignacionCajaId === a.id)?.selloValidado : '-'}
+                </td>
                 
                 <td className="p-4 text-center">
                     {hasLiberacion ? (

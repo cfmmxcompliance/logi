@@ -142,9 +142,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 </>
               )}
               <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? "Asig. Diarias Cajas" : ""} />
-              {user?.role === UserRole.EMBARQUES && (
-                <SidebarItem to="/m/home" icon={LayoutDashboard} label={sidebarOpen ? "Módulo Handheld" : ""} />
-              )}
             </>
           )}
 

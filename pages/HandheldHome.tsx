@@ -1,8 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
-import { LogOut, ShieldCheck, Box, DoorOpen, Monitor } from 'lucide-react';
+import { LogOut, ShieldCheck, Box, DoorOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { UserRole } from '../types.ts';
 
 export const HandheldHome = () => {
     const { user, logout } = useAuth();
@@ -62,15 +61,6 @@ export const HandheldHome = () => {
                 </div>
 
                 <div className="w-full mt-auto mb-4 flex flex-col gap-3">
-                    {user?.role === UserRole.EMBARQUES && (
-                        <button 
-                            onClick={() => navigate('/asignaciones-diarias')}
-                            className="w-full h-[56px] bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg transition-all flex items-center justify-center gap-3 text-lg"
-                        >
-                            <Monitor size={22} className="text-white/80" />
-                            Modo Web
-                        </button>
-                    )}
                     <button 
                         onClick={() => logout()}
                         className="w-full h-[56px] bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-300 rounded-2xl font-bold shadow-lg transition-all flex items-center justify-center gap-3 text-lg"

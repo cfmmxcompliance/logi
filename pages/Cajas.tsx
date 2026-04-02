@@ -141,78 +141,85 @@ export const Cajas: React.FC = () => {
 
   // --- CSV LOGIC ---
   const exportToCSV = () => {
-    const headers = cajaColumns.join(',');
-    const rows = filteredCajas.map(m => {
-        return cajaColumns.map(col => {
-            let val = (m as any)[col] ?? '';
-            val = String(val).replace(/"/g, '""');
-            if (val.includes(',') || val.includes('\n') || val.includes('"')) {
-                val = `"${val}"`;
-            }
-            return val;
-        }).join(',');
-    });
-    const csvContent = "\uFEFF" + [headers, ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Cajas_Export_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const headers = ["NÚMERO CAJA", "CARRIER (SCAC)", "LÍNEA TRANSPORTE", "NOMBRE SUB-LÍNEA", "APÉNDICE 10", "TIPO CAJA", "PLACAS"];
+      const rows = filteredCajas.map(c => [
+          c.NumeroCaja,
+          c.carrierCodigo,
+          c.TransportLine,
+          c.nombreSubLinea || '',
+          c.claveApendice10 || '',
+          c.TipoCaja,
+          c.placas || ''
+      ]);
+      const csvContent = [headers, ...rows].map(e => e.map(item => `"${(item || '').replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Cajas_Export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
   };
 
   const downloadTemplate = () => {
-    const headers = cajaColumns.join(',');
-    const csvContent = "\uFEFF" + headers;
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Plantilla_Cajas_Importacion.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const headers = ["NÚMERO CAJA", "CARRIER (SCAC)", "LÍNEA TRANSPORTE", "NOMBRE SUB-LÍNEA", "APÉNDICE 10 (CLAVE)", "TIPO CAJA", "PLACAS"];
+      const example = ["EMCU-123456", "EGLV", "APL Logistics", "DIVISION REEFER", "8", "40HC", "123-AB-4C"];
+      const csvContent = [headers, example].map(e => e.join(",")).join("\n");
+      const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "plantilla_cajas.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
       if (!file) return;
 
       const reader = new FileReader();
       reader.onload = async (evt) => {
           const text = evt.target?.result as string;
-          if (!text) return;
           const rows = parseCSV(text);
-          if (rows.length < 2) {
-              alert("El archivo CSV está vacío.");
-              return;
+          if (rows.length < 2) return alert("El archivo está vacío o no tiene datos válidos.");
+
+          const headers = rows[0].map(h => h.trim().toUpperCase());
+          const nIdx = headers.findIndex(h => h.includes('NÚMERO CAJA') || h.includes('NUMERO CAJA') || h.includes('NUMEROCAJA'));
+          const cIdx = headers.findIndex(h => h.includes('CARRIER') || h.includes('SCAC'));
+          const lIdx = headers.findIndex(h => h.includes('LÍNEA TRANSPORTE') || h.includes('LINEA') || h.includes('LÍNEA'));
+          const sIdx = headers.findIndex(h => h.includes('NOMBRE SUB-LÍNEA') || h.includes('SUB') || h.includes('SUB-LINEA'));
+          const aIdx = headers.findIndex(h => h.includes('APÉNDICE') || h.includes('APENDICE') || h.includes('10'));
+          const tIdx = headers.findIndex(h => h.includes('TIPO CAJA') || h.includes('TIPO'));
+          const pIdx = headers.findIndex(h => h.includes('PLACAS'));
+
+          if (nIdx === -1 || cIdx === -1) {
+              return alert("Estructura inválida. Asegúrate de usar la plantilla descargable con NÚMERO CAJA y CARRIER (SCAC).");
           }
 
-          const headers = rows[0].map(h => h.trim());
+          setLoading(true);
           const records: CajaModel[] = [];
 
           for (let i = 1; i < rows.length; i++) {
-              const row = rows[i];
-              if (row.length < 2) continue;
+              const r = rows[i];
+              if (!r[nIdx] || !r[cIdx]) continue;
               
-              const model: any = {};
-              headers.forEach((h, idx) => {
-                  let key = h;
-                  if (h.toUpperCase() === 'NOMBRE SUB-LÍNEA' || h.toUpperCase() === 'NOMBRE SUB-LINEA') {
-                      key = 'nombreSubLinea';
-                  }
-                  model[key] = row[idx]?.trim() || '';
+              records.push({
+                  NumeroCaja: r[nIdx].trim().toUpperCase(),
+                  carrierCodigo: r[cIdx].trim().toUpperCase(),
+                  TransportLine: lIdx !== -1 ? r[lIdx]?.trim() : '',
+                  nombreSubLinea: sIdx !== -1 ? r[sIdx]?.trim().toUpperCase() : '',
+                  claveApendice10: aIdx !== -1 ? r[aIdx]?.trim() : '',
+                  TipoCaja: tIdx !== -1 ? r[tIdx]?.trim().toUpperCase() : '',
+                  placas: pIdx !== -1 ? r[pIdx]?.trim().toUpperCase() : ''
               });
-
-              if (model.NumeroCaja && model.carrierCodigo) {
-                  records.push(model as CajaModel);
-              }
           }
 
           if (records.length === 0) {
-              alert("No se encontraron registros válidos. Obligatorios: NumeroCaja, carrierCodigo.");
+              alert("No se encontraron registros válidos. Obligatorios: NÚMERO CAJA, CARRIER (SCAC).");
+              setLoading(false);
               if (fileInputRef.current) fileInputRef.current.value = '';
               return;
           }
@@ -227,6 +234,8 @@ export const Cajas: React.FC = () => {
               }
               alert(`¡Carga exitosa! Se procesaron ${successCount} registros.`);
               loadCajas();
+          } else {
+              setLoading(false);
           }
           if (fileInputRef.current) fileInputRef.current.value = '';
       };

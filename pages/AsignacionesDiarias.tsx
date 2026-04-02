@@ -190,16 +190,16 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // CSV EXPORT
   const exportCSV = () => {
-      const headers = ["FECHA", "HORA", "NÚMERO CAJA", "SUB-LÍNEA", "MODAL C", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO"];
+      const headers = ["FECHA", "HORA", "NÚMERO CAJA", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO"];
       const rows = filteredData.map(a => [
           a.fecha,
           a.horaAsignacion || '',
           a.numeroCaja,
-          a.subLinea,
-          a.placasCaja,
+          a.subLinea || '',
+          a.placasCaja || '',
           a.driverId,
-          a.nombreDriver,
-          a.placasTracto,
+          a.nombreDriver || '',
+          a.placasTracto || '',
           a.modeloAsignado || ''
       ]);
       const csvContent = [headers, ...rows].map(e => e.map(item => `"${(item || '').replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -215,8 +215,8 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // CSV TEMPLATE
   const downloadTemplate = () => {
-      const headers = ["FECHA (YYYY-MM-DD)","NÚMERO CAJA","DRIVER ID (NOMBRE DE EMPRESA)"];
-      const example = ["2026-03-25", "EMCU-123456", "TRANSPORTES SA DE CV"];
+      const headers = ["FECHA", "HORA", "NÚMERO CAJA", "DRIVER ID", "MODELO"];
+      const example = ["2026-03-25", "09:30", "EMCU-123456", "TRANSPORTES SA DE CV", "COMPACTO, SUV"];
       const csvContent = [headers, example].map(e => e.join(",")).join("\n");
       const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -241,11 +241,13 @@ export const AsignacionesDiarias: React.FC = () => {
 
           const headers = rows[0].map(h => h.trim().toUpperCase());
           const fIdx = headers.findIndex(h => h.includes('FECHA'));
+          const hIdx = headers.findIndex(h => h.includes('HORA'));
           const cIdx = headers.findIndex(h => h.includes('CAJA'));
           const dIdx = headers.findIndex(h => h.includes('DRIVER'));
+          const mIdx = headers.findIndex(h => h.includes('MODELO'));
 
           if (fIdx === -1 || cIdx === -1 || dIdx === -1) {
-              return alert("Estructura inválida. La cabecera debe contener columnas llamadas FECHA, NÚMERO CAJA y DRIVER ID.");
+              return alert("Estructura inválida. La cabecera debe contener al menos FECHA, NÚMERO CAJA y DRIVER ID.");
           }
 
           setLoading(true);
@@ -253,8 +255,10 @@ export const AsignacionesDiarias: React.FC = () => {
           for (let i = 1; i < rows.length; i++) {
               const r = rows[i];
               const rawFecha = r[fIdx]?.trim();
+              const rawHora = hIdx !== -1 ? r[hIdx]?.trim() : '';
               const rawCaja = r[cIdx]?.trim().toUpperCase();
               const rawDriver = r[dIdx]?.trim().toUpperCase();
+              const rawModelo = mIdx !== -1 ? r[mIdx]?.trim().toUpperCase() : '';
 
               if (!rawFecha || !rawCaja || !rawDriver) continue;
 
@@ -265,14 +269,15 @@ export const AsignacionesDiarias: React.FC = () => {
 
               const asig: AsignacionCajaModel = {
                   fecha: rawFecha,
-                  horaAsignacion: new Date().toTimeString().substring(0, 5),
+                  horaAsignacion: rawHora || new Date().toTimeString().substring(0, 5),
                   carrierCodigo: carrierPadre,
                   numeroCaja: rawCaja,
                   subLinea: matchCaja ? matchCaja.nombreSubLinea || '' : '',
                   placasCaja: matchCaja ? matchCaja.placas || '' : '',
                   driverId: rawDriver,
                   nombreDriver: matchDriver ? matchDriver.nombre : rawDriver,
-                  placasTracto: matchDriver ? matchDriver.placasTracto || '' : ''
+                  placasTracto: matchDriver ? matchDriver.placasTracto || '' : '',
+                  modeloAsignado: rawModelo || ''
               };
 
               try {

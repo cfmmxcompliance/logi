@@ -9,7 +9,7 @@ import { CajaModel } from '../types/caja';
 import { DriverModel } from '../types/driver';
 import { CarrierModel } from '../types/carrier';
 import { LiberacionRecord } from '../types';
-import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { parseCSV } from '../utils/csvHelpers';
 import { useAuth } from '../context/AuthContext';
@@ -33,6 +33,7 @@ export const AsignacionesDiarias: React.FC = () => {
     horaAsignacion: new Date().toTimeString().substring(0, 5)
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
 
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
@@ -110,20 +111,43 @@ export const AsignacionesDiarias: React.FC = () => {
         });
     }
 
-    // Sort combined by date and time (ascending - earliest first)
-    result.sort((a, b) => {
-        const dateTimeA = new Date(`${a.fecha}T${a.horaAsignacion || '00:00'}:00`).getTime();
-        const dateTimeB = new Date(`${b.fecha}T${b.horaAsignacion || '00:00'}:00`).getTime();
-        if (dateTimeA !== dateTimeB) return dateTimeA - dateTimeB;
-        
-        // Secondary sort by createdAt to preserve CSV insertion order for identical hours
-        const crA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const crB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return crA - crB;
-    });
+    // Apply sorting
+    if (sortConfig) {
+        result.sort((a, b) => {
+            let valA: any = a[sortConfig.key as keyof AsignacionCajaModel];
+            let valB: any = b[sortConfig.key as keyof AsignacionCajaModel];
+
+            // Special case for Liberacion
+            if (sortConfig.key === 'selloLiberacion') {
+                const libA = liberaciones.find(l => l.asignacionCajaId === a.id);
+                const libB = liberaciones.find(l => l.asignacionCajaId === b.id);
+                valA = libA ? libA.selloValidado : '';
+                valB = libB ? libB.selloValidado : '';
+            }
+
+            if (!valA) valA = '';
+            if (!valB) valB = '';
+            
+            if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    } else {
+        // Default Sort combined by date and time (ascending - earliest first)
+        result.sort((a, b) => {
+            const dateTimeA = new Date(`${a.fecha}T${a.horaAsignacion || '00:00'}:00`).getTime();
+            const dateTimeB = new Date(`${b.fecha}T${b.horaAsignacion || '00:00'}:00`).getTime();
+            if (dateTimeA !== dateTimeB) return dateTimeA - dateTimeB;
+            
+            // Secondary sort by createdAt to preserve CSV insertion order for identical hours
+            const crA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const crB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return crA - crB;
+        });
+    }
 
     return result;
-  }, [asignaciones, searchTerm, dateRange, activeMassQuery]);
+  }, [asignaciones, searchTerm, dateRange, activeMassQuery, sortConfig, liberaciones]);
 
   const handleApplyMassQuery = () => {
     const valid = queryConditions.filter(c => c.operator === 'empty' || c.operator === 'not_empty' || c.input.trim());
@@ -135,6 +159,24 @@ export const AsignacionesDiarias: React.FC = () => {
     setActiveMassQuery(null);
     setQueryConditions([{ id: Math.random().toString(), column: 'numeroCaja', operator: 'in', type: 'string', input: '' }]);
     setIsMassQueryOpen(false);
+  };
+
+  const handleSort = (key: string) => {
+      if (sortConfig && sortConfig.key === key) {
+          if (sortConfig.direction === 'asc') setSortConfig({ key, direction: 'desc' });
+          else setSortConfig(null);
+      } else {
+          setSortConfig({ key, direction: 'asc' });
+      }
+  };
+
+  const renderSortIcon = (key: string) => {
+      if (sortConfig?.key === key) {
+          return sortConfig.direction === 'asc' 
+              ? <ChevronUp size={16} className="inline ml-1 text-blue-600" /> 
+              : <ChevronDown size={16} className="inline ml-1 text-blue-600" />;
+      }
+      return <ChevronUp size={16} className="inline ml-1 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />;
   };
 
   const handleCajaChange = (numeroCaja: string) => {
@@ -474,16 +516,16 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 w-12 border-r border-slate-100 bg-slate-100 text-center">
                   {!isEmbarques && <input type="checkbox" checked={filteredData.length > 0 && selectedIds.size === filteredData.length} onChange={toggleSelectAll} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
               </th>
-              <th className="p-4 font-medium border-r border-slate-100 bg-blue-50/50 whitespace-nowrap">Fecha/Hora</th>
-              <th className="p-4 font-medium text-pink-800 bg-pink-50/30 whitespace-nowrap">No. Operación</th>
-              <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Número Caja</th>
-              <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Sub-Línea</th>
-              <th className="p-4 font-medium text-emerald-800 bg-emerald-50/30">Placas Caja</th>
-              <th className="p-4 font-medium text-orange-800 bg-orange-50/30 whitespace-nowrap">Driver ID</th>
-              <th className="p-4 font-medium text-orange-800 bg-orange-50/30">Nombre / Transportista</th>
-              <th className="p-4 font-medium text-orange-800 bg-orange-50/30">Placas Tracto</th>
-              <th className="p-4 font-medium text-purple-800 bg-purple-50/30 whitespace-nowrap">Modelo</th>
-              <th className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap">Sello Liberación</th>
+              <th onClick={() => handleSort('fecha')} className="p-4 font-medium border-r border-slate-100 bg-blue-50/50 whitespace-nowrap cursor-pointer hover:bg-blue-100 group transition-colors">Fecha/Hora {renderSortIcon('fecha')}</th>
+              <th onClick={() => handleSort('numeroOperacion')} className="p-4 font-medium text-pink-800 bg-pink-50/30 whitespace-nowrap cursor-pointer hover:bg-pink-100 group transition-colors">No. Operación {renderSortIcon('numeroOperacion')}</th>
+              <th onClick={() => handleSort('numeroCaja')} className="p-4 font-medium text-emerald-800 bg-emerald-50/30 cursor-pointer hover:bg-emerald-100 group transition-colors">Número Caja {renderSortIcon('numeroCaja')}</th>
+              <th onClick={() => handleSort('subLinea')} className="p-4 font-medium text-emerald-800 bg-emerald-50/30 cursor-pointer hover:bg-emerald-100 group transition-colors">Sub-Línea {renderSortIcon('subLinea')}</th>
+              <th onClick={() => handleSort('placasCaja')} className="p-4 font-medium text-emerald-800 bg-emerald-50/30 cursor-pointer hover:bg-emerald-100 group transition-colors">Placas Caja {renderSortIcon('placasCaja')}</th>
+              <th onClick={() => handleSort('driverId')} className="p-4 font-medium text-orange-800 bg-orange-50/30 whitespace-nowrap cursor-pointer hover:bg-orange-100 group transition-colors">Driver ID {renderSortIcon('driverId')}</th>
+              <th onClick={() => handleSort('nombreDriver')} className="p-4 font-medium text-orange-800 bg-orange-50/30 cursor-pointer hover:bg-orange-100 group transition-colors">Nombre / Transportista {renderSortIcon('nombreDriver')}</th>
+              <th onClick={() => handleSort('placasTracto')} className="p-4 font-medium text-orange-800 bg-orange-50/30 cursor-pointer hover:bg-orange-100 group transition-colors">Placas Tracto {renderSortIcon('placasTracto')}</th>
+              <th onClick={() => handleSort('modeloAsignado')} className="p-4 font-medium text-purple-800 bg-purple-50/30 whitespace-nowrap cursor-pointer hover:bg-purple-100 group transition-colors">Modelo {renderSortIcon('modeloAsignado')}</th>
+              <th onClick={() => handleSort('selloLiberacion')} className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap cursor-pointer hover:bg-teal-100 group transition-colors">Sello Liberación {renderSortIcon('selloLiberacion')}</th>
               <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">CARGADO</th>
               {!isEmbarques && <th className="p-4 font-medium text-right bg-slate-50">Acciones</th>}
             </tr>

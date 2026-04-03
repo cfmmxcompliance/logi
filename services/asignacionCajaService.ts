@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
 
@@ -7,6 +7,12 @@ const COLLECTION_NAME = 'asignacion_cajas';
 export const asignacionCajaService = {
   async getAllAsignaciones(): Promise<AsignacionCajaModel[]> {
     const snapshot = await getDocs(collection(db, COLLECTION_NAME));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsignacionCajaModel));
+  },
+
+  async getAsignacionesByDate(fecha: string): Promise<AsignacionCajaModel[]> {
+    const q = query(collection(db, COLLECTION_NAME), where('fecha', '==', fecha));
+    const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsignacionCajaModel));
   },
 

@@ -49,8 +49,7 @@ export const HandheldLiberacion = () => {
   const fetchDataForDate = async (targetDate: string) => {
     setLoading(true);
     try {
-      const todasLasCajas = await asignacionCajaService.getAllAsignaciones();
-      const cajasParaFecha = todasLasCajas.filter(c => c.fecha === targetDate);
+      const cajasParaFecha = await asignacionCajaService.getAsignacionesByDate(targetDate);
       
       cajasParaFecha.sort((a, b) => {
         const dateTimeA = new Date(`${a.fecha}T${a.horaAsignacion || '00:00'}:00`).getTime();

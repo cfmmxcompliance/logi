@@ -133,13 +133,15 @@ export const AsignacionesDiarias: React.FC = () => {
             return 0;
         });
     } else {
-        // Default Sort combined by date and time (ascending - earliest first)
+        // Default Sort: No. Operacion (asc), then tie-break with createdAt (CSV sequence)
         result.sort((a, b) => {
-            const dateTimeA = new Date(`${a.fecha}T${a.horaAsignacion || '00:00'}:00`).getTime();
-            const dateTimeB = new Date(`${b.fecha}T${b.horaAsignacion || '00:00'}:00`).getTime();
-            if (dateTimeA !== dateTimeB) return dateTimeA - dateTimeB;
+            const opA = a.numeroOperacion || '';
+            const opB = b.numeroOperacion || '';
             
-            // Secondary sort by createdAt to preserve CSV insertion order for identical hours
+            if (opA < opB) return -1;
+            if (opA > opB) return 1;
+            
+            // Secondary sort by createdAt to preserve CSV insertion order for identical operations
             const crA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
             const crB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
             return crA - crB;

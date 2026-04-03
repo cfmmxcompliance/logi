@@ -6,6 +6,7 @@ import {
   AlertCircle, FileSearch, Zap, BarChart3, BookOpen, CheckCircle2, Copy
 } from 'lucide-react';
 import { storageService } from '../services/storageService.ts';
+import { catalogoProductosService } from '../services/catalogoProductosService';
 
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -141,6 +142,20 @@ export const BOMAnalyzer: React.FC = () => {
     setLines([]);
     setLineCounter(0);
   };
+
+  // Load Catalog on Mount
+  useEffect(() => {
+    const fetchCatalog = async () => {
+      try {
+        const catalog = await catalogoProductosService.getProductCatalog();
+        setProductCatalog(catalog);
+        console.log(`✅ Loaded ${Object.keys(catalog).length} products from Firestore collection`);
+      } catch (err) {
+        console.error("Failed to load catalog from Firestore", err);
+      }
+    };
+    fetchCatalog();
+  }, []);
 
   // ── Read Excel File (Standard & CI) ────────────────────────────────────
   const parseExcelOrCI = (file: File): Promise<BomRow[]> => {
@@ -299,30 +314,62 @@ export const BOMAnalyzer: React.FC = () => {
   };
 
   // ── Step 2: Diagnose ──────────────────────────────────────────────────
-  const runDiagnosis = () => {
+  const runDiagnosis = async () => {
     addLine('cmd', `> [STEP 2] DIAGNÓSTICO DEL ARCHIVO`);
     addLine('header', '──────────────────────────────────────────────────');
+
+    setProcessing(true);
+    let catalog = productCatalog;
+
+    // Await catalog dynamically if it hasn't loaded yet
+    if (Object.keys(catalog).length === 0) {
+      addLine('info', '  Obteniendo Catálogo Live desde Firebase...');
+      try {
+        catalog = await catalogoProductosService.getProductCatalog();
+        setProductCatalog(catalog);
+        if (Object.keys(catalog).length > 0) {
+          addLine('ok', `  ✓ Catálogo listo: ${Object.keys(catalog).length} productos.`);
+        } else {
+          addLine('warn', `  ⚠ Catálogo Live descargado pero vacío.`);
+        }
+      } catch (err) {
+        addLine('error', `  ❌ Falló la conexión con Firestore: ${String(err)}`);
+      }
+    }
 
     const estilos: string[] = Array.from(new Set(rawRows.map(r => r.ESTILO)));
     const estiloCount: Record<string, number> = {};
     rawRows.forEach(r => { estiloCount[r.ESTILO] = (estiloCount[r.ESTILO] || 0) + 1; });
 
-    const partsDb = new Set(storageService.getParts().map(p => (p.PART_NUMBER || '').toString().trim().toUpperCase()));
+    const isCatalogLoaded = Object.keys(catalog).length > 0;
 
     addLine('info', `Estilos únicos: ${estilos.length}`);
+    let catalogOkCount = 0;
+
     estilos.forEach((e: string) => {
       const eClean = e.toUpperCase().replace(/[\.\s]+$/, '').trim();
       const hasPoint = e.trim().endsWith('.');
       const isClean = !hasPoint;
-      const inDB = partsDb.has(eClean);
+      
+      let isFound = false;
+      let foundMsg = '';
 
-      const icon = isClean && inDB ? '  ✓' : '  ⚠';
-      const dbMsg = inDB ? '[DB: OK]' : '[DB: NO EXISTE]';
-      const note = hasPoint ? `— tiene punto final ${dbMsg}` : `— formato correcto ${dbMsg}`;
+      if (isCatalogLoaded) {
+        isFound = !!catalog[eClean];
+        foundMsg = isFound ? '[CATÁLOGO: OK]' : '[CATÁLOGO: NO EXISTE]';
+        if (isFound) catalogOkCount++;
+      } else {
+        foundMsg = '[CATÁLOGO: NO DISPONIBLE]';
+      }
 
-      addLine(isClean && inDB ? 'ok' : 'warn', `${icon}  ${e}  →  ${estiloCount[e]} registros ${note}`);
+      const icon = (isClean && isFound) ? '  ✓' : '  ⚠';
+      const note = hasPoint ? `— tiene punto final ${foundMsg}` : `— formato correcto ${foundMsg}`;
+
+      addLine((isClean && isFound) ? 'ok' : 'warn', `${icon}  ${e}  →  ${estiloCount[e]} piezas ${note}`);
     });
+    
     addBlank();
+    setProcessing(false);
 
     // Duplicates
     const comboCount: Record<string, number> = {};
@@ -331,6 +378,16 @@ export const BOMAnalyzer: React.FC = () => {
       comboCount[k] = (comboCount[k] || 0) + 1;
     });
     const dupCombos = Object.entries(comboCount).filter(([, v]) => v > 1);
+
+    let dupSameQty = 0;
+    let dupDiffQty = 0;
+    dupCombos.forEach(([k]) => {
+      const [estilo, insumo] = k.split('||');
+      const records = rawRows.filter(r => r.ESTILO === estilo && r.INSUMO === insumo);
+      const uniqueQtys = new Set(records.map(r => r.CANTIDAD));
+      if (uniqueQtys.size === 1) dupSameQty++;
+      else dupDiffQty++;
+    });
 
     // Zero quantities
     const zeroQty = rawRows.filter(r => r.CANTIDAD === 0);
@@ -341,6 +398,15 @@ export const BOMAnalyzer: React.FC = () => {
 
     addLine('info', `Insumos únicos: ${new Set(rawRows.map(r => r.INSUMO)).size}`);
     addLine(dupCombos.length > 0 ? 'warn' : 'ok', `${dupCombos.length > 0 ? '⚠' : '✓'}  Combinaciones ESTILO+INSUMO duplicadas: ${dupCombos.length}`);
+    if (dupCombos.length > 0) {
+      addLine('info', `   └─ Coinciden en CANTIDAD: ${dupSameQty}`);
+      if (dupDiffQty > 0) {
+        addLine('error', `   └─ Difieren en CANTIDAD (Conflicto): ${dupDiffQty}`);
+      } else {
+        addLine('ok', `   └─ Difieren en CANTIDAD: 0 (Cruce limpio)`);
+      }
+    }
+    
     addLine(zeroQty.length > 0 ? 'warn' : 'ok', `${zeroQty.length > 0 ? '⚠' : '✓'}  Registros con CANTIDAD = 0: ${zeroQty.length}`);
     if (zeroQty.length > 0) {
       const affectedStyles = Array.from(new Set(zeroQty.map(r => r.ESTILO)));
@@ -613,6 +679,9 @@ export const BOMAnalyzer: React.FC = () => {
     setStep('crossed');
 
     addLine('ok', `✓ Cruce con MasterData completado.`);
+    if (Object.keys(productCatalog).length > 0) {
+      runCatalogValidation(productCatalog, source);
+    }
     addLine('info', `  Accede al tab "Auditoría" para ver el detalle completo.`);
     addBlank();
     setActiveTab('audit');
@@ -967,28 +1036,13 @@ export const BOMAnalyzer: React.FC = () => {
             </div>
           </div>
 
-          {/* Productos Catalog Upload */}
+          {/* Productos Catalog Status */}
           <div className="space-y-1">
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">4 · Catálogo Productos</p>
-            <div
-              className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all
-                ${step === 'idle' ? 'opacity-40 pointer-events-none' : ''}
-                ${catalogDragging ? 'border-teal-500 bg-teal-900/20' : 'border-slate-700 hover:border-teal-700 hover:bg-slate-800/50'}`}
-              onDrop={e => onDrop(e, 'catalog')}
-              onDragOver={onDragOver}
-              onDragEnter={() => setCatalogDragging(true)}
-              onDragLeave={() => setCatalogDragging(false)}
-              onClick={() => catalogInputRef.current?.click()}
-            >
-              <input ref={catalogInputRef} type="file" className="hidden" accept=".xlsx,.xls"
-                onChange={e => { if (e.target.files?.[0]) handleCatalogFile(e.target.files[0]); e.target.value = ''; }} />
-              <BookOpen size={28} className={`mx-auto mb-2 ${catalogFileName ? 'text-teal-400' : 'text-slate-600'}`} />
-              {catalogFileName
-                ? <p className="text-[11px] text-teal-400 font-bold truncate">{catalogFileName}</p>
-                : <p className="text-[11px] text-slate-500">Drop Productos .xlsx</p>}
-              {catalogFileName && (
-                <p className="text-[10px] text-slate-600 mt-1">{Object.keys(productCatalog).length} products · {Array.from(new Set(Object.values(productCatalog))).length} modelos</p>
-              )}
+            <div className={`border border-solid rounded-xl p-4 text-center ${Object.keys(productCatalog).length > 0 ? 'bg-teal-900/20 border-teal-800' : 'bg-slate-800 border-slate-700'}`}>
+              <BookOpen size={28} className={`mx-auto mb-2 ${Object.keys(productCatalog).length > 0 ? 'text-teal-400' : 'text-slate-600'}`} />
+              <p className="text-[11px] text-teal-400 font-bold truncate">Firestore Live DB</p>
+              <p className="text-[10px] text-slate-400 mt-1">{Object.keys(productCatalog).length} products loaded</p>
             </div>
           </div>
 
@@ -1068,7 +1122,7 @@ export const BOMAnalyzer: React.FC = () => {
                 <table className="w-full text-[11px] font-mono">
                   <thead className="sticky top-0 bg-slate-800 text-slate-400 uppercase text-[10px] tracking-widest">
                     <tr>
-                      {['#', 'ESTILO', 'INSUMO', 'CANTIDAD', 'MERMA', 'UNIDAD', 'BOM', 'FECHAINI', 'FECHAFIN'].map(h => (
+                      {['#', 'ESTILO', 'INSUMO', 'DESCRIPCIÓN', 'CANTIDAD', 'MERMA', 'UNIDAD', 'BOM', 'FECHAINI', 'FECHAFIN'].map(h => (
                         <th key={h} className="px-3 py-2 text-left border-r border-slate-700 last:border-0">{h}</th>
                       ))}
                     </tr>
@@ -1077,13 +1131,19 @@ export const BOMAnalyzer: React.FC = () => {
                     {tableSource.map((r, i) => {
                       const isMissing = auditResult && auditResult.noMaster.some(n => n.INSUMO === r.INSUMO);
                       const isZero = r.CANTIDAD === 0;
+                      const matchPart = storageService.getParts().find(p => p.PART_NUMBER === r.INSUMO);
+                      const descText = matchPart?.DESCRIPCION_ES || matchPart?.DESCRIPTION_EN || '';
+                      
                       return (
-                        <tr key={r.INSUMO}
+                        <tr key={i}
                           className={`transition-colors hover:bg-slate-800/50
                             ${isMissing ? 'bg-red-950/20' : isZero ? 'bg-yellow-950/20' : ''}`}>
                           <td className="px-3 py-1.5 text-slate-600">{i + 1}</td>
-                          <td className="px-3 py-1.5 text-emerald-400">{r.ESTILO}</td>
-                          <td className="px-3 py-1.5 text-slate-200">{r.INSUMO}</td>
+                          <td className="px-3 py-1.5 text-emerald-400 whitespace-nowrap">{r.ESTILO}</td>
+                          <td className="px-3 py-1.5 text-slate-200 whitespace-nowrap">{r.INSUMO}</td>
+                          <td className="px-3 py-1.5 text-slate-400 max-w-[200px] truncate" title={descText || 'No encontrada'}>
+                            {descText || '—'}
+                          </td>
                           <td className={`px-3 py-1.5 text-right font-bold ${isZero ? 'text-yellow-500' : 'text-slate-300'}`}>{r.CANTIDAD}</td>
                           <td className="px-3 py-1.5 text-slate-500 text-right">{r.MERMA}</td>
                           <td className="px-3 py-1.5 text-slate-400">{r.UNIDAD}</td>
@@ -1399,6 +1459,84 @@ export const BOMAnalyzer: React.FC = () => {
             </div>
           )}
         </div>
+        {/* Conflict Resolution Modal Overlay */}
+        {conflicts.length > 0 && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-6 overflow-hidden">
+            <div className="bg-slate-900 border-2 border-yellow-900/50 shadow-[0_0_50px_-12px_rgba(234,179,8,0.2)] rounded-xl w-full max-w-5xl flex flex-col max-h-full">
+              <div className="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-800/30">
+                <div>
+                  <h2 className="text-lg font-bold text-yellow-500 flex items-center gap-2">
+                    <AlertTriangle size={24} /> Decisiones Requeridas ({conflicts.length})
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Se detectaron discrepancias en la <strong>CANTIDAD</strong> del mismo insumo cruzando estilos. Por favor, selecciona la cantidad oficial para cada cruce.
+                  </p>
+                </div>
+              </div>
+              <div className="p-0 overflow-y-auto flex-1 custom-scrollbar">
+                <table className="w-full text-[12px] font-mono text-left">
+                  <thead className="sticky top-0 bg-slate-950 text-slate-400 uppercase tracking-widest text-[10px] shadow-sm z-10">
+                    <tr>
+                      <th className="px-5 py-3 border-b border-slate-800 w-[150px]">INSUMO</th>
+                      <th className="px-5 py-3 border-b border-slate-800 w-1/3">DESCRIPCIÓN</th>
+                      <th className="px-5 py-3 border-b border-slate-800">CANTIDADES DETECTADAS</th>
+                      <th className="px-5 py-3 border-b border-slate-800 text-right">ESTADO</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50">
+                    {conflicts.map((c, i) => {
+                      const actualInsumo = c.insumo.includes('||') ? c.insumo.split('||')[1] : c.insumo;
+                      const matchPart = storageService.getParts().find(p => p.PART_NUMBER === actualInsumo);
+                      const desc = matchPart?.DESCRIPCION_ES || matchPart?.DESCRIPTION_EN || '—';
+                      const qtys = Array.from(new Set(c.records.map(r => r.CANTIDAD))) as number[];
+                      const isResolved = c.chosen !== null;
+                      
+                      return (
+                        <tr key={c.insumo} className={`transition-colors ${isResolved ? 'bg-emerald-950/20' : 'bg-slate-900/50 hover:bg-slate-800/50'}`}>
+                          <td className="px-5 py-4 font-bold text-yellow-400 relative">
+                            {actualInsumo}
+                            {!isResolved && <span className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-yellow-500 animate-pulse"></span>}
+                          </td>
+                          <td className="px-5 py-4 text-slate-400">
+                            {desc === '—' ? <span className="text-red-400 italic font-sans text-[11px]">No encontrada en DB</span> : desc}
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="flex flex-wrap gap-2">
+                              {qtys.map((qty) => (
+                                <button key={qty} onClick={() => resolveConflict(c.insumo, qty)}
+                                  className={`px-3 py-1.5 rounded-md transition-all border font-bold
+                                    ${c.chosen === qty ? 'bg-emerald-600 border-emerald-500 text-white shadow-[0_0_15px_-3px_rgba(16,185,129,0.5)]' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white'}`}>
+                                  {qty} pzas
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-5 py-4 text-right">
+                            {isResolved 
+                              ? <span className="text-emerald-400 flex items-center justify-end gap-1"><CheckCircle2 size={14}/> {c.chosen}</span> 
+                              : <span className="text-yellow-600 font-sans italic text-[11px]">Requiere selección</span>}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="p-4 border-t border-slate-800 bg-slate-950 flex items-center justify-between">
+                <p className={`text-[12px] font-bold ${unresolvedCount === 0 ? 'text-emerald-400' : 'text-slate-400'}`}>
+                  {unresolvedCount === 0 ? `✓ Todos los ${conflicts.length} conflictos resueltos` : `Faltan ${unresolvedCount} conflictos por resolver`}
+                </p>
+                <button onClick={applyConflictResolutions} disabled={unresolvedCount > 0}
+                  className={`px-8 py-3 rounded-lg font-bold text-[13px] transition-all flex items-center gap-2
+                    ${unresolvedCount === 0 
+                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
+                      : 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'}`}>
+                  CONFIRMAR Y RESOLVER 
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

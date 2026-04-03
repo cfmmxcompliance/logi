@@ -383,8 +383,10 @@ export const AsignacionesDiarias: React.FC = () => {
               const matchCaja = cajas.find(c => c.NumeroCaja.toUpperCase() === rawCaja);
               const matchDriver = drivers.find(d => d.driverId.toUpperCase() === rawDriver);
 
-              if (!matchCaja) errors.push(`Fila ${i + 1}: La Caja "${rawCaja}" no existe en catálogo.`);
-              if (!matchDriver) errors.push(`Fila ${i + 1}: El Driver "${rawDriver}" no existe en catálogo.`);
+              // Remove strict catalog validation. Many times the 'Driver' column contains 
+              // unstructured statuses like "EJ SHELBY IN ROUTE" or unregistered boxes.
+              // if (!matchCaja) errors.push(`Fila ${i + 1}: La Caja "${rawCaja}" no existe en catálogo.`);
+              // if (!matchDriver) errors.push(`Fila ${i + 1}: El Driver "${rawDriver}" no existe en catálogo.`);
 
               const carrierPadre = matchCaja ? matchCaja.carrierCodigo : (matchDriver ? matchDriver.carrierCodigo : '');
 

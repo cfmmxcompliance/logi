@@ -173,10 +173,10 @@ export const AsignacionesDiarias: React.FC = () => {
   const renderSortIcon = (key: string) => {
       if (sortConfig?.key === key) {
           return sortConfig.direction === 'asc' 
-              ? <ChevronUp size={16} className="inline ml-1 text-blue-600" /> 
-              : <ChevronDown size={16} className="inline ml-1 text-blue-600" />;
+              ? <ChevronUp size={16} className="inline-block ml-1 text-blue-600 font-bold" /> 
+              : <ChevronDown size={16} className="inline-block ml-1 text-blue-600 font-bold" />;
       }
-      return <ChevronUp size={16} className="inline ml-1 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />;
+      return <ChevronUp size={16} className="inline-block ml-1 text-slate-400 opacity-50 group-hover:opacity-100 transition-opacity" />;
   };
 
   const handleCajaChange = (numeroCaja: string) => {

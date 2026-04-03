@@ -14,10 +14,10 @@ export const asignacionCajaService = {
     const docId = asignacion.id || doc(collection(db, COLLECTION_NAME)).id;
     const docRef = doc(db, COLLECTION_NAME, docId);
     await setDoc(docRef, {
-      ...asignacion,
       id: docId,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      ...asignacion
     });
   },
 

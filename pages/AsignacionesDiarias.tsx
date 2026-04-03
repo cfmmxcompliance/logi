@@ -355,7 +355,8 @@ export const AsignacionesDiarias: React.FC = () => {
                   driverId: rawDriver,
                   nombreDriver: matchDriver ? matchDriver.nombre : rawDriver,
                   placasTracto: matchDriver ? matchDriver.placasTracto || '' : '',
-                  modeloAsignado: rawModelo || ''
+                  modeloAsignado: rawModelo || '',
+                  createdAt: new Date(Date.now() + i).toISOString()
               };
 
               try {

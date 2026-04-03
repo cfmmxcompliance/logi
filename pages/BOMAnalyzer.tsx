@@ -311,8 +311,8 @@ export const BOMAnalyzer: React.FC = () => {
 
     addLine('info', `Estilos únicos: ${estilos.length}`);
     estilos.forEach((e: string) => {
-      const eClean = e.trim().toUpperCase().replace(/\.$/, '');
-      const hasPoint = e.endsWith('.');
+      const eClean = e.toUpperCase().replace(/[\.\s]+$/, '').trim();
+      const hasPoint = e.trim().endsWith('.');
       const isClean = !hasPoint;
       const inDB = partsDb.has(eClean);
       
@@ -373,9 +373,11 @@ export const BOMAnalyzer: React.FC = () => {
 
     let changed = 0;
     const normalized = rawRows.map(r => {
-      let estilo = r.ESTILO.trim().replace(/\.$/, '');
-      if (estilo !== r.ESTILO) changed++;
-      return { ...r, ESTILO: estilo };
+      let estilo = r.ESTILO.toUpperCase().replace(/[\.\s]+$/, '').trim();
+      // Also silently clean whitespace issues in INSUMO
+      let insumo = r.INSUMO.toUpperCase().trim();
+      if (estilo !== r.ESTILO || insumo !== r.INSUMO) changed++;
+      return { ...r, ESTILO: estilo, INSUMO: insumo };
     });
 
     setNormalizedRows(normalized);

@@ -92,26 +92,26 @@ function yearColor(year: string | null): string {
 // ────────────────────────────────────────────────────────────────────────────
 export const BOMAnalyzer: React.FC = () => {
   // ── State ──────────────────────────────────────────────────────────────
-  const [step, setStep]             = useState<Step>('idle');
-  const [lines, setLines]           = useState<TerminalLine[]>([]);
+  const [step, setStep] = useState<Step>('idle');
+  const [lines, setLines] = useState<TerminalLine[]>([]);
   const [lineCounter, setLineCounter] = useState(0);
-  const [rawRows, setRawRows]       = useState<BomRow[]>([]);
+  const [rawRows, setRawRows] = useState<BomRow[]>([]);
   const [normalizedRows, setNormalizedRows] = useState<BomRow[]>([]);
   const [dedupedRows, setDedupedRows] = useState<BomRow[]>([]);
-  const [finalRows, setFinalRows]   = useState<BomRow[]>([]);
-  const [conflicts, setConflicts]   = useState<ConflictItem[]>([]);
-  const [masterMap, setMasterMap]   = useState<Record<string, any>>({});
+  const [finalRows, setFinalRows] = useState<BomRow[]>([]);
+  const [conflicts, setConflicts] = useState<ConflictItem[]>([]);
+  const [masterMap, setMasterMap] = useState<Record<string, any>>({});
   const [auditResult, setAuditResult] = useState<AuditResult | null>(null);
   const [productCatalog, setProductCatalog] = useState<ProductCatalog>({});
   const [catalogValidation, setCatalogValidation] = useState<CatalogValidation | null>(null);
   const [catalogFileName, setCatalogFileName] = useState('');
   const [catalogDragging, setCatalogDragging] = useState(false);
-  const [dragging, setDragging]     = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [masterDragging, setMasterDragging] = useState(false);
-  const [fileName, setFileName]     = useState('');
+  const [fileName, setFileName] = useState('');
   const [masterFileName, setMasterFileName] = useState('');
-  const [diagStats, setDiagStats]   = useState<any>(null);
-  const [activeTab, setActiveTab]   = useState<'terminal' | 'table' | 'audit'>('terminal');
+  const [diagStats, setDiagStats] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'terminal' | 'table' | 'audit'>('terminal');
   const [processing, setProcessing] = useState(false);
 
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -151,16 +151,16 @@ export const BOMAnalyzer: React.FC = () => {
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
           const wb = XLSX.read(data, { type: 'array' });
           const rows: BomRow[] = [];
-          
+
           for (const sheetName of wb.SheetNames) {
             const ws = wb.Sheets[sheetName];
             const json: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
-            
+
             let headerRow = -1;
             let isCI = false;
-            
+
             for (let i = 0; i < Math.min(json.length, 30); i++) {
-              if(!json[i]) continue;
+              if (!json[i]) continue;
               const rstr = json[i].map(c => String(c || '').toUpperCase()).join(' ');
               if (rstr.includes('ESTILO') && rstr.includes('INSUMO')) {
                 headerRow = i;
@@ -173,25 +173,25 @@ export const BOMAnalyzer: React.FC = () => {
                 break;
               }
             }
-            
+
             if (headerRow === -1) continue;
-            
+
             const hdrs = json[headerRow].map(h => String(h || '').trim().toUpperCase());
             const col = (name: string) => hdrs.findIndex(h => h.includes(name));
-            
+
             if (isCI) {
               const modelIdx = col('MODEL');
               const partIdx = hdrs.findIndex(h => h.includes('PART'));
               const qtyIdx = col('QTY') >= 0 ? col('QTY') : col('QUANTITY');
               const umIdx = col('U-M') >= 0 ? col('U-M') : col('UM');
-              
+
               for (let i = headerRow + 1; i < json.length; i++) {
                 const r = json[i];
                 if (!r || r.length === 0) continue;
                 const part = String(r[partIdx] || '').trim();
                 const model = modelIdx >= 0 ? String(r[modelIdx] || '').trim() : '';
                 if (!part || part.length < 4 || part.toUpperCase().includes('TOTAL')) continue;
-                
+
                 rows.push({
                   ESTILO: model || 'UNKNOWN_MODEL',
                   INSUMO: part,
@@ -205,8 +205,8 @@ export const BOMAnalyzer: React.FC = () => {
               }
             } else {
               const objJson: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: null });
-              for(const r of objJson) {
-                if(!r['INSUMO']) continue;
+              for (const r of objJson) {
+                if (!r['INSUMO']) continue;
                 rows.push({
                   ESTILO: String(r['ESTILO'] ?? '').trim(),
                   INSUMO: String(r['INSUMO'] ?? '').trim(),
@@ -288,7 +288,7 @@ export const BOMAnalyzer: React.FC = () => {
       addLine('info', `  Registros totales  : ${allRows.length}`);
       addLine('info', `  Insumos únicos     : ${insumos.length}`);
       addLine('info', `  Estilos detectados : ${estilos.length}`);
-      if(estilos.length > 0 && estilos.length < 10) addLine('info', `  Estilos            : ${estilos.join(', ')}`);
+      if (estilos.length > 0 && estilos.length < 10) addLine('info', `  Estilos            : ${estilos.join(', ')}`);
       addBlank();
 
       setStep('loaded');
@@ -315,11 +315,11 @@ export const BOMAnalyzer: React.FC = () => {
       const hasPoint = e.trim().endsWith('.');
       const isClean = !hasPoint;
       const inDB = partsDb.has(eClean);
-      
+
       const icon = isClean && inDB ? '  ✓' : '  ⚠';
       const dbMsg = inDB ? '[DB: OK]' : '[DB: NO EXISTE]';
       const note = hasPoint ? `— tiene punto final ${dbMsg}` : `— formato correcto ${dbMsg}`;
-      
+
       addLine(isClean && inDB ? 'ok' : 'warn', `${icon}  ${e}  →  ${estiloCount[e]} registros ${note}`);
     });
     addBlank();
@@ -384,9 +384,9 @@ export const BOMAnalyzer: React.FC = () => {
 
     const estilosResult = [...new Set(normalized.map(r => r.ESTILO))];
     addLine('info', `  Registros procesados : ${normalized.length}`);
-    addLine('ok',   `  ✓ Normalizados       : ${changed}`);
+    addLine('ok', `  ✓ Normalizados       : ${changed}`);
     addLine('info', `  Sin cambio           : ${normalized.length - changed}`);
-    addLine('ok',   `  ✓ Estilos resultantes: ${estilosResult.join(', ')}`);
+    addLine('ok', `  ✓ Estilos resultantes: ${estilosResult.join(', ')}`);
     addBlank();
 
     setStep('normalized');
@@ -428,9 +428,9 @@ export const BOMAnalyzer: React.FC = () => {
     const singles: BomRow[] = clean.map(k => byInsumo[k][0]);
 
     addLine('info', `  Insumos únicos totales  : ${uniqueInsumos.length}`);
-    addLine('ok',   `  ✓ Auto-deduplicados      : ${autoMerge.length + singles.length}`);
+    addLine('ok', `  ✓ Auto-deduplicados      : ${autoMerge.length + singles.length}`);
     addLine(conflicts2x.length > 0 ? 'warn' : 'ok',
-            `  ${conflicts2x.length > 0 ? '⚠' : '✓'}  Conflictos de cantidad   : ${conflicts2x.length}`);
+      `  ${conflicts2x.length > 0 ? '⚠' : '✓'}  Conflictos de cantidad   : ${conflicts2x.length}`);
     addLine('info', `  Eliminados               : ${normalizedRows.length - uniqueInsumos.length}`);
     addBlank();
 
@@ -486,43 +486,43 @@ export const BOMAnalyzer: React.FC = () => {
 
     const source = dedupedRows.length > 0 ? dedupedRows : normalizedRows;
     const bomEstilos = Array.from(new Set(source.map(r => r.ESTILO)));
-    
+
     // Group catalog
     const byModel: Record<string, string[]> = {};
     for (const [p, m] of Object.entries(productCatalog) as [string, string][]) {
       if (!byModel[m]) byModel[m] = [];
       byModel[m].push(p);
     }
-    
+
     const COLOR_RE = /-0(ET|RE|YG|BM|K1|RT|HJ|YD|BQ|D0|PG|P8|RM)0{1,2}/i;
     const getColor = (pn: string) => {
       const m = pn.match(/^[A-Z]\d{2}[A-Z]{3}\d([A-Z0-9]{2})/);
       return m ? m[1] : null;
     };
-    
+
     let clonedRows: BomRow[] = [];
     let totalClonesObj = 0;
-    
+
     for (const estilo of bomEstilos as string[]) {
       const baseParts = source.filter(r => r.ESTILO === estilo);
       const modelo = productCatalog[estilo];
-      
+
       if (!modelo) continue;
-      
+
       const targets = byModel[modelo].filter(t => t !== estilo && !bomEstilos.includes(t));
       if (targets.length === 0) continue;
-      
+
       addLine('info', `  Base ${estilo} (${modelo}) → Clonando ${targets.length} variantes...`);
-      
+
       for (const target of targets) {
         const targetColor = getColor(target) || 'ET';
         let substCount = 0;
         const newRows = baseParts.map(r => {
           let newInsumo = r.INSUMO;
           if (COLOR_RE.test(r.INSUMO)) {
-            newInsumo = r.INSUMO.replace(COLOR_RE, (match, g1) => 
-               match.replace(g1.toUpperCase(), targetColor.toUpperCase())
-                    .replace(g1.toLowerCase(), targetColor.toLowerCase())
+            newInsumo = r.INSUMO.replace(COLOR_RE, (match, g1) =>
+              match.replace(g1.toUpperCase(), targetColor.toUpperCase())
+                .replace(g1.toLowerCase(), targetColor.toLowerCase())
             );
             if (newInsumo !== r.INSUMO) substCount++;
           }
@@ -533,14 +533,14 @@ export const BOMAnalyzer: React.FC = () => {
         addLine('ok', `    ✓ ${target} (Color: ${targetColor}) → ${substCount} sust.`);
       }
     }
-    
+
     if (totalClonesObj > 0) {
       setDedupedRows([...source, ...clonedRows]);
       addLine('ok', `✓ ${totalClonesObj} BOMs autogenerados vinculando variantes.`);
     } else {
       addLine('warn', `⚠ No hay variantes para clonar, estilos cubiertos.`);
     }
-    
+
     setStep('cloned');
     addBlank();
   };
@@ -637,7 +637,7 @@ export const BOMAnalyzer: React.FC = () => {
             const keys = Object.keys(row);
             const modelVal = String(row[keys[0]] ?? '').trim();
             const productVal = String(row[keys[1]] ?? '').trim();
-            if (modelVal && productVal && !['MODEL','model'].includes(modelVal)) {
+            if (modelVal && productVal && !['MODEL', 'model'].includes(modelVal)) {
               catalog[productVal] = modelVal;
             }
           }
@@ -662,7 +662,7 @@ export const BOMAnalyzer: React.FC = () => {
       setCatalogFileName(file.name);
 
       const models = Array.from(new Set(Object.values(catalog)));
-      addLine('ok',   `✓ Catálogo cargado: ${Object.keys(catalog).length} productos | ${models.length} modelos`);
+      addLine('ok', `✓ Catálogo cargado: ${Object.keys(catalog).length} productos | ${models.length} modelos`);
 
       // Run validation against current BOM rows
       const source = finalRows.length > 0 ? finalRows : dedupedRows.length > 0 ? dedupedRows : normalizedRows;
@@ -704,7 +704,7 @@ export const BOMAnalyzer: React.FC = () => {
       if (modelo) {
         const siblings = byModel[modelo].filter(p => p !== estilo);
         estilosValidos.push({ estilo, modelo, siblings });
-        addLine('ok',  `  ✓ ${estilo}  →  ${modelo}  (${siblings.length} hermanos en catálogo)`);
+        addLine('ok', `  ✓ ${estilo}  →  ${modelo}  (${siblings.length} hermanos en catálogo)`);
       } else {
         estilosInvalidos.push(estilo);
         addLine('warn', `  ⚠  ${estilo}  →  No encontrado en catálogo`);
@@ -789,12 +789,12 @@ export const BOMAnalyzer: React.FC = () => {
 
   // ── Terminal line renderer ────────────────────────────────────────────
   const lineColor: Record<TerminalLine['type'], string> = {
-    cmd:    'text-cyan-400',
-    ok:     'text-emerald-400',
-    warn:   'text-yellow-400',
-    error:  'text-red-400',
-    info:   'text-slate-300',
-    blank:  'text-transparent',
+    cmd: 'text-cyan-400',
+    ok: 'text-emerald-400',
+    warn: 'text-yellow-400',
+    error: 'text-red-400',
+    info: 'text-slate-300',
+    blank: 'text-transparent',
     header: 'text-blue-400',
   };
 
@@ -1151,15 +1151,15 @@ export const BOMAnalyzer: React.FC = () => {
                     return (
                       <div className="grid grid-cols-4 gap-3">
                         <div className="bg-teal-950/30 border border-teal-900/50 rounded-xl p-3">
-                          <p className="text-[10px] text-teal-400 font-bold uppercase mb-1 flex items-center gap-1"><CheckCircle2 size={10}/>Estilos válidos</p>
+                          <p className="text-[10px] text-teal-400 font-bold uppercase mb-1 flex items-center gap-1"><CheckCircle2 size={10} />Estilos válidos</p>
                           <p className="text-2xl font-black text-teal-300">{catalogValidation.estilosValidos.length}</p>
                         </div>
                         <div className="bg-orange-950/30 border border-orange-900/50 rounded-xl p-3">
-                          <p className="text-[10px] text-orange-400 font-bold uppercase mb-1 flex items-center gap-1"><AlertTriangle size={10}/>No en catálogo</p>
+                          <p className="text-[10px] text-orange-400 font-bold uppercase mb-1 flex items-center gap-1"><AlertTriangle size={10} />No en catálogo</p>
                           <p className="text-2xl font-black text-orange-300">{catalogValidation.estilosInvalidos.length}</p>
                         </div>
                         <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-3">
-                          <p className="text-[10px] text-slate-400 font-bold uppercase mb-1 flex items-center gap-1"><AlertCircle size={10}/>Products sin BOM</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase mb-1 flex items-center gap-1"><AlertCircle size={10} />Products sin BOM</p>
                           <p className="text-2xl font-black text-slate-300">{catalogValidation.modelsWithoutBOM.reduce((a, m) => a + m.products.length, 0)}</p>
                         </div>
                         <div className={`rounded-xl p-3 border ${yearColor(years[0])}`}>
@@ -1174,7 +1174,7 @@ export const BOMAnalyzer: React.FC = () => {
                   {catalogValidation.estilosValidos.length > 0 && (
                     <div>
                       <h3 className="text-teal-400 font-bold text-[11px] uppercase tracking-widest flex items-center gap-2 mb-2">
-                        <CheckCircle2 size={13}/> Estilos del BOM reconocidos en catálogo
+                        <CheckCircle2 size={13} /> Estilos del BOM reconocidos en catálogo
                       </h3>
                       <div className="bg-slate-900 rounded-xl border border-teal-900/40 overflow-hidden">
                         <table className="w-full text-[11px] font-mono">
@@ -1194,10 +1194,10 @@ export const BOMAnalyzer: React.FC = () => {
                                   {siblings.length === 0
                                     ? <span className="text-slate-600">—</span>
                                     : <div className="flex flex-wrap gap-1">
-                                        {siblings.map(s => (
-                                          <span key={s} className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-mono">{s}</span>
-                                        ))}
-                                      </div>
+                                      {siblings.map(s => (
+                                        <span key={s} className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-mono">{s}</span>
+                                      ))}
+                                    </div>
                                   }
                                 </td>
                               </tr>
@@ -1212,7 +1212,7 @@ export const BOMAnalyzer: React.FC = () => {
                   {catalogValidation.estilosInvalidos.length > 0 && (
                     <div>
                       <h3 className="text-orange-400 font-bold text-[11px] uppercase tracking-widest flex items-center gap-2 mb-2">
-                        <AlertTriangle size={13}/> Estilos NO encontrados en catálogo
+                        <AlertTriangle size={13} /> Estilos NO encontrados en catálogo
                       </h3>
                       <div className="flex flex-wrap gap-2">
                         {catalogValidation.estilosInvalidos.map(e => (
@@ -1231,8 +1231,8 @@ export const BOMAnalyzer: React.FC = () => {
                     return (
                       <div>
                         <h3 className="text-slate-400 font-bold text-[11px] uppercase tracking-widest flex items-center gap-2 mb-3">
-                          <AlertCircle size={13}/> Modelos con products sin BOM asignado
-                          <span className="text-slate-600 font-normal normal-case">({catalogValidation.modelsWithoutBOM.reduce((a,m)=>a+m.products.length,0)} products)</span>
+                          <AlertCircle size={13} /> Modelos con products sin BOM asignado
+                          <span className="text-slate-600 font-normal normal-case">({catalogValidation.modelsWithoutBOM.reduce((a, m) => a + m.products.length, 0)} products)</span>
                         </h3>
 
                         {/* Year breakdown badges */}
@@ -1259,7 +1259,7 @@ export const BOMAnalyzer: React.FC = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-800">
                               {catalogValidation.modelsWithoutBOM
-                                .sort((a,b) => b.products.length - a.products.length)
+                                .sort((a, b) => b.products.length - a.products.length)
                                 .map(({ modelo, products }) => {
                                   // Group this model's products by year
                                   const byYr: Record<string, string[]> = {};

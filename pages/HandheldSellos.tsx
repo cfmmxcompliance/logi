@@ -42,10 +42,14 @@ export const HandheldSellos = () => {
       const cajasParaFecha = await asignacionCajaService.getAsignacionesByDate(targetDate);
       
       cajasParaFecha.sort((a, b) => {
-        const dateTimeA = new Date(`${a.fecha}T${a.horaAsignacion || '00:00'}:00`).getTime();
-        const dateTimeB = new Date(`${b.fecha}T${b.horaAsignacion || '00:00'}:00`).getTime();
-        if (dateTimeA !== dateTimeB) return dateTimeA - dateTimeB;
-        
+        const timeA = a.horaAsignacion || '00:00';
+        const timeB = b.horaAsignacion || '00:00';
+        if (timeA !== timeB) return timeA < timeB ? -1 : 1;
+
+        const opA = a.numeroOperacion || '';
+        const opB = b.numeroOperacion || '';
+        if (opA !== opB) return opA < opB ? -1 : 1;
+
         const crA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const crB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return crA - crB;

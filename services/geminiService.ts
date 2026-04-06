@@ -1341,13 +1341,19 @@ export const geminiService = {
           ] as any
         }
       });
-
-      const extractedText = response.text?.trim() || "NO_DETECTADO";
-      console.log("Sello Extracted:", extractedText);
-      return extractedText;
-    } catch (error) {
-      console.error("Gemini Sello Extraction Error:", error);
-      throw error;
+      return response.text?.trim() || "NO_DETECTADO";
+    } catch (e) {
+      console.error("Sello Extraction Error:", e);
+      return "NO_DETECTADO";
     }
+  },
+
+  async chatAssistant(messages: any[]): Promise<string> {
+    const ai = getClient();
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: messages,
+    });
+    return response.text || "";
   }
 };

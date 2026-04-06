@@ -35,6 +35,7 @@ import { Controller } from '../pages/Controller.tsx';
 import { Vucem } from '../pages/Vucem.tsx';
 import { ExpedienteElectronico } from '../pages/ExpedienteElectronico';
 import { BOMAnalyzer } from '../pages/BOMAnalyzer.tsx';
+import { AIAssistant } from '../pages/AIAssistant.tsx';
 import { HandheldHome } from '../pages/HandheldHome.tsx';
 import { HandheldSellos } from '../pages/HandheldSellos.tsx';
 import { HandheldLiberacion } from '../pages/HandheldLiberacion.tsx';
@@ -43,6 +44,7 @@ import { trackingService } from '../services/trackingService.ts';
 import { AuthProvider, useAuth } from '../context/AuthContext.tsx';
 import { NotificationProvider } from '../context/NotificationContext.tsx';
 import { VucemProvider } from '../context/VucemContext.tsx';
+import { LanguageProvider } from '../context/LanguageContext.tsx';
 import { NotificationPopup } from '../components/NotificationPopup.tsx';
 import { Database } from 'lucide-react';
 import { UserRole } from '../types.ts';
@@ -189,6 +191,7 @@ const AppContent = () => {
             } />
             <Route path="/proforma-validator" element={<ProtectedRoute><ProformaValidator /></ProtectedRoute>} />
             <Route path="/bom-analyzer" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EDITOR]}><BOMAnalyzer /></ProtectedRoute>} />
+            <Route path="/ai-assistant" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]}><AIAssistant /></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><SmartDocs /></ProtectedRoute>} />
             <Route path="/database" element={<ProtectedRoute><DatabaseView /></ProtectedRoute>} />
             <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
@@ -209,13 +212,16 @@ const AppContent = () => {
 
 const App: React.FC = () => {
     return (
-        <HashRouter>
-            <VucemProvider>
-                <AppContent />
-            </VucemProvider>
-            <NotificationPopup />
-        </HashRouter>
+        <LanguageProvider>
+            <HashRouter>
+                <VucemProvider>
+                    <AppContent />
+                </VucemProvider>
+                <NotificationPopup />
+            </HashRouter>
+        </LanguageProvider>
     );
 };
 
 export default App;
+

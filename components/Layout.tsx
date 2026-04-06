@@ -2,11 +2,12 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck, Globe, Activity, FolderOpen,
   Navigation,
-  Box, DollarSign, BookOpen, PackageOpen, Cpu } from 'lucide-react';
+  Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ConnectionStatus } from './ConnectionStatus.tsx';
 import { UserRole } from '../types.ts';
 import { storageService } from '../services/storageService.ts';
+import { useLanguage } from '../context/LanguageContext';
 
 const SyncIndicator = () => {
   const [syncing, setSyncing] = React.useState(false);
@@ -57,6 +58,7 @@ const SidebarItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
   const { user, logout } = useAuth();
+  const { toggleLanguage, language, t } = useLanguage();
 
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden">
@@ -91,7 +93,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           )}
 
           {(user?.role === UserRole.ADMIN || user?.role === UserRole.CONTROLLER || user?.role === UserRole.EDITOR) && (
-            <SidebarItem to="/controller" icon={Settings} label={sidebarOpen ? "Payments" : ""} />
+            <>
+              <SidebarItem to="/controller" icon={Settings} label={sidebarOpen ? "Payments" : ""} />
+            </>
           )}
 
           {/* RBAC: Restricted Areas (Admins only) */}
@@ -103,6 +107,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <SidebarItem to="/proforma-validator" icon={FileCheck} label={sidebarOpen ? "Validador Proforma" : ""} />
               <SidebarItem to="/bom-analyzer" icon={Cpu} label={sidebarOpen ? "BOM Analyzer" : ""} />
               <SidebarItem to="/documents" icon={FileText} label={sidebarOpen ? "Smart Docs" : ""} />
+              <SidebarItem to="/ai-assistant" icon={Sparkles} label={sidebarOpen ? t("menu.ai") : ""} />
             </>
           )}
 
@@ -132,16 +137,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {[UserRole.ADMIN, UserRole.EDITOR, UserRole.AGENT, UserRole.CONTROLLER, UserRole.EXPO, UserRole.CARRIER, UserRole.EMBARQUES].includes(user?.role as UserRole) && (
             <>
               {user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && (
-                  <SidebarItem to="/carriers" icon={Anchor} label={sidebarOpen ? "Carriers" : ""} />
+                  <SidebarItem to="/carriers" icon={Anchor} label={sidebarOpen ? t("menu.carriers") : ""} />
               )}
               {user?.role !== UserRole.EMBARQUES && (
                 <>
-                  <SidebarItem to="/transport-lines" icon={Truck} label={sidebarOpen ? "Transport Lines" : ""} />
-                  <SidebarItem to="/drivers" icon={Users} label={sidebarOpen ? "Drivers" : ""} />
-                  <SidebarItem to="/cajas" icon={Container} label={sidebarOpen ? "Cajas" : ""} />
+                  <SidebarItem to="/transport-lines" icon={Truck} label={sidebarOpen ? t("menu.líneas") : ""} />
+                  <SidebarItem to="/drivers" icon={Users} label={sidebarOpen ? t("menu.drivers") : ""} />
+                  <SidebarItem to="/cajas" icon={Container} label={sidebarOpen ? t("menu.cajas") : ""} />
                 </>
               )}
-              <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? "Asig. Diarias Cajas" : ""} />
+              <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? t("menu.asignaciones") : ""} />
             </>
           )}
 
@@ -197,6 +202,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         <header className="bg-white shadow-sm h-16 flex items-center justify-between px-8 sticky top-0 z-10">
           <h2 className="text-lg font-semibold text-slate-700">CFMoto Import/Export Control</h2>
           <div className="flex items-center space-x-4">
+            <button
+               onClick={toggleLanguage} 
+               className="flex items-center justify-center font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg px-3 py-1.5 transition-colors border border-slate-200"
+               title="Cambiar Idioma / Toggle Language"
+            >
+               {language === 'es' ? 'ES | EN' : 'EN | ES'}
+            </button>
             <ConnectionStatus />
             <SyncIndicator />
             <div className={`px-3 py-1 rounded-full text-xs font-bold border ${user?.role === 'Admin' ? 'bg-red-50 text-red-600 border-red-200' :

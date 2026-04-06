@@ -15,9 +15,11 @@ import { parseCSV } from '../utils/csvHelpers';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import modelosCaja from '../utils/modelosCaja.json';
+import { useLanguage } from '../context/LanguageContext';
 
 export const AsignacionesDiarias: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const isEmbarques = user?.role === UserRole.EMBARQUES;
   const [asignaciones, setAsignaciones] = useState<AsignacionCajaModel[]>([]);
   const [cajas, setCajas] = useState<CajaModel[]>([]);
@@ -283,7 +285,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // CSV EXPORT
   const exportCSV = () => {
-      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO", "SELLO LIBERACIÓN"];
+      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO", "SELLO LIBERACIÓN", "FECHA SELLADO", "OBSERVACIONES"];
       const rows = filteredData.map(a => {
           const lib = liberaciones.find(l => l.asignacionCajaId === a.id);
           return [
@@ -297,7 +299,9 @@ export const AsignacionesDiarias: React.FC = () => {
               a.nombreDriver || '',
               a.placasTracto || '',
               a.modeloAsignado || '',
-              lib ? lib.selloValidado : ''
+              lib ? lib.selloValidado : '',
+              lib && lib.fechaHoraRegistro ? lib.fechaHoraRegistro : '',
+              a.observaciones || ''
           ];
       });
       const csvContent = [headers, ...rows].map(e => e.map(item => `"${(item || '').replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -313,8 +317,8 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // CSV TEMPLATE
   const downloadTemplate = () => {
-      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "DRIVER ID", "MODELO"];
-      const example = ["2026-03-25", "09:30", "OP-001", "EMCU-123456", "TRANSPORTES SA DE CV", "COMPACTO, SUV"];
+      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "DRIVER ID", "MODELO", "OBSERVACIONES"];
+      const example = ["2026-03-25", "09:30", "OP-001", "EMCU-123456", "TRANSPORTES SA DE CV", "COMPACTO, SUV", "Comentarios extra..."];
       const csvContent = [headers, example].map(e => e.join(",")).join("\n");
       const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -344,6 +348,7 @@ export const AsignacionesDiarias: React.FC = () => {
           const cIdx = headers.findIndex(h => h.includes('CAJA'));
           const dIdx = headers.findIndex(h => h.includes('DRIVER'));
           const mIdx = headers.findIndex(h => h.includes('MODELO'));
+          const obsIdx = headers.findIndex(h => h.includes('OBSERVACIONES'));
 
           if (fIdx === -1 || cIdx === -1 || dIdx === -1) {
               return alert("Estructura inválida. La cabecera debe contener al menos FECHA, NÚMERO CAJA y DRIVER ID.");
@@ -373,6 +378,7 @@ export const AsignacionesDiarias: React.FC = () => {
               const rawCaja = r[cIdx]?.trim().toUpperCase();
               const rawDriver = r[dIdx]?.trim().toUpperCase();
               const rawModelo = mIdx !== -1 ? r[mIdx]?.trim().toUpperCase() : '';
+              const rawObs = obsIdx !== -1 ? r[obsIdx]?.trim().substring(0, 50) : '';
 
               if (!rawFecha && !rawCaja && !rawDriver) continue;
               if (!rawFecha || !rawCaja || !rawDriver) {
@@ -402,6 +408,7 @@ export const AsignacionesDiarias: React.FC = () => {
                   nombreDriver: matchDriver ? matchDriver.nombre : rawDriver,
                   placasTracto: matchDriver ? matchDriver.placasTracto || '' : '',
                   modeloAsignado: rawModelo || '',
+                  observaciones: rawObs || '',
                   createdAt: new Date(Date.now() + i).toISOString()
               };
 
@@ -431,9 +438,9 @@ export const AsignacionesDiarias: React.FC = () => {
         <div>
            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
               <Navigation className="text-blue-600" />
-              Asignación Diaria de Cajas
+              {t('asig.title')}
            </h1>
-           <p className="text-slate-500 text-sm mt-1">Gestión operativa vinculando Contenedores y Transportistas activos.</p>
+           <p className="text-slate-500 text-sm mt-1">{t('asig.subtitle')}</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -520,25 +527,57 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 w-12 border-r border-slate-100 bg-slate-100 text-center">
                   {!isEmbarques && <input type="checkbox" checked={filteredData.length > 0 && selectedIds.size === filteredData.length} onChange={toggleSelectAll} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
               </th>
-              <th onClick={() => handleSort('fecha')} className="p-4 font-medium border-r border-slate-100 bg-blue-50/50 whitespace-nowrap cursor-pointer hover:bg-blue-100 group transition-colors">Fecha/Hora {renderSortIcon('fecha')}</th>
-              <th onClick={() => handleSort('numeroOperacion')} className="p-4 font-medium text-pink-800 bg-pink-50/30 whitespace-nowrap cursor-pointer hover:bg-pink-100 group transition-colors">No. Operación {renderSortIcon('numeroOperacion')}</th>
-              <th onClick={() => handleSort('numeroCaja')} className="p-4 font-medium text-emerald-800 bg-emerald-50/30 cursor-pointer hover:bg-emerald-100 group transition-colors">Número Caja {renderSortIcon('numeroCaja')}</th>
-              <th onClick={() => handleSort('subLinea')} className="p-4 font-medium text-emerald-800 bg-emerald-50/30 cursor-pointer hover:bg-emerald-100 group transition-colors">Sub-Línea {renderSortIcon('subLinea')}</th>
-              <th onClick={() => handleSort('placasCaja')} className="p-4 font-medium text-emerald-800 bg-emerald-50/30 cursor-pointer hover:bg-emerald-100 group transition-colors">Placas Caja {renderSortIcon('placasCaja')}</th>
-              <th onClick={() => handleSort('driverId')} className="p-4 font-medium text-orange-800 bg-orange-50/30 whitespace-nowrap cursor-pointer hover:bg-orange-100 group transition-colors">Driver ID {renderSortIcon('driverId')}</th>
-              <th onClick={() => handleSort('nombreDriver')} className="p-4 font-medium text-orange-800 bg-orange-50/30 cursor-pointer hover:bg-orange-100 group transition-colors">Nombre / Transportista {renderSortIcon('nombreDriver')}</th>
-              <th onClick={() => handleSort('placasTracto')} className="p-4 font-medium text-orange-800 bg-orange-50/30 cursor-pointer hover:bg-orange-100 group transition-colors">Placas Tracto {renderSortIcon('placasTracto')}</th>
-              <th onClick={() => handleSort('modeloAsignado')} className="p-4 font-medium text-purple-800 bg-purple-50/30 whitespace-nowrap cursor-pointer hover:bg-purple-100 group transition-colors">Modelo {renderSortIcon('modeloAsignado')}</th>
-              <th onClick={() => handleSort('selloLiberacion')} className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap cursor-pointer hover:bg-teal-100 group transition-colors">Sello Liberación {renderSortIcon('selloLiberacion')}</th>
-              <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">CARGADO</th>
+              <th onClick={() => handleSort('fecha')} className="p-4 font-medium border-r border-slate-100 bg-blue-50/50 whitespace-nowrap cursor-pointer hover:bg-blue-100 group transition-colors">{t('col.fecha')} {renderSortIcon('fecha')}</th>
+              <th onClick={() => handleSort('numeroOperacion')} className="p-4 font-medium text-pink-800 bg-pink-50/30 whitespace-nowrap cursor-pointer hover:bg-pink-100 group transition-colors">{t('col.operacion')} {renderSortIcon('numeroOperacion')}</th>
+              <th onClick={() => handleSort('numeroCaja')} className="p-4 font-medium text-emerald-800 bg-emerald-50/30 cursor-pointer hover:bg-emerald-100 group transition-colors">{t('col.caja')} {renderSortIcon('numeroCaja')}</th>
+              <th onClick={() => handleSort('subLinea')} className="p-4 font-medium text-emerald-800 bg-emerald-50/30 cursor-pointer hover:bg-emerald-100 group transition-colors">{t('col.sublinea')} {renderSortIcon('subLinea')}</th>
+              <th onClick={() => handleSort('placasCaja')} className="p-4 font-medium text-emerald-800 bg-emerald-50/30 cursor-pointer hover:bg-emerald-100 group transition-colors">{t('col.placascaja')} {renderSortIcon('placasCaja')}</th>
+              <th onClick={() => handleSort('driverId')} className="p-4 font-medium text-orange-800 bg-orange-50/30 whitespace-nowrap cursor-pointer hover:bg-orange-100 group transition-colors">{t('col.driverid')} {renderSortIcon('driverId')}</th>
+              <th onClick={() => handleSort('nombreDriver')} className="p-4 font-medium text-orange-800 bg-orange-50/30 cursor-pointer hover:bg-orange-100 group transition-colors">{t('col.driver')} {renderSortIcon('nombreDriver')}</th>
+              <th onClick={() => handleSort('placasTracto')} className="p-4 font-medium text-orange-800 bg-orange-50/30 cursor-pointer hover:bg-orange-100 group transition-colors">{t('col.placastracto')} {renderSortIcon('placasTracto')}</th>
+              <th onClick={() => handleSort('modeloAsignado')} className="p-4 font-medium text-purple-800 bg-purple-50/30 whitespace-nowrap cursor-pointer hover:bg-purple-100 group transition-colors">{t('col.modelo')} {renderSortIcon('modeloAsignado')}</th>
+              <th onClick={() => handleSort('selloLiberacion')} className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap cursor-pointer hover:bg-teal-100 group transition-colors">{t('col.sello')} {renderSortIcon('selloLiberacion')}</th>
+              <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">{t('col.cargado')}</th>
+              <th className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap">{t('col.sellado_time')}</th>
+              <th className="p-4 font-medium text-slate-800 bg-slate-100/50">{t('col.observaciones')}</th>
               {!isEmbarques && <th className="p-4 font-medium text-right bg-slate-50">Acciones</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">
             {filteredData.map((a, index) => {
-              const hasLiberacion = liberaciones.some(lib => lib.asignacionCajaId === a.id);
+              const liberacion = liberaciones.find(lib => lib.asignacionCajaId === a.id);
+              const hasLiberacion = !!liberacion;
+              
+              let rowColorClass = "hover:bg-slate-50";
+              if (!hasLiberacion && a.fecha && a.horaAsignacion) {
+                  let timeStr = (a.horaAsignacion || '').toLowerCase().trim();
+                  let isPM = timeStr.includes('pm') || timeStr.includes('p.m.');
+                  let isAM = timeStr.includes('am') || timeStr.includes('a.m.');
+                  let [hours, minutes] = timeStr.replace(/[a-z\s.]/g, '').split(':');
+                  let h = parseInt(hours || '0', 10);
+                  if (isPM && h < 12) h += 12;
+                  if (isAM && h === 12) h = 0;
+                  
+                  const asigDate = new Date(`${a.fecha}T${String(h).padStart(2, '0')}:${minutes || '00'}:00`);
+                  
+                  if (!isNaN(asigDate.getTime())) {
+                      const now = new Date();
+                      const diffHours = (now.getTime() - asigDate.getTime()) / (1000 * 60 * 60);
+
+                      if (diffHours > 4) {
+                          rowColorClass = "bg-red-50 hover:bg-red-100 transition-colors";
+                      } else if (diffHours > 2) {
+                          rowColorClass = "bg-yellow-50 hover:bg-yellow-100 transition-colors";
+                      }
+                  }
+              }
+
+              if (selectedIds.has(a.id!)) {
+                  rowColorClass = "bg-blue-50/50";
+              }
+
               return (
-              <tr key={a.id} className={`transition-colors ${selectedIds.has(a.id!) ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}>
+              <tr key={a.id} className={rowColorClass}>
                 <td className="p-4 bg-slate-50/30 border-r border-slate-100 text-center">
                     {!isEmbarques && <input type="checkbox" checked={selectedIds.has(a.id!)} onChange={() => toggleSelectRow(a.id!)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
                 </td>
@@ -560,7 +599,7 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 font-medium text-slate-700 whitespace-nowrap">{a.modeloAsignado || '-'}</td>
                 
                 <td className="p-4 font-mono text-teal-700 font-bold whitespace-nowrap border-l border-teal-100/50 bg-teal-50/10">
-                    {hasLiberacion ? liberaciones.find(l => l.asignacionCajaId === a.id)?.selloValidado : '-'}
+                    {liberacion ? liberacion.selloValidado : '-'}
                 </td>
                 
                 <td className="p-4 text-center">
@@ -573,6 +612,14 @@ export const AsignacionesDiarias: React.FC = () => {
                            <XCircle size={18} className="text-red-500" />
                         </div>
                     )}
+                </td>
+
+                <td className="p-4 font-mono text-xs text-teal-800 font-medium whitespace-nowrap">
+                    {liberacion?.fechaHoraRegistro ? liberacion.fechaHoraRegistro : '-'}
+                </td>
+                
+                <td className="p-4 text-xs text-slate-600 truncate max-w-[200px]" title={a.observaciones || ''}>
+                    {a.observaciones || '-'}
                 </td>
 
                 {!isEmbarques && (
@@ -628,6 +675,13 @@ export const AsignacionesDiarias: React.FC = () => {
                   <input type="text" value={formData.numeroOperacion || ''} onChange={e => setFormData({...formData, numeroOperacion: e.target.value.toUpperCase()})} placeholder="Opcional" className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-pink-500 outline-none font-mono uppercase" />
                 </div>
               </div>
+              
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Observaciones (Max 50 caract.)</label>
+                  <input type="text" maxLength={50} value={formData.observaciones || ''} onChange={e => setFormData({...formData, observaciones: e.target.value})} placeholder="Opcional..." className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+              </div>
 
               <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 space-y-3">
                  <h3 className="text-xs font-bold text-indigo-800 uppercase flex items-center gap-1.5"><Navigation size={14}/> Carrier Padre (SCAC)</h3>
@@ -640,7 +694,7 @@ export const AsignacionesDiarias: React.FC = () => {
               </div>
               
               <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100 space-y-3">
-                 <h3 className="text-xs font-bold text-emerald-800 uppercase flex items-center gap-1.5"><Container size={14}/> Equipo (Módulo Cajas)</h3>
+                 <h3 className="text-xs font-bold text-emerald-800 uppercase flex items-center gap-1.5"><Container size={14}/> {t('form.caja_sec')}</h3>
                  <div>
                     <select required disabled={!formData.carrierCodigo} value={formData.numeroCaja || ''} onChange={e => handleCajaChange(e.target.value)} className="w-full border border-emerald-200 rounded-lg p-2.5 outline-none bg-white font-mono shadow-sm focus:ring-2 focus:ring-emerald-500 disabled:opacity-50">
                         <option value="" disabled>Seleccionar Número de Caja...</option>
@@ -660,7 +714,7 @@ export const AsignacionesDiarias: React.FC = () => {
               </div>
 
               <div className="p-4 bg-orange-50 rounded-xl border border-orange-100 space-y-3">
-                 <h3 className="text-xs font-bold text-orange-800 uppercase flex items-center gap-1.5"><Truck size={14}/> Transportista (Módulo Driver)</h3>
+                 <h3 className="text-xs font-bold text-orange-800 uppercase flex items-center gap-1.5"><Truck size={14}/> {t('form.tracto_sec')}</h3>
                  <div>
                     <select required disabled={!formData.carrierCodigo} value={formData.driverId || ''} onChange={e => handleDriverChange(e.target.value)} className="w-full border border-orange-200 rounded-lg p-2.5 outline-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 disabled:opacity-50">
                         <option value="" disabled>Seleccionar Driver ID...</option>

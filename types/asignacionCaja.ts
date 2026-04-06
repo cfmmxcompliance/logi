@@ -11,6 +11,7 @@ export interface AsignacionCajaModel {
   nombreDriver: string;
   placasTracto: string;
   modeloAsignado?: string;
+  observaciones?: string;
   notas?: string;
   createdAt?: string;
   updatedAt?: string;

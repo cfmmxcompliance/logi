@@ -196,9 +196,12 @@ export const HandheldSellos = () => {
         selloAsignado: selloValue.toUpperCase().trim(),
         usuario: user.email || user.username || 'unknown',
         fechaHoraRegistro: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),
-        fotoUrl: finalFotoUrl,
         createdAt: selloExistente?.createdAt || new Date().toISOString()
       };
+
+      if (finalFotoUrl) {
+          newSello.fotoUrl = finalFotoUrl;
+      }
 
       if (selloExistente && selloExistente.id) {
           await selloService.updateSello(selloExistente.id, newSello);

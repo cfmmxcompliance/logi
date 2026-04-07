@@ -35,11 +35,24 @@ export const HandheldSellos = () => {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const fetchWithTimeout = <T,>(promise: Promise<T>, ms: number = 10000): Promise<T> => {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT_EXCEEDED')), ms))
+    ]);
+  };
+
   const fetchDataForDate = async (targetDate: string) => {
     setLoading(true);
     
     try {
-      const cajasParaFecha = await asignacionCajaService.getAsignacionesByDate(targetDate);
+      const [cajasParaFecha, sellosParaFecha] = await fetchWithTimeout(
+        Promise.all([
+          asignacionCajaService.getAsignacionesByDate(targetDate),
+          selloService.getSellosByDate(targetDate)
+        ]),
+        12000 // 12 seconds max wait
+      );
       
       cajasParaFecha.sort((a, b) => {
         const timeA = a.horaAsignacion || '00:00';
@@ -55,12 +68,15 @@ export const HandheldSellos = () => {
         return crA - crB;
       });
       
-      const sellosParaFecha = await selloService.getSellosByDate(targetDate);
-      
       setCajasDelDia(cajasParaFecha);
       setSellosDelDia(sellosParaFecha);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error fetching data", e);
+      if (e.message === 'TIMEOUT_EXCEEDED') {
+          alert('La conexión de internet es muy lenta o inestable. Intente moverse a un área con mejor señal y recargue la página.');
+      } else {
+          alert('Hubo un problema al consultar la base de datos. Verifique su red.');
+      }
     } finally {
       setLoading(false);
     }

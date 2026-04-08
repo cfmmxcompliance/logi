@@ -9,107 +9,82 @@ const ROOT_ADMIN_EMAIL = 'admin@logimaster.com';
 
 export const authService = {
     login: async (email: string, password: string): Promise<User | null> => {
-        let firebaseUser = null;
-        let migrationNeeded = false;
-
-        // 1. Attempt Firebase Native Auth First
-        if (auth) {
-            try {
-                const credential = await signInWithEmailAndPassword(auth, email, password);
-                firebaseUser = credential.user;
-                console.log("✅ Firebase Auth: Login Success");
-            } catch (e: any) {
-                if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-login-credentials') {
-                    console.warn("⚠️ Firebase Auth failed. Checking Legacy DB for migration...");
-                    migrationNeeded = true;
-                } else if (e.code === 'auth/wrong-password') {
-                    console.warn("⛔ Firebase Auth: Wrong Password.");
-                    throw e;
-                } else {
-                    console.error("Firebase Auth Error:", e);
-                    // Continue to legacy check in case of network weirdness? No, usually stop.
-                }
-            }
-        }
-
         if (!db || !auth) {
-            console.error("⛔ Firebase initialization failed.", { db: !!db, auth: !!auth });
-            // In dev environment, help developer. In prod, provide slightly more info.
             const details = `DB: ${!!db}, AUTH: ${!!auth}`;
             throw {
                 code: 'auth/initialization-failed',
-                message: `Servicios de seguridad no inicializados correctamente (${details}). Por favor reporta con soporte.`
+                message: `Servicios de seguridad no inicializados correctamente (${details}).`
             };
         }
 
         const username = email.split('@')[0];
         const isRootAdmin = email.toLowerCase() === ROOT_ADMIN_EMAIL;
-        let role: UserRole | null = null;
-        let legacyData: any = null;
+
+        // Timeout wrapper for slow handheld networks
+        const withTimeout = <T>(promise: Promise<T>, ms = 10000): Promise<T> =>
+            Promise.race([
+                promise,
+                new Promise<T>((_, reject) =>
+                    setTimeout(() => reject({ code: 'auth/network-request-failed', message: 'Tiempo de espera agotado. Verifica tu red.' }), ms)
+                )
+            ]);
 
         try {
-            // 2. Fetch User Data (Role/Profile) from Firestore
-            // We ALWAYS need this because we store Roles in Firestore (until Custom Claims are built)
-            const userRef = doc(db, 'users', email);
-            const userSnap = await getDoc(userRef);
-
-            if (userSnap.exists()) {
-                const data = userSnap.data();
-                legacyData = data;
-                role = data.role as UserRole;
-
-                // A. HARD OVERRIDE: Root Admin is ALWAYS Admin
-                if (isRootAdmin) {
-                    role = UserRole.ADMIN;
-                    if (data.role !== UserRole.ADMIN) {
-                        updateDoc(userRef, { role: UserRole.ADMIN }).catch(console.error);
-                    }
-                }
-
-                // B. Legacy Password Check (Only if Firebase Auth failed/didn't exist)
-                if (!firebaseUser) {
-                    // If migration is needed, we verify the LEGACY password here
-                    if (data.password && data.password !== password) {
-                        console.warn(`⛔ Access Denied: User ${email} entered wrong password (Legacy).`);
-                        throw { code: 'auth/wrong-password', message: 'Invalid password.' };
-                    }
-
-                    // C. AUTO-MIGRATION
-                    // If we are here, Legacy Password matched.
-                    if (auth) {
-                        console.log(`🚀 Migrating user ${email} to Firebase Auth...`);
-                        try {
-                            const newCred = await createUserWithEmailAndPassword(auth, email, password);
-                            firebaseUser = newCred.user;
-                            console.log(`✅ Migration Successful for ${email}`);
-                            // Optional: Clear legacy password field to enforce Firebase usage?
-                            // await updateDoc(userRef, { password: deleteField() }); 
-                        } catch (migErr) {
-                            console.error("Migration Failed (User might exist or weak pass):", migErr);
-                            // We allow them to login via Legacy for now, but log the error
+            // PARALLEL: Fire both Firebase Auth and Firestore role lookup at the same time
+            const [authResult, userSnap] = await withTimeout(
+                Promise.all([
+                    signInWithEmailAndPassword(auth, email, password).catch(async (e: any) => {
+                        // If login fails but user exists in Firestore with legacy pass, allow migration below
+                        if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-login-credentials' || e.code === 'auth/invalid-credential') {
+                            return null; // Will attempt legacy check
                         }
-                    }
-                }
+                        throw e;
+                    }),
+                    getDoc(doc(db, 'users', email))
+                ])
+            );
 
-                // D. Check "Require Reset" flag
-                if (data.requireReset) {
-                    throw { code: 'auth/new-password-required', message: 'Admin requested password reset.' };
-                }
-
-            } else {
-                console.warn(`⛔ Access Denied: User ${email} not found.`);
+            if (!userSnap.exists()) {
                 throw { code: 'auth/user-not-found', message: 'User not registered.' };
             }
 
-            // 3. Role Verification
+            const data = userSnap.data();
+            let role = data.role as UserRole;
+            let firebaseUser = authResult ? (authResult as any).user : null;
+
+            // Root Admin override
+            if (isRootAdmin) {
+                role = UserRole.ADMIN;
+                if (data.role !== UserRole.ADMIN) {
+                    updateDoc(doc(db, 'users', email), { role: UserRole.ADMIN }).catch(console.error);
+                }
+            }
+
+            // Legacy password check if Firebase Auth failed
+            if (!firebaseUser) {
+                if (data.password && data.password !== password) {
+                    throw { code: 'auth/wrong-password', message: 'Invalid password.' };
+                }
+                // Auto-migrate to Firebase Auth in background (non-blocking)
+                createUserWithEmailAndPassword(auth, email, password)
+                    .then(cred => { firebaseUser = cred.user; })
+                    .catch(console.warn);
+            }
+
+            // Require reset check
+            if (data.requireReset) {
+                throw { code: 'auth/new-password-required', message: 'Admin requested password reset.' };
+            }
+
+            // Role check
             if (!role || (role === UserRole.PENDING && !isRootAdmin)) {
-                console.error("⛔ Security Alert: Role not assigned or Pending.");
                 throw { code: 'auth/role-pending', message: 'Role verification failed. Pending Approval.' };
             }
 
             const user: User = {
-                username: legacyData.username || username,
-                name: legacyData.name || legacyData.username || username,
+                username: data.username || username,
+                name: data.name || data.username || username,
+                email,
                 role,
                 avatarInitials: email.substring(0, 2).toUpperCase()
             };
@@ -118,7 +93,7 @@ export const authService = {
             return user;
 
         } catch (e) {
-            console.error("Auth Error:", e);
+            console.error('Auth Error:', e);
             throw e;
         }
     },

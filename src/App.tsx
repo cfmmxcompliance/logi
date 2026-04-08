@@ -40,6 +40,7 @@ import { HandheldHome } from '../pages/HandheldHome.tsx';
 import { HandheldSellos } from '../pages/HandheldSellos.tsx';
 import { HandheldLiberacion } from '../pages/HandheldLiberacion.tsx';
 import { BPMClasificacion } from '../pages/BPMClasificacion.tsx';
+import { DailyVanAssignment } from '../pages/DailyVanAssignment.tsx';
 import { storageService } from '../services/storageService.ts';
 import { trackingService } from '../services/trackingService.ts';
 import { AuthProvider, useAuth } from '../context/AuthContext.tsx';
@@ -92,8 +93,8 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Expo constraints
     if (user?.role === UserRole.EXPO) {
-        const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/models', '/pricing-matrix', '/shipping-schedules', '/asignaciones-diarias'];
-        if (!allowed.includes(location.pathname)) return <Navigate to="/shipping-schedules" replace />;
+        const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/models', '/pricing-matrix', '/shipping-schedules', '/asignaciones-diarias', '/daily-van-assignment'];
+        if (!allowed.includes(location.pathname)) return <Navigate to="/daily-van-assignment" replace />;
     }
 
     // Embarques constraints
@@ -201,6 +202,7 @@ const AppContent = () => {
             <Route path="/audit-logs" element={<ProtectedRoute><ActionLogs /></ProtectedRoute>} />
             <Route path="/daily-audit" element={<ProtectedRoute><DailyAudit /></ProtectedRoute>} />
             <Route path="/bpm" element={<ProtectedRoute><BPMClasificacion /></ProtectedRoute>} />
+            <Route path="/daily-van-assignment" element={<ProtectedRoute><DailyVanAssignment /></ProtectedRoute>} />
 
             {/* Handheld Routes */}
             <Route path="/m/home" element={<ProtectedRoute><HandheldHome /></ProtectedRoute>} />

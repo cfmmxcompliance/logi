@@ -32,31 +32,32 @@ export const AuthProvider = ({ children }: { children?: ReactNode }) => {
         return;
       }
 
+      // Immediately unblock the UI - the user is already loaded from localStorage
+      setLoading(false);
+
+      // Background re-validation: refresh role data silently without blocking
       try {
         const parsedUser = JSON.parse(storedUser);
         if (parsedUser.email) {
-          // BACKGROUND VALIDATION: Don't block UI if we already have a user
           const dbUser = await authService.getUser(parsedUser.email);
           if (dbUser) {
-            setUser(dbUser); // Refresh with latest data (roles, etc)
+            setUser(dbUser);
             localStorage.setItem('logimaster_user', JSON.stringify(dbUser));
           } else {
-            console.warn("⚠️ Session Expired: User deleted from database.");
+            console.warn('⚠️ Session Expired: User deleted from database.');
             localStorage.removeItem('logimaster_user');
             setUser(null);
           }
         }
       } catch (err) {
-        console.error("Session Validation Failed:", err);
-        // We only clear if it's a definitive "user not found" or similar auth error
-        // If it's just a network error, we keep the optimistic session for offline support
-      } finally {
-        setLoading(false);
+        console.error('Background session validation failed (non-blocking):', err);
+        // Keep the optimistic session - don't clear on network errors
       }
     };
 
     validateSession();
   }, []);
+
 
   const login = (userData: User) => {
     setUser(userData);

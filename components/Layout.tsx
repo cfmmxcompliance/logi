@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck, Globe, Activity, FolderOpen,
   Navigation,
-  Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles } from 'lucide-react';
+  Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles, CalendarCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ConnectionStatus } from './ConnectionStatus.tsx';
 import { UserRole } from '../types.ts';
@@ -126,6 +126,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <SidebarItem to="/models" icon={Box} label={sidebarOpen ? "Models (Expo)" : ""} />
               <SidebarItem to="/pricing-matrix" icon={DollarSign} label={sidebarOpen ? "Pricing Matrix" : ""} />
               <SidebarItem to="/shipping-schedules" icon={Ship} label={sidebarOpen ? "Shipping Sched." : ""} />
+              <SidebarItem to="/daily-van-assignment" icon={CalendarCheck} label={sidebarOpen ? "Daily Van Assignment" : ""} />
             </>
           )}
 

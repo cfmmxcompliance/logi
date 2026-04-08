@@ -132,7 +132,7 @@ export const BPMClasificacion = () => {
       
       try {
           const promises = Array.from(selectedIds).map(id => 
-              bpmService.updateBPM(id, { [bulkEditField]: bulkEditValue } as Partial<BPMRecord>)
+              bpmService.updateBPM(id, { [bulkEditField as string]: bulkEditValue } as Partial<BPMRecord>)
           );
           await Promise.all(promises);
           alert("Cambio masivo aplicado con éxito.");

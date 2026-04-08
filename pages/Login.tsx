@@ -170,8 +170,9 @@ export const Login = () => {
           )}
         </form>
 
-        <div className="bg-slate-50 p-4 text-center text-xs text-slate-400 border-t border-slate-100">
-          Protected System • Authorized Personnel Only
+        <div className="bg-slate-50 p-4 text-center text-[10px] text-slate-400 border-t border-slate-100 flex justify-between items-center px-6">
+          <span>Protected System • Authorized Only</span>
+          <span className="font-mono opacity-50">v1.2.1-PERF</span>
         </div>
       </div>
     </div>

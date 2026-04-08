@@ -20,12 +20,15 @@ export const authService = {
         const username = email.split('@')[0];
         const isRootAdmin = email.toLowerCase() === ROOT_ADMIN_EMAIL;
 
-        // Timeout wrapper for slow handheld networks
-        const withTimeout = <T>(promise: Promise<T>, ms = 10000): Promise<T> =>
+        // Increased to 25s for warehouse connectivity
+        const withTimeout = <T>(promise: Promise<T>, ms = 25000): Promise<T> =>
             Promise.race([
                 promise,
                 new Promise<T>((_, reject) =>
-                    setTimeout(() => reject({ code: 'auth/network-request-failed', message: 'Tiempo de espera agotado. Verifica tu red.' }), ms)
+                    setTimeout(() => reject({ 
+                        code: 'auth/network-request-failed', 
+                        message: 'Conexión lenta Detectada. Intente acercarse a una antena o punto de acceso WiFi.' 
+                    }), ms)
                 )
             ]);
 

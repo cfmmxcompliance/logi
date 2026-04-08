@@ -135,8 +135,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <SidebarItem to="/macro" icon={PackageOpen} label={sidebarOpen ? "Motor de Captura (Macro)" : ""} />
           )}
 
-          {/* Operational Transport -> Admin, Editor, Agent, Controller, Expo, Carrier, Embarques */}
-          {[UserRole.ADMIN, UserRole.EDITOR, UserRole.AGENT, UserRole.CONTROLLER, UserRole.EXPO, UserRole.CARRIER, UserRole.EMBARQUES].includes(user?.role as UserRole) && (
+          {/* Operational Transport -> Admin, Editor, Agent, Controller, Carrier, Embarques (NOT Expo) */}
+          {[UserRole.ADMIN, UserRole.EDITOR, UserRole.AGENT, UserRole.CONTROLLER, UserRole.CARRIER, UserRole.EMBARQUES].includes(user?.role as UserRole) && (
             <>
               {user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && (
                   <SidebarItem to="/carriers" icon={Anchor} label={sidebarOpen ? t("menu.carriers") : ""} />
@@ -150,6 +150,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               )}
               <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? t("menu.asignaciones") : ""} />
             </>
+          )}
+
+          {/* Expo: only Daily Van Assignment and Asignaciones (read-only) */}
+          {user?.role === UserRole.EXPO && (
+            <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? t("menu.asignaciones") : ""} />
           )}
 
           {/* Daily Audit: Accessible to Everyone (except Pending, Carrier, Expo, Embarques) */}

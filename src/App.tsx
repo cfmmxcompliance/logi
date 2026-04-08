@@ -39,6 +39,7 @@ import { AIAssistant } from '../pages/AIAssistant.tsx';
 import { HandheldHome } from '../pages/HandheldHome.tsx';
 import { HandheldSellos } from '../pages/HandheldSellos.tsx';
 import { HandheldLiberacion } from '../pages/HandheldLiberacion.tsx';
+import { BPMClasificacion } from '../pages/BPMClasificacion.tsx';
 import { storageService } from '../services/storageService.ts';
 import { trackingService } from '../services/trackingService.ts';
 import { AuthProvider, useAuth } from '../context/AuthContext.tsx';
@@ -199,6 +200,7 @@ const AppContent = () => {
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/audit-logs" element={<ProtectedRoute><ActionLogs /></ProtectedRoute>} />
             <Route path="/daily-audit" element={<ProtectedRoute><DailyAudit /></ProtectedRoute>} />
+            <Route path="/bpm" element={<ProtectedRoute><BPMClasificacion /></ProtectedRoute>} />
 
             {/* Handheld Routes */}
             <Route path="/m/home" element={<ProtectedRoute><HandheldHome /></ProtectedRoute>} />

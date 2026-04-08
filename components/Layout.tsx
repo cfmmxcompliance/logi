@@ -116,6 +116,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <>
               <SidebarItem to="/apendice10" icon={BookOpen} label={sidebarOpen ? "Apéndice 10" : ""} />
               <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
+              <SidebarItem to="/bpm" icon={Box} label={sidebarOpen ? "BPM Clasificación" : ""} />
             </>
           )}
 

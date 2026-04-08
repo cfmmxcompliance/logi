@@ -582,3 +582,49 @@ export interface LiberacionRecord {
   };
   createdAt?: string;
 }
+
+export interface BPMRecord {
+  id?: string;
+  ref_no?: string | number;
+  part_no: string;
+  description_cn?: string;
+  description_en?: string;
+  material_cn?: string;
+  material_en?: string;
+  function_cn?: string;
+  function_en?: string;
+  net_weight?: number;
+  imported_or_not?: string;
+  rrynas?: string;
+  remarks?: string;
+  certification?: string;
+  spanish_description?: string;
+  um?: string;
+  hts?: string;
+  prosec?: string;
+  r8?: string;
+  regimen?: string;
+  sensible?: string;
+  igi?: string | number;
+  clavesat?: string | number;
+  
+  // MasterData explicit mappings not originally in BPM
+  type_material?: string | number;
+  hts_base?: string | number;
+  hts_nico?: string;
+  descripcion_r8?: string;
+  company?: string;
+  hts_serial_no?: string | number;
+  umc?: string;
+  umt?: string;
+
+  // Auditing and Operations
+  folio_seguimiento?: string; // Example: LMHTS202604040001
+  secuencia_lote?: string; // Example: "1 of 50"
+  subidoPor?: string; // Email of the user who uploaded
+  fechaSubida?: string; // ISO date string
+  aprobadoPor?: string; // Email of checking user
+  fechaAprobacion?: string; // ISO date string
+  fotoUrl?: string; // Legacy single Google drive link
+  fotoUrls?: string[]; // Array of multiple Google Drive URLs
+}

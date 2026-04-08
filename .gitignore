@@ -30,3 +30,9 @@ scripts/fix_json.js
 functions/.env
 .env
 *.env
+functions/service_account.json
+renew_drive_token.cjs
+tmp_auth.cjs
+verify_products_prod.mjs
+*.xls
+.env

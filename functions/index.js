@@ -439,6 +439,48 @@ exports.saveFileToDriveV2 = onCall({
         throw new functions.https.HttpsError("internal", err.message);
     }
 });
+
+/**
+ * CLOUD FUNCTION: Save BPM Photo to strict Drive Folder
+ */
+exports.saveBpmPhotoToDrive = onCall({
+    cors: true,
+    memory: "512MiB",
+    timeoutSeconds: 120
+}, async (request) => {
+    const { data } = request;
+    const { fileName, fileBase64, mimeType } = data;
+    const BPM_FOLDER_ID = "1XfTr7XBk01ORHDjClLrXYPYXqqp3S7sy";
+
+    console.log(`[BPM-PHOTO] Uploading: ${fileName}`);
+
+    if (!fileName || !fileBase64) {
+        throw new functions.https.HttpsError("invalid-argument", "Missing file data.");
+    }
+
+    try {
+        const drive = getDriveClient();
+        const buffer = Buffer.from(fileBase64, 'base64');
+        const fileMetadata = { name: fileName, parents: [BPM_FOLDER_ID] };
+        const media = {
+            mimeType: mimeType || 'image/jpeg',
+            body: require('stream').Readable.from(buffer)
+        };
+
+        const file = await drive.files.create({
+            resource: fileMetadata,
+            media: media,
+            fields: 'id, webViewLink'
+        });
+
+        console.log(`✅ [BPM-PHOTO] Success. Drive File ID: ${file.data.id}`);
+        return { success: true, fileId: file.data.id, url: file.data.webViewLink };
+    } catch (err) {
+        console.error("🔥 [BPM-PHOTO] Error:", err);
+        throw new functions.https.HttpsError("internal", err.message);
+    }
+});
+
 /**
  * CLOUD FUNCTION: Delete File from Drive (v2)
  */

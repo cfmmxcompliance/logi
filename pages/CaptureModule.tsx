@@ -139,7 +139,7 @@ export const CaptureModule: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto animate-fade-in relative pb-20">
+    <div className="p-6 w-full mx-auto animate-fade-in relative pb-20">
       <div className="mb-8">
          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-700 flex items-center gap-3">
             <PackageOpen className="text-blue-600" size={32} />

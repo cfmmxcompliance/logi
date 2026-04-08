@@ -327,19 +327,7 @@ export const HandheldSellos = () => {
                             </div>
                         </div>
                         {isCompleted ? (
-                            <div className="bg-emerald-500/10 text-emerald-400 p-2 rounded-full ring-1 ring-emerald-500/30">
-                                <Check size={20} className="stroke-[3]" />
-                            </div>
-                        ) : (
-                            <div className="bg-blue-500/10 text-blue-400 px-3 py-1.5 rounded-full ring-1 ring-blue-500/30 text-xs font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.15)]">
-                                Pendiente
-                            </div>
-                        )}
-                    </div>
-                    {isCompleted && (
-                        <div className="mt-2 bg-slate-900/50 p-3 rounded-xl border border-emerald-800/30 flex items-center justify-between">
-                            <span className="text-xs text-slate-400">SELLO ACTUAL:</span>
-                            <div className="flex items-center gap-3">
+                            <div className="flex gap-2">
                                 {selloExistente.fotoUrl && (
                                     <button
                                       type="button" 
@@ -352,12 +340,26 @@ export const HandheldSellos = () => {
                                           }
                                           setPreviewUrl(safePreview);
                                       }}
-                                      className="p-1.5 bg-slate-800 rounded-md text-blue-400 hover:text-white border border-slate-700 hover:border-blue-500 transition-colors"
+                                      className="p-2 bg-slate-800 rounded-full text-blue-400 hover:text-white border border-slate-700 hover:border-blue-500 transition-colors shadow-sm"
                                       title="Ver foto del sello"
                                     >
-                                        <ImageIcon size={18} />
+                                        <ImageIcon size={20} />
                                     </button>
                                 )}
+                            </div>
+                        ) : (
+                            <div className="bg-blue-500/10 text-blue-400 px-3 py-1.5 rounded-full ring-1 ring-blue-500/30 text-xs font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                                Pendiente
+                            </div>
+                        )}
+                    </div>
+                    {isCompleted && (
+                        <div className="mt-2 bg-slate-900/50 p-3 rounded-xl border border-emerald-800/30 flex items-center justify-between">
+                            <span className="text-xs text-slate-400">SELLO ACTUAL:</span>
+                            <div className="flex items-center gap-3">
+                                <div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded-full ring-1 ring-emerald-500/30">
+                                    <Check size={16} className="stroke-[3]" />
+                                </div>
                                 <span className="font-mono text-lg font-bold text-emerald-400 tracking-wider">
                                     {selloExistente.selloAsignado}
                                 </span>

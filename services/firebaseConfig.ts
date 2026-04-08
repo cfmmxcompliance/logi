@@ -1,7 +1,7 @@
 // @ts-ignore
 import { initializeApp } from 'firebase/app';
 // @ts-ignore
-import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore';
+import { initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 // @ts-ignore
 import { getAuth } from 'firebase/auth';
 // @ts-ignore
@@ -20,9 +20,9 @@ const firebaseConfig = {
 // 1. Inicialización Síncrona (Garantiza que 'app' existe antes de usarse)
 const app = initializeApp(firebaseConfig);
 
-// 2. Instanciación inmediata de servicios con Caché Local Indestructible
+// 2. Instanciación inmediata de servicios con Caché Local en Memoria (Súper Rápido, no traba handhelds)
 const db = initializeFirestore(app, {
-  localCache: persistentLocalCache()
+  localCache: memoryLocalCache()
 });
 const auth = getAuth(app);
 const storage = getStorage(app);

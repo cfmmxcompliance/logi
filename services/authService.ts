@@ -33,12 +33,12 @@ export const authService = {
             // PARALLEL: Fire both Firebase Auth and Firestore role lookup at the same time
             const [authResult, userSnap] = await withTimeout(
                 Promise.all([
-                    signInWithEmailAndPassword(auth, email, password).catch(async (e: any) => {
-                        // If login fails but user exists in Firestore with legacy pass, allow migration below
-                        if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-login-credentials' || e.code === 'auth/invalid-credential') {
-                            return null; // Will attempt legacy check
-                        }
-                        throw e;
+                    signInWithEmailAndPassword(auth, email, password).catch((e: any) => {
+                        // Only block on explicit wrong-password — all other Firebase Auth errors
+                        // (user-not-found, config-not-found, invalid-credential, etc.) fall through
+                        // to the legacy Firestore password check below.
+                        if (e.code === 'auth/wrong-password') throw e;
+                        return null; // Fall back to legacy path
                     }),
                     getDoc(doc(db, 'users', email))
                 ])

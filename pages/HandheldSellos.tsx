@@ -99,28 +99,22 @@ export const HandheldSellos = () => {
           let width = img.width;
           let height = img.height;
           
-          // Max dimension 1200px
-          const MAX_DIM = 1200;
+          // Reduced to 800px for handheld performance
+          const MAX_DIM = 800;
           if (width > height) {
-            if (width > MAX_DIM) {
-              height *= MAX_DIM / width;
-              width = MAX_DIM;
-            }
+            if (width > MAX_DIM) { height *= MAX_DIM / width; width = MAX_DIM; }
           } else {
-            if (height > MAX_DIM) {
-              width *= MAX_DIM / height;
-              height = MAX_DIM;
-            }
+            if (height > MAX_DIM) { width *= MAX_DIM / height; height = MAX_DIM; }
           }
           
-          canvas.width = width;
-          canvas.height = height;
+          canvas.width = Math.round(width);
+          canvas.height = Math.round(height);
           const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
           
-          // Compress as JPEG 70% quality -> usually ~150-300kb
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-          resolve(dataUrl.split(',')[1]); // return just the base64 data
+          // Lower quality to 60% for faster upload on handheld
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          resolve(dataUrl.split(',')[1]);
         };
         img.onerror = (e) => reject(e);
       };
@@ -131,40 +125,30 @@ export const HandheldSellos = () => {
   const handleImageCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (fileInputRef.current) fileInputRef.current.value = '';
 
     try {
       setIsProcessingImage(true);
       
-      // Compress the file right away
+      // Compress immediately
       const compressedBase64 = await compressImage(file);
       
-      // We store a reconstructed File for Google Drive upload to use
-      const byteCharacters = atob(compressedBase64);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'image/jpeg' });
-      const smallFile = new File([blob], file.name, { type: 'image/jpeg' });
-      
+      const byteArray = Uint8Array.from(atob(compressedBase64), c => c.charCodeAt(0));
+      const smallFile = new File([byteArray], file.name, { type: 'image/jpeg' });
       setCurrentImageFile(smallFile);
+      setIsProcessingImage(false); // Unblock the UI immediately - show the image preview
 
-      try {
-        // Send tiny base64 to Gemini
-        const extractedNumber = await geminiService.extractSelloNumber(compressedBase64);
-        if (extractedNumber !== 'NO_DETECTADO') {
+      // Run Gemini AI in the background without blocking
+      geminiService.extractSelloNumber(compressedBase64)
+        .then(extractedNumber => {
+          if (extractedNumber && extractedNumber !== 'NO_DETECTADO') {
             setSelloValue(extractedNumber);
-          } else {
-            alert("No se pudo detectar un sello claro en la imagen. Por favor, intenta de nuevo o escríbelo manualmente.");
           }
-        } catch (aiError) {
-          console.error(aiError);
-          alert("Error procesando la imagen con IA. Introduce el número manualmente.");
-        } finally {
-          setIsProcessingImage(false);
-          if (fileInputRef.current) fileInputRef.current.value = ""; // Reset input
-        }
+        })
+        .catch(aiError => {
+          console.warn('Gemini no pudo extraer sello:', aiError);
+          // Silent fail - user can type manually
+        });
     } catch (e) {
       console.error(e);
       setIsProcessingImage(false);
@@ -225,11 +209,17 @@ export const HandheldSellos = () => {
           await selloService.addSello(newSello);
       }
       
-      // Si no arrojó error, todo salió bien
-      setSelloValue("");
+      // Optimistic local update instead of full reload
+      const savedSello = { ...newSello, id: selloExistente?.id || `temp_${Date.now()}` };
+      if (selloExistente) {
+        setSellosDelDia(prev => prev.map(s => s.id === selloExistente.id ? savedSello : s));
+      } else {
+        setSellosDelDia(prev => [...prev, savedSello]);
+      }
+
+      setSelloValue('');
       setCurrentImageFile(null);
       setSelectedCaja(null);
-      await fetchDataForDate(selectedDate); // Refrescar lista
     } catch (err: any) {
       console.error(err);
       alert("Error inesperado al guardar: " + (err.message || "Desconocido"));

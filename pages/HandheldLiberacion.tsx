@@ -111,36 +111,28 @@ export const HandheldLiberacion = () => {
           let width = img.width;
           let height = img.height;
 
-          // Define max dimension while keeping aspect ratio
-          const MAX_WIDTH = 1200;
-          const MAX_HEIGHT = 1200;
+          // Reduced to 800px for handheld performance
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
 
           if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
           } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
+            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
           }
 
           canvas.width = Math.round(width);
           canvas.height = Math.round(height);
 
           const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            reject(new Error("Failed to get canvas context"));
-            return;
-          }
+          if (!ctx) { reject(new Error("Failed to get canvas context")); return; }
 
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          // Lower quality 60% - faster upload on handheld
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
           resolve(compressedBase64);
         };
-        img.onerror = (e) => reject(new Error("Failed to load image for compression"));
+        img.onerror = (e) => reject(new Error("Failed to load image"));
       };
       reader.onerror = (e) => reject(new Error("Failed to read file"));
     });
@@ -171,39 +163,50 @@ export const HandheldLiberacion = () => {
   const handleCaptureFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeCameraStep) return;
+    if (fileInputRef.current) fileInputRef.current.value = '';
 
     setIsProcessingImage(true);
 
     try {
       // 1. Compress Image
       const compressedBase64 = await compressImage(file);
-      const compressedFile = base64ToFile(compressedBase64, `compressed_${file.name}`);
+      const byteArray = Uint8Array.from(atob(compressedBase64.split(',')[1]), c => c.charCodeAt(0));
+      const compressedFile = new File([byteArray], `compressed_${file.name}`, { type: 'image/jpeg' });
 
-      // 2. Set State based on Step
+      // 2. Set State based on Step - unblock UI immediately
       if (activeCameraStep === 'CAJA') {
         setFotoCajaFile(compressedFile);
+        setIsProcessingImage(false);
       } else if (activeCameraStep === 'PUERTAS') {
         setFotoPuertasFile(compressedFile);
+        setIsProcessingImage(false);
       } else if (activeCameraStep === 'SELLO') {
         setFotoSelloFile(compressedFile);
+        setExtractedSello("Analizando...");
+        setIsProcessingImage(false); // Unblock UI
         
-        // Gemini AI Extraction for Sello
+        // Run Gemini in background without blocking
         const base64Data = compressedBase64.split(',')[1];
-        setExtractedSello("Analizando sello...");
-        const result = await geminiService.extractSelloNumber(base64Data);
-        if (result && result.trim().length > 0) {
-          setExtractedSello(result.trim());
-        } else {
-          setExtractedSello("1"); // Falso por defecto o vacío
-          setValidationError("No se pudo detectar un sello válido. Escríbalo manualmente.");
-        }
+        geminiService.extractSelloNumber(base64Data)
+          .then(result => {
+            if (result && result.trim().length > 0) {
+              setExtractedSello(result.trim());
+            } else {
+              setExtractedSello('');
+              setValidationError("No se pudo detectar el sello. Escríbalo manualmente.");
+            }
+          })
+          .catch(() => {
+            setExtractedSello('');
+            setValidationError("IA no disponible. Escriba el sello manualmente.");
+          });
       }
 
     } catch (err: any) {
       console.error("Error comprimiendo foto:", err);
       alert("No se pudo procesar la foto.");
-    } finally {
       setIsProcessingImage(false);
+    } finally {
       setActiveCameraStep(null);
     }
   };
@@ -278,8 +281,8 @@ export const HandheldLiberacion = () => {
 
       await liberacionService.addLiberacion(newLiberacion);
 
-      // Refresh memory list
-      setLiberacionesDelDia(prev => [...prev, { ...newLiberacion, id: "temp_id_just_saved" }]);
+      // Optimistic local update - no need to reload full list
+      setLiberacionesDelDia(prev => [...prev, { ...newLiberacion, id: `temp_${Date.now()}` }]);
       setSaveSuccess(true);
       
       // Auto-close modal after 2 seconds

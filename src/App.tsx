@@ -60,10 +60,10 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
         return <Navigate to="/login" replace />;
     }
 
-    // Agent role is limited to Master Data and Daily Audit
-    const isAgentAllowedPath = location.pathname === '/database' || location.pathname === '/daily-audit';
+    // Agent role is limited to BPM, Daily Audit, and Master Data
+    const isAgentAllowedPath = location.pathname === '/bpm' || location.pathname === '/daily-audit' || location.pathname === '/database';
     if (user?.role === UserRole.AGENT && !isAgentAllowedPath) {
-        return <Navigate to="/database" replace />;
+        return <Navigate to="/bpm" replace />;
     }
 
     // Handheld constraints (Bidirectional)

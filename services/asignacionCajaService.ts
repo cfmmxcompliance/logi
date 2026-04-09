@@ -27,6 +27,24 @@ export const asignacionCajaService = {
     });
   },
 
+  async getNextOperationNumber(fecha: string): Promise<string> {
+    try {
+      const asigs = await this.getAsignacionesByDate(fecha);
+      let maxNum = 0;
+      asigs.forEach(a => {
+        const match = (a.numeroOperacion || '').match(/^TL(\d+)$/);
+        if (match) {
+          const n = parseInt(match[1], 10);
+          if (n > maxNum) maxNum = n;
+        }
+      });
+      const next = maxNum + 1;
+      return `TL${String(next).padStart(3, '0')}`;
+    } catch {
+      return 'TL001';
+    }
+  },
+
   async updateAsignacion(id: string, asignacion: Partial<AsignacionCajaModel>): Promise<void> {
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, {

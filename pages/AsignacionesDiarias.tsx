@@ -4,13 +4,17 @@ import { cajaService } from '../services/cajaService';
 import { driverService } from '../services/driverService';
 import { carrierService } from '../services/carrierService';
 import { liberacionService } from '../services/liberacionService';
+import { transportLineService } from '../services/transportLineService';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
 import { CajaModel } from '../types/caja';
 import { DriverModel } from '../types/driver';
 import { CarrierModel } from '../types/carrier';
+import { TransportLineModel } from '../types/transportLine';
 import { LiberacionRecord } from '../types';
 import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
+import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
+import { MultiSearchableComboBox } from '../components/MultiSearchableComboBox';
 import { parseCSV } from '../utils/csvHelpers';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
@@ -25,6 +29,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [cajas, setCajas] = useState<CajaModel[]>([]);
   const [drivers, setDrivers] = useState<DriverModel[]>([]);
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
+  const [transportLines, setTransportLines] = useState<TransportLineModel[]>([]);
   const [liberaciones, setLiberaciones] = useState<LiberacionRecord[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [importErrors, setImportErrors] = useState<string[] | null>(null);
@@ -50,7 +55,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [activeMassQuery, setActiveMassQuery] = useState<QueryCondition[] | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const columns = ['fecha', 'horaAsignacion', 'numeroCaja', 'subLinea', 'placasCaja', 'driverId', 'nombreDriver', 'placasTracto', 'modeloAsignado'];
+  const columns = ['fecha', 'horaAsignacion', 'numeroOperacion', 'numeroCaja', 'subLinea', 'placasCaja', 'transportLineId', 'driverId', 'nombreDriver', 'placasTracto', 'modeloAsignado'];
 
   useEffect(() => {
     loadData();
@@ -58,18 +63,20 @@ export const AsignacionesDiarias: React.FC = () => {
 
   const loadData = async () => {
     try {
-        const [asigData, cajasData, driversData, carriersData, liberacionesData] = await Promise.all([
+        const [asigData, cajasData, driversData, carriersData, liberacionesData, linesData] = await Promise.all([
             asignacionCajaService.getAllAsignaciones().catch(() => []),
             cajaService.getAllCajas().catch(() => []),
             driverService.getAllDrivers().catch(() => []),
             carrierService.getAllCarriers().catch(() => []),
-            liberacionService.getAllLiberaciones().catch(() => [])
+            liberacionService.getAllLiberaciones().catch(() => []),
+            transportLineService.getAllTransportLines().catch(() => [])
         ]);
         setAsignaciones(asigData.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()));
         setCajas(cajasData);
         setDrivers(driversData);
         setCarriers(carriersData);
         setLiberaciones(liberacionesData);
+        setTransportLines(linesData);
     } catch (e) {
         console.error("Error cargando dependencias de Asignación:", e);
     } finally {
@@ -183,6 +190,16 @@ export const AsignacionesDiarias: React.FC = () => {
       return <ChevronUp size={16} className="inline-block ml-1 text-slate-400 opacity-50 group-hover:opacity-100 transition-opacity" />;
   };
 
+  const renderColumnHeader = (label: string, key: string) => (
+    <div 
+        onClick={() => handleSort(key)} 
+        className={`flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors group ${sortConfig?.key === key ? 'text-blue-700 font-bold' : ''}`}
+    >
+        {label}
+        {renderSortIcon(key)}
+    </div>
+  );
+
   const handleCajaChange = (numeroCaja: string) => {
       const selected = cajas.find(c => c.NumeroCaja === numeroCaja);
       if (selected) {
@@ -210,6 +227,18 @@ export const AsignacionesDiarias: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fecha || !formData.numeroCaja || !formData.driverId) return;
+
+    // VALIDACIÓN DE DUPLICADOS: No permitir misma caja el mismo día
+    const isDuplicate = asignaciones.some(a => 
+      a.fecha === formData.fecha && 
+      a.numeroCaja === formData.numeroCaja && 
+      (!isEditing || a.id !== formData.id)
+    );
+
+    if (isDuplicate) {
+      alert(`ERROR: La caja "${formData.numeroCaja}" ya tiene una asignación registrada para el día ${formData.fecha}. No se permiten duplicados en la misma fecha operativa.`);
+      return;
+    }
 
     if (isEditing && formData.id) {
       await asignacionCajaService.updateAsignacion(formData.id, formData);
@@ -265,10 +294,13 @@ export const AsignacionesDiarias: React.FC = () => {
     setSelectedIds(newSec);
   };
 
-  const openNew = () => {
-      setFormData({ 
-          fecha: new Date().toISOString().split('T')[0],
-          horaAsignacion: new Date().toTimeString().substring(0, 5)
+  const openNew = async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const nextOp = await asignacionCajaService.getNextOperationNumber(today);
+      setFormData({
+          fecha: today,
+          horaAsignacion: new Date().toTimeString().substring(0, 5),
+          numeroOperacion: nextOp
       });
       setIsEditing(false);
       setShowModal(true);
@@ -285,7 +317,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // CSV EXPORT
   const exportCSV = () => {
-      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO", "SELLO LIBERACIÓN", "FECHA SELLADO", "OBSERVACIONES"];
+      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "SUB-LÍNEA", "PLACAS CAJA", "TRANSPORT LINE ID", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO", "SELLO LIBERACIÓN", "FECHA SELLADO", "OBSERVACIONES"];
       const rows = filteredData.map(a => {
           const lib = liberaciones.find(l => l.asignacionCajaId === a.id);
           return [
@@ -295,6 +327,7 @@ export const AsignacionesDiarias: React.FC = () => {
               a.numeroCaja,
               a.subLinea || '',
               a.placasCaja || '',
+              a.transportLineId || '',
               a.driverId,
               a.nombreDriver || '',
               a.placasTracto || '',
@@ -317,8 +350,8 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // CSV TEMPLATE
   const downloadTemplate = () => {
-      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "DRIVER ID", "MODELO", "OBSERVACIONES"];
-      const example = ["2026-03-25", "09:30", "OP-001", "EMCU-123456", "TRANSPORTES SA DE CV", "COMPACTO, SUV", "Comentarios extra..."];
+      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "TRANSPORT LINE ID (Opcional)", "DRIVER ID", "MODELO", "OBSERVACIONES"];
+      const example = ["2026-03-25", "09:30", "OP-001", "EMCU-123456", "TL-001", "ARC-001", "MODEL A, MODEL B", "Carga prioritaria"];
       const csvContent = [headers, example].map(e => e.join(",")).join("\n");
       const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -357,6 +390,7 @@ export const AsignacionesDiarias: React.FC = () => {
           setLoading(true);
           let imported = 0;
           let errors: string[] = [];
+          const seenInBatch = new Set<string>();
 
           for (let i = 1; i < rows.length; i++) {
               const r = rows[i];
@@ -386,21 +420,29 @@ export const AsignacionesDiarias: React.FC = () => {
                   continue;
               }
 
+              // VALIDACIÓN DE DUPLICADOS EN IMPORTACIÓN
+              const isDuplicateInDb = asignaciones.some(a => a.fecha === rawFecha && a.numeroCaja === rawCaja);
+              const batchKey = `${rawFecha}|${rawCaja}`;
+              const isDuplicateInBatch = seenInBatch.has(batchKey);
+
+              if (isDuplicateInDb || isDuplicateInBatch) {
+                  errors.push(`Fila ${i + 1}: La caja "${rawCaja}" ya está asignada para el ${rawFecha} (Duplicado omitido)`);
+                  continue;
+              }
+              seenInBatch.add(batchKey);
+
               const matchCaja = cajas.find(c => c.NumeroCaja.toUpperCase() === rawCaja);
               const matchDriver = drivers.find(d => d.driverId.toUpperCase() === rawDriver);
 
-              // Remove strict catalog validation. Many times the 'Driver' column contains 
-              // unstructured statuses like "EJ SHELBY IN ROUTE" or unregistered boxes.
-              // if (!matchCaja) errors.push(`Fila ${i + 1}: La Caja "${rawCaja}" no existe en catálogo.`);
-              // if (!matchDriver) errors.push(`Fila ${i + 1}: El Driver "${rawDriver}" no existe en catálogo.`);
-
               const carrierPadre = matchCaja ? matchCaja.carrierCodigo : (matchDriver ? matchDriver.carrierCodigo : '');
+              const transportId = matchDriver?.transportLineId || '';
 
               const asig: AsignacionCajaModel = {
                   fecha: rawFecha,
                   horaAsignacion: rawHora || new Date().toTimeString().substring(0, 5),
                   numeroOperacion: rawOperacion || '',
                   carrierCodigo: carrierPadre,
+                  transportLineId: transportId,
                   numeroCaja: rawCaja,
                   subLinea: matchCaja ? matchCaja.nombreSubLinea || '' : '',
                   placasCaja: matchCaja ? matchCaja.placas || '' : '',
@@ -527,16 +569,17 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 w-12 border-r border-slate-100 bg-slate-100 text-center">
                   {!isEmbarques && <input type="checkbox" checked={filteredData.length > 0 && selectedIds.size === filteredData.length} onChange={toggleSelectAll} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
               </th>
-              <th onClick={() => handleSort('fecha')} className="p-4 font-medium border-r border-slate-100 bg-blue-50/50 whitespace-nowrap cursor-pointer hover:bg-blue-100 group transition-colors">{t('col.fecha')} {renderSortIcon('fecha')}</th>
-              <th onClick={() => handleSort('numeroOperacion')} className="p-4 font-medium text-pink-800 bg-pink-50/30 whitespace-nowrap cursor-pointer hover:bg-pink-100 group transition-colors">{t('col.operacion')} {renderSortIcon('numeroOperacion')}</th>
-              <th onClick={() => handleSort('numeroCaja')} className="p-4 font-medium text-emerald-800 bg-emerald-50/30 cursor-pointer hover:bg-emerald-100 group transition-colors">{t('col.caja')} {renderSortIcon('numeroCaja')}</th>
-              <th onClick={() => handleSort('subLinea')} className="p-4 font-medium text-emerald-800 bg-emerald-50/30 cursor-pointer hover:bg-emerald-100 group transition-colors">{t('col.sublinea')} {renderSortIcon('subLinea')}</th>
-              <th onClick={() => handleSort('placasCaja')} className="p-4 font-medium text-emerald-800 bg-emerald-50/30 cursor-pointer hover:bg-emerald-100 group transition-colors">{t('col.placascaja')} {renderSortIcon('placasCaja')}</th>
-              <th onClick={() => handleSort('driverId')} className="p-4 font-medium text-orange-800 bg-orange-50/30 whitespace-nowrap cursor-pointer hover:bg-orange-100 group transition-colors">{t('col.driverid')} {renderSortIcon('driverId')}</th>
-              <th onClick={() => handleSort('nombreDriver')} className="p-4 font-medium text-orange-800 bg-orange-50/30 cursor-pointer hover:bg-orange-100 group transition-colors">{t('col.driver')} {renderSortIcon('nombreDriver')}</th>
-              <th onClick={() => handleSort('placasTracto')} className="p-4 font-medium text-orange-800 bg-orange-50/30 cursor-pointer hover:bg-orange-100 group transition-colors">{t('col.placastracto')} {renderSortIcon('placasTracto')}</th>
-              <th onClick={() => handleSort('modeloAsignado')} className="p-4 font-medium text-purple-800 bg-purple-50/30 whitespace-nowrap cursor-pointer hover:bg-purple-100 group transition-colors">{t('col.modelo')} {renderSortIcon('modeloAsignado')}</th>
-              <th onClick={() => handleSort('selloLiberacion')} className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap cursor-pointer hover:bg-teal-100 group transition-colors">{t('col.sello')} {renderSortIcon('selloLiberacion')}</th>
+              <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.fecha'), 'fecha')}</th>
+              <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader('No. Operación', 'numeroOperacion')}</th>
+              <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader('Caja', 'numeroCaja')}</th>
+              <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader('Sub-Línea', 'subLinea')}</th>
+              <th className="p-4 font-medium">{renderColumnHeader('Placas C', 'placasCaja')}</th>
+              <th className="p-4 font-medium min-w-[160px] text-blue-600 uppercase text-xs">{renderColumnHeader('Línea Transporte', 'transportLineId')}</th>
+              <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader('Driver ID', 'driverId')}</th>
+              <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.driver'), 'nombreDriver')}</th>
+              <th className="p-4 font-medium">{renderColumnHeader(t('col.placastracto'), 'placasTracto')}</th>
+              <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.modelo'), 'modeloAsignado')}</th>
+              <th className="p-4 font-medium min-w-[100px]">{renderColumnHeader(t('col.sello'), 'selloLiberacion')}</th>
               <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">{t('col.cargado')}</th>
               <th className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap">{t('col.sellado_time')}</th>
               <th className="p-4 font-medium text-slate-800 bg-slate-100/50">{t('col.observaciones')}</th>
@@ -593,6 +636,10 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 text-slate-600">{a.subLinea || '-'}</td>
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium">{a.placasCaja || '-'}</td>
                 
+                <td className="p-4 text-xs font-bold text-blue-800 whitespace-nowrap">
+                    {transportLines.find(tl => tl.transportLineId === a.transportLineId)?.nombreSubLinea || a.transportLineId || '-'}
+                </td>
+
                 <td className="p-4 font-mono text-orange-600 font-medium whitespace-nowrap">{a.driverId}</td>
                 <td className="p-4 font-medium text-slate-800 whitespace-nowrap">{a.nombreDriver}</td>
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium whitespace-nowrap">{a.placasTracto || '-'}</td>
@@ -654,104 +701,184 @@ export const AsignacionesDiarias: React.FC = () => {
       />
 
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[110] animate-fade-in">
-           <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg transform scale-100 transition-transform">
-            <h2 className="text-xl font-bold mb-6 text-slate-800 flex items-center gap-2">
-                <Navigation className="text-blue-600" />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[110] animate-fade-in p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[92vh]">
+            
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <Navigation className="text-blue-600" size={20} />
                 {isEditing ? 'Editar Asignación' : 'Relacionar Caja / Operador'}
-            </h2>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="block text-xs font-bold text-slate-500 mb-1">Fecha Operativa</label>
-                  <input type="date" required value={formData.fecha || ''} onChange={e => setFormData({...formData, fecha: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+              </h2>
+              <button type="button" onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">✕</button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+              {/* Scrollable body */}
+              <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+                
+                {/* Row 1: Fecha / Hora / No. Operación */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Fecha Operativa</label>
+                    <input type="date" required value={formData.fecha || ''} onChange={e => setFormData({...formData, fecha: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Hora (24h)</label>
+                    <input type="time" required value={formData.horaAsignacion || ''} onChange={e => setFormData({...formData, horaAsignacion: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">No. Operación</label>
+                    <input type="text" value={formData.numeroOperacion || ''} onChange={e => setFormData({...formData, numeroOperacion: e.target.value.toUpperCase()})} placeholder="Auto" className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-pink-500 outline-none font-mono uppercase" />
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <label className="block text-xs font-bold text-slate-500 mb-1">Hora (24h)</label>
-                  <input type="time" required value={formData.horaAsignacion || ''} onChange={e => setFormData({...formData, horaAsignacion: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+
+                {/* Row 2: Two columns — Left: Carrier + Transport Line | Right: Caja + Driver */}
+                <div className="grid grid-cols-2 gap-4">
+
+                  {/* LEFT COLUMN */}
+                  <div className="space-y-3">
+
+                    {/* Carrier */}
+                    <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100 space-y-2">
+                      <h3 className="text-xs font-bold text-indigo-800 uppercase flex items-center gap-1.5">
+                        <Navigation size={12}/> Carrier Padre (SCAC)
+                      </h3>
+                      <SearchableComboBox
+                        required
+                        value={formData.carrierCodigo || ''}
+                        onChange={val => setFormData({...formData, carrierCodigo: val, transportLineId: '', numeroCaja: '', driverId: '', subLinea: '', placasCaja: '', nombreDriver: '', placasTracto: ''})}
+                        options={carriers.map(c => ({ value: c.codigo, label: c.nombre, sublabel: c.codigo }))}
+                        placeholder="Seleccionar Carrier..."
+                      />
+                    </div>
+
+                    {/* Transport Line */}
+                    <div className="p-3 bg-violet-50 rounded-xl border border-violet-100 space-y-2">
+                      <h3 className="text-xs font-bold text-violet-800 uppercase flex items-center gap-1.5">
+                        <Truck size={12}/> Línea de Transporte
+                      </h3>
+                      <SearchableComboBox
+                        value={formData.transportLineId || ''}
+                        onChange={val => setFormData({...formData, transportLineId: val, driverId: '', nombreDriver: '', placasTracto: ''})}
+                        options={transportLines
+                          .filter(tl => !formData.carrierCodigo || tl.carrierCodigo === formData.carrierCodigo)
+                          .map(tl => ({ value: tl.transportLineId, label: tl.nombreSubLinea || tl.TransportLine }))}
+                        placeholder={formData.carrierCodigo ? 'Seleccionar Sub-Línea...' : 'Selecciona un Carrier primero'}
+                        disabled={!formData.carrierCodigo}
+                      />
+                    </div>
+
+                    {/* Observaciones — fills empty left space */}
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                      <h3 className="text-xs font-bold text-slate-600 uppercase">Observaciones</h3>
+                      <input
+                        type="text"
+                        maxLength={50}
+                        value={formData.observaciones || ''}
+                        onChange={e => setFormData({...formData, observaciones: e.target.value})}
+                        placeholder="Opcional... (máx. 50 caracteres)"
+                        className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
+
+                  </div>
+
+                  {/* RIGHT COLUMN */}
+                  <div className="space-y-3">
+
+                    {/* Caja */}
+                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 space-y-2">
+                      <h3 className="text-xs font-bold text-emerald-800 uppercase flex items-center gap-1.5">
+                        <Container size={12}/> {t('form.caja_sec')}
+                      </h3>
+                      <SearchableComboBox
+                        required
+                        value={formData.numeroCaja || ''}
+                        onChange={val => handleCajaChange(val)}
+                        options={cajas
+                          .filter(c => {
+                            if (!formData.carrierCodigo) return false;
+                            if (c.carrierCodigo !== formData.carrierCodigo) return false;
+                            if (formData.transportLineId) {
+                              const selectedTL = transportLines.find(tl => tl.transportLineId === formData.transportLineId);
+                              const targetSubLinea = selectedTL?.nombreSubLinea?.trim().toUpperCase();
+                              const cajaSubLinea = (c.nombreSubLinea || '').trim().toUpperCase();
+                              if (targetSubLinea && cajaSubLinea !== targetSubLinea) return false;
+                            }
+                            return true;
+                          })
+                          .map(c => ({ value: c.NumeroCaja, label: c.NumeroCaja, sublabel: c.nombreSubLinea || '' }))}
+                        placeholder={formData.transportLineId ? 'Seleccionar Caja...' : (formData.carrierCodigo ? 'Selecciona la Línea primero' : 'Selecciona un Carrier primero')}
+                        disabled={!formData.carrierCodigo}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs text-emerald-700 mb-0.5">Sub-Línea</label>
+                          <input disabled value={formData.subLinea || ''} className="w-full bg-emerald-100/50 border-transparent rounded p-1.5 text-xs text-emerald-800 font-medium" placeholder="Auto" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-emerald-700 mb-0.5">Placas Caja</label>
+                          <input disabled value={formData.placasCaja || ''} className="w-full bg-emerald-100/50 border-transparent rounded p-1.5 text-xs text-emerald-800 font-mono" placeholder="Auto" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Driver */}
+                    <div className="p-3 bg-orange-50 rounded-xl border border-orange-100 space-y-2">
+                      <h3 className="text-xs font-bold text-orange-800 uppercase flex items-center gap-1.5">
+                        <Truck size={12}/> {t('form.tracto_sec')}
+                      </h3>
+                      <SearchableComboBox
+                        required
+                        value={formData.driverId || ''}
+                        onChange={val => handleDriverChange(val)}
+                        options={drivers
+                          .filter(d => {
+                            if (!formData.carrierCodigo) return false;
+                            if (formData.transportLineId) return d.transportLineId === formData.transportLineId;
+                            return d.carrierCodigo === formData.carrierCodigo;
+                          })
+                          .map(d => ({ value: d.driverId, label: d.nombre, sublabel: d.driverId }))}
+                        placeholder={formData.transportLineId ? 'Seleccionar Driver...' : (formData.carrierCodigo ? 'Selecciona la Línea primero' : 'Selecciona un Carrier primero')}
+                        disabled={!formData.carrierCodigo}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs text-orange-700 mb-0.5">Nombre</label>
+                          <input disabled value={formData.nombreDriver || ''} className="w-full bg-orange-100/50 border-transparent rounded p-1.5 text-xs text-orange-800" placeholder="Auto" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-orange-700 mb-0.5">Placas Tracto</label>
+                          <input
+                            value={formData.placasTracto || ''}
+                            onChange={e => setFormData({...formData, placasTracto: e.target.value.toUpperCase()})}
+                            className="w-full bg-white border border-orange-200 rounded p-1.5 text-xs text-orange-800 font-mono focus:ring-2 focus:ring-orange-400 outline-none"
+                            placeholder="Ej. ABC-123"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <label className="block text-xs font-bold text-slate-500 mb-1">No. Operación</label>
-                  <input type="text" value={formData.numeroOperacion || ''} onChange={e => setFormData({...formData, numeroOperacion: e.target.value.toUpperCase()})} placeholder="Opcional" className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-pink-500 outline-none font-mono uppercase" />
+
+                {/* Row 3: Producto (Modelo) — full width */}
+                <div className="p-3 bg-purple-50 rounded-xl border border-purple-100 space-y-2">
+                  <h3 className="text-xs font-bold text-purple-800 uppercase flex items-center gap-1.5"><Box size={12}/> Producto (Modelo)</h3>
+                  <MultiSearchableComboBox
+                    options={modelosCaja.map((m: string) => ({ value: m, label: m }))}
+                    value={formData.modeloAsignado ? formData.modeloAsignado.split(', ') : []}
+                    onChange={values => setFormData({...formData, modeloAsignado: values.join(', ')})}
+                    placeholder="Seleccionar modelos de producto..."
+                  />
                 </div>
-              </div>
-              
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="block text-xs font-bold text-slate-500 mb-1">Observaciones (Max 50 caract.)</label>
-                  <input type="text" maxLength={50} value={formData.observaciones || ''} onChange={e => setFormData({...formData, observaciones: e.target.value})} placeholder="Opcional..." className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
-                </div>
+
               </div>
 
-              <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 space-y-3">
-                 <h3 className="text-xs font-bold text-indigo-800 uppercase flex items-center gap-1.5"><Navigation size={14}/> Carrier Padre (SCAC)</h3>
-                 <div>
-                    <select required value={formData.carrierCodigo || ''} onChange={e => setFormData({...formData, carrierCodigo: e.target.value, numeroCaja: '', driverId: '', subLinea: '', placasCaja: '', nombreDriver: '', placasTracto: ''})} className="w-full border border-indigo-200 rounded-lg p-2.5 outline-none bg-white font-mono shadow-sm focus:ring-2 focus:ring-indigo-500">
-                        <option value="" disabled>Seleccionar Carrier Padre...</option>
-                        {carriers.map(c => <option key={c.codigo} value={c.codigo}>{c.codigo} - {c.nombre}</option>)}
-                    </select>
-                 </div>
-              </div>
-              
-              <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100 space-y-3">
-                 <h3 className="text-xs font-bold text-emerald-800 uppercase flex items-center gap-1.5"><Container size={14}/> {t('form.caja_sec')}</h3>
-                 <div>
-                    <select required disabled={!formData.carrierCodigo} value={formData.numeroCaja || ''} onChange={e => handleCajaChange(e.target.value)} className="w-full border border-emerald-200 rounded-lg p-2.5 outline-none bg-white font-mono shadow-sm focus:ring-2 focus:ring-emerald-500 disabled:opacity-50">
-                        <option value="" disabled>Seleccionar Número de Caja...</option>
-                        {cajas.map(c => <option key={c.NumeroCaja} value={c.NumeroCaja}>{c.NumeroCaja} ({c.nombreSubLinea || 'Sin sublinea'}) {c.carrierCodigo !== formData.carrierCodigo && c.carrierCodigo ? `[${c.carrierCodigo}]` : ''}</option>)}
-                    </select>
-                 </div>
-                 <div className="flex gap-3">
-                    <div className="flex-1">
-                        <label className="block text-xs text-emerald-700 mb-1">Sub-Línea</label>
-                        <input disabled value={formData.subLinea || ''} className="w-full bg-emerald-100/50 border-transparent rounded p-2 text-sm text-emerald-800" placeholder="Auto-completado" />
-                    </div>
-                    <div className="flex-1">
-                        <label className="block text-xs text-emerald-700 mb-1">Placas Caja</label>
-                        <input disabled value={formData.placasCaja || ''} className="w-full bg-emerald-100/50 border-transparent rounded p-2 text-sm text-emerald-800 font-mono" placeholder="Auto-completado" />
-                    </div>
-                 </div>
-              </div>
-
-              <div className="p-4 bg-orange-50 rounded-xl border border-orange-100 space-y-3">
-                 <h3 className="text-xs font-bold text-orange-800 uppercase flex items-center gap-1.5"><Truck size={14}/> {t('form.tracto_sec')}</h3>
-                 <div>
-                    <select required disabled={!formData.carrierCodigo} value={formData.driverId || ''} onChange={e => handleDriverChange(e.target.value)} className="w-full border border-orange-200 rounded-lg p-2.5 outline-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 disabled:opacity-50">
-                        <option value="" disabled>Seleccionar Driver ID...</option>
-                        {drivers.map(d => <option key={d.driverId} value={d.driverId}>{d.driverId} - {d.nombre} {d.carrierCodigo !== formData.carrierCodigo && d.carrierCodigo ? `[${d.carrierCodigo}]` : ''}</option>)}
-                    </select>
-                 </div>
-                 <div className="flex gap-3">
-                    <div className="flex-1">
-                        <label className="block text-xs text-orange-700 mb-1">Nombre</label>
-                        <input disabled value={formData.nombreDriver || ''} className="w-full bg-orange-100/50 border-transparent rounded p-2 text-sm text-orange-800" placeholder="Auto-completado" />
-                    </div>
-                    <div className="flex-1">
-                        <label className="block text-xs text-orange-700 mb-1">Placas Tracto</label>
-                        <input disabled value={formData.placasTracto || ''} className="w-full bg-orange-100/50 border-transparent rounded p-2 text-sm text-orange-800 font-mono" placeholder="Auto-completado" />
-                    </div>
-                 </div>
-              </div>
-
-              <div className="p-4 bg-purple-50 rounded-xl border border-purple-100 space-y-3">
-                 <h3 className="text-xs font-bold text-purple-800 uppercase flex items-center gap-1.5"><Box size={14}/> Producto (Modelo)</h3>
-                    <select 
-                        multiple
-                        required 
-                        value={formData.modeloAsignado ? formData.modeloAsignado.split(', ') : []} 
-                        onChange={e => {
-                            const selectedValues = Array.from(e.target.selectedOptions, option => (option as HTMLOptionElement).value);
-                            setFormData({...formData, modeloAsignado: selectedValues.join(', ')});
-                        }}
-                        className="w-full border border-purple-200 rounded-lg p-2.5 outline-none bg-white shadow-sm focus:ring-2 focus:ring-purple-500 min-h-[100px]"
-                    >
-                        <option value="" disabled>Seleccionar Modelos (Usa Ctrl/Cmd para varios)...</option>
-                        {modelosCaja.map((m: string) => <option key={m} value={m}>{m}</option>)}
-                    </select>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-3">
-                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 shrink-0 bg-slate-50 rounded-b-2xl">
+                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition-colors">Cancelar</button>
                 <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 shadow-md shadow-blue-500/30 transition-all font-bold">
                   {isEditing ? 'Guardar Cambios' : 'Vincular Asignación'}
                 </button>

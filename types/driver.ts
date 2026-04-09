@@ -5,6 +5,7 @@ export interface DriverModel {
   telefono: string;
   placasTracto?: string;
   carrierCodigo: string; // Relacional FK
+  transportLineId?: string; // FK -> TransportLine (Raón Social)
   createdAt?: string;
   updatedAt?: string;
 }

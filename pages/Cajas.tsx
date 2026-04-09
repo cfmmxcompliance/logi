@@ -9,6 +9,7 @@ import { TransportLineModel } from '../types/transportLine';
 import { Apendice10Model } from '../types/apendice10';
 import { Plus, Edit2, Trash2, Search, Filter, Container, Download, UploadCloud, FileSpreadsheet } from 'lucide-react';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
+import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
 import { parseCSV } from '../utils/csvHelpers';
 
 export const Cajas: React.FC = () => {
@@ -367,56 +368,58 @@ export const Cajas: React.FC = () => {
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">Código SCAC (Carrier Link)</label>
-                <select required disabled={isEditing} value={formData.carrierCodigo || ''} onChange={e => setFormData({...formData, carrierCodigo: e.target.value, TransportLine: '', nombreSubLinea: ''})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-violet-500 outline-none bg-white font-mono uppercase disabled:bg-slate-50">
-                    <option value="" disabled>Selecciona el SCAC (Carrier)...</option>
-                    {carriers.map(c => <option key={c.codigo} value={c.codigo}>{c.codigo} - {c.nombre}</option>)}
-                </select>
+                <SearchableComboBox
+                  required
+                  disabled={isEditing}
+                  value={formData.carrierCodigo || ''}
+                  onChange={val => setFormData({...formData, carrierCodigo: val, TransportLine: '', nombreSubLinea: ''})}
+                  options={carriers.map(c => ({ value: c.codigo, label: c.nombre, sublabel: c.codigo }))}
+                  placeholder="Selecciona el SCAC (Carrier)..."
+                />
               </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">Línea Transportista</label>
-                <select required value={formData.TransportLine || ''} onChange={e => {
-                    const newVal = e.target.value;
-                    const validSubs = getValidSublines(newVal);
-                    setFormData({...formData, TransportLine: newVal, nombreSubLinea: validSubs[0] || ''});
-                }} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-violet-500 outline-none bg-white disabled:bg-slate-50" disabled={!formData.carrierCodigo}>
-                    <option value="" disabled>Selecciona la Transport Line...</option>
-                    {Array.from(new Set(transportLines.filter(l => String(l.carrierCodigo || '').trim().toUpperCase() === String(formData.carrierCodigo || '').trim().toUpperCase()).map(l => l.TransportLine))).map(tl => (
-                        <option key={tl} value={tl}>{tl}</option>
-                    ))}
-                </select>
+                <SearchableComboBox
+                  required
+                  disabled={!formData.carrierCodigo}
+                  value={formData.TransportLine || ''}
+                  onChange={val => {
+                    const validSubs = getValidSublines(val);
+                    setFormData({...formData, TransportLine: val, nombreSubLinea: validSubs[0] || ''});
+                  }}
+                  options={Array.from(new Set(transportLines
+                    .filter(l => String(l.carrierCodigo || '').trim().toUpperCase() === String(formData.carrierCodigo || '').trim().toUpperCase())
+                    .map(l => l.TransportLine)))
+                    .map(tl => ({ value: tl, label: tl }))}
+                  placeholder="Selecciona la Transport Line..."
+                />
               </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">Nombre Sub-Línea</label>
-                <select 
+                <SearchableComboBox
                     required 
                     disabled={!formData.TransportLine}
                     value={formData.nombreSubLinea || ''} 
-                    onChange={e => setFormData({...formData, nombreSubLinea: e.target.value})} 
-                    className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-violet-500 outline-none bg-white font-medium uppercase disabled:bg-slate-50" 
-                >
-                    <option value="" disabled>Selecciona la Sub-Línea...</option>
-                    {getValidSublines(formData.TransportLine || '').map(sl => (
-                        <option key={sl} value={sl}>{sl}</option>
-                    ))}
-                </select>
+                    onChange={val => setFormData({...formData, nombreSubLinea: val})} 
+                    options={getValidSublines(formData.TransportLine || '').map(sl => ({ value: sl, label: sl }))}
+                    placeholder="Selecciona la Sub-Línea..."
+                />
               </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">Clave Apéndice 10 (Anexo 22)</label>
-                <select 
+                <SearchableComboBox
                     value={formData.claveApendice10 || ''} 
-                    onChange={e => {
-                        const clave = e.target.value;
-                        const match = apendice10List.find(a => a.clave === clave);
+                    onChange={val => {
+                        const match = apendice10List.find(a => a.clave === val);
                         const tipoCajaVal = match ? match.descripcion : (formData.TipoCaja || '');
-                        setFormData({...formData, claveApendice10: clave, TipoCaja: tipoCajaVal});
+                        setFormData({...formData, claveApendice10: val, TipoCaja: tipoCajaVal});
                     }}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-violet-500 outline-none bg-white font-mono"
-                >
-                    <option value="">-- Selecciona código y llena el tipo --</option>
-                    {apendice10List.map(a => (
-                        <option key={a.clave} value={a.clave}>{a.clave} - {a.descripcion}</option>
-                    ))}
-                </select>
+                    options={apendice10List.map(a => ({ value: a.clave, label: a.descripcion, sublabel: a.clave }))}
+                    placeholder="Selecciona código y llena el tipo..."
+                />
               </div>
 
               <div>

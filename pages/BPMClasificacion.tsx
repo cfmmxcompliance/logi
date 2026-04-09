@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { DownloadCloud, UploadCloud, Search, Image as ImageIcon, CheckCircle, RefreshCcw, Loader2, Edit3, Trash2 } from 'lucide-react';
 import { bpmService } from '../services/bpmService';
-import { BPMRecord } from '../types.ts';
+import { BPMRecord, UserRole } from '../types.ts';
 import * as xlsx from 'xlsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
@@ -385,14 +385,16 @@ export const BPMClasificacion = () => {
               ref={fileInputRef}
               onChange={handleFileUpload}
             />
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:opacity-70 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-900/20"
-            >
-              {uploading ? <Loader2 size={18} className="animate-spin" /> : <UploadCloud size={18} />}
-              Subir Masivo
-            </button>
+            {user?.role !== UserRole.AGENT && (
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:opacity-70 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-900/20"
+              >
+                {uploading ? <Loader2 size={18} className="animate-spin" /> : <UploadCloud size={18} />}
+                Subir Masivo
+              </button>
+            )}
           </div>
         </div>
 
@@ -419,7 +421,7 @@ export const BPMClasificacion = () => {
                 Resultados <span className="text-slate-400 font-normal ml-2 text-sm">({filteredData.length} registros)</span>
             </h2>
             <div className="flex items-center gap-3">
-                {selectedIds.size > 0 && (
+                {selectedIds.size > 0 && user?.role !== UserRole.AGENT && (
                    <div className="flex items-center gap-2 animate-in slide-in-from-right-2">
                      <button 
                        onClick={handleBatchApprove}
@@ -471,12 +473,14 @@ export const BPMClasificacion = () => {
                 <tr>
                   <th className="px-4 py-3 sticky left-0 bg-slate-900 border-r border-slate-700/50 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
                     <div className="flex items-center gap-3">
-                        <input 
-                        type="checkbox" 
-                        checked={filteredData.length > 0 && selectedIds.size === filteredData.length}
-                        onChange={handleSelectAll}
-                        className="rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
-                        />
+                        {user?.role !== UserRole.AGENT && (
+                          <input 
+                            type="checkbox" 
+                            checked={filteredData.length > 0 && selectedIds.size === filteredData.length}
+                            onChange={handleSelectAll}
+                            className="rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
+                          />
+                        )}
                         <span className="sr-only">Seleccionar todo</span>
                     </div>
                   </th>
@@ -532,20 +536,24 @@ export const BPMClasificacion = () => {
                     <tr key={row.id} className={`hover:bg-slate-800/80 group ${selectedIds.has(row.id!) ? 'bg-blue-900/20' : ''}`}>
                       <td className={`px-4 py-3 sticky left-0 group-hover:bg-slate-800/80 border-r border-slate-700/50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)] ${selectedIds.has(row.id!) ? 'bg-slate-800' : 'bg-slate-900'}`}>
                        <div className="flex items-center gap-3">
-                           <input 
-                             type="checkbox" 
-                             checked={selectedIds.has(row.id!)}
-                             onChange={() => handleSelectRow(row.id!)}
-                             className="rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
-                           />
-                           <div className="flex gap-1">
-                             <button onClick={() => setEditingRow(row)} className="text-slate-500 hover:text-blue-400 transition-colors p-1" title="Editar Fila">
-                                <Edit3 size={16} />
-                             </button>
-                             <button onClick={() => handleDeleteRow(row.id!, row.ref_no?.toString() || row.folio_seguimiento || 'desconocido')} className="text-slate-500 hover:text-red-400 transition-colors p-1" title="Eliminar Fila">
-                                <Trash2 size={16} />
-                             </button>
-                           </div>
+                           {user?.role !== UserRole.AGENT && (
+                             <>
+                               <input 
+                                 type="checkbox" 
+                                 checked={selectedIds.has(row.id!)}
+                                 onChange={() => handleSelectRow(row.id!)}
+                                 className="rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
+                               />
+                               <div className="flex gap-1">
+                                 <button onClick={() => setEditingRow(row)} className="text-slate-500 hover:text-blue-400 transition-colors p-1" title="Editar Fila">
+                                    <Edit3 size={16} />
+                                 </button>
+                                 <button onClick={() => handleDeleteRow(row.id!, row.ref_no?.toString() || row.folio_seguimiento || 'desconocido')} className="text-slate-500 hover:text-red-400 transition-colors p-1" title="Eliminar Fila">
+                                    <Trash2 size={16} />
+                                 </button>
+                               </div>
+                             </>
+                           )}
                          </div>
                       </td>
                       <td className={`px-4 py-3 font-mono text-blue-400 sticky left-[52px] group-hover:bg-slate-800/80 border-r border-slate-700/50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)] ${selectedIds.has(row.id!) ? 'bg-slate-800' : 'bg-slate-900'}`}>{row.ref_no || row.folio_seguimiento}</td>
@@ -622,21 +630,23 @@ export const BPMClasificacion = () => {
                              <CheckCircle size={16} />
                            </a>
                         )}
-                           <button 
-                             disabled={uploadingPhotoRow === row.id}
-                             onClick={() => {
-                                 setSelectedPhotoBpmId(row.id!);
-                                 photoInputRef.current?.click();
-                             }}
-                             className={`inline-flex items-center justify-center p-2 rounded-full ring-1 transition-colors ${
-                                 uploadingPhotoRow === row.id 
-                                 ? 'bg-slate-700 text-slate-500 ring-slate-600'
-                                 : 'bg-slate-800 text-blue-400 hover:text-white hover:bg-blue-600 ring-slate-700 hover:ring-blue-500'
-                             }`}
-                             title="Agregar FOTO(s)"
-                           >
-                             {uploadingPhotoRow === row.id ? <Loader2 size={16} className="animate-spin" /> : <ImageIcon size={16} />}
-                           </button>
+                         {user?.role !== UserRole.AGENT && (
+                            <button 
+                              disabled={uploadingPhotoRow === row.id}
+                              onClick={() => {
+                                  setSelectedPhotoBpmId(row.id!);
+                                  photoInputRef.current?.click();
+                              }}
+                              className={`inline-flex items-center justify-center p-2 rounded-full ring-1 transition-colors ${
+                                  uploadingPhotoRow === row.id 
+                                  ? 'bg-slate-700 text-slate-500 ring-slate-600'
+                                  : 'bg-slate-800 text-blue-400 hover:text-white hover:bg-blue-600 ring-slate-700 hover:ring-blue-500'
+                              }`}
+                              title="Agregar FOTO(s)"
+                            >
+                              {uploadingPhotoRow === row.id ? <Loader2 size={16} className="animate-spin" /> : <ImageIcon size={16} />}
+                            </button>
+                         )}
                         </div>
                       </td>
                     </tr>

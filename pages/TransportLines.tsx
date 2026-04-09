@@ -5,6 +5,7 @@ import { TransportLineModel } from '../types/transportLine';
 import { CarrierModel } from '../types/carrier';
 import { Plus, Edit2, Trash2, Truck, Search, Filter, Download, UploadCloud, FileSpreadsheet } from 'lucide-react';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
+import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
 import { parseCSV } from '../utils/csvHelpers';
 
 export const TransportLines: React.FC = () => {
@@ -108,13 +109,14 @@ export const TransportLines: React.FC = () => {
   };
 
   const exportCSV = () => {
-      const headers = ["LÍNEA ID (KEY)", "CARRIER (SCAC)", "NOMBRE COMERCIAL", "NOMBRE SUB-LÍNEA", "RAZÓN SOCIAL"];
+      const headers = ["LÍNEA ID (KEY)", "CARRIER (SCAC)", "NOMBRE COMERCIAL", "NOMBRE SUB-LÍNEA", "RAZÓN SOCIAL", "LÍNEA MEXICANA"];
       const rows = filteredLines.map(c => [
           c.transportLineId,
           c.carrierCodigo,
           c.TransportLine,
           c.nombreSubLinea || '',
-          c.razonSocial
+          c.razonSocial,
+          c.lineaMexicana || ''
       ]);
       const csvContent = [headers, ...rows].map(e => e.map(item => `"${(item || '').replace(/"/g, '""')}"`).join(",")).join("\n");
       const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -128,8 +130,8 @@ export const TransportLines: React.FC = () => {
   };
 
   const downloadTemplate = () => {
-      const headers = ["LÍNEA ID (KEY)", "CARRIER (SCAC)", "NOMBRE COMERCIAL", "NOMBRE SUB-LÍNEA", "RAZÓN SOCIAL"];
-      const example = ["TL-001", "EGLV", "APL Logistics", "DIVISION REEFER", "Logistics SA de CV"];
+      const headers = ["LÍNEA ID (KEY)", "CARRIER (SCAC)", "NOMBRE COMERCIAL", "NOMBRE SUB-LÍNEA", "RAZÓN SOCIAL", "LÍNEA MEXICANA"];
+      const example = ["TL-001", "EGLV", "APL Logistics", "DIVISION REEFER", "Logistics SA de CV", "Transportes Mexicanos SA"];
       const csvContent = [headers, example].map(e => e.join(",")).join("\n");
       const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -157,6 +159,7 @@ export const TransportLines: React.FC = () => {
           const nIdx = headers.findIndex(h => h.includes('NOMBRE COMERCIAL'));
           const sIdx = headers.findIndex(h => h.includes('SUB-LÍNEA'));
           const rIdx = headers.findIndex(h => h.includes('RAZÓN SOCIAL'));
+          const mIdx = headers.findIndex(h => h.includes('LÍNEA MEXICANA') || h.includes('MEXICANA'));
 
           if (lIdx === -1 || cIdx === -1 || nIdx === -1) {
               return alert("Estructura inválida. Asegúrate de usar la plantilla descargable.");
@@ -173,7 +176,8 @@ export const TransportLines: React.FC = () => {
                   carrierCodigo: r[cIdx].trim().toUpperCase(),
                   TransportLine: r[nIdx]?.trim() || '',
                   nombreSubLinea: r[sIdx]?.trim().toUpperCase() || '',
-                  razonSocial: r[rIdx]?.trim() || ''
+                  razonSocial: r[rIdx]?.trim() || '',
+                  lineaMexicana: mIdx !== -1 ? r[mIdx]?.trim() || '' : ''
               };
 
               try {
@@ -244,6 +248,7 @@ export const TransportLines: React.FC = () => {
               <th className="p-4 font-medium">Carrier Padre</th>
               <th className="p-4 font-medium">Nombre Sub-Línea</th>
               <th className="p-4 font-medium">Razón Social</th>
+              <th className="p-4 font-medium">Línea Mexicana</th>
               <th className="p-4 font-medium text-right">Acciones</th>
             </tr>
           </thead>
@@ -262,6 +267,7 @@ export const TransportLines: React.FC = () => {
                 <td className="p-4 font-medium text-slate-700">{c.TransportLine}</td>
                 <td className="p-4 text-indigo-600 font-medium">{c.nombreSubLinea || '-'}</td>
                 <td className="p-4 text-slate-500">{c.razonSocial}</td>
+                <td className="p-4 text-emerald-700 font-medium">{c.lineaMexicana || '-'}</td>
                 <td className="p-4 flex gap-2 justify-end">
                   <button onClick={() => openEdit(c)} className="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded transition-colors" title="Editar">
                     <Edit2 size={16} />
@@ -272,10 +278,10 @@ export const TransportLines: React.FC = () => {
                 </td>
               </tr>
             ))}
-            {filteredLines.length === 0 && !loading && (
-              <tr><td colSpan={5} className="p-12 text-center text-slate-400">No hay líneas que coincidan.</td></tr>
+              {filteredLines.length === 0 && !loading && (
+              <tr><td colSpan={6} className="p-12 text-center text-slate-400">No hay líneas que coincidan.</td></tr>
             )}
-            {loading && <tr><td colSpan={5} className="p-12 text-center text-slate-400">Cargando base de datos...</td></tr>}
+            {loading && <tr><td colSpan={6} className="p-12 text-center text-slate-400">Cargando base de datos...</td></tr>}
           </tbody>
         </table>
       </div>
@@ -297,35 +303,42 @@ export const TransportLines: React.FC = () => {
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">ID Único (Ej. TL-001)</label>
-                <input required disabled={isEditing} value={formData.transportLineId || ''} onChange={e => setFormData({...formData, transportLineId: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-slate-100" placeholder="Ej. APL-001" />
+                <input required disabled={isEditing} value={formData.transportLineId || ''} onChange={e => setFormData({...formData, transportLineId: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-slate-100 placeholder:text-slate-400" placeholder="Ej. APL-001" />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Carrier Principal (Asociación)</label>
-                <select required value={formData.carrierCodigo || ''} onChange={e => setFormData({...formData, carrierCodigo: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                    <option value="" disabled>Selecciona el Carrier matriz...</option>
-                    {carriers.map(car => (
-                        <option key={car.codigo} value={car.codigo}>{car.codigo} - {car.nombre}</option>
-                    ))}
-                </select>
+                <SearchableComboBox
+                  required
+                  value={formData.carrierCodigo || ''}
+                  onChange={val => setFormData({...formData, carrierCodigo: val})}
+                  options={carriers.map(car => ({
+                    value: car.codigo,
+                    label: car.nombre,
+                    sublabel: car.codigo
+                  }))}
+                  placeholder="Selecciona el Carrier matriz..."
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nombre Comercial de la Línea</label>
-                <input required value={formData.TransportLine || ''} onChange={e => setFormData({...formData, TransportLine: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ej. APL Logistics" />
+                <label className="block text-sm font-medium text-slate-700 mb-1">Nombre Comercial</label>
+                <input required value={formData.TransportLine || ''} onChange={e => setFormData({...formData, TransportLine: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-400" placeholder="Ej. APL Logistics" />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Nombre Sub-Línea</label>
-                <input 
-                    value={formData.nombreSubLinea || ''} 
-                    onChange={e => setFormData({...formData, nombreSubLinea: e.target.value.toUpperCase()})} 
-                    className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500 uppercase" 
-                    placeholder="Ej. DIVISION REEFER" 
-                />
+                <input value={formData.nombreSubLinea || ''} onChange={e => setFormData({...formData, nombreSubLinea: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-400 uppercase" placeholder="Ej. DIVISION REEFER" />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Razón Social</label>
-                <input required value={formData.razonSocial || ''} onChange={e => setFormData({...formData, razonSocial: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ej. Empresa SA de CV" />
+                <label className="block text-sm font-medium text-slate-700 mb-1">Razón Social Legal</label>
+                <input required value={formData.razonSocial || ''} onChange={e => setFormData({...formData, razonSocial: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-400" placeholder="Ej. Logistics SA de CV" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Línea Mexicana</label>
+                <input value={formData.lineaMexicana || ''} onChange={e => setFormData({...formData, lineaMexicana: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-400" placeholder="Ej. Transportes Mexicanos SA" />
               </div>
               <div className="flex justify-end gap-3 mt-6">
                 <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>

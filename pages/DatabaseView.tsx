@@ -83,7 +83,7 @@ const CSV_ORDER_KEYS: (keyof RawMaterialPart)[] = [
 ];
 
 export const DatabaseView = () => {
-    const { hasRole } = useAuth();
+    const { hasRole, user } = useAuth();
     const canEdit = hasRole([UserRole.ADMIN, UserRole.OPERATOR]);
     const canDelete = hasRole([UserRole.ADMIN]);
 
@@ -1315,7 +1315,7 @@ export const DatabaseView = () => {
                     )}
 
                     {/* Publish / Send Email Alert Button */}
-                    {selectedIds.size > 0 && (
+                    {selectedIds.size > 0 && user?.role !== UserRole.AGENT && (
                         <button
                             onClick={handlePublishItems}
                             className="bg-blue-600 border border-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md shadow-blue-200 hover:bg-blue-700 hover:shadow-lg transition-all font-medium animate-in fade-in slide-in-from-left-2"

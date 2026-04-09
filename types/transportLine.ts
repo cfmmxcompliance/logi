@@ -4,6 +4,7 @@ export interface TransportLineModel {
   TransportLine: string; // Brand or internal name
   nombreSubLinea?: string; // Sub-linea classification (Replaces array concept)
   razonSocial: string; // Legal entity name
+  lineaMexicana?: string; // Mexican transport line name
   createdAt?: string;
   updatedAt?: string;
 }

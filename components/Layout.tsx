@@ -111,8 +111,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {/* Master Data: Accessible to Admin, Editor, Agent, Controller */}
-          {[UserRole.ADMIN, UserRole.EDITOR, UserRole.AGENT, UserRole.CONTROLLER].includes(user?.role as UserRole) && (
+          {/* Master Data: Accessible to Admin, Editor, Controller (NOT Agent anymore) */}
+          {[UserRole.ADMIN, UserRole.EDITOR, UserRole.CONTROLLER].includes(user?.role as UserRole) && (
             <>
               <SidebarItem to="/apendice10" icon={BookOpen} label={sidebarOpen ? "Apéndice 10" : ""} />
               <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
@@ -120,8 +120,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {/* Logistics Planning -> Admin, Editor, Agent, Controller, Expo */}
-          {[UserRole.ADMIN, UserRole.EDITOR, UserRole.AGENT, UserRole.CONTROLLER, UserRole.EXPO].includes(user?.role as UserRole) && (
+          {/* Agent specific block: BPM, Master Data, and Audit */}
+          {user?.role === UserRole.AGENT && (
+            <>
+              <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
+              <SidebarItem to="/bpm" icon={Box} label={sidebarOpen ? "BPM Clasificación" : ""} />
+            </>
+          )}
+
+          {/* Logistics Planning -> Admin, Editor, Controller, Expo (NOT Agent) */}
+          {[UserRole.ADMIN, UserRole.EDITOR, UserRole.CONTROLLER, UserRole.EXPO].includes(user?.role as UserRole) && (
             <>
               <SidebarItem to="/models" icon={Box} label={sidebarOpen ? "Models (Expo)" : ""} />
               <SidebarItem to="/pricing-matrix" icon={DollarSign} label={sidebarOpen ? "Pricing Matrix" : ""} />
@@ -130,13 +138,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {/* Macro Module -> Admin, Editor, Agent, Controller, Expo (EXCLUDES CARRIER) */}
-          {import.meta.env.DEV && [UserRole.ADMIN, UserRole.EDITOR, UserRole.AGENT, UserRole.CONTROLLER, UserRole.EXPO].includes(user?.role as UserRole) && (
+          {/* Macro Module -> Admin, Editor, Controller, Expo (NOT Agent/Carrier) */}
+          {import.meta.env.DEV && [UserRole.ADMIN, UserRole.EDITOR, UserRole.CONTROLLER, UserRole.EXPO].includes(user?.role as UserRole) && (
               <SidebarItem to="/macro" icon={PackageOpen} label={sidebarOpen ? "Motor de Captura (Macro)" : ""} />
           )}
 
-          {/* Operational Transport -> Admin, Editor, Agent, Controller, Carrier, Embarques (NOT Expo) */}
-          {[UserRole.ADMIN, UserRole.EDITOR, UserRole.AGENT, UserRole.CONTROLLER, UserRole.CARRIER, UserRole.EMBARQUES].includes(user?.role as UserRole) && (
+          {/* Operational Transport -> Admin, Editor, Controller, Carrier, Embarques (NOT Agent/Expo) */}
+          {[UserRole.ADMIN, UserRole.EDITOR, UserRole.CONTROLLER, UserRole.CARRIER, UserRole.EMBARQUES].includes(user?.role as UserRole) && (
             <>
               {user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && (
                   <SidebarItem to="/carriers" icon={Anchor} label={sidebarOpen ? t("menu.carriers") : ""} />

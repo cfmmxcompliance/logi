@@ -3,6 +3,7 @@ export interface AsignacionCajaModel {
   fecha: string; // YYYY-MM-DD
   horaAsignacion?: string; // HH:mm
   carrierCodigo?: string;
+  transportLineId?: string; // FK -> TransportLine (Razón Social)
   numeroCaja: string;
   numeroOperacion?: string;
   subLinea: string;

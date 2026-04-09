@@ -76,6 +76,24 @@ export const driverService = {
       throw error;
     }
   },
+
+  async getNextDriverId(): Promise<string> {
+    try {
+      const all = await this.getAllDrivers();
+      let maxNum = 0;
+      all.forEach(d => {
+        const match = d.driverId.match(/^ARC-(\d+)$/);
+        if (match) {
+          const n = parseInt(match[1], 10);
+          if (n > maxNum) maxNum = n;
+        }
+      });
+      const next = maxNum + 1;
+      return `ARC-${String(next).padStart(3, '0')}`;
+    } catch {
+      return 'ARC-001';
+    }
+  },
   
   async updateDriver(driverId: string, data: Partial<DriverModel>): Promise<void> {
     try {

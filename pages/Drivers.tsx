@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { driverService } from '../services/driverService';
 import { carrierService } from '../services/carrierService';
+import { transportLineService } from '../services/transportLineService';
 import { DriverModel } from '../types/driver';
 import { CarrierModel } from '../types/carrier';
-import { Plus, Edit2, Trash2, User, Search, Filter, Download, UploadCloud, FileSpreadsheet } from 'lucide-react';
+import { TransportLineModel } from '../types/transportLine';
+import { Plus, Edit2, Trash2, User, Search, Filter, Download, UploadCloud, FileSpreadsheet, Truck } from 'lucide-react';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
+import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
 import { parseCSV } from '../utils/csvHelpers';
 
 export const Drivers: React.FC = () => {
   const [drivers, setDrivers] = useState<DriverModel[]>([]);
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
+  const [transportLines, setTransportLines] = useState<TransportLineModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<Partial<DriverModel>>({});
@@ -29,27 +33,35 @@ export const Drivers: React.FC = () => {
   }, []);
 
   const loadData = async () => {
-    const [driversData, carriersData] = await Promise.all([
+    const [driversData, carriersData, linesData] = await Promise.all([
         driverService.getAllDrivers(),
-        carrierService.getAllCarriers()
+        carrierService.getAllCarriers(),
+        transportLineService.getAllTransportLines()
     ]);
     setDrivers(driversData);
     setCarriers(carriersData);
+    setTransportLines(linesData);
     setLoading(false);
   };
 
   const getCarrierName = (code: string) => carriers.find(c => c.codigo === code)?.nombre || code;
+  const getTransportLineName = (id?: string) => {
+    if (!id) return '-';
+    const tl = transportLines.find(t => t.transportLineId === id);
+    return tl ? (tl.nombreSubLinea || tl.TransportLine) : id;
+  };
 
   const filteredDrivers = useMemo(() => {
       let result = drivers;
       if (searchTerm) {
           const lowerTerm = searchTerm.toLowerCase();
-          result = result.filter(c => 
-              c.driverId.toLowerCase().includes(lowerTerm) || 
+          result = result.filter(c =>
+              c.driverId.toLowerCase().includes(lowerTerm) ||
               c.nombre.toLowerCase().includes(lowerTerm) ||
               c.licencia.toLowerCase().includes(lowerTerm) ||
               (c.placasTracto && c.placasTracto.toLowerCase().includes(lowerTerm)) ||
-              c.carrierCodigo.toLowerCase().includes(lowerTerm)
+              c.carrierCodigo.toLowerCase().includes(lowerTerm) ||
+              getTransportLineName(c.transportLineId).toLowerCase().includes(lowerTerm)
           );
       }
       if (activeMassQuery && activeMassQuery.length > 0) {
@@ -75,12 +87,24 @@ export const Drivers: React.FC = () => {
       setIsMassQueryOpen(false);
   };
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.driverId || !formData.carrierCodigo || !formData.nombre || !formData.licencia) return;
 
-    if (isEditing) {
+    // VALIDACIÓN: Solicitar aprobación si el nombre es idéntico a otro registro
+    const inputName = (formData.nombre || '').trim().toLowerCase();
+    const isDuplicateName = drivers.some(d =>
+        d.nombre.trim().toLowerCase() === inputName &&
+        d.driverId !== formData.driverId
+    );
+
+    if (isDuplicateName) {
+        if (!confirm(`Ya existe un chófer registrado con el nombre "${formData.nombre}". ¿Estás seguro de que deseas guardar este registro duplicado?`)) {
+            return;
+        }
+    }
+
+    if (isEditing && formData.driverId) {
       await driverService.updateDriver(formData.driverId, formData);
     } else {
       await driverService.addDriver(formData as DriverModel);
@@ -102,17 +126,22 @@ export const Drivers: React.FC = () => {
     setShowModal(true);
   };
 
-  const openNew = () => {
-    setFormData({ carrierCodigo: carriers[0]?.codigo || '' });
+  const openNew = async () => {
+    const nextId = await driverService.getNextDriverId();
+    setFormData({
+      driverId: nextId,
+      carrierCodigo: carriers[0]?.codigo || ''
+    });
     setIsEditing(false);
     setShowModal(true);
   };
 
   const exportCSV = () => {
-      const headers = ["DRIVER ID", "CARRIER", "NOMBRE", "LICENCIA", "TELÉFONO", "PLACAS TRACTO"];
+      const headers = ["DRIVER ID", "CARRIER", "TRANSPORT LINE ID", "NOMBRE", "LICENCIA", "TELÉFONO", "PLACAS TRACTO"];
       const rows = filteredDrivers.map(c => [
           c.driverId,
           c.carrierCodigo,
+          c.transportLineId || '',
           c.nombre,
           c.licencia,
           c.telefono,
@@ -130,8 +159,8 @@ export const Drivers: React.FC = () => {
   };
 
   const downloadTemplate = () => {
-      const headers = ["DRIVER ID", "CARRIER (SCAC)", "NOMBRE", "LICENCIA", "TELÉFONO", "PLACAS TRACTO"];
-      const example = ["JUANP123", "EGLV", "Juan Perez", "123456789", "555-1234", "ABC-123"];
+      const headers = ["DRIVER ID", "CARRIER (SCAC)", "TRANSPORT LINE ID", "NOMBRE", "LICENCIA", "TELÉFONO", "PLACAS TRACTO"];
+      const example = ["ARC-001", "EGLV", "TL-001", "Juan Perez", "123456789", "555-1234", "ABC-123"];
       const csvContent = [headers, example].map(e => e.join(",")).join("\n");
       const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -156,6 +185,7 @@ export const Drivers: React.FC = () => {
           const headers = rows[0].map(h => h.trim().toUpperCase());
           const dIdx = headers.findIndex(h => h.includes('DRIVER'));
           const cIdx = headers.findIndex(h => h.includes('CARRIER') || h.includes('SCAC'));
+          const tlIdx = headers.findIndex(h => h.includes('TRANSPORT LINE') || h.includes('TRANSPORT_LINE'));
           const nIdx = headers.findIndex(h => h.includes('NOMBRE'));
           const lIdx = headers.findIndex(h => h.includes('LICENCIA'));
           const tIdx = headers.findIndex(h => h.includes('TEL'));
@@ -170,10 +200,11 @@ export const Drivers: React.FC = () => {
           for (let i = 1; i < rows.length; i++) {
               const r = rows[i];
               if (!r[dIdx] || !r[cIdx]) continue;
-              
+
               const driver: DriverModel = {
                   driverId: r[dIdx].trim().toUpperCase(),
                   carrierCodigo: r[cIdx].trim().toUpperCase(),
+                  transportLineId: tlIdx !== -1 ? r[tlIdx]?.trim() || '' : '',
                   nombre: r[nIdx]?.trim() || '',
                   licencia: r[lIdx]?.trim() || '',
                   telefono: r[tIdx]?.trim() || '',
@@ -194,6 +225,20 @@ export const Drivers: React.FC = () => {
       reader.readAsText(file);
   };
 
+  // Combobox options
+  const carrierOptions: ComboOption[] = carriers.map(c => ({
+    value: c.codigo,
+    label: c.nombre,
+    sublabel: c.codigo
+  }));
+
+  const transportLineOptions: ComboOption[] = transportLines
+    .filter(tl => !formData.carrierCodigo || tl.carrierCodigo === formData.carrierCodigo)
+    .map(tl => ({
+      value: tl.transportLineId,
+      label: tl.nombreSubLinea || tl.TransportLine
+    }));
+
   return (
     <div className="p-6 max-w-6xl mx-auto animate-fade-in relative">
       <div className="flex justify-between items-center mb-6">
@@ -201,20 +246,20 @@ export const Drivers: React.FC = () => {
            <h1 className="text-2xl font-bold text-slate-800">Directorio de Choferes</h1>
            <p className="text-slate-500 text-sm mt-1">Gestión de operadores físicos asignados a los carriers.</p>
         </div>
-        
+
         <div className="flex items-center gap-3">
              <div className="relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input 
-                    type="text" 
-                    placeholder="Buscar Chofer..." 
-                    value={searchTerm} 
+                <input
+                    type="text"
+                    placeholder="Buscar Chofer..."
+                    value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                     className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none w-64 shadow-sm"
                 />
              </div>
-             <button 
-                 onClick={() => setIsMassQueryOpen(true)} 
+             <button
+                 onClick={() => setIsMassQueryOpen(true)}
                  className={`px-4 py-2 flex items-center rounded-lg border text-sm font-medium transition-colors shadow-sm ${activeMassQuery ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}
              >
                  <Filter size={16} className="mr-2" />
@@ -240,12 +285,13 @@ export const Drivers: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
         <table className="w-full text-left">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
             <tr>
               <th className="p-4 font-medium">Nombre (Driver ID)</th>
               <th className="p-4 font-medium">Carrier Padre</th>
+              <th className="p-4 font-medium">Línea de Transporte</th>
               <th className="p-4 font-medium">Licencia</th>
               <th className="p-4 font-medium">Teléfono</th>
               <th className="p-4 font-medium">Placas Tracto</th>
@@ -255,17 +301,22 @@ export const Drivers: React.FC = () => {
           <tbody className="divide-y divide-slate-100 text-sm">
             {filteredDrivers.map(c => (
               <tr key={c.driverId} className="hover:bg-slate-50 transition-colors">
-                <td className="p-4 font-semibold text-slate-800 flex items-center gap-2">
-                    <User size={14} className="text-slate-400" />
-                    <div>
-                        <div className="text-slate-800">{c.nombre}</div>
-                        <div className="text-xs text-slate-400 font-normal">{c.driverId}</div>
+                <td className="p-4 font-semibold text-slate-800">
+                    <div className="flex items-center gap-2">
+                      <User size={14} className="text-slate-400" />
+                      <div>
+                          <div className="text-slate-800">{c.nombre}</div>
+                          <div className="text-xs text-slate-400 font-mono font-normal">{c.driverId}</div>
+                      </div>
                     </div>
                 </td>
                 <td className="p-4">
                     <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-medium">
                         {getCarrierName(c.carrierCodigo)}
                     </span>
+                </td>
+                <td className="p-4 text-indigo-700 font-medium text-xs">
+                    {getTransportLineName(c.transportLineId)}
                 </td>
                 <td className="p-4 font-medium text-slate-600">{c.licencia}</td>
                 <td className="p-4 text-slate-500">{c.telefono}</td>
@@ -281,14 +332,14 @@ export const Drivers: React.FC = () => {
               </tr>
             ))}
             {filteredDrivers.length === 0 && !loading && (
-              <tr><td colSpan={6} className="p-12 text-center text-slate-400">No hay choferes que coincidan.</td></tr>
+              <tr><td colSpan={7} className="p-12 text-center text-slate-400">No hay choferes que coincidan.</td></tr>
             )}
-            {loading && <tr><td colSpan={6} className="p-12 text-center text-slate-400">Cargando base de datos...</td></tr>}
+            {loading && <tr><td colSpan={7} className="p-12 text-center text-slate-400">Cargando base de datos...</td></tr>}
           </tbody>
         </table>
       </div>
 
-      <CatalogQueryBuilder 
+      <CatalogQueryBuilder
           isOpen={isMassQueryOpen}
           onClose={() => setIsMassQueryOpen(false)}
           columns={['driverId', 'carrierCodigo', 'nombre', 'licencia', 'telefono', 'placasTracto']}
@@ -300,31 +351,61 @@ export const Drivers: React.FC = () => {
 
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[110]">
-          <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg">
+          <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-6 text-slate-800">{isEditing ? 'Editar Chofer' : 'Registrar Nuevo Chofer'}</h2>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              
+
+              {/* Driver ID + Carrier */}
               <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Driver ID (Curp/RFC/etc)</label>
-                    <input required disabled={isEditing} value={formData.driverId || ''} onChange={e => setFormData({...formData, driverId: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-teal-500 outline-none disabled:bg-slate-100" placeholder="ID único" />
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Driver ID (Auto)</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        required
+                        disabled={isEditing}
+                        value={formData.driverId || ''}
+                        onChange={e => setFormData({...formData, driverId: e.target.value.toUpperCase()})}
+                        className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-teal-500 outline-none disabled:bg-slate-100 font-mono font-bold text-teal-700"
+                        placeholder="ARC-001"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Carrier Principal</label>
-                    <select required value={formData.carrierCodigo || ''} onChange={e => setFormData({...formData, carrierCodigo: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-teal-500 outline-none bg-white">
-                        <option value="" disabled>Selecciona el Carrier...</option>
-                        {carriers.map(car => (
-                            <option key={car.codigo} value={car.codigo}>{car.codigo} - {car.nombre}</option>
-                        ))}
-                    </select>
+                    <SearchableComboBox
+                      required
+                      value={formData.carrierCodigo || ''}
+                      onChange={val => setFormData({...formData, carrierCodigo: val, transportLineId: ''})}
+                      options={carrierOptions}
+                      placeholder="Seleccionar Carrier..."
+                    />
                   </div>
               </div>
 
+              {/* TransportLine (Razón Social) */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1.5">
+                  <Truck size={13} className="text-indigo-500" /> Línea de Transporte (Razón Social)
+                </label>
+                <SearchableComboBox
+                  value={formData.transportLineId || ''}
+                  onChange={val => setFormData({...formData, transportLineId: val})}
+                  options={transportLineOptions}
+                  placeholder={formData.carrierCodigo ? 'Seleccionar Razón Social...' : 'Primero selecciona un Carrier'}
+                  disabled={!formData.carrierCodigo}
+                />
+                {formData.carrierCodigo && transportLineOptions.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">No hay líneas registradas para este carrier.</p>
+                )}
+              </div>
+
+              {/* Nombre */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Nombre Completo</label>
                 <input required value={formData.nombre || ''} onChange={e => setFormData({...formData, nombre: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder="Ej. Juan Pérez" />
               </div>
 
+              {/* Licencia, Teléfono, Placas */}
               <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Licencia</label>
@@ -336,7 +417,7 @@ export const Drivers: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Placas Tracto</label>
-                    <input value={formData.placasTracto || ''} onChange={e => setFormData({...formData, placasTracto: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder="ABC-123" />
+                    <input value={formData.placasTracto || ''} onChange={e => setFormData({...formData, placasTracto: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder="ABC-123" />
                   </div>
               </div>
 

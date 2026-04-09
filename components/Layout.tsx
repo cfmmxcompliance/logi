@@ -162,7 +162,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
           {/* Expo: only Daily Van Assignment and Asignaciones (read-only) */}
           {user?.role === UserRole.EXPO && (
-            <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? t("menu.asignaciones") : ""} />
+            <>
+              <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? t("menu.asignaciones") : ""} />
+              <SidebarItem to="/xml-invoices" icon={Database} label={sidebarOpen ? "XML Invoice Extractor" : ""} />
+              <SidebarItem to="/xml-ci" icon={FileText} label={sidebarOpen ? "XMLCI Consolidated" : ""} />
+            </>
           )}
 
           {/* Daily Audit: Accessible to Everyone (except Pending, Carrier, Expo, Embarques) */}

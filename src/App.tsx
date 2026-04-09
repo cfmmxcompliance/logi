@@ -93,7 +93,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Expo constraints
     if (user?.role === UserRole.EXPO) {
-        const allowed = ['/models', '/pricing-matrix', '/shipping-schedules', '/asignaciones-diarias', '/daily-van-assignment'];
+        const allowed = ['/models', '/pricing-matrix', '/shipping-schedules', '/asignaciones-diarias', '/daily-van-assignment', '/xml-ci', '/xml-invoices'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/daily-van-assignment" replace />;
     }
 

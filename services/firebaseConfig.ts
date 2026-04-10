@@ -1,7 +1,7 @@
 // @ts-ignore
 import { initializeApp } from 'firebase/app';
 // @ts-ignore
-import { initializeFirestore, memoryLocalCache } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore';
 // @ts-ignore
 import { getAuth } from 'firebase/auth';
 // @ts-ignore
@@ -17,12 +17,16 @@ const firebaseConfig = {
   measurementId: "G-01VXE7L5C3"
 };
 
-// 1. Inicialización Síncrona (Garantiza que 'app' existe antes de usarse)
+// 1. Inicialización Síncrona
 const app = initializeApp(firebaseConfig);
 
-// 2. Instanciación inmediata de servicios con Caché Local en Memoria (Súper Rápido, no traba handhelds)
+// 2. Caché persistente en IndexedDB — los datos sobreviven recargas y navegación entre módulos.
+//    Primera carga: va a la red. Vistas posteriores: responde desde caché local (instantáneo)
+//    y actualiza en background con datos frescos.
 const db = initializeFirestore(app, {
-  localCache: memoryLocalCache()
+  localCache: persistentLocalCache({
+    tabManager: persistentSingleTabManager({ forceOwnership: true })
+  })
 });
 const auth = getAuth(app);
 const storage = getStorage(app);

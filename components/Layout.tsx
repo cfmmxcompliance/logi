@@ -138,8 +138,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {/* Macro Module -> Admin, Editor, Controller, Expo (NOT Agent/Carrier) */}
-          {import.meta.env.DEV && [UserRole.ADMIN, UserRole.EDITOR, UserRole.CONTROLLER, UserRole.EXPO].includes(user?.role as UserRole) && (
+          {/* Macro Module -> Admin, Editor, Controller, Expo */}
+          {[UserRole.ADMIN, UserRole.EDITOR, UserRole.CONTROLLER, UserRole.EXPO].includes(user?.role as UserRole) && (
               <SidebarItem to="/macro" icon={PackageOpen} label={sidebarOpen ? "Motor de Captura (Macro)" : ""} />
           )}
 

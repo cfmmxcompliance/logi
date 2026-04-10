@@ -171,7 +171,7 @@ export const XMLInvoiceExtractor: React.FC = () => {
             if (found) {
                 const num = parseFloat(found);
                 setTcValorNum(num);
-                setTcValor(num.toLocaleString('es-ES', { minimumFractionDigits: 4, maximumFractionDigits: 4 }));
+                setTcValor(num.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }));
             } else {
                 setTcError('Sin publicar para esta fecha');
             }

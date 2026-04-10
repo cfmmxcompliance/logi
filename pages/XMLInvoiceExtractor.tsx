@@ -103,8 +103,7 @@ export const XMLInvoiceExtractor: React.FC = () => {
         document.body.style.cursor = 'default';
     }, [onMouseMove]);
 
-    // Fetch tipo de cambio from aduanas-mexico.com.mx (grid: Día × Mes)
-    // Uses regex (not DOMParser) because the HTML has \r\r\n that confuses browser parsers
+    // Fetch tipo de cambio — tries multiple CORS proxies with fallback
     const fetchTipoCambio = async (fecha: string) => {
         if (!fecha) return;
         setTcLoading(true);
@@ -113,58 +112,102 @@ export const XMLInvoiceExtractor: React.FC = () => {
 
         const MONTH_ABBR = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-        try {
-            const [yearStr, monthStr, dayStr] = fecha.split('-');
-            const targetDay   = parseInt(dayStr,   10);
-            const targetMonth = parseInt(monthStr, 10);
-            const targetAbbr  = MONTH_ABBR[targetMonth - 1];
-
-            const sourceUrl = `https://aduanas-mexico.com.mx/indicadores_tc.php?year=${yearStr}`;
-            const proxyUrl  = `https://api.allorigins.win/get?url=${encodeURIComponent(sourceUrl)}`;
-
-            const res  = await fetch(proxyUrl, { cache: 'no-store' });
-            const json = await res.json();
-            const html: string = json.contents || '';
-
-            if (!html) throw new Error('Sin respuesta del servidor');
-
-            // --- Extract all <tr>...</tr> blocks using regex ---
+        const parseHtml = (html: string, targetDay: number, targetAbbr: string, targetMonth: number): string | null => {
             const trMatches = html.match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi) || [];
-
-            // Helper: extract text from all <td> cells in a <tr> block
-            const getCells = (tr: string): string[] =>
+            const getCells = (tr: string) =>
                 (tr.match(/<td[^>]*>([\s\S]*?)<\/td>/gi) || [])
                     .map(td => td.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, '').replace(/\s+/g, '').trim());
 
-            // Step 1: Find which column index is our target month
+            // Find month column index
             let monthColIndex = -1;
             for (const tr of trMatches) {
-                // Look for the header row that contains the month abbreviation
-                const cellsRaw = tr.match(/<td[^>]*>([\s\S]*?)<\/td>/gi) || [];
-                const texts = cellsRaw.map(td => td.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim());
+                const texts = (tr.match(/<td[^>]*>([\s\S]*?)<\/td>/gi) || [])
+                    .map(td => td.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim());
                 for (let ci = 0; ci < texts.length; ci++) {
-                    if (texts[ci] === targetAbbr) {
-                        monthColIndex = ci;
-                        break;
-                    }
+                    if (texts[ci] === targetAbbr) { monthColIndex = ci; break; }
                 }
                 if (monthColIndex !== -1) break;
             }
-
-            // Fallback: Ene=1, Feb=2, Mar=3, Abr=4 ...
             if (monthColIndex === -1) monthColIndex = targetMonth;
 
-            // Step 2: Find the data row for the target day
-            let found: string | null = null;
+            // Find day row
             for (const tr of trMatches) {
                 const cells = getCells(tr);
                 if (cells.length < 2) continue;
                 if (parseInt(cells[0], 10) === targetDay) {
                     const val = cells[monthColIndex] || '';
-                    if (val && /^\d+\.\d+$/.test(val)) {
-                        found = val;
+                    return /^\d+\.\d+$/.test(val) ? val : null;
+                }
+            }
+            return null;
+        };
+
+        try {
+            const [yearStr, monthStr, dayStr] = fecha.split('-');
+            const targetDay   = parseInt(dayStr,   10);
+            const targetMonth = parseInt(monthStr, 10);
+            const targetAbbr  = MONTH_ABBR[targetMonth - 1];
+            const sourceUrl   = `https://aduanas-mexico.com.mx/indicadores_tc.php?year=${yearStr}`;
+
+            // Proxy chain — tries each until one returns valid HTML
+            const proxyChain: { name: string; fetch: () => Promise<string> }[] = [
+                {
+                    name: 'allorigins',
+                    fetch: async () => {
+                        const r = await fetch(
+                            `https://api.allorigins.win/get?url=${encodeURIComponent(sourceUrl)}`,
+                            { signal: AbortSignal.timeout(7000), cache: 'no-store' }
+                        );
+                        const j = await r.json();
+                        return j.contents || '';
                     }
-                    break; // found the day row, stop
+                },
+                {
+                    name: 'corsproxy.io',
+                    fetch: async () => {
+                        const r = await fetch(
+                            `https://corsproxy.io/?${encodeURIComponent(sourceUrl)}`,
+                            { signal: AbortSignal.timeout(7000), cache: 'no-store' }
+                        );
+                        return r.text();
+                    }
+                },
+                {
+                    name: 'cors.sh',
+                    fetch: async () => {
+                        const r = await fetch(sourceUrl, {
+                            signal: AbortSignal.timeout(7000),
+                            cache: 'no-store',
+                            headers: { 'x-cors-api-key': 'temp_7aa1b24a-3e5d-4f8a-a7b1-c2e9d8f0123b' }
+                        });
+                        return r.text();
+                    }
+                },
+                {
+                    name: 'thingproxy',
+                    fetch: async () => {
+                        const r = await fetch(
+                            `https://thingproxy.freeboard.io/fetch/${sourceUrl}`,
+                            { signal: AbortSignal.timeout(7000), cache: 'no-store' }
+                        );
+                        return r.text();
+                    }
+                },
+            ];
+
+            let found: string | null = null;
+            let lastErr = '';
+
+            for (const proxy of proxyChain) {
+                try {
+                    const html = await proxy.fetch();
+                    if (!html || html.length < 1000) { lastErr = `${proxy.name}: respuesta vacía`; continue; }
+                    found = parseHtml(html, targetDay, targetAbbr, targetMonth);
+                    if (found) break; // success
+                    lastErr = `${proxy.name}: dato no encontrado`;
+                } catch (e: any) {
+                    lastErr = `${proxy.name}: ${e.message}`;
+                    console.warn(`TC proxy ${proxy.name} failed:`, e.message);
                 }
             }
 
@@ -174,6 +217,7 @@ export const XMLInvoiceExtractor: React.FC = () => {
                 setTcValor(num.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }));
             } else {
                 setTcError('Sin publicar para esta fecha');
+                console.warn('TC last error:', lastErr);
             }
         } catch (e) {
             console.error('Tipo de cambio fetch error:', e);

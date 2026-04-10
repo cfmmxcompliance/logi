@@ -55,6 +55,35 @@ export const HandheldLiberacion = () => {
 
   const fetchDataForDate = async (targetDate: string) => {
     setLoading(true);
+
+    // ⚡ STEP 1: Show cached data instantly (< 50ms on revisits)
+    try {
+      const [cachedCajas, cachedSellos, cachedLiberaciones] = await Promise.all([
+        asignacionCajaService.getAsignacionesByDateCached(targetDate),
+        selloService.getSellosByDateCached(targetDate),
+        liberacionService.getLiberacionesByDateCached(targetDate),
+      ]);
+
+      if (cachedCajas.length > 0) {
+        cachedCajas.sort((a, b) => {
+          const tA = a.horaAsignacion || '00:00';
+          const tB = b.horaAsignacion || '00:00';
+          if (tA !== tB) return tA < tB ? -1 : 1;
+          const opA = a.numeroOperacion || '';
+          const opB = b.numeroOperacion || '';
+          if (opA !== opB) return opA < opB ? -1 : 1;
+          const crA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const crB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return crA - crB;
+        });
+        setCajasDelDia(cachedCajas);
+        setSellosDelDia(cachedSellos);
+        setLiberacionesDelDia(cachedLiberaciones);
+        setLoading(false); // Show immediately — don't wait for network
+      }
+    } catch { /* cache miss — spinner stays visible */ }
+
+    // STEP 2: Refresh from network silently in background
     try {
       const [cajasParaFecha, sellosParaFecha, liberacionesParaFecha] = await fetchWithTimeout(
         Promise.all([
@@ -62,32 +91,30 @@ export const HandheldLiberacion = () => {
           selloService.getSellosByDate(targetDate),
           liberacionService.getLiberacionesByDate(targetDate)
         ]),
-        12000 // 12 seconds max wait
+        12000
       );
-      
+
       cajasParaFecha.sort((a, b) => {
         const timeA = a.horaAsignacion || '00:00';
         const timeB = b.horaAsignacion || '00:00';
         if (timeA !== timeB) return timeA < timeB ? -1 : 1;
-
         const opA = a.numeroOperacion || '';
         const opB = b.numeroOperacion || '';
         if (opA !== opB) return opA < opB ? -1 : 1;
-
         const crA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const crB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return crA - crB;
       });
-      
+
       setCajasDelDia(cajasParaFecha);
       setSellosDelDia(sellosParaFecha);
       setLiberacionesDelDia(liberacionesParaFecha);
     } catch (e: any) {
-      console.error("Error fetching data", e);
+      console.error("Error fetching data from network", e);
       if (e.message === 'TIMEOUT_EXCEEDED') {
-          alert('La conexión de internet es muy lenta o inestable. Intente moverse a un área con mejor señal y recargue la página.');
-      } else {
-          alert('Hubo un problema al consultar la base de datos. Verifique su red.');
+        if (cajasDelDia.length === 0) {
+          alert('La conexión es muy lenta. Si ves datos en pantalla ya están actualizados.');
+        }
       }
     } finally {
       setLoading(false);

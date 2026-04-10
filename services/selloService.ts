@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, getDocsFromCache, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebaseConfig';
 import { SelloRecord } from '../types.ts';
@@ -15,6 +15,23 @@ export const selloService = {
       );
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SelloRecord));
+    } catch (error) {
+      console.error('Error fetching sellos by date:', error);
+      return [];
+    }
+  },
+
+  // ⚡ Cache-first
+  async getSellosByDateCached(fecha: string): Promise<SelloRecord[]> {
+    if (!db) return [];
+    const q = query(collection(db, COLLECTION_NAME), where('fechaAsignacion', '==', fecha));
+    try {
+      const cached = await getDocsFromCache(q);
+      if (!cached.empty) return cached.docs.map(d => ({ id: d.id, ...d.data() } as SelloRecord));
+    } catch { /* cache miss */ }
+    try {
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as SelloRecord));
     } catch (error) {
       console.error('Error fetching sellos by date:', error);
       return [];

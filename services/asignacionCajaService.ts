@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, getDocsFromCache, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
 
@@ -14,6 +14,19 @@ export const asignacionCajaService = {
     const q = query(collection(db, COLLECTION_NAME), where('fecha', '==', fecha));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsignacionCajaModel));
+  },
+
+  // ⚡ Cache-first: returns cached data in < 50ms, then caller can refresh from network
+  async getAsignacionesByDateCached(fecha: string): Promise<AsignacionCajaModel[]> {
+    const q = query(collection(db, COLLECTION_NAME), where('fecha', '==', fecha));
+    try {
+      const cached = await getDocsFromCache(q);
+      if (!cached.empty) {
+        return cached.docs.map(d => ({ id: d.id, ...d.data() } as AsignacionCajaModel));
+      }
+    } catch { /* cache miss — fall through to network */ }
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AsignacionCajaModel));
   },
 
   async addAsignacion(asignacion: AsignacionCajaModel): Promise<void> {

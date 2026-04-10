@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, getDocsFromCache, query, where } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { LiberacionRecord } from '../types.ts';
 
@@ -14,6 +14,23 @@ export const liberacionService = {
       );
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LiberacionRecord));
+    } catch (error) {
+      console.error('Error fetching liberaciones by date:', error);
+      return [];
+    }
+  },
+
+  // ⚡ Cache-first
+  async getLiberacionesByDateCached(fecha: string): Promise<LiberacionRecord[]> {
+    if (!db) return [];
+    const q = query(collection(db, COLLECTION_NAME), where('fechaLiberacion', '==', fecha));
+    try {
+      const cached = await getDocsFromCache(q);
+      if (!cached.empty) return cached.docs.map(d => ({ id: d.id, ...d.data() } as LiberacionRecord));
+    } catch { /* cache miss */ }
+    try {
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as LiberacionRecord));
     } catch (error) {
       console.error('Error fetching liberaciones by date:', error);
       return [];

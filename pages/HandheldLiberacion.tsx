@@ -238,21 +238,23 @@ export const HandheldLiberacion = () => {
         throw new Error(`⛔ ALERTA CRÍTICA: ¡Descuadre de Sello!\n\nSello de Salida: [${assignedSelloRecord.selloAsignado}]\nSello Escaneado Físicamente: [${extractedSello.toUpperCase().trim()}]\n\nPor seguridad, no se puede cerrar la caja. Verifique error y/o escale al responsable del area.`);
       }
 
-      // 2. Validation Passed. Upload the 3 Photos to Google Drive "SellosCajas" Folder
+      // 2. Validation Passed. Upload 3 photos in PARALLEL to Google Drive
       const FOLDER_ID = "1jBIvDIbXAP2eGFyVM3J2i5iZWjaEdO9X";
       let cajaUrl = "";
       let puertasUrl = "";
       let selloUrl = "";
-      
+
       try {
-          const cajaRes = await uploadFileToDrive(fotoCajaFile, `Liberacion_${selectedCaja.numeroCaja}_CAJA`, FOLDER_ID);
-          cajaUrl = cajaRes?.webViewLink || (cajaRes as any)?.url || "";
-          
-          const puertasRes = await uploadFileToDrive(fotoPuertasFile, `Liberacion_${selectedCaja.numeroCaja}_PUERTAS`, FOLDER_ID);
-          puertasUrl = puertasRes?.webViewLink || (puertasRes as any)?.url || "";
-          
-          const selloRes = await uploadFileToDrive(fotoSelloFile, `Liberacion_${selectedCaja.numeroCaja}_SELLO`, FOLDER_ID);
-          selloUrl = selloRes?.webViewLink || (selloRes as any)?.url || "";
+          // ⚡ Parallel upload — 3x faster than sequential
+          const [cajaRes, puertasRes, selloRes] = await Promise.all([
+              uploadFileToDrive(fotoCajaFile,   `Liberacion_${selectedCaja.numeroCaja}_CAJA`,    FOLDER_ID),
+              uploadFileToDrive(fotoPuertasFile, `Liberacion_${selectedCaja.numeroCaja}_PUERTAS`, FOLDER_ID),
+              uploadFileToDrive(fotoSelloFile,   `Liberacion_${selectedCaja.numeroCaja}_SELLO`,   FOLDER_ID),
+          ]);
+
+          cajaUrl    = cajaRes?.webViewLink    || (cajaRes    as any)?.url || "";
+          puertasUrl = puertasRes?.webViewLink  || (puertasRes as any)?.url || "";
+          selloUrl   = selloRes?.webViewLink    || (selloRes   as any)?.url || "";
       } catch (driveErr: any) {
           console.error("Error subiendo evidencias a Drive:", driveErr);
           throw new Error("Error en Drive: " + driveErr.message + "\n\nLa caja NO fue liberada. Reintente presionar Cierre de Caja.");
@@ -284,11 +286,12 @@ export const HandheldLiberacion = () => {
       // Optimistic local update - no need to reload full list
       setLiberacionesDelDia(prev => [...prev, { ...newLiberacion, id: `temp_${Date.now()}` }]);
       setSaveSuccess(true);
-      
-      // Auto-close modal after 2 seconds
+
+      // Auto-close modal after 3 seconds
       setTimeout(() => {
         closeModal();
-      }, 2000);
+      }, 3000);
+
 
     } catch (e: any) {
       setValidationError(e.message);

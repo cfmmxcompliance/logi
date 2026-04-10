@@ -983,78 +983,65 @@ export const XMLInvoiceExtractor: React.FC = () => {
             </div>
 
             {/* Sticky Totals Footer */}
-            <div className="bg-blue-600 px-8 py-3 flex-shrink-0 z-20 flex justify-between items-center text-white shadow-[0_-4px_20px_rgba(37,99,235,0.2)]">
+            <div className="bg-blue-600 px-6 py-2.5 flex-shrink-0 z-20 flex items-center justify-between text-white shadow-[0_-4px_20px_rgba(37,99,235,0.2)] overflow-x-auto gap-4 whitespace-nowrap">
                 {/* Left: Counts */}
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-5 flex-shrink-0">
                     <div className="flex flex-col items-start">
-                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Modelos</span>
-                        <span className="text-sm font-mono font-bold leading-none">{(totals as any).modelos ?? 0}</span>
+                        <span className="text-[9px] font-bold opacity-70 uppercase tracking-widest">Modelos</span>
+                        <span className="text-xs font-mono font-bold leading-none">{(totals as any).modelos ?? 0}</span>
                     </div>
                     <div className="flex flex-col items-start">
-                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">No. Parte</span>
-                        <span className="text-sm font-mono font-bold leading-none">{(totals as any).partes ?? 0}</span>
+                        <span className="text-[9px] font-bold opacity-70 uppercase tracking-widest">No. Parte</span>
+                        <span className="text-xs font-mono font-bold leading-none">{(totals as any).partes ?? 0}</span>
                     </div>
                     <div className="flex flex-col items-start">
-                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Facturas</span>
-                        <span className="text-sm font-mono font-bold leading-none">{(totals as any).facturas ?? 0}</span>
+                        <span className="text-[9px] font-bold opacity-70 uppercase tracking-widest">Facturas</span>
+                        <span className="text-xs font-mono font-bold leading-none">{(totals as any).facturas ?? 0}</span>
                     </div>
                 </div>
-                {/* Right: Totals */}
-                <div className="flex items-center gap-6 flex-wrap justify-end">
-                    <div className="flex flex-col items-end">
-                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Peso Neto KG</span>
-                        <span className="text-sm font-mono font-bold leading-none">{totals.pesoNeto.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="flex flex-col items-end">
-                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Peso Bruto KG</span>
-                        <span className="text-sm font-mono font-bold leading-none">{totals.pesoBruto.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                    </div>
 
-                    {/* Val. Agregado */}
+                {/* Right: Totals — single row, no wrap */}
+                <div className="flex items-center gap-4 flex-shrink-0">
                     <div className="flex flex-col items-end">
-                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Val. Agregado</span>
-                        <span className="text-sm font-mono font-bold leading-none">{totals.valAgregado.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        <span className="text-[9px] font-bold opacity-70 uppercase tracking-widest">Peso Neto KG</span>
+                        <span className="text-xs font-mono font-bold leading-none">{totals.pesoNeto.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                     </div>
-
-                    {/* ValAdMx = Val.Agregado × TC */}
-                    <div className="flex flex-col items-end bg-white/10 px-3 py-1 rounded-lg">
-                        <span className="text-[10px] font-bold opacity-90 uppercase tracking-widest text-yellow-200">ValAdMx (MXN)</span>
-                        <span className="text-sm font-mono font-bold leading-none text-yellow-100">
-                            {tcValorNum > 0
-                                ? `$${(totals.valAgregado * tcValorNum).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                : '—'}
+                    <div className="flex flex-col items-end">
+                        <span className="text-[9px] font-bold opacity-70 uppercase tracking-widest">Peso Bruto KG</span>
+                        <span className="text-xs font-mono font-bold leading-none">{totals.pesoBruto.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                        <span className="text-[9px] font-bold opacity-70 uppercase tracking-widest">Val. Agregado</span>
+                        <span className="text-xs font-mono font-bold leading-none">{totals.valAgregado.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    {/* ValAdMx */}
+                    <div className="flex flex-col items-end bg-white/10 px-2 py-1 rounded-lg">
+                        <span className="text-[9px] font-bold opacity-90 uppercase tracking-widest text-yellow-200">ValAdMx MXN</span>
+                        <span className="text-xs font-mono font-bold leading-none text-yellow-100">
+                            {tcValorNum > 0 ? `$${(totals.valAgregado * tcValorNum).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
                         </span>
                     </div>
-
-                    {/* Cantidad */}
                     <div className="flex flex-col items-end">
-                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Cantidad</span>
-                        <span className="text-sm font-mono font-bold leading-none">{totals.qty.toLocaleString('en-US')}</span>
+                        <span className="text-[9px] font-bold opacity-70 uppercase tracking-widest">Cantidad</span>
+                        <span className="text-xs font-mono font-bold leading-none">{totals.qty.toLocaleString('en-US')}</span>
                     </div>
-
-                    {/* ValUnit = Monto Total / Cantidad */}
-                    <div className="flex flex-col items-end bg-white/10 px-3 py-1 rounded-lg">
-                        <span className="text-[10px] font-bold opacity-90 uppercase tracking-widest text-cyan-200">ValUnit (USD)</span>
-                        <span className="text-sm font-mono font-bold leading-none text-cyan-100">
-                            {totals.qty > 0
-                                ? `$${(totals.total / totals.qty).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                : '—'}
+                    {/* ValUnit */}
+                    <div className="flex flex-col items-end bg-white/10 px-2 py-1 rounded-lg">
+                        <span className="text-[9px] font-bold opacity-90 uppercase tracking-widest text-cyan-200">ValUnit USD</span>
+                        <span className="text-xs font-mono font-bold leading-none text-cyan-100">
+                            {totals.qty > 0 ? `$${(totals.total / totals.qty).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
                         </span>
                     </div>
-
                     {/* Monto Total */}
-                    <div className="flex flex-col items-end border-l border-blue-400/50 pl-6 ml-2">
-                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Monto Total</span>
-                        <span className="text-xl font-mono font-black leading-none">${totals.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <div className="flex flex-col items-end border-l border-blue-400/50 pl-4 ml-1">
+                        <span className="text-[9px] font-bold opacity-70 uppercase tracking-widest">Monto Total</span>
+                        <span className="text-sm font-mono font-black leading-none">${totals.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
-
-                    {/* ValTotMx = Monto Total × TC */}
-                    <div className="flex flex-col items-end bg-white/10 px-3 py-1 rounded-lg border border-yellow-400/30">
-                        <span className="text-[10px] font-bold opacity-90 uppercase tracking-widest text-yellow-200">ValTotMx (MXN)</span>
-                        <span className="text-xl font-mono font-black leading-none text-yellow-100">
-                            {tcValorNum > 0
-                                ? `$${(totals.total * tcValorNum).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                : '—'}
+                    {/* ValTotMx */}
+                    <div className="flex flex-col items-end bg-white/10 px-2 py-1 rounded-lg border border-yellow-400/30">
+                        <span className="text-[9px] font-bold opacity-90 uppercase tracking-widest text-yellow-200">ValTotMx MXN</span>
+                        <span className="text-sm font-mono font-black leading-none text-yellow-100">
+                            {tcValorNum > 0 ? `$${(totals.total * tcValorNum).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
                         </span>
                     </div>
                 </div>

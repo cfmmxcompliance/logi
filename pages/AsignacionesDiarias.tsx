@@ -570,9 +570,9 @@ export const AsignacionesDiarias: React.FC = () => {
                   {!isEmbarques && <input type="checkbox" checked={filteredData.length > 0 && selectedIds.size === filteredData.length} onChange={toggleSelectAll} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
               </th>
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.fecha'), 'fecha')}</th>
+              <th className="p-4 font-medium min-w-[100px]">{renderColumnHeader('Arribo', 'arribo')}</th>
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader('No. Operación', 'numeroOperacion')}</th>
               <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader('Caja', 'numeroCaja')}</th>
-              <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader('Sub-Línea', 'subLinea')}</th>
               <th className="p-4 font-medium">{renderColumnHeader('Placas C', 'placasCaja')}</th>
               <th className="p-4 font-medium min-w-[160px] text-blue-600 uppercase text-xs">{renderColumnHeader('Línea Transporte', 'transportLineId')}</th>
               <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader('Driver ID', 'driverId')}</th>
@@ -630,10 +630,10 @@ export const AsignacionesDiarias: React.FC = () => {
                        {a.horaAsignacion && <span className="text-xs text-slate-400 font-mono">| {a.horaAsignacion}</span>}
                     </div>
                 </td>
+                <td className="p-4 font-mono text-amber-600 font-semibold whitespace-nowrap">{(a as any).arribo || '—'}</td>
                 
                 <td className="p-4 font-mono text-pink-700 font-bold tracking-wide whitespace-nowrap">{a.numeroOperacion || '-'}</td>
                 <td className="p-4 font-semibold text-emerald-700 font-mono tracking-wide">{a.numeroCaja}</td>
-                <td className="p-4 text-slate-600">{a.subLinea || '-'}</td>
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium">{a.placasCaja || '-'}</td>
                 
                 <td className="p-4 text-xs font-bold text-blue-800 whitespace-nowrap">

@@ -6,7 +6,7 @@ import { geminiService } from '../services/geminiService.ts';
 import { uploadFileToDrive } from '../services/googleDriveService.ts';
 import { AsignacionCajaModel } from '../types/asignacionCaja.ts';
 import { SelloRecord } from '../types.ts';
-import { Camera, Check, ArrowLeft, Loader2, Save, X, Box, ImageIcon } from 'lucide-react';
+import { Camera, Check, ArrowLeft, Loader2, Save, X, Box, ImageIcon, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const HandheldSellos = () => {
@@ -33,6 +33,9 @@ export const HandheldSellos = () => {
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
+  // Replacement confirmation modal state
+  const [replaceConfirm, setReplaceConfirm] = useState<{ caja: AsignacionCajaModel; sello: SelloRecord } | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchWithTimeout = <T,>(promise: Promise<T>, ms: number = 10000): Promise<T> => {
@@ -292,7 +295,9 @@ export const HandheldSellos = () => {
                   <div 
                     key={caja.id} 
                     onClick={() => {
-                        if (isCompleted && !window.confirm("Esta caja ya tiene un sello asegurado. ¿Deseas reemplazarlo de todos modos?")) {
+                        if (isCompleted && selloExistente) {
+                            // Show custom confirmation popup if photo already exists
+                            setReplaceConfirm({ caja, sello: selloExistente });
                             return;
                         }
                         setSelectedCaja(caja);
@@ -362,6 +367,72 @@ export const HandheldSellos = () => {
           </div>
         )}
       </main>
+
+      {/* ── REEMPLAZO CONFIRMATION MODAL ── */}
+      {replaceConfirm && (
+          <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-5">
+              <div className="bg-slate-900 rounded-3xl border border-amber-500/40 shadow-[0_0_40px_rgba(245,158,11,0.2)] w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                  {/* Header */}
+                  <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-5 flex items-center gap-4">
+                      <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                          <AlertTriangle size={24} className="text-amber-400" />
+                      </div>
+                      <div>
+                          <h3 className="text-white font-black text-lg leading-tight">¿Reemplazar Sello?</h3>
+                          <p className="text-amber-300/70 text-xs mt-0.5">Esta caja ya tiene evidencia registrada</p>
+                      </div>
+                  </div>
+
+                  {/* Caja info */}
+                  <div className="px-6 py-5 space-y-3">
+                      <div className="bg-slate-800 rounded-2xl p-4 border border-slate-700">
+                          <p className="text-slate-400 text-xs uppercase tracking-widest font-bold mb-1">Caja</p>
+                          <p className="text-2xl font-black font-mono text-white">{replaceConfirm.caja.numeroCaja}</p>
+                      </div>
+
+                      <div className="bg-emerald-950/40 rounded-2xl p-4 border border-emerald-800/40">
+                          <p className="text-slate-400 text-xs uppercase tracking-widest font-bold mb-1">Sello Registrado</p>
+                          <p className="text-xl font-black font-mono text-emerald-400 tracking-widest">
+                              {replaceConfirm.sello.selloAsignado}
+                          </p>
+                          {replaceConfirm.sello.fotoUrl && (
+                              <div className="mt-2 flex items-center gap-2 text-xs text-emerald-500/70">
+                                  <ImageIcon size={12} />
+                                  <span>Foto de evidencia ya cargada en Drive</span>
+                              </div>
+                          )}
+                          <p className="text-slate-500 text-[10px] mt-1">{replaceConfirm.sello.fechaHoraRegistro}</p>
+                      </div>
+
+                      <p className="text-amber-300/80 text-sm text-center leading-relaxed">
+                          Si continúas, el sello y la foto actuales serán <span className="font-bold text-amber-300">reemplazados permanentemente</span>.
+                      </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="px-6 pb-6 flex gap-3">
+                      <button
+                          onClick={() => setReplaceConfirm(null)}
+                          className="flex-1 py-4 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-bold hover:bg-slate-700 transition-colors"
+                      >
+                          Cancelar
+                      </button>
+                      <button
+                          onClick={() => {
+                              const { caja, sello } = replaceConfirm;
+                              setReplaceConfirm(null);
+                              setSelectedCaja(caja);
+                              setSelloValue(sello.selloAsignado || '');
+                              setCurrentImageFile(null);
+                          }}
+                          className="flex-1 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-900 font-black transition-colors shadow-[0_0_20px_rgba(245,158,11,0.3)]"
+                      >
+                          Reemplazar
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
 
       {/* MODAL / POPUP DE CAPTURA */}
       {selectedCaja && (

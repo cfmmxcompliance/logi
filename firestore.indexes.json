@@ -1,4 +1,45 @@
 {
-    "indexes": [],
+    "indexes": [
+        {
+            "collectionGroup": "asignacion_cajas",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "fecha", "order": "ASCENDING" },
+                { "fieldPath": "horaAsignacion", "order": "ASCENDING" }
+            ]
+        },
+        {
+            "collectionGroup": "sellos",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "fechaAsignacion", "order": "ASCENDING" },
+                { "fieldPath": "numeroCaja", "order": "ASCENDING" }
+            ]
+        },
+        {
+            "collectionGroup": "liberacionesCaja",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "fechaLiberacion", "order": "ASCENDING" },
+                { "fieldPath": "createdAt", "order": "ASCENDING" }
+            ]
+        },
+        {
+            "collectionGroup": "cfdi_invoices",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "fecha", "order": "ASCENDING" },
+                { "fieldPath": "invoiceNo", "order": "ASCENDING" }
+            ]
+        },
+        {
+            "collectionGroup": "asignacion_diaria",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "fecha", "order": "ASCENDING" },
+                { "fieldPath": "createdAt", "order": "ASCENDING" }
+            ]
+        }
+    ],
     "fieldOverrides": []
 }

@@ -51,7 +51,6 @@ export const DailyVanAssignment: React.FC = () => {
       a.numeroCaja?.toLowerCase().includes(q) ||
       a.nombreDriver?.toLowerCase().includes(q) ||
       a.placasTracto?.toLowerCase().includes(q) ||
-      a.subLinea?.toLowerCase().includes(q) ||
       a.numeroOperacion?.toLowerCase().includes(q)
     );
   }, [assignments, searchQuery]);
@@ -148,9 +147,9 @@ export const DailyVanAssignment: React.FC = () => {
                   <tr>
                     <th className="px-4 py-3">#</th>
                     <th className="px-4 py-3">Hora</th>
+                    <th className="px-4 py-3">Arribo</th>
                     <th className="px-4 py-3">Operación</th>
                     <th className="px-4 py-3">Caja (53-ft Dry Van)</th>
-                    <th className="px-4 py-3">Sub-Línea</th>
                     <th className="px-4 py-3">Driver</th>
                     <th className="px-4 py-3">Placas Tracto</th>
                     <th className="px-4 py-3">Placas Caja</th>
@@ -165,11 +164,11 @@ export const DailyVanAssignment: React.FC = () => {
                       <tr key={asig.id} className="hover:bg-slate-800/70 transition-colors">
                         <td className="px-4 py-3 text-slate-500 text-xs">{idx + 1}</td>
                         <td className="px-4 py-3 font-mono font-bold text-blue-400">{asig.horaAsignacion || '—'}</td>
+                        <td className="px-4 py-3 font-mono text-amber-300 font-semibold">{asig.arribo || '—'}</td>
                         <td className="px-4 py-3 text-pink-400 font-semibold">{asig.numeroOperacion || '—'}</td>
                         <td className="px-4 py-3">
                           <span className="font-bold text-white font-mono tracking-wider">{asig.numeroCaja}</span>
                         </td>
-                        <td className="px-4 py-3 text-slate-300">{asig.subLinea}</td>
                         <td className="px-4 py-3 font-medium">{asig.nombreDriver}</td>
                         <td className="px-4 py-3 font-mono text-slate-400">{asig.placasTracto}</td>
                         <td className="px-4 py-3 font-mono text-slate-400">{asig.placasCaja}</td>

@@ -571,6 +571,7 @@ export const AsignacionesDiarias: React.FC = () => {
               </th>
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.fecha'), 'fecha')}</th>
               <th className="p-4 font-medium min-w-[100px]">{renderColumnHeader('Arribo', 'arribo')}</th>
+              <th className="p-4 font-medium min-w-[180px]">{renderColumnHeader('Comentarios Arribo', 'comentariosArribo')}</th>
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader('No. Operación', 'numeroOperacion')}</th>
               <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader('Caja', 'numeroCaja')}</th>
               <th className="p-4 font-medium">{renderColumnHeader('Placas C', 'placasCaja')}</th>
@@ -631,6 +632,7 @@ export const AsignacionesDiarias: React.FC = () => {
                     </div>
                 </td>
                 <td className="p-4 font-mono text-amber-600 font-semibold whitespace-nowrap">{(a as any).arribo || '—'}</td>
+                <td className="p-4 text-slate-500 text-xs max-w-[180px] truncate" title={(a as any).comentariosArribo || ''}>{(a as any).comentariosArribo || '—'}</td>
                 
                 <td className="p-4 font-mono text-pink-700 font-bold tracking-wide whitespace-nowrap">{a.numeroOperacion || '-'}</td>
                 <td className="p-4 font-semibold text-emerald-700 font-mono tracking-wide">{a.numeroCaja}</td>

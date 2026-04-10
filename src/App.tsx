@@ -39,6 +39,7 @@ import { AIAssistant } from '../pages/AIAssistant.tsx';
 import { HandheldHome } from '../pages/HandheldHome.tsx';
 import { HandheldSellos } from '../pages/HandheldSellos.tsx';
 import { HandheldLiberacion } from '../pages/HandheldLiberacion.tsx';
+import { HandheldArribo } from '../pages/HandheldArribo.tsx';
 import { BPMClasificacion } from '../pages/BPMClasificacion.tsx';
 import { DailyVanAssignment } from '../pages/DailyVanAssignment.tsx';
 import { storageService } from '../services/storageService.ts';
@@ -208,6 +209,7 @@ const AppContent = () => {
             <Route path="/m/home" element={<ProtectedRoute><HandheldHome /></ProtectedRoute>} />
             <Route path="/m/sellos" element={<ProtectedRoute><HandheldSellos /></ProtectedRoute>} />
             <Route path="/m/liberacion" element={<ProtectedRoute><HandheldLiberacion /></ProtectedRoute>} />
+            <Route path="/m/arribo" element={<ProtectedRoute><HandheldArribo /></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

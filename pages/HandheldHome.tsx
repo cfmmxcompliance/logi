@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
-import { LogOut, ShieldCheck, Box, DoorOpen } from 'lucide-react';
+import { LogOut, ShieldCheck, Box, DoorOpen, Truck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../types.ts';
 
@@ -60,6 +60,20 @@ export const HandheldHome = () => {
                            <p className="text-slate-400 text-sm mt-1 font-medium">Cierre Fotográfico 3x</p>
                        </div>
                     </button>
+
+                     {/* Tarjeta de Arribo */}
+                     <button
+                        onClick={() => navigate('/m/arribo')}
+                        className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group mt-4"
+                     >
+                        <div className="w-16 h-16 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(245,158,11,0.3)] group-hover:scale-105 transition-transform">
+                           <Truck size={32} />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-white tracking-tight">Registro de Arribo</h2>
+                            <p className="text-slate-400 text-sm mt-1 font-medium">Hora y comentarios de llegada</p>
+                        </div>
+                     </button>
 
                 </div>
 

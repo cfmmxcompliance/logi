@@ -177,9 +177,7 @@ const AppContent = () => {
             <Route path="/pricing-matrix" element={<ProtectedRoute><PricingMatrix /></ProtectedRoute>} />
             <Route path="/cajas" element={<ProtectedRoute><Cajas /></ProtectedRoute>} />
             <Route path="/asignaciones-diarias" element={<ProtectedRoute><AsignacionesDiarias /></ProtectedRoute>} />
-            {import.meta.env.DEV && (
-               <Route path="/macro" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EDITOR, UserRole.AGENT, UserRole.CONTROLLER, UserRole.EXPO]}><CaptureModule /></ProtectedRoute>} />
-            )}
+            <Route path="/macro" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO]}><CaptureModule /></ProtectedRoute>} />
             <Route path="/apendice10" element={<ProtectedRoute><Apendice10 /></ProtectedRoute>} />
             <Route path="/carriers" element={<ProtectedRoute><Carriers /></ProtectedRoute>} />
             <Route path="/transport-lines" element={<ProtectedRoute><TransportLines /></ProtectedRoute>} />

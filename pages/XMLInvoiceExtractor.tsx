@@ -103,7 +103,7 @@ export const XMLInvoiceExtractor: React.FC = () => {
     }, [onMouseMove]);
 
     // Fetch tipo de cambio from aduanas-mexico.com.mx (grid: Día × Mes)
-    // Confirmed table structure: row[header]=['Mes/Dia','Ene','Feb',...], row[data]=['01','17.95','17.25',...]
+    // Uses regex (not DOMParser) because the HTML has \r\r\n that confuses browser parsers
     const fetchTipoCambio = async (fecha: string) => {
         if (!fecha) return;
         setTcLoading(true);
@@ -114,33 +114,35 @@ export const XMLInvoiceExtractor: React.FC = () => {
 
         try {
             const [yearStr, monthStr, dayStr] = fecha.split('-');
-            const targetDay   = parseInt(dayStr,   10); // e.g. 7 for '07'
-            const targetMonth = parseInt(monthStr, 10); // 1-based: Apr=4
-            const targetYear  = parseInt(yearStr,  10);
-            const targetAbbr  = MONTH_ABBR[targetMonth - 1]; // e.g. 'Abr'
+            const targetDay   = parseInt(dayStr,   10);
+            const targetMonth = parseInt(monthStr, 10);
+            const targetAbbr  = MONTH_ABBR[targetMonth - 1];
 
-            // Real data lives at aduanas-mexico.com.mx
-            const sourceUrl = `https://aduanas-mexico.com.mx/indicadores_tc.php?year=${targetYear}`;
+            const sourceUrl = `https://aduanas-mexico.com.mx/indicadores_tc.php?year=${yearStr}`;
             const proxyUrl  = `https://api.allorigins.win/get?url=${encodeURIComponent(sourceUrl)}`;
 
             const res  = await fetch(proxyUrl, { cache: 'no-store' });
             const json = await res.json();
-            const html: string = json.contents;
+            const html: string = json.contents || '';
 
-            if (!html) throw new Error('Empty response from proxy');
+            if (!html) throw new Error('Sin respuesta del servidor');
 
-            // --- Parse with DOMParser ---
-            const parser = new DOMParser();
-            const doc    = parser.parseFromString(html, 'text/html');
+            // --- Extract all <tr>...</tr> blocks using regex ---
+            const trMatches = html.match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi) || [];
 
-            // Find the month-header row (contains 'Ene','Feb',...,'Dic')
-            const allRows = Array.from(doc.querySelectorAll('tr'));
+            // Helper: extract text from all <td> cells in a <tr> block
+            const getCells = (tr: string): string[] =>
+                (tr.match(/<td[^>]*>([\s\S]*?)<\/td>/gi) || [])
+                    .map(td => td.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, '').replace(/\s+/g, '').trim());
+
+            // Step 1: Find which column index is our target month
             let monthColIndex = -1;
-
-            for (const row of allRows) {
-                const cells = Array.from(row.querySelectorAll('td, th'));
-                for (let ci = 0; ci < cells.length; ci++) {
-                    if (cells[ci].textContent?.trim() === targetAbbr) {
+            for (const tr of trMatches) {
+                // Look for the header row that contains the month abbreviation
+                const cellsRaw = tr.match(/<td[^>]*>([\s\S]*?)<\/td>/gi) || [];
+                const texts = cellsRaw.map(td => td.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim());
+                for (let ci = 0; ci < texts.length; ci++) {
+                    if (texts[ci] === targetAbbr) {
                         monthColIndex = ci;
                         break;
                     }
@@ -148,36 +150,28 @@ export const XMLInvoiceExtractor: React.FC = () => {
                 if (monthColIndex !== -1) break;
             }
 
-            // Fallback: column index = month number (Ene=1, Feb=2, ...)
+            // Fallback: Ene=1, Feb=2, Mar=3, Abr=4 ...
             if (monthColIndex === -1) monthColIndex = targetMonth;
 
-            // Find the data row where first cell === target day (as zero-padded or plain int)
+            // Step 2: Find the data row for the target day
             let found: string | null = null;
-            for (const row of allRows) {
-                const cells = Array.from(row.querySelectorAll('td'));
+            for (const tr of trMatches) {
+                const cells = getCells(tr);
                 if (cells.length < 2) continue;
-
-                const dayText = cells[0].textContent?.replace(/\s/g, '') || '';
-                if (parseInt(dayText, 10) === targetDay) {
-                    const valueCell = cells[monthColIndex];
-                    if (valueCell) {
-                        // Strip HTML entities and whitespace; &nbsp; → ''
-                        const raw = valueCell.textContent?.replace(/\u00a0/g, '').replace(/[^\d.]/g, '').trim() || '';
-                        if (raw.length > 0) { found = raw; }
+                if (parseInt(cells[0], 10) === targetDay) {
+                    const val = cells[monthColIndex] || '';
+                    if (val && /^\d+\.\d+$/.test(val)) {
+                        found = val;
                     }
-                    break; // stop after finding the day row
+                    break; // found the day row, stop
                 }
             }
 
             if (found) {
                 const num = parseFloat(found);
-                if (!isNaN(num) && num > 1) {
-                    setTcValor(num.toLocaleString('es-MX', { minimumFractionDigits: 4, maximumFractionDigits: 4 }));
-                } else {
-                    setTcError('Sin publicar para esta fecha');
-                }
+                setTcValor(num.toLocaleString('es-MX', { minimumFractionDigits: 4, maximumFractionDigits: 4 }));
             } else {
-                setTcError('No publicado para esta fecha');
+                setTcError('Sin publicar para esta fecha');
             }
         } catch (e) {
             console.error('Tipo de cambio fetch error:', e);

@@ -24,6 +24,12 @@ export const XMLInvoiceExtractor: React.FC = () => {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
 
+    // Tipo de Cambio State
+    const [tcFecha, setTcFecha] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [tcValor, setTcValor] = useState<string | null>(null);
+    const [tcLoading, setTcLoading] = useState(false);
+    const [tcError, setTcError] = useState<string | null>(null);
+
     // Advanced Query Builder State
     const [isQueryBuilderOpen, setIsQueryBuilderOpen] = useState(false);
     const [queryConditions, setQueryConditions] = useState<QueryCondition[]>([
@@ -95,6 +101,96 @@ export const XMLInvoiceExtractor: React.FC = () => {
         document.removeEventListener('mouseup', onMouseUp);
         document.body.style.cursor = 'default';
     }, [onMouseMove]);
+
+    // Fetch tipo de cambio from aduanas-mexico.com.mx (grid: Día × Mes)
+    // Confirmed table structure: row[header]=['Mes/Dia','Ene','Feb',...], row[data]=['01','17.95','17.25',...]
+    const fetchTipoCambio = async (fecha: string) => {
+        if (!fecha) return;
+        setTcLoading(true);
+        setTcError(null);
+        setTcValor(null);
+
+        const MONTH_ABBR = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+        try {
+            const [yearStr, monthStr, dayStr] = fecha.split('-');
+            const targetDay   = parseInt(dayStr,   10); // e.g. 7 for '07'
+            const targetMonth = parseInt(monthStr, 10); // 1-based: Apr=4
+            const targetYear  = parseInt(yearStr,  10);
+            const targetAbbr  = MONTH_ABBR[targetMonth - 1]; // e.g. 'Abr'
+
+            // Real data lives at aduanas-mexico.com.mx
+            const sourceUrl = `https://aduanas-mexico.com.mx/indicadores_tc.php?year=${targetYear}`;
+            const proxyUrl  = `https://api.allorigins.win/get?url=${encodeURIComponent(sourceUrl)}`;
+
+            const res  = await fetch(proxyUrl, { cache: 'no-store' });
+            const json = await res.json();
+            const html: string = json.contents;
+
+            if (!html) throw new Error('Empty response from proxy');
+
+            // --- Parse with DOMParser ---
+            const parser = new DOMParser();
+            const doc    = parser.parseFromString(html, 'text/html');
+
+            // Find the month-header row (contains 'Ene','Feb',...,'Dic')
+            const allRows = Array.from(doc.querySelectorAll('tr'));
+            let monthColIndex = -1;
+
+            for (const row of allRows) {
+                const cells = Array.from(row.querySelectorAll('td, th'));
+                for (let ci = 0; ci < cells.length; ci++) {
+                    if (cells[ci].textContent?.trim() === targetAbbr) {
+                        monthColIndex = ci;
+                        break;
+                    }
+                }
+                if (monthColIndex !== -1) break;
+            }
+
+            // Fallback: column index = month number (Ene=1, Feb=2, ...)
+            if (monthColIndex === -1) monthColIndex = targetMonth;
+
+            // Find the data row where first cell === target day (as zero-padded or plain int)
+            let found: string | null = null;
+            for (const row of allRows) {
+                const cells = Array.from(row.querySelectorAll('td'));
+                if (cells.length < 2) continue;
+
+                const dayText = cells[0].textContent?.replace(/\s/g, '') || '';
+                if (parseInt(dayText, 10) === targetDay) {
+                    const valueCell = cells[monthColIndex];
+                    if (valueCell) {
+                        // Strip HTML entities and whitespace; &nbsp; → ''
+                        const raw = valueCell.textContent?.replace(/\u00a0/g, '').replace(/[^\d.]/g, '').trim() || '';
+                        if (raw.length > 0) { found = raw; }
+                    }
+                    break; // stop after finding the day row
+                }
+            }
+
+            if (found) {
+                const num = parseFloat(found);
+                if (!isNaN(num) && num > 1) {
+                    setTcValor(num.toLocaleString('es-MX', { minimumFractionDigits: 4, maximumFractionDigits: 4 }));
+                } else {
+                    setTcError('Sin publicar para esta fecha');
+                }
+            } else {
+                setTcError('No publicado para esta fecha');
+            }
+        } catch (e) {
+            console.error('Tipo de cambio fetch error:', e);
+            setTcError('Error de conexión');
+        } finally {
+            setTcLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchTipoCambio(tcFecha);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -567,13 +663,48 @@ export const XMLInvoiceExtractor: React.FC = () => {
     return (
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50">
             {/* Header */}
-            <header className="bg-white border-b border-slate-200 px-8 py-5 flex-shrink-0 flex justify-between items-center z-10">
+            <header className="bg-white border-b border-slate-200 px-8 py-5 flex-shrink-0 flex flex-wrap items-center justify-between gap-4 z-10">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-3">
                         <FileText className="text-blue-600" size={28} />
                         XML Invoice Extractor (Targeted)
                     </h1>
                     <p className="text-slate-500 mt-1">Sube una carpeta XML para extraer facturas y guardarlas automáticamente en Firebase.</p>
+                </div>
+
+                {/* Tipo de Cambio Widget */}
+                <div className="flex items-center gap-3 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl px-5 py-3 shadow-sm">
+                    <div className="flex flex-col items-center justify-center w-10 h-10 bg-emerald-600 rounded-xl text-white flex-shrink-0">
+                        <span className="text-[9px] font-bold leading-none">MXN</span>
+                        <span className="text-[9px] font-bold leading-none opacity-70">/USD</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Tipo de Cambio DOF</span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <input
+                                type="date"
+                                value={tcFecha}
+                                onChange={e => { setTcFecha(e.target.value); fetchTipoCambio(e.target.value); }}
+                                className="bg-white border border-emerald-200 rounded-lg px-2 py-1 text-xs text-slate-700 focus:ring-2 focus:ring-emerald-400 outline-none cursor-pointer"
+                            />
+                            {tcLoading && (
+                                <span className="text-xs text-emerald-600 animate-pulse font-medium">Consultando...</span>
+                            )}
+                            {tcValor && !tcLoading && (
+                                <span className="text-xl font-black text-emerald-700 font-mono tracking-tight">$ {tcValor}</span>
+                            )}
+                            {tcError && !tcLoading && (
+                                <span className="text-xs text-red-500 font-medium">{tcError}</span>
+                            )}
+                            <button
+                                onClick={() => fetchTipoCambio(tcFecha)}
+                                title="Actualizar"
+                                className="p-1 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-100 rounded-lg transition-colors"
+                            >
+                                <RefreshCw size={14} className={tcLoading ? 'animate-spin' : ''} />
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -1037,48 +1168,50 @@ export const XMLInvoiceExtractor: React.FC = () => {
                         <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-white">
                             {queryConditions.map((condition, index) => (
                                 <div key={condition.id} className="flex gap-4 items-start animate-in slide-in-from-top-2 duration-300">
-                                    <div className="flex-1 grid grid-cols-3 gap-4 bg-slate-50 p-6 rounded-2xl border border-slate-100 relative group">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Column</label>
-                                            <select
-                                                value={condition.column}
-                                                onChange={(e) => updateQueryCondition(condition.id, { column: e.target.value })}
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-                                            >
-                                                <option value="partNo">No. Parte</option>
-                                                <option value="invoiceNo">Factura</option>
-                                                <option value="vin">VIN</option>
-                                                <option value="engine">Motor</option>
-                                                <option value="model">Modelo</option>
-                                                <option value="rawDescripcion">Descripción XML</option>
-                                                <option value="spanishDescription">Descripción ES</option>
-                                                <option value="uuid">UUID</option>
-                                            </select>
+                                    <div className="flex-1 flex flex-col gap-3 bg-slate-50 p-6 rounded-2xl border border-slate-100 relative group">
+                                        {/* Row 1: Column + Operator side by side */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Column</label>
+                                                <select
+                                                    value={condition.column}
+                                                    onChange={(e) => updateQueryCondition(condition.id, { column: e.target.value })}
+                                                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                                                >
+                                                    <option value="partNo">No. Parte</option>
+                                                    <option value="invoiceNo">Factura</option>
+                                                    <option value="vin">VIN</option>
+                                                    <option value="engine">Motor</option>
+                                                    <option value="model">Modelo</option>
+                                                    <option value="rawDescripcion">Descripción XML</option>
+                                                    <option value="spanishDescription">Descripción ES</option>
+                                                    <option value="uuid">UUID</option>
+                                                </select>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Operator</label>
+                                                <select
+                                                    value={condition.operator}
+                                                    onChange={(e) => updateQueryCondition(condition.id, { operator: e.target.value })}
+                                                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                                                >
+                                                    <option value="in list">In List (line separated)</option>
+                                                    <option value="equals">Equals</option>
+                                                    <option value="contains">Contains</option>
+                                                </select>
+                                            </div>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Operator</label>
-                                            <select
-                                                value={condition.operator}
-                                                onChange={(e) => updateQueryCondition(condition.id, { operator: e.target.value })}
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-                                            >
-                                                <option value="in list">In List (line separated)</option>
-                                                <option value="equals">Equals</option>
-                                                <option value="contains">Contains</option>
-                                            </select>
-                                        </div>
-
+                                        {/* Row 2: Values — full width spanning COLUMN + OPERATOR */}
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Values</label>
-                                            <div className="relative">
-                                                <textarea
-                                                    value={condition.values}
-                                                    onChange={(e) => updateQueryCondition(condition.id, { values: e.target.value })}
-                                                    placeholder="Enter values..."
-                                                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all min-h-[44px] max-h-32"
-                                                />
-                                            </div>
+                                            <textarea
+                                                value={condition.values}
+                                                onChange={(e) => updateQueryCondition(condition.id, { values: e.target.value })}
+                                                placeholder="Enter values..."
+                                                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all min-h-[80px] max-h-40 resize-y"
+                                            />
                                         </div>
 
                                         {queryConditions.length > 1 && (

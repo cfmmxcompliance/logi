@@ -570,13 +570,13 @@ export const AsignacionesDiarias: React.FC = () => {
                   {!isEmbarques && <input type="checkbox" checked={filteredData.length > 0 && selectedIds.size === filteredData.length} onChange={toggleSelectAll} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
               </th>
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.fecha'), 'fecha')}</th>
-              <th className="p-4 font-medium min-w-[100px]">{renderColumnHeader('Arribo', 'arribo')}</th>
-              <th className="p-4 font-medium min-w-[180px]">{renderColumnHeader('Comentarios Arribo', 'comentariosArribo')}</th>
-              <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader('No. Operación', 'numeroOperacion')}</th>
-              <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader('Caja', 'numeroCaja')}</th>
-              <th className="p-4 font-medium">{renderColumnHeader('Placas C', 'placasCaja')}</th>
-              <th className="p-4 font-medium min-w-[160px] text-blue-600 uppercase text-xs">{renderColumnHeader('Línea Transporte', 'transportLineId')}</th>
-              <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader('Driver ID', 'driverId')}</th>
+              <th className="p-4 font-medium min-w-[100px]">{renderColumnHeader(t('col.arribo'), 'arribo')}</th>
+              <th className="p-4 font-medium min-w-[180px]">{renderColumnHeader(t('col.comentariosArribo'), 'comentariosArribo')}</th>
+              <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.operacion'), 'numeroOperacion')}</th>
+              <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.caja'), 'numeroCaja')}</th>
+              <th className="p-4 font-medium">{renderColumnHeader(t('col.placascaja'), 'placasCaja')}</th>
+              <th className="p-4 font-medium min-w-[160px] text-blue-600 uppercase text-xs">{renderColumnHeader(t('col.lineatransporte'), 'transportLineId')}</th>
+              <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.driverid'), 'driverId')}</th>
               <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.driver'), 'nombreDriver')}</th>
               <th className="p-4 font-medium">{renderColumnHeader(t('col.placastracto'), 'placasTracto')}</th>
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.modelo'), 'modeloAsignado')}</th>

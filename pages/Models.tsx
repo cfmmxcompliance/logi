@@ -45,8 +45,8 @@ export const Models: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const modelColumns = [
-      'expo', 'modelo', 'pesoNetoUnitarioKg', 'pesoBrutoUnitarioKg', 'pesoBrutoUnitarioLb',
-      'volumenUnitario', 'valorUsdUnitario', 'ValAcero', 'objetoImpuestoSat', 'unidadMedidaSat', 
+      'expo', 'modelo', 'pesoNetoUnitarioKg', 'pesoBrutoUnitarioKg', 'pesoBrutoUnitarioLb', 'pesoNetoUnitarioLb',
+      'volumenUnitario', 'valorUsdUnitario', 'ValAcero', 'pesoAcero', 'objetoImpuestoSat', 'unidadMedidaSat', 
       'usoCfdiSat', 'claveProductoSat', 'fraccionArancelaria', 'HTSUS', 'unidadAduana', 
       'cantidadAduana', 'puAduana', 'clavePedimento', 'incoterm', 'materialPeligroso', 
       'claveMaterialPeligroso', 'tipoDeMateria', 'mid', 'testGroupNameNo'
@@ -128,9 +128,11 @@ export const Models: React.FC = () => {
         pesoNetoUnitarioKg: 0,
         pesoBrutoUnitarioKg: 0,
         pesoBrutoUnitarioLb: 0,
+        pesoNetoUnitarioLb: 0,
         volumenUnitario: 0,
         valorUsdUnitario: 0,
         ValAcero: 0,
+        pesoAcero: 0,
         cantidadAduana: 0,
         puAduana: 0,
         materialPeligroso: false
@@ -200,7 +202,7 @@ export const Models: React.FC = () => {
               const model: any = {};
               headers.forEach((h, idx) => {
                   let val: any = row[idx]?.trim() || '';
-                  if (['pesoNetoUnitarioKg', 'pesoBrutoUnitarioKg', 'pesoBrutoUnitarioLb', 'volumenUnitario', 'valorUsdUnitario', 'ValAcero', 'cantidadAduana', 'puAduana'].includes(h)) {
+                  if (['pesoNetoUnitarioKg', 'pesoBrutoUnitarioKg', 'pesoBrutoUnitarioLb', 'pesoNetoUnitarioLb', 'volumenUnitario', 'valorUsdUnitario', 'ValAcero', 'pesoAcero', 'cantidadAduana', 'puAduana'].includes(h)) {
                       val = val ? Number(val) : 0;
                   }
                   if (h === 'materialPeligroso') {
@@ -332,7 +334,7 @@ export const Models: React.FC = () => {
                 </td>
                 {modelColumns.map(col => {
                     let content: string | number = '';
-                    const isNumeric = ['pesoNetoUnitarioKg', 'pesoBrutoUnitarioKg', 'pesoBrutoUnitarioLb', 'volumenUnitario', 'valorUsdUnitario', 'ValAcero', 'cantidadAduana', 'puAduana'].includes(col);
+                    const isNumeric = ['pesoNetoUnitarioKg', 'pesoBrutoUnitarioKg', 'pesoBrutoUnitarioLb', 'pesoNetoUnitarioLb', 'volumenUnitario', 'valorUsdUnitario', 'ValAcero', 'pesoAcero', 'cantidadAduana', 'puAduana'].includes(col);
                     
                     if (isNumeric) {
                         const sum = filteredModels.reduce((acc, m) => acc + (Number((m as any)[col]) || 0), 0);
@@ -405,7 +407,7 @@ export const Models: React.FC = () => {
               {/* 2. Logística y Valores */}
               <fieldset className="border border-slate-200 p-5 rounded-xl bg-white shadow-sm">
                  <legend className="px-3 font-bold text-slate-700 text-sm tracking-wide">2. Dimensiones y Finanzas Unitarias</legend>
-                 <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mt-2">
+                 <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-4 mt-2">
                     <div>
                         <label className="block text-[11px] font-bold text-slate-500 mb-1">Peso Neto (kg)</label>
                         <input type="number" step="0.001" value={formData.pesoNetoUnitarioKg || ''} onChange={e => setFormData({...formData, pesoNetoUnitarioKg: Number(e.target.value)})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
@@ -417,6 +419,10 @@ export const Models: React.FC = () => {
                     <div>
                         <label className="block text-[11px] font-bold text-slate-500 mb-1">Peso Bruto (lb)</label>
                         <input type="number" step="0.001" value={formData.pesoBrutoUnitarioLb || ''} onChange={e => setFormData({...formData, pesoBrutoUnitarioLb: Number(e.target.value)})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+                    </div>
+                    <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1">Peso Neto (lb)</label>
+                        <input type="number" step="0.001" value={formData.pesoNetoUnitarioLb || ''} onChange={e => setFormData({...formData, pesoNetoUnitarioLb: Number(e.target.value)})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
                     </div>
                     <div>
                         <label className="block text-[11px] font-bold text-slate-500 mb-1">Volumen (m3)</label>
@@ -435,6 +441,10 @@ export const Models: React.FC = () => {
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
                             <input type="number" step="0.01" value={formData.ValAcero || ''} onChange={e => setFormData({...formData, ValAcero: Number(e.target.value)})} className="w-full pl-7 pr-2 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold text-blue-700 bg-blue-50" />
                         </div>
+                    </div>
+                    <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1">Peso Acero (kg)</label>
+                        <input type="number" step="0.001" value={formData.pesoAcero || ''} onChange={e => setFormData({...formData, pesoAcero: Number(e.target.value)})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
                     </div>
                  </div>
               </fieldset>

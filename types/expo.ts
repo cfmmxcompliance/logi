@@ -5,9 +5,11 @@ export interface ExpoModel {
   pesoNetoUnitarioKg: number;
   pesoBrutoUnitarioKg: number;
   pesoBrutoUnitarioLb: number;
+  pesoNetoUnitarioLb: number;
   volumenUnitario: number;
   valorUsdUnitario: number;
   ValAcero?: number;
+  pesoAcero?: number;           // "Peso unit Net / Gross Acero" del CSV
 
   // 2. Datos de Impuestos y Facturación (SAT / CFDI)
   objetoImpuestoSat?: string;

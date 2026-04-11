@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FileDown, UploadCloud, Truck, FileCheck, CheckCircle2, XCircle, ChevronRight, PackageOpen, Info, Anchor, Calendar, DatabaseZap, AlertTriangle, Download, RotateCcw, Container } from 'lucide-react';
+import { FileDown, UploadCloud, Truck, FileCheck, CheckCircle2, XCircle, ChevronRight, PackageOpen, Info, Anchor, Calendar, DatabaseZap, AlertTriangle, Download, RotateCcw, Container, Save, Loader2 } from 'lucide-react';
+import { capturaService } from '../services/capturaService';
 import { shippingService } from '../services/shippingService';
 import { expoService } from '../services/expoService';
 import { asignacionCajaService } from '../services/asignacionCajaService';
@@ -35,6 +36,7 @@ export const CaptureModule: React.FC = () => {
   const [vinPayload, setVinPayload] = useState<any[]>([]);
   const [enrichedPayload, setEnrichedPayload] = useState<any[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle'|'saving'|'saved'|'error'>('idle');
 
   // END OF STATE
 
@@ -679,22 +681,74 @@ export const CaptureModule: React.FC = () => {
                    </div>
                  </div>
 
-                 {/* CTA de descarga */}
-                 <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex items-center gap-4">
-                   <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-                     <FileCheck size={24} className="text-emerald-600" />
+                 {/* CTA dual: guardar + exportar */}
+                 <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                   <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                     <div>
+                       <h4 className="font-bold text-white flex items-center gap-2">
+                         <FileCheck size={18} className="text-emerald-400" />
+                         Layout Aduanal Generado — {totalUnits} vehículos · {containers.length} contenedor(es)
+                       </h4>
+                       <p className="text-slate-400 text-xs mt-0.5">
+                         Guarda en el sistema para consulta posterior, o descarga el CSV para tu agente de customs.
+                       </p>
+                     </div>
+                     <div className="flex gap-3 flex-shrink-0">
+                       {/* Guardar en Sistema */}
+                       <button
+                         onClick={async () => {
+                           setSaveStatus('saving');
+                           try {
+                             await capturaService.save({
+                               invoiceNo:     infoEnvio.invoiceNo,
+                               cfpContractNo: infoEnvio.cfpContractNo,
+                               totalUnits,
+                               totalValUsd,
+                               totalPesoBruto: totalBruto,
+                               totalPesoNeto:  totalNeto,
+                               containers: containers as string[],
+                               vins: enrichedPayload,
+                               status: 'final',
+                             });
+                             setSaveStatus('saved');
+                           } catch(e) {
+                             console.error(e);
+                             setSaveStatus('error');
+                           }
+                         }}
+                         disabled={saveStatus === 'saving' || saveStatus === 'saved'}
+                         className={`flex items-center gap-2 font-bold px-5 py-3 rounded-xl transition-colors flex-shrink-0 ${
+                           saveStatus === 'saved'  ? 'bg-emerald-600 text-white cursor-default' :
+                           saveStatus === 'error'  ? 'bg-red-600 text-white hover:bg-red-700' :
+                           saveStatus === 'saving' ? 'bg-slate-500 text-white cursor-wait' :
+                           'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25'
+                         }`}>
+                         {saveStatus === 'saving' ? <Loader2 size={18} className="animate-spin" /> :
+                          saveStatus === 'saved'   ? <CheckCircle2 size={18} /> :
+                          saveStatus === 'error'   ? <XCircle size={18} /> :
+                          <Save size={18} />}
+                         {saveStatus === 'saving' ? 'Guardando...' :
+                          saveStatus === 'saved'   ? '¡Guardado!' :
+                          saveStatus === 'error'   ? 'Error — reintentar' :
+                          'Guardar en Sistema'}
+                       </button>
+                       {/* CSV */}
+                       <button onClick={exportLayoutCSV}
+                         className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3 rounded-xl transition-colors shadow-lg shadow-emerald-500/25 flex-shrink-0">
+                         <Download size={18} /> Descargar CSV
+                       </button>
+                     </div>
                    </div>
-                   <div className="flex-1">
-                     <h4 className="font-bold text-emerald-800">Layout Aduanal Generado</h4>
-                     <p className="text-emerald-700 text-sm mt-0.5">
-                       {totalUnits} vehículos procesados en {containers.length} contenedor(es). Descarga el CSV para presentarlo a tu agente de customs.
-                     </p>
-                   </div>
-                   <button onClick={exportLayoutCSV}
-                     className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3 rounded-xl transition-colors shadow-lg shadow-emerald-500/25 flex-shrink-0">
-                     <Download size={18} /> Descargar CSV
-                   </button>
+                   {saveStatus === 'saved' && (
+                     <div className="bg-emerald-50 border-t border-emerald-200 px-6 py-3 flex items-center gap-3 text-sm">
+                       <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0" />
+                       <span className="text-emerald-800 font-medium">
+                         Captura <strong>{infoEnvio.invoiceNo}</strong> guardada exitosamente. Puedes consultarla en <strong>Motor de Captura → Historial</strong>.
+                       </span>
+                     </div>
+                   )}
                  </div>
+
                </div>
              );
            })()}

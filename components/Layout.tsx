@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck, Globe, Activity, FolderOpen,
   Navigation,
-  Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles, CalendarCheck } from 'lucide-react';
+  Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles, CalendarCheck, History } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ConnectionStatus } from './ConnectionStatus.tsx';
 import { UserRole } from '../types.ts';
@@ -140,7 +140,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
           {/* Macro Module -> Admin y Expo solamente */}
           {[UserRole.ADMIN, UserRole.EXPO].includes(user?.role as UserRole) && (
+            <>
               <SidebarItem to="/macro" icon={PackageOpen} label={sidebarOpen ? "Motor de Captura (Macro)" : ""} />
+              <SidebarItem to="/historial-capturas" icon={History} label={sidebarOpen ? "Historial de Capturas" : ""} />
+            </>
           )}
 
           {/* Operational Transport -> Admin, Editor, Controller, Carrier, Embarques (NOT Agent/Expo) */}

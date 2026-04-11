@@ -28,6 +28,7 @@ import { Cajas } from '../pages/Cajas.tsx';
 import { AsignacionesDiarias } from '../pages/AsignacionesDiarias.tsx';
 import { Apendice10 } from '../pages/Apendice10.tsx';
 import { CaptureModule } from '../pages/CaptureModule.tsx';
+import { HistorialCapturas } from '../pages/HistorialCapturas.tsx';
 import { ShippingSchedules } from '../pages/ShippingSchedules.tsx';
 import { PricingMatrix } from '../pages/PricingMatrix.tsx';
 import CCPBuilder from '../pages/CCPBuilder.tsx';
@@ -94,7 +95,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Expo constraints
     if (user?.role === UserRole.EXPO) {
-        const allowed = ['/models', '/pricing-matrix', '/shipping-schedules', '/asignaciones-diarias', '/daily-van-assignment', '/xml-ci', '/xml-invoices', '/macro'];
+        const allowed = ['/models', '/pricing-matrix', '/shipping-schedules', '/asignaciones-diarias', '/daily-van-assignment', '/xml-ci', '/xml-invoices', '/macro', '/historial-capturas'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/daily-van-assignment" replace />;
     }
 
@@ -178,6 +179,7 @@ const AppContent = () => {
             <Route path="/cajas" element={<ProtectedRoute><Cajas /></ProtectedRoute>} />
             <Route path="/asignaciones-diarias" element={<ProtectedRoute><AsignacionesDiarias /></ProtectedRoute>} />
             <Route path="/macro" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO]}><CaptureModule /></ProtectedRoute>} />
+            <Route path="/historial-capturas" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO]}><HistorialCapturas /></ProtectedRoute>} />
             <Route path="/apendice10" element={<ProtectedRoute><Apendice10 /></ProtectedRoute>} />
             <Route path="/carriers" element={<ProtectedRoute><Carriers /></ProtectedRoute>} />
             <Route path="/transport-lines" element={<ProtectedRoute><TransportLines /></ProtectedRoute>} />

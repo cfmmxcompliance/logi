@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { FileDown, UploadCloud, Truck, FileCheck, CheckCircle2, XCircle, ChevronRight, PackageOpen, Info, Anchor, Calendar, DatabaseZap, AlertTriangle, Download, RotateCcw, Container, Save, Loader2 } from 'lucide-react';
 import { capturaService } from '../services/capturaService';
+import { CaptureDocumentTabs } from './CaptureDocumentTabs';
 import { shippingService } from '../services/shippingService';
 import { expoService } from '../services/expoService';
 import { asignacionCajaService } from '../services/asignacionCajaService';
@@ -680,6 +681,9 @@ export const CaptureModule: React.FC = () => {
                      </table>
                    </div>
                  </div>
+
+                 {/* Pestañas de documentos */}
+                 <CaptureDocumentTabs enrichedPayload={enrichedPayload} infoEnvio={infoEnvio} />
 
                  {/* CTA dual: guardar + exportar */}
                  <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">

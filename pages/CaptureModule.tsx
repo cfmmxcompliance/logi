@@ -3,9 +3,11 @@ import { FileDown, UploadCloud, Truck, FileCheck, CheckCircle2, XCircle, Chevron
 import { shippingService } from '../services/shippingService';
 import { expoService } from '../services/expoService';
 import { asignacionCajaService } from '../services/asignacionCajaService';
+import { selloService } from '../services/selloService';
 import { ShippingModel } from '../types/shipping';
 import { ExpoModel } from '../types/expo';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
+import { SelloRecord } from '../types';
 
 type CaptureStep = 'INFO_ENVIO' | 'VIN_LIST' | 'LOGISTICA' | 'LAYOUT_ADUANAL';
 
@@ -14,11 +16,13 @@ export const CaptureModule: React.FC = () => {
   const [schedules, setSchedules] = useState<ShippingModel[]>([]);
   const [boms, setBoms] = useState<ExpoModel[]>([]);
   const [asignaciones, setAsignaciones] = useState<AsignacionCajaModel[]>([]);
+  const [sellos, setSellos] = useState<SelloRecord[]>([]);
 
   useEffect(() => {
      shippingService.getAllSchedules().then(setSchedules).catch(console.error);
      expoService.getAllExpos().then(setBoms).catch(console.error);
      asignacionCajaService.getAllAsignaciones().then(setAsignaciones).catch(console.error);
+     selloService.getAllSellos().then(setSellos).catch(console.error);
   }, []);
 
   // INFO ENVÍO STATE
@@ -296,6 +300,7 @@ export const CaptureModule: React.FC = () => {
                                    <tr>
                                       <th className="px-4 py-3">Contenedor</th>
                                       <th className="px-4 py-3">Sello</th>
+                                      <th className="px-4 py-3 text-center">Sello (Match)</th>
                                       <th className="px-4 py-3 text-center">Asig. Caja (Match)</th>
                                       <th className="px-4 py-3">Outdate</th>
                                       <th className="px-4 py-3">VIN</th>
@@ -313,10 +318,25 @@ export const CaptureModule: React.FC = () => {
                                 <tbody className="divide-y divide-slate-100">
                                    {vinPayload.slice(0, 100).map((v, i) => {
                                        const isAsigMatch = asignaciones.some(a => String(a.numeroCaja).trim().toUpperCase() === String(v.containerNo).trim().toUpperCase() && String(a.fecha).trim() === String(v.outDate).trim());
+                                       const isSelloMatch = !!v.sealNo && sellos.some(s =>
+                                         String(s.selloAsignado).trim().toUpperCase() === String(v.sealNo).trim().toUpperCase() &&
+                                         String(s.numeroCaja).trim().toUpperCase() === String(v.containerNo).trim().toUpperCase()
+                                       );
                                        return (
                                        <tr key={i} className="hover:bg-white text-slate-700">
                                           <td className="px-4 py-2 font-mono text-cyan-700">{v.containerNo}</td>
                                           <td className="px-4 py-2 font-mono text-slate-500">{v.sealNo || '—'}</td>
+                                          <td className="px-4 py-2 text-center">
+                                              {isSelloMatch ? (
+                                                  <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mx-auto" title={"Sello " + v.sealNo + " validado en Firebase"}>
+                                                      <CheckCircle2 size={12} />
+                                                  </div>
+                                              ) : (
+                                                  <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center text-red-600 mx-auto" title={v.sealNo ? "Sello " + v.sealNo + " no encontrado" : "Sin sello en Excel"}>
+                                                      <XCircle size={12} />
+                                                  </div>
+                                              )}
+                                          </td>
                                           <td className="px-4 py-2 text-center">
                                               {isAsigMatch ? (
                                                   <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mx-auto" title="Caja asignada correctamente">
@@ -355,7 +375,7 @@ export const CaptureModule: React.FC = () => {
                                    })}
                                    {vinPayload.length > 100 && (
                                        <tr>
-                                           <td colSpan={14} className="text-center py-4 text-slate-400 font-medium">... y {vinPayload.length - 100} vehículos más</td>
+                                           <td colSpan={15} className="text-center py-4 text-slate-400 font-medium">... y {vinPayload.length - 100} vehículos más</td>
                                        </tr>
                                    )}
                                 </tbody>

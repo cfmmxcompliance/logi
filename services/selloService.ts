@@ -6,6 +6,17 @@ import { SelloRecord } from '../types.ts';
 const COLLECTION_NAME = 'sellos';
 
 export const selloService = {
+  async getAllSellos(): Promise<SelloRecord[]> {
+    if (!db) return [];
+    try {
+      const snapshot = await getDocs(collection(db, COLLECTION_NAME));
+      return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as SelloRecord));
+    } catch (error) {
+      console.error('Error fetching all sellos:', error);
+      return [];
+    }
+  },
+
   async getSellosByDate(fecha: string): Promise<SelloRecord[]> {
     if (!db) return [];
     try {

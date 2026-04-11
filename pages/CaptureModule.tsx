@@ -307,32 +307,36 @@ export const CaptureModule: React.FC = () => {
                  ) : (
                      <div className="w-full flex flex-col h-full items-start justify-start">
                          {(() => {
-                             const hasMismatch = vinPayload.some(v => !v.orderNo || !infoEnvio.cfpContractNo || v.orderNo.trim().toUpperCase() !== infoEnvio.cfpContractNo.trim().toUpperCase());
-                             
-                             return (
-                                 <>
-                                     <div className="flex justify-between items-center w-full mb-6 py-4 border-b border-emerald-100">
-                                         <div className="flex gap-4 items-center">
-                                             <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
-                                                 <FileCheck size={24} />
-                                             </div>
-                                             <h2 className="text-2xl font-bold text-slate-800">
-                                                 {vinPayload.length} Vehículos Extraídos
-                                             </h2>
-                                         </div>
-                                         <div className="flex gap-3">
-                                             <button onClick={() => setVinPayload([])} className="px-5 py-2 border border-slate-300 rounded-lg text-slate-600 font-bold hover:bg-slate-50">Descartar Archivo</button>
-                                             
-                                             {hasMismatch ? (
-                                                 <>
-                                                     <button onClick={() => setCurrentStep('INFO_ENVIO')} className="px-5 py-2 border border-orange-200 text-orange-600 rounded-lg font-bold hover:bg-orange-50">Corregir Cabecera</button>
-                                                     <button disabled className="bg-slate-200 text-slate-400 px-5 py-2 rounded-lg font-bold flex items-center gap-2 cursor-not-allowed" title="Hay discrepancias en los contratos">Bloqueado</button>
-                                                 </>
-                                             ) : (
-                                                 <button onClick={generateEnrichedPayload} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-700 flex items-center gap-2">Motor de Cruce <ChevronRight size={18}/></button>
-                                             )}
-                                         </div>
-                                     </div>
+                              // Solo bloquear si el usuario ingresó un contrato Y hay discrepancia
+                              const hasContractMismatch = !!infoEnvio.cfpContractNo &&
+                                vinPayload.some(v => !v.orderNo || v.orderNo.trim().toUpperCase() !== infoEnvio.cfpContractNo.trim().toUpperCase());
+                              
+                              return (
+                                  <>
+                                      <div className="flex justify-between items-center w-full mb-6 py-4 border-b border-emerald-100">
+                                          <div className="flex gap-4 items-center">
+                                              <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
+                                                  <FileCheck size={24} />
+                                              </div>
+                                              <h2 className="text-2xl font-bold text-slate-800">
+                                                  {vinPayload.length} Vehículos Extraídos
+                                              </h2>
+                                          </div>
+                                          <div className="flex gap-3">
+                                              <button onClick={() => setVinPayload([])} className="px-5 py-2 border border-slate-300 rounded-lg text-slate-600 font-bold hover:bg-slate-50">Descartar Archivo</button>
+                                              
+                                              {hasContractMismatch ? (
+                                                  <>
+                                                      <button onClick={() => setCurrentStep('INFO_ENVIO')} className="px-5 py-2 border border-orange-200 text-orange-600 rounded-lg font-bold hover:bg-orange-50">Corregir Cabecera</button>
+                                                      <button onClick={generateEnrichedPayload} className="bg-amber-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg shadow-amber-400/30 hover:bg-amber-600 flex items-center gap-2" title="Hay discrepancias en los contratos, pero puedes continuar">
+                                                        Continuar con diferencias <ChevronRight size={18}/>
+                                                      </button>
+                                                  </>
+                                              ) : (
+                                                  <button onClick={generateEnrichedPayload} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-700 flex items-center gap-2">Motor de Cruce <ChevronRight size={18}/></button>
+                                              )}
+                                          </div>
+                                      </div>
 
                          <div className="w-full bg-slate-50 border border-slate-200 rounded-xl overflow-hidden max-h-[350px] overflow-y-auto">
                              <table className="w-full text-left text-xs whitespace-nowrap">

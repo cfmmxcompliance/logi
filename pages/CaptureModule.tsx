@@ -499,12 +499,24 @@ export const CaptureModule: React.FC = () => {
                  )}
 
                  <div className="mt-auto flex justify-end items-center pt-6 border-t border-slate-100 gap-4">
-                     <button
-                       onClick={() => setCurrentStep('LAYOUT_ADUANAL')}
-                       disabled={enrichedPayload.some(v => !v.bomFound)}
-                       className="bg-green-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-green-500/30 hover:bg-green-700 transition-all flex items-center gap-2 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed">
-                        Validar Entorno Aduanal <ChevronRight size={18} />
-                     </button>
+                     {enrichedPayload.some(v => !v.bomFound) ? (
+                       <>
+                         <span className="text-xs text-orange-600 font-semibold flex items-center gap-1.5 mr-2">
+                           <AlertTriangle size={14}/> {enrichedPayload.filter(v => !v.bomFound).length} vehículos sin BOM — los campos de aranceles quedarán vacíos
+                         </span>
+                         <button
+                           onClick={() => setCurrentStep('LAYOUT_ADUANAL')}
+                           className="bg-amber-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-amber-400/30 hover:bg-amber-600 transition-all flex items-center gap-2">
+                           Continuar con diferencias <ChevronRight size={18} />
+                         </button>
+                       </>
+                     ) : (
+                       <button
+                         onClick={() => setCurrentStep('LAYOUT_ADUANAL')}
+                         className="bg-green-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-green-500/30 hover:bg-green-700 transition-all flex items-center gap-2">
+                          Validar Entorno Aduanal <ChevronRight size={18} />
+                       </button>
+                     )}
                  </div>
              </div>
           )}

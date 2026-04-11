@@ -11,7 +11,7 @@ import { DriverModel } from '../types/driver';
 import { CarrierModel } from '../types/carrier';
 import { TransportLineModel } from '../types/transportLine';
 import { LiberacionRecord } from '../types';
-import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
 import { MultiSearchableComboBox } from '../components/MultiSearchableComboBox';
@@ -34,6 +34,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [importErrors, setImportErrors] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<Partial<AsignacionCajaModel>>({ 
     fecha: new Date().toISOString().split('T')[0],
@@ -552,6 +553,16 @@ export const AsignacionesDiarias: React.FC = () => {
 
              <button onClick={exportCSV} className="px-4 py-2 bg-white text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-300 transition-colors shadow-sm flex items-center text-sm font-medium">
                 <Download size={16} className="mr-2 text-slate-500" /> Exportar
+             </button>
+
+             <button
+               onClick={async () => { setIsRefreshing(true); await loadData(); setIsRefreshing(false); }}
+               disabled={isRefreshing}
+               className="px-3 py-2 bg-white text-slate-700 hover:bg-emerald-50 rounded-lg border border-slate-300 hover:border-emerald-400 transition-colors shadow-sm flex items-center text-sm font-medium disabled:opacity-60"
+               title="Actualizar datos sin recargar la página"
+             >
+               <RefreshCw size={16} className={`mr-1.5 text-emerald-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+               {isRefreshing ? 'Actualizando...' : 'Actualizar'}
              </button>
 
              {!isEmbarques && (

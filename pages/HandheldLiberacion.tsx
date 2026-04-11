@@ -431,9 +431,6 @@ export const HandheldLiberacion = () => {
                             <span>{caja.numeroCaja}</span>
                         </div>
                         <div className="flex gap-2">
-                             <span className="bg-slate-700/50 text-slate-300 text-xs px-2.5 py-1 rounded-md font-medium border border-slate-600/50 shrink-0">
-                                ECO {caja.tracto}
-                             </span>
                              <span className="bg-amber-900/30 text-amber-500/90 text-xs px-2.5 py-1 rounded-md font-medium border border-amber-800/50 truncate">
                                 {caja.transportista}
                              </span>
@@ -441,47 +438,49 @@ export const HandheldLiberacion = () => {
                         
                         {yaLiberada && (
                             <div className="mt-3 bg-emerald-900/30 p-2.5 rounded-lg border border-emerald-800/50 flex flex-col gap-1">
-                                 <span className="text-[10px] text-emerald-400 uppercase font-bold tracking-widest">Sello Validado</span>
+                                 <div className="flex items-center justify-between">
+                                     <span className="text-[10px] text-emerald-400 uppercase font-bold tracking-widest">Sello Validado</span>
+                                     <div className="flex items-center gap-2">
+                                         <button
+                                            type="button" 
+                                            onClick={(e) => { 
+                                                e.stopPropagation();
+                                                if (lib.fotos?.cajaUrl) setPreviewUrl(lib.fotos.cajaUrl.replace('/view', '/preview'));
+                                            }}
+                                            className={`p-2.5 bg-slate-800 rounded-xl border transition-colors ${lib.fotos?.cajaUrl ? 'text-blue-400 hover:text-white border-slate-700 hover:border-blue-500' : 'text-slate-600 border-slate-800 cursor-not-allowed opacity-40'}`}
+                                            title="Ver foto Caja/Placas"
+                                            disabled={!lib.fotos?.cajaUrl}
+                                          >
+                                              <Car size={28} />
+                                          </button>
+                                          <button
+                                            type="button" 
+                                            onClick={(e) => { 
+                                                e.stopPropagation();
+                                                if (lib.fotos?.puertasUrl) setPreviewUrl(lib.fotos.puertasUrl.replace('/view', '/preview'));
+                                            }}
+                                            className={`p-2.5 bg-slate-800 rounded-xl border transition-colors ${lib.fotos?.puertasUrl ? 'text-orange-400 hover:text-white border-slate-700 hover:border-orange-500' : 'text-slate-600 border-slate-800 cursor-not-allowed opacity-40'}`}
+                                            title="Ver foto Puertas"
+                                            disabled={!lib.fotos?.puertasUrl}
+                                          >
+                                              <DoorOpen size={28} />
+                                          </button>
+                                          <button
+                                            type="button" 
+                                            onClick={(e) => { 
+                                                e.stopPropagation();
+                                                if (lib.fotos?.selloUrl) setPreviewUrl(lib.fotos.selloUrl.replace('/view', '/preview'));
+                                            }}
+                                            className={`p-2.5 bg-slate-800 rounded-xl border transition-colors ${lib.fotos?.selloUrl ? 'text-emerald-400 hover:text-white border-slate-700 hover:border-emerald-500' : 'text-slate-600 border-slate-800 cursor-not-allowed opacity-40'}`}
+                                            title="Ver foto Sello Asignado"
+                                            disabled={!lib.fotos?.selloUrl}
+                                          >
+                                              <ShieldCheck size={28} />
+                                          </button>
+                                     </div>
+                                 </div>
                                  <div className="font-mono text-lg text-white font-bold">{lib.selloValidado}</div>
                                  <span className="text-[10px] text-emerald-500/70 border-t border-emerald-800/50 pt-1 mt-1 block">{lib.fechaHoraRegistro}</span>
-                                 
-                                 {/* BOTONES DE AUDITORÍA */}
-                                 <div className="flex items-center gap-2 mt-2 pt-2 border-t border-emerald-800/30">
-                                     <span className="text-[10px] text-emerald-500/80 uppercase font-bold tracking-widest flex-1">Evidencias:</span>
-                                     <button
-                                        type="button" 
-                                        onClick={(e) => { 
-                                            e.stopPropagation();
-                                            if (lib.fotos?.cajaUrl) setPreviewUrl(lib.fotos.cajaUrl.replace('/view', '/preview'));
-                                        }}
-                                        className="p-1.5 bg-slate-800 rounded-md text-emerald-400 hover:text-white border border-slate-700 hover:border-emerald-500 transition-colors"
-                                        title="Ver foto Caja/Placas"
-                                      >
-                                          <Car size={16} />
-                                      </button>
-                                      <button
-                                        type="button" 
-                                        onClick={(e) => { 
-                                            e.stopPropagation();
-                                            if (lib.fotos?.puertasUrl) setPreviewUrl(lib.fotos.puertasUrl.replace('/view', '/preview'));
-                                        }}
-                                        className="p-1.5 bg-slate-800 rounded-md text-emerald-400 hover:text-white border border-slate-700 hover:border-emerald-500 transition-colors"
-                                        title="Ver foto Puertas"
-                                      >
-                                          <DoorOpen size={16} />
-                                      </button>
-                                      <button
-                                        type="button" 
-                                        onClick={(e) => { 
-                                            e.stopPropagation();
-                                            if (lib.fotos?.selloUrl) setPreviewUrl(lib.fotos.selloUrl.replace('/view', '/preview'));
-                                        }}
-                                        className="p-1.5 bg-slate-800 rounded-md text-emerald-400 hover:text-white border border-slate-700 hover:border-emerald-500 transition-colors"
-                                        title="Ver foto Sello Asignado"
-                                      >
-                                          <ShieldCheck size={16} />
-                                      </button>
-                                 </div>
                             </div>
                         )}
                     </div>
@@ -534,7 +533,6 @@ export const HandheldLiberacion = () => {
                                 <div className="flex items-center gap-2 text-sm font-bold text-slate-300">
                                    <Car size={18} className="text-blue-400"/> 1. Foto de Placas/Caja
                                 </div>
-                                {fotoCajaFile && <CheckCircle size={18} className="text-blue-500" />}
                              </div>
                              
                              <button
@@ -557,7 +555,6 @@ export const HandheldLiberacion = () => {
                                 <div className="flex items-center gap-2 text-sm font-bold text-slate-300">
                                    <DoorOpen size={18} className="text-orange-400"/> 2. Foto de Puertas
                                 </div>
-                                {fotoPuertasFile && <CheckCircle size={18} className="text-orange-500" />}
                              </div>
                              
                              <button
@@ -580,7 +577,6 @@ export const HandheldLiberacion = () => {
                                 <div className="flex items-center gap-2 text-sm font-bold text-slate-300">
                                    <ShieldCheck size={18} className="text-emerald-400"/> 3. Foto de Sello Físico
                                 </div>
-                                {fotoSelloFile && <CheckCircle size={18} className="text-emerald-500" />}
                              </div>
                              
                              <button

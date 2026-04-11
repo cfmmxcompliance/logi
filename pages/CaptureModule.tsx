@@ -40,7 +40,13 @@ export const CaptureModule: React.FC = () => {
 
   const generateEnrichedPayload = () => {
       const enriched = vinPayload.map(v => {
-          const matchedBom = boms.find(b => String(b.modelo).trim().toUpperCase() === String(v.modelo).trim().toUpperCase());
+          // Smart match: exact OR partial (BOM stores full name "1000CC UTV CM1000UZ-8K",
+          // VIN List stores short code "CM1000UZ-8K" → bidirectional contains)
+          const vinModelo = String(v.modelo).trim().toUpperCase();
+          const matchedBom = boms.find(b => {
+              const bomModelo = String(b.modelo).trim().toUpperCase();
+              return bomModelo === vinModelo || bomModelo.includes(vinModelo) || vinModelo.includes(bomModelo);
+          });
           return {
               ...v,
               taric:           matchedBom?.fraccionArancelaria || '',

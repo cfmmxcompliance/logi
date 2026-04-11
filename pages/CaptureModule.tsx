@@ -98,16 +98,19 @@ export const CaptureModule: React.FC = () => {
                           }
 
                           parsedRecords.push({
-                              containerNo: model.containerno || model.container || '',
-                              outDate: parsedOutdate,
-                              sealNo: model.sealno || model.seal || '',
-                              modelo: model.modelo || model.model || '',
-                              vin: vinStr,
-                              engine: model.engineno || model.engine || '',
-                              color: model.color || '',
-                              orderNo: model.orderno || model.order || '',
-                              productNo: model.productno || model.product || '',
+                              containerNo:    model.containerno || model.container || '',
+                              outDate:        parsedOutdate,
+                              sealNo:         model.sealno || model.seal || '',
+                              ref:            model.ref || '',
+                              modelo:         model.modelo || model.model || '',
+                              vin:            vinStr,
+                              engine:         model.engineno || model.engine || '',
+                              color:          model.color || '',
+                              orderNo:        model.orderno || model.order || '',
+                              productNo:      model.productno || model.product || '',
                               productionDate: model.productiondate || '',
+                              remarks:        model.remarks || model.remark || '',
+                              states:         model.states || model.state || '',
                           });
                       }
                   }
@@ -292,12 +295,18 @@ export const CaptureModule: React.FC = () => {
                                 <thead className="bg-slate-100 border-b border-slate-200 text-slate-500 font-bold uppercase sticky top-0">
                                    <tr>
                                       <th className="px-4 py-3">Contenedor</th>
+                                      <th className="px-4 py-3">Sello</th>
                                       <th className="px-4 py-3 text-center">Asig. Caja (Match)</th>
                                       <th className="px-4 py-3">Outdate</th>
                                       <th className="px-4 py-3">VIN</th>
+                                      <th className="px-4 py-3">Product No.</th>
                                       <th className="px-4 py-3">Modelo</th>
                                       <th className="px-4 py-3">Color</th>
                                       <th className="px-4 py-3">Motor</th>
+                                      <th className="px-4 py-3">Fecha Prod.</th>
+                                      <th className="px-4 py-3">Ref</th>
+                                      <th className="px-4 py-3">Remarks</th>
+                                      <th className="px-4 py-3">States</th>
                                       <th className="px-4 py-3">CFP Order (Match)</th>
                                    </tr>
                                 </thead>
@@ -307,6 +316,7 @@ export const CaptureModule: React.FC = () => {
                                        return (
                                        <tr key={i} className="hover:bg-white text-slate-700">
                                           <td className="px-4 py-2 font-mono text-cyan-700">{v.containerNo}</td>
+                                          <td className="px-4 py-2 font-mono text-slate-500">{v.sealNo || '—'}</td>
                                           <td className="px-4 py-2 text-center">
                                               {isAsigMatch ? (
                                                   <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mx-auto" title="Caja asignada correctamente">
@@ -320,9 +330,14 @@ export const CaptureModule: React.FC = () => {
                                           </td>
                                           <td className="px-4 py-2 font-mono text-slate-500">{v.outDate}</td>
                                           <td className="px-4 py-2 font-mono font-bold">{v.vin}</td>
+                                          <td className="px-4 py-2 font-mono text-indigo-700 font-semibold">{v.productNo || '—'}</td>
                                           <td className="px-4 py-2">{v.modelo}</td>
                                           <td className="px-4 py-2">{v.color}</td>
                                           <td className="px-4 py-2">{v.engine}</td>
+                                          <td className="px-4 py-2 font-mono text-xs text-slate-400">{v.productionDate || '—'}</td>
+                                          <td className="px-4 py-2">{v.ref || '—'}</td>
+                                          <td className="px-4 py-2">{v.remarks || '—'}</td>
+                                          <td className="px-4 py-2">{v.states || '—'}</td>
                                           <td className="px-4 py-2 flex items-center justify-between">
                                               <span className="text-slate-500 mr-2">{v.orderNo}</span>
                                               {v.orderNo && infoEnvio.cfpContractNo && v.orderNo.trim().toUpperCase() === infoEnvio.cfpContractNo.trim().toUpperCase() ? (
@@ -340,7 +355,7 @@ export const CaptureModule: React.FC = () => {
                                    })}
                                    {vinPayload.length > 100 && (
                                        <tr>
-                                           <td colSpan={8} className="text-center py-4 text-slate-400 font-medium">... y {vinPayload.length - 100} vehículos más</td>
+                                           <td colSpan={14} className="text-center py-4 text-slate-400 font-medium">... y {vinPayload.length - 100} vehículos más</td>
                                        </tr>
                                    )}
                                 </tbody>

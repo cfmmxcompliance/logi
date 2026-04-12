@@ -1,13 +1,25 @@
 /**
  * CaptureDocumentTabs.tsx
  * Genera los 9 documentos del motor de captura con formato EXACTO al Excel LOUT-8LK MACROS 2.7
- * Cada pestaña → CSV que replica columna por columna el sheet correspondiente.
+ * Los botones Descargar producen archivos .xlsx con fuente, anchos, bordes y merges exactos.
+ * La vista previa en pantalla usa tablas HTML (misma estructura de datos).
  */
 import React, { useState, useMemo } from 'react';
 import {
   Download, FileText, FileCheck, Package, Truck, ClipboardList,
   Receipt, PackageOpen, Map, Table2, ChevronLeft, ChevronRight
 } from 'lucide-react';
+import {
+  downloadWB,
+  generateCfmotoXLSX,
+  generateProformaXLSX,
+  generateBOLXLSX,
+  generateInstruccionesXLSX,
+  generateCfcCfpXLSX,
+  generateInCfpXLSX,
+  generatePlCfpXLSX,
+  generateCCPXLSX,
+} from '../services/excelGeneratorService';
 
 // ─── Constantes estáticas CFMOTO ─────────────────────────────────────────
 const C = {
@@ -789,9 +801,9 @@ export const CaptureDocumentTabs: React.FC<Props> = ({ enrichedPayload, infoEnvi
                 <h3 className="text-base font-black text-slate-800">FORMATO — Complemento de Comercio Exterior (CFDI por VIN)</h3>
                 <p className="text-xs text-slate-500">{D.invoiceNo} · {D.totalUnits} vehículos · Precio: puAduana por VIN</p>
               </div>
-              <button onClick={() => downloadCSV(csvRows, `FORMATO_${D.invoiceNo}.csv`)}
+              <button onClick={async () => { const wb = await generateProformaXLSX(D.vins, D.invoiceNo, true); await downloadWB(wb, `FORMATO_${D.invoiceNo}.xlsx`); }}
                 className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs shrink-0">
-                <Download size={14}/> Descargar CSV
+                <Download size={14}/> Descargar Excel
               </button>
             </div>
             <PreviewTable rows={csvRows.filter(r => r.some(v => v!==''))} caption="Vista previa (columnas con datos)" />
@@ -808,9 +820,9 @@ export const CaptureDocumentTabs: React.FC<Props> = ({ enrichedPayload, infoEnvi
                 <h3 className="text-base font-black text-slate-800">PROFORMA DE FACTURACIÓN Y DEPÓSITOS</h3>
                 <p className="text-xs text-slate-500">{D.invoiceNo} · {D.totalUnits} vehículos · Dirigido a: {C.CHINA_NAME}</p>
               </div>
-              <button onClick={() => downloadCSV(csvRows, `PROFORMA_${D.invoiceNo}.csv`)}
+              <button onClick={async () => { const wb = await generateProformaXLSX(D.vins, D.invoiceNo, false); await downloadWB(wb, `PROFORMA_${D.invoiceNo}.xlsx`); }}
                 className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs shrink-0">
-                <Download size={14}/> Descargar CSV
+                <Download size={14}/> Descargar Excel
               </button>
             </div>
             <PreviewTable rows={csvRows.filter(r => r.some(v => v!==''))} caption="Vista previa" />
@@ -827,9 +839,9 @@ export const CaptureDocumentTabs: React.FC<Props> = ({ enrichedPayload, infoEnvi
                 <h3 className="text-base font-black text-slate-800">BILL OF LADING</h3>
                 <p className="text-xs text-slate-500">{D.invoiceNo} · {D.containers.length} contenedor(es)</p>
               </div>
-              <button onClick={() => downloadCSV(csvRows, `BL_${D.invoiceNo}.csv`)}
+              <button onClick={async () => { const wb = await generateBOLXLSX(D.vins, D.invoiceNo, D.asnNo); await downloadWB(wb, `BL_${D.invoiceNo}.xlsx`); }}
                 className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs shrink-0">
-                <Download size={14}/> Descargar CSV
+                <Download size={14}/> Descargar Excel
               </button>
             </div>
             <PreviewTable rows={csvRows.filter(r => r.some(v => v!==''))} caption="Estructura B/L" />
@@ -846,9 +858,9 @@ export const CaptureDocumentTabs: React.FC<Props> = ({ enrichedPayload, infoEnvi
                 <h3 className="text-base font-black text-slate-800">CARTA DE INSTRUCCIONES — EXPORTACIÓN</h3>
                 <p className="text-xs text-slate-500">Exportador: {C.SHIPPER_NAME} · Agente: {C.AGENT_ADUANAL}</p>
               </div>
-              <button onClick={() => downloadCSV(csvRows, `INSTRUCCIONES_${D.invoiceNo}.csv`)}
+              <button onClick={async () => { const wb = await generateInstruccionesXLSX(D.vins, D.invoiceNo); await downloadWB(wb, `INSTRUCCIONES_${D.invoiceNo}.xlsx`); }}
                 className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs shrink-0">
-                <Download size={14}/> Descargar CSV
+                <Download size={14}/> Descargar Excel
               </button>
             </div>
             <PreviewTable rows={csvRows.filter(r => r.some(v => v!==''))} caption="Carta de Instrucciones" />
@@ -865,9 +877,9 @@ export const CaptureDocumentTabs: React.FC<Props> = ({ enrichedPayload, infoEnvi
                 <h3 className="text-base font-black text-slate-800">COMMERCIAL INVOICE — CFC invoiced to CFP</h3>
                 <p className="text-xs text-slate-500">{C.CHINA_NAME} → {C.CONSIGNEE_NAME} · {D.invoiceNo}</p>
               </div>
-              <button onClick={() => downloadCSV(csvRows, `CFC_CFP_Invoice_${D.invoiceNo}.csv`)}
+              <button onClick={async () => { const wb = await generateCfcCfpXLSX(D.vins, D.invoiceNo); await downloadWB(wb, `CFC_CFP_Invoice_${D.invoiceNo}.xlsx`); }}
                 className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs shrink-0">
-                <Download size={14}/> Descargar CSV
+                <Download size={14}/> Descargar Excel
               </button>
             </div>
             <PreviewTable rows={csvRows.filter(r => r.some(v => v!==''))} caption="Commercial Invoice China → US" />
@@ -884,9 +896,9 @@ export const CaptureDocumentTabs: React.FC<Props> = ({ enrichedPayload, infoEnvi
                 <h3 className="text-base font-black text-slate-800">INVOICE — CFMOTO Mexico with CFM title to CFP</h3>
                 <p className="text-xs text-slate-500">{C.SHIPPER_NAME} → {C.CONSIGNEE_NAME} · {D.invoiceNo}</p>
               </div>
-              <button onClick={() => downloadCSV(csvRows, `IN_CFM_CFP_${D.invoiceNo}.csv`)}
+              <button onClick={async () => { const wb = await generateInCfpXLSX(D.vins, D.invoiceNo); await downloadWB(wb, `IN_CFM_CFP_${D.invoiceNo}.xlsx`); }}
                 className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs shrink-0">
-                <Download size={14}/> Descargar CSV
+                <Download size={14}/> Descargar Excel
               </button>
             </div>
             <PreviewTable rows={csvRows.filter(r => r.some(v => v!==''))} caption="Invoice CFM México → US" />
@@ -903,9 +915,9 @@ export const CaptureDocumentTabs: React.FC<Props> = ({ enrichedPayload, infoEnvi
                 <h3 className="text-base font-black text-slate-800">PACKING LIST — CFMOTO Mexico with CFM title to CFP</h3>
                 <p className="text-xs text-slate-500">Peso neto total: {fmt(D.totalNeto)} kg · Peso bruto: {fmt(D.totalBruto)} kg</p>
               </div>
-              <button onClick={() => downloadCSV(csvRows, `PL_CFM_CFP_${D.invoiceNo}.csv`)}
+              <button onClick={async () => { const wb = await generatePlCfpXLSX(D.vins, D.invoiceNo); await downloadWB(wb, `PL_CFM_CFP_${D.invoiceNo}.xlsx`); }}
                 className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs shrink-0">
-                <Download size={14}/> Descargar CSV
+                <Download size={14}/> Descargar Excel
               </button>
             </div>
             <PreviewTable rows={csvRows.filter(r => r.some(v => v!==''))} caption="Packing List" />
@@ -922,9 +934,9 @@ export const CaptureDocumentTabs: React.FC<Props> = ({ enrichedPayload, infoEnvi
                 <h3 className="text-base font-black text-slate-800">LAY OUT CCP — Datos Carta Porte (Arcbets)</h3>
                 <p className="text-xs text-slate-500">RFC remitente: {C.SHIPPER_RFC} → RFC destinatario: {C.CONSIGNEE_TAXID.replace('-','')}</p>
               </div>
-              <button onClick={() => downloadCSV(csvRows, `LAY_OUT_CCP_${D.invoiceNo}.csv`)}
+              <button onClick={async () => { const wb = await generateCCPXLSX(D.vins, D.invoiceNo); await downloadWB(wb, `LAY_OUT_CCP_${D.invoiceNo}.xlsx`); }}
                 className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs shrink-0">
-                <Download size={14}/> Descargar CSV
+                <Download size={14}/> Descargar Excel
               </button>
             </div>
             <PreviewTable rows={csvRows.filter(r => r.some(v => v!==''))} caption="Layout CCP / Carta Porte" />
@@ -941,9 +953,9 @@ export const CaptureDocumentTabs: React.FC<Props> = ({ enrichedPayload, infoEnvi
                 <h3 className="text-base font-black text-slate-800">CFMOTO CSV — US Customs Import Format</h3>
                 <p className="text-xs text-slate-500">{D.totalUnits} VINs · 31 columnas · Importer: {C.IMPORTER_CODE} · Shipper: {C.SHIPPER_CODE}</p>
               </div>
-              <button onClick={() => downloadCSV(csvRows, `CFMOTO_CSV_${D.invoiceNo}.csv`)}
+              <button onClick={async () => { const wb = await generateCfmotoXLSX(D.vins, D.invoiceNo, D.asnNo); await downloadWB(wb, `CFMOTO_CSV_${D.invoiceNo}.xlsx`); }}
                 className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-lg shadow-blue-500/25 shrink-0">
-                <Download size={14}/> Descargar CFMOTO CSV
+                <Download size={14}/> Descargar CFMOTO Excel
               </button>
             </div>
             {/* Muestra todas las columnas en vista horizontal con scroll */}

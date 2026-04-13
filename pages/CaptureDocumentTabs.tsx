@@ -12,6 +12,7 @@ import {
 import {
   downloadWB,
   generateCfmotoXLSX,
+  generateFormatoXLSX,
   generateProformaXLSX,
   generateBOLXLSX,
   generateInstruccionesXLSX,
@@ -801,7 +802,7 @@ export const CaptureDocumentTabs: React.FC<Props> = ({ enrichedPayload, infoEnvi
                 <h3 className="text-base font-black text-slate-800">FORMATO — Complemento de Comercio Exterior (CFDI por VIN)</h3>
                 <p className="text-xs text-slate-500">{D.invoiceNo} · {D.totalUnits} vehículos · Precio: puAduana por VIN</p>
               </div>
-              <button onClick={async () => { const wb = await generateProformaXLSX(D.vins, D.invoiceNo, true); await downloadWB(wb, `FORMATO_${D.invoiceNo}.xlsx`); }}
+              <button onClick={async () => { const wb = await generateFormatoXLSX(D.vins); await downloadWB(wb, `FORMATO_${D.invoiceNo}.xlsx`); }}
                 className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs shrink-0">
                 <Download size={14}/> Descargar Excel
               </button>

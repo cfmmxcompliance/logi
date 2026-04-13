@@ -28,9 +28,15 @@ const topSideMedium = (): Partial<ExcelJS.Borders> => ({ left: MEDIUM, right: ME
 
 // ─── Rellenos (Fills) ─────────────────────────────────────────────────────
 const solidFill = (argb: string): ExcelJS.Fill => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
-const WHITE     = solidFill('FFFFFFFF');
+const WHITE       = solidFill('FFFFFFFF');
 const GREY_HEADER = solidFill('FFD9D9D9');
 const GREY_LIGHT  = solidFill('FFF2F2F2');
+const YELLOW_FILL = solidFill('FFFFFF00');
+const GREEN_FILL  = solidFill('FF00B050');
+const BLUE_FILL   = solidFill('FF0070C0');
+const RED_FILL    = solidFill('FFFF0000');
+const ORANGE_FILL = solidFill('FFED7D31');
+const NAVY_FILL   = solidFill('FF1F3864');
 
 // ─── Alineación ───────────────────────────────────────────────────────────
 const AL_CC  : Partial<ExcelJS.Alignment> = { horizontal: 'center',  vertical: 'middle', wrapText: true  };
@@ -369,7 +375,63 @@ export async function generateCfmotoXLSX(vins: any[], invoiceNo: string, asnNo: 
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 2. PROFORMA VEHICULOS / FORMATO  — Times New Roman 10pt Bold, bordes thin
+// 1b. FORMATO — Tabla simple VIN, 9 columnas A-I
+// ════════════════════════════════════════════════════════════════════════════
+export async function generateFormatoXLSX(vins: any[]): Promise<ExcelJS.Workbook> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'CFMOTO Logistics';
+  const ws = wb.addWorksheet('FORMATO');
+  applyPageSetup(ws, PAGE.FORMATO);
+
+  // Anchos exactos extraídos del XML
+  setCols(ws, { 0:10.82, 1:20.18, 2:18.54, 3:15, 4:10.82, 5:12.18, 6:24.82, 7:13.27, 8:162.18 });
+
+  const BF = F_CALIBRI(10,true); const NF = F_CALIBRI(10,false);
+
+  // Row 3: Encabezados — mismos colores del Excel original
+  const headers: [number, string, ExcelJS.Fill][] = [
+    [2, 'DESCRIPCION',   GREY_HEADER],
+    [3, 'VIN NO',        YELLOW_FILL],
+    [4, 'ENGINE NO',     YELLOW_FILL],
+    [5, 'PESO NETO',     YELLOW_FILL],
+    [6, 'PESO BRUTO',    YELLOW_FILL],
+    [7, 'MODELO',        YELLOW_FILL],
+    [8, 'Val. Agregado', YELLOW_FILL],
+    [9, 'FORMULA',       GREY_HEADER],
+  ];
+  headers.forEach(([ci, label, fill]) => {
+    const cell = ws.getCell(3, ci);
+    cell.value = label; cell.font = BF; cell.fill = fill;
+    cell.border = allThin(); cell.alignment = AL_CC;
+  });
+
+  // Una fila por VIN a partir de row 4
+  vins.forEach((v: any, i: number) => {
+    const row = 4 + i;
+    const formula = `VEHICULO UTILITARIO | VIN ${v.vin} / ENGINE ${v.engine || ''} / PESO NETO ${v.pesoNeto} KG / PESO BRUTO ${v.pesoBruto} KG MODELO ${v.modelo}`;
+    const valAgregado = Number(v.valAgregado || v.valAcero || 0);
+    [
+      [2, CF.DESC_MERCH, NF, AL_LW ],
+      [3, v.vin,         NF, AL_CC ],
+      [4, v.engine || '',NF, AL_CC ],
+      [5, Number(v.pesoNeto || 0),  NF, AL_CC ],
+      [6, Number(v.pesoBruto || 0), NF, AL_CC ],
+      [7, v.modelo,      NF, AL_CC ],
+      [8, valAgregado,   NF, AL_CC ],
+      [9, formula,       NF, AL_LW ],
+    ].forEach(([ci, val, font, align]) => {
+      const cell = ws.getCell(row, ci as number);
+      cell.value = val; cell.font = font as Partial<ExcelJS.Font>;
+      cell.alignment = align as Partial<ExcelJS.Alignment>;
+      if ((ci as number) <= 8) cell.border = allThin();
+    });
+  });
+
+  return wb;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 2. PROFORMA VEHICULOS — Times New Roman 10pt Bold, bordes thin
 // ════════════════════════════════════════════════════════════════════════════
 export async function generateProformaXLSX(
   vins: any[], invoiceNo: string, isFormato = false
@@ -537,59 +599,63 @@ export async function generateBOLXLSX(vins: any[], invoiceNo: string, asnNo: str
   const BF = F_CALIBRI(11, true);
   const NF = F_CALIBRI(11, false);
 
-  // Título
+  // ── Row 1: Título principal ──
   ws.mergeCells('A1:G1');
-  sc(ws,1,1,'BILL OF LADING',{ font: F_CALIBRI(16,true), align: AL_CC, fill: GREY_HEADER, border: allThin() });
+  sc(ws,1,1,'BILL OF LADING', { font: F_CALIBRI(18,true), align: AL_CC });
 
-  ws.mergeCells('A2:G2'); ws.getRow(2).height=6;
+  // ── Rows 2-6: espacio para logo + separador ──
+  for (let r=2;r<=6;r++) { ws.getRow(r).height = r===4 ? 40 : 8; }
+  // Row 4: "CFMOTO" como sustituto de imagen
+  ws.mergeCells('A4:G4'); sc(ws,4,1,'⊕  CFMOTO', { font: F_CALIBRI(16,true), align: AL_CC });
 
-  // Sección SHIP FROM (col A = label, col B = valor) 
-  sc(ws,3,1,'SHIP FROM', { font: BF, fill: GREY_HEADER, border: allThin(), align: AL_CC });
-  ws.mergeCells('B3:G3');
+  // ── Row 7: SHIP FROM ──
+  ws.mergeCells('A7:G7');
+  sc(ws,7,1,'SHIP FROM', { font: BF, fill: GREY_HEADER, border: allThin(), align: AL_CC });
   [
-    [4,'NAME',          `${CF.SHIPPER} / RFC: ${CF.SHIPPER_RFC}`],
-    [5,'ADDRESS',       CF.SHIPPER_ADDR],
-    [6,'Telephone / Fax No.', CF.SHIPPER_TEL],
-    [7,'E-MAIL ADDRESS',CF.SHIPPER_EMAIL],
-    [8,'ISSUE DATE: ',  vins[0]?.outDate || ''],
+    [8,'NAME',           `${CF.SHIPPER} / RFC: ${CF.SHIPPER_RFC}`],
+    [9,'ADDRESS',        CF.SHIPPER_ADDR],
+    [10,'Telephone / Fax No.', CF.SHIPPER_TEL],
+    [11,'E-MAIL ADDRESS',CF.SHIPPER_EMAIL],
+    [12,'ISSUE DATE: ',  vins[0]?.outDate || ''],
   ].forEach(([rn,lbl,val]) => {
     sc(ws,rn as number,1,lbl, { font: BF, border: allThin(), align: AL_LC });
     ws.mergeCells(`B${rn}:G${rn}`);
     sc(ws,rn as number,2,val, { font: NF, border: allThin(), align: AL_LW });
   });
 
-  // SHIP TO
-  sc(ws,9,1,'SHIP TO', { font: BF, fill: GREY_HEADER, border: allThin(), align: AL_CC });
-  ws.mergeCells('B9:G9');
+  // ── Row 13: SHIP TO ──
+  ws.mergeCells('A13:G13');
+  sc(ws,13,1,'SHIP TO', { font: BF, fill: GREY_HEADER, border: allThin(), align: AL_CC });
   [
-    [10,'NAME',             CF.CONSIGNEE],
-    [11,'WAREHOUSE ADDRESS',CF.CONSIGNEE_WH],
-    [12,'Telephone / Fax No.',CF.CONSIGNEE_TEL],
+    [14,'NAME',              CF.CONSIGNEE],
+    [15,'WAREHOUSE ADDRESS', CF.CONSIGNEE_WH],
+    [16,'Telephone / Fax No.',CF.CONSIGNEE_TEL],
   ].forEach(([rn,lbl,val]) => {
     sc(ws,rn as number,1,lbl, { font: BF, border: allThin(), align: AL_LC });
     ws.mergeCells(`B${rn}:G${rn}`);
     sc(ws,rn as number,2,val, { font: NF, border: allThin(), align: AL_LW });
   });
 
-  // SHIPPING DETAILS
+  // ── Row 17: blank ── Row 18: SHPPING DETAILS ──
+  ws.getRow(17).height = 8;
+  ws.mergeCells('A18:G18');
+  sc(ws,18,1,'SHPPING DETAILS', { font: BF, fill: GREY_HEADER, border: allThin(), align: AL_CC }); // typo intencional
+
   const containerGroups = groupBy(vins, 'containerNo');
-  let curRow = 14;
-  sc(ws,curRow,1,'SHPPING DETAILS', { font: BF, fill: GREY_HEADER, border: allThin(), align: AL_CC }); // typo intencional = Excel
-  ws.mergeCells(`B${curRow}:G${curRow}`); curRow++;
-
+  let curRow = 19;
   Object.entries(containerGroups).forEach(([containerNo, cvins]: [string, any]) => {
-    const qty       = cvins.length;
-    const sealNo    = cvins[0]?.sealNo || '';
-    const brutoSum  = cvins.reduce((s: number, v: any) => s + Number(v.pesoBruto||0), 0);
-    const lbsSum    = cvins.reduce((s: number, v: any) => s + Number(v.pesoBrutoLb||0), 0);
-    const modelo    = Object.keys(groupBy(cvins,'modelo')).join(' / ');
+    const qty      = cvins.length;
+    const sealNo   = cvins[0]?.sealNo || '';
+    const brutoSum = cvins.reduce((s: number, v: any) => s + Number(v.pesoBruto||0), 0);
+    const lbsSum   = cvins.reduce((s: number, v: any) => s + Number(v.pesoBrutoLb||0), 0);
+    const modelo   = Object.keys(groupBy(cvins,'modelo')).join(' / ');
     const details: [string, any][] = [
       ['INVOICE NO.', invoiceNo],
       ['ORDER NO.',   asnNo],
-      ['MODLE ',      modelo],   // typo intencional
+      ['MODLE ',      modelo],
       ['PCS',         qty],
-      ['G.W. Kg',     `${brutoSum.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} Kg`],
-      ['G.W. Lbs',    `${(lbsSum || brutoSum*2.20462).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} Lbs`],
+      ['G.W. Kg',     `${brutoSum.toFixed(1).replace(/\B(?=(\d{3})+(?!\d))/g,',')} Kg`],
+      ['G.W. Lbs',    `${(lbsSum||brutoSum*2.20462).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',')} Lbs`],
       ['CONTAINER NO.',containerNo],
       ['SEAL NO.',    sealNo],
       ['AGENT',       CF.AGENT],
@@ -597,16 +663,16 @@ export async function generateBOLXLSX(vins: any[], invoiceNo: string, asnNo: str
     details.forEach(([lbl, val]) => {
       sc(ws,curRow,1,lbl, { font: BF, border: allThin(), align: AL_LC });
       ws.mergeCells(`B${curRow}:G${curRow}`);
-      sc(ws,curRow,2,val, { font: NF, border: allThin(), align: AL_LW });
+      sc(ws,curRow,2,val,  { font: NF, border: allThin(), fill: GREY_LIGHT, align: AL_CC });
       curRow++;
     });
-    curRow++; // blank separator between containers
+    curRow++;
   });
 
   // Firma
   curRow++;
-  sc(ws,curRow,1,'TRUCKER\'s Signature:', { font: BF });
-  sc(ws,curRow,7,'CFMOTO\'s Signature:', { font: BF });
+  sc(ws,curRow,1,'TRUCKER\' s Signature:', { font: BF });
+  sc(ws,curRow,7,'CFMOTO\' s Signature:', { font: BF });
   curRow++;
   sc(ws,curRow,1,'SHIPMENT DATE: ', { font: NF });
   sc(ws,curRow,7,'SHIPMENT DATE: ',  { font: NF });
@@ -933,21 +999,17 @@ export async function generatePlCfpXLSX(vins: any[], invoiceNo: string): Promise
   ws.mergeCells('J10:L10');sc(ws,10,10,'VIA:', { font: BF, border: allThin() });
   ws.mergeCells('M10:N10');sc(ws,10,13,CF.VIA, { font: NF, border: allThin() });
 
-  // Column headers
-  ws.mergeCells('C11:N11');sc(ws,11,3,' ', { font: NF });
-  ws.mergeCells('C12:F12'); sc(ws,12,3,'Marks&Nos.', { font: BF, border: allThin(), align: AL_CC });
-  ws.mergeCells('G12:K12'); sc(ws,12,7,'Description of Goods and Package', { font: BF, border: allThin(), align: AL_CC });
-  sc(ws,12,7,'', { font: NF }); // clear merge-start overwrite
-  // redo column header with correct positions
-  ws.getCell(12,3).value = 'Marks&Nos.';      ws.getCell(12,3).font = BF; ws.getCell(12,3).border = allThin(); ws.getCell(12,3).alignment = AL_CC;
-  ws.getCell(12,7).value = 'Quantity';         ws.getCell(12,7).font = BF; ws.getCell(12,7).border = allThin(); ws.getCell(12,7).alignment = AL_CC;
-  ws.getCell(12,8).value = '';
-  ws.getCell(12,12).value= 'G.W.\n(KGS)';     ws.getCell(12,12).font = BF; ws.getCell(12,12).border = allThin(); ws.getCell(12,12).alignment = AL_CC;
-  ws.getCell(12,13).value= 'N.W.\n(KGS)';     ws.getCell(12,13).font = BF; ws.getCell(12,13).border = allThin(); ws.getCell(12,13).alignment = AL_CC;
-  ws.getCell(12,14).value= 'MEAS (CBM)';      ws.getCell(12,14).font = BF; ws.getCell(12,14).border = allThin(); ws.getCell(12,14).alignment = AL_CC;
-  ws.getCell(12,4).value = 'Description of Goods and Package'; ws.getCell(12,4).font = BF; ws.getCell(12,4).border = allThin(); ws.getCell(12,4).alignment = AL_CC;
+  // ── Row 11: separador ── Row 12: headers EXACTOS del Excel ──
+  ws.mergeCells('C11:N11'); ws.getRow(11).height = 6;
+  // C12 = Marks&Nos. (standalone) | D12:F12 = Description | G12:K12 = Quantity | L12=G.W. | M12=N.W. | N12=MEAS
+  sc(ws,12,3,'Marks\nNos.', { font: BF, border: allThin(), align: AL_CC });
+  ws.mergeCells('D12:F12'); sc(ws,12,4,'Description of Goods and Package', { font: BF, border: allThin(), align: AL_CC });
+  ws.mergeCells('G12:K12'); sc(ws,12,7,'Quantity', { font: BF, border: allThin(), align: AL_CC });
+  sc(ws,12,12,'G.W.\n(KGS)', { font: BF, border: allThin(), align: AL_CC });
+  sc(ws,12,13,'N.W.\n(KGS)', { font: BF, border: allThin(), align: AL_CC });
+  sc(ws,12,14,'MEAS (CBM)',  { font: BF, border: allThin(), align: AL_CC });
 
-  // Data rows per model
+  // ── Data rows per model — merges exactos del Excel ──
   const modelGroups = groupBy(vins, 'modelo');
   let dr = 13;
   let gTotalBruto = 0; let gTotalNeto = 0; let gQty = 0;
@@ -963,42 +1025,46 @@ export async function generatePlCfpXLSX(vins: any[], invoiceNo: string): Promise
     const year      = s?.outDate ? new Date(s.outDate).getFullYear() : '';
     gTotalBruto += brutoSum; gTotalNeto += netoSum; gQty += qty;
 
-    ws.mergeCells(`C${dr}:C${dr+1}`);
-    sc(ws,dr,3,`Country of origin Mexico    REF.  RULING ${CF.RULING}`, { font: NF, border: allThin(), align: AL_LW });
-    ws.mergeCells(`D${dr}:K${dr}`);
-    sc(ws,dr,4,`${modelo} MODEL ${year}`, { font: BF, border: allThin() });
-    sc(ws,dr,7,qty,     { font: NF, border: allThin(), align: AL_CC });
-    sc(ws,dr,8,'CTNS',  { font: NF, border: allThin() });
-    sc(ws,dr,9,qty,     { font: NF, border: allThin(), align: AL_CC });
-    sc(ws,dr,11,'UNIT', { font: NF, border: allThin() });
-    sc(ws,dr,12,brutoSum,{ font: NF, border: allThin(), align: AL_RC });
-    sc(ws,dr,13,netoSum, { font: NF, border: allThin(), align: AL_RC });
-    if (volTotal) sc(ws,dr,14,volTotal, { font: NF, border: allThin(), align: AL_RC });
+    // Data row: C13 standalone, D13:F13 merged (model), G13 qty, H13 CTNS, I13:J13 qty, K13 UNIT, L13 GW, M13 NW, N13 vol
+    const countryText = `Country of origin Mexico                           REF.  RULING ${CF.RULING}`;
+    sc(ws,dr,3,countryText, { font: { ...NF, color:{argb:'FFFF0000'} }, border: allThin(), align: AL_LW });
+    ws.mergeCells(`D${dr}:F${dr}`);
+    sc(ws,dr,4,`${modelo} MODEL ${year}`, { font: BF, border: allThin(), align: AL_CC });
+    sc(ws,dr,7,qty,      { font: NF, border: allThin(), align: AL_CC });
+    sc(ws,dr,8,'CTNS',   { font: NF, border: allThin(), align: AL_CC });
+    ws.mergeCells(`I${dr}:J${dr}`);
+    sc(ws,dr,9,qty,      { font: NF, border: allThin(), align: AL_CC });
+    sc(ws,dr,11,'UNIT',  { font: NF, border: allThin(), align: AL_CC });
+    sc(ws,dr,12,brutoSum,{ font: NF, border: allThin(), align: AL_RC, numFmt:'#,##0.00' });
+    sc(ws,dr,13,netoSum, { font: NF, border: allThin(), align: AL_RC, numFmt:'#,##0.00' });
+    if (volTotal) sc(ws,dr,14,volTotal, { font: NF, border: allThin(), align: AL_RC, numFmt:'#,##0.00' });
     dr++;
 
     if (pesoAcero > 0) {
+      // Steel row 1 (non-steel) — C14:C15 merged vertically
       ws.mergeCells(`C${dr}:C${dr+1}`);
-      sc(ws,dr,3,'Steel Country of Melt/Pour: China', { font: NF, border: allThin() });
+      sc(ws,dr,3,'Steel Country of Melt/Pour: China', { font: { ...NF, color:{argb:'FFFF0000'} }, border: allThin(), align: AL_CC });
       ws.mergeCells(`D${dr}:K${dr}`);
-      sc(ws,dr,4,'Non-Steel Content', { font: NF, border: allThin() });
-      sc(ws,dr,12,nonSteelW, { font: NF, border: allThin(), align: AL_RC });
-      sc(ws,dr,13,nonSteelW, { font: NF, border: allThin(), align: AL_RC }); dr++;
-      ws.mergeCells(`C${dr}:C${dr+1}`);
+      sc(ws,dr,4,'Non-Steel Content', { font: BF, border: allThin(), align: AL_CC });
+      sc(ws,dr,12,nonSteelW, { font: { ...NF, color:{argb:'FF0070C0'} }, border: allThin(), align: AL_RC, numFmt:'#,##0.00' });
+      sc(ws,dr,13,nonSteelW, { font: { ...NF, color:{argb:'FF0070C0'} }, border: allThin(), align: AL_RC, numFmt:'#,##0.00' }); dr++;
+      // Steel row 2 (steel content)
       ws.mergeCells(`D${dr}:K${dr}`);
-      sc(ws,dr,4,'Steel Content', { font: NF, border: allThin() });
-      sc(ws,dr,12,steelW, { font: NF, border: allThin(), align: AL_RC });
-      sc(ws,dr,13,steelW, { font: NF, border: allThin(), align: AL_RC }); dr++;
+      sc(ws,dr,4,'Steel Content', { font: BF, border: allThin(), align: AL_CC });
+      sc(ws,dr,12,steelW, { font: { ...NF, color:{argb:'FF0070C0'} }, border: allThin(), align: AL_RC, numFmt:'#,##0.00' });
+      sc(ws,dr,13,steelW, { font: { ...NF, color:{argb:'FF0070C0'} }, border: allThin(), align: AL_RC, numFmt:'#,##0.00' }); dr++;
     }
   });
 
-  // TOTAL row
+  // TOTAL row — C16:F16, G16, H16=CTNS, I16:J16, K16=UNIT, L16=GW, M16=NW
   ws.mergeCells(`C${dr}:F${dr}`); sc(ws,dr,3,'TOTAL:', { font: BF, border: allThin() });
-  sc(ws,dr,7,gQty,       { font: BF, border: allThin(), align: AL_CC });
-  sc(ws,dr,8,'CTNS',     { font: BF, border: allThin() });
-  sc(ws,dr,9,gQty,       { font: BF, border: allThin(), align: AL_CC });
-  sc(ws,dr,11,'UNIT',    { font: BF, border: allThin() });
-  sc(ws,dr,12,gTotalBruto,{ font: BF, border: allThin(), align: AL_RC });
-  sc(ws,dr,13,gTotalNeto, { font: BF, border: allThin(), align: AL_RC });
+  sc(ws,dr,7,gQty,        { font: BF, border: allThin(), align: AL_CC });
+  sc(ws,dr,8,'CTNS',      { font: BF, border: allThin(), align: AL_CC });
+  ws.mergeCells(`I${dr}:J${dr}`);
+  sc(ws,dr,9,gQty,        { font: BF, border: allThin(), align: AL_CC });
+  sc(ws,dr,11,'UNIT',     { font: BF, border: allThin(), align: AL_CC });
+  sc(ws,dr,12,gTotalBruto,{ font: BF, border: allThin(), align: AL_RC, numFmt:'#,##0.00' });
+  sc(ws,dr,13,gTotalNeto, { font: BF, border: allThin(), align: AL_RC, numFmt:'#,##0.00' });
 
   return wb;
 }
@@ -1021,52 +1087,69 @@ export async function generateCCPXLSX(vins: any[], invoiceNo: string): Promise<E
   const fraccion    = vins[0]?.taric || CF.FRACCION_DEF;
   const claveProd   = vins[0]?.claveProductoSat || CF.CLAVE_PROD;
 
-  const brdB = (): Partial<ExcelJS.Borders> => ({ left: MEDIUM, right: MEDIUM, top: MEDIUM, bottom: MEDIUM });
+  // ── helper: cell de categoría con fill de color ──
+  const catFill = (label: string): ExcelJS.Fill => {
+    if (label === 'REQUERIDO')          return RED_FILL;
+    if (label === 'CONDICIONAL')        return ORANGE_FILL;
+    if (label === 'EN CASO DE DEVOLUCIÓN') return YELLOW_FILL;
+    return solidFill('FFD9D9D9');
+  };
+  const catFont = (label: string): Partial<ExcelJS.Font> => {
+    const white = label === 'REQUERIDO' || label === 'CONDICIONAL';
+    return { ...BF, color: white ? { argb:'FFFFFFFF' } : { argb:'FF000000' } };
+  };
 
-  function row(r: number, reqLabel: string, bLabel: string, val: any, bold = false) {
-    sc(ws,r,1,reqLabel, { font: { ...BF, italic: true }, align: AL_CC });
-    sc(ws,r,2,bLabel, { font: BF, border: brdB(), align: AL_LW });
-    sc(ws,r,4,(val||''), { font: bold ? BF : NF });
+  function row(r: number, reqLabel: string, bLabel: string, val: any, dangerousField = false) {
+    sc(ws,r,1,reqLabel, { font: catFont(reqLabel), fill: catFill(reqLabel), align: AL_CC, border: allThin() });
+    const bFill = dangerousField ? RED_FILL : WHITE;
+    sc(ws,r,2,bLabel, { font: BF, fill: bFill, border: allThin(), align: AL_LW });
+    sc(ws,r,4,(val||''), { font: NF, border: allThin() });
   }
+
+  const sectionHdr = (r: number, label: string, val: any) => {
+    sc(ws,r,2,label, { font: { ...BF, color:{argb:'FFFFFFFF'} }, fill: NAVY_FILL, border: allThin(), align: AL_LC });
+    sc(ws,r,4,val,   { font: NF, border: allThin() });
+  };
 
   let r = 1;
   sc(ws,r,2,'LAYOUT ARCBETS', { font: F_CALIBRI(12,true) }); r+=3;
-  sc(ws,r,2,'DATOS ORIGEN',   { font: BF }); sc(ws,r,4,CF.SHIPPER,{ font: NF }); r++;
-  row(r,'REQUERIDO','RFC REMITENTE',   CF.SHIPPER_RFC);  r++;
-  row(r,'REQUERIDO','ESTADO',          CF.SHIPPER_STATE); r++;
-  row(r,'REQUERIDO','PAIS',            'MEXICO');          r++;
-  row(r,'REQUERIDO','CODIGO POSTAL',   CF.SHIPPER_CP);    r++;
-  row(r,'REQUERIDO','FECHA/HORA DE SALIDA', invoiceDate);  r++;
+  sectionHdr(r,'DATOS ORIGEN', CF.SHIPPER); r++;
+  row(r,'REQUERIDO','RFC REMITENTE',        CF.SHIPPER_RFC);  r++;
+  row(r,'REQUERIDO','ESTADO',               CF.SHIPPER_STATE); r++;
+  row(r,'REQUERIDO','PAIS',                 'MEXICO');         r++;
+  row(r,'REQUERIDO','CODIGO POSTAL',        CF.SHIPPER_CP);    r++;
+  row(r,'REQUERIDO','FECHA/HORA DE SALIDA', invoiceDate);      r++;
   r++;
-  sc(ws,r,2,'DATOS DESTINO', { font: BF }); sc(ws,r,4,CF.CONSIGNEE,{ font: NF }); r++;
-  row(r,'REQUERIDO','RFC DESTINATARIO', CF.CONSIGNEE_TAX.replace('-',''));  r++;
-  row(r,'REQUERIDO','ESTADO',           CF.CONSIGNEE_ST); r++;
-  row(r,'REQUERIDO','PAIS',             'USA');             r++;
-  row(r,'REQUERIDO','CODIGO POSTAL',    CF.CONSIGNEE_CP); r++;
-  row(r,'REQUERIDO','FECHA/HORA DE SALIDA', '');            r++;
-  row(r,'REQUERIDO','DISTANCIA RECORRIDA',  '');            r++;
+  sectionHdr(r,'DATOS DESTINO', CF.CONSIGNEE); r++;
+  row(r,'REQUERIDO','RFC DESTINATARIO',     CF.CONSIGNEE_TAX.replace('-','')); r++;
+  row(r,'REQUERIDO','ESTADO',               CF.CONSIGNEE_ST); r++;
+  row(r,'REQUERIDO','PAIS',                 'USA');            r++;
+  row(r,'REQUERIDO','CODIGO POSTAL',        CF.CONSIGNEE_CP); r++;
+  row(r,'REQUERIDO','FECHA/HORA DE SALIDA', '');               r++;
+  row(r,'REQUERIDO','DISTANCIA RECORRIDA',  '');               r++;
   r++;
-  sc(ws,r,2,'MERCANCIAS',            { font: BF }); sc(ws,r,4,'1',{ font: NF }); r++;
-  sc(ws,r,2,'Valor de la mercancia USD', { font: NF }); sc(ws,r,4,totalValUsd,{ font: NF }); r++;
-  row(r,'REQUERIDO','Peso Bruto Total',        totalBruto); r++;
-  row(r,'REQUERIDO','Unidad de Peso',           'kg');       r++;
-  row(r,'REQUERIDO','Número total de Mercancías',vins.length); r++;
+  sectionHdr(r,'MERCANCIAS', 1); r++;
+  sc(ws,r,2,'Valor de la mercancia USD', { font: NF, border: allThin() });
+  sc(ws,r,4,`$${totalValUsd.toLocaleString('en-US',{minimumFractionDigits:2})}`, { font: NF, border: allThin() }); r++;
+  row(r,'REQUERIDO','Peso Bruto Total',                  totalBruto); r++;
+  row(r,'REQUERIDO','Unidad de Peso',                    'kg');       r++;
+  row(r,'REQUERIDO','Número total de Mercancías',         vins.length); r++;
   row(r,'EN CASO DE DEVOLUCIÓN','Logistica Inversa Recolección Devolución','no aplica'); r++;
-  row(r,'REQUERIDO','Bienes Transportados (clave SAT)', claveProd); r++;
-  row(r,'REQUERIDO','Descripción bienes transportados (SAT)', CF.DESC_MERCH); r++;
-  row(r,'REQUERIDO','Cantidad',         vins.length); r++;
-  row(r,'REQUERIDO','Clave de la Unidad (Clave SAT)', 'H87 PIEZA'); r++;
-  row(r,'REQUERIDO','Peso en KG',        totalBruto); r++;
-  row(r,'CONDICIONAL','Material Peligroso','no aplica'); r++;
-  row(r,'CONDICIONAL','Clave Material Peligroso','no aplica'); r++;
-  row(r,'REQUERIDO','Tipo de Materia',   '\'03'); r++;
+  row(r,'REQUERIDO','Bienes Transportados (clave SAT)',  claveProd); r++;
+  row(r,'REQUERIDO','Descripción bienes transportados (SAT)',CF.DESC_MERCH); r++;
+  row(r,'REQUERIDO','Cantidad',                           vins.length); r++;
+  row(r,'REQUERIDO','Clave de la Unidad (Clave SAT)',    'H87 PIEZA'); r++;
+  row(r,'REQUERIDO','Peso en KG',                         totalBruto); r++;
+  row(r,'CONDICIONAL','Material Peligroso',               'no aplica', true); r++;
+  row(r,'CONDICIONAL','Clave Material Peligroso',         'no aplica', true); r++;
+  row(r,'REQUERIDO','Tipo de Materia',                   '\'03'); r++;
   r++;
-  sc(ws,r,2,'DOCUMENTACIÓN ADUANERA',{ font: BF }); r++;
-  row(r,'REQUERIDO','Fracción Arancelaria (Clave SAT)', fraccion, true); r++;
+  sectionHdr(r,'DOCUMENTACIÓN ADUANERA',''); r++;
+  row(r,'REQUERIDO','Fracción Arancelaria (Clave SAT)',  fraccion); r++;
   row(r,'CONDICIONAL','UUID del comprobante de comercio exterior (expo)',''); r++;
-  row(r,'REQUERIDO','Tipo de documento','PEDIMENTO'); r++;
-  row(r,'CONDICIONAL','Numero de Pedimento',''); r++;
-  row(r,'CONDICIONAL','RFC Importador',''); r++;
+  row(r,'REQUERIDO','Tipo de documento',                 'PEDIMENTO'); r++;
+  row(r,'CONDICIONAL','Numero de Pedimento',              ''); r++;
+  row(r,'CONDICIONAL','RFC Importador',                   ''); r++;
 
   return wb;
 }

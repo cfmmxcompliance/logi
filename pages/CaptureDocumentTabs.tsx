@@ -738,40 +738,39 @@ export const CaptureDocumentTabs: React.FC<Props> = ({ enrichedPayload, infoEnvi
     if (!rows || rows.length < 2) return null;
     const headers = rows[0];
     const data    = rows.slice(1, maxRows + 1);
+
+    // Determinar qué columnas tienen algún valor (header o datos)
+    const visibleCols: number[] = [];
+    headers.forEach((_, ci) => {
+      const hasValue = headers[ci] !== '' || data.some(r => (r[ci] ?? '') !== '');
+      if (hasValue) visibleCols.push(ci);
+    });
+
     return (
       <div className="overflow-x-auto rounded-xl border border-slate-200 text-[10px]">
         {caption && <p className="px-3 py-1.5 bg-slate-100 text-slate-500 font-bold text-[9px] uppercase tracking-wider">{caption}</p>}
         <table className="w-full whitespace-nowrap">
           <thead className="bg-slate-800 text-white">
             <tr>
-              {headers.filter((_, ci) => {
-                // Mostrar solo columnas no vacías en el header o en los datos
-                const colVals = [headers[ci], ...data.map(r => r[ci] || '')];
-                return colVals.some(v => v !== '');
-              }).map((h, ci) => (
-                <th key={ci} className="px-2 py-1.5 text-left font-bold border-r border-slate-700 last:border-0">{h || `col${ci}`}</th>
+              {visibleCols.map((ci) => (
+                <th key={ci} className="px-2 py-1.5 text-left font-bold border-r border-slate-700 last:border-0">
+                  {headers[ci] || `col${ci}`}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
             {data.map((row, ri) => {
               const nonEmpty = row.some(v => v !== '');
-              if (!nonEmpty) return <tr key={ri}><td colSpan={headers.length} className="px-2 py-0.5 bg-slate-50"></td></tr>;
-              // Filter same cols as headers
-              const filteredHeaders = headers.filter((_, ci) => {
-                const colVals = [headers[ci], ...data.map(r => r[ci] || '')];
-                return colVals.some(v => v !== '');
-              });
+              if (!nonEmpty) return <tr key={ri}><td colSpan={visibleCols.length} className="px-2 py-0.5 bg-slate-50"></td></tr>;
               return (
                 <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}>
-                  {filteredHeaders.map((_, ci) => {
-                    // Find actual col index
-                    const actualCi = headers.indexOf(filteredHeaders[ci]);
-                    const val = row[actualCi] || '';
+                  {visibleCols.map((ci) => {
+                    const val = row[ci] ?? '';
                     return (
-                      <td key={ci} className={`px-2 py-1 border-r border-slate-50 last:border-0 max-w-[200px] truncate ${
-                        actualCi === 29 ? 'font-mono font-bold text-blue-700' :
-                        actualCi === 0 ? 'font-mono text-slate-800' : 'text-slate-600'
+                      <td key={ci} className={`px-2 py-1 border-r border-slate-50 last:border-0 max-w-[220px] truncate ${
+                        ci === 29 ? 'font-mono font-bold text-blue-700' :
+                        ci === 0  ? 'font-mono text-slate-800' : 'text-slate-600'
                       }`} title={val}>{val}</td>
                     );
                   })}
@@ -782,12 +781,13 @@ export const CaptureDocumentTabs: React.FC<Props> = ({ enrichedPayload, infoEnvi
         </table>
         {rows.length > maxRows + 1 && (
           <p className="px-3 py-1.5 bg-slate-100 text-slate-400 text-[9px]">
-            ... {rows.length - maxRows - 1} filas más en el CSV
+            ... {rows.length - maxRows - 1} filas más en el Excel
           </p>
         )}
       </div>
     );
   }
+
 
   // ── Render por pestaña ─────────────────────────────────────────────────
   const renderTab = () => {

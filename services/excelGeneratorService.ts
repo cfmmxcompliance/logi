@@ -456,59 +456,135 @@ export async function generateProformaXLSX(
   const BASE_FONT = F_TNR(10, true);
   const BASE_BORDER = allThin();
 
-  // ── Cabecera PROFORMA ──
+  // ── Cabecera PROFORMA — fills exactos del XML ──
   if (!isFormato) {
-    ws.mergeCells('B2:V2'); sc(ws,2,2, `Folio: ${invoiceNo}`, { font: F_TNR(10,true), align: AL_LC });
-    ws.mergeCells('B3:V3'); sc(ws,3,2, 'PROFORMA DE FACTURACION Y DEPÓSITOS', { font: F_TNR(12,true), align: AL_CC });
-    ws.mergeCells('C5:G5'); sc(ws,5,3, 'Proyecto',            { font: BASE_FONT, align: AL_LC });
-    ws.mergeCells('H5:V5'); sc(ws,5,8, 'CFMOTO',              { font: BASE_FONT });
-    ws.mergeCells('C6:G6'); sc(ws,6,3, 'Cliente',             { font: BASE_FONT, align: AL_LC });
-    ws.mergeCells('H6:V6'); sc(ws,6,8, CF.CHINA_NAME,         { font: BASE_FONT });
-    ws.mergeCells('C7:G7'); sc(ws,7,3, 'Régimen Fiscal',      { font: BASE_FONT });
-    ws.mergeCells('H7:V7'); sc(ws,7,8, '616 Sin obligaciones fiscales', { font: BASE_FONT });
-    ws.mergeCells('C8:V8'); sc(ws,8,3, `DIRECCION: NO.116 WUZHOU ROAD,YUHANG ECONOMIC DEVELOPMENT ZONE, HANGZHOU, ZHEJIANG, CHINA`, { font: BASE_FONT });
-    ws.mergeCells('C9:G9'); sc(ws,9,3, 'CP',   { font: BASE_FONT }); sc(ws,9,8,'311100',    { font: BASE_FONT });
-    ws.mergeCells('C10:G10');sc(ws,10,3,'TAX ID',{ font: BASE_FONT }); sc(ws,10,8,CF.CHINA_TAXID, { font: BASE_FONT });
-    ws.mergeCells('C11:G11');sc(ws,11,3,'EMISOR',{ font: BASE_FONT }); sc(ws,11,8,'CFMOTO MEXICO POWER', { font: BASE_FONT });
-    ws.mergeCells('C12:G12');sc(ws,12,3,'TAX ID',{ font: BASE_FONT }); sc(ws,12,8,CF.SHIPPER_RFC, { font: BASE_FONT });
-    ws.mergeCells('C13:G13');sc(ws,13,3,'Método de pago', { font: BASE_FONT }); sc(ws,13,8,'PUE',{ font: BASE_FONT });
-    ws.mergeCells('C14:G14');sc(ws,14,3,'Moneda', { font: BASE_FONT }); sc(ws,14,8,'USD', { font: BASE_FONT });
-    ws.mergeCells('B19:V19');sc(ws,19,2,'EXPORTACION: 04 Definitiva con clave distinta', { font: BASE_FONT });
-    ws.mergeCells('C23:V23');sc(ws,23,3,'Incoterm: FCA FRANCO TRANSPORTISTA (LUGAR DESIGNADO).', { font: BASE_FONT });
+    // Row 1: código de formato
+    sc(ws,1,2,'4_ATFO_06, Rev 3,', { font: F_TNR(9,true) });
+    // Row 2: E2:F2 = número de folio (amarillo)
+    ws.mergeCells('E2:F2');
+    sc(ws,2,2,'Folio:', { font: F_TNR(10,true) });
+    sc(ws,2,5, invoiceNo, { font: F_TNR(10,true), fill: YELLOW_FILL, border: allThin(), align: AL_CC });
+    // Row 3: B3:U3 = título con relleno azul
+    ws.mergeCells('B3:U3');
+    sc(ws,3,2,'PROFORMA DE FACTURACIÓN Y DEPÓSITOS', { font: F_TNR(11,true), fill: BLUE_FILL, align: AL_CC,
+      border: allThin() });
+    // Row 5: Proyecto (label + valor) + bloque derecho EN CASO DE SER PUE
+    sc(ws,5,3,'Proyecto', { font: BASE_FONT });
+    sc(ws,5,4,'CFMOTO',   { font: BASE_FONT });
+    ws.mergeCells('H5:M5');
+    sc(ws,5,8,'                                                          EN CASO DE SER PUE',
+      { font: { ...BASE_FONT, color:{argb:'FFFFFFFF'} }, fill: BLUE_FILL, align: AL_RC, border: allThin() });
+    // Row 6: Cliente (verde) + valor china (amarillo) + Forma de Pago derecho
+    sc(ws,6,3,'Cliente',          { font: BASE_FONT, fill: GREEN_FILL, border: allThin() });
+    ws.mergeCells('D6:G6');
+    sc(ws,6,4, CF.CHINA_NAME,     { font: BASE_FONT, fill: YELLOW_FILL, border: allThin() });
+    sc(ws,6,9,'Forma de Pago', { font: BASE_FONT });
+    sc(ws,6,11,'Elige de Lista', { font: BASE_FONT });
+    // Row 7: Régimen Fiscal (verde) + Depósito Relacionado (azul)
+    sc(ws,7,3,'Régimen Fiscal',   { font: BASE_FONT, fill: GREEN_FILL, border: allThin() });
+    ws.mergeCells('D7:G7');
+    sc(ws,7,4,'616 Sin obligaciones fiscales', { font: BASE_FONT, border: allThin() });
+    ws.mergeCells('H7:M7');
+    sc(ws,7,8,'                                                      Depósito Relacionado',
+      { font: { ...BASE_FONT, color:{argb:'FFFFFFFF'} }, fill: BLUE_FILL, align: AL_RC, border: allThin() });
+    // Row 8: DIRECCION (verde) + D8:F8 merged (amarillo)
+    sc(ws,8,3,'DIRECCION',        { font: BASE_FONT, fill: GREEN_FILL, border: allThin() });
+    ws.mergeCells('D8:F8');
+    sc(ws,8,4,'NO.116 WUZHOU ROAD,YUHANG ECONOMIC DEVELOPMENT ZONE, HANGZHOU,ZHEJIANG PROVINCE,P.R.CHINA',
+      { font: BASE_FONT, fill: YELLOW_FILL, border: allThin(), align: AL_LW });
+    // Row 9: CP (verde) + valor (amarillo)
+    sc(ws,9,3,'CP',               { font: BASE_FONT, fill: GREEN_FILL, border: allThin() });
+    sc(ws,9,4,'311100',           { font: BASE_FONT, fill: YELLOW_FILL, border: allThin() });
+    // Row 10: TAX ID China (verde) + valor (amarillo)
+    sc(ws,10,3,'TAX ID',          { font: BASE_FONT, fill: GREEN_FILL, border: allThin() });
+    sc(ws,10,4, CF.CHINA_TAXID,   { font: BASE_FONT, fill: YELLOW_FILL, border: allThin() });
+    sc(ws,10,9,'Fecha de depósito', { font: BASE_FONT });
+    sc(ws,10,11,'dd-mmm-aa',      { font: BASE_FONT, fill: YELLOW_FILL, border: allThin() });
+    // Row 11: EMISOR (verde) + valor (amarillo)
+    sc(ws,11,3,'EMISOR',          { font: BASE_FONT, fill: GREEN_FILL, border: allThin() });
+    sc(ws,11,4,'CFMOTO MEXICO POWER', { font: BASE_FONT, fill: YELLOW_FILL, border: allThin() });
+    // Row 12: TAX ID MX + valor (amarillo)
+    sc(ws,12,3,'TAX ID',          { font: BASE_FONT, border: allThin() });
+    sc(ws,12,4, CF.SHIPPER_RFC,   { font: BASE_FONT, fill: YELLOW_FILL, border: allThin() });
+    sc(ws,12,9,'Monto cobrado',   { font: BASE_FONT });
+    sc(ws,12,11, 0,               { font: BASE_FONT, fill: YELLOW_FILL, border: allThin() });
+    // Row 13: Método de pago
+    sc(ws,13,3,'Método de pago',  { font: BASE_FONT, border: allThin() });
+    sc(ws,13,4,'PUE',            { font: BASE_FONT, border: allThin() });
+    sc(ws,13,9,'Comisión',       { font: BASE_FONT }); sc(ws,13,11,0,{ font: BASE_FONT });
+    // Row 14: Tipo (amarillo) + bloque azul derecho
+    sc(ws,14,3,'Tipo',            { font: BASE_FONT, border: allThin() });
+    sc(ws,14,4,'Factura',         { font: BASE_FONT, fill: YELLOW_FILL, border: allThin() });
+    ws.mergeCells('H14:M14');
+    sc(ws,14,8,'                       En caso de cobrarse más documentos en el mismo depósito',
+      { font: { ...BASE_FONT, color:{argb:'FFFFFFFF'} }, fill: BLUE_FILL, align: AL_RC, border: allThin() });
+    // Row 15: UUID Relacionado
+    sc(ws,15,3,'UUID Relacionado', { font: BASE_FONT, border: allThin() });
+    ws.mergeCells('D15:G15');
+    sc(ws,15,4,'(UUID Obligatorio en caso de ser Refactura o NCT)', { font: BASE_FONT, border: allThin(), align: AL_LW });
+    sc(ws,15,9,'Factura', { font: BASE_FONT });
+    sc(ws,15,11,'(# de factura)', { font: BASE_FONT, fill: YELLOW_FILL, border: allThin() });
+    sc(ws,15,12,'(Monto fact)',   { font: BASE_FONT, fill: YELLOW_FILL, border: allThin() });
+    sc(ws,15,13,'(moneda)',       { font: BASE_FONT, fill: YELLOW_FILL, border: allThin() });
+    // Row 16: Condiciones
+    sc(ws,16,3,'Condiciones (En caso de PPD)', { font: BASE_FONT, border: allThin() });
+    sc(ws,16,4,'Elige de Lista', { font: BASE_FONT, border: allThin() });
+    // Row 17: Moneda
+    sc(ws,17,3,'Moneda', { font: BASE_FONT, border: allThin() });
+    sc(ws,17,4,'USD',    { font: BASE_FONT, border: allThin() });
+    // Row 18: Observaciones
+    sc(ws,18,3,'Observaciones', { font: BASE_FONT, border: allThin() });
+    ws.mergeCells('D18:G18');
+    sc(ws,18,4,'(Datos que requieren se agregue a la factura)', { font: BASE_FONT, border: allThin(), align: AL_LW });
+    // Row 19: EXPORTACION (merged label) + valor (amarillo)
+    ws.mergeCells('B19:C19');
+    sc(ws,19,2,'EXPORTACION', { font: BASE_FONT, border: allThin() });
+    ws.mergeCells('D19:G19');
+    sc(ws,19,4,'04 Definitiva con clave distinta', { font: BASE_FONT, fill: YELLOW_FILL, border: allThin() });
+    // Row 21: nota de complemento (AZUL)
+    ws.mergeCells('B21:U21');
+    sc(ws,21,2,'***Llenar en caso de ser factura con complemento de comercio exterior',
+      { font: { ...BASE_FONT, color:{argb:'FFFFFFFF'} }, fill: BLUE_FILL, border: allThin() });
+    // Row 22-23: Pedimento / Incoterm
+    sc(ws,22,3,'Pedimento', { font: BASE_FONT });
+    sc(ws,23,3,'Incoterm',  { font: BASE_FONT });
+    ws.mergeCells('D23:G23');
+    sc(ws,23,4,'FCA FRANCO TRANSPORTISTA (LUGAR DESIGNADO).', { font: BASE_FONT, align: AL_LW });
   } else {
-    // Cabecera FORMATO (Complemento Comercio Exterior)
-    ws.mergeCells('B2:V2'); sc(ws,2,2, CF.SHIPPER, { font: F_TNR(11,true), align: AL_CC });
-    ws.mergeCells('B3:V3'); sc(ws,3,2, CF.SHIPPER_FULL, { font: F_TNR(9,false), align: AL_LC });
-    ws.mergeCells('B5:V5'); sc(ws,5,2, 'COMPLEMENTO DE COMERCIO EXTERIOR — EXPORTACIÓN DEFINITIVA', { font: F_TNR(11,true), align: AL_CC });
-    ws.mergeCells('C7:G7'); sc(ws,7,3,'EXPORTADOR RFC:',{ font: BASE_FONT });
-    ws.mergeCells('H7:V7'); sc(ws,7,8, `${CF.SHIPPER}  RFC: ${CF.SHIPPER_RFC}`, { font: BASE_FONT });
-    ws.mergeCells('C8:G8'); sc(ws,8,3,'PEDIMENTO:',{ font: BASE_FONT });
-    ws.mergeCells('H8:V8'); sc(ws,8,8, `DEFINITIVO  Clave: ${CF.PED_CLAVE}  Fracción: ${vins[0]?.taric || CF.FRACCION_DEF}`, { font: BASE_FONT });
-    ws.mergeCells('C9:G9'); sc(ws,9,3,'INCOTERM:',{ font: BASE_FONT });
-    ws.mergeCells('H9:V9'); sc(ws,9,8,'FCA FRANCO TRANSPORTISTA (LUGAR DESIGNADO).', { font: BASE_FONT });
-    ws.mergeCells('C10:G10');sc(ws,10,3,'DESCRIPCIÓN:',{ font: BASE_FONT });
-    ws.mergeCells('H10:V10');sc(ws,10,8,CF.DESC_MERCH, { font: BASE_FONT });
+    // (isFormato = obsoleto, ahora se usa generateFormatoXLSX)
+    ws.mergeCells('B3:U3'); sc(ws,3,2, 'FORMATO', { font: F_TNR(12,true), align: AL_CC });
   }
 
-  // ── Fila de encabezado de columnas (R27 en PROFORMA = fila 27 en ExcelJS) ──
-  const HR = isFormato ? 23 : 27;
-  const colHeaders = ['','SERIE','FOLIO','Cantidad','Objeto de impuesto (SAT)',
-    'Unidad de Medida (SAT)','Uso de CFDI (SAT)','Clave Producto (SAT)',
-    'Descripción','No. Parte','Precio Unitario','Subtotal ','Iva',
-    'Retención','Descuento','Total','','Fracción arancelaria',
-    '**Unidad Aduana','**Cantidad Aduana','**PU Aduana','Total'];
-  colHeaders.forEach((h, ci) => {
-    const cell = ws.getCell(HR, ci + 1);
-    cell.value  = h;
-    cell.font   = BASE_FONT;
-    cell.fill   = GREY_HEADER;
-    cell.border = BASE_BORDER;
-    cell.alignment = AL_CC;
-  });
-
-  // Merges en fila de encabezado PROFORMA
+  // ── Fila 27: encabezados con colores exactos del Excel (solo PROFORMA) ──
+  const HR = 27;
   if (!isFormato) {
-    ws.mergeCells(`A${HR}:J${HR}`); ws.mergeCells(`K${HR}:U${HR}`); ws.mergeCells(`V${HR}:W${HR}`);
+    const hdrDef: [number, string, ExcelJS.Fill][] = [
+      [2,  'SERIE',                    BLUE_FILL],
+      [3,  'FOLIO',                    BLUE_FILL],
+      [4,  'Cantidad',                 BLUE_FILL],
+      [5,  'Objeto de impuesto (SAT)', GREEN_FILL],
+      [6,  'Unidad de Medida (SAT)',   BLUE_FILL],
+      [7,  'Uso de CFDI (SAT)',        GREEN_FILL],
+      [8,  'Clave Producto (SAT)',     BLUE_FILL],
+      [9,  'Descripción',              BLUE_FILL],
+      [10, 'No. Parte',                BLUE_FILL],
+      [11, 'Precio Unitario',          GREY_HEADER],
+      [12, 'Subtotal',                 RED_FILL],
+      [13, 'Iva',                      RED_FILL],
+      [14, 'Retención',                RED_FILL],
+      [15, 'Descuento',                BLUE_FILL],
+      [16, 'Total',                    BLUE_FILL],
+      [18, 'Fracción arancelaria',     BLUE_FILL],
+      [19, '**Unidad Aduana',          BLUE_FILL],
+      [20, '**Cantidad Aduana',        BLUE_FILL],
+      [21, '**PU Aduana',              BLUE_FILL],
+      [22, 'Total',                    BLUE_FILL],
+    ];
+    hdrDef.forEach(([ci, label, fill]) => {
+      const cell = ws.getCell(HR, ci as number);
+      cell.value = label; cell.font = { ...BASE_FONT, color:{argb:'FFFFFFFF'} };
+      cell.fill = fill; cell.border = BASE_BORDER; cell.alignment = AL_CC;
+    });
   }
 
   // ── Filas de datos por VIN ──
@@ -874,7 +950,7 @@ export async function generateCfcCfpXLSX(vins: any[], invoiceNo: string): Promis
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 6. IN-with CFM title to CFP — Calibri/TNR, bordes thin, 22 cols A-V
+// 6. IN-with CFM title to CFP — 23 cols A-W, estructura 2 filas por modelo
 // ════════════════════════════════════════════════════════════════════════════
 export async function generateInCfpXLSX(vins: any[], invoiceNo: string): Promise<ExcelJS.Workbook> {
   const wb = new ExcelJS.Workbook();
@@ -882,39 +958,49 @@ export async function generateInCfpXLSX(vins: any[], invoiceNo: string): Promise
   const ws = wb.addWorksheet('IN-with CFM title to CFP');
   applyPageSetup(ws, PAGE.IN_CFP);
 
-  setCols(ws, { 0:3,1:3,2:3,3:18,4:2,5:2,6:2,7:8,8:2,9:2,10:7,11:2,12:2,13:2,14:5,15:5,16:3,17:10,18:2,19:2,20:2,21:14 });
-  setRows(ws, { 0:20,1:15,2:35,3:12,4:8,5:20,6:20,7:12,8:8,9:12,10:12,11:8,12:18,13:12,14:8,15:8,16:8,17:8,18:25,19:15,20:15,21:20,22:20,23:15,24:15,25:15,26:15,27:15 });
+  // 23 columnas A-W (col 1-23). Anchos aproximados del Excel.
+  setCols(ws, { 0:3,1:3,2:3,3:18,4:2,5:2,6:2,7:8,8:2,9:2,10:7,11:2,12:2,13:2,14:5,15:5,16:3,17:10,18:2,19:2,20:2,21:7,22:7 });
+  setRows(ws, { 0:20,1:15,2:35,3:12,4:8,5:20,6:20,7:12,8:8,9:12,10:12,11:8,12:18,13:12,14:8,15:8,16:8,17:8,18:25,19:20,20:20,21:12,22:20,23:20,24:20,25:20,26:20,27:15 });
 
   const BF = F_CALIBRI(10,true); const NF = F_CALIBRI(10,false);
+  const SALMON = solidFill('FFFFC7CE'); // light salmon = invoice/date highlight
   const invoiceDate = vins[0]?.outDate || '';
 
-  // Header empresa CFMOTO Mexico
-  ws.mergeCells('A2:V2'); sc(ws,2,1,CF.SHIPPER, { font: F_CALIBRI(12,true), align: AL_CC, border: topMedium() });
-  ws.mergeCells('A3:V3'); sc(ws,3,1,CF.SHIPPER_FULL, { font: NF, align: AL_CC });
-  ws.mergeCells('A6:V6'); sc(ws,6,1,'INVOICE', { font: F_CALIBRI(16,true), align: AL_CC });
+  // ── Header empresa (rows 1-5) ──
+  ws.mergeCells('G1:W1'); sc(ws,1,7,'INVOICE', { font: F_CALIBRI(16,true), align: AL_CC });
+  ws.mergeCells('A2:W2'); sc(ws,2,1,CF.SHIPPER,     { font: F_CALIBRI(12,true), align: AL_CC, border: topMedium() });
+  ws.mergeCells('A3:W3'); sc(ws,3,1,CF.SHIPPER_FULL, { font: NF, align: AL_CC });
 
-  // Consignee + Invoice No
-  ws.mergeCells('B7:T7'); sc(ws,7,2,`${CF.CONSIGNEE}\n${CF.CONSIGNEE_ADDR}`, { font: BF, align: AL_LW });
-  sc(ws,7,21,invoiceNo,  { font: BF, border: allThin() });
-  sc(ws,8,1,'TO:',       { font: BF }); sc(ws,8,13,'INV NO.:',{ font: BF });
-  sc(ws,10,21,invoiceDate,{ font: NF, border: allThin() }); sc(ws,11,13,'Date:',{ font: BF });
+  // ── Consignee + Invoice block (rows 7-11) ──
+  ws.mergeCells('B7:K8');  // consignee spans rows 7–8
+  sc(ws,7,2,`${CF.CONSIGNEE}\n${CF.CONSIGNEE_ADDR}`, { font: BF, align: AL_LW, border: allThin() });
+  sc(ws,8,1,'TO:', { font: BF });
+  ws.mergeCells('M7:S7');  sc(ws,7,13,'INV NO.:',  { font: BF, border: allThin(), align: AL_CC });
+  ws.mergeCells('U7:W8');  sc(ws,7,21,invoiceNo,   { font: BF, fill: SALMON, border: allThin(), align: AL_CC });
+  ws.mergeCells('M8:S8');  sc(ws,8,13,'INV NO.:',  { font: BF, border: allThin(), align: AL_CC });
+  ws.mergeCells('M11:S11'); sc(ws,11,13,'Date:',    { font: BF, border: allThin(), align: AL_CC });
+  ws.mergeCells('U10:W11'); sc(ws,10,21,invoiceDate,{ font: NF, fill: SALMON, border: allThin(), align: AL_CC });
 
-  // Route
-  sc(ws,13,3,CF.FROM_PORT,{ font: NF, border: allThin() });
-  sc(ws,13,8,CF.VIA,      { font: NF, border: allThin() });
-  sc(ws,13,17,CF.TO_PORT, { font: NF, border: allThin() });
-  sc(ws,14,1,'From:',     { font: BF }); sc(ws,14,5,'Via',{ font: BF }); sc(ws,14,14,'To:',{ font: BF });
-  sc(ws,16,1,'L/C No.', { font: NF }); sc(ws,16,14,'Drawn Under',{ font: NF });
+  // ── From / Via / To (rows 13-17) ──
+  ws.mergeCells('A13:B13'); sc(ws,13,1,'From:', { font: BF });
+  ws.mergeCells('C13:D14'); sc(ws,13,3,CF.FROM_PORT, { font: NF, border: allThin(), align: AL_CC });
+  ws.mergeCells('E14:G14'); sc(ws,14,5,'Via',        { font: BF, align: AL_CC });
+  ws.mergeCells('H13:M14'); sc(ws,13,8,CF.VIA,        { font: NF, border: allThin(), align: AL_CC });
+  ws.mergeCells('N14:P14'); sc(ws,14,14,'To:',        { font: BF, align: AL_CC });
+  ws.mergeCells('Q13:W14'); sc(ws,13,17,CF.TO_PORT,   { font: NF, border: allThin(), align: AL_CC });
+  ws.mergeCells('A16:B16'); sc(ws,16,1,'L/C No.',     { font: NF });
+  ws.mergeCells('N16:P17'); sc(ws,16,14,'Drawn Under', { font: NF, border: allThin() });
 
-  // Table headers
-  ws.mergeCells('D20:J20'); sc(ws,20,4,'DESCRIPTIONS',  { font: BF, border: allThin(), align: AL_CC });
-  sc(ws,20,11,'QUANTITY', { font: BF, border: allThin(), align: AL_CC });
-  sc(ws,20,16,'UNIT PRICE',{ font: BF, border: allThin(), align: AL_CC });
-  sc(ws,20,22,'AMOUNT',   { font: BF, border: allThin(), align: AL_CC });
-  sc(ws,21,1,'Marks & Numbers', { font: BF });
-  sc(ws,22,22,`${CF.INCOTERM}  ${CF.FROM_PORT}`, { font: NF, border: allThin(), align: AL_CC });
+  // ── Column headers 2-row (rows 20-21) ──
+  ws.mergeCells('A20:C21'); sc(ws,20,1,'Marks \u0026 Numbers', { font: BF, border: allThin(), align: AL_CC });
+  ws.mergeCells('D20:J21'); sc(ws,20,4,'DESCRIPTIONS',  { font: BF, border: allThin(), align: AL_CC });
+  ws.mergeCells('K20:O21'); sc(ws,20,11,'QUANTITY',      { font: BF, border: allThin(), align: AL_CC });
+  ws.mergeCells('P20:U21'); sc(ws,20,16,'UNIT PRICE',    { font: BF, border: allThin(), align: AL_CC });
+  ws.mergeCells('V20:W21'); sc(ws,20,22,'AMOUNT',        { font: BF, border: allThin(), align: AL_CC });
+  // FCA Laredo bajo AMOUNT
+  ws.mergeCells('V22:W22'); sc(ws,22,22,`${CF.INCOTERM}  ${CF.FROM_PORT}`, { font: NF, border: allThin(), align: AL_CC });
 
-  // Data rows per model
+  // ── Data rows — 2 filas por modelo, exacto al XML ──
   const modelGroups = groupBy(vins, 'modelo');
   let dr = 23; let grandTotal = 0;
   Object.entries(modelGroups).forEach(([modelo,mvins]: [string, any]) => {
@@ -925,39 +1011,49 @@ export async function generateInCfpXLSX(vins: any[], invoiceNo: string): Promise
     const nonSteel= valAcero > 0 ? (unitVal - valAcero) : 0;
     const total   = qty * unitVal; grandTotal += total;
     const year    = s?.outDate ? new Date(s.outDate).getFullYear() : '';
+    const countryTxt = `Country of origin Mexico                      REF. RULING ${CF.RULING}`;
 
-    ws.mergeCells(`A${dr}:C${dr}`);
-    sc(ws,dr,1,`Country of origin Mexico    REF. RULING ${CF.RULING}`, { font: NF, border: allThin(), align: AL_LW });
-    ws.mergeCells(`D${dr}:J${dr}`);
-    sc(ws,dr,4,`${modelo}                       MODEL ${year}`, { font: BF, border: allThin() });
+    // Main data row spans 2 rows (A:C merged, D:J merged, K:N merged, O, P:Q, R:U, V:W)
+    ws.mergeCells(`A${dr}:C${dr+1}`);
+    sc(ws,dr,1,countryTxt, { font: { ...NF, color:{argb:'FFFF0000'} }, border: allThin(), align: AL_LW });
+    ws.mergeCells(`D${dr}:J${dr+1}`);
+    sc(ws,dr,4,`${modelo}   MODEL ${year}`,{ font: BF, border: allThin(), align: AL_CC });
+    ws.mergeCells(`K${dr}:N${dr+1}`);
     sc(ws,dr,11,qty,      { font: NF, border: allThin(), align: AL_CC });
-    sc(ws,dr,15,'UNIT',  { font: NF, border: allThin() });
-    sc(ws,dr,16,'USD',   { font: NF, border: allThin() });
-    sc(ws,dr,18,unitVal, { font: NF, border: allThin(), align: AL_RC });
-    sc(ws,dr,22,total,   { font: NF, border: allThin(), align: AL_RC });
-    dr++;
+    ws.mergeCells(`O${dr}:O${dr+1}`);
+    sc(ws,dr,15,'UNIT',   { font: NF, border: allThin(), align: AL_CC });
+    ws.mergeCells(`P${dr}:Q${dr+1}`);
+    sc(ws,dr,16,'USD',    { font: NF, border: allThin(), align: AL_CC });
+    ws.mergeCells(`R${dr}:U${dr+1}`);
+    sc(ws,dr,18,unitVal,  { font: NF, border: allThin(), align: AL_RC });
+    ws.mergeCells(`V${dr}:W${dr+1}`);
+    sc(ws,dr,22,total,    { font: NF, border: allThin(), align: AL_RC });
+    dr += 2;
 
     if (valAcero > 0) {
-      ws.mergeCells(`A${dr}:C${dr}`);
-      sc(ws,dr,1,'Steel Country of Melt/Pour: China', { font: NF, border: allThin() });
-      ws.mergeCells(`D${dr}:J${dr}`);
-      sc(ws,dr,4,'Non-Steel Content',{ font: NF, border: allThin() });
-      sc(ws,dr,16,'USD',   { font: NF, border: allThin() });
-      sc(ws,dr,18,nonSteel,{ font: NF, border: allThin(), align: AL_RC });
-      sc(ws,dr,22,qty*nonSteel,{ font: NF, border: allThin(), align: AL_RC }); dr++;
-      ws.mergeCells(`D${dr}:J${dr}`);
-      sc(ws,dr,4,'Steel Content',{ font: NF, border: allThin() });
-      sc(ws,dr,16,'USD',    { font: NF, border: allThin() });
-      sc(ws,dr,18,valAcero, { font: NF, border: allThin(), align: AL_RC });
-      sc(ws,dr,22,qty*valAcero,{ font: NF, border: allThin(), align: AL_RC }); dr++;
+      // Steel rows A:C merged vertically (rows dr..dr+1)
+      ws.mergeCells(`A${dr}:C${dr+1}`);
+      sc(ws,dr,1,'Steel Country of Melt/Pour: China',{ font:{ ...NF,color:{argb:'FFFF0000'} }, border:allThin(), align:AL_LW });
+      ws.mergeCells(`D${dr}:O${dr}`);  sc(ws,dr,4,'Non-Steel Content',{ font:BF, border:allThin(), align:AL_CC });
+      ws.mergeCells(`P${dr}:Q${dr}`);  sc(ws,dr,16,'USD',{ font:NF, border:allThin() });
+      ws.mergeCells(`R${dr}:U${dr}`);  sc(ws,dr,18,nonSteel,{ font:{ ...NF,color:{argb:'FF0070C0'} }, border:allThin(), align:AL_RC });
+      ws.mergeCells(`V${dr}:W${dr}`);  sc(ws,dr,22,qty*nonSteel,{ font:{ ...NF,color:{argb:'FF0070C0'} }, border:allThin(), align:AL_RC }); dr++;
+      ws.mergeCells(`D${dr}:O${dr}`);  sc(ws,dr,4,'Steel Content',{ font:BF, border:allThin(), align:AL_CC });
+      ws.mergeCells(`P${dr}:Q${dr}`);  sc(ws,dr,16,'USD',{ font:NF, border:allThin() });
+      ws.mergeCells(`R${dr}:U${dr}`);  sc(ws,dr,18,valAcero,{ font:{ ...NF,color:{argb:'FF0070C0'} }, border:allThin(), align:AL_RC });
+      ws.mergeCells(`V${dr}:W${dr}`);  sc(ws,dr,22,qty*valAcero,{ font:{ ...NF,color:{argb:'FF0070C0'} }, border:allThin(), align:AL_RC }); dr++;
     }
   });
 
-  ws.mergeCells(`A${dr}:C${dr}`); sc(ws,dr,1,'TOTAL:', { font: BF, border: allThin() });
-  sc(ws,dr,11,'USD',{ font: BF, border: allThin() });
-  sc(ws,dr,22,grandTotal, { font: BF, border: allThin(), align: AL_RC }); dr++;
-  ws.mergeCells(`A${dr}:C${dr}`); sc(ws,dr,1,'SAY TOTAL ：',{ font: BF });
-  ws.mergeCells(`D${dr}:V${dr}`); sc(ws,dr,4,amountToWords(grandTotal), { font: BF, align: AL_LW });
+  // TOTAL row: A:J merged, K:U merged, V:W merged
+  ws.mergeCells(`A${dr}:J${dr}`); sc(ws,dr,1,'TOTAL:',    { font:BF, border:allThin() });
+  ws.mergeCells(`K${dr}:U${dr}`); sc(ws,dr,11,'USD',      { font:BF, border:allThin(), align:AL_CC });
+  ws.mergeCells(`V${dr}:W${dr}`); sc(ws,dr,22,grandTotal, { font:BF, border:allThin(), align:AL_RC }); dr++;
+  // SAY TOTAL: A:J merged, K:W merged — palabras en VERDE
+  ws.mergeCells(`A${dr}:J${dr}`); sc(ws,dr,1,'SAY TOTAL ：',{ font:BF, border:allThin() });
+  ws.mergeCells(`K${dr}:W${dr}`);
+  sc(ws,dr,11,amountToWords(grandTotal),
+    { font:{ ...BF, color:{argb:'FF00B050'} }, border:allThin(), align:AL_LW });
 
   return wb;
 }

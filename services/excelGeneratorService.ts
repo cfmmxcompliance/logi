@@ -169,7 +169,98 @@ function setRows(ws: ExcelJS.Worksheet, heights: Record<number, number>) {
   });
 }
 
+// ─── Configuraciones de página exactas por sheet (extraídas del Excel) ────
+interface PageCfg {
+  orientation: 'portrait' | 'landscape';
+  scale?: number;      // % (1-100), use cuando fitToPage es false
+  fitToPage?: boolean;
+  fitToWidth?: number;
+  fitToHeight?: number;
+  hCenter?: boolean;
+  left: number; right: number; top: number; bottom: number;
+  header: number; footer: number;
+}
+
+const PAGE: Record<string, PageCfg> = {
+  // FORMATO: A4, vertical, 100%, márgenes 1.78cm/1.91cm
+  FORMATO: {
+    orientation:'portrait', scale:100,
+    left:0.7, right:0.7, top:0.75, bottom:0.75, header:0.3, footer:0.3,
+  },
+  // PROFORMA: A4, horizontal, 46% escala, fitToPage=true, centrado horizontal
+  PROFORMA: {
+    orientation:'landscape', scale:46, fitToPage:true, fitToWidth:1, fitToHeight:1, hCenter:true,
+    left:0.23622047244094499, right:0.23622047244094499,
+    top:0.74803149606299202, bottom:0.74803149606299202,
+    header:0.31496062992126, footer:0.31496062992126,
+  },
+  // BILL OF LADING: A4, horizontal, 96%, fitToPage=true, márgenes 1.91cm/2.54cm
+  BOL: {
+    orientation:'landscape', scale:96, fitToPage:true, fitToWidth:1, fitToHeight:1,
+    left:0.75, right:0.75, top:1.0, bottom:1.0, header:0.5, footer:0.5,
+  },
+  // CFM_INSTRUCTIONS: A4, vertical, 100%, márgenes estándar
+  INSTRUCCIONES: {
+    orientation:'portrait', scale:100,
+    left:0.7, right:0.7, top:0.75, bottom:0.75, header:0.3, footer:0.3,
+  },
+  // CFC invoiced to CFP: A4, horizontal, 100%, márgenes estándar
+  CFC_CFP: {
+    orientation:'landscape', scale:100,
+    left:0.7, right:0.7, top:0.75, bottom:0.75, header:0.3, footer:0.3,
+  },
+  // IN-with CFM: A4, horizontal, 100%, márgenes estándar
+  IN_CFP: {
+    orientation:'landscape', scale:100,
+    left:0.7, right:0.7, top:0.75, bottom:0.75, header:0.3, footer:0.3,
+  },
+  // Packing List: A4, horizontal, 97%, márgenes ajustados 0.92cm todos lados
+  PL_CFP: {
+    orientation:'landscape', scale:97,
+    left:0.36111111111111099, right:0.36111111111111099,
+    top:0.36111111111111099, bottom:0.36111111111111099,
+    header:0.5, footer:0.5,
+  },
+  // LAY OUT CCP: A4, vertical, 80%, fitToPage=true (1 página de ancho)
+  CCP: {
+    orientation:'portrait', scale:80, fitToPage:true, fitToWidth:1, fitToHeight:0,
+    left:0.7, right:0.7, top:0.75, bottom:0.75, header:0.3, footer:0.3,
+  },
+  // CFMOTO CSV: A4, vertical, 100%, márgenes estándar
+  CSV: {
+    orientation:'portrait', scale:100,
+    left:0.7, right:0.7, top:0.75, bottom:0.75, header:0.3, footer:0.3,
+  },
+};
+
+function applyPageSetup(ws: ExcelJS.Worksheet, cfg: PageCfg) {
+  ws.pageSetup.paperSize   = 9; // A4
+  ws.pageSetup.orientation = cfg.orientation;
+
+  if (cfg.fitToPage) {
+    ws.pageSetup.fitToPage   = true;
+    ws.pageSetup.fitToWidth  = cfg.fitToWidth  ?? 1;
+    ws.pageSetup.fitToHeight = cfg.fitToHeight ?? 1;
+    // ExcelJS: cuando fitToPage=true NO setear scale (se ignora)
+  } else {
+    ws.pageSetup.scale = cfg.scale ?? 100;
+  }
+
+  if (cfg.hCenter) ws.pageSetup.horizontalCentered = true;
+
+  // Márgenes en pulgadas (ExcelJS acepta el objeto margins directamente)
+  (ws.pageSetup as any).margins = {
+    left:   cfg.left,
+    right:  cfg.right,
+    top:    cfg.top,
+    bottom: cfg.bottom,
+    header: cfg.header,
+    footer: cfg.footer,
+  };
+}
+
 export async function downloadWB(wb: ExcelJS.Workbook, filename: string) {
+
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer as ArrayBuffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -188,6 +279,7 @@ export async function generateCfmotoXLSX(vins: any[], invoiceNo: string, asnNo: 
   const wb = new ExcelJS.Workbook();
   wb.creator = 'CFMOTO Logistics'; wb.created = new Date();
   const ws = wb.addWorksheet('CFMOTO CSV');
+  applyPageSetup(ws, PAGE.CSV);
 
   // Anchos exactos del Excel original (0-indexed → 1-indexed)
   setCols(ws, {
@@ -286,6 +378,7 @@ export async function generateProformaXLSX(
   wb.creator = 'CFMOTO Logistics';
   const sheetName = isFormato ? 'FORMATO' : 'PROFORMA VEHICULOS';
   const ws = wb.addWorksheet(sheetName);
+  applyPageSetup(ws, isFormato ? PAGE.FORMATO : PAGE.PROFORMA);
 
   // Anchos de columna (cols A-V = 1-22)
   setCols(ws, {
@@ -436,6 +529,7 @@ export async function generateBOLXLSX(vins: any[], invoiceNo: string, asnNo: str
   const wb = new ExcelJS.Workbook();
   wb.creator = 'CFMOTO Logistics';
   const ws = wb.addWorksheet('BILL OF LADING');
+  applyPageSetup(ws, PAGE.BOL);
 
   setCols(ws, { 0:22, 1:45, 2:3, 3:3, 4:3, 5:3, 6:25 });
   setRows(ws, { 1:30 });
@@ -527,6 +621,7 @@ export async function generateInstruccionesXLSX(vins: any[], invoiceNo: string):
   const wb = new ExcelJS.Workbook();
   wb.creator = 'CFMOTO Logistics';
   const ws = wb.addWorksheet('CFM_INSTRUCTIONS LETTER');
+  applyPageSetup(ws, PAGE.INSTRUCCIONES);
 
   setCols(ws, { 0:2, 1:14, 2:14, 3:22, 4:10, 5:10, 6:10, 7:14, 8:22, 9:12 });
 
@@ -622,6 +717,7 @@ export async function generateCfcCfpXLSX(vins: any[], invoiceNo: string): Promis
   const wb = new ExcelJS.Workbook();
   wb.creator = 'CFMOTO Logistics';
   const ws = wb.addWorksheet('CFC invoiced to CFP');
+  applyPageSetup(ws, PAGE.CFC_CFP);
 
   setCols(ws, { 0:3,1:18,2:14,3:28,4:6,5:8,6:8,7:8,8:10,9:6,10:12,11:4,12:14 });
   setRows(ws, { 0:20,1:15,2:15,3:25,4:25,5:8,6:12,7:12,8:12,9:8,10:12,11:12,12:8,
@@ -712,6 +808,7 @@ export async function generateInCfpXLSX(vins: any[], invoiceNo: string): Promise
   const wb = new ExcelJS.Workbook();
   wb.creator = 'CFMOTO Logistics';
   const ws = wb.addWorksheet('IN-with CFM title to CFP');
+  applyPageSetup(ws, PAGE.IN_CFP);
 
   setCols(ws, { 0:3,1:3,2:3,3:18,4:2,5:2,6:2,7:8,8:2,9:2,10:7,11:2,12:2,13:2,14:5,15:5,16:3,17:10,18:2,19:2,20:2,21:14 });
   setRows(ws, { 0:20,1:15,2:35,3:12,4:8,5:20,6:20,7:12,8:8,9:12,10:12,11:8,12:18,13:12,14:8,15:8,16:8,17:8,18:25,19:15,20:15,21:20,22:20,23:15,24:15,25:15,26:15,27:15 });
@@ -800,6 +897,7 @@ export async function generatePlCfpXLSX(vins: any[], invoiceNo: string): Promise
   const wb = new ExcelJS.Workbook();
   wb.creator = 'CFMOTO Logistics';
   const ws = wb.addWorksheet('PL-with CFM title to CFP');
+  applyPageSetup(ws, PAGE.PL_CFP);
 
   setCols(ws, { 0:0.2,1:0.5,2:22,3:9.8,4:2,5:14.3,6:6.5,7:5.8,8:3.5,9:3.8,10:5.5,11:9.5,12:9.5,13:17,14:8.8 });
   setRows(ws, { 0:39,1:26.15,2:36.75,3:16,4:21,5:42,6:35.15,7:24.65,8:24.65,9:26.15,10:22.5,11:37.4,12:40.5,13:23.5,14:23.5 });
@@ -906,6 +1004,7 @@ export async function generateCCPXLSX(vins: any[], invoiceNo: string): Promise<E
   const wb = new ExcelJS.Workbook();
   wb.creator = 'CFMOTO Logistics';
   const ws = wb.addWorksheet('LAY OUT CCP');
+  applyPageSetup(ws, PAGE.CCP);
 
   setCols(ws, { 0:22.8, 1:47.5, 2:1.7, 3:40.5 });
 

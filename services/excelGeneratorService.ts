@@ -711,55 +711,61 @@ export async function generateInstruccionesXLSX(vins: any[], invoiceNo: string):
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 5. CFC invoiced to CFP — Times New Roman, bordes medium/thin, 13 cols A-M
+// 5. CFC invoiced to CFP — Times New Roman, bordes exact, 14 cols A-N
 // ════════════════════════════════════════════════════════════════════════════
+
 export async function generateCfcCfpXLSX(vins: any[], invoiceNo: string): Promise<ExcelJS.Workbook> {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'CFMOTO Logistics';
   const ws = wb.addWorksheet('CFC invoiced to CFP');
   applyPageSetup(ws, PAGE.CFC_CFP);
 
-  setCols(ws, { 0:3,1:18,2:14,3:28,4:6,5:8,6:8,7:8,8:10,9:6,10:12,11:4,12:14 });
+  setCols(ws, {
+    0:1.54, 1:10, 2:12, 3:12.54, 4:4, 5:6.54, 6:10.18,
+    7:8.82, 8:8, 9:6.45, 10:10, 11:2.54, 12:5, 13:20.27,
+  });
   setRows(ws, { 0:20,1:15,2:15,3:25,4:25,5:8,6:12,7:12,8:12,9:8,10:12,11:12,12:8,
                 13:18,14:12,15:8,16:25,17:12,18:30,19:12,20:12 });
 
   const BF = F_TNR(10,true); const NF = F_TNR(10,false);
   const invoiceDate = vins[0]?.outDate || '';
 
-  // Header empresa China
-  ws.mergeCells('B1:M1'); sc(ws,1,2,CF.CHINA_NAME_ZH, { font: F_TNR(12,true), align: AL_CC, border: topMedium() });
-  ws.mergeCells('B2:M2'); sc(ws,2,2,` ZHEJIANG CFMOTO POWER CO.,LTD `, { font: F_TNR(11,true), align: AL_CC });
-  ws.mergeCells('B3:M3'); sc(ws,3,2,'NO.116,WUZHOU ROAD,YUHANG ECONOMIC DEVELOPMENT ZONE, HANGZHOU 311100,ZHEJIANG PROVINCE,P.R.CHINA', { font: NF, align: AL_CC });
-  ws.mergeCells('B4:M4'); sc(ws,4,2,'商 业 发 票', { font: F_TNR(14,true), align: AL_CC });
-  ws.mergeCells('B5:M5'); sc(ws,5,2,'COMMERCIAL INVOICE', { font: F_TNR(12,true), align: AL_CC });
+  // ── Cabecera empresa China — filas 1-5 mergeadas B:N ──
+  ws.mergeCells('B1:N1'); sc(ws,1,2,CF.CHINA_NAME_ZH,          { font: F_TNR(14,true), align: AL_CC });
+  ws.mergeCells('B2:N2'); sc(ws,2,2,' ZHEJIANG CFMOTO POWER CO.,LTD ', { font: F_TNR(11,true), align: AL_CC });
+  ws.mergeCells('B3:N3'); sc(ws,3,2,'NO.116,WUZHOU ROAD,YUHANG ECONOMIC DEVELOPMENT ZONE,\nHANGZHOU 311100,ZHEJIANG PROVINCE,P.R.CHINA', { font: NF, align: AL_CC });
+  ws.mergeCells('B4:N4'); sc(ws,4,2,'商 业 发 票',              { font: F_TNR(14,true), align: AL_CC });
+  ws.mergeCells('B5:N5'); sc(ws,5,2,'COMMERCIAL INVOICE',        { font: F_TNR(12,true), align: AL_CC });
 
-  // Invoice info
-  sc(ws,6,9,'发票号码', { font: BF, border: allThin() });
-  sc(ws,7,2,'至',      { font: BF });
-  sc(ws,7,9,'INV NO.:', { font: BF, border: allThin() });
-  ws.mergeCells('K7:M7'); sc(ws,7,11,invoiceNo, { font: BF, border: allThin() });
-  sc(ws,8,2,'TO:', { font: BF }); ws.mergeCells('C8:H8');
-  sc(ws,8,3,CF.CONSIGNEE, { font: BF }); sc(ws,8,9,'日期', { font: BF, border: allThin() });
-  sc(ws,9,2,'Address', { font: NF }); ws.mergeCells('C9:H9');
-  sc(ws,9,3,CF.CONSIGNEE_ADDR, { font: NF }); sc(ws,9,9,'Date', { font: BF, border: allThin() });
-  ws.mergeCells('K9:M9'); sc(ws,9,11,invoiceDate, { font: NF, border: allThin() });
+  // ── Fila 6: 发票号码 en I6:J6 y vacío k6:M6 ──
+  ws.mergeCells('I6:J6'); sc(ws,6,9,'发票号码', { font: BF, border: allThin(), align: AL_CC });
+  ws.mergeCells('K6:M6');
 
-  // Comments
+  // ── Fila 7: 至 | INV NO.: en I7:J7 | número en K7:N7 ──
+  sc(ws,7,2,'至', { font: BF });
+  ws.mergeCells('I7:J7'); sc(ws,7,9,'INV NO.:', { font: BF, border: allThin(), align: AL_CC });
+  ws.mergeCells('K7:N7'); sc(ws,7,11,invoiceNo,  { font: BF, border: allThin(), align: AL_LC });
+
+  // ── Fila 8: TO: + consignee en C8:G8 | 日期 en I8:J8 ──
+  sc(ws,8,2,'TO:', { font: BF });
+  ws.mergeCells('C8:G8'); sc(ws,8,3,CF.CONSIGNEE, { font: BF, border: allThin(), align: AL_LC });
+  ws.mergeCells('I8:J8'); sc(ws,8,9,'日期', { font: BF, border: allThin(), align: AL_CC });
+
+  // ── Fila 9: Address + addr en C9:G9 | Date en I9:J9 | fecha en K9:M9 ──
+  sc(ws,9,2,'Address', { font: NF });
+  ws.mergeCells('C9:G9'); sc(ws,9,3,CF.CONSIGNEE_ADDR, { font: NF, border: allThin(), align: AL_LW });
+  ws.mergeCells('I9:J9'); sc(ws,9,9,'Date', { font: BF, border: allThin(), align: AL_CC });
+  ws.mergeCells('K9:M9'); sc(ws,9,11,invoiceDate, { font: NF, border: allThin(), align: AL_LC });
+
+  // ── Fila 11-12: COMMENTS ──
   sc(ws,11,3,'COMMENTS:', { font: BF });
-  ws.mergeCells('D11:M11');
+  ws.mergeCells('D11:N11');
   sc(ws,11,4,`Direct Shipment from Mexico to CFMOTO Powersports Inc. of Mexico origin vehicles produced by CFMOTO MEXICO POWER, S. DE R.L. DE C.V. for Zhejiang CFMOTO Power Co. Ltd.`, { font: NF, align: AL_LW });
-  ws.mergeCells('D12:M12'); sc(ws,12,4,`REF.  RULING ${CF.RULING}`, { font: NF });
+  sc(ws,12,4,`REF.  RULING ${CF.RULING}`, { font: NF });
 
-  // Route
+  // ── Fila 14: Route — posiciones exactas del Excel ──
+  //   C14=装船口岸/From | D14:E14=Laredo | F14=经/Via | G14=BY TRUCK | H14:I14=目的地/To | J14:N14=Kansas
   sc(ws,14,3,'装船口岸\nFrom', { font: BF, border: allThin(), align: AL_CC });
-  sc(ws,14,4,CF.FROM_PORT, { font: NF, border: allThin() });
-  sc(ws,14,6,'经\nVia',    { font: BF, border: allThin(), align: AL_CC });
-  sc(ws,14,7,CF.VIA_UP,   { font: NF, border: allThin() });
-  sc(ws,14,8,'目的地\nTo', { font: BF, border: allThin(), align: AL_CC });
-  sc(ws,14,10,CF.TO_PORT,  { font: NF, border: allThin() });
-  sc(ws,15,3,'信用证号码\nL/C No.', { font: BF, border: allThin() });
-  sc(ws,15,8,'开证银行\nDrawn Under', { font: BF, border: allThin() });
-
   // Table headers
   const TH = 17;
   ws.mergeCells(`B${TH}:C${TH}`); sc(ws,TH,2,'唛头及包/箱号\nMarks & Numbers', { font: BF, border: allThin(), align: AL_CC });

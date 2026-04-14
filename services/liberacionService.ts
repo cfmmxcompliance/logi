@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, getDocsFromCache, query, where } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, getDocsFromCache, updateDoc, query, where } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { LiberacionRecord } from '../types.ts';
 
@@ -61,6 +61,21 @@ export const liberacionService = {
       return docId;
     } catch (error) {
       console.error('Error adding Liberacion:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * updateLiberacion — actualiza campos parciales de un registro existente.
+   * Usado por el background upload para parchear las URLs de fotos reales.
+   */
+  async updateLiberacion(id: string, data: Partial<LiberacionRecord>): Promise<void> {
+    if (!db) return;
+    try {
+      const docRef = doc(db, COLLECTION_NAME, id);
+      await updateDoc(docRef, data as Record<string, unknown>);
+    } catch (error) {
+      console.error('Error updating Liberacion:', error);
       throw error;
     }
   }

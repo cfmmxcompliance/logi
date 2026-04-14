@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { selloService } from '../services/selloService.ts';
@@ -9,6 +9,9 @@ import { AsignacionCajaModel } from '../types/asignacionCaja.ts';
 import { LiberacionRecord, SelloRecord } from '../types.ts';
 import { Camera, Check, ArrowLeft, Loader2, Save, X, Box, ShieldCheck, DoorOpen, HardDrive, AlertCircle, CheckCircle, Car } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUploadGuard } from '../hooks/useUploadGuard.ts';
+import { waitForOnline } from '../hooks/useOnlineStatus.ts';
+import { UploadStatusBanner, UploadStatus } from '../components/UploadStatusBanner.tsx';
 
 export const HandheldLiberacion = () => {
   const navigate = useNavigate();
@@ -43,6 +46,14 @@ export const HandheldLiberacion = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // ── Upload state ──
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
+  const [uploadStatusLabel, setUploadStatusLabel] = useState<string | undefined>(undefined);
+  const [uploadError, setUploadError] = useState<string | undefined>(undefined);
+
+  // Bloquea cierre del browser mientras suben las 3 evidencias
+  useUploadGuard(uploadStatus === 'uploading' || uploadStatus === 'waiting-online');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -238,15 +249,89 @@ export const HandheldLiberacion = () => {
     }
   };
 
+  /**
+   * uploadEvidenciasBackground — sube las 3 fotos a Drive en paralelo, en segundo plano.
+   * Espera signal si está offline. Reintenta hasta 3 veces con back-off.
+   * Actualiza el registro de Firestore con las URLs reales cuando termina.
+   */
+  const uploadEvidenciasBackground = useCallback(async (
+    cajaFile: File,
+    puertasFile: File,
+    selloFile: File,
+    liberacionId: string,
+    numeroCaja: string
+  ) => {
+    const FOLDER_ID = '1jBIvDIbXAP2eGFyVM3J2i5iZWjaEdO9X';
+    const MAX_RETRIES = 3;
+
+    if (!navigator.onLine) {
+      setUploadStatus('waiting-online');
+      setUploadStatusLabel('Sin señal — esperando conexión para subir 3 evidencias...');
+      await waitForOnline();
+    }
+
+    setUploadStatus('uploading');
+    setUploadStatusLabel('Subiendo 3 evidencias a Drive...');
+    setUploadError(undefined);
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const [cajaRes, puertasRes, selloRes] = await Promise.all([
+          uploadFileToDrive(cajaFile,   `Liberacion_${numeroCaja}_CAJA`,    FOLDER_ID),
+          uploadFileToDrive(puertasFile, `Liberacion_${numeroCaja}_PUERTAS`, FOLDER_ID),
+          uploadFileToDrive(selloFile,   `Liberacion_${numeroCaja}_SELLO`,   FOLDER_ID),
+        ]);
+        const cajaUrl    = cajaRes?.webViewLink    || (cajaRes    as any)?.url || '';
+        const puertasUrl = puertasRes?.webViewLink  || (puertasRes as any)?.url || '';
+        const selloUrl   = selloRes?.webViewLink    || (selloRes   as any)?.url || '';
+
+        // Actualiza Firestore con las URLs reales
+        await liberacionService.updateLiberacion(liberacionId, {
+          fotos: { cajaUrl, puertasUrl, selloUrl },
+          uploadStatus: 'done',
+        } as any);
+
+        // Actualiza optimistic local state
+        setLiberacionesDelDia(prev =>
+          prev.map(l => l.id === liberacionId
+            ? { ...l, fotos: { cajaUrl, puertasUrl, selloUrl } }
+            : l
+          )
+        );
+
+        setUploadStatus('done');
+        setUploadStatusLabel('3 evidencias subidas correctamente ✔');
+        setTimeout(() => setUploadStatus('idle'), 4000);
+        return;
+      } catch (err: any) {
+        console.warn(`Drive upload intento ${attempt}/${MAX_RETRIES}:`, err.message);
+        setUploadError(err.message);
+        if (attempt < MAX_RETRIES) {
+          if (!navigator.onLine) {
+            setUploadStatus('waiting-online');
+            setUploadStatusLabel('Sin señal — reintentando cuando haya conexión...');
+            await waitForOnline();
+          }
+          setUploadStatus('uploading');
+          setUploadStatusLabel(`Reintentando subida (intento ${attempt + 1}/${MAX_RETRIES})...`);
+          await new Promise(r => setTimeout(r, 2000 * attempt));
+        } else {
+          setUploadStatus('error');
+          setUploadStatusLabel('Error subiendo evidencias — las URLs quedarán pendientes.');
+        }
+      }
+    }
+  }, []);
+
   // --- VALIDATION AND SAVE ---
   const handleCierreCaja = async () => {
     if (!selectedCaja) return;
     if (!fotoCajaFile || !fotoPuertasFile || !fotoSelloFile) {
-      setValidationError("Aún faltan evidencias por capturar.");
+      setValidationError('Aún faltan evidencias por capturar.');
       return;
     }
     if (!extractedSello || extractedSello.trim().length < 3) {
-      setValidationError("El sello extraído es inválido o muy corto.");
+      setValidationError('El sello extraído es inválido o muy corto.');
       return;
     }
 
@@ -254,71 +339,46 @@ export const HandheldLiberacion = () => {
     setIsSaving(true);
 
     try {
-      // 1. Validate Sello in Firebase
-      // Find the recorded sello assigned to this particular Caja on this selectedDate
+      // 1. Valida sello en Firebase
       const assignedSelloRecord = sellosDelDia.find(s => s.numeroCaja === selectedCaja.numeroCaja);
       if (!assignedSelloRecord) {
-        throw new Error("⛔ ALERTA: Esta caja NO TIENE NINGÚN SELLO REGISTRADO para el día de hoy. No se puede liberar.");
+        throw new Error('⛔ ALERTA: Esta caja NO TIENE NINGÚN SELLO REGISTRADO para el día de hoy. No se puede liberar.');
       }
-
       if (assignedSelloRecord.selloAsignado !== extractedSello.trim().toUpperCase()) {
         throw new Error(`⛔ ALERTA CRÍTICA: ¡Descuadre de Sello!\n\nSello de Salida: [${assignedSelloRecord.selloAsignado}]\nSello Escaneado Físicamente: [${extractedSello.toUpperCase().trim()}]\n\nPor seguridad, no se puede cerrar la caja. Verifique error y/o escale al responsable del area.`);
       }
 
-      // 2. Validation Passed. Upload 3 photos in PARALLEL to Google Drive
-      const FOLDER_ID = "1jBIvDIbXAP2eGFyVM3J2i5iZWjaEdO9X";
-      let cajaUrl = "";
-      let puertasUrl = "";
-      let selloUrl = "";
-
-      try {
-          // ⚡ Parallel upload — 3x faster than sequential
-          const [cajaRes, puertasRes, selloRes] = await Promise.all([
-              uploadFileToDrive(fotoCajaFile,   `Liberacion_${selectedCaja.numeroCaja}_CAJA`,    FOLDER_ID),
-              uploadFileToDrive(fotoPuertasFile, `Liberacion_${selectedCaja.numeroCaja}_PUERTAS`, FOLDER_ID),
-              uploadFileToDrive(fotoSelloFile,   `Liberacion_${selectedCaja.numeroCaja}_SELLO`,   FOLDER_ID),
-          ]);
-
-          cajaUrl    = cajaRes?.webViewLink    || (cajaRes    as any)?.url || "";
-          puertasUrl = puertasRes?.webViewLink  || (puertasRes as any)?.url || "";
-          selloUrl   = selloRes?.webViewLink    || (selloRes   as any)?.url || "";
-      } catch (driveErr: any) {
-          console.error("Error subiendo evidencias a Drive:", driveErr);
-          throw new Error("Error en Drive: " + driveErr.message + "\n\nLa caja NO fue liberada. Reintente presionar Cierre de Caja.");
-      }
-
-      if (!cajaUrl || !puertasUrl || !selloUrl) {
-          throw new Error("No se obtuvieron todas las URLs de Google Drive. Abortando cierre.");
-      }
-
-      // 3. Save Final Record in Database
+      // 2. Guarda el registro de liberación INMEDIATAMENTE con fotos=PENDING
+      // La operación queda registrada, las URLs se rellenan en background
+      const liberacionId = `lib_${selectedCaja.id}_${Date.now()}`;
       const newLiberacion: LiberacionRecord = {
+        id: liberacionId,
         fechaLiberacion: selectedDate,
-        asignacionCajaId: selectedCaja.id || "",
+        asignacionCajaId: selectedCaja.id || '',
         numeroCaja: selectedCaja.numeroCaja,
         selloValidado: extractedSello.toUpperCase().trim(),
         coincideConOriginal: true,
         usuario: user.email || user.username || 'unknown',
         fechaHoraRegistro: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),
-        fotos: {
-            cajaUrl,
-            puertasUrl,
-            selloUrl
-        },
-        createdAt: new Date().toISOString()
+        fotos: { cajaUrl: 'PENDING', puertasUrl: 'PENDING', selloUrl: 'PENDING' },
+        createdAt: new Date().toISOString(),
       };
 
       await liberacionService.addLiberacion(newLiberacion);
 
-      // Optimistic local update - no need to reload full list
-      setLiberacionesDelDia(prev => [...prev, { ...newLiberacion, id: `temp_${Date.now()}` }]);
+      // Optimistic update local
+      setLiberacionesDelDia(prev => [...prev, newLiberacion]);
       setSaveSuccess(true);
 
-      // Auto-close modal after 3 seconds
-      setTimeout(() => {
-        closeModal();
-      }, 3000);
+      // 3. Cierra modal INMEDIATAMENTE (operación completada)
+      setTimeout(() => closeModal(), 2500);
 
+      // 4. Sube las 3 fotos en SEGUNDO PLANO (fire & forget)
+      const cajaSnap    = fotoCajaFile;
+      const puertasSnap = fotoPuertasFile;
+      const selloSnap   = fotoSelloFile;
+      uploadEvidenciasBackground(cajaSnap, puertasSnap, selloSnap, liberacionId, selectedCaja.numeroCaja);
+      // sin await intencionalmente — no bloquea el cierre del modal
 
     } catch (e: any) {
       setValidationError(e.message);
@@ -343,6 +403,13 @@ export const HandheldLiberacion = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col font-sans">
+      {/* Banner flotante de upload — aparece cuando suben las evidencias en background */}
+      <UploadStatusBanner
+        status={uploadStatus}
+        label={uploadStatusLabel}
+        error={uploadError}
+        onDismiss={() => setUploadStatus('idle')}
+      />
       <input 
         type="file" 
         accept="image/*" 

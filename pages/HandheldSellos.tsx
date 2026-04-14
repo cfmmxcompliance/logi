@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { selloService } from '../services/selloService.ts';
@@ -8,6 +8,9 @@ import { AsignacionCajaModel } from '../types/asignacionCaja.ts';
 import { SelloRecord } from '../types.ts';
 import { Camera, Check, ArrowLeft, Loader2, Save, X, Box, ImageIcon, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUploadGuard } from '../hooks/useUploadGuard.ts';
+import { waitForOnline } from '../hooks/useOnlineStatus.ts';
+import { UploadStatusBanner, UploadStatus } from '../components/UploadStatusBanner.tsx';
 
 export const HandheldSellos = () => {
   const navigate = useNavigate();
@@ -33,8 +36,14 @@ export const HandheldSellos = () => {
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Replacement confirmation modal state
   const [replaceConfirm, setReplaceConfirm] = useState<{ caja: AsignacionCajaModel; sello: SelloRecord } | null>(null);
+
+  // ── Upload state: non-blocking, fire & forget ──
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
+  const [uploadError, setUploadError]   = useState<string | undefined>(undefined);
+
+  // Bloquea cierre del browser si hay upload activo
+  useUploadGuard(uploadStatus === 'uploading' || uploadStatus === 'waiting-online');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -158,62 +167,95 @@ export const HandheldSellos = () => {
     }
   };
 
+  /**
+   * uploadPhotoBackground — sube la foto a Drive en segundo plano (fire & forget).
+   * Si no hay signal, espera sin bloquear la UI. Reintenta hasta 3 veces con back-off.
+   * Actualiza el registro de Firestore con la URL real cuando termina.
+   */
+  const uploadPhotoBackground = useCallback(async (
+    file: File,
+    filename: string,
+    selloId: string
+  ) => {
+    const FOLDER_ID = '1jBIvDIbXAP2eGFyVM3J2i5iZWjaEdO9X';
+    const MAX_RETRIES = 3;
+
+    if (!navigator.onLine) {
+      setUploadStatus('waiting-online');
+      await waitForOnline();
+    }
+
+    setUploadStatus('uploading');
+    setUploadError(undefined);
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const result = await uploadFileToDrive(file, filename, FOLDER_ID);
+        const url = result?.webViewLink || (result as any)?.url || '';
+        if (url) {
+          // Actualiza Firestore con la URL real — en background
+          await selloService.updateSello(selloId, { fotoUrl: url });
+          setSellosDelDia(prev =>
+            prev.map(s => s.id === selloId ? { ...s, fotoUrl: url } : s)
+          );
+        }
+        setUploadStatus('done');
+        setTimeout(() => setUploadStatus('idle'), 3000);
+        return;
+      } catch (err: any) {
+        console.warn(`Drive upload intento ${attempt}/${MAX_RETRIES}:`, err.message);
+        setUploadError(err.message);
+        if (attempt < MAX_RETRIES) {
+          // Back-off exponencial: 2s, 4s, 8s
+          if (!navigator.onLine) {
+            setUploadStatus('waiting-online');
+            await waitForOnline();
+          }
+          setUploadStatus('uploading');
+          await new Promise(r => setTimeout(r, 2000 * attempt));
+        } else {
+          setUploadStatus('error');
+        }
+      }
+    }
+  }, []);
+
   const handleSaveSello = async () => {
     if (!selectedCaja || !selloValue.trim()) {
-       alert("Por favor completa el número de sello.");
+       alert('Por favor completa el número de sello.');
        return;
     }
     if (!user?.username && !user?.email) {
-       alert("Error de sesión: No se detectó un usuario válido.");
+       alert('Error de sesión: No se detectó un usuario válido.');
        return;
     }
-    
+
     setIsSaving(true);
     try {
-      let finalFotoUrl: string | undefined = undefined;
-
-      if (currentImageFile) {
-        // Subida estricta a Google Drive (Sin Firebase Fallback)
-        try {
-            const FOLDER_ID = "1jBIvDIbXAP2eGFyVM3J2i5iZWjaEdO9X";
-            const result = await uploadFileToDrive(currentImageFile, `Sello de Caja ${selectedCaja.numeroCaja}`, FOLDER_ID);
-            
-            const url = result?.webViewLink || (result as any)?.url || (result as any)?.fileUrl;
-            if (url && typeof url === 'string' && url.startsWith('http')) {
-                finalFotoUrl = url;
-            } else {
-                throw new Error("Google Drive no devolvió el link de la foto.");
-            }
-        } catch (driveErr: any) {
-            console.error("Fallo definitivo en Drive:", driveErr);
-            throw new Error(`Error en Drive: ${driveErr.message}. La foto no se guardó.`);
-        }
-      }
-
-      const selloExistente = getSelloForCaja(selectedCaja.id || "");
+      const selloExistente = getSelloForCaja(selectedCaja.id || '');
 
       const newSello: SelloRecord = {
         fechaAsignacion: selectedDate,
-        asignacionCajaId: selectedCaja.id || "",
+        asignacionCajaId: selectedCaja.id || '',
         numeroCaja: selectedCaja.numeroCaja,
         selloAsignado: selloValue.toUpperCase().trim(),
         usuario: user.email || user.username || 'unknown',
         fechaHoraRegistro: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),
         createdAt: selloExistente?.createdAt || new Date().toISOString()
       };
-
-      if (finalFotoUrl) {
-          newSello.fotoUrl = finalFotoUrl;
-      }
-
+      // NO esperamos la foto — guardamos el registro de sello INMEDIATAMENTE
+      // Pre-generamos el id para poder referenciarlo en el background upload
+      let savedId: string;
       if (selloExistente && selloExistente.id) {
-          await selloService.updateSello(selloExistente.id, newSello);
+        await selloService.updateSello(selloExistente.id, newSello);
+        savedId = selloExistente.id;
       } else {
-          await selloService.addSello(newSello);
+        savedId = `sello_${selectedCaja.id}_${Date.now()}`;
+        await selloService.addSello({ ...newSello, id: savedId });
       }
-      
-      // Optimistic local update instead of full reload
-      const savedSello = { ...newSello, id: selloExistente?.id || `temp_${Date.now()}` };
+
+      // Optimistic local update
+      const savedSello = { ...newSello, id: savedId };
       if (selloExistente) {
         setSellosDelDia(prev => prev.map(s => s.id === selloExistente.id ? savedSello : s));
       } else {
@@ -222,10 +264,20 @@ export const HandheldSellos = () => {
 
       setSelloValue('');
       setCurrentImageFile(null);
-      setSelectedCaja(null);
+      setSelectedCaja(null); // cierra modal INMEDIATAMENTE
+
+      // Upload foto en SEGUNDO PLANO si existe (fire & forget — no bloquea)
+      if (currentImageFile) {
+        uploadPhotoBackground(
+          currentImageFile,
+          `Sello de Caja ${selectedCaja.numeroCaja}`,
+          savedId
+        ); // sin await intencionalmente
+      }
+
     } catch (err: any) {
       console.error(err);
-      alert("Error inesperado al guardar: " + (err.message || "Desconocido"));
+      alert('Error inesperado al guardar: ' + (err.message || 'Desconocido'));
     } finally {
       setIsSaving(false);
     }
@@ -237,6 +289,12 @@ export const HandheldSellos = () => {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col font-sans">
+      {/* Banner flotante de upload — no bloquea nada */}
+      <UploadStatusBanner
+        status={uploadStatus}
+        error={uploadError}
+        onDismiss={() => setUploadStatus('idle')}
+      />
       {/* HEADER */}
       <header className="bg-slate-800 p-4 shadow-md sticky top-0 z-10 flex flex-col gap-3 border-b border-slate-700">
         <div className="flex items-center justify-between">

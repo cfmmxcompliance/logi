@@ -221,6 +221,7 @@ export const Settings = () => {
                                                         <option value={UserRole.HANDHELD_USER}>Handheld (Sellos)</option>
                                                         <option value={UserRole.HANDHELD_USER2}>Handheld 2 (Liberación)</option>
                                                         <option value={UserRole.EMBARQUES}>Embarques</option>
+                                                        <option value={UserRole.CLIENT}>Cliente</option>
                                                         <option value={UserRole.PENDING}>Pending</option>
                                                     </select>
                                                     {u.role === UserRole.PENDING && (

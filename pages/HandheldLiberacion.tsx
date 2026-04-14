@@ -46,6 +46,7 @@ export const HandheldLiberacion = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [networkWarning, setNetworkWarning] = useState<string | null>(null);
 
   // ── Upload state ──
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
@@ -121,11 +122,15 @@ export const HandheldLiberacion = () => {
       setSellosDelDia(sellosParaFecha);
       setLiberacionesDelDia(liberacionesParaFecha);
     } catch (e: any) {
-      console.error("Error fetching data from network", e);
-      if (e.message === 'TIMEOUT_EXCEEDED') {
-        if (cajasDelDia.length === 0) {
-          alert('La conexión es muy lenta. Si ves datos en pantalla ya están actualizados.');
-        }
+      console.warn('fetchDataForDate error:', e.message);
+      // Sin alert() bloqueante — datos del caché siguen visibles
+      if (cajasDelDia.length === 0) {
+        setNetworkWarning(
+          e.message === 'TIMEOUT_EXCEEDED'
+            ? 'Señal lenta — mostrando datos en caché. Actualizará cuando haya conexión.'
+            : 'Sin conexión — mostrando datos en caché.'
+        );
+        setTimeout(() => setNetworkWarning(null), 5000);
       }
     } finally {
       setLoading(false);
@@ -403,7 +408,14 @@ export const HandheldLiberacion = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col font-sans">
-      {/* Banner flotante de upload — aparece cuando suben las evidencias en background */}
+      {/* Banner de red lenta — barra delgada que desaparece sola, sin popup */}
+      {networkWarning && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 text-white
+          text-xs font-semibold px-4 py-2 flex items-center justify-between gap-2">
+          <span>⚠ {networkWarning}</span>
+          <button onClick={() => setNetworkWarning(null)} className="text-white/80 hover:text-white">✕</button>
+        </div>
+      )}
       <UploadStatusBanner
         status={uploadStatus}
         label={uploadStatusLabel}

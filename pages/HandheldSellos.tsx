@@ -37,6 +37,7 @@ export const HandheldSellos = () => {
   const [isSaving, setIsSaving] = useState(false);
   
   const [replaceConfirm, setReplaceConfirm] = useState<{ caja: AsignacionCajaModel; sello: SelloRecord } | null>(null);
+  const [networkWarning, setNetworkWarning] = useState<string | null>(null);
 
   // ── Upload state: non-blocking, fire & forget ──
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
@@ -83,11 +84,16 @@ export const HandheldSellos = () => {
       setCajasDelDia(cajasParaFecha);
       setSellosDelDia(sellosParaFecha);
     } catch (e: any) {
-      console.error("Error fetching data", e);
-      if (e.message === 'TIMEOUT_EXCEEDED') {
-          alert('La conexión de internet es muy lenta o inestable. Intente moverse a un área con mejor señal y recargue la página.');
-      } else {
-          alert('Hubo un problema al consultar la base de datos. Verifique su red.');
+      console.warn('fetchDataForDate error:', e.message);
+      // Sin alert() bloqueante — si hay datos en caché el usuario los ve sin interrupción
+      if (cajasDelDia.length === 0) {
+        // Solo avisa si no hay absolutamente nada que mostrar
+        setNetworkWarning(
+          e.message === 'TIMEOUT_EXCEEDED'
+            ? 'Señal lenta — mostrando datos en caché. Actualizará cuando haya conexión.'
+            : 'Sin conexión — mostrando datos en caché.'
+        );
+        setTimeout(() => setNetworkWarning(null), 5000);
       }
     } finally {
       setLoading(false);
@@ -295,6 +301,14 @@ export const HandheldSellos = () => {
         error={uploadError}
         onDismiss={() => setUploadStatus('idle')}
       />
+      {/* Banner de red lenta — aparece y desaparece solo, sin bloquear */}
+      {networkWarning && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 text-white
+          text-xs font-semibold px-4 py-2 flex items-center justify-between gap-2">
+          <span>⚠ {networkWarning}</span>
+          <button onClick={() => setNetworkWarning(null)} className="text-white/80 hover:text-white">✕</button>
+        </div>
+      )}
       {/* HEADER */}
       <header className="bg-slate-800 p-4 shadow-md sticky top-0 z-10 flex flex-col gap-3 border-b border-slate-700">
         <div className="flex items-center justify-between">

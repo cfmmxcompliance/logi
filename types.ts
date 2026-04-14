@@ -27,7 +27,8 @@ export enum UserRole {
   PENDING = 'Pending',    // Default for new signups
   HANDHELD_USER = 'Handheld User', // Operario de piso con scanner (Sello)
   HANDHELD_USER2 = 'Handheld User 2', // Operario de piso con scanner (Liberacion)
-  EMBARQUES = 'Embarques' // Equipo encargado de control de embarques
+  EMBARQUES = 'Embarques', // Equipo encargado de control de embarques
+  CLIENT = 'Cliente',    // Read-only access: Asignación Diaria de Cajas Secas 53' only
 }
 
 export interface User {

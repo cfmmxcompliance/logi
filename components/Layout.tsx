@@ -78,7 +78,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <SidebarItem to="/" icon={LayoutDashboard} label={sidebarOpen ? "Dashboard" : ""} />
           )}
 
-          {user?.role !== UserRole.AGENT && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && (
+          {user?.role !== UserRole.AGENT && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && (
             <>
               <SidebarItem to="/operations" icon={Ship} label={sidebarOpen ? "Shipment Plan" : ""} />
               <SidebarItem to="/pre-alerts" icon={Bell} label={sidebarOpen ? "Pre-Alerts" : ""} />
@@ -171,9 +171,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <SidebarItem to="/xml-ci" icon={FileText} label={sidebarOpen ? "XMLCI Consolidated" : ""} />
             </>
           )}
+          {/* Cliente: solo lectura de Asignaciones Diarias */}
+          {user?.role === UserRole.CLIENT && (
+            <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? 'Asignaciones Diarias' : ''} />
+          )}
 
-          {/* Daily Audit: Accessible to Everyone (except Pending, Carrier, Expo, Embarques) */}
-          {user?.role !== UserRole.PENDING && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && (
+          {/* Daily Audit: Accessible to Everyone (except Pending, Carrier, Expo, Embarques, Client) */}
+          {user?.role !== UserRole.PENDING && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && (
             <SidebarItem to="/daily-audit" icon={Activity} label={sidebarOpen ? "Control de Auditoría" : ""} />
           )}
 

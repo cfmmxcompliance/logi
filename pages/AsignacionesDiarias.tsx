@@ -24,7 +24,9 @@ import { useLanguage } from '../context/LanguageContext';
 export const AsignacionesDiarias: React.FC = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const isEmbarques = user?.role === UserRole.EMBARQUES;
+  // Roles con acceso de solo lectura — sin botones de escritura
+  const isReadOnly = user?.role === UserRole.EMBARQUES || user?.role === UserRole.CLIENT;
+  const isEmbarques = isReadOnly; // alias para compatibilidad con código existente
   const [asignaciones, setAsignaciones] = useState<AsignacionCajaModel[]>([]);
   const [cajas, setCajas] = useState<CajaModel[]>([]);
   const [drivers, setDrivers] = useState<DriverModel[]>([]);

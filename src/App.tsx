@@ -105,6 +105,12 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
         if (!allowed.includes(location.pathname)) return <Navigate to="/asignaciones-diarias" replace />;
     }
 
+    // Cliente constraints — solo lectura de Asignaciones Diarias
+    if (user?.role === UserRole.CLIENT) {
+        const allowed = ['/asignaciones-diarias'];
+        if (!allowed.includes(location.pathname)) return <Navigate to="/asignaciones-diarias" replace />;
+    }
+
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
         return <Navigate to="/" replace />;
     }

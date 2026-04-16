@@ -1,48 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from '../components/Layout.tsx';
-import { Dashboard } from '../pages/Dashboard.tsx';
-import { Operations } from '../pages/Operations.tsx';
-import { VesselTracking } from '../pages/VesselTracking.tsx';
-import { EquipmentTracking } from '../pages/EquipmentTracking.tsx';
-import { CustomsClearance } from '../pages/CustomsClearance.tsx';
-import { PreAlerts } from '../pages/PreAlerts.tsx';
-import { ProformaValidator } from '../pages/ProformaValidator';
-import { SmartDocs } from '../pages/SmartDocs.tsx';
-import { DatabaseView } from '../pages/DatabaseView.tsx';
-import { Suppliers } from '../pages/Suppliers.tsx';
-import { Reports } from '../pages/Reports.tsx';
-import { Settings } from '../pages/Settings.tsx';
-import { Login } from '../pages/Login.tsx';
-import { ActionLogs } from '../pages/AuditLogs.tsx';
-import { DailyAudit } from '../pages/DailyAudit.tsx';
-import { DataStage } from '../pages/DataStage.tsx';
-import { Carriers } from '../pages/Carriers.tsx';
-import { TransportLines } from '../pages/TransportLines.tsx';
-import { Drivers } from '../pages/Drivers.tsx';
-import { CIExtractor } from '../pages/CIExtractor.tsx';
-import { XMLInvoiceExtractor } from '../pages/XMLInvoiceExtractor.tsx';
-import { XMLCI } from '../pages/XMLCI.tsx';
-import { Models } from '../pages/Models';
-import { Cajas } from '../pages/Cajas.tsx';
-import { AsignacionesDiarias } from '../pages/AsignacionesDiarias.tsx';
-import { Apendice10 } from '../pages/Apendice10.tsx';
-import { CaptureModule } from '../pages/CaptureModule.tsx';
-import { HistorialCapturas } from '../pages/HistorialCapturas.tsx';
-import { ShippingSchedules } from '../pages/ShippingSchedules.tsx';
-import { PricingMatrix } from '../pages/PricingMatrix.tsx';
-import CCPBuilder from '../pages/CCPBuilder.tsx';
-import { Controller } from '../pages/Controller.tsx';
-import { Vucem } from '../pages/Vucem.tsx';
-import { ExpedienteElectronico } from '../pages/ExpedienteElectronico';
-import { BOMAnalyzer } from '../pages/BOMAnalyzer.tsx';
-import { AIAssistant } from '../pages/AIAssistant.tsx';
-import { HandheldHome } from '../pages/HandheldHome.tsx';
-import { HandheldSellos } from '../pages/HandheldSellos.tsx';
-import { HandheldLiberacion } from '../pages/HandheldLiberacion.tsx';
-import { HandheldArribo } from '../pages/HandheldArribo.tsx';
-import { BPMClasificacion } from '../pages/BPMClasificacion.tsx';
-import { DailyVanAssignment } from '../pages/DailyVanAssignment.tsx';
 import { storageService } from '../services/storageService.ts';
 import { trackingService } from '../services/trackingService.ts';
 import { AuthProvider, useAuth } from '../context/AuthContext.tsx';
@@ -50,8 +8,62 @@ import { NotificationProvider } from '../context/NotificationContext.tsx';
 import { VucemProvider } from '../context/VucemContext.tsx';
 import { LanguageProvider } from '../context/LanguageContext.tsx';
 import { NotificationPopup } from '../components/NotificationPopup.tsx';
-import { Database } from 'lucide-react';
+import { Database, Loader2 } from 'lucide-react';
 import { UserRole } from '../types.ts';
+
+// ─── Lazy page imports — cada página es su propio chunk (carga bajo demanda) ───
+const Login               = lazy(() => import('../pages/Login.tsx').then(m => ({ default: m.Login })));
+const Dashboard           = lazy(() => import('../pages/Dashboard.tsx').then(m => ({ default: m.Dashboard })));
+const Operations          = lazy(() => import('../pages/Operations.tsx').then(m => ({ default: m.Operations })));
+const VesselTracking      = lazy(() => import('../pages/VesselTracking.tsx').then(m => ({ default: m.VesselTracking })));
+const EquipmentTracking   = lazy(() => import('../pages/EquipmentTracking.tsx').then(m => ({ default: m.EquipmentTracking })));
+const CustomsClearance    = lazy(() => import('../pages/CustomsClearance.tsx').then(m => ({ default: m.CustomsClearance })));
+const PreAlerts           = lazy(() => import('../pages/PreAlerts.tsx').then(m => ({ default: m.PreAlerts })));
+const ProformaValidator   = lazy(() => import('../pages/ProformaValidator').then(m => ({ default: m.ProformaValidator })));
+const SmartDocs           = lazy(() => import('../pages/SmartDocs.tsx').then(m => ({ default: m.SmartDocs })));
+const DatabaseView        = lazy(() => import('../pages/DatabaseView.tsx').then(m => ({ default: m.DatabaseView })));
+const Suppliers           = lazy(() => import('../pages/Suppliers.tsx').then(m => ({ default: m.Suppliers })));
+const Reports             = lazy(() => import('../pages/Reports.tsx').then(m => ({ default: m.Reports })));
+const Settings            = lazy(() => import('../pages/Settings.tsx').then(m => ({ default: m.Settings })));
+const ActionLogs          = lazy(() => import('../pages/AuditLogs.tsx').then(m => ({ default: m.ActionLogs })));
+const DailyAudit          = lazy(() => import('../pages/DailyAudit.tsx').then(m => ({ default: m.DailyAudit })));
+const DataStage           = lazy(() => import('../pages/DataStage.tsx').then(m => ({ default: m.DataStage })));
+const Carriers            = lazy(() => import('../pages/Carriers.tsx').then(m => ({ default: m.Carriers })));
+const TransportLines      = lazy(() => import('../pages/TransportLines.tsx').then(m => ({ default: m.TransportLines })));
+const Drivers             = lazy(() => import('../pages/Drivers.tsx').then(m => ({ default: m.Drivers })));
+const CIExtractor         = lazy(() => import('../pages/CIExtractor.tsx').then(m => ({ default: m.CIExtractor })));
+const XMLInvoiceExtractor = lazy(() => import('../pages/XMLInvoiceExtractor.tsx').then(m => ({ default: m.XMLInvoiceExtractor })));
+const XMLCI               = lazy(() => import('../pages/XMLCI.tsx').then(m => ({ default: m.XMLCI })));
+const Models              = lazy(() => import('../pages/Models').then(m => ({ default: m.Models })));
+const Cajas               = lazy(() => import('../pages/Cajas.tsx').then(m => ({ default: m.Cajas })));
+const AsignacionesDiarias = lazy(() => import('../pages/AsignacionesDiarias.tsx').then(m => ({ default: m.AsignacionesDiarias })));
+const Apendice10          = lazy(() => import('../pages/Apendice10.tsx').then(m => ({ default: m.Apendice10 })));
+const CaptureModule       = lazy(() => import('../pages/CaptureModule.tsx').then(m => ({ default: m.CaptureModule })));
+const HistorialCapturas   = lazy(() => import('../pages/HistorialCapturas.tsx').then(m => ({ default: m.HistorialCapturas })));
+const ShippingSchedules   = lazy(() => import('../pages/ShippingSchedules.tsx').then(m => ({ default: m.ShippingSchedules })));
+const PricingMatrix       = lazy(() => import('../pages/PricingMatrix.tsx').then(m => ({ default: m.PricingMatrix })));
+const CCPBuilder          = lazy(() => import('../pages/CCPBuilder.tsx'));
+const Controller          = lazy(() => import('../pages/Controller.tsx').then(m => ({ default: m.Controller })));
+const Vucem               = lazy(() => import('../pages/Vucem.tsx').then(m => ({ default: m.Vucem })));
+const ExpedienteElectronico = lazy(() => import('../pages/ExpedienteElectronico').then(m => ({ default: m.ExpedienteElectronico })));
+const BOMAnalyzer         = lazy(() => import('../pages/BOMAnalyzer.tsx').then(m => ({ default: m.BOMAnalyzer })));
+const AIAssistant         = lazy(() => import('../pages/AIAssistant.tsx').then(m => ({ default: m.AIAssistant })));
+const BPMClasificacion    = lazy(() => import('../pages/BPMClasificacion.tsx').then(m => ({ default: m.BPMClasificacion })));
+const DailyVanAssignment  = lazy(() => import('../pages/DailyVanAssignment.tsx').then(m => ({ default: m.DailyVanAssignment })));
+
+// ─── Handheld — prioridad de carga (primeras en el chunk handheld) ──────────
+const HandheldHome        = lazy(() => import('../pages/HandheldHome.tsx').then(m => ({ default: m.HandheldHome })));
+const HandheldSellos      = lazy(() => import('../pages/HandheldSellos.tsx').then(m => ({ default: m.HandheldSellos })));
+const HandheldLiberacion  = lazy(() => import('../pages/HandheldLiberacion.tsx').then(m => ({ default: m.HandheldLiberacion })));
+const HandheldArribo      = lazy(() => import('../pages/HandheldArribo.tsx').then(m => ({ default: m.HandheldArribo })));
+
+// ─── Fallback liviano mientras carga el chunk ────────────────────────────────
+const PageLoader = () => (
+    <div className="h-screen w-full flex items-center justify-center bg-slate-900">
+        <Loader2 size={32} className="animate-spin text-blue-400" />
+    </div>
+);
+
 
 // Authenticated Route Wrapper
 const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode, allowedRoles?: string[] }) => {
@@ -132,16 +144,15 @@ const AppContent = () => {
         // Async Init for IndexedDB and Services
         const init = async () => {
             try {
-                await storageService.init(user?.role);
-                // storageService.initAutoBackup();
-
-                // Initialize Automated 4AM Tracking Check
-                await trackingService.init();
-
+                // Skip heavy desktop init for handheld users
+                const isHandheld = user?.role === UserRole.HANDHELD_USER || user?.role === UserRole.HANDHELD_USER2;
+                if (!isHandheld) {
+                    await storageService.init(user?.role);
+                    await trackingService.init();
+                }
                 setIsReady(true);
             } catch (e) {
                 console.error("Failed to initialize DB", e);
-                // Do NOT alert blocking. Just log. User can proceed with degraded functionality.
                 console.warn("Database init failure. App loading anyway.");
             } finally {
                 setIsReady(true);
@@ -163,6 +174,7 @@ const AppContent = () => {
     }
 
     return (
+        <Suspense fallback={<PageLoader />}>
         <Routes>
             <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
 
@@ -193,7 +205,6 @@ const AppContent = () => {
             <Route path="/expediente-electronico" element={
                 <ProtectedRoute>
                     <ExpedienteElectronico setActiveTab={(tab) => {
-                        // Simple shim: if tab is 'vucem', navigate there.
                         if (tab === 'vucem') window.location.hash = '#/vucem';
                     }} />
                 </ProtectedRoute>
@@ -219,6 +230,7 @@ const AppContent = () => {
 
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
     );
 };
 

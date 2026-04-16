@@ -17,8 +17,18 @@ export const authService = {
             };
         }
 
-        const username = email.split('@')[0];
-        const isRootAdmin = email.toLowerCase() === ROOT_ADMIN_EMAIL;
+        // Guard: email vacío causa error críptico de Firestore en Android
+        const cleanEmail = (email || '').trim().toLowerCase();
+        const cleanPassword = (password || '').trim();
+        if (!cleanEmail || !cleanEmail.includes('@')) {
+            throw { code: 'auth/invalid-email', message: 'Ingresa un correo electrónico válido.' };
+        }
+        if (!cleanPassword) {
+            throw { code: 'auth/wrong-password', message: 'Ingresa tu contraseña.' };
+        }
+
+        const username = cleanEmail.split('@')[0];
+        const isRootAdmin = cleanEmail.toLowerCase() === ROOT_ADMIN_EMAIL;
 
         // Increased to 25s for warehouse connectivity
         const withTimeout = <T>(promise: Promise<T>, ms = 25000): Promise<T> =>
@@ -36,14 +46,14 @@ export const authService = {
             // PARALLEL: Fire both Firebase Auth and Firestore role lookup at the same time
             const [authResult, userSnap] = await withTimeout(
                 Promise.all([
-                    signInWithEmailAndPassword(auth, email, password).catch((e: any) => {
+                    signInWithEmailAndPassword(auth, cleanEmail, cleanPassword).catch((e: any) => {
                         // Only block on explicit wrong-password — all other Firebase Auth errors
                         // (user-not-found, config-not-found, invalid-credential, etc.) fall through
                         // to the legacy Firestore password check below.
                         if (e.code === 'auth/wrong-password') throw e;
                         return null; // Fall back to legacy path
                     }),
-                    getDoc(doc(db, 'users', email))
+                    getDoc(doc(db, 'users', cleanEmail))
                 ])
             );
 
@@ -87,9 +97,9 @@ export const authService = {
             const user: User = {
                 username: data.username || username,
                 name: data.name || data.username || username,
-                email,
+                email: cleanEmail,
                 role,
-                avatarInitials: email.substring(0, 2).toUpperCase()
+                avatarInitials: cleanEmail.substring(0, 2).toUpperCase()
             };
 
             localStorage.setItem('logimaster_user', JSON.stringify(user));

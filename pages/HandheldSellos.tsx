@@ -395,7 +395,7 @@ export const HandheldSellos = () => {
                         </div>
                         {isCompleted ? (
                             <div className="flex gap-2">
-                                {selloExistente.fotoUrl && (
+                                {selloExistente.fotoUrl && selloExistente.fotoUrl !== 'PENDING' ? (
                                     <button
                                       type="button" 
                                       onClick={(e) => { 
@@ -409,6 +409,15 @@ export const HandheldSellos = () => {
                                       }}
                                       className="p-2 bg-slate-800 rounded-full text-blue-400 hover:text-white border border-slate-700 hover:border-blue-500 transition-colors shadow-sm"
                                       title="Ver foto del sello"
+                                    >
+                                        <ImageIcon size={20} />
+                                    </button>
+                                ) : (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); setSelectedCaja(caja); setSelloValue(selloExistente?.selloAsignado || ""); setCurrentImageFile(null); }}
+                                      className="p-2 bg-slate-800 rounded-full text-amber-400 hover:text-white border border-slate-700 hover:border-amber-500 transition-colors shadow-sm"
+                                      title="Foto pendiente — toca para agregar"
                                     >
                                         <ImageIcon size={20} />
                                     </button>

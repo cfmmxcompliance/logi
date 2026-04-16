@@ -63,7 +63,7 @@ export const uploadFileToDrive = async (file: File, description: string = '', fo
 
         return {
             id: result.id,
-            webViewLink: result.webViewLink,
+            webViewLink: result.webViewLink || result.url || result.fileUrl || '',
             name: result.name
         };
 

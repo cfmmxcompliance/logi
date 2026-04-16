@@ -15,7 +15,17 @@ export default defineConfig({
         },
     },
     build: {
-        target: 'esnext'
+        target: 'es2019',  // Compatible con Android Chrome 80+ (gama baja)
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+                    'vendor-firebase': ['firebase/app', 'firebase/firestore', 'firebase/auth', 'firebase/storage'],
+                    'vendor-pdf': ['pdfjs-dist'],
+                    'vendor-excel': ['exceljs'],
+                }
+            }
+        }
     },
     server: {
         port: 3000,

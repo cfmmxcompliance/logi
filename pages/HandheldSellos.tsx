@@ -32,6 +32,7 @@ export const HandheldSellos = () => {
   // Modal State
   const [selectedCaja, setSelectedCaja] = useState<AsignacionCajaModel | null>(null);
   const [selloValue, setSelloValue] = useState("");
+  const [aiRenderKey, setAiRenderKey] = useState(0);
   const [currentImageFile, setCurrentImageFile] = useState<File | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -195,6 +196,9 @@ export const HandheldSellos = () => {
         .catch(aiError => {
           console.warn('Gemini no pudo extraer sello:', aiError);
           // Silent fail - user can type manually
+        })
+        .finally(() => {
+          setAiRenderKey(k => k + 1);
         });
     } catch (e) {
       console.error(e);
@@ -586,6 +590,7 @@ export const HandheldSellos = () => {
                           <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">Número de Sello</label>
                           <div className="flex gap-2">
                               <input 
+                                key={`sello-input-${aiRenderKey}`}
                                 type="text" 
                                 value={selloValue}
                                 onChange={(e) => setSelloValue(e.target.value.toUpperCase())}

@@ -38,6 +38,7 @@ export const HandheldLiberacion = () => {
   const [fotoPuertasFile, setFotoPuertasFile] = useState<File | null>(null);
   const [fotoSelloFile, setFotoSelloFile] = useState<File | null>(null);
   const [extractedSello, setExtractedSello] = useState<string>('');
+  const [aiRenderKey, setAiRenderKey] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
   // Flow State
@@ -243,6 +244,10 @@ export const HandheldLiberacion = () => {
           .catch(() => {
             setExtractedSello('');
             setValidationError("IA no disponible. Escriba el sello manualmente.");
+          })
+          .finally(() => {
+            // Force mobile WebView paint cycle
+            setAiRenderKey(k => k + 1);
           });
       }
 
@@ -683,6 +688,7 @@ export const HandheldLiberacion = () => {
                                         REVISIÓN DE SELLO EXTRAÍDO
                                     </label>
                                     <input
+                                        key={`sello-input-${aiRenderKey}`}
                                         type="text"
                                         value={extractedSello}
                                         onChange={(e) => setExtractedSello(e.target.value.toUpperCase())}

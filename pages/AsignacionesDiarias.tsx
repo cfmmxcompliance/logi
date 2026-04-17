@@ -509,7 +509,7 @@ export const AsignacionesDiarias: React.FC = () => {
                   className="bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold px-3 py-2 text-xs border-r border-slate-200 transition-colors h-full"
                   title="Filtrar por Hoy"
                 >
-                  HOY
+                  {t('common.hoy')}
                 </button>
                 <Calendar size={14} className="text-slate-400 ml-2" />
                 <input 
@@ -517,7 +517,7 @@ export const AsignacionesDiarias: React.FC = () => {
                     value={dateRange.start}
                     onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
                     className="py-2 px-2 text-sm outline-none text-slate-600 bg-transparent"
-                    title="Fecha Inicial"
+                    title={t('common.fecha_inicial')}
                 />
                 <span className="text-slate-300">-</span>
                 <input 
@@ -525,19 +525,19 @@ export const AsignacionesDiarias: React.FC = () => {
                     value={dateRange.end}
                     onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
                     className="py-2 px-2 text-sm outline-none text-slate-600 bg-transparent"
-                    title="Fecha Final"
+                    title={t('common.fecha_final')}
                 />
              </div>
 
              {!isEmbarques && selectedIds.size > 0 && (
                  <button onClick={handleMassDelete} className="px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg border border-red-200 transition-colors shadow-sm flex items-center text-sm font-bold animate-fade-in" title="Eliminar Seleccionados">
-                    <Trash2 size={16} className="mr-2" /> Borrar ({selectedIds.size})
+                    <Trash2 size={16} className="mr-2" /> {t('btn.borrar')} ({selectedIds.size})
                  </button>
              )}
 
              <button onClick={() => setIsMassQueryOpen(true)} className={`px-4 py-2 flex items-center rounded-lg border text-sm font-medium transition-colors shadow-sm ${activeMassQuery ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}>
                  <Filter size={16} className="mr-2" />
-                 Filtros Masivos
+                 {t('btn.mass')}
              </button>
 
              {!isEmbarques && (
@@ -554,7 +554,7 @@ export const AsignacionesDiarias: React.FC = () => {
              )}
 
              <button onClick={exportCSV} className="px-4 py-2 bg-white text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-300 transition-colors shadow-sm flex items-center text-sm font-medium">
-                <Download size={16} className="mr-2 text-slate-500" /> Exportar
+                <Download size={16} className="mr-2 text-slate-500" /> {t('btn.export')}
              </button>
 
              <button
@@ -564,12 +564,12 @@ export const AsignacionesDiarias: React.FC = () => {
                title="Actualizar datos sin recargar la página"
              >
                <RefreshCw size={16} className={`mr-1.5 text-emerald-600 ${isRefreshing ? 'animate-spin' : ''}`} />
-               {isRefreshing ? 'Actualizando...' : 'Actualizar'}
+               {isRefreshing ? t('btn.actualizando') : t('btn.actualizar')}
              </button>
 
              {!isEmbarques && (
                  <button onClick={openNew} className="bg-blue-600 text-white px-4 py-2 flex items-center rounded-lg hover:bg-blue-700 shadow-md shadow-blue-500/30 transition-all font-medium text-sm">
-                    <Plus size={18} className="mr-2" /> Asignar
+                    <Plus size={18} className="mr-2" /> {t('btn.new')}
                  </button>
              )}
         </div>
@@ -597,7 +597,7 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">{t('col.cargado')}</th>
               <th className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap">{t('col.sellado_time')}</th>
               <th className="p-4 font-medium text-slate-800 bg-slate-100/50">{t('col.observaciones')}</th>
-              {!isEmbarques && <th className="p-4 font-medium text-right bg-slate-50">Acciones</th>}
+              {!isEmbarques && <th className="p-4 font-medium text-right bg-slate-50">{t('btn.acciones')}</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">

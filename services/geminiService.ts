@@ -1318,9 +1318,9 @@ export const geminiService = {
         You are an industrial logistics AI. 
         Your task is to extract the SEAL NUMBER (Número de Sello/Candado) from this photo.
         - The seal number is usually a highly visible alphanumeric code printed on a plastic or metal security seal.
-        - Ignore background text, container numbers, or irrelevant labels unless you are absolutely sure it is the seal.
-        - Return ONLY the exact alphanumeric string. Do not include spaces or prefixes like "SEAL:" or "No.".
-        - If you cannot definitively find a seal number, return "NO_DETECTADO".
+        - Important: Even if it doesn't explicitly say "SEAL" or "No.", extract the most prominent alphanumeric code you see printed on the physical object.
+        - Return ONLY the exact alphanumeric string. Do not include spaces.
+        - Only return "NO_DETECTADO" if the image is completely blank or there is absolutely zero text visible. If you see ANY strong candidate number, just return it.
       `;
 
       // Handheld devices usually upload JPEG images.

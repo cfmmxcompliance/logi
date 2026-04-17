@@ -214,13 +214,13 @@ export const HandheldLiberacion = () => {
       const compressedFile = new File([blob], `compressed_${file.name}`, { type: 'image/jpeg' });
 
       // 2. Set State based on Step - unblock UI immediately
-      if (activeCameraStep === 'CAJA') {
+      if (step === 'CAJA') {
         setFotoCajaFile(compressedFile);
         setIsProcessingImage(false);
-      } else if (activeCameraStep === 'PUERTAS') {
+      } else if (step === 'PUERTAS') {
         setFotoPuertasFile(compressedFile);
         setIsProcessingImage(false);
-      } else if (activeCameraStep === 'SELLO') {
+      } else if (step === 'SELLO') {
         setFotoSelloFile(compressedFile);
         setExtractedSello("Analizando...");
         setIsProcessingImage(false); // Unblock UI

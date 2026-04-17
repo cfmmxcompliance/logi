@@ -21,6 +21,7 @@ export default defineConfig({
                 manualChunks: {
                     'vendor-react': ['react', 'react-dom', 'react-router-dom'],
                     'vendor-firebase': ['firebase/app', 'firebase/firestore', 'firebase/auth', 'firebase/storage'],
+                    'vendor-icons': ['lucide-react'],
                     'vendor-pdf': ['pdfjs-dist'],
                     'vendor-excel': ['exceljs'],
                 }

@@ -58,6 +58,32 @@ export const HandheldSellos = () => {
   const fetchDataForDate = async (targetDate: string) => {
     setLoading(true);
     
+    // ⚡ STEP 1: Show cached data instantly (< 50ms on revisits)
+    try {
+      const [cachedCajas, cachedSellos] = await Promise.all([
+        asignacionCajaService.getAsignacionesByDateCached(targetDate),
+        selloService.getSellosByDateCached(targetDate)
+      ]);
+      
+      if (cachedCajas.length > 0) {
+        cachedCajas.sort((a, b) => {
+          const tA = a.horaAsignacion || '00:00';
+          const tB = b.horaAsignacion || '00:00';
+          if (tA !== tB) return tA < tB ? -1 : 1;
+          const opA = a.numeroOperacion || '';
+          const opB = b.numeroOperacion || '';
+          if (opA !== opB) return opA < opB ? -1 : 1;
+          const crA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const crB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return crA - crB;
+        });
+        setCajasDelDia(cachedCajas);
+        setSellosDelDia(cachedSellos);
+        setLoading(false); // UI unblocked instantly
+      }
+    } catch { /* cache miss */ }
+
+    // STEP 2: Refresh from network silently in background
     try {
       const [cajasParaFecha, sellosParaFecha] = await fetchWithTimeout(
         Promise.all([

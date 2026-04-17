@@ -25,6 +25,28 @@ export const HandheldArribo = () => {
 
   const fetchDataForDate = async (targetDate: string) => {
     setLoading(true);
+    // ⚡ STEP 1: Show cached data instantly
+    try {
+      const cached = await asignacionCajaService.getAsignacionesByDateCached(targetDate);
+      if (cached.length > 0) {
+        cached.sort((a, b) => {
+          const tA = a.horaAsignacion || '00:00';
+          const tB = b.horaAsignacion || '00:00';
+          return tA < tB ? -1 : tA > tB ? 1 : 0;
+        });
+        setCajasDelDia(cached);
+        const initialComentarios: Record<string, string> = {};
+        cached.forEach(c => {
+          if (c.id && c.comentariosArribo) {
+            initialComentarios[c.id] = c.comentariosArribo;
+          }
+        });
+        setComentarios(initialComentarios);
+        setLoading(false); // UI unblocked instantly
+      }
+    } catch { /* cache miss */ }
+
+    // STEP 2: Refresh from network silently in background
     try {
       const cajas = await asignacionCajaService.getAsignacionesByDate(targetDate);
       cajas.sort((a, b) => {

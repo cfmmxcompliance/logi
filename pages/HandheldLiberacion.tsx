@@ -239,12 +239,13 @@ export const HandheldLiberacion = () => {
               setValidationError(null);
             } else {
               setExtractedSello('');
-              setValidationError("No se pudo detectar automáticamente. Escríbalo manualmente.");
+              // Fallback silencioso igual que Asignacion:
+              // Simplemente dejamos el input vacio para que el usuario teclee.
             }
           })
           .catch(() => {
             setExtractedSello('');
-            setValidationError("IA no disponible. Escriba el sello manualmente.");
+            // Fallback silencioso igual que Asignacion
           })
           .finally(() => {
             // Force mobile WebView paint cycle

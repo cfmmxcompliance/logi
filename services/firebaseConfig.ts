@@ -1,7 +1,7 @@
 // @ts-ignore
 import { initializeApp } from 'firebase/app';
 // @ts-ignore
-import { initializeFirestore, persistentLocalCache, persistentSingleTabManager, memoryLocalCache } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore';
 // @ts-ignore
 import { getAuth } from 'firebase/auth';
 // @ts-ignore
@@ -17,28 +17,18 @@ const firebaseConfig = {
   measurementId: "G-01VXE7L5C3"
 };
 
-// 1. Inicialización Síncrona
 const app = initializeApp(firebaseConfig);
 
-// 2. Caché persistente con fallback a memoria para Android de gama baja
-//    persistentLocalCache falla en dispositivos con poca RAM o WebView antigua
-//    En ese caso cae silenciosamente a memoryLocalCache (sin crash)
-let db;
-try {
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache({
-      tabManager: persistentSingleTabManager({ forceOwnership: false })
-    })
-  });
-} catch (e) {
-  console.warn('[Firebase] IndexedDB no disponible, usando memoria:', e);
-  db = initializeFirestore(app, {
-    localCache: memoryLocalCache()
-  });
-}
+// forceOwnership:false — comparte IndexedDB sin forzar acceso exclusivo
+// Resuelve crash en Android sin sacrificar el caché persistente entre sesiones
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentSingleTabManager({ forceOwnership: false })
+  })
+});
+
 const auth = getAuth(app);
 const storage = getStorage(app);
 
-// 3. Exportación robusta
 export { app, db, auth, storage };
 console.log("✅ Firebase: Services Initialized");

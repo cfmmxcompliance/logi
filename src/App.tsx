@@ -18,6 +18,7 @@ import { ActionLogs } from '../pages/AuditLogs.tsx';
 import { DailyAudit } from '../pages/DailyAudit.tsx';
 import { DataStage } from '../pages/DataStage.tsx';
 import { Carriers } from '../pages/Carriers.tsx';
+import { NetworkIndicator } from '../components/NetworkIndicator.tsx';
 import { TransportLines } from '../pages/TransportLines.tsx';
 import { Drivers } from '../pages/Drivers.tsx';
 import { CIExtractor } from '../pages/CIExtractor.tsx';
@@ -228,6 +229,7 @@ const App: React.FC = () => {
                 <VucemProvider>
                     <AppContent />
                 </VucemProvider>
+                <NetworkIndicator />
                 <NotificationPopup />
             </HashRouter>
         </LanguageProvider>

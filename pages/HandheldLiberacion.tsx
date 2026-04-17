@@ -213,8 +213,9 @@ export const HandheldLiberacion = () => {
     try {
       // 1. Compress Image
       const compressedBase64 = await compressImage(file);
-      const byteArray = Uint8Array.from(atob(compressedBase64.split(',')[1]), c => c.charCodeAt(0));
-      const compressedFile = new File([byteArray], `compressed_${file.name}`, { type: 'image/jpeg' });
+      const res = await fetch(compressedBase64);
+      const blob = await res.blob();
+      const compressedFile = new File([blob], `compressed_${file.name}`, { type: 'image/jpeg' });
 
       // 2. Set State based on Step - unblock UI immediately
       if (activeCameraStep === 'CAJA') {

@@ -158,7 +158,7 @@ export const HandheldSellos = () => {
           
           // Higher quality (85%) for Gemini OCR accuracy
           const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-          resolve(dataUrl.split(',')[1]);
+          resolve(dataUrl);
         };
         img.onerror = (e) => reject(e);
       };
@@ -177,13 +177,16 @@ export const HandheldSellos = () => {
       // Compress immediately
       const compressedBase64 = await compressImage(file);
       
-      const byteArray = Uint8Array.from(atob(compressedBase64), c => c.charCodeAt(0));
-      const smallFile = new File([byteArray], file.name, { type: 'image/jpeg' });
+      // Safe base64 -> Blob conversion that doesn't trigger Call Stack limits
+      const res = await fetch(compressedBase64);
+      const blob = await res.blob();
+      const smallFile = new File([blob], file.name, { type: 'image/jpeg' });
       setCurrentImageFile(smallFile);
       setIsProcessingImage(false); // Unblock the UI immediately - show the image preview
 
       // Run Gemini AI in the background without blocking
-      geminiService.extractSelloNumber(compressedBase64)
+      const base64Data = compressedBase64.split(',')[1];
+      geminiService.extractSelloNumber(base64Data)
         .then(extractedNumber => {
           if (extractedNumber && extractedNumber !== 'NO_DETECTADO') {
             setSelloValue(extractedNumber);

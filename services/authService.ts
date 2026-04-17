@@ -48,16 +48,20 @@ export const authService = {
                 null  // Si Auth tarda más de 15s, continúa con Firestore
             );
 
-            // Firestore: timeout largo (30s)
+            // Firestore: timeout largo (45s para PDA con señal débil)
             const userSnapPromise = withTimeout(
                 getDoc(doc(db, 'users', cleanEmail)),
-                30000,
+                45000,
                 null as any
             );
 
             const [authResult, userSnap] = await Promise.all([authResultPromise, userSnapPromise]);
 
-            if (!userSnap || !userSnap.exists()) {
+            // null = timeout de Firestore (red lenta), no usuario inexistente
+            if (!userSnap) {
+                throw { code: 'auth/network-request-failed', message: 'Sin conexión con la base de datos. Verifica tu señal.' };
+            }
+            if (!userSnap.exists()) {
                 throw { code: 'auth/user-not-found', message: 'User not registered.' };
             }
 

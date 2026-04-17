@@ -166,6 +166,25 @@ export interface EquipmentTrackingRecord {
   updatedAt?: string;
 }
 
+export interface SparePartsTrackingRecord {
+  id: string;
+  projectSection: string;
+  shipmentBatch: string;
+  personInCharge: string;
+  unloadingLocation: string;
+  unloadingParty: string;
+  unloadingTools: string;
+  status: string;
+  containerSize: string;
+  containerQty: number;
+  containerNo: string;
+  blNo: string;
+  etd: string;
+  atd: string;
+  etaPort: string;
+  updatedAt?: string;
+}
+
 export interface CustomsClearanceRecord {
   id: string;
   blNo: string;
@@ -183,6 +202,7 @@ export interface CustomsClearanceRecord {
   ataFactory: string;
   eirDate: string;
   clavePedimento?: string; // New: E.g. A1, V1
+  assignedSpecialist?: string; // New: Selected in PreAlerts
   updatedAt?: string;
 }
 
@@ -210,6 +230,7 @@ export interface PreAlertRecord {
   packages?: number;
   grossWeight?: number;
   linkedContainers?: string[];
+  assignedSpecialist?: string; // New: Added via PreAlert Extraction
   updatedAt?: string;
 }
 
@@ -536,6 +557,7 @@ export interface StorageState {
   shipments: Shipment[];
   vesselTracking: VesselTrackingRecord[];
   equipmentTracking: EquipmentTrackingRecord[];
+  sparePartsTracking?: SparePartsTrackingRecord[];
   customsClearance: CustomsClearanceRecord[];
   preAlerts: PreAlertRecord[];
   costs: CostRecord[];

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { downloadFile } from '../utils/fileHelpers.ts';
 import { storageService } from '../services/storageService.ts';
 import { geminiService } from '../services/geminiService.ts';
-import { PreAlertRecord, UserRole } from '../types.ts';
+import { PreAlertRecord, UserRole, User } from '../types.ts';
 import { Plus, Search, FileDown, Bell, FileSpreadsheet, Edit2, X, Save, Trash2, AlertTriangle, Upload, FileText, CheckCircle, Plane, Anchor, Container } from 'lucide-react';
 import { parseCSV } from '../utils/csvHelpers.ts';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
@@ -65,6 +65,9 @@ export const PreAlerts = () => {
     const [procState, setProcState] = useState<ProcessingState>(INITIAL_PROCESSING_STATE);
     const [extractionReview, setExtractionReview] = useState<ExtractionReview | null>(null);
     const [includeEquipment, setIncludeEquipment] = useState(true);
+    const [includeSpareParts, setIncludeSpareParts] = useState(false);
+    const [specialists, setSpecialists] = useState<User[]>([]);
+    const [selectedSpecialist, setSelectedSpecialist] = useState<string>('');
 
     const handleForceNuke = async () => {
         if (!confirm("☢️ NUCLEAR LAUNCH DETECTED ☢️\n\nThis will scan ALL records for '143559588446' and destroy them. Are you sure?")) return;
@@ -117,6 +120,16 @@ export const PreAlerts = () => {
         const unsub = storageService.subscribe(() => {
             setRecords([...storageService.getPreAlerts()]);
         });
+
+        // Load specialists (roles: Admin, Editor, Embarques)
+        const loadSpecialists = () => {
+             const state = storageService.getLocalState();
+             const users = state.users || [];
+             const editors = users.filter(u => [UserRole.ADMIN, UserRole.EDITOR, UserRole.EMBARQUES].includes(u.role));
+             setSpecialists(editors);
+        };
+        loadSpecialists();
+
         return unsub;
     }, []);
 
@@ -581,6 +594,7 @@ export const PreAlerts = () => {
         // Open Batch Notification if there are valid results or warnings
         setExtractionReview({ results: batchResults });
         setIncludeEquipment(true);
+        setIncludeSpareParts(false);
 
         if (docInputRef.current) docInputRef.current.value = '';
     };
@@ -683,10 +697,16 @@ export const PreAlerts = () => {
         try {
             let processed = 0;
             for (const res of validResults) {
+                // Attach specialist if selected
+                if (selectedSpecialist) {
+                    res.preAlert.assignedSpecialist = selectedSpecialist;
+                }
+
                 await storageService.processPreAlertExtraction(
                     res.preAlert,
                     res.containers,
-                    includeEquipment
+                    includeEquipment,
+                    includeSpareParts
                 );
                 processed++;
                 setProcState(prev => ({ ...prev, progress: 20 + (processed / validResults.length) * 80 }));
@@ -981,21 +1001,49 @@ export const PreAlerts = () => {
                             </div>
                         )}
 
-                        <div className="p-4 bg-yellow-50 border-t border-yellow-100 mx-6 mt-4 rounded-lg">
-                            <label className="flex items-start gap-3 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-                                    checked={includeEquipment}
-                                    onChange={(e) => setIncludeEquipment(e.target.checked)}
-                                />
-                                <div>
-                                    <span className="font-bold text-slate-800 text-sm">Generar Equipment Tracking?</span>
-                                    <p className="text-xs text-slate-600 mt-1">
-                                        Si se marca, se crearán registros en Equipment Tracking para TODOS los archivos válidos.
-                                    </p>
-                                </div>
-                            </label>
+                        <div className="p-4 bg-slate-50 border-t border-slate-200 mx-6 mt-4 rounded-lg flex flex-col md:flex-row gap-6">
+                            <div className="flex-1 space-y-4">
+                                <h4 className="font-bold text-slate-800 text-sm">Configuración de Procesamiento</h4>
+                                <label className="flex items-start gap-3 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                        checked={includeEquipment}
+                                        onChange={(e) => setIncludeEquipment(e.target.checked)}
+                                    />
+                                    <div>
+                                        <span className="font-bold text-slate-800 text-sm">Generar Equipment Tracking?</span>
+                                        <p className="text-xs text-slate-500 mt-0.5">Crea registros en módulo Equipment.</p>
+                                    </div>
+                                </label>
+                                <label className="flex items-start gap-3 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        className="mt-1 w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500"
+                                        checked={includeSpareParts}
+                                        onChange={(e) => setIncludeSpareParts(e.target.checked)}
+                                    />
+                                    <div>
+                                        <span className="font-bold text-slate-800 text-sm">Generar SpareParts Tracking?</span>
+                                        <p className="text-xs text-slate-500 mt-0.5">Crea registros en módulo de Refacciones.</p>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div className="flex-1 bg-white p-4 rounded border border-slate-200">
+                                <label className="block text-sm font-bold text-slate-800 mb-2">Especialista Asignado (Dashboard)</label>
+                                <p className="text-xs text-slate-500 mb-3">Este usuario será ligado a los embarques para medir su rendimiento.</p>
+                                <select 
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    value={selectedSpecialist}
+                                    onChange={(e) => setSelectedSpecialist(e.target.value)}
+                                >
+                                    <option value="">-- Seleccionar Especialista --</option>
+                                    {specialists.map(u => (
+                                        <option key={u.username} value={u.username}>{u.name} ({u.role})</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
 
                         <div className="p-6 bg-white border-t border-slate-100 flex gap-3 mt-auto">

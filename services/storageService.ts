@@ -1,4 +1,4 @@
-import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole, XMLCIRecord } from '../types.ts';
+import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, SparePartsTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole, XMLCIRecord } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
   collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc, arrayUnion, increment, limit, startAfter
@@ -14,7 +14,8 @@ const COLS = {
   TRAINING: 'training_submissions', INVOICES: 'commercial_invoices', CFDI_INVOICES: 'cfdi_invoices',
   METADATA: 'system_metadata', DAILY_CHANGES: 'daily_changes', DAILY_REPORTS: 'master_data_reports',
   SUBSCRIPTIONS: 'audit_subscriptions',
-  XML_CI: 'xml_ci'
+  XML_CI: 'xml_ci',
+  SPARE_PARTS: 'spare_parts_tracking'
 };
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
@@ -25,7 +26,7 @@ const PENDING_WRITES_KEY = 'logimaster_sync_queue';
 
 interface PendingWrite {
   id: string;
-  action: 'UPSERT_PARTS' | 'UPSERT_SHIPMENTS' | 'UPSERT_VESSEL' | 'UPDATE_VESSEL' | 'UPDATE_EQUIPMENT' | 'UPDATE_CUSTOMS' | 'UPSERT_INVOICES' | 'DELETE_PARTS' | 'DELETE_INVOICES' | 'DELETE_SHIPMENTS' | 'DELETE_VESSEL' | 'DELETE_EQUIPMENT' | 'DELETE_CUSTOMS' | 'UPSERT_SUPPLIER' | 'DELETE_SUPPLIER' | 'UPSERT_LOGISTICS' | 'DELETE_LOGISTICS' | 'LOG_ACTION' | 'SAVE_REPORT' | 'UPSERT_USER' | 'DELETE_USER' | 'SAVE_ARCHIVE' | 'DELETE_ARCHIVE' | 'UPSERT_COSTS' | 'DELETE_COSTS' | 'UPSERT_PRE_ALERTS' | 'DELETE_PRE_ALERTS';
+  action: 'UPSERT_PARTS' | 'UPSERT_SHIPMENTS' | 'UPSERT_VESSEL' | 'UPDATE_VESSEL' | 'UPDATE_EQUIPMENT' | 'UPDATE_SPARE_PARTS' | 'UPDATE_CUSTOMS' | 'UPSERT_INVOICES' | 'DELETE_PARTS' | 'DELETE_INVOICES' | 'DELETE_SHIPMENTS' | 'DELETE_VESSEL' | 'DELETE_EQUIPMENT' | 'DELETE_SPARE_PARTS' | 'DELETE_CUSTOMS' | 'UPSERT_SUPPLIER' | 'DELETE_SUPPLIER' | 'UPSERT_LOGISTICS' | 'DELETE_LOGISTICS' | 'LOG_ACTION' | 'SAVE_REPORT' | 'UPSERT_USER' | 'DELETE_USER' | 'SAVE_ARCHIVE' | 'DELETE_ARCHIVE' | 'UPSERT_COSTS' | 'DELETE_COSTS' | 'UPSERT_PRE_ALERTS' | 'DELETE_PRE_ALERTS';
   data: any;
   timestamp: string;
 }
@@ -33,7 +34,7 @@ interface PendingWrite {
 let pendingWrites: PendingWrite[] = [];
 
 let dbState: StorageState = {
-  parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
+  parts: [], shipments: [], vesselTracking: [], equipmentTracking: [], sparePartsTracking: [],
   customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
   logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
   dailyChanges: [], dailyReports: [], users: [],
@@ -1794,6 +1795,50 @@ export const storageService = {
     dbState.equipmentTracking = dbState.equipmentTracking.filter((e: any) => e.id !== id);
   },
 
+  upsertSparePartsTracking: async (items: SparePartsTrackingRecord[], onProgress?: (p: number) => void) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    items.forEach((item) => {
+      const id = item.id || generateId();
+      batch.set(doc(db, COLS.SPARE_PARTS, id), sanitizeForFirestore({ ...item, id }));
+    });
+    await batch.commit();
+    dbState.sparePartsTracking = [...(dbState.sparePartsTracking || []), ...items];
+    notifyListeners();
+  },
+
+  updateSparePartsTracking: async (record: SparePartsTrackingRecord) => {
+    const updated = { ...record, updatedAt: new Date().toISOString() };
+    const id = updated.id || generateId();
+    if (!db) throw new Error("Sin conexión a Internet.");
+
+    await setDoc(doc(db, COLS.SPARE_PARTS, id), sanitizeForFirestore(updated));
+
+    const currentSp = dbState.sparePartsTracking || [];
+    const idx = currentSp.findIndex((e: any) => e.id === id);
+    if (idx !== -1) currentSp[idx] = { ...updated, id };
+    else currentSp.push({ ...updated, id });
+    dbState.sparePartsTracking = currentSp;
+  },
+
+  deleteSparePartsTracking: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.SPARE_PARTS, id));
+    if (dbState.sparePartsTracking) {
+      dbState.sparePartsTracking = dbState.sparePartsTracking.filter((e: any) => e.id !== id);
+    }
+  },
+
+  deleteSparePartsTrackings: async (ids: string[]) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    ids.forEach(id => batch.delete(doc(db, COLS.SPARE_PARTS, id)));
+    await batch.commit();
+    if (dbState.sparePartsTracking) {
+      dbState.sparePartsTracking = dbState.sparePartsTracking.filter((e: any) => !ids.includes(e.id));
+    }
+  },
+
   deleteEquipmentTrackings: async (ids: string[]) => {
     if (!db) throw new Error("Sin conexión a Internet.");
     const batch = writeBatch(db);
@@ -1827,6 +1872,7 @@ export const storageService = {
       eirDate: updated.eirDate,
       ataPort: updated.ataPort,
       blNo: updated.blNo,
+      assignedSpecialist: updated.assignedSpecialist,
       updatedAt: updated.updatedAt
     };
 
@@ -1877,7 +1923,7 @@ export const storageService = {
     dbState.customsClearance = dbState.customsClearance.filter((c: any) => !ids.includes(c.id));
   },
 
-  processPreAlertExtraction: async (record: PreAlertRecord, containers: any[], createEquipment: boolean = true) => {
+  processPreAlertExtraction: async (record: PreAlertRecord, containers: any[], createEquipment: boolean = true, createSpareParts: boolean = false) => {
     if (!db) throw new Error("Sin conexión a Internet.");
     const batch = writeBatch(db);
 
@@ -1890,7 +1936,7 @@ export const storageService = {
 
     // --- RESILIENCE SCRUBBER ---
     if (bookingRef) {
-      const scrubCollections = [COLS.VESSEL_TRACKING, COLS.CUSTOMS, COLS.EQUIPMENT, COLS.SHIPMENTS];
+      const scrubCollections = [COLS.VESSEL_TRACKING, COLS.CUSTOMS, COLS.EQUIPMENT, COLS.SPARE_PARTS, COLS.SHIPMENTS];
       for (const colName of scrubCollections) {
         const qScrub = query(collection(db, colName), where("blNo", "==", bookingRef));
         const snapScrub = await getDocs(qScrub);
@@ -1936,6 +1982,17 @@ export const storageService = {
         if (createEquipment) {
           const eqRef = doc(db, COLS.EQUIPMENT, deterministicId);
           batch.set(eqRef, sanitizeForFirestore({
+            id: deterministicId,
+            blNo: bookingRef,
+            containerNo: cont.containerNo,
+            updatedAt: new Date().toISOString()
+          }), { merge: true });
+        }
+
+        // Spare Parts
+        if (createSpareParts) {
+          const spRef = doc(db, COLS.SPARE_PARTS, deterministicId);
+          batch.set(spRef, sanitizeForFirestore({
             id: deterministicId,
             blNo: bookingRef,
             containerNo: cont.containerNo,
@@ -2061,7 +2118,7 @@ export const storageService = {
 
     // B. Surgical Cleanup
     if (bookingRef) {
-      const collectionsToScrub = [COLS.VESSEL_TRACKING, COLS.CUSTOMS, COLS.EQUIPMENT, COLS.SHIPMENTS];
+      const collectionsToScrub = [COLS.VESSEL_TRACKING, COLS.CUSTOMS, COLS.EQUIPMENT, COLS.SPARE_PARTS, COLS.SHIPMENTS];
       for (const col of collectionsToScrub) {
         const q = query(collection(db, col), where("blNo", "==", bookingRef));
         const snap = await getDocs(q);
@@ -2077,6 +2134,7 @@ export const storageService = {
       dbState.vesselTracking = dbState.vesselTracking.filter((v: any) => v.blNo !== bookingRef);
       dbState.customsClearance = dbState.customsClearance.filter((c: any) => c.blNo !== bookingRef);
       dbState.equipmentTracking = dbState.equipmentTracking.filter((e: any) => e.blNo !== bookingRef);
+      if (dbState.sparePartsTracking) dbState.sparePartsTracking = dbState.sparePartsTracking.filter((e: any) => e.blNo !== bookingRef);
       dbState.shipments = dbState.shipments.filter((s: any) => s.blNo !== bookingRef);
     }
     saveLocal();

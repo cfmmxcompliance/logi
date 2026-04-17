@@ -195,19 +195,14 @@ export const HandheldLiberacion = () => {
     return new File([u8arr], originalName, { type: mime });
   };
 
-  // --- CAMERA FLOW ---
-  const handleLaunchCamera = (step: 'CAJA' | 'PUERTAS' | 'SELLO') => {
-    setActiveCameraStep(step);
-    if (fileInputRef.current) {
-        fileInputRef.current.value = ""; // Reset value so onChange triggers even for same file
-        fileInputRef.current.click();
-    }
-  };
-
-  const handleCaptureFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCaptureFile = async (e: React.ChangeEvent<HTMLInputElement>, step: 'CAJA' | 'PUERTAS' | 'SELLO') => {
     const file = e.target.files?.[0];
-    if (!file || !activeCameraStep) return;
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
+    
+    // Clear input so same file can be captured sequentially
+    e.target.value = '';
+
+    setActiveCameraStep(step);
 
     setIsProcessingImage(true);
 
@@ -430,15 +425,6 @@ export const HandheldLiberacion = () => {
         error={uploadError}
         onDismiss={() => setUploadStatus('idle')}
       />
-      <input 
-        type="file" 
-        accept="image/*" 
-        capture="environment" 
-        ref={fileInputRef} 
-        onChange={handleCaptureFile}
-        className="hidden" 
-      />
-
       {/* Header */}
       <div className="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-10 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
@@ -621,19 +607,25 @@ export const HandheldLiberacion = () => {
                                    <Car size={18} className="text-blue-400"/> 1. Foto de Placas/Caja
                                 </div>
                              </div>
-                             
-                             <button
-                                onClick={() => handleLaunchCamera('CAJA')}
-                                disabled={isProcessingImage || isSaving}
-                                className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-semibold transition-all shadow-sm ${
+                             <input 
+                                type="file" 
+                                accept="image/*" 
+                                capture="environment" 
+                                id="camera-caja"
+                                onChange={(e) => handleCaptureFile(e, 'CAJA')}
+                                className="hidden" 
+                             />
+                             <label
+                                htmlFor="camera-caja"
+                                className={`w-full py-4 rounded-xl cursor-pointer flex items-center justify-center gap-2 font-semibold transition-all shadow-sm ${
                                     fotoCajaFile 
                                        ? 'bg-blue-900/30 text-blue-400 border border-blue-800/50' 
                                        : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-900/20'
-                                }`}
+                                } ${(isProcessingImage || isSaving) ? 'opacity-50 pointer-events-none' : ''}`}
                              >
                                  <Camera size={20} />
                                  {fotoCajaFile ? 'Tomar Nueva Foto' : 'Abrir Cámara'}
-                             </button>
+                             </label>
                          </div>
 
                          {/* FOTO PUERTAS */}
@@ -643,19 +635,25 @@ export const HandheldLiberacion = () => {
                                    <DoorOpen size={18} className="text-orange-400"/> 2. Foto de Puertas
                                 </div>
                              </div>
-                             
-                             <button
-                                onClick={() => handleLaunchCamera('PUERTAS')}
-                                disabled={isProcessingImage || isSaving}
-                                className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-semibold transition-all shadow-sm ${
+                             <input 
+                                type="file" 
+                                accept="image/*" 
+                                capture="environment" 
+                                id="camera-puertas"
+                                onChange={(e) => handleCaptureFile(e, 'PUERTAS')}
+                                className="hidden" 
+                             />
+                             <label
+                                htmlFor="camera-puertas"
+                                className={`w-full py-4 rounded-xl cursor-pointer flex items-center justify-center gap-2 font-semibold transition-all shadow-sm ${
                                     fotoPuertasFile 
                                        ? 'bg-orange-900/30 text-orange-400 border border-orange-800/50' 
                                        : 'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-900/20'
-                                }`}
+                                } ${(isProcessingImage || isSaving) ? 'opacity-50 pointer-events-none' : ''}`}
                              >
                                  <Camera size={20} />
                                  {fotoPuertasFile ? 'Tomar Nueva Foto' : 'Abrir Cámara'}
-                             </button>
+                             </label>
                          </div>
 
                          {/* FOTO SELLO & ANALISIS */}
@@ -665,15 +663,21 @@ export const HandheldLiberacion = () => {
                                    <ShieldCheck size={18} className="text-emerald-400"/> 3. Foto de Sello Físico
                                 </div>
                              </div>
-                             
-                             <button
-                                onClick={() => handleLaunchCamera('SELLO')}
-                                disabled={isProcessingImage || isSaving}
-                                className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-semibold transition-all shadow-sm mb-4 ${
+                             <input 
+                                type="file" 
+                                accept="image/*" 
+                                capture="environment" 
+                                id="camera-sello"
+                                onChange={(e) => handleCaptureFile(e, 'SELLO')}
+                                className="hidden" 
+                             />
+                             <label
+                                htmlFor="camera-sello"
+                                className={`w-full py-4 rounded-xl cursor-pointer flex items-center justify-center gap-2 font-semibold transition-all shadow-sm mb-4 ${
                                     fotoSelloFile 
                                        ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-800/50' 
                                        : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20'
-                                }`}
+                                } ${(isProcessingImage || isSaving) ? 'opacity-50 pointer-events-none' : ''}`}
                              >
                                  {isProcessingImage && activeCameraStep === 'SELLO' ? (
                                      <><Loader2 size={20} className="animate-spin" /> Analizando Sello con IA...</>
@@ -682,7 +686,7 @@ export const HandheldLiberacion = () => {
                                  ) : (
                                      <><Camera size={20} /> Capturar y Extraer Sello</>
                                  )}
-                             </button>
+                             </label>
 
                              {fotoSelloFile && (
                                 <div className="animate-in fade-in slide-in-from-top-4 duration-300 mt-2 bg-slate-950 p-4 rounded-xl border border-slate-800 shadow-inner">

@@ -57,11 +57,17 @@ export const authService = {
 
             const [authResult, userSnap] = await Promise.all([authResultPromise, userSnapPromise]);
 
-            // null = timeout de Firestore (red lenta), no usuario inexistente
+            // null = timeout de Firestore (red lenta)
             if (!userSnap) {
                 throw { code: 'auth/network-request-failed', message: 'Sin conexión con la base de datos. Verifica tu señal.' };
             }
+            
+            // Si Firestore resolvió del caché local (porque está offline) y no encontró el usuario,
+            // significa que el caché fue borrado (por el bug anterior) y necesita internet para bajardo de nuevo.
             if (!userSnap.exists()) {
+                if (userSnap.metadata?.fromCache) {
+                   throw { code: 'auth/network-request-failed', message: 'Sin conexión: Acércate al módem para descargar tu perfil por primera vez.' };
+                }
                 throw { code: 'auth/user-not-found', message: 'User not registered.' };
             }
 

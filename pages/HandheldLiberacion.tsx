@@ -234,11 +234,12 @@ export const HandheldLiberacion = () => {
         const base64Data = compressedBase64.split(',')[1];
         geminiService.extractSelloNumber(base64Data)
           .then(result => {
-            if (result && result.trim().length > 0) {
+            if (result && result.trim() !== 'NO_DETECTADO' && result.trim().length > 0) {
               setExtractedSello(result.trim());
+              setValidationError(null);
             } else {
               setExtractedSello('');
-              setValidationError("No se pudo detectar el sello. Escríbalo manualmente.");
+              setValidationError("No se pudo detectar automáticamente. Escríbalo manualmente.");
             }
           })
           .catch(() => {

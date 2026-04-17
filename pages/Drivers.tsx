@@ -254,7 +254,7 @@ export const Drivers: React.FC = () => {
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                     type="text"
-                    placeholder="Buscar Chofer..."
+                    placeholder={t('common.buscar')}
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                     className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none w-64 shadow-sm"
@@ -265,7 +265,7 @@ export const Drivers: React.FC = () => {
                  className={`px-4 py-2 flex items-center rounded-lg border text-sm font-medium transition-colors shadow-sm ${activeMassQuery ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}
              >
                  <Filter size={16} className="mr-2" />
-                 {activeMassQuery ? `Filtros (${activeMassQuery.length})` : 'Mass Query'}
+                 {activeMassQuery ? `${t('btn.mass')} (${activeMassQuery.length})` : t('btn.mass')}
              </button>
 
              <button onClick={downloadTemplate} className="px-3 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg border border-slate-300 transition-colors shadow-sm flex items-center text-sm font-medium" title="Plantilla CSV">
@@ -278,11 +278,11 @@ export const Drivers: React.FC = () => {
              </button>
 
              <button onClick={exportCSV} className="px-4 py-2 bg-white text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-300 transition-colors shadow-sm flex items-center text-sm font-medium">
-                <Download size={16} className="mr-2 text-slate-500" /> Exportar
+                <Download size={16} className="mr-2 text-slate-500" /> {t('btn.export')}
              </button>
 
              <button onClick={openNew} className="bg-teal-600 text-white px-4 py-2 flex items-center rounded-lg hover:bg-teal-700 shadow-md shadow-teal-500/30 transition-all font-medium text-sm">
-                <Plus size={18} className="mr-2" /> Alta de Chofer
+                <Plus size={18} className="mr-2" /> {t('btn.new')}
              </button>
         </div>
       </div>

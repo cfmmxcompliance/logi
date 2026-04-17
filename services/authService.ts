@@ -1,7 +1,7 @@
 import { getAuth, sendPasswordResetEmail, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { User, UserRole } from '../types.ts';
 // @ts-ignore
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, orderBy, deleteField } from 'firebase/firestore';
+import { doc, getDoc, getDocFromCache, setDoc, updateDoc, deleteDoc, collection, getDocs, query, orderBy, deleteField } from 'firebase/firestore';
 import { db, auth } from './firebaseConfig';
 import { storageService } from './storageService';
 
@@ -31,10 +31,21 @@ export const authService = {
         const isRootAdmin = cleanEmail.toLowerCase() === ROOT_ADMIN_EMAIL;
 
         try {
-            // 1. Descargar perfil de Firestore (Nativo: 10ms si es caché, usa red si es primer inicio)
-            const userSnap = await getDoc(doc(db, 'users', cleanEmail));
+            // 1. Force Local Cache First
+            // Esto es crucial para redes lentas: getDoc estándar intentará hablar con la red
+            // y colgará la app por hasta 10 segundos antes de leer el caché.
+            // getDocFromCache lee el disco duro de inmediato y solo falla si no existe.
+            let userSnap;
+            try {
+                userSnap = await getDocFromCache(doc(db, 'users', cleanEmail));
+            } catch (e) {
+                // Falla si el caché está literal vacío (primer inicio)
+                // En ese caso, dependemos de la red obligatoriamente.
+                userSnap = await getDoc(doc(db, 'users', cleanEmail));
+            }
             
             // Si resolvió del caché local (offline) y no encontró el usuario,
+
             // el caché está vacío y necesita internet para bajarse por primera vez.
             if (!userSnap.exists()) {
                 if (userSnap.metadata?.fromCache) {

@@ -7,6 +7,7 @@ import { CommercialInvoiceItem, RawMaterialPart, VesselTrackingRecord } from '..
 import { useAuth } from '../context/AuthContext.tsx';
 import { useNotification } from '../context/NotificationContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
+import { CatalogQueryBuilder, evaluateCondition, QueryCondition } from '../components/CatalogQueryBuilder.tsx';
 import { LOGO_BASE64 } from '../src/constants/logo.ts';
 
 
@@ -373,7 +374,7 @@ export const CIExtractor: React.FC = () => {
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
     const [showQueryBuilder, setShowQueryBuilder] = useState(false);
-    const [queryConditions, setQueryConditions] = useState<any[]>([]);
+    const [queryConditions, setQueryConditions] = useState<QueryCondition[]>([]);
 
     const [stats, setStats] = useState({
         totalItems: 0,
@@ -1497,18 +1498,10 @@ export const CIExtractor: React.FC = () => {
 
         const hasSearch = terms.length > 0;
 
-        // Pre-calculate condition sets for O(1) performance in Mass Query
-        const activeQueryConditions = queryConditions
-            .filter(c => c.value && c.value.trim().length > 0)
-            .map(c => {
-                if (c.operator === 'in_list') {
-                    const listItems = c.value.split(/[\n,;\t]+/)
-                        .map((s: string) => s.trim().toLowerCase())
-                        .filter((s: string) => s.length > 0);
-                    return { ...c, set: new Set(listItems) };
-                }
-                return c;
-            });
+        const activeQueryConditions = queryConditions.filter(c => {
+            if (c.operator === 'empty' || c.operator === 'not_empty') return true;
+            return c.input && c.input.trim().length > 0;
+        });
 
         return items.filter(i => {
             if (showMissingOnly) {
@@ -1606,28 +1599,20 @@ export const CIExtractor: React.FC = () => {
                 }
             }
 
-            // Advanced Query Builder Filter (Optimized)
+            // Advanced Query Builder Filter (Unified Component)
             if (activeQueryConditions.length > 0) {
                 const results = activeQueryConditions.every(condition => {
-                    const { column, operator, value } = condition;
-                    if (!value) return true;
+                    const { column } = condition;
 
                     // Support for BL lookup if column is 'bl'
-                    let itemValue = '';
+                    let itemValue: any = '';
                     if (column === 'bl') {
-                        itemValue = String((i as any).bl || invoiceToBLMap[i.invoiceNo] || '').toLowerCase();
+                        itemValue = String((i as any).bl || invoiceToBLMap[i.invoiceNo] || '');
                     } else {
-                        itemValue = String((i as any)[column] || '').toLowerCase();
+                        itemValue = (i as any)[column];
                     }
 
-                    const targetValue = value.toLowerCase();
-
-                    if (operator === 'contains') return itemValue.includes(targetValue);
-                    if (operator === 'equals') return itemValue === targetValue;
-                    if (operator === 'in_list' && (condition as any).set) {
-                        return ((condition as any).set as Set<string>).has(itemValue.trim());
-                    }
-                    return true;
+                    return evaluateCondition(itemValue, condition);
                 });
                 if (!results) return false;
             }
@@ -2830,157 +2815,15 @@ export const CIExtractor: React.FC = () => {
                 )
             }
             {/* Advanced Query Builder Modal */}
-            {showQueryBuilder && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                        {/* Header */}
-                        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-blue-50 text-blue-600 rounded-xl shadow-sm border border-blue-100">
-                                    <Database size={24} />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-slate-800">Advanced Query Builder</h2>
-                                    <p className="text-sm text-slate-500">Combine multiple filters to find specific records in Master Data.</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setShowQueryBuilder(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
-                                <X size={24} />
-                            </button>
-                        </div>
-
-
-
-                        {/* Body */}
-                        <div className="p-6 max-h-[60vh] overflow-y-auto space-y-4 bg-slate-50/30">
-                            {queryConditions.length === 0 ? (
-                                <div className="text-center py-10 text-slate-400">
-                                    <Database size={48} className="mx-auto mb-4 opacity-20" />
-                                    <p>No filters added yet. Click "+ Add Condition" to start.</p>
-                                </div>
-                            ) : (
-                                queryConditions.map((cond, idx) => (
-                                    <div key={idx} className="flex gap-4 items-start bg-white p-4 rounded-xl border border-slate-200 shadow-sm transition-all hover:border-blue-200">
-                                        <div className="flex-1 space-y-4">
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Column</label>
-                                                    <select
-                                                        value={cond.column}
-                                                        onChange={(e) => {
-                                                            const newConds = [...queryConditions];
-                                                            newConds[idx].column = e.target.value;
-                                                            setQueryConditions(newConds);
-                                                        }}
-                                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
-                                                    >
-                                                        <option value="partNo">No. Parte</option>
-                                                        <option value="invoiceNo">No. Factura</option>
-                                                        <option value="bl">BL</option>
-                                                        <option value="containerNo">Contenedor</option>
-                                                        <option value="hts">HTS</option>
-                                                        <option value="regimen">Regimen</option>
-                                                        <option value="incoterm">Incoterm</option>
-                                                        <option value="englishName">English Name</option>
-                                                        <option value="spanishDescription">Spanish Description</option>
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Operator</label>
-                                                    <select
-                                                        value={cond.operator}
-                                                        onChange={(e) => {
-                                                            const newConds = [...queryConditions];
-                                                            newConds[idx].operator = e.target.value;
-                                                            setQueryConditions(newConds);
-                                                        }}
-                                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
-                                                    >
-                                                        <option value="contains">Contains</option>
-                                                        <option value="equals">Equals</option>
-                                                        <option value="in_list">In List (line separated)</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div className="flex justify-between items-center mb-1">
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase">Values</label>
-                                                    {cond.operator === 'in_list' && cond.value && (
-                                                        <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
-                                                            {cond.value.split(/[\n,;\t]+/).filter((s: string) => s.trim()).length} items
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                {cond.operator === 'in_list' ? (
-                                                    <textarea
-                                                        value={cond.value}
-                                                        onChange={(e) => {
-                                                            const newConds = [...queryConditions];
-                                                            newConds[idx].value = e.target.value;
-                                                            setQueryConditions(newConds);
-                                                        }}
-                                                        placeholder="Enter values (separated by line, comma, semicolon or tab)..."
-                                                        rows={6}
-                                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none resize-y font-mono min-h-[120px]"
-                                                    />
-                                                ) : (
-                                                    <input
-                                                        type="text"
-                                                        value={cond.value}
-                                                        onChange={(e) => {
-                                                            const newConds = [...queryConditions];
-                                                            newConds[idx].value = e.target.value;
-                                                            setQueryConditions(newConds);
-                                                        }}
-                                                        placeholder="Enter value..."
-                                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
-                                                    />
-                                                )}
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                const newConds = queryConditions.filter((_, i) => i !== idx);
-                                                setQueryConditions(newConds);
-                                            }}
-                                            className="mt-6 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-                                ))
-                            )}
-
-                            <button
-                                onClick={() => setQueryConditions([...queryConditions, { column: 'partNo', operator: 'contains', value: '' }])}
-                                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-bold text-sm bg-blue-50/50 px-4 py-3 rounded-xl border border-blue-100 border-dashed w-full justify-center transition-all hover:bg-blue-50"
-                            >
-                                <Plus size={18} /> Add Condition
-                            </button>
-                        </div>
-
-                        {/* Footer */}
-                        <div className="p-6 border-t border-slate-100 flex items-center justify-between bg-white">
-                            <button
-                                onClick={() => {
-                                    setQueryConditions([]);
-                                    setStartDate('');
-                                    setEndDate('');
-                                }}
-                                className="text-slate-400 hover:text-red-500 font-bold text-sm transition-colors px-4 py-2 hover:bg-red-50 rounded-lg"
-                            >
-                                Reset All
-                            </button>
-                            <button
-                                onClick={() => setShowQueryBuilder(false)}
-                                className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:scale-95 flex items-center gap-2"
-                            >
-                                Apply Query
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <CatalogQueryBuilder
+                isOpen={showQueryBuilder}
+                onClose={() => setShowQueryBuilder(false)}
+                columns={['partNo', 'invoiceNo', 'bl', 'containerNo', 'hts', 'regimen', 'incoterm', 'englishName', 'spanishDescription']}
+                conditions={queryConditions}
+                setConditions={setQueryConditions}
+                onApply={() => setShowQueryBuilder(false)}
+                onClear={() => setQueryConditions([])}
+            />
 
             {/* --- PENDING BLs MODAL --- */}
             {showPendingBLsModal && (

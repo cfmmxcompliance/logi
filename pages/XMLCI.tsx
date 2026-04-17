@@ -8,8 +8,8 @@ interface QueryCondition {
     id: string;
     column: string;
     operator: string;
-    dataType: string;
-    values: string;
+    type: 'string' | 'number' | 'boolean';
+    input: string;
 }
 
 export const XMLCI: React.FC = () => {
@@ -25,7 +25,7 @@ export const XMLCI: React.FC = () => {
     // Advanced Query Builder State
     const [isQueryBuilderOpen, setIsQueryBuilderOpen] = useState(false);
     const [queryConditions, setQueryConditions] = useState<QueryCondition[]>([
-        { id: Date.now().toString(), column: 'invoiceNo', operator: 'in list', dataType: 'String (Text)', values: '' }
+        { id: Date.now().toString(), column: 'invoiceNo', operator: 'in', type: 'string', input: '' }
     ]);
     const [appliedConditions, setAppliedConditions] = useState<QueryCondition[]>([]);
     const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
@@ -207,22 +207,57 @@ export const XMLCI: React.FC = () => {
             }
 
             if (appliedConditions.length > 0) {
-                const matchesConditions = appliedConditions.every(condition => {
-                    const columnValue = String((r as any)[condition.column] || '').toLowerCase();
-                    const filterValues = condition.values.split(/[\n,]/).map(v => v.trim().toLowerCase()).filter(v => v !== '');
+                const matchesConditions = appliedConditions.every(cond => {
+                    const rawVal = (r as any)[cond.column];
 
-                    if (filterValues.length === 0) return true;
+                    if (cond.operator === 'empty') {
+                        return rawVal === null || rawVal === undefined || String(rawVal).trim() === '';
+                    }
+                    if (cond.operator === 'not_empty') {
+                        return rawVal !== null && rawVal !== undefined && String(rawVal).trim() !== '';
+                    }
 
-                    if (condition.operator === 'in list') {
-                        return filterValues.some(val => columnValue.includes(val));
+                    const inputLines = (cond.input || '').split(/[\r\n,;\t]+/).map(t => t.trim()).filter(t => t.length > 0);
+                    if (inputLines.length === 0) return true;
+
+                    const normalizeStrict = (s: any) => String(s || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+                    if (cond.operator === 'in') {
+                        const set = new Set(inputLines.map(l => normalizeStrict(l)));
+                        return set.has(normalizeStrict(rawVal));
                     }
-                    if (condition.operator === 'equals') {
-                        return filterValues.some(val => columnValue === val);
+
+                    const cast = (val: any) => {
+                        if (cond.type === 'number') return parseFloat(String(val || '0')) || 0;
+                        if (cond.type === 'boolean') {
+                            const s = normalizeStrict(val);
+                            return s === 'true' || s === 'yes' || s === 'y' || s === 's' || s === 'si' ? true : false;
+                        }
+                        return cond.type === 'string' ? normalizeStrict(val) : String(val || '').trim();
+                    };
+
+                    const itemVal = cast(rawVal);
+
+                    const matchesLine = (lineStr: string) => {
+                        const targetVal = cast(lineStr);
+                        switch (cond.operator) {
+                            case '==': return itemVal === targetVal;
+                            case '!=': return itemVal !== targetVal;
+                            case '>': return itemVal > targetVal;
+                            case '>=': return itemVal >= targetVal;
+                            case '<': return itemVal < targetVal;
+                            case '<=': return itemVal <= targetVal;
+                            case 'contains': return String(itemVal).includes(String(targetVal));
+                            case 'not_contains': return !String(itemVal).includes(String(targetVal));
+                            default: return true;
+                        }
+                    };
+
+                    if (cond.operator === '!=' || cond.operator === 'not_contains') {
+                        return inputLines.every(matchesLine);
+                    } else {
+                        return inputLines.some(matchesLine);
                     }
-                    if (condition.operator === 'contains') {
-                        return filterValues.some(val => columnValue.includes(val));
-                    }
-                    return true;
                 });
                 if (!matchesConditions) return false;
             }
@@ -258,7 +293,7 @@ export const XMLCI: React.FC = () => {
     };
 
     const addQueryCondition = () => {
-        setQueryConditions([...queryConditions, { id: Date.now().toString(), column: 'invoiceNo', operator: 'in list', dataType: 'String (Text)', values: '' }]);
+        setQueryConditions([...queryConditions, { id: Date.now().toString(), column: 'invoiceNo', operator: 'in', type: 'string', input: '' }]);
     };
 
     const removeQueryCondition = (id: string) => {
@@ -277,7 +312,7 @@ export const XMLCI: React.FC = () => {
     };
 
     const resetQueryBuilder = () => {
-        const initialCondition = { id: Date.now().toString(), column: 'invoiceNo', operator: 'in list', dataType: 'String (Text)', values: '' };
+        const initialCondition: QueryCondition = { id: Date.now().toString(), column: 'invoiceNo', operator: 'in', type: 'string', input: '' };
         setQueryConditions([initialCondition]);
         setAppliedConditions([]);
     };
@@ -681,33 +716,44 @@ export const XMLCI: React.FC = () => {
 
             {/* Advanced Query Builder Modal */}
             {isQueryBuilderOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-                        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-start bg-white">
-                            <div className="flex gap-4">
-                                <div className="bg-indigo-50 p-2.5 rounded-xl">
-                                    <Database size={24} className="text-indigo-600" />
-                                </div>
-                                <div className="max-w-[calc(100%-100px)]">
-                                    <h3 className="text-xl font-bold text-slate-800">Advanced Query Builder (XMLCI)</h3>
-                                    <p className="text-slate-500 text-sm mt-1">Combine multiple filters to find specific invoices.</p>
-                                </div>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+                        <div className="bg-slate-50 p-6 border-b border-slate-100 flex justify-between items-center">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                    <Database size={20} className="text-indigo-600" />
+                                    Advanced Query Builder (XMLCI)
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-1">Combine multiple filters to find specific invoices.</p>
                             </div>
-                            <button onClick={() => setIsQueryBuilderOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                                <X size={20} className="text-slate-400" />
-                            </button>
+                            <button onClick={() => setIsQueryBuilderOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-white">
-                            {queryConditions.map((condition) => (
-                                <div key={condition.id} className="flex gap-4 items-start animate-in slide-in-from-top-2 duration-300">
-                                    <div className="flex-1 grid grid-cols-3 gap-4 bg-slate-50 p-6 rounded-2xl border border-slate-100 relative group">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Column</label>
+                        <div className="p-6 flex-1 overflow-y-auto space-y-6 bg-white">
+                            {queryConditions.map((cond, index) => (
+                                <div key={cond.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 relative group animate-in slide-in-from-top-2 duration-200">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
+                                            {index + 1}
+                                        </div>
+                                        <div className="h-px flex-1 bg-slate-200"></div>
+                                        {queryConditions.length > 1 && (
+                                            <button
+                                                onClick={() => removeQueryCondition(cond.id)}
+                                                className="text-slate-400 hover:text-red-500 transition-colors"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Column</label>
                                             <select
-                                                value={condition.column}
-                                                onChange={(e) => updateQueryCondition(condition.id, { column: e.target.value })}
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                                                className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500"
+                                                value={cond.column}
+                                                onChange={(e) => updateQueryCondition(cond.id, { column: e.target.value })}
                                             >
                                                 <option value="idFiscal">RFC / ID Fiscal</option>
                                                 <option value="nombre">Nombre Proveedor</option>
@@ -717,66 +763,84 @@ export const XMLCI: React.FC = () => {
                                             </select>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Operator</label>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Operator</label>
                                             <select
-                                                value={condition.operator}
-                                                onChange={(e) => updateQueryCondition(condition.id, { operator: e.target.value })}
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                                                className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500"
+                                                value={cond.operator}
+                                                onChange={(e) => updateQueryCondition(cond.id, { operator: e.target.value })}
                                             >
-                                                <option value="in list">In List (line separated)</option>
-                                                <option value="equals">Equals</option>
-                                                <option value="contains">Contains</option>
+                                                <option value="in">(in) in list</option>
+                                                <option value="==">(==) equal to</option>
+                                                <option value="!=">(!=) not equal to</option>
+                                                <option value="contains">contains</option>
+                                                <option value="not_contains">not contains</option>
+                                                <option value="empty">is empty / null</option>
+                                                <option value="not_empty">is NOT empty</option>
+                                                <option value=">">( {'>'} ) greater than</option>
+                                                <option value=">=">( {'>='} ) greater or equal</option>
+                                                <option value="<">( {'<'} ) less than</option>
+                                                <option value="<=">( {'<='} ) less or equal</option>
                                             </select>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Values</label>
-                                            <textarea
-                                                value={condition.values}
-                                                onChange={(e) => updateQueryCondition(condition.id, { values: e.target.value })}
-                                                placeholder="Enter values..."
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all min-h-[44px] max-h-32"
-                                            />
-                                        </div>
-
-                                        {queryConditions.length > 1 && (
-                                            <button
-                                                onClick={() => removeQueryCondition(condition.id)}
-                                                className="absolute -right-2 -top-2 w-7 h-7 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all"
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data Type</label>
+                                            <select
+                                                className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:bg-slate-50"
+                                                value={cond.type}
+                                                disabled={cond.operator === 'empty' || cond.operator === 'not_empty'}
+                                                onChange={(e) => updateQueryCondition(cond.id, { type: e.target.value as any })}
                                             >
-                                                <X size={14} />
-                                            </button>
-                                        )}
+                                                <option value="string">String (Text)</option>
+                                                <option value="number">Number</option>
+                                                <option value="boolean">Boolean (Y/N/Boolean)</option>
+                                            </select>
+                                        </div>
                                     </div>
-                                    <div className="mt-11">
-                                        <ChevronDown className="text-slate-300" size={24} />
+
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                            {cond.operator === 'empty' || cond.operator === 'not_empty'
+                                                ? 'Value (Not required for this operator)'
+                                                : cond.operator === 'in' ? 'Values (One per line or comma-separated)' : 'Target Value'
+                                            }
+                                        </label>
+                                        <textarea
+                                            className="w-full border border-slate-300 rounded-lg p-3 font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none min-h-[80px] disabled:bg-slate-100 disabled:cursor-not-allowed"
+                                            placeholder={cond.operator === 'empty' || cond.operator === 'not_empty' ? "N/A" : cond.operator === 'in' ? "Example:\nValue 1\nValue 2" : "Enter value..."}
+                                            value={cond.operator === 'empty' || cond.operator === 'not_empty' ? '' : cond.input}
+                                            disabled={cond.operator === 'empty' || cond.operator === 'not_empty'}
+                                            onChange={(e) => updateQueryCondition(cond.id, { input: e.target.value })}
+                                        />
                                     </div>
                                 </div>
                             ))}
 
                             <button
                                 onClick={addQueryCondition}
-                                className="flex items-center gap-2 text-indigo-600 font-bold text-sm bg-indigo-50 px-4 py-2.5 rounded-xl hover:bg-indigo-100 transition-colors shadow-sm border border-indigo-100/50"
+                                className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 font-medium"
                             >
-                                <Plus size={18} />
-                                Add Condition
+                                <Plus size={18} /> Add Another Condition
                             </button>
                         </div>
 
-                        <div className="px-8 py-6 border-t border-slate-100 flex justify-between items-center bg-slate-50">
+                        <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
                             <button
                                 onClick={resetQueryBuilder}
-                                className="px-6 py-2.5 text-slate-500 font-bold hover:text-slate-700 transition-colors"
+                                className="text-red-600 hover:text-red-700 font-medium text-sm flex items-center gap-1"
                             >
-                                Reset All
+                                <RotateCcw size={16} /> Reset All
                             </button>
-                            <button
-                                onClick={applyAdvancedQuery}
-                                className="px-8 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg transition-all flex items-center gap-2"
-                            >
-                                Apply Query
-                            </button>
+                            <div className="flex gap-3">
+                                <button onClick={() => setIsQueryBuilderOpen(false)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-medium">Cancel</button>
+                                <button
+                                    onClick={applyAdvancedQuery}
+                                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium shadow-lg shadow-indigo-200 transition-all flex items-center gap-2"
+                                >
+                                    <Search size={16} /> Apply Complex Filter
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

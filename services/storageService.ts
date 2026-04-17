@@ -15,7 +15,8 @@ const COLS = {
   METADATA: 'system_metadata', DAILY_CHANGES: 'daily_changes', DAILY_REPORTS: 'master_data_reports',
   SUBSCRIPTIONS: 'audit_subscriptions',
   XML_CI: 'xml_ci',
-  SPARE_PARTS: 'spare_parts_tracking'
+  SPARE_PARTS: 'spare_parts_tracking',
+  FIANZAS: 'fianzas'
 };
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
@@ -38,7 +39,7 @@ let dbState: StorageState = {
   customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
   logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
   dailyChanges: [], dailyReports: [], users: [],
-  cfdiInvoices: [], xmlCI: []
+  cfdiInvoices: [], xmlCI: [], fianzas: []
 };
 
 let listeners: (() => void)[] = [];
@@ -704,6 +705,7 @@ export const storageService = {
   getShipments: () => dbState.shipments || [],
   getVesselTracking: () => dbState.vesselTracking || [],
   getEquipmentTracking: () => dbState.equipmentTracking || [],
+  getSparePartsTracking: () => dbState.sparePartsTracking || [],
   getCustomsClearance: () => dbState.customsClearance || [],
   getPreAlerts: () => dbState.preAlerts || [],
   getCosts: () => dbState.costs || [],
@@ -1348,7 +1350,7 @@ export const storageService = {
       // --- GHOST EXTERMINATOR ---
       // Search for any record with the same Part Number but DIFFERENT ID
       const ghosts = dbState.parts.filter(p =>
-        p.PART_NUMBER.toString().toUpperCase().trim() === standardPN &&
+        (p.PART_NUMBER || '').toString().toUpperCase().trim() === standardPN &&
         p.id !== id
       );
 
@@ -1586,7 +1588,7 @@ export const storageService = {
       // Find ghosts for this chunk
       const ghostIdsForChunk = new Set<string>();
       dbState.parts.forEach(p => {
-        const standardPN = p.PART_NUMBER.toString().toUpperCase().trim();
+        const standardPN = (p.PART_NUMBER || '').toString().toUpperCase().trim();
         if (chunkPNs.includes(standardPN) && !chunkIDs.has(p.id)) {
           ghostIdsForChunk.add(p.id);
         }
@@ -3190,6 +3192,40 @@ export const storageService = {
       console.error("❌ FIRESTORE CRUD FAILED:", e);
       return `FAILURE: ${e.message}`;
     }
+  },
+
+  getFianzas: (): FianzaRecord[] => {
+    return dbState.fianzas || [];
+  },
+
+  upsertFianzas: async (records: Partial<FianzaRecord>[], onProgress?: (p: number) => void) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    let count = 0;
+    
+    for (const record of records) {
+      if (!record.id) record.id = `fza_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      const docRef = doc(db, COLS.FIANZAS, record.id);
+      batch.set(docRef, { ...record, updatedAt: new Date().toISOString() }, { merge: true });
+      count++;
+    }
+    
+    await batch.commit();
+    if (onProgress) onProgress(1);
+    return count;
+  },
+
+  deleteFianza: async (id: string) => {
+    if (!db) throw new Error("Offline.");
+    await deleteDoc(doc(db, COLS.FIANZAS, id));
+  },
+  
+  resetFianzas: async () => {
+    if (!db) return;
+    const snap = await getDocs(collection(db, COLS.FIANZAS));
+    const batch = writeBatch(db);
+    snap.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
   }
 };
 

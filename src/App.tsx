@@ -38,6 +38,7 @@ import { Controller } from '../pages/Controller.tsx';
 import { Vucem } from '../pages/Vucem.tsx';
 import { ExpedienteElectronico } from '../pages/ExpedienteElectronico';
 import { BOMAnalyzer } from '../pages/BOMAnalyzer.tsx';
+import { SaldoFianza } from '../pages/SaldoFianza.tsx';
 import { AIAssistant } from '../pages/AIAssistant.tsx';
 import { HandheldHome } from '../pages/HandheldHome.tsx';
 import { HandheldSellos } from '../pages/HandheldSellos.tsx';
@@ -179,6 +180,7 @@ const AppContent = () => {
             <Route path="/commercial-invoices" element={<ProtectedRoute><CIExtractor /></ProtectedRoute>} />
             <Route path="/xml-invoices" element={<ProtectedRoute><XMLInvoiceExtractor /></ProtectedRoute>} />
             <Route path="/xml-ci" element={<ProtectedRoute><XMLCI /></ProtectedRoute>} />
+            <Route path="/saldo-fianza" element={<ProtectedRoute><SaldoFianza /></ProtectedRoute>} />
             <Route path="/ccp-builder" element={<ProtectedRoute><CCPBuilder /></ProtectedRoute>} />
             <Route path="/data-stage" element={<ProtectedRoute><DataStage /></ProtectedRoute>} />
             <Route path="/controller" element={<ProtectedRoute><Controller /></ProtectedRoute>} />

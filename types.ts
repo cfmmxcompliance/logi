@@ -574,6 +574,7 @@ export interface StorageState {
   dailyReports?: MasterDataReport[];
   users: User[];
   xmlCI?: XMLCIRecord[];
+  fianzas?: FianzaRecord[];
 }
 
 export interface SelloRecord {
@@ -650,4 +651,4 @@ export interface BPMRecord {
   fechaAprobacion?: string; // ISO date string
   fotoUrl?: string; // Legacy single Google drive link
   fotoUrls?: string[]; // Array of multiple Google Drive URLs
-}
+}export * from './types/fianza';

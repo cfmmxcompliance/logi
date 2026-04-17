@@ -819,7 +819,7 @@ export const DatabaseView = () => {
                     const existingMap: Record<string, string[]> = {};
 
                     parsedParts.forEach(p => {
-                        const standardPN = p.PART_NUMBER.toString().toUpperCase().trim();
+                        const standardPN = (p.PART_NUMBER || '').toString().toUpperCase().trim();
                         const cloudIds = cloudMap.get(standardPN);
 
                         if (cloudIds && cloudIds.length > 0) {

@@ -68,8 +68,7 @@ export const Login = () => {
       } else if (err.code === 'auth/email-already-in-use') {
         setError('Email already registered. Please login.');
       } else if (err.code === 'auth/network-request-failed' || err.code === 'unavailable') {
-        window.alert("Connection Failed: Cannot validate user security. / Sin conexión: No se puede validar usuario.");
-        setError('Network error. Cannot validate user.');
+        setError('Sin conexión. Verifica tu señal e intenta de nuevo.');
       } else if (err.code === 'auth/role-pending') {
         // Explicit requirement: Pop-up for pending users
         setError('Access Denied. Contact Admin.');

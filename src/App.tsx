@@ -10,9 +10,10 @@ import { LanguageProvider } from '../context/LanguageContext.tsx';
 import { NotificationPopup } from '../components/NotificationPopup.tsx';
 import { Database, Loader2 } from 'lucide-react';
 import { UserRole } from '../types.ts';
+// Login es estático — debe aparecer de inmediato sin esperar chunk adicional
+import { Login } from '../pages/Login.tsx';
 
 // ─── Lazy page imports — cada página es su propio chunk (carga bajo demanda) ───
-const Login               = lazy(() => import('../pages/Login.tsx').then(m => ({ default: m.Login })));
 const Dashboard           = lazy(() => import('../pages/Dashboard.tsx').then(m => ({ default: m.Dashboard })));
 const Operations          = lazy(() => import('../pages/Operations.tsx').then(m => ({ default: m.Operations })));
 const VesselTracking      = lazy(() => import('../pages/VesselTracking.tsx').then(m => ({ default: m.VesselTracking })));

@@ -30,34 +30,34 @@ export const authService = {
         const username = cleanEmail.split('@')[0];
         const isRootAdmin = cleanEmail.toLowerCase() === ROOT_ADMIN_EMAIL;
 
-        // Increased to 25s for warehouse connectivity
-        const withTimeout = <T>(promise: Promise<T>, ms = 25000): Promise<T> =>
+        // Timeout helper
+        const withTimeout = <T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> =>
             Promise.race([
                 promise,
-                new Promise<T>((_, reject) =>
-                    setTimeout(() => reject({ 
-                        code: 'auth/network-request-failed', 
-                        message: 'Conexión lenta Detectada. Intente acercarse a una antena o punto de acceso WiFi.' 
-                    }), ms)
-                )
+                new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))
             ]);
 
         try {
-            // PARALLEL: Fire both Firebase Auth and Firestore role lookup at the same time
-            const [authResult, userSnap] = await withTimeout(
-                Promise.all([
-                    signInWithEmailAndPassword(auth, cleanEmail, cleanPassword).catch((e: any) => {
-                        // Only block on explicit wrong-password — all other Firebase Auth errors
-                        // (user-not-found, config-not-found, invalid-credential, etc.) fall through
-                        // to the legacy Firestore password check below.
-                        if (e.code === 'auth/wrong-password') throw e;
-                        return null; // Fall back to legacy path
-                    }),
-                    getDoc(doc(db, 'users', cleanEmail))
-                ])
+            // Firebase Auth: timeout corto (15s), falla silenciosamente → ruta legacy
+            const authResultPromise = withTimeout(
+                signInWithEmailAndPassword(auth, cleanEmail, cleanPassword).catch((e: any) => {
+                    if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') throw e;
+                    return null;
+                }),
+                15000,
+                null  // Si Auth tarda más de 15s, continúa con Firestore
             );
 
-            if (!userSnap.exists()) {
+            // Firestore: timeout largo (30s)
+            const userSnapPromise = withTimeout(
+                getDoc(doc(db, 'users', cleanEmail)),
+                30000,
+                null as any
+            );
+
+            const [authResult, userSnap] = await Promise.all([authResultPromise, userSnapPromise]);
+
+            if (!userSnap || !userSnap.exists()) {
                 throw { code: 'auth/user-not-found', message: 'User not registered.' };
             }
 
@@ -75,11 +75,11 @@ export const authService = {
 
             // Legacy password check if Firebase Auth failed
             if (!firebaseUser) {
-                if (data.password && data.password !== password) {
+                if (data.password && data.password !== cleanPassword) {
                     throw { code: 'auth/wrong-password', message: 'Invalid password.' };
                 }
                 // Auto-migrate to Firebase Auth in background (non-blocking)
-                createUserWithEmailAndPassword(auth, email, password)
+                createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword)
                     .then(cred => { firebaseUser = cred.user; })
                     .catch(console.warn);
             }

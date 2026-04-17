@@ -143,8 +143,8 @@ export const HandheldSellos = () => {
           let width = img.width;
           let height = img.height;
           
-          // Reduced to 800px for handheld performance
-          const MAX_DIM = 800;
+          // Increased to 1440px for OCR text readability
+          const MAX_DIM = 1440;
           if (width > height) {
             if (width > MAX_DIM) { height *= MAX_DIM / width; width = MAX_DIM; }
           } else {
@@ -156,8 +156,8 @@ export const HandheldSellos = () => {
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
           
-          // Lower quality to 60% for faster upload on handheld
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          // Higher quality (85%) for Gemini OCR accuracy
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
           resolve(dataUrl.split(',')[1]);
         };
         img.onerror = (e) => reject(e);

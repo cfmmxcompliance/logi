@@ -154,9 +154,9 @@ export const HandheldLiberacion = () => {
           let width = img.width;
           let height = img.height;
 
-          // Reduced to 800px for handheld performance
-          const MAX_WIDTH = 800;
-          const MAX_HEIGHT = 800;
+          // Increased from 800px to 1440px for OCR accuracy
+          const MAX_WIDTH = 1440;
+          const MAX_HEIGHT = 1440;
 
           if (width > height) {
             if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
@@ -171,8 +171,8 @@ export const HandheldLiberacion = () => {
           if (!ctx) { reject(new Error("Failed to get canvas context")); return; }
 
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          // Lower quality 60% - faster upload on handheld
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+          // Higher quality (85%) for Gemini OCR accuracy
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
           resolve(compressedBase64);
         };
         img.onerror = (e) => reject(new Error("Failed to load image"));

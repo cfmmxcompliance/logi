@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { authService } from '../services/authService.ts';
-import { Lock, User as UserIcon, LogIn, Ship, UserPlus, Key } from 'lucide-react';
+import { Lock, User as UserIcon, LogIn, Ship, UserPlus, Key, Loader2 } from 'lucide-react';
 
 export const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -150,7 +150,7 @@ export const Login = () => {
             disabled={loading}
             className={`w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md transition-all flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-wait' : ''}`}
           >
-            {loading ? 'Processing...' : (
+            {loading ? <><Loader2 size={18} className="animate-spin" /> Procesando conexión...</> : (
               isResetMode ? <><Key size={18} /> Set New Password</> :
                 (isLogin ? <><LogIn size={18} /> Sign In</> : <><UserPlus size={18} /> Create Account</>)
             )}

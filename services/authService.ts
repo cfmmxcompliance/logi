@@ -127,7 +127,12 @@ export const authService = {
         if (!db) return null;
         try {
             const userRef = doc(db, 'users', email);
-            const userSnap = await getDoc(userRef);
+            let userSnap;
+            try {
+                userSnap = await getDocFromCache(userRef);
+            } catch (e) {
+                userSnap = await getDoc(userRef);
+            }
 
             if (userSnap.exists()) {
                 const data = userSnap.data();
@@ -142,10 +147,19 @@ export const authService = {
                     avatarInitials: (data.email || email).substring(0, 2).toUpperCase()
                 };
             }
+            
+            // Si viene del caché y no existe, o hubo un error local, no asumimos borrado
+            if (userSnap.metadata?.fromCache) {
+                 throw new Error("Offline cache miss");
+            }
+            
+            // Si el servidor (NO CACHÉ) explícitamente dice que no existe, entonces sí se borró
             return null;
         } catch (e) {
             console.error("Error fetching user:", e);
-            return null;
+            // THROW en lugar de retornar null. AuthContext conserva la sesión si se lanza error.
+            // Si retornamos null, AuthContext asume que el Admin lo borró y cierra la sesión.
+            throw e;
         }
     },
 

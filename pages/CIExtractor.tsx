@@ -2123,33 +2123,33 @@ export const CIExtractor: React.FC = () => {
                                         className="rounded border-slate-300"
                                     />
                                 </th>
-                                <th className="p-4 text-center">Actions</th>
-                                <th className="p-4">Item</th>
-                                <th className="p-4 text-center">R8Diff</th>
-                                <th className="p-4 text-center">Estimated</th>
-                                <th className="p-4 text-center">Sensible</th>
-                                <th className="p-4 text-center">NDB</th>
-                                <th className="p-4 min-w-[150px]">Invoice No</th>
-                                <th className="p-4">BL</th>
-                                <th className="p-4">Container/Guide</th>
-                                <th className="p-4">Date</th>
-                                <th className="p-4">Regimen</th>
-                                <th className="p-4">Incoterm</th>
-                                <th className="p-4">HTS</th>
-                                <th className="p-4">CLAVESAT</th>
-                                <th className="p-4">IGI DUTY</th>
-                                <th className="p-4">PROSEC</th>
-                                <th className="p-4">R8</th>
-                                <th className="p-4 min-w-[300px]">Part No</th>
-                                <th className="p-4 min-w-[200px]">Model</th>
-                                <th className="p-4">English Name</th>
-                                <th className="p-4">Desc (ES)</th>
-                                <th className="p-4 text-right">Qty</th>
-                                <th className="p-4">UM</th>
-                                <th className="p-4 text-right">Net Weight</th>
-                                <th className="p-4 text-right">Total Net Wt</th>
-                                <th className="p-4 text-right">Unit Price</th>
-                                <th className="p-4 text-right">Total</th>
+                                <th className="p-4 text-center">{t('ci.actions')}</th>
+                                <th className="p-4">{t('ci.item')}</th>
+                                <th className="p-4 text-center">{t('ci.r8diff')}</th>
+                                <th className="p-4 text-center">{t('ci.estimated')}</th>
+                                <th className="p-4 text-center">{t('ci.sensible')}</th>
+                                <th className="p-4 text-center">{t('ci.ndb')}</th>
+                                <th className="p-4 min-w-[150px]">{t('ci.invoice')}</th>
+                                <th className="p-4">{t('ci.bl')}</th>
+                                <th className="p-4">{t('ci.container')}</th>
+                                <th className="p-4">{t('ci.date')}</th>
+                                <th className="p-4">{t('ci.regimen')}</th>
+                                <th className="p-4">{t('ci.incoterm')}</th>
+                                <th className="p-4">{t('ci.hts')}</th>
+                                <th className="p-4">{t('ci.clavesat')}</th>
+                                <th className="p-4">{t('ci.igi')}</th>
+                                <th className="p-4">{t('ci.prosec')}</th>
+                                <th className="p-4">{t('ci.r8')}</th>
+                                <th className="p-4 min-w-[300px]">{t('ci.part')}</th>
+                                <th className="p-4 min-w-[200px]">{t('ci.model')}</th>
+                                <th className="p-4">{t('ci.english')}</th>
+                                <th className="p-4">{t('ci.desc_es')}</th>
+                                <th className="p-4 text-right">{t('ci.qty')}</th>
+                                <th className="p-4">{t('ci.um')}</th>
+                                <th className="p-4 text-right">{t('ci.netwt')}</th>
+                                <th className="p-4 text-right">{t('ci.totalnetwt')}</th>
+                                <th className="p-4 text-right">{t('ci.unitprice')}</th>
+                                <th className="p-4 text-right">{t('ci.total')}</th>
 
                             </tr>
                         </thead>

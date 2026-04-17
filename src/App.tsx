@@ -135,7 +135,9 @@ const AppContent = () => {
             try {
                 // Handheld users no necesitan init de escritorio (indexedDB, tracking)
                 const isHandheld = user?.role === UserRole.HANDHELD_USER || user?.role === UserRole.HANDHELD_USER2;
-                if (!isHandheld) {
+                
+                // Solo inicializamos bases de datos masivas si el usuario está autenticado y no es handheld
+                if (isAuthenticated && !isHandheld) {
                     await storageService.init(user?.role);
                     await trackingService.init();
                 }

@@ -6,6 +6,7 @@ import { Plus, Search, FileDown, ClipboardCheck, FileSpreadsheet, Edit2, X, Save
 import { parseCSV } from '../utils/csvHelpers.ts';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
+import { useLanguage } from '../context/LanguageContext.tsx';
 
 const customsEmptyState: CustomsClearanceRecord = {
     id: '',
@@ -100,6 +101,7 @@ const CustomsRow = React.memo(({ record, isSelected, isAir, isAdmin, onSelect, o
 export const CustomsClearance = () => {
     const { hasRole } = useAuth();
     const isAdmin = hasRole([UserRole.ADMIN]);
+    const { t, language } = useLanguage();
 
     const [records, setRecords] = useState<CustomsClearanceRecord[]>([]);
     const [filter, setFilter] = useState('');
@@ -537,65 +539,65 @@ export const CustomsClearance = () => {
                                     />
                                 </Th>
                                 <Th className="w-[80px] bg-slate-50">
-                                    Action<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">操作</span>
+                                    {t('cust.action')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">操作</span></>}
                                 </Th>
                                 <Th className="min-w-[200px]">
-                                    Número de BL / AWB<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">提单号</span>
+                                    {t('cust.bl')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">提单号</span></>}
                                 </Th>
                                 <Th className="min-w-[150px]">
-                                    Número de Contenedor<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">集装箱号</span>
+                                    {t('cust.container')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">集装箱号</span></>}
                                 </Th>
                                 <Th>
-                                    ATA Port<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">到港日</span>
+                                    {t('cust.ata')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">到港日</span></>}
                                 </Th>
                                 <Th>
-                                    Número de Pedimento<br />Entry/Pedimento number<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">报关单号</span>
+                                    {t('cust.pedimento')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">报关单号</span></>}
                                 </Th>
                                 <Th>
-                                    Clave<br />Key
+                                    {t('cust.key')}
                                 </Th>
                                 <Th>
-                                    Asignación de revisión<br />Proforma Revision by:
+                                    {t('cust.assigned')}
                                 </Th>
                                 <Th>
-                                    Fecha meta de finalización de revisión<br />Target review completion date<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">审查完成的截止日期</span>
+                                    {t('cust.target')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">审查完成的截止日期</span></>}
                                 </Th>
                                 <Th>
-                                    1er envío de Proforma<br />PEDIMENTO PROFORMA SENT<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">预录报关单发送</span>
+                                    {t('cust.sent')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">预录报关单发送</span></>}
                                 </Th>
                                 <Th>
-                                    Aprobación de Pedimento<br />PEDIMENTO AUTHORIZED<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">预录报关单审核通过</span>
+                                    {t('cust.auth')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">预录报关单审核通过</span></>}
                                 </Th>
                                 <Th>
-                                    Fecha de solicitud PECE en BPM<br />PECE Request in BPM
+                                    {t('cust.pece_req')}
                                 </Th>
                                 <Th>
-                                    Fecha de autorización de PECE en BPM<br />Authorization<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">PECE账户汇款</span>
+                                    {t('cust.pece_auth')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">PECE账户汇款</span></>}
                                 </Th>
                                 <Th>
-                                    Fecha de pago de Pedimento<br />(PEDIMENTO PAYMENT)<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">支付报关单时间</span>
+                                    {t('cust.pay')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">支付报关单时间</span></>}
                                 </Th>
                                 <Th>
-                                    Cita de Despacho<br />Truck appointment Date<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">预约提箱日</span>
+                                    {t('cust.appoint')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">预约提箱日</span></>}
                                 </Th>
                                 <Th>
-                                    ATA Planta<br />ATA factory<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">到厂日</span>
+                                    {t('cust.ata_fac')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">到厂日</span></>}
                                 </Th>
                                 <Th className="border-r-0">
-                                    Fecha retorno de vacío<br />EIR date<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">还箱日</span>
+                                    {t('cust.eir')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">还箱日</span></>}
                                 </Th>
                             </tr>
                         </thead>

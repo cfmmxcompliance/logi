@@ -7,6 +7,7 @@ import { Plus, Edit2, Trash2, Truck, Search, Filter, Download, UploadCloud, File
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
 import { parseCSV } from '../utils/csvHelpers';
+import { useLanguage } from '../context/LanguageContext';
 
 export const TransportLines: React.FC = () => {
   const [lines, setLines] = useState<TransportLineModel[]>([]);
@@ -19,6 +20,7 @@ export const TransportLines: React.FC = () => {
 
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
+  const { t } = useLanguage();
   const [isMassQueryOpen, setIsMassQueryOpen] = useState(false);
   const [queryConditions, setQueryConditions] = useState<QueryCondition[]>([
       { id: '1', column: 'transportLineId', operator: 'in', type: 'string', input: '' }
@@ -244,12 +246,12 @@ export const TransportLines: React.FC = () => {
         <table className="w-full text-left">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
             <tr>
-              <th className="p-4 font-medium">Línea ID (Key)</th>
-              <th className="p-4 font-medium">Carrier Padre</th>
-              <th className="p-4 font-medium">Nombre Sub-Línea</th>
-              <th className="p-4 font-medium">Razón Social</th>
-              <th className="p-4 font-medium">Línea Mexicana</th>
-              <th className="p-4 font-medium text-right">Acciones</th>
+              <th className="p-4 font-medium">{t('tl.id')}</th>
+              <th className="p-4 font-medium">{t('tl.carrier')}</th>
+              <th className="p-4 font-medium">{t('tl.sublinea')}</th>
+              <th className="p-4 font-medium">{t('tl.razon')}</th>
+              <th className="p-4 font-medium">{t('tl.mexicana')}</th>
+              <th className="p-4 font-medium text-right">{t('btn.acciones')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">

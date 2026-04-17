@@ -7,6 +7,7 @@ import { Plus, Search, FileDown, Bell, FileSpreadsheet, Edit2, X, Save, Trash2, 
 import { parseCSV } from '../utils/csvHelpers.ts';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
+import { useLanguage } from '../context/LanguageContext.tsx';
 
 // Initialize Empty State
 const preAlertEmptyState: PreAlertRecord = {
@@ -47,6 +48,7 @@ interface ExtractionReview {
 export const PreAlerts = () => {
     const { hasRole } = useAuth();
     const isAdmin = hasRole([UserRole.ADMIN]);
+    const { t } = useLanguage();
 
     const [records, setRecords] = useState<PreAlertRecord[]>([]);
     const [filter, setFilter] = useState('');
@@ -886,11 +888,11 @@ export const PreAlerts = () => {
                             <table className="w-full text-left text-sm border-collapse">
                                 <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm text-xs uppercase text-slate-500 font-bold">
                                     <tr>
-                                        <th className="px-4 py-3 border-b">Status</th>
-                                        <th className="px-4 py-3 border-b">File</th>
-                                        <th className="px-4 py-3 border-b">Booking / AWB</th>
-                                        <th className="px-4 py-3 border-b text-center">Containers (Found/Expected)</th>
-                                        <th className="px-4 py-3 border-b">Message</th>
+                                        <th className="px-4 py-3 border-b">{t('pre.status')}</th>
+                                        <th className="px-4 py-3 border-b">{t('pre.file')}</th>
+                                        <th className="px-4 py-3 border-b">{t('pre.booking')}</th>
+                                        <th className="px-4 py-3 border-b text-center">{t('pre.containers')}</th>
+                                        <th className="px-4 py-3 border-b">{t('pre.message')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -1146,16 +1148,16 @@ export const PreAlerts = () => {
                                         onChange={handleSelectAll}
                                     />
                                 </Th>
-                                <Th className="sticky left-[40px] z-20 w-16 bg-slate-50">Action</Th>
-                                <Th>Booking / AWB</Th>
-                                <Th>Mode</Th>
-                                <Th>Model</Th>
-                                <Th>ETD</Th>
-                                <Th>Departure City</Th>
-                                <Th>ETA</Th>
-                                <Th>Arrival City</Th>
-                                <Th>Invoice No</Th>
-                                <Th className="border-r-0">Status</Th>
+                                <Th className="sticky left-[40px] z-20 w-16 bg-slate-50">{t('pre.action')}</Th>
+                                <Th>{t('pre.booking')}</Th>
+                                <Th>{t('pre.mode')}</Th>
+                                <Th>{t('pre.model')}</Th>
+                                <Th>{t('pre.etd')}</Th>
+                                <Th>{t('pre.dep_city')}</Th>
+                                <Th>{t('pre.eta')}</Th>
+                                <Th>{t('pre.arr_city')}</Th>
+                                <Th>{t('pre.invoice')}</Th>
+                                <Th className="border-r-0">{t('pre.status')}</Th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 whitespace-nowrap">

@@ -11,6 +11,7 @@ import { Plus, Edit2, Trash2, Search, Filter, Container, Download, UploadCloud, 
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
 import { parseCSV } from '../utils/csvHelpers';
+import { useLanguage } from '../context/LanguageContext';
 
 export const Cajas: React.FC = () => {
   const [cajas, setCajas] = useState<CajaModel[]>([]);
@@ -31,6 +32,7 @@ export const Cajas: React.FC = () => {
   const [activeMassQuery, setActiveMassQuery] = useState<QueryCondition[] | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useLanguage();
 
   const cajaColumns = ['NumeroCaja', 'carrierCodigo', 'TransportLine', 'nombreSubLinea', 'TipoCaja', 'placas'];
 
@@ -295,14 +297,14 @@ export const Cajas: React.FC = () => {
         <table className="w-full text-left">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
             <tr>
-              <th className="p-4 font-medium">Número Caja</th>
-              <th className="p-4 font-medium">Carrier Enlace</th>
-              <th className="p-4 font-medium">Línea Transporte</th>
-              <th className="p-4 font-medium">Sub-Línea</th>
-              <th className="p-4 font-medium">Clave Ap. 10</th>
-              <th className="p-4 font-medium">Tipo Caja</th>
-              <th className="p-4 font-medium">Placas</th>
-              <th className="p-4 font-medium text-right">Acciones</th>
+              <th className="p-4 font-medium">{t('cajas.num')}</th>
+              <th className="p-4 font-medium">{t('cajas.carrier')}</th>
+              <th className="p-4 font-medium">{t('cajas.linea')}</th>
+              <th className="p-4 font-medium">{t('cajas.sublinea')}</th>
+              <th className="p-4 font-medium">{t('cajas.clave')}</th>
+              <th className="p-4 font-medium">{t('cajas.tipo')}</th>
+              <th className="p-4 font-medium">{t('cajas.placas')}</th>
+              <th className="p-4 font-medium text-right">{t('btn.acciones')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">

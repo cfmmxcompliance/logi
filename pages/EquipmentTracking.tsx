@@ -5,6 +5,7 @@ import { Plus, Search, FileDown, Container, Edit2, Trash2, X, Save, AlertTriangl
 import { useAuth } from '../context/AuthContext.tsx';
 import { parseCSV } from '../utils/csvHelpers.ts';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
+import { useLanguage } from '../context/LanguageContext.tsx';
 
 // Initialize Empty State
 const equipmentEmptyState: EquipmentTrackingRecord = {
@@ -35,6 +36,7 @@ const EQUIPMENT_KEYS: (keyof EquipmentTrackingRecord)[] = [
 export const EquipmentTracking = () => {
     const { hasRole } = useAuth();
     const isAdmin = hasRole([UserRole.ADMIN]);
+    const { t, language } = useLanguage();
 
     const [records, setRecords] = useState<EquipmentTrackingRecord[]>([]);
     const [filter, setFilter] = useState('');
@@ -403,53 +405,53 @@ export const EquipmentTracking = () => {
                                         onChange={handleSelectAll}
                                     />
                                 </Th>
-                                <Th className="sticky left-[40px] z-20 w-16 bg-slate-50">Action</Th>
+                                <Th className="sticky left-[40px] z-20 w-16 bg-slate-50">{t('eq.action')}</Th>
                                 <Th className="sticky left-[104px] z-20 w-32">
-                                    Project Section<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">项目板块</span>
+                                    {t('eq.proj')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">项目板块</span></>}
                                 </Th>
                                 <Th className="min-w-[150px]">
-                                    Shipment Batch<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">发运批次</span>
+                                    {t('eq.batch')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">发运批次</span></>}
                                 </Th>
                                 <Th>
-                                    Person in charge<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">负责人</span>
+                                    {t('eq.pic')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">负责人</span></>}
                                 </Th>
-                                <Th>Unloading location</Th>
-                                <Th>Unloading party</Th>
-                                <Th>Unloading tools</Th>
+                                <Th>{t('eq.loc')}</Th>
+                                <Th>{t('eq.party')}</Th>
+                                <Th>{t('eq.tools')}</Th>
                                 <Th>
-                                    Status<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">状态</span>
-                                </Th>
-                                <Th>
-                                    Equipment Container Size<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">设备柜型</span>
+                                    {t('eq.status')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">状态</span></>}
                                 </Th>
                                 <Th>
-                                    Container Qty<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">数量</span>
+                                    {t('eq.size')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">设备柜型</span></>}
                                 </Th>
                                 <Th>
-                                    Container No.<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">集装箱号</span>
+                                    {t('eq.qty')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">数量</span></>}
                                 </Th>
                                 <Th>
-                                    BL No.<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">提单号</span>
+                                    {t('eq.container')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">集装箱号</span></>}
                                 </Th>
                                 <Th>
-                                    ETD<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">预计出运时间</span>
+                                    {t('eq.bl')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">提单号</span></>}
                                 </Th>
                                 <Th>
-                                    ATD<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">实际出运时间</span>
+                                    {t('eq.etd')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">预计出运时间</span></>}
+                                </Th>
+                                <Th>
+                                    {t('eq.atd')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">实际出运时间</span></>}
                                 </Th>
                                 <Th className="border-r-0">
-                                    ETA Port<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">抵达港口</span>
+                                    {t('eq.eta')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">抵达港口</span></>}
                                 </Th>
                             </tr>
                         </thead>

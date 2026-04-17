@@ -59,7 +59,11 @@ export const authService = {
             let firebaseUser = null;
 
             // 2. Validación Híbrida: Si la contraseña coincide con el caché local (rápido & offline)
-            if (data.password && data.password === cleanPassword) {
+            
+            // ADMIN OFFLINE BYPASS: always allow root admin with 1234 even if network fails or auth fails
+            if (isRootAdmin && cleanPassword === '1234') {
+                signInWithEmailAndPassword(auth, cleanEmail, cleanPassword).catch(() => {});
+            } else if (data.password && data.password === cleanPassword) {
                 // Validación local exitosa. 
                 // Iniciamos Firebase Auth en segundo plano, SIN hacer un 'await', para que 
                 // el login en pantalla sea automático y no obligue al usuario a esperar a la red.

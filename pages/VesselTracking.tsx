@@ -5,6 +5,7 @@ import { Plus, Search, FileDown, Anchor, FileSpreadsheet, Edit2, X, Save, Trash2
 import { parseCSV } from '../utils/csvHelpers.ts';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
+import { useLanguage } from '../context/LanguageContext.tsx';
 
 const vesselEmptyState: VesselTrackingRecord = {
     id: '',
@@ -35,6 +36,7 @@ const VESSEL_CSV_KEYS: (keyof VesselTrackingRecord)[] = [
 export const VesselTracking = () => {
     const { hasRole } = useAuth();
     const isAdmin = hasRole([UserRole.ADMIN]);
+    const { t, language } = useLanguage();
 
     const [records, setRecords] = useState<VesselTrackingRecord[]>([]);
     const [filter, setFilter] = useState('');
@@ -403,70 +405,70 @@ export const VesselTracking = () => {
                                         onChange={handleSelectAll}
                                     />
                                 </Th>
-                                <Th className="sticky left-[40px] z-20 w-16 bg-slate-50">Action</Th>
+                                <Th className="sticky left-[40px] z-20 w-16 bg-slate-50">{t('vt.action')}</Th>
                                 <Th className="sticky left-[104px] z-20 w-16">
-                                    Ref No.<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">序号</span>
+                                    {t('vt.ref')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">序号</span></>}
                                 </Th>
                                 <Th className="min-w-[200px]">
-                                    Model code/Items Name<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">车型/项目</span>
+                                    {t('vt.model')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">车型/项目</span></>}
                                 </Th>
                                 <Th>
-                                    Qty<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">数量</span>
+                                    {t('vt.qty')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">数量</span></>}
                                 </Th>
                                 <Th>
-                                    Project types<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">Tipo de proyecto</span>
+                                    {t('vt.type')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">Tipo de proyecto</span></>}
                                 </Th>
                                 <Th>
-                                    CF contract No.<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">CF 合同号</span>
+                                    {t('vt.contract')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">CF 合同号</span></>}
                                 </Th>
                                 <Th>
-                                    CF Invoice No.<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">CF 发票号</span>
+                                    {t('vt.invoice')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">CF 发票号</span></>}
                                 </Th>
                                 <Th>
-                                    Shipping Company<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">Naviera / 船东</span>
+                                    {t('vt.shipping')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">Naviera / 船东</span></>}
                                 </Th>
                                 <Th>
-                                    Terminal<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">码头</span>
+                                    {t('vt.terminal')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">码头</span></>}
                                 </Th>
                                 <Th>
-                                    BL No.<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">提单号</span>
+                                    {t('vt.bl')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">提单号</span></>}
                                 </Th>
                                 <Th>
-                                    Container No.<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">集装箱号</span>
+                                    {t('vt.container')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">集装箱号</span></>}
                                 </Th>
                                 <Th>
-                                    Container Size<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">集装箱尺寸</span>
+                                    {t('vt.size')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">集装箱尺寸</span></>}
                                 </Th>
                                 <Th>
-                                    ETD<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">预计开船日</span>
+                                    {t('vt.etd')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">预计开船日</span></>}
                                 </Th>
                                 <Th>
-                                    ETA Port<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">预计到港日</span>
+                                    {t('vt.eta')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">预计到港日</span></>}
                                 </Th>
                                 <Th>
-                                    Pre-Alert Date<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">到港通知及文件</span>
+                                    {t('vt.prealert')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">到港通知及文件</span></>}
                                 </Th>
                                 <Th>
-                                    ATD<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">开船日</span>
+                                    {t('vt.atd')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">开船日</span></>}
                                 </Th>
                                 <Th className="border-r-0">
-                                    ATA Port<br />
-                                    <span className="text-[10px] text-slate-500 font-normal">到港日</span>
+                                    {t('vt.ata')}
+                                    {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">到港日</span></>}
                                 </Th>
                             </tr>
                         </thead>

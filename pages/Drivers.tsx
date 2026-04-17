@@ -9,6 +9,7 @@ import { Plus, Edit2, Trash2, User, Search, Filter, Download, UploadCloud, FileS
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
 import { parseCSV } from '../utils/csvHelpers';
+import { useLanguage } from '../context/LanguageContext';
 
 export const Drivers: React.FC = () => {
   const [drivers, setDrivers] = useState<DriverModel[]>([]);
@@ -22,6 +23,7 @@ export const Drivers: React.FC = () => {
 
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
+  const { t } = useLanguage();
   const [isMassQueryOpen, setIsMassQueryOpen] = useState(false);
   const [queryConditions, setQueryConditions] = useState<QueryCondition[]>([
       { id: '1', column: 'driverId', operator: 'in', type: 'string', input: '' }
@@ -289,13 +291,13 @@ export const Drivers: React.FC = () => {
         <table className="w-full text-left">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
             <tr>
-              <th className="p-4 font-medium">Nombre (Driver ID)</th>
-              <th className="p-4 font-medium">Carrier Padre</th>
-              <th className="p-4 font-medium">Línea de Transporte</th>
-              <th className="p-4 font-medium">Licencia</th>
-              <th className="p-4 font-medium">Teléfono</th>
-              <th className="p-4 font-medium">Placas Tracto</th>
-              <th className="p-4 font-medium text-right">Acciones</th>
+              <th className="p-4 font-medium">{t('driver.name')}</th>
+              <th className="p-4 font-medium">{t('driver.carrier')}</th>
+              <th className="p-4 font-medium">{t('driver.linea')}</th>
+              <th className="p-4 font-medium">{t('driver.licencia')}</th>
+              <th className="p-4 font-medium">{t('driver.tel')}</th>
+              <th className="p-4 font-medium">{t('driver.placas')}</th>
+              <th className="p-4 font-medium text-right">{t('btn.acciones')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">

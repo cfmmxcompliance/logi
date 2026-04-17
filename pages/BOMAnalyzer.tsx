@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { storageService } from '../services/storageService.ts';
 import { catalogoProductosService } from '../services/catalogoProductosService';
+import { useLanguage } from '../context/LanguageContext.tsx';
 
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -92,6 +93,7 @@ function yearColor(year: string | null): string {
 // Component
 // ────────────────────────────────────────────────────────────────────────────
 export const BOMAnalyzer: React.FC = () => {
+  const { t } = useLanguage();
   // ── State ──────────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>('idle');
   const [lines, setLines] = useState<TerminalLine[]>([]);
@@ -1122,7 +1124,7 @@ export const BOMAnalyzer: React.FC = () => {
                 <table className="w-full text-[11px] font-mono">
                   <thead className="sticky top-0 bg-slate-800 text-slate-400 uppercase text-[10px] tracking-widest">
                     <tr>
-                      {['#', 'ESTILO', 'INSUMO', 'DESCRIPCIÓN', 'CANTIDAD', 'MERMA', 'UNIDAD', 'BOM', 'FECHAINI', 'FECHAFIN'].map(h => (
+                      {['#', t('bom.estilo'), t('bom.insumo'), t('bom.desc'), t('bom.cant'), t('bom.merma'), t('bom.unidad'), 'BOM', t('bom.fechaini'), t('bom.fechafin')].map(h => (
                         <th key={h} className="px-3 py-2 text-left border-r border-slate-700 last:border-0">{h}</th>
                       ))}
                     </tr>
@@ -1240,9 +1242,9 @@ export const BOMAnalyzer: React.FC = () => {
                         <table className="w-full text-[11px] font-mono">
                           <thead className="bg-slate-800 text-slate-500 uppercase text-[10px]">
                             <tr>
-                              <th className="px-3 py-2 text-left">ESTILO (Product No.)</th>
-                              <th className="px-3 py-2 text-left">MODELO</th>
-                              <th className="px-3 py-2 text-left">Hermanos sin BOM</th>
+                              <th className="px-3 py-2 text-left">{t('bom.estilo')}</th>
+                              <th className="px-3 py-2 text-left">{t('bom.modelo')}</th>
+                              <th className="px-3 py-2 text-left">{t('bom.hnos_sin_bom')}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-800">
@@ -1312,9 +1314,9 @@ export const BOMAnalyzer: React.FC = () => {
                           <table className="w-full text-[11px] font-mono">
                             <thead className="bg-slate-800 text-slate-500 uppercase text-[10px]">
                               <tr>
-                                <th className="px-3 py-2 text-left">MODELO</th>
-                                <th className="px-3 py-2 text-left">Products sin BOM (por año)</th>
-                                <th className="px-3 py-2 text-right w-16">Qty</th>
+                                <th className="px-3 py-2 text-left">{t('bom.modelo')}</th>
+                                <th className="px-3 py-2 text-left">{t('bom.prod_sin_bom')}</th>
+                                <th className="px-3 py-2 text-right w-16">{t('bom.qty')}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800">
@@ -1373,9 +1375,9 @@ export const BOMAnalyzer: React.FC = () => {
                       <thead className="bg-slate-800 text-slate-500 uppercase text-[10px]">
                         <tr>
                           <th className="px-3 py-2 text-left">#</th>
-                          <th className="px-3 py-2 text-left">INSUMO</th>
-                          <th className="px-3 py-2 text-right">CANTIDAD</th>
-                          <th className="px-3 py-2 text-left">NOTA</th>
+                          <th className="px-3 py-2 text-left">{t('bom.insumo')}</th>
+                          <th className="px-3 py-2 text-right">{t('bom.cant')}</th>
+                          <th className="px-3 py-2 text-left">{t('bom.nota')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800">
@@ -1410,9 +1412,9 @@ export const BOMAnalyzer: React.FC = () => {
                     <table className="w-full text-[11px] font-mono">
                       <thead className="bg-slate-800/80 text-slate-500 uppercase text-[10px]">
                         <tr>
-                          <th className="px-3 py-2 text-left">INSUMO</th>
-                          <th className="px-3 py-2 text-left">RÉGIMEN</th>
-                          <th className="px-3 py-2 text-left">DESCRIPCIÓN</th>
+                          <th className="px-3 py-2 text-left">{t('bom.insumo')}</th>
+                          <th className="px-3 py-2 text-left">{t('bom.regimen')}</th>
+                          <th className="px-3 py-2 text-left">{t('bom.desc')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800">
@@ -1439,8 +1441,8 @@ export const BOMAnalyzer: React.FC = () => {
                     <table className="w-full text-[11px] font-mono">
                       <thead className="bg-slate-800/80 text-slate-500 uppercase text-[10px]">
                         <tr>
-                          <th className="px-3 py-2 text-left">INSUMO</th>
-                          <th className="px-3 py-2 text-right">CANTIDAD</th>
+                          <th className="px-3 py-2 text-left">{t('bom.insumo')}</th>
+                          <th className="px-3 py-2 text-right">{t('bom.cant')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800">
@@ -1477,10 +1479,10 @@ export const BOMAnalyzer: React.FC = () => {
                 <table className="w-full text-[12px] font-mono text-left">
                   <thead className="sticky top-0 bg-slate-950 text-slate-400 uppercase tracking-widest text-[10px] shadow-sm z-10">
                     <tr>
-                      <th className="px-5 py-3 border-b border-slate-800 w-[150px]">INSUMO</th>
-                      <th className="px-5 py-3 border-b border-slate-800 w-1/3">DESCRIPCIÓN</th>
-                      <th className="px-5 py-3 border-b border-slate-800">CANTIDADES DETECTADAS</th>
-                      <th className="px-5 py-3 border-b border-slate-800 text-right">ESTADO</th>
+                      <th className="px-5 py-3 border-b border-slate-800 w-[150px]">{t('bom.insumo')}</th>
+                      <th className="px-5 py-3 border-b border-slate-800 w-1/3">{t('bom.desc')}</th>
+                      <th className="px-5 py-3 border-b border-slate-800">{t('bom.cant_detec')}</th>
+                      <th className="px-5 py-3 border-b border-slate-800 text-right">{t('bom.estado')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50">

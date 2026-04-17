@@ -30,40 +30,12 @@ export const authService = {
         const username = cleanEmail.split('@')[0];
         const isRootAdmin = cleanEmail.toLowerCase() === ROOT_ADMIN_EMAIL;
 
-        // Timeout helper
-        const withTimeout = <T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> =>
-            Promise.race([
-                promise,
-                new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))
-            ]);
-
         try {
-            // Firebase Auth: timeout corto (15s), falla silenciosamente → ruta legacy
-            const authResultPromise = withTimeout(
-                signInWithEmailAndPassword(auth, cleanEmail, cleanPassword).catch((e: any) => {
-                    if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') throw e;
-                    return null;
-                }),
-                15000,
-                null  // Si Auth tarda más de 15s, continúa con Firestore
-            );
-
-            // Firestore: timeout largo (45s para PDA con señal débil)
-            const userSnapPromise = withTimeout(
-                getDoc(doc(db, 'users', cleanEmail)),
-                45000,
-                null as any
-            );
-
-            const [authResult, userSnap] = await Promise.all([authResultPromise, userSnapPromise]);
-
-            // null = timeout de Firestore (red lenta)
-            if (!userSnap) {
-                throw { code: 'auth/network-request-failed', message: 'Sin conexión con la base de datos. Verifica tu señal.' };
-            }
+            // 1. Descargar perfil de Firestore (Nativo: 10ms si es caché, usa red si es primer inicio)
+            const userSnap = await getDoc(doc(db, 'users', cleanEmail));
             
-            // Si Firestore resolvió del caché local (porque está offline) y no encontró el usuario,
-            // significa que el caché fue borrado (por el bug anterior) y necesita internet para bajardo de nuevo.
+            // Si resolvió del caché local (offline) y no encontró el usuario,
+            // el caché está vacío y necesita internet para bajarse por primera vez.
             if (!userSnap.exists()) {
                 if (userSnap.metadata?.fromCache) {
                    throw { code: 'auth/network-request-failed', message: 'Sin conexión: Acércate al módem para descargar tu perfil por primera vez.' };
@@ -73,7 +45,37 @@ export const authService = {
 
             const data = userSnap.data();
             let role = data.role as UserRole;
-            let firebaseUser = authResult ? (authResult as any).user : null;
+            let firebaseUser = null;
+
+            // 2. Validación Híbrida: Si la contraseña coincide con el caché local (rápido & offline)
+            if (data.password && data.password === cleanPassword) {
+                // Validación local exitosa. 
+                // Iniciamos Firebase Auth en segundo plano, SIN hacer un 'await', para que 
+                // el login en pantalla sea automático y no obligue al usuario a esperar a la red.
+                signInWithEmailAndPassword(auth, cleanEmail, cleanPassword)
+                    .catch((e) => {
+                        // Si falla porque no existe en Auth, lo creamos (auto-migrate)
+                        if (e.code === 'auth/user-not-found') {
+                            createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword).catch(console.warn);
+                        }
+                    });
+            } else {
+                // 3. Fallback: Si no coincide en caché o la contraseña se cambió recientemente, 
+                //    forzamos a validar estrictamente contra los servidores de Firebase Auth.
+                try {
+                    const authResult = await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+                    firebaseUser = authResult.user;
+                } catch (e: any) {
+                    if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') throw e;
+                    
+                    // Si Auth falla por mala señal, verificamos si es que simplemente tipeó mal la suya local
+                    if (data.password) {
+                        throw { code: 'auth/wrong-password', message: 'Invalid password.' };
+                    } else {
+                        throw { code: 'auth/network-request-failed', message: 'Fallo red: No se pudo validar contraseña nueva.' };
+                    }
+                }
+            }
 
             // Root Admin override
             if (isRootAdmin) {
@@ -81,17 +83,6 @@ export const authService = {
                 if (data.role !== UserRole.ADMIN) {
                     updateDoc(doc(db, 'users', email), { role: UserRole.ADMIN }).catch(console.error);
                 }
-            }
-
-            // Legacy password check if Firebase Auth failed
-            if (!firebaseUser) {
-                if (data.password && data.password !== cleanPassword) {
-                    throw { code: 'auth/wrong-password', message: 'Invalid password.' };
-                }
-                // Auto-migrate to Firebase Auth in background (non-blocking)
-                createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword)
-                    .then(cred => { firebaseUser = cred.user; })
-                    .catch(console.warn);
             }
 
             // Require reset check

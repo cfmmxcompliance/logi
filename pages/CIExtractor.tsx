@@ -6,6 +6,7 @@ import { storageService } from '../services/storageService.ts';
 import { CommercialInvoiceItem, RawMaterialPart, VesselTrackingRecord } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useNotification } from '../context/NotificationContext.tsx';
+import { useLanguage } from '../context/LanguageContext.tsx';
 import { LOGO_BASE64 } from '../src/constants/logo.ts';
 
 
@@ -323,6 +324,7 @@ export const CIExtractor: React.FC = () => {
     const isAdmin = user?.role === 'Admin';
     const isEditor = user?.role === 'Editor';
     const { showNotification } = useNotification();
+    const { t, language } = useLanguage();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const searchTimerRef = useRef<NodeJS.Timeout>();

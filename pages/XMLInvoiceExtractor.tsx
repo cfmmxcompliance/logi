@@ -367,9 +367,15 @@ export const XMLInvoiceExtractor: React.FC = () => {
     };
 
     const handleExportCSV = () => {
-        const itemsToExport = items.filter(i => selectedIds.has(i.id));
-        if (itemsToExport.length === 0) {
-            showNotification('Error', 'Selecciona al menos un registro para exportar.', 'error');
+        let itemsToExport = items;
+        if (selectedIds.size > 0) {
+            itemsToExport = items.filter(i => selectedIds.has(i.id));
+        } else {
+            itemsToExport = filteredItems;
+        }
+
+        if (!itemsToExport || itemsToExport.length === 0) {
+            showNotification('Export Info', "No hay datos para exportar.", 'info');
             return;
         }
 
@@ -749,23 +755,21 @@ export const XMLInvoiceExtractor: React.FC = () => {
 
                 <div className="flex items-center gap-4">
                     {selectedIds.size > 0 && (
-                        <>
-                            <button
-                                onClick={() => setIsBulkDeleteModalOpen(true)}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 animate-in fade-in slide-in-from-right-4"
-                            >
-                                <Trash2 size={20} />
-                                <span>Eliminar Seleccionados ({selectedIds.size})</span>
-                            </button>
-                            <button
-                                onClick={handleExportCSV}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20 shadow-lg animate-in fade-in slide-in-from-right-4"
-                            >
-                                <Download size={20} />
-                                <span>Exportar Seleccionados (CSV) ({selectedIds.size})</span>
-                            </button>
-                        </>
+                        <button
+                            onClick={() => setIsBulkDeleteModalOpen(true)}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 animate-in fade-in slide-in-from-right-4"
+                        >
+                            <Trash2 size={20} />
+                            <span>Eliminar Seleccionados ({selectedIds.size})</span>
+                        </button>
                     )}
+                    <button
+                        onClick={handleExportCSV}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20 shadow-lg"
+                    >
+                        <Download size={20} />
+                        <span>{selectedIds.size > 0 ? `Exportar Seleccionados (${selectedIds.size})` : 'Exportar CSV'}</span>
+                    </button>
 
                     <label className={`
                         flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all shadow-sm cursor-pointer

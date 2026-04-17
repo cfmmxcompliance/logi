@@ -1039,9 +1039,12 @@ export const PreAlerts = () => {
                                     onChange={(e) => setSelectedSpecialist(e.target.value)}
                                 >
                                     <option value="">-- Seleccionar Especialista --</option>
-                                    {specialists.map(u => (
-                                        <option key={u.username} value={u.username}>{u.name} ({u.role})</option>
-                                    ))}
+                                    {specialists.map(u => {
+                                        const displayName = u.name || u.username;
+                                        return (
+                                            <option key={u.username} value={displayName}>{displayName} ({u.role})</option>
+                                        );
+                                    })}
                                 </select>
                             </div>
                         </div>

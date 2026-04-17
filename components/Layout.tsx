@@ -84,6 +84,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <SidebarItem to="/pre-alerts" icon={Bell} label={sidebarOpen ? "Pre-Alerts" : ""} />
               <SidebarItem to="/vessel-tracking" icon={Anchor} label={sidebarOpen ? "Tracking" : ""} />
               <SidebarItem to="/equipment-tracking" icon={Container} label={sidebarOpen ? "Equipment" : ""} />
+              <SidebarItem to="/spare-parts-tracking" icon={Box} label={sidebarOpen ? "SpareParts" : ""} />
               <SidebarItem to="/customs-clearance" icon={ClipboardCheck} label={sidebarOpen ? "Customs Clearance" : ""} />
               <SidebarItem to="/commercial-invoices" icon={FileText} label={sidebarOpen ? "CI Extractor" : ""} />
               <SidebarItem to="/xml-invoices" icon={Database} label={sidebarOpen ? "Facturas XML" : ""} />

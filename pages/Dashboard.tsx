@@ -5,6 +5,7 @@ import { ShipmentStatus, UserRole } from '../types.ts';
 import { Database, Play, AlertCircle, CheckCircle, Loader2, Anchor, Ship, Container, ClipboardCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
+import { SpecialistsPerformanceTable } from '../components/SpecialistsPerformanceTable.tsx';
 
 const StatCard = ({ title, value, sub, color, icon: Icon }: any) => (
   <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-start justify-between">
@@ -240,6 +241,8 @@ export const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      <SpecialistsPerformanceTable customs={customs} />
     </div>
   );
 };

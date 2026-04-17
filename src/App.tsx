@@ -5,6 +5,7 @@ import { Dashboard } from '../pages/Dashboard.tsx';
 import { Operations } from '../pages/Operations.tsx';
 import { VesselTracking } from '../pages/VesselTracking.tsx';
 import { EquipmentTracking } from '../pages/EquipmentTracking.tsx';
+import { SparePartsTracking } from '../pages/SparePartsTracking.tsx';
 import { CustomsClearance } from '../pages/CustomsClearance.tsx';
 import { PreAlerts } from '../pages/PreAlerts.tsx';
 import { ProformaValidator } from '../pages/ProformaValidator';
@@ -173,6 +174,7 @@ const AppContent = () => {
             <Route path="/pre-alerts" element={<ProtectedRoute><PreAlerts /></ProtectedRoute>} />
             <Route path="/vessel-tracking" element={<ProtectedRoute><VesselTracking /></ProtectedRoute>} />
             <Route path="/equipment-tracking" element={<ProtectedRoute><EquipmentTracking /></ProtectedRoute>} />
+            <Route path="/spare-parts-tracking" element={<ProtectedRoute><SparePartsTracking /></ProtectedRoute>} />
             <Route path="/customs-clearance" element={<ProtectedRoute><CustomsClearance /></ProtectedRoute>} />
             <Route path="/commercial-invoices" element={<ProtectedRoute><CIExtractor /></ProtectedRoute>} />
             <Route path="/xml-invoices" element={<ProtectedRoute><XMLInvoiceExtractor /></ProtectedRoute>} />

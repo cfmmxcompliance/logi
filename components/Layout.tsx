@@ -140,8 +140,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {/* Logistics Planning -> Admin, Editor, Controller, Expo (NOT Agent) */}
-          {[UserRole.ADMIN, UserRole.EDITOR, UserRole.CONTROLLER, UserRole.EXPO].includes(user?.role as UserRole) && (
+          {/* Logistics Planning -> Admin, Controller, Expo (NOT Agent/Editor) */}
+          {[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.EXPO].includes(user?.role as UserRole) && (
             <>
               <SidebarItem to="/models" icon={Box} label={sidebarOpen ? "Models (Expo)" : ""} />
               <SidebarItem to="/pricing-matrix" icon={DollarSign} label={sidebarOpen ? "Pricing Matrix" : ""} />

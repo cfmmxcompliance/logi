@@ -110,9 +110,9 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Editor constraints
     if (user?.role === UserRole.EDITOR) {
-        const editorAllowed = ['/controller', '/database', '/bpm', '/models', '/pricing-matrix', '/shipping-schedules', '/daily-van-assignment', '/saldo-fianza', '/suppliers'];
+        const editorAllowed = ['/controller', '/database', '/bpm', '/saldo-fianza', '/suppliers'];
         // Let them see root or basically if they try to access restricted logistics ops
-        const restricted = ['/apendice10', '/carriers', '/transport-lines', '/drivers', '/cajas', '/asignaciones-diarias'];
+        const restricted = ['/apendice10', '/carriers', '/transport-lines', '/drivers', '/cajas', '/asignaciones-diarias', '/models', '/pricing-matrix', '/shipping-schedules', '/daily-van-assignment'];
         if (restricted.includes(location.pathname)) {
             return <Navigate to="/database" replace />;
         }

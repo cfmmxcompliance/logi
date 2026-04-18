@@ -3211,6 +3211,17 @@ export const storageService = {
     }
     
     await batch.commit();
+
+    // Optimistic local UI update
+    let current = [...(dbState.fianzas || [])];
+    records.forEach(r => {
+        const idx = current.findIndex(x => x.id === r.id);
+        if (idx !== -1) current[idx] = { ...current[idx], ...r } as FianzaRecord;
+        else current.push(r as FianzaRecord);
+    });
+    dbState.fianzas = current;
+    notifyListeners();
+
     if (onProgress) onProgress(1);
     return count;
   },
@@ -3218,6 +3229,17 @@ export const storageService = {
   deleteFianza: async (id: string) => {
     if (!db) throw new Error("Offline.");
     await deleteDoc(doc(db, COLS.FIANZAS, id));
+  },
+
+  deleteFianzas: async (ids: string[]) => {
+    if (!db) throw new Error("Sin conexión a Base de Datos");
+    const batchSize = 400; // Firestore limit per batch is 500, using 400 for safety
+    for (let i = 0; i < ids.length; i += batchSize) {
+      const chunk = ids.slice(i, i + batchSize);
+      const batch = writeBatch(db);
+      chunk.forEach(id => batch.delete(doc(db, COLS.FIANZAS, id)));
+      await batch.commit();
+    }
   },
   
   resetFianzas: async () => {

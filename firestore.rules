@@ -50,6 +50,7 @@ service cloud.firestore {
     match /productos/{docId} { allow read, write: if true; }
     match /BPM/{docId} { allow read, write: if true; }
     match /counters/{docId} { allow read, write: if true; }
+    match /fianzas/{docId} { allow read, write: if true; }
 
     // 4. Default Block (Catch-all)
     match /{document=**} {

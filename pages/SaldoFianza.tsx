@@ -440,21 +440,25 @@ export const SaldoFianza: React.FC = () => {
                         </button>
                     )}
 
-                    <button
-                        onClick={handleDownloadTemplate}
-                        className="flex items-center gap-1.5 px-3 py-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg text-sm transition-colors border border-transparent hover:border-emerald-200 font-medium"
-                        title="Descargar Plantilla Excel"
-                    >
-                        <FileSpreadsheet size={16} /> Plantilla
-                    </button>
+                    {user?.role !== UserRole.AGENT && (
+                        <>
+                            <button
+                                onClick={handleDownloadTemplate}
+                                className="flex items-center gap-1.5 px-3 py-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg text-sm transition-colors border border-transparent hover:border-emerald-200 font-medium"
+                                title="Descargar Plantilla Excel"
+                            >
+                                <FileSpreadsheet size={16} /> Plantilla
+                            </button>
 
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-medium shadow-sm transition-all hover:border-slate-300"
-                    >
-                        <Upload size={16} /> Cargar Datos
-                    </button>
-                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".xlsx, .xls, .csv" className="hidden" />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-medium shadow-sm transition-all hover:border-slate-300"
+                            >
+                                <Upload size={16} /> Cargar Datos
+                            </button>
+                            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".xlsx, .xls, .csv" className="hidden" />
+                        </>
+                    )}
 
                     <button
                         onClick={handleExportCSV}
@@ -463,18 +467,22 @@ export const SaldoFianza: React.FC = () => {
                         <Download size={16} /> Exportar {selectedIds.size > 0 && `(${selectedIds.size})`}
                     </button>
 
-                    <button
-                        onClick={() => setIsNewRecordModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 shadow-md font-medium"
-                    >
-                        <PlusCircle size={16} /> Nuevo
-                    </button>
-                    <button
-                        onClick={() => setIsPaymentModalOpen(true)}
-                        className="flex items-center gap-2 px-5 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-lg shadow-emerald-200 font-bold transition-all"
-                    >
-                        <CheckCircle2 size={18} /> Pago
-                    </button>
+                    {user?.role !== UserRole.AGENT && (
+                        <>
+                            <button
+                                onClick={() => setIsNewRecordModalOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 shadow-md font-medium"
+                            >
+                                <PlusCircle size={16} /> Nuevo
+                            </button>
+                            <button
+                                onClick={() => setIsPaymentModalOpen(true)}
+                                className="flex items-center gap-2 px-5 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-lg shadow-emerald-200 font-bold transition-all"
+                            >
+                                <CheckCircle2 size={18} /> Pago
+                            </button>
+                        </>
+                    )}
 
                     {user?.role === UserRole.ADMIN && selectedIds.size > 0 && (
                         <button

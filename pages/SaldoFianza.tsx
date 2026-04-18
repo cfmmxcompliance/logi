@@ -3,7 +3,7 @@ import { storageService } from '../services/storageService.ts';
 import { authService } from '../services/authService.ts';
 import { FianzaRecord, UserRole } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
-import { Upload, DollarSign, Calendar, Search, PlusCircle, CheckCircle2, Filter, Download, Trash2, X, Plus, ChevronDown, Lock, FileSpreadsheet, Edit2 } from 'lucide-react';
+import { Upload, DollarSign, Calendar, Search, PlusCircle, CheckCircle2, Filter, Download, Trash2, X, Plus, ChevronDown, Lock, FileSpreadsheet, Edit2, Monitor } from 'lucide-react';
 import * as xlsx from 'xlsx';
 
 interface QueryCondition {
@@ -340,7 +340,21 @@ export const SaldoFianza: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-300">
+        <div className="w-full">
+            {/* Mobile Block */}
+            <div className="block lg:hidden flex-col items-center justify-center p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-sm mx-auto max-w-md mt-[10vh]">
+                <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-500">
+                    <Monitor size={40} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 mb-3">Solo Versión de Escritorio</h3>
+                <p className="text-slate-500 text-sm">
+                    El módulo de Saldo Fianza requiere una resolución de pantalla más amplia.
+                    Por favor, accede desde una computadora para utilizar estas herramientas.
+                </p>
+            </div>
+
+            {/* Desktop UI */}
+            <div className="hidden lg:block space-y-6 animate-in fade-in duration-300">
             {/* Top Indicator Widget */}
             <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-3xl p-6 md:p-8 text-white relative overflow-hidden shadow-xl">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
@@ -909,6 +923,7 @@ export const SaldoFianza: React.FC = () => {
                     </div>
                 </div>
             )}
+            </div>
         </div>
     );
 };

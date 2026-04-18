@@ -65,8 +65,8 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
         return <Navigate to="/login" replace />;
     }
 
-    // Agent role is limited to BPM, Daily Audit, and Master Data
-    const isAgentAllowedPath = location.pathname === '/bpm' || location.pathname === '/daily-audit' || location.pathname === '/database';
+    // Agent role is limited to BPM, Daily Audit, Master Data, and Saldo Fianza
+    const isAgentAllowedPath = location.pathname === '/bpm' || location.pathname === '/daily-audit' || location.pathname === '/database' || location.pathname === '/saldo-fianza';
     if (user?.role === UserRole.AGENT && !isAgentAllowedPath) {
         return <Navigate to="/bpm" replace />;
     }
@@ -92,7 +92,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Carrier constraints
     if (user?.role === UserRole.CARRIER) {
-        const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/asignaciones-diarias'];
+        const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/asignaciones-diarias', '/saldo-fianza'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/transport-lines" replace />;
     }
 
@@ -104,7 +104,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Embarques constraints
     if (user?.role === UserRole.EMBARQUES) {
-        const allowed = ['/asignaciones-diarias'];
+        const allowed = ['/asignaciones-diarias', '/saldo-fianza'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/asignaciones-diarias" replace />;
     }
 

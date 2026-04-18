@@ -92,7 +92,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Carrier constraints
     if (user?.role === UserRole.CARRIER) {
-        const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/asignaciones-diarias', '/saldo-fianza'];
+        const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/asignaciones-diarias'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/transport-lines" replace />;
     }
 
@@ -104,8 +104,18 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Embarques constraints
     if (user?.role === UserRole.EMBARQUES) {
-        const allowed = ['/asignaciones-diarias', '/saldo-fianza'];
+        const allowed = ['/asignaciones-diarias'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/asignaciones-diarias" replace />;
+    }
+
+    // Editor constraints
+    if (user?.role === UserRole.EDITOR) {
+        const editorAllowed = ['/controller', '/database', '/bpm', '/models', '/pricing-matrix', '/shipping-schedules', '/daily-van-assignment', '/saldo-fianza', '/suppliers'];
+        // Let them see root or basically if they try to access restricted logistics ops
+        const restricted = ['/apendice10', '/carriers', '/transport-lines', '/drivers', '/cajas', '/asignaciones-diarias'];
+        if (restricted.includes(location.pathname)) {
+            return <Navigate to="/database" replace />;
+        }
     }
 
     // Cliente constraints — solo lectura de Asignaciones Diarias

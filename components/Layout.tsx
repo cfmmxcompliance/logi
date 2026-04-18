@@ -93,8 +93,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {/* Universal but Desktop Only (except CLIENT) */}
-          {user?.role !== UserRole.CLIENT && (
+          {/* Saldo Fianza: Desktop Only */ }
+          {![UserRole.CLIENT, UserRole.CARRIER, UserRole.EMBARQUES, UserRole.EXPO].includes(user?.role as UserRole) && (
              <div className="hidden lg:block">
                  <SidebarItem to="/saldo-fianza" icon={DollarSign} label={sidebarOpen ? "Saldo Fianza" : ""} />
              </div>
@@ -119,10 +119,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
+          {/* Apéndice 10: Accessible to Admin, Controller */}
+          {[UserRole.ADMIN, UserRole.CONTROLLER].includes(user?.role as UserRole) && (
+              <SidebarItem to="/apendice10" icon={BookOpen} label={sidebarOpen ? "Apéndice 10" : ""} />
+          )}
+
           {/* Master Data: Accessible to Admin, Editor, Controller (NOT Agent anymore) */}
           {[UserRole.ADMIN, UserRole.EDITOR, UserRole.CONTROLLER].includes(user?.role as UserRole) && (
             <>
-              <SidebarItem to="/apendice10" icon={BookOpen} label={sidebarOpen ? "Apéndice 10" : ""} />
               <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
               <SidebarItem to="/bpm" icon={Box} label={sidebarOpen ? "BPM Clasificación" : ""} />
             </>
@@ -154,8 +158,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {/* Operational Transport -> Admin, Editor, Controller, Carrier, Embarques (NOT Agent/Expo) */}
-          {[UserRole.ADMIN, UserRole.EDITOR, UserRole.CONTROLLER, UserRole.CARRIER, UserRole.EMBARQUES].includes(user?.role as UserRole) && (
+          {/* Operational Transport -> Admin, Controller, Carrier, Embarques (NOT Agent/Expo/Editor) */}
+          {[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.CARRIER, UserRole.EMBARQUES].includes(user?.role as UserRole) && (
             <>
               {user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && (
                   <SidebarItem to="/carriers" icon={Anchor} label={sidebarOpen ? t("menu.carriers") : ""} />

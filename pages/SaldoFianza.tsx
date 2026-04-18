@@ -393,7 +393,7 @@ export const SaldoFianza: React.FC = () => {
                                 <div className="text-base md:text-xl font-mono font-bold text-orange-400">${impuestosPagados.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                             </div>
                             <div className="bg-slate-800/50 p-4 rounded-xl border border-yellow-500/20 backdrop-blur-sm">
-                                <div className="text-[10px] text-yellow-300 font-bold tracking-wider mb-1 truncate">PENDIENTE DE PAGO</div>
+                                <div className="text-[10px] text-yellow-300 font-bold tracking-wider mb-1 truncate">SALDO UTILIZADO</div>
                                 <div className="text-base md:text-xl font-mono font-bold text-yellow-400">${pendientePago.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                             </div>
                         </div>

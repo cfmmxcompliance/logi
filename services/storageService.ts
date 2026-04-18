@@ -461,9 +461,9 @@ export const storageService = {
         // (B) Skip Heavy Collections from Initial Sync (Lazy Load required on-page)
         if (key === 'LOGS') return;
 
-        // (C) Agent Role Optimization: Only sync Suppliers + Logistics + Daily Tools
+        // (C) Agent Role Optimization: Only sync Suppliers + Logistics + Daily Tools + Fianzas
         if (role === UserRole.AGENT) {
-          if (key !== 'SUPPLIERS' && key !== 'LOGISTICS' && key !== 'DAILY_CHANGES' && key !== 'DAILY_REPORTS') return;
+          if (key !== 'SUPPLIERS' && key !== 'LOGISTICS' && key !== 'DAILY_CHANGES' && key !== 'DAILY_REPORTS' && key !== 'FIANZAS') return;
         }
 
         // (D) Editor / Operator Optimization: Shared critical operational data

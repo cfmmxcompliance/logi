@@ -14,6 +14,17 @@ interface QueryCondition {
     input: string;
 }
 
+const validatePedimentoFormat = (ped: string): string | null => {
+    if (!ped) return "El pedimento está vacío.";
+    if (ped.length !== 18) return `El pedimento debe tener exactamente 18 caracteres (incluyendo espacios). Actualmente tiene ${ped.length} caracteres. Estructura requerida: "XX XX XXXX XXXXXXX"`;
+    
+    const regex = /^\d{2} \d{2} \d{4} \d{7}$/;
+    if (!regex.test(ped)) {
+        return `El pedimento "${ped}" tiene caracteres inválidos o espacios mal colocados. Debe seguir la estructura "XX XX XXXX XXXXXXX" (sólo números y 3 espacios, ej. "26 16 1614 6002166").`;
+    }
+    return null;
+};
+
 export const SaldoFianza: React.FC = () => {
     const { user } = useAuth();
     const [records, setRecords] = useState<FianzaRecord[]>([]);
@@ -89,7 +100,7 @@ export const SaldoFianza: React.FC = () => {
     const filteredRecords = sortedRecordsOriginalMap.filter(r => {
         // AGENT Role SCAC Restriction
         if (user?.role === UserRole.AGENT) {
-            if (!user?.scac || !r.pedimento || !r.pedimento.includes(user.scac)) {
+            if (!user?.scac || !r.pedimento || !r.pedimento.toLowerCase().includes(user.scac.toLowerCase())) {
                 return false;
             }
         }
@@ -214,6 +225,16 @@ export const SaldoFianza: React.FC = () => {
                 }
 
                 if (parsedRecords.length > 0) {
+                    // Format Validation
+                    for (const pr of parsedRecords) {
+                        if (!pr.pedimento) continue;
+                        const formatError = validatePedimentoFormat(pr.pedimento);
+                        if (formatError) {
+                            alert(`Error de formato en Excel: ${formatError}`);
+                            return;
+                        }
+                    }
+
                     const existingPedimentosSet = new Set(records.filter(r => r.id !== 'fza_0000000_iniciabase').map(r => r.pedimento.trim().toLowerCase()));
                     const hasDuplicates = parsedRecords.some(pr => pr.pedimento && existingPedimentosSet.has(pr.pedimento.trim().toLowerCase()));
 
@@ -322,6 +343,12 @@ export const SaldoFianza: React.FC = () => {
     const handleCreateNewRecord = async () => {
         if (newPedi.trim() === '' || newNombre.trim() === '' || newProv === '') return;
 
+        const formatError = validatePedimentoFormat(newPedi);
+        if (formatError) {
+            alert(formatError);
+            return;
+        }
+
         const isDuplicate = records.some(r => r.pedimento.trim().toLowerCase() === newPedi.trim().toLowerCase() && r.id !== 'fza_0000000_iniciabase');
         if (isDuplicate) {
             alert("PEDIMENTO DUPLICADO FAVOR DE CORREGIR");
@@ -355,6 +382,12 @@ export const SaldoFianza: React.FC = () => {
 
     const handleSaveEdit = async () => {
         if (!editingRecord) return;
+
+        const formatError = validatePedimentoFormat(editingRecord.pedimento);
+        if (formatError) {
+            alert(formatError);
+            return;
+        }
 
         const isDuplicate = records.some(r => r.pedimento.trim().toLowerCase() === editingRecord.pedimento.trim().toLowerCase() && r.id !== editingRecord.id && r.id !== 'fza_0000000_iniciabase');
         if (isDuplicate) {

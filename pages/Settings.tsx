@@ -303,23 +303,20 @@ export const Settings = () => {
                                             </td>
                                             <td className="px-6 py-3">
                                                 <input 
+                                                    key={`scac-${u.email || u.username}-${u.scac || ''}`}
                                                     type="text" 
                                                     placeholder="SCAC"
-                                                    value={u.scac || ''}
-                                                    onChange={async (e) => {
-                                                        const newScac = e.target.value;
-                                                        // Optimistically update local UI state
-                                                        setSystemUsers(prev => prev.map(user => 
-                                                            (user.email || user.username) === (u.email || u.username) 
-                                                                ? { ...user, scac: newScac } 
-                                                                : user
-                                                        ));
-                                                    }}
+                                                    defaultValue={u.scac || ''}
                                                     onBlur={async (e) => {
                                                         const newScac = e.target.value;
-                                                        if (u.scac !== newScac) {
+                                                        if ((u.scac || '') !== newScac) {
                                                             // @ts-ignore
                                                             await authService.updateUserScac(u.email || u.username, newScac);
+                                                            setSystemUsers(prev => prev.map(user => 
+                                                                (user.email || user.username) === (u.email || u.username) 
+                                                                    ? { ...user, scac: newScac } 
+                                                                    : user
+                                                            ));
                                                         }
                                                     }}
                                                     className="w-24 border-slate-200 rounded text-xs font-mono py-1 px-2 bg-white outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"

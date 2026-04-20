@@ -115,7 +115,8 @@ export const authService = {
                 name: data.name || data.username || username,
                 email: cleanEmail,
                 role,
-                avatarInitials: cleanEmail.substring(0, 2).toUpperCase()
+                avatarInitials: cleanEmail.substring(0, 2).toUpperCase(),
+                scac: data.scac || ''
             };
 
             localStorage.setItem('logimaster_user', JSON.stringify(user));
@@ -148,7 +149,8 @@ export const authService = {
                     name: data.username || data.name || email.split('@')[0],
                     role: isRootAdmin ? UserRole.ADMIN : (data.role as UserRole),
                     email: email,
-                    avatarInitials: (data.email || email).substring(0, 2).toUpperCase()
+                    avatarInitials: (data.email || email).substring(0, 2).toUpperCase(),
+                    scac: data.scac || ''
                 };
             }
             
@@ -282,7 +284,8 @@ export const authService = {
                     email: userEmail,
                     name: data.username || data.name || data.email,
                     role: effectiveRole,
-                    avatarInitials: (data.email || '??').substring(0, 2).toUpperCase()
+                    avatarInitials: (data.email || '??').substring(0, 2).toUpperCase(),
+                    scac: data.scac || ''
                 };
 
                 uniqueUsers.set(doc.id, userObj);
@@ -313,6 +316,17 @@ export const authService = {
             return true;
         } catch (e) {
             console.error("Error updating role:", e);
+            return false;
+        }
+    },
+
+    updateUserScac: async (email: string, scac: string) => {
+        if (!db) return false;
+        try {
+            await storageService.upsertUser({ email, scac });
+            return true;
+        } catch (e) {
+            console.error("Error updating SCAC:", e);
             return false;
         }
     },

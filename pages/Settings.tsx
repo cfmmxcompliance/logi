@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { storageService } from '../services/storageService.ts';
-import { Database, Trash2, AlertTriangle, History, RotateCcw, Save, Users, Shield, Play, Key, UserPlus, Mail, Plus } from 'lucide-react';
+import { Database, Trash2, AlertTriangle, History, RotateCcw, Save, Users, Shield, Play, Key, UserPlus, Mail, Plus, Search } from 'lucide-react';
+import { CatalogQueryBuilder, evaluateCondition, QueryCondition } from '../components/CatalogQueryBuilder.tsx';
 import { RestorePoint, UserRole, User } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { authService } from '../services/authService.ts';
@@ -13,6 +14,59 @@ export const Settings = () => {
     const [systemUsers, setSystemUsers] = useState<User[]>([]);
     const [reportEmails, setReportEmails] = useState<string[]>([]);
     const [newEmail, setNewEmail] = useState('');
+
+    const [userFilter, setUserFilter] = useState('');
+    const [showUserQueryBuilder, setShowUserQueryBuilder] = useState(false);
+    const [userQueryConditions, setUserQueryConditions] = useState<QueryCondition[]>([]);
+
+    const [emailFilter, setEmailFilter] = useState('');
+    const [showEmailQueryBuilder, setShowEmailQueryBuilder] = useState(false);
+    const [emailQueryConditions, setEmailQueryConditions] = useState<QueryCondition[]>([]);
+
+    const filteredUsers = React.useMemo(() => {
+        return systemUsers.filter(u => {
+            if (userFilter) {
+                const terms = userFilter.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
+                const matchesText = terms.some(term => 
+                    (u.username?.toLowerCase().includes(term)) ||
+                    (u.name?.toLowerCase().includes(term)) ||
+                    (u.role?.toLowerCase().includes(term)) ||
+                    (u.scac?.toLowerCase().includes(term)) ||
+                    (u.email?.toLowerCase().includes(term))
+                );
+                if (!matchesText) return false;
+            }
+            if (userQueryConditions.length > 0) {
+                const matchesQuery = userQueryConditions.every(cond => {
+                    let val: any = '';
+                    if (cond.column === 'username') val = u.username || u.email;
+                    if (cond.column === 'name') val = u.name;
+                    if (cond.column === 'role') val = u.role;
+                    if (cond.column === 'scac') val = u.scac;
+                    return evaluateCondition(val, cond);
+                });
+                if (!matchesQuery) return false;
+            }
+            return true;
+        });
+    }, [systemUsers, userFilter, userQueryConditions]);
+
+    const filteredEmails = React.useMemo(() => {
+        return reportEmails.filter(email => {
+            if (emailFilter) {
+                const terms = emailFilter.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
+                const matchesText = terms.some(term => email.toLowerCase().includes(term));
+                if (!matchesText) return false;
+            }
+            if (emailQueryConditions.length > 0) {
+                const matchesQuery = emailQueryConditions.every(cond => {
+                    return evaluateCondition(email, cond);
+                });
+                if (!matchesQuery) return false;
+            }
+            return true;
+        });
+    }, [reportEmails, emailFilter, emailQueryConditions]);
 
     useEffect(() => {
         // Initial load
@@ -125,8 +179,25 @@ export const Settings = () => {
                                 <p className="text-slate-500 text-sm mt-1">Manage system access and roles.</p>
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="text-xs text-slate-400 font-mono">
-                                    Count: {systemUsers?.length || 0}
+                                <div className="relative">
+                                    <Search className="absolute left-2.5 top-2.5 text-slate-400" size={16} />
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar por coma..."
+                                        value={userFilter}
+                                        onChange={(e) => setUserFilter(e.target.value)}
+                                        className="pl-9 pr-4 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 w-56 outline-none"
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => setShowUserQueryBuilder(true)}
+                                    className={`p-2 rounded-lg transition-colors border ${userQueryConditions.length > 0 ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                                    title="Mass Query"
+                                >
+                                    <Database size={18} />
+                                </button>
+                                <div className="text-xs text-slate-400 font-mono hidden sm:block">
+                                    Count: {filteredUsers.length} / {systemUsers?.length || 0}
                                 </div>
                                 <button
                                     onClick={async () => {
@@ -177,11 +248,12 @@ export const Settings = () => {
                                         <th className="px-6 py-3">Username</th>
                                         <th className="px-6 py-3">Name</th>
                                         <th className="px-6 py-3">Role</th>
+                                        <th className="px-6 py-3">SCAC</th>
                                         <th className="px-6 py-3 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {systemUsers?.map((u, i) => (
+                                    {filteredUsers?.map((u, i) => (
                                         <tr key={u.email || u.username} className="hover:bg-slate-50">
                                             <td className="px-6 py-3 font-mono text-slate-600">
                                                 <span>{u.username}</span>
@@ -228,6 +300,30 @@ export const Settings = () => {
                                                         <span className="animate-pulse w-2 h-2 rounded-full bg-amber-500" title="Waiting for Approval"></span>
                                                     )}
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-3">
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="SCAC"
+                                                    value={u.scac || ''}
+                                                    onChange={async (e) => {
+                                                        const newScac = e.target.value;
+                                                        // Optimistically update local UI state
+                                                        setSystemUsers(prev => prev.map(user => 
+                                                            (user.email || user.username) === (u.email || u.username) 
+                                                                ? { ...user, scac: newScac } 
+                                                                : user
+                                                        ));
+                                                    }}
+                                                    onBlur={async (e) => {
+                                                        const newScac = e.target.value;
+                                                        if (u.scac !== newScac) {
+                                                            // @ts-ignore
+                                                            await authService.updateUserScac(u.email || u.username, newScac);
+                                                        }
+                                                    }}
+                                                    className="w-24 border-slate-200 rounded text-xs font-mono py-1 px-2 bg-white outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                                />
                                             </td>
                                             <td className="px-6 py-3 text-right">
                                                 <div className="flex items-center justify-end gap-3">
@@ -363,6 +459,25 @@ export const Settings = () => {
                                 </h2>
                                 <p className="text-slate-500 text-sm mt-1">Configura quién recibirá el reporte de Master Data todas las noches a la 1:00 AM.</p>
                             </div>
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
+                                    <Search className="absolute left-2.5 top-2.5 text-slate-400" size={16} />
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar por coma..."
+                                        value={emailFilter}
+                                        onChange={(e) => setEmailFilter(e.target.value)}
+                                        className="pl-9 pr-4 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 w-56 outline-none"
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => setShowEmailQueryBuilder(true)}
+                                    className={`p-2 rounded-lg transition-colors border ${emailQueryConditions.length > 0 ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                                    title="Mass Query"
+                                >
+                                    <Database size={18} />
+                                </button>
+                            </div>
                         </div>
                         <div className="p-6 space-y-4">
                             <div className="flex gap-2">
@@ -399,10 +514,10 @@ export const Settings = () => {
                             </div>
 
                             <div className="space-y-2">
-                                {(reportEmails?.length || 0) === 0 ? (
-                                    <p className="text-slate-400 text-sm italic py-4 text-center">No hay correos registrados para el reporte diario.</p>
+                                {(filteredEmails?.length || 0) === 0 ? (
+                                    <p className="text-slate-400 text-sm italic py-4 text-center">No hay correos registrados o que coincidan con la búsqueda.</p>
                                 ) : (
-                                    reportEmails?.map((email, idx) => (
+                                    filteredEmails?.map((email, idx) => (
                                         <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold uppercase">
@@ -499,6 +614,34 @@ export const Settings = () => {
                     </div>
                 </div>
             </div>
+
+            {/* User Management Query Builder */}
+            <CatalogQueryBuilder
+                isOpen={showUserQueryBuilder}
+                onClose={() => setShowUserQueryBuilder(false)}
+                columns={['username', 'name', 'role', 'scac']}
+                conditions={userQueryConditions}
+                setConditions={setUserQueryConditions}
+                onApply={() => setShowUserQueryBuilder(false)}
+                onClear={() => {
+                    setUserQueryConditions([]);
+                    setShowUserQueryBuilder(false);
+                }}
+            />
+
+            {/* Email Report Query Builder */}
+            <CatalogQueryBuilder
+                isOpen={showEmailQueryBuilder}
+                onClose={() => setShowEmailQueryBuilder(false)}
+                columns={['email']}
+                conditions={emailQueryConditions}
+                setConditions={setEmailQueryConditions}
+                onApply={() => setShowEmailQueryBuilder(false)}
+                onClear={() => {
+                    setEmailQueryConditions([]);
+                    setShowEmailQueryBuilder(false);
+                }}
+            />
         </div>
     );
 };

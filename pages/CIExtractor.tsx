@@ -218,6 +218,13 @@ const InvoiceRow = React.memo(({
                 {blNo || '-'}
             </td>
 
+            {/* Especialista */}
+            <td className="p-4 text-slate-600 font-mono text-xs">
+                {isEditing ? (
+                    <input type="text" value={editValues.assignedSpecialist || ''} onChange={e => setEditValues({ ...editValues, assignedSpecialist: e.target.value })} className="w-full px-2 py-1 border rounded bg-white text-xs" />
+                ) : (item.assignedSpecialist || '-')}
+            </td>
+
             {/* Container */}
             <td className="p-4 text-slate-600 font-mono text-xs">
                 {isEditing ? (
@@ -652,7 +659,8 @@ export const CIExtractor: React.FC = () => {
             unitPrice: item.unitPrice,
             netWeight: item.netWeight,
             containerNo: item.containerNo,
-            incoterm: item.incoterm
+            incoterm: item.incoterm,
+            assignedSpecialist: item.assignedSpecialist
             // Add other editable fields if needed
         });
     };
@@ -2118,6 +2126,7 @@ export const CIExtractor: React.FC = () => {
                                 <th className="p-4 text-center">{t('ci.ndb')}</th>
                                 <th className="p-4 min-w-[150px]">{t('ci.invoice')}</th>
                                 <th className="p-4">{t('ci.bl')}</th>
+                                <th className="p-4">Especialista</th>
                                 <th className="p-4">{t('ci.container')}</th>
                                 <th className="p-4">{t('ci.date')}</th>
                                 <th className="p-4">{t('ci.regimen')}</th>

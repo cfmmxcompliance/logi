@@ -30,7 +30,7 @@ const vesselEmptyState: VesselTrackingRecord = {
 const VESSEL_CSV_KEYS: (keyof VesselTrackingRecord)[] = [
     'refNo', 'modelCode', 'qty', 'projectType', 'contractNo', 'invoiceNo',
     'shippingCompany', 'terminal', 'blNo', 'containerNo', 'containerSize',
-    'etd', 'etaPort', 'preAlertDate', 'atd', 'ataPort'
+    'etd', 'etaPort', 'preAlertDate', 'atd', 'ataPort', 'assignedSpecialist'
 ];
 
 export const VesselTracking = () => {
@@ -470,6 +470,7 @@ export const VesselTracking = () => {
                                     {t('vt.ata')}
                                     {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">到港日</span></>}
                                 </Th>
+                                <Th>Especialista</Th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 whitespace-nowrap">
@@ -512,6 +513,7 @@ export const VesselTracking = () => {
                                     <Td className="text-amber-600">{r.preAlertDate}</Td>
                                     <Td>{r.atd}</Td>
                                     <Td className="border-r-0">{r.ataPort}</Td>
+                                    <Td>{r.assignedSpecialist}</Td>
                                 </tr>
                             ))}
                             {filteredRecords.length === 0 && (

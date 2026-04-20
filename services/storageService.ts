@@ -485,6 +485,7 @@ export const storageService = {
           let stateKey = key.toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase());
           if (key === 'CUSTOMS') stateKey = 'customsClearance';
           if (key === 'EQUIPMENT') stateKey = 'equipmentTracking';
+          if (key === 'SPARE_PARTS') stateKey = 'sparePartsTracking';
           if (key === 'TRAINING') stateKey = 'trainingSubmissions';
           if (key === 'INVOICES') stateKey = 'commercialInvoices';
           if (key === 'XML_CI') stateKey = 'xmlCI';

@@ -30,7 +30,7 @@ const sparePartsEmptyState: SparePartsTrackingRecord = {
 const SPARE_PARTS_KEYS: (keyof SparePartsTrackingRecord)[] = [
     'projectSection', 'shipmentBatch', 'personInCharge', 'unloadingLocation',
     'unloadingParty', 'unloadingTools', 'status', 'containerSize', 'containerQty',
-    'containerNo', 'blNo', 'etd', 'atd', 'etaPort'
+    'containerNo', 'blNo', 'etd', 'atd', 'etaPort', 'assignedSpecialist'
 ];
 
 export const SparePartsTracking = () => {
@@ -453,6 +453,7 @@ export const SparePartsTracking = () => {
                                     {t('eq.eta')}
                                     {language === 'es' && <><br /><span className="text-[10px] text-slate-500 font-normal">抵达港口</span></>}
                                 </Th>
+                                <Th>Especialista</Th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 whitespace-nowrap">
@@ -497,6 +498,7 @@ export const SparePartsTracking = () => {
                                     <Td>{r.etd}</Td>
                                     <Td>{r.atd}</Td>
                                     <Td className="border-r-0">{r.etaPort}</Td>
+                                    <Td>{r.assignedSpecialist}</Td>
                                 </tr>
                             ))}
                             {filteredRecords.length === 0 && (

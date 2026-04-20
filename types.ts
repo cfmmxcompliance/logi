@@ -37,6 +37,7 @@ export interface User {
   name: string;
   role: UserRole;
   avatarInitials: string;
+  scac?: string; // New field
 }
 
 export interface Quotation {
@@ -144,6 +145,7 @@ export interface VesselTrackingRecord {
   preAlertDate: string;
   atd: string;
   ataPort: string;
+  assignedSpecialist?: string;
   updatedAt?: string;
 }
 
@@ -163,6 +165,7 @@ export interface EquipmentTrackingRecord {
   etd: string;
   atd: string;
   etaPort: string;
+  assignedSpecialist?: string;
   updatedAt?: string;
 }
 
@@ -182,6 +185,7 @@ export interface SparePartsTrackingRecord {
   etd: string;
   atd: string;
   etaPort: string;
+  assignedSpecialist?: string;
   updatedAt?: string;
 }
 
@@ -481,6 +485,7 @@ export interface CommercialInvoiceItem {
   incoterm?: string;
   currency?: string;
   priceVerified?: boolean;
+  assignedSpecialist?: string;
   // Custom CFDI Fields
   vin?: string;
   engine?: string;

@@ -27,7 +27,7 @@ const customsEmptyState: CustomsClearanceRecord = {
 };
 
 const CUSTOMS_CSV_KEYS: (keyof CustomsClearanceRecord)[] = [
-    'blNo', 'containerNo', 'ataPort', 'pedimentoNo', 'clavePedimento', 'proformaRevisionBy',
+    'blNo', 'containerNo', 'ataPort', 'pedimentoNo', 'clavePedimento', 'assignedSpecialist', 'proformaRevisionBy',
     'targetReviewDate', 'proformaSentDate', 'pedimentoAuthorizedDate',
     'peceRequestDate', 'peceAuthDate', 'pedimentoPaymentDate',
     'truckAppointmentDate', 'ataFactory', 'eirDate'
@@ -84,6 +84,7 @@ const CustomsRow = React.memo(({ record, isSelected, isAir, isAdmin, onSelect, o
             <Td>{record.ataPort}</Td>
             <Td className="font-medium text-slate-800">{record.pedimentoNo}</Td>
             <Td className="font-mono text-xs text-center">{record.clavePedimento}</Td>
+            <Td>{record.assignedSpecialist}</Td>
             <Td>{record.proformaRevisionBy}</Td>
             <Td className="text-amber-600">{record.targetReviewDate}</Td>
             <Td>{record.proformaSentDate}</Td>
@@ -561,6 +562,7 @@ export const CustomsClearance = () => {
                                 <Th>
                                     {t('cust.key')}
                                 </Th>
+                                <Th>Especialista</Th>
                                 <Th>
                                     {t('cust.assigned')}
                                 </Th>

@@ -87,6 +87,13 @@ export const SaldoFianza: React.FC = () => {
 
     // Filter application
     const filteredRecords = sortedRecordsOriginalMap.filter(r => {
+        // AGENT Role SCAC Restriction
+        if (user?.role === UserRole.AGENT) {
+            if (!user?.scac || !r.pedimento || !r.pedimento.includes(user.scac)) {
+                return false;
+            }
+        }
+
         if (!activeMassQuery || activeMassQuery.length === 0) return true;
 
         return activeMassQuery.every(cond => {
@@ -207,6 +214,32 @@ export const SaldoFianza: React.FC = () => {
                 }
 
                 if (parsedRecords.length > 0) {
+                    const existingPedimentosSet = new Set(records.filter(r => r.id !== 'fza_0000000_iniciabase').map(r => r.pedimento.trim().toLowerCase()));
+                    const hasDuplicates = parsedRecords.some(pr => pr.pedimento && existingPedimentosSet.has(pr.pedimento.trim().toLowerCase()));
+
+                    if (hasDuplicates) {
+                        alert("PEDIMENTO DUPLICADO FAVOR DE CORREGIR");
+                        return;
+                    }
+
+                    // Check for duplicates within the uploaded file itself
+                    const uploadedPedimentosSet = new Set();
+                    let hasInternalDuplicates = false;
+                    for (const pr of parsedRecords) {
+                        if (!pr.pedimento) continue;
+                        const ped = pr.pedimento.trim().toLowerCase();
+                        if (uploadedPedimentosSet.has(ped)) {
+                            hasInternalDuplicates = true;
+                            break;
+                        }
+                        uploadedPedimentosSet.add(ped);
+                    }
+
+                    if (hasInternalDuplicates) {
+                        alert("PEDIMENTO DUPLICADO FAVOR DE CORREGIR");
+                        return;
+                    }
+
                     await storageService.upsertFianzas(parsedRecords);
                     alert(`Importados ${parsedRecords.length} registros exitosamente.`);
                 }
@@ -289,6 +322,12 @@ export const SaldoFianza: React.FC = () => {
     const handleCreateNewRecord = async () => {
         if (newPedi.trim() === '' || newNombre.trim() === '' || newProv === '') return;
 
+        const isDuplicate = records.some(r => r.pedimento.trim().toLowerCase() === newPedi.trim().toLowerCase() && r.id !== 'fza_0000000_iniciabase');
+        if (isDuplicate) {
+            alert("PEDIMENTO DUPLICADO FAVOR DE CORREGIR");
+            return;
+        }
+
         const provAmount = Number(newProv);
         const slInicial = saldoActual;
         const slFinal = slInicial - provAmount;
@@ -316,6 +355,13 @@ export const SaldoFianza: React.FC = () => {
 
     const handleSaveEdit = async () => {
         if (!editingRecord) return;
+
+        const isDuplicate = records.some(r => r.pedimento.trim().toLowerCase() === editingRecord.pedimento.trim().toLowerCase() && r.id !== editingRecord.id && r.id !== 'fza_0000000_iniciabase');
+        if (isDuplicate) {
+            alert("PEDIMENTO DUPLICADO FAVOR DE CORREGIR");
+            return;
+        }
+
         try {
             await storageService.upsertFianzas([editingRecord]);
             setEditingRecord(null);

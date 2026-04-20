@@ -28,7 +28,7 @@ const preAlertEmptyState: PreAlertRecord = {
 
 // Keys for form generation (and CSV)
 const PREALERT_KEYS: (keyof PreAlertRecord)[] = [
-    'model', 'shippingMode', 'bookingAbw', 'etd', 'atd', 'departureCity', 'eta', 'ata', 'ataFactory', 'arrivalCity', 'invoiceNo'
+    'model', 'shippingMode', 'bookingAbw', 'etd', 'atd', 'departureCity', 'eta', 'ata', 'ataFactory', 'arrivalCity', 'invoiceNo', 'assignedSpecialist'
 ];
 
 // Batch Review Interface
@@ -1208,6 +1208,7 @@ export const PreAlerts = () => {
                                 <Th>{t('pre.eta')}</Th>
                                 <Th>{t('pre.arr_city')}</Th>
                                 <Th>{t('pre.invoice')}</Th>
+                                <Th>Especialista</Th>
                                 <Th className="border-r-0">{t('pre.status')}</Th>
                             </tr>
                         </thead>
@@ -1243,6 +1244,7 @@ export const PreAlerts = () => {
                                     <Td>{r.eta}</Td>
                                     <Td>{r.arrivalCity}</Td>
                                     <Td>{r.invoiceNo}</Td>
+                                    <Td>{r.assignedSpecialist}</Td>
                                     <Td className="border-r-0">
                                         {r.processed ?
                                             <span className="flex items-center gap-1 text-emerald-600 font-medium"><CheckCircle size={12} /> Processed</span> :

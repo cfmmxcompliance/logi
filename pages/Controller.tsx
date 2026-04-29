@@ -8,7 +8,7 @@ import { parseCFDI } from '../utils/cfdiParser';
 import { extractTextFromPdf } from '../utils/pdfParser';
 import { extractBlAndContainer } from '../utils/extractionLogic';
 import { parseCSV } from '../utils/csvParser';
-import { initGoogleDrive, uploadFileToDrive, trashFile, ensureAuth } from '../services/googleDriveService.ts';
+import { uploadPaymentFile } from '../services/paymentsUploadService.ts';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal';
 import { ExtractionReviewModal } from '../components/ExtractionReviewModal';
@@ -135,7 +135,6 @@ export const Controller = () => {
     useEffect(() => {
         loadData();
         const unsub = storageService.subscribe(loadData);
-        initGoogleDrive().catch(err => console.error("Drive Init Error", err));
         return unsub;
     }, []);
 
@@ -609,15 +608,9 @@ export const Controller = () => {
     };
 
 
-    // Helper for Base64 conversion
-    const fileToBase64 = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = error => reject(error);
-        });
-    };
+    // Carpeta de Payments en Google Drive — todos los XMLs y PDFs van aquí
+    // Definida en paymentsUploadService.ts; referenciada aquí solo como constante visual.
+    const PAYMENTS_FOLDER_ID = '1saSKQQFvFvvk1zGA4mJaNUdcFtMiDvXl';
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files: File[] = Array.from(e.target.files || []);
@@ -706,9 +699,32 @@ export const Controller = () => {
                     }
                 }
 
-                // 3b. Generate URLs (Base64 for persistence)
-                const xmlUrlRaw = await fileToBase64(xmlFile);
-                const pdfUrlRaw = pdfFile ? await fileToBase64(pdfFile) : '';
+                // 3b. Subir archivos a Google Drive (Payments folder)
+                // Bug #2 Fix: antes se guardaba base64 en Firestore, lo que superaba el límite de 1MB.
+                // Ahora se sube a Drive via GAS y se guarda solo la URL de Drive en Firestore.
+                let xmlDriveUrl: string | null = existingCost?.xmlUrl || null;
+                let pdfDriveUrl: string | null = existingCost?.pdfUrl || null;
+
+                setProcessingState(prev => ({ ...prev, message: `Subiendo ${xmlFile.name} a Drive...` }));
+                try {
+                    const xmlFilename = `PAYMENTS_${xmlFile.name.replace(/\.xml$/i, '')}_${Date.now()}.xml`;
+                    const xmlResult = await uploadPaymentFile(xmlFile, xmlFilename);
+                    xmlDriveUrl = xmlResult.webViewLink || null;
+                } catch (driveErr: any) {
+                    console.warn(`Drive upload XML fallido (${xmlFile.name}):`, driveErr.message);
+                    errorDetails.push(`⚠️ ${xmlFile.name}: Subido a DB sin Drive link (${driveErr.message})`);
+                }
+
+                if (pdfFile) {
+                    setProcessingState(prev => ({ ...prev, message: `Subiendo ${pdfFile.name} a Drive...` }));
+                    try {
+                        const pdfFilename = `PAYMENTS_${pdfFile.name.replace(/\.pdf$/i, '')}_${Date.now()}.pdf`;
+                        const pdfResult = await uploadPaymentFile(pdfFile, pdfFilename);
+                        pdfDriveUrl = pdfResult.webViewLink || null;
+                    } catch (driveErr: any) {
+                        console.warn(`Drive upload PDF fallido (${pdfFile.name}):`, driveErr.message);
+                    }
+                }
 
                 // 3c. XML Description Fallback/Priority
                 // Sometimes the PDF is bad but the XML Description has the BL.
@@ -796,11 +812,11 @@ export const Controller = () => {
                     extractedBl: (isXmlOverride ? extractedBl : (existingCost?.extractedBl || extractedBl)) || (targetShipment ? targetShipment.blNo : ''),
                     linkedContainer: existingCost?.linkedContainer || extractedContainer,
 
-                    // Files: Priority to NEW upload, fallback to OLD. prevent undefined.
+                    // Files: Drive URLs (no base64 en Firestore — Bug #2 Fix)
                     xmlFile: xmlFile.name,
                     pdfFile: pdfFile?.name || existingCost?.pdfFile || null,
-                    xmlUrl: xmlUrlRaw || existingCost?.xmlUrl || null,
-                    pdfUrl: pdfUrlRaw || existingCost?.pdfUrl || null,
+                    xmlUrl: xmlDriveUrl,
+                    pdfUrl: pdfDriveUrl,
                     xmlDriveId: existingCost?.xmlDriveId || null,
                     pdfDriveId: existingCost?.pdfDriveId || null,
 
@@ -1137,12 +1153,9 @@ export const Controller = () => {
             onConfirm: async () => {
                 setProcessingState({ isOpen: true, status: 'loading', title: 'Fixing Duplicates', message: 'Removing redundant records...', progress: 0 });
                 try {
-                    // Batch Delete
-                    await storageService.deleteInvoiceItems(toDeleteIds); // Using Invoice Delete for efficiency but these are Costs
-                    // Wait! Costs logic is deleteCost. storageService.deleteInvoiceItems is for Commercial Invoices!
-                    // We must use Promise.all with deleteCost for costs.
-                    const proms = toDeleteIds.map(id => storageService.deleteCost(id));
-                    await Promise.all(proms);
+                    // Bug #1 Fix: antes llamaba deleteInvoiceItems (colección incorrecta) + deleteCost = doble delete.
+                    // Ahora usa deleteCosts (batch correcto para la colección 'costs').
+                    await storageService.deleteCosts(toDeleteIds);
 
                     // Cleanup UI
                     setCosts(prev => prev.filter(c => !toDeleteIds.includes(c.id)));
@@ -1763,17 +1776,21 @@ export const Controller = () => {
                                 {shipments
                                     .filter(s =>
                                         !linkSearchTerm ||
-                                        (s.mblNo || '').toLowerCase().includes(linkSearchTerm.toLowerCase()) ||
-                                        (s.hblNo || '').toLowerCase().includes(linkSearchTerm.toLowerCase()) ||
-                                        (s.refNo || '').toLowerCase().includes(linkSearchTerm.toLowerCase())
+                                        (s.blNo || '').toLowerCase().includes(linkSearchTerm.toLowerCase()) ||
+                                        (s.id || '').toLowerCase().includes(linkSearchTerm.toLowerCase()) ||
+                                        (s.forwarder || '').toLowerCase().includes(linkSearchTerm.toLowerCase()) ||
+                                        (s.containers || []).some(c => c.toLowerCase().includes(linkSearchTerm.toLowerCase()))
                                     )
                                     .slice(0, 20)
                                     .map(shipment => (
                                         <div key={shipment.id} className="border p-3 rounded hover:bg-slate-50 cursor-pointer flex justify-between items-center group"
                                             onClick={() => handleLinkSave(shipment.id)}>
                                             <div>
-                                                <div className="font-bold text-slate-700">{shipment.idShort}</div>
-                                                <div className="text-xs text-slate-500">MBL: {shipment.mblNo || '-'} | HBL: {shipment.hblNo || '-'}</div>
+                                                <div className="font-bold text-slate-700 font-mono text-sm">{shipment.blNo || shipment.id}</div>
+                                                <div className="text-xs text-slate-500">
+                                                    {shipment.forwarder || '-'}
+                                                    {shipment.containers?.length ? ` · ${shipment.containers.slice(0, 2).join(', ')}${shipment.containers.length > 2 ? ` +${shipment.containers.length - 2}` : ''}` : ''}
+                                                </div>
                                             </div>
                                             <div className="opacity-0 group-hover:opacity-100 text-blue-600 font-bold text-xs">Select →</div>
                                         </div>

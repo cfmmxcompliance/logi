@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext.tsx';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { selloService } from '../services/selloService.ts';
 import { geminiService } from '../services/geminiService.ts';
-import { uploadFileToDrive } from '../services/googleDriveService.ts';
+import { uploadSelloPhoto } from '../services/sellosUploadService.ts';
 import { AsignacionCajaModel } from '../types/asignacionCaja.ts';
 import { SelloRecord } from '../types.ts';
 import { Camera, Check, ArrowLeft, Loader2, Save, X, Box, ImageIcon, AlertTriangle } from 'lucide-react';
@@ -216,7 +216,7 @@ export const HandheldSellos = () => {
     filename: string,
     selloId: string
   ) => {
-    const FOLDER_ID = '1jBIvDIbXAP2eGFyVM3J2i5iZWjaEdO9X';
+    // Folder gestionado en sellosUploadService.ts
     const MAX_RETRIES = 3;
 
     if (!navigator.onLine) {
@@ -229,14 +229,21 @@ export const HandheldSellos = () => {
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        const result = await uploadFileToDrive(file, filename, FOLDER_ID);
-        const url = result?.webViewLink || (result as any)?.url || '';
+        const result = await uploadSelloPhoto(file, filename);
+        const url = result?.webViewLink || '';
         if (url) {
           // Actualiza Firestore con la URL real — en background
           await selloService.updateSello(selloId, { fotoUrl: url });
           setSellosDelDia(prev =>
             prev.map(s => s.id === selloId ? { ...s, fotoUrl: url } : s)
           );
+        } else {
+          // Bug Fix: GAS devolvió respuesta OK pero sin URL — loguear para diagnóstico
+          console.error('[Drive] Upload completado pero webViewLink está vacío. Respuesta GAS:', result);
+          // Marcar como error para que el ícono muestre estado de advertencia
+          setUploadError('Drive subió el archivo pero no devolvió URL. Verifica el GAS script.');
+          setUploadStatus('error');
+          return;
         }
         setUploadStatus('done');
         setTimeout(() => setUploadStatus('idle'), 3000);
@@ -293,8 +300,10 @@ export const HandheldSellos = () => {
         await selloService.addSello({ ...newSello, id: savedId });
       }
 
-      // Optimistic local update
-      const savedSello = { ...newSello, id: savedId };
+      // Optimistic local update — incluye fotoUrl:'PENDING' si hay foto adjunta
+      // Esto hace que el ícono cambie inmediatamente a ámbar (foto pendiente de subir)
+      // y a azul cuando el background upload termine y fotoUrl se actualice con la URL real.
+      const savedSello = { ...newSello, id: savedId, fotoUrl: currentImageFile ? 'PENDING' : undefined };
       if (selloExistente) {
         setSellosDelDia(prev => prev.map(s => s.id === selloExistente.id ? savedSello : s));
       } else {
@@ -307,9 +316,13 @@ export const HandheldSellos = () => {
 
       // Upload foto en SEGUNDO PLANO si existe (fire & forget — no bloquea)
       if (currentImageFile) {
+        // Bug Fix: filename debe incluir extensión .jpg y timestamp único
+        // para que Google Drive lo procese con MIME type correcto.
+        const ts = Date.now();
+        const safeFilename = `sello_${selectedCaja.numeroCaja}_${ts}.jpg`;
         uploadPhotoBackground(
           currentImageFile,
-          `Sello de Caja ${selectedCaja.numeroCaja}`,
+          safeFilename,
           savedId
         ); // sin await intencionalmente
       }

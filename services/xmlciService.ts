@@ -11,7 +11,16 @@ export const xmlciService = {
 
             const emisorRfc = emisor.getAttribute("Rfc") || "";
             const emisorNombre = emisor.getAttribute("Nombre") || "";
-            const totalVal = parseFloat(comprobante.getAttribute("Total") || comprobante.getAttribute("total") || "0");
+
+            // For TipoDeComprobante='T' (Traslado), Total is always 0.00 (fiscal).
+            // The real commercial value is the sum of each Concepto's Importe.
+            const tipoComp = comprobante.getAttribute("TipoDeComprobante") || "";
+            let totalVal = parseFloat(comprobante.getAttribute("Total") || comprobante.getAttribute("total") || "0");
+            if (tipoComp === "T") {
+                const conceptos = xmlDoc.getElementsByTagName("cfdi:Concepto");
+                totalVal = Array.from(conceptos)
+                    .reduce((sum, c) => sum + parseFloat(c.getAttribute("Importe") || "0"), 0);
+            }
             const exchangeRate = parseFloat(comprobante.getAttribute("TipoCambio") || comprobante.getAttribute("tipoCambio") || "1");
 
             // Attempt to find Incoterm in Comercio Exterior complement

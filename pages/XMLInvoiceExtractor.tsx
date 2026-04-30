@@ -304,7 +304,8 @@ export const XMLInvoiceExtractor: React.FC = () => {
     const parseNum = (val: any) => {
         if (typeof val === 'number') return val;
         if (!val) return 0;
-        const match = String(val).match(/[\d.]+/);
+        // Strip thousand-separator commas before matching (e.g. "3,952" → 3952)
+        const match = String(val).replace(/,/g, '').match(/[\d.]+/);
         return match ? parseFloat(match[0]) : 0;
     };
 
@@ -438,6 +439,102 @@ export const XMLInvoiceExtractor: React.FC = () => {
         });
     };
 
+    // ── Word ML Fallback Parser ─────────────────────────────────────────────
+    // Invoked ONLY when the standard cfdi:Comprobante parser finds nothing.
+    // Handles XMLs where the CFDI is embedded as text inside <w:t> nodes
+    // (Word ML 2003 format, progid="Word.Document").
+    // Returns the same shape as parsedFiles entries so the rest of the pipeline
+    // is completely unaffected.
+    const parseWordMLCFDI = (
+        text: string,
+        parser: DOMParser,
+        fileName: string
+    ): { uuid: string; invoiceNo: string; fileItems: CommercialInvoiceItem[]; xmlDoc: Document } | null => {
+        try {
+            const wordDoc = parser.parseFromString(text, 'text/xml');
+            if (wordDoc.documentElement?.tagName !== 'w:wordDocument') return null;
+
+            // Concatenate all <w:t> text nodes — the CFDI lives here as plain text
+            const embedded = Array.from(wordDoc.getElementsByTagName('w:t'))
+                .map((n: Element) => n.textContent || '').join('');
+            if (!embedded.includes('cfdi:Comprobante')) return null;
+
+            // Re-parse the extracted string as a real CFDI document
+            const cfdiDoc = parser.parseFromString(embedded, 'text/xml');
+            const comp  = cfdiDoc.getElementsByTagName('cfdi:Comprobante')[0] || cfdiDoc.getElementsByTagName('Comprobante')[0];
+            const emis  = cfdiDoc.getElementsByTagName('cfdi:Emisor')[0]      || cfdiDoc.getElementsByTagName('Emisor')[0];
+            const concs = cfdiDoc.getElementsByTagName('cfdi:Concepto');
+            if (!comp || !emis || concs.length === 0) return null;
+
+            const serie     = comp.getAttribute('Serie')  || '';
+            const folio     = comp.getAttribute('Folio')  || '';
+            const invoiceNo = (serie + folio).trim()      || 'S/F';
+            const dateRaw   = comp.getAttribute('Fecha')  || new Date().toISOString();
+            const date      = dateRaw.split('T')[0];
+            const currency  = comp.getAttribute('Moneda') || 'USD';
+
+            const timbre = cfdiDoc.getElementsByTagName('tfd:TimbreFiscalDigital')[0] || cfdiDoc.getElementsByTagName('TimbreFiscalDigital')[0];
+            const uuid   = timbre?.getAttribute('UUID') || '';
+
+            // Guard: UUID is required for deduplication — reject if missing
+            if (!uuid) {
+                console.warn(`[WordML fallback] ${fileName}: sin UUID fiscal (tfd:TimbreFiscalDigital ausente) — descartado`);
+                return null;
+            }
+
+            const emisorRfc      = emis.getAttribute('Rfc')    || '';
+            const emisorNombre   = emis.getAttribute('Nombre') || '';
+            const emisorDomicilio = comp.getAttribute('LugarExpedicion') || 'MÉXICO';
+
+            let extractedIncoterm = 'FCA';
+            const cce = cfdiDoc.getElementsByTagName('cce11:ComercioExterior')[0] || cfdiDoc.getElementsByTagName('cce20:ComercioExterior')[0];
+            if (cce) extractedIncoterm = cce.getAttribute('Incoterm') || 'FCA';
+
+            const fileItems: CommercialInvoiceItem[] = [];
+            for (let i = 0; i < concs.length; i++) {
+                const c          = concs[i];
+                const partNoRaw  = c.getAttribute('NoIdentificacion') || `ITEM-${i + 1}`;
+                const descripcion = c.getAttribute('Descripcion')     || 'Sin descripción';
+                const qty        = parseFloat(c.getAttribute('Cantidad')      || '1');
+                const unitPrice  = parseFloat(c.getAttribute('ValorUnitario') || '0');
+                const totalAmount = qty * unitPrice;
+
+                const vinMatch        = descripcion.match(/VIN\s+([A-Z0-9]+)/i);
+                const engineMatch     = descripcion.match(/ENGINE\s+([^/]+?)(?:\s*\/|\s*\)|\s*$)/i);
+                const modelMatch      = descripcion.match(/MODELO\s+(.+?)(?:,|\s*$)/i);
+                const netWeightMatch  = descripcion.match(/PESO NETO\s+([^/)]+)/i);
+                const grossWeightMatch = descripcion.match(/PESO BRUTO\s+([^/)]+)/i);
+                const addedValueMatch  = descripcion.match(/Val\.\s*Agregado\s+(.+)/i);
+
+                const unidad          = c.getAttribute('Unidad') || '';
+                const cleanDescription = descripcion.split(/[(]|VIN|MODELO|Val\./i)[0].trim();
+
+                fileItems.push({
+                    id:                (vinMatch ? vinMatch[1].trim() : '') || `${uuid}-${i}` || `${invoiceNo}-${partNoRaw}-${i}`,
+                    invoiceNo, date,   item: String(i + 1),
+                    model:             modelMatch   ? modelMatch[1].trim()      : 'N/A',
+                    partNo:            partNoRaw,
+                    spanishDescription: cleanDescription,
+                    qty, unitPrice, totalAmount, currency,
+                    vin:               vinMatch      ? vinMatch[1].trim()       : '',
+                    engine:            engineMatch   ? engineMatch[1].trim()    : '',
+                    pesoNetokg:        parseNum(netWeightMatch  ? netWeightMatch[1].trim()  : ''),
+                    pesoBrutokg:       parseNum(grossWeightMatch ? grossWeightMatch[1].trim() : ''),
+                    valAgregado:       parseNum(addedValueMatch  ? addedValueMatch[1].trim()  : ''),
+                    unidad, rawDescripcion: descripcion, uuid,
+                    vendorName: emisorNombre, vendorRfc: emisorRfc,
+                    vendorAddress: emisorDomicilio, incoterm: extractedIncoterm
+                } as any);
+            }
+
+            return { uuid, invoiceNo, fileItems, xmlDoc: cfdiDoc };
+        } catch (e) {
+            console.warn(`[WordML fallback] failed for ${fileName}:`, e);
+            return null;
+        }
+    };
+    // ─────────────────────────────────────────────────────────────────────────
+
     const processFiles = async (files: File[]) => {
         const xmlFiles = files.filter((f: File) => f.name.toLowerCase().endsWith('.xml'));
 
@@ -467,7 +564,13 @@ export const XMLInvoiceExtractor: React.FC = () => {
                 const conceptos = xmlDoc.getElementsByTagName("cfdi:Concepto");
 
                 if (!comprobante || !emisor || !conceptos || conceptos.length === 0) {
-                    console.warn(`Archivo ${file.name} no parece un XML/CFDI válido.`);
+                    // Standard CFDI parse failed — try Word ML fallback
+                    const wordMLResult = parseWordMLCFDI(text, parser, file.name);
+                    if (wordMLResult) {
+                        parsedFiles.push(wordMLResult);
+                    } else {
+                        console.warn(`Archivo ${file.name} no parece un XML/CFDI válido.`);
+                    }
                     continue;
                 }
 

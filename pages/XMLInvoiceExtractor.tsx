@@ -459,8 +459,18 @@ export const XMLInvoiceExtractor: React.FC = () => {
                 .map((n: Element) => n.textContent || '').join('');
             if (!embedded.includes('cfdi:Comprobante')) return null;
 
-            // Re-parse the extracted string as a real CFDI document
-            const cfdiDoc = parser.parseFromString(embedded, 'text/xml');
+            // The embedded string starts with Word metadata text BEFORE the CFDI XML.
+            // e.g. "CMP002 CMP220712ND9 ... <?xml ...><cfdi:Comprobante ..."
+            // Feeding the full string to parseFromString fails in the browser because
+            // the parser sees non-XML text at the start and throws a parsererror.
+            // Solution: slice from the opening <cfdi:Comprobante to its closing tag.
+            const cfdiStart = embedded.indexOf('<cfdi:Comprobante');
+            const cfdiEnd   = embedded.lastIndexOf('</cfdi:Comprobante>');
+            if (cfdiStart === -1 || cfdiEnd === -1) return null;
+            const cfdiXml = embedded.substring(cfdiStart, cfdiEnd + '</cfdi:Comprobante>'.length);
+
+            // Re-parse the extracted CFDI string as a proper XML document
+            const cfdiDoc = parser.parseFromString(cfdiXml, 'text/xml');
             const comp  = cfdiDoc.getElementsByTagName('cfdi:Comprobante')[0] || cfdiDoc.getElementsByTagName('Comprobante')[0];
             const emis  = cfdiDoc.getElementsByTagName('cfdi:Emisor')[0]      || cfdiDoc.getElementsByTagName('Emisor')[0];
             const concs = cfdiDoc.getElementsByTagName('cfdi:Concepto');

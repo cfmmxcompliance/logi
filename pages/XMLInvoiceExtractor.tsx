@@ -452,18 +452,16 @@ export const XMLInvoiceExtractor: React.FC = () => {
     ): { uuid: string; invoiceNo: string; fileItems: CommercialInvoiceItem[]; xmlDoc: Document } | null => {
         try {
             const wordDoc = parser.parseFromString(text, 'text/xml');
-            if (wordDoc.documentElement?.tagName !== 'w:wordDocument') return null;
+            const rootTag = wordDoc.documentElement?.tagName;
+            if (rootTag !== 'w:wordDocument') return null;
 
             // Concatenate all <w:t> text nodes — the CFDI lives here as plain text
             const embedded = Array.from(wordDoc.getElementsByTagName('w:t'))
                 .map((n: Element) => n.textContent || '').join('');
             if (!embedded.includes('cfdi:Comprobante')) return null;
 
-            // The embedded string starts with Word metadata text BEFORE the CFDI XML.
-            // e.g. "CMP002 CMP220712ND9 ... <?xml ...><cfdi:Comprobante ..."
-            // Feeding the full string to parseFromString fails in the browser because
-            // the parser sees non-XML text at the start and throws a parsererror.
-            // Solution: slice from the opening <cfdi:Comprobante to its closing tag.
+            // Slice only the CFDI XML portion — the embedded string may start with
+            // Word metadata text before the actual <cfdi:Comprobante> block.
             const cfdiStart = embedded.indexOf('<cfdi:Comprobante');
             const cfdiEnd   = embedded.lastIndexOf('</cfdi:Comprobante>');
             if (cfdiStart === -1 || cfdiEnd === -1) return null;

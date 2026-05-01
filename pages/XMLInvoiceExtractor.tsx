@@ -266,7 +266,8 @@ export const XMLInvoiceExtractor: React.FC = () => {
                         item.spanishDescription,
                         item.unidad,
                         item.uuid,
-                        item.currency
+                        item.currency,
+                        (item as any).archivo
                     ].map(v => (v || '').toString().toLowerCase());
 
                     const matchesSearch = searchValues.every(term =>

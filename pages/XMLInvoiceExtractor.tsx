@@ -376,7 +376,7 @@ export const XMLInvoiceExtractor: React.FC = () => {
 
         try {
             const headers = [
-                'INVOICE NO', 'UUID', 'DATE', 'CURRENCY', 'PART NO', 'UNIT', 'DESCRIPTION',
+                'INVOICE NO', 'ARCHIVO', 'UUID', 'DATE', 'CURRENCY', 'PART NO', 'UNIT', 'DESCRIPTION',
                 'MODEL', 'VIN', 'ENGINE', 'NET WEIGHT', 'GROSS WEIGHT', 'VAL AGREGADO',
                 'QTY', 'UNIT PRICE', 'TOTAL'
             ];
@@ -393,6 +393,7 @@ export const XMLInvoiceExtractor: React.FC = () => {
             const csvRows = itemsToExport.map((item, index) => {
                 return [
                     esc(item.invoiceNo),
+                    esc((item as any).archivo || ''),
                     esc(item.uuid),
                     esc(item.date),
                     esc(item.currency),
@@ -531,7 +532,8 @@ export const XMLInvoiceExtractor: React.FC = () => {
                     valAgregado:       parseNum(addedValueMatch  ? addedValueMatch[1].trim()  : ''),
                     unidad, rawDescripcion: descripcion, uuid,
                     vendorName: emisorNombre, vendorRfc: emisorRfc,
-                    vendorAddress: emisorDomicilio, incoterm: extractedIncoterm
+                    vendorAddress: emisorDomicilio, incoterm: extractedIncoterm,
+                    archivo: fileName
                 } as any);
             }
 
@@ -653,7 +655,8 @@ export const XMLInvoiceExtractor: React.FC = () => {
                         valAgregado: parseNum(extractedAddedValue),
                         unidad, rawDescripcion, uuid,
                         vendorName: emisorNombre, vendorRfc: emisorRfc,
-                        vendorAddress: emisorDomicilio, incoterm: extractedIncoterm
+                        vendorAddress: emisorDomicilio, incoterm: extractedIncoterm,
+                        archivo: file.name
                     });
                 }
 
@@ -744,7 +747,8 @@ export const XMLInvoiceExtractor: React.FC = () => {
             }
             try {
                 await xmlciService.extractAndSave(parsed.xmlDoc, parsed.invoiceNo,
-                    parsed.fileItems[0]?.date || '', parsed.fileItems[0]?.currency || 'USD', parsed.uuid);
+                    parsed.fileItems[0]?.date || '', parsed.fileItems[0]?.currency || 'USD',
+                    parsed.uuid, parsed.fileItems[0]?.archivo || '');
                 newItems.push(...parsed.fileItems);
                 count++;
             } catch (err) {
@@ -1011,6 +1015,10 @@ export const XMLInvoiceExtractor: React.FC = () => {
                                         Factura
                                         <div className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" onMouseDown={(e) => onMouseDown('factura', e)} />
                                     </th>
+                                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-3 font-bold text-[11px] text-slate-600 border-b border-slate-200 text-left uppercase tracking-wider group relative" style={{ width: columnWidths['archivo'] || 180 }}>
+                                        Archivo
+                                        <div className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" onMouseDown={(e) => onMouseDown('archivo', e)} />
+                                    </th>
                                     <th className="sticky top-0 z-20 bg-slate-50 px-2 py-3 font-bold text-[11px] text-slate-600 border-b border-slate-200 text-left uppercase tracking-wider group relative" style={{ width: columnWidths['uuid'] || 'auto' }}>
                                         UUID
                                         <div className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" onMouseDown={(e) => onMouseDown('uuid', e)} />
@@ -1103,6 +1111,7 @@ export const XMLInvoiceExtractor: React.FC = () => {
                                                 </button>
                                             </td>
                                             <td className="px-2 py-2 text-slate-700 font-medium whitespace-nowrap text-[11px]" style={{ width: columnWidths['factura'] || 'auto' }}>{item.invoiceNo}</td>
+                                            <td className="px-2 py-2 text-slate-500 text-[10px] whitespace-nowrap truncate" style={{ width: columnWidths['archivo'] || 180 }} title={(item as any).archivo || ''}>{(item as any).archivo || '-'}</td>
                                             <td className="px-2 py-2 text-slate-400 font-mono text-[9px] truncate" style={{ width: columnWidths['uuid'] || 'auto' }} title={item.uuid}>{item.uuid || '-'}</td>
                                             <td className="px-2 py-2 text-slate-500 whitespace-nowrap text-[11px]" style={{ width: columnWidths['fecha'] || 'auto' }}>{item.date}</td>
                                             <td className="px-2 py-2 text-slate-600 text-[11px]" style={{ width: columnWidths['divisa'] || 'auto' }}>{item.currency || 'USD'}</td>

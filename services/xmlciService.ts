@@ -2,7 +2,7 @@ import { XMLCIRecord } from '../types.ts';
 import { storageService } from './storageService.ts';
 
 export const xmlciService = {
-    extractAndSave: async (xmlDoc: Document, invoiceNo: string, date: string, currency: string, uuid: string) => {
+    extractAndSave: async (xmlDoc: Document, invoiceNo: string, date: string, currency: string, uuid: string, fileName: string = '') => {
         try {
             const comprobante = xmlDoc.getElementsByTagName("cfdi:Comprobante")[0] || xmlDoc.getElementsByTagName("Comprobante")[0];
             const emisor = xmlDoc.getElementsByTagName("cfdi:Emisor")[0] || xmlDoc.getElementsByTagName("Emisor")[0];
@@ -58,6 +58,7 @@ export const xmlciService = {
                 factorMoneda: exchangeRate || 1,
                 valDolares: currency === 'USD' ? totalVal : (totalVal / (exchangeRate || 1)),
                 uuid: uuid,
+                archivo: fileName,
                 updatedAt: new Date().toISOString()
             };
 

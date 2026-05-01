@@ -196,7 +196,8 @@ export const XMLCI: React.FC = () => {
                         r.fecha,
                         r.incoterm,
                         r.moneda,
-                        r.uuid
+                        r.uuid,
+                        (r as any).archivo
                     ].map(v => (v || '').toString().toLowerCase());
 
                     const matchesSearch = searchValues.every(term =>
@@ -336,7 +337,7 @@ export const XMLCI: React.FC = () => {
         try {
             const headers = [
                 "ID FISCAL", "NOMBRE", "DOMICILIO", "VINCULACIÓN",
-                "NUM. FACTURA", "FECHA", "INCOTERM", "MONEDA",
+                "NUM. FACTURA", "ARCHIVO", "FECHA", "INCOTERM", "MONEDA",
                 "VAL. MON. FACT.", "FACTOR MON.", "VAL. DOLARES", "UUID"
             ];
 
@@ -346,6 +347,7 @@ export const XMLCI: React.FC = () => {
                 r.domicilio,
                 r.vinculacion,
                 r.invoiceNo,
+                (r as any).archivo || '',
                 r.fecha,
                 r.incoterm,
                 r.moneda,
@@ -574,6 +576,10 @@ export const XMLCI: React.FC = () => {
                                         Factura
                                         <div className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" onMouseDown={(e) => onMouseDown('factura', e)} />
                                     </th>
+                                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-3 border-b border-slate-200 group relative" style={{ width: columnWidths['archivo'] || 180 }}>
+                                        Archivo
+                                        <div className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" onMouseDown={(e) => onMouseDown('archivo', e)} />
+                                    </th>
                                     <th className="sticky top-0 z-20 bg-slate-50 px-2 py-3 border-b border-slate-200 group relative" style={{ width: columnWidths['fecha'] || 110 }}>
                                         Fecha
                                         <div className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" onMouseDown={(e) => onMouseDown('fecha', e)} />
@@ -607,7 +613,7 @@ export const XMLCI: React.FC = () => {
                             <tbody className="divide-y divide-slate-100">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={14} className="p-20 text-center text-slate-400">
+                                        <td colSpan={15} className="p-20 text-center text-slate-400">
                                             <div className="flex flex-col items-center gap-3">
                                                 <RefreshCw className="animate-spin" size={32} />
                                                 <p>Sincronizando...</p>
@@ -644,6 +650,7 @@ export const XMLCI: React.FC = () => {
                                                 <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-bold text-[9px]">{record.vinculacion}</span>
                                             </td>
                                             <td className="px-2 py-2 text-slate-700 font-bold">{record.invoiceNo}</td>
+                                            <td className="px-2 py-2 text-slate-500 text-[10px] truncate" style={{ maxWidth: columnWidths['archivo'] || 180 }} title={(record as any).archivo || ''}>{(record as any).archivo || '-'}</td>
                                             <td className="px-2 py-2 text-slate-500">{record.fecha}</td>
                                             <td className="px-2 py-2 text-amber-700 font-bold uppercase">{record.incoterm}</td>
                                             <td className="px-2 py-2 text-center text-slate-700 font-bold">{record.moneda}</td>
@@ -657,7 +664,7 @@ export const XMLCI: React.FC = () => {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={14} className="p-20 text-center text-slate-400">
+                                        <td colSpan={15} className="p-20 text-center text-slate-400">
                                             <div className="flex flex-col items-center gap-3">
                                                 <FileText size={48} className="opacity-20" />
                                                 <p>No hay registros disponibles.</p>

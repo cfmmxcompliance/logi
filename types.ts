@@ -29,6 +29,7 @@ export enum UserRole {
   HANDHELD_USER2 = 'Handheld User 2', // Operario de piso con scanner (Liberacion)
   EMBARQUES = 'Embarques', // Equipo encargado de control de embarques
   CLIENT = 'Cliente',    // Read-only access: Asignación Diaria de Cajas Secas 53' only
+  FINANZAS = 'Finanzas', // Read-only access: Saldo Fianza module only
 }
 
 export interface User {
@@ -418,6 +419,8 @@ export interface PedimentoRecord extends GeneralData {
   lineaCaptura?: string;
   isFixedAsset?: boolean;
   totalValueUsd: number;
+  edDocuments?: number; // Count of CFDIs from 507 (ClaveCaso='ED')
+  containerCount?: number; // Count of containers from 504
 }
 
 export interface CCPItem {
@@ -454,6 +457,12 @@ export interface DataStageReport {
   rawFiles: RawFileParsed[];
   stats: DSProcessingStats;
   storageUrl?: string;
+  reviewsByMonth?: { name: string; Import: number; Export: number }[]; // Revisiones _Sel/_Inci
+  monthlyDuties?: {                                                    // Cruce 501×510 precomputado
+    name: string;
+    'IGI Import': number; 'IVA Import': number; 'DTA Import': number;
+    'IGI Export': number; 'IVA Export': number; 'DTA Export': number;
+  }[];
 }
 
 export interface DataStageSession {
@@ -499,6 +508,7 @@ export interface CommercialInvoiceItem {
   vendorName?: string;
   vendorRfc?: string;
   vendorAddress?: string;
+  archivo?: string;  // Original filename used as reference key
 }
 
 export interface XMLCIRecord {
@@ -515,6 +525,7 @@ export interface XMLCIRecord {
   factorMoneda: number;
   valDolares: number;
   uuid: string;
+  archivo?: string;  // Original filename reference
   updatedAt?: string;
 }
 

@@ -675,28 +675,36 @@ export const storageService = {
   validatePartsExistInCloud: async (partNumbers: string[]): Promise<Map<string, string[]>> => {
     if (!db) throw new Error("Sin conexión a Internet.");
 
-    const results = new Map<string, string[]>(); // PART_NUMBER -> [id1, id2, ...]
-    const fieldsToSearch = ["PART_NUMBER", "PartNo", "PARTNUMBER", "PartNumber", "pn"];
-    const cleanNumbers = partNumbers.map(n => n.toString().toUpperCase().trim()).filter(n => !!n);
-    const CHUNK_SIZE = 30;
+    const results = new Map<string, string[]>();
+    const cleanNumbers = new Set(partNumbers.map(n => n.toString().toUpperCase().trim()).filter(n => !!n));
 
-    for (const field of fieldsToSearch) {
-      for (let i = 0; i < cleanNumbers.length; i += CHUNK_SIZE) {
-        const chunk = cleanNumbers.slice(i, i + CHUNK_SIZE);
-        const q = query(collection(db, COLS.PARTS), where(field, "in", chunk));
-        const snap = await getDocs(q);
+    // === FAST PATH: Use local state (already synced from Firestore) ===
+    // Avoids hundreds of Firestore queries when parts are already loaded
+    if (dbState.parts && dbState.parts.length > 0) {
+      dbState.parts.forEach(p => {
+        const pn = (p.PART_NUMBER || '').toString().toUpperCase().trim();
+        if (cleanNumbers.has(pn)) {
+          const existing = results.get(pn) || [];
+          if (!existing.includes(p.id)) results.set(pn, [...existing, p.id]);
+        }
+      });
+      return results;
+    }
 
-        snap.docs.forEach(doc => {
-          const data = doc.data();
-          const docVal = (data[field] || '').toString().toUpperCase().trim();
-          if (docVal) {
-            const existing = results.get(docVal) || [];
-            if (!existing.includes(doc.id)) {
-              results.set(docVal, [...existing, doc.id]);
-            }
-          }
-        });
-      }
+    // === SLOW PATH: Query Firestore only if local state is empty ===
+    const cleanArr = Array.from(cleanNumbers);
+    const CHUNK_SIZE = 30; // Firestore 'in' limit
+    for (let i = 0; i < cleanArr.length; i += CHUNK_SIZE) {
+      const chunk = cleanArr.slice(i, i + CHUNK_SIZE);
+      const q = query(collection(db, COLS.PARTS), where("PART_NUMBER", "in", chunk));
+      const snap = await getDocs(q);
+      snap.docs.forEach(doc => {
+        const pn = ((doc.data().PART_NUMBER) || '').toString().toUpperCase().trim();
+        if (pn) {
+          const existing = results.get(pn) || [];
+          if (!existing.includes(doc.id)) results.set(pn, [...existing, doc.id]);
+        }
+      });
     }
 
     return results;
@@ -822,6 +830,31 @@ export const storageService = {
     saveLocal();
   },
   getDataStageReports: () => dbState.dataStageReports || [],
+
+  // Loads the full PedimentoRecords for a report from Firestore subcollection.
+  // Reports are saved "lean" (records:[]) to avoid Firestore 1MB doc limit.
+  getDataStageReportWithRecords: async (reportId: string): Promise<PedimentoRecord[]> => {
+    if (!db) return [];
+    // Check if already hydrated in memory
+    const cached = (dbState.dataStageReports || []).find((r: any) => r.id === reportId);
+    if (cached && cached.records && cached.records.length > 0) return cached.records;
+
+    try {
+      const { collection, getDocs } = await import('firebase/firestore');
+      const itemsRef = collection(db, COLS.DATA_STAGE_REPORTS, reportId, 'items');
+      const snap = await getDocs(itemsRef);
+      if (snap.empty) return [];
+      const records = snap.docs.map(d => d.data() as PedimentoRecord);
+
+      // Hydrate in memory so future calls are instant
+      if (cached) cached.records = records;
+      console.log(`[DataStage] Loaded ${records.length} records for report ${reportId}`);
+      return records;
+    } catch (e) {
+      console.error('[DataStage] Failed to load records from subcollection:', e);
+      return [];
+    }
+  },
   getInvoiceItems: () => dbState.commercialInvoices || [],
 
   updateCost: async (cost: CostRecord) => {
@@ -936,7 +969,8 @@ export const storageService = {
     } catch (e) { }
 
     // Update Local State AFTER successful Cloud Write
-    dbState.commercialInvoices = [...(dbState.commercialInvoices || []), ...uniqueNewItems];
+    if (!dbState.commercialInvoices) dbState.commercialInvoices = [];
+    dbState.commercialInvoices = [...dbState.commercialInvoices, ...uniqueNewItems];
     notifyListeners();
 
     return uniqueNewItems.length;
@@ -987,6 +1021,7 @@ export const storageService = {
     }
 
     // Update Local State AFTER success
+    if (!dbState.commercialInvoices) dbState.commercialInvoices = [];
     items.forEach(item => {
       const idx = dbState.commercialInvoices.findIndex((i: any) => i.id === item.id);
       if (idx !== -1) dbState.commercialInvoices[idx] = item;
@@ -1057,41 +1092,77 @@ export const storageService = {
     // 1. Deduplication against the new isolated collection
     const normalize = (val: any) => String(val || '').trim().toUpperCase();
 
-    const existingKeys = new Set(
+    const existingMap = new Map(
       (dbState.cfdiInvoices || []).map(
-        (i: any) => `${normalize(i.invoiceNo)}-${normalize(i.partNo)}-${Number(i.qty || 0).toFixed(4)}`
+        (i: any) => [`${normalize(i.invoiceNo)}-${normalize(i.partNo)}-${Number(i.qty || 0).toFixed(4)}`, i]
       )
     );
 
     const uniqueNewItems = newItems.filter(item => {
       const key = `${normalize(item.invoiceNo)}-${normalize(item.partNo)}-${Number(item.qty || 0).toFixed(4)}`;
-      return !existingKeys.has(key);
+      return !existingMap.has(key);
     });
 
-    if (uniqueNewItems.length === 0) return 0;
+    // 2. Items that already exist but are missing the archivo field — patch them
+    const itemsToUpdateArchivo = newItems.filter(item => {
+      const key = `${normalize(item.invoiceNo)}-${normalize(item.partNo)}-${Number(item.qty || 0).toFixed(4)}`;
+      const existing = existingMap.get(key);
+      const newArchivo = (item as any).archivo;
+      return existing && !existing.archivo && newArchivo; // only patch if archivo is now available
+    });
+
     if (!db) throw new Error("Sin conexión a Internet.");
 
-    const chunks = [];
-    for (let i = 0; i < uniqueNewItems.length; i += 400) {
-      chunks.push(uniqueNewItems.slice(i, i + 400));
+    // 3. Write new items
+    if (uniqueNewItems.length > 0) {
+      const chunks = [];
+      for (let i = 0; i < uniqueNewItems.length; i += 400) {
+        chunks.push(uniqueNewItems.slice(i, i + 400));
+      }
+      for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        chunk.forEach((item) => {
+          batch.set(doc(db, COLS.CFDI_INVOICES, item.id), sanitizeForFirestore(item));
+        });
+        await batch.commit();
+      }
+      dbState.cfdiInvoices = [...(dbState.cfdiInvoices || []), ...uniqueNewItems];
     }
 
-    for (const chunk of chunks) {
-      const batch = writeBatch(db);
-      chunk.forEach((item) => {
-        batch.set(doc(db, COLS.CFDI_INVOICES, item.id), sanitizeForFirestore(item));
+    // 4. Patch archivo field on existing items that were missing it
+    if (itemsToUpdateArchivo.length > 0) {
+      const patchChunks = [];
+      for (let i = 0; i < itemsToUpdateArchivo.length; i += 400) {
+        patchChunks.push(itemsToUpdateArchivo.slice(i, i + 400));
+      }
+      for (const chunk of patchChunks) {
+        const batch = writeBatch(db);
+        chunk.forEach((item) => {
+          batch.set(doc(db, COLS.CFDI_INVOICES, item.id),
+            { archivo: (item as any).archivo },
+            { merge: true }
+          );
+        });
+        await batch.commit();
+      }
+      // Update in-memory state too
+      dbState.cfdiInvoices = (dbState.cfdiInvoices || []).map((existing: any) => {
+        const match = itemsToUpdateArchivo.find(ni =>
+          normalize(ni.invoiceNo) === normalize(existing.invoiceNo) &&
+          normalize(ni.partNo) === normalize(existing.partNo)
+        );
+        return match ? { ...existing, archivo: (match as any).archivo } : existing;
       });
-      await batch.commit();
     }
+
+    if (uniqueNewItems.length === 0 && itemsToUpdateArchivo.length === 0) return 0;
 
     try {
-      logAction('XML_CFDI_IMPORT', `Líneas XML extraídas: ${uniqueNewItems.length}`);
+      logAction('XML_CFDI_IMPORT', `Líneas XML extraídas: ${uniqueNewItems.length}, actualizadas: ${itemsToUpdateArchivo.length}`);
     } catch (e) { }
 
-    dbState.cfdiInvoices = [...(dbState.cfdiInvoices || []), ...uniqueNewItems];
     notifyListeners();
-
-    return uniqueNewItems.length;
+    return uniqueNewItems.length + itemsToUpdateArchivo.length;
   },
 
   addXMLCIRecords: async (newRecords: XMLCIRecord[]) => {
@@ -1565,7 +1636,8 @@ export const storageService = {
   upsertParts: async (parts: RawMaterialPart[], onProgress?: (p: number) => void) => {
     if (!db) throw new Error("Sin conexión a Internet.");
 
-    const CHUNK_SIZE = 100;
+    const CHUNK_SIZE = 400; // Increased from 100 → fewer batches
+    const PARALLEL_BATCHES = 4; // Commit up to 4 batches simultaneously
     const total = parts.length;
     const timestamp = new Date().toISOString();
 
@@ -1577,64 +1649,62 @@ export const storageService = {
       return { ...p, id, PART_NUMBER: partNumber, UPDATE_TIME: timestamp };
     }).filter(p => !!p.PART_NUMBER);
 
-    console.log(`[Ghost Exterminator] Preparing ${preparedParts.length} parts for bulk upload with deep clean.`);
+    console.log(`[upsertParts] ${preparedParts.length} partes → chunks de ${CHUNK_SIZE}, hasta ${PARALLEL_BATCHES} en paralelo`);
 
+    // 2. Build all chunks first
+    const chunks: RawMaterialPart[][] = [];
     for (let i = 0; i < preparedParts.length; i += CHUNK_SIZE) {
-      const chunk = preparedParts.slice(i, i + CHUNK_SIZE);
-      const batch = writeBatch(db);
-
-      const chunkPNs = chunk.map(p => p.PART_NUMBER);
-      const chunkIDs = new Set(chunk.map(p => p.id));
-
-      // Find ghosts for this chunk
-      const ghostIdsForChunk = new Set<string>();
-      dbState.parts.forEach(p => {
-        const standardPN = (p.PART_NUMBER || '').toString().toUpperCase().trim();
-        if (chunkPNs.includes(standardPN) && !chunkIDs.has(p.id)) {
-          ghostIdsForChunk.add(p.id);
-        }
-      });
-
-      if (ghostIdsForChunk.size > 0) {
-        console.log(`[Ghost Exterminator] Found ${ghostIdsForChunk.size} ghosts in chunk. Deleting from Cloud...`);
-        ghostIdsForChunk.forEach(gid => {
-          batch.delete(doc(db, COLS.PARTS, gid));
-        });
-      }
-
-      // Upload Chunk
-      chunk.forEach((p) => {
-        batch.set(doc(db, COLS.PARTS, p.id), sanitizeForFirestore(p));
-      });
-
-      await batch.commit();
-
-      // --- LOCAL SYNC ---
-      // 1. Filter out deleted ghosts from memory
-      let newLocalParts = dbState.parts.filter(p => !ghostIdsForChunk.has(p.id));
-
-      // 2. Standard Upsert Logic
-      chunk.forEach(p => {
-        const idx = newLocalParts.findIndex(ip => ip.id === p.id);
-        if (idx !== -1) {
-          newLocalParts[idx] = p;
-        } else {
-          // Double check for same PN in case pre-sync was stale
-          const pnIdx = newLocalParts.findIndex(ip => ip.PART_NUMBER === p.PART_NUMBER);
-          if (pnIdx !== -1) newLocalParts[pnIdx] = p; else newLocalParts.push(p);
-        }
-      });
-
-      dbState.parts = newLocalParts;
-      await indexedDbService.saveParts(chunk);
-      if (ghostIdsForChunk.size > 0) {
-        await Promise.all(Array.from(ghostIdsForChunk).map(gid => indexedDbService.deletePart(gid)));
-      }
-
-      notifyListeners();
-      if (onProgress) onProgress(Math.min((i + CHUNK_SIZE), total) / total);
+      chunks.push(preparedParts.slice(i, i + CHUNK_SIZE));
     }
 
+    // Collect all ghost IDs upfront (single pass over dbState.parts)
+    const allPreparedPNs = new Set(preparedParts.map(p => p.PART_NUMBER));
+    const allPreparedIDs = new Set(preparedParts.map(p => p.id));
+    const allGhostIds = new Set<string>();
+    dbState.parts.forEach(p => {
+      const pn = (p.PART_NUMBER || '').toString().toUpperCase().trim();
+      if (allPreparedPNs.has(pn) && !allPreparedIDs.has(p.id)) allGhostIds.add(p.id);
+    });
+
+    let totalProcessed = 0;
+
+    // 3. Process chunks in parallel pools
+    for (let i = 0; i < chunks.length; i += PARALLEL_BATCHES) {
+      const pool = chunks.slice(i, i + PARALLEL_BATCHES).map(async (chunk) => {
+        const batch = writeBatch(db);
+        // Delete ghosts that match this chunk's PNs
+        const chunkPNs = new Set(chunk.map(p => p.PART_NUMBER));
+        allGhostIds.forEach(gid => {
+          const ghost = dbState.parts.find(p => p.id === gid);
+          if (ghost && chunkPNs.has((ghost.PART_NUMBER||'').toUpperCase().trim())) {
+            batch.delete(doc(db, COLS.PARTS, gid));
+          }
+        });
+        chunk.forEach(p => batch.set(doc(db, COLS.PARTS, p.id), sanitizeForFirestore(p)));
+        await batch.commit();
+        await indexedDbService.saveParts(chunk);
+        totalProcessed += chunk.length;
+        if (onProgress) onProgress(Math.min(totalProcessed / total, 0.99));
+      });
+      await Promise.all(pool);
+    }
+
+    // 4. Delete ghost IDs from IndexedDB in bulk
+    if (allGhostIds.size > 0) {
+      await Promise.all(Array.from(allGhostIds).map(gid => indexedDbService.deletePart(gid)));
+    }
+
+    // 5. Single local state update at the end (not per-chunk)
+    let newLocalParts = dbState.parts.filter(p => !allGhostIds.has(p.id));
+    preparedParts.forEach(p => {
+      const idx = newLocalParts.findIndex(ip => ip.id === p.id);
+      if (idx !== -1) { newLocalParts[idx] = p; }
+      else {
+        const pnIdx = newLocalParts.findIndex(ip => ip.PART_NUMBER === p.PART_NUMBER);
+        if (pnIdx !== -1) newLocalParts[pnIdx] = p; else newLocalParts.push(p);
+      }
+    });
+    dbState.parts = newLocalParts;
     notifyListeners();
     saveLocal();
     // 3. Record change for Daily Automation (Upsert)
@@ -2063,7 +2133,10 @@ export const storageService = {
       const snap = await getDocs(q);
       snap.forEach(d => {
         if (d.id !== id) {
-          batch.update(d.ref, sharedFields);
+          // Bug Fix: batch.update() rejects `undefined` values (unlike batch.set with merge).
+          // sanitizeForFirestore converts undefined -> null to prevent SDK crash:
+          // "Cannot read properties of undefined (reading 'indexOf')"
+          batch.update(d.ref, sanitizeForFirestore(sharedFields));
         }
       });
     }
@@ -2511,13 +2584,14 @@ export const storageService = {
       }
     }
 
-    // 3. Batch Write Records
-    console.log("Saving records via Batch Writes...");
+    // 3. Batch Write Records (parallel pools of 4)
+    console.log("Saving records via parallel Batch Writes...");
     const { writeBatch, collection } = await import('firebase/firestore');
 
     const recordsRef = collection(db, COLS.DATA_STAGE_REPORTS, report.id, 'items');
-    const BATCH_SIZE = 400;
-    const chunks = [];
+    const BATCH_SIZE = 200;
+    const PARALLEL_BATCHES = 4;
+    const chunks: PedimentoRecord[][] = [];
 
     for (let i = 0; i < report.records.length; i += BATCH_SIZE) {
       chunks.push(report.records.slice(i, i + BATCH_SIZE));
@@ -2526,26 +2600,22 @@ export const storageService = {
     let totalProcessed = 0;
     const totalRecords = report.records.length;
 
-    for (let i = 0; i < chunks.length; i++) {
-      const batch = writeBatch(db);
-      const chunk = chunks[i];
-
-      chunk.forEach(record => {
-        const recordDocRef = doc(recordsRef, record.id);
-        batch.set(recordDocRef, record);
-      });
-
-      try {
+    for (let i = 0; i < chunks.length; i += PARALLEL_BATCHES) {
+      const pool = chunks.slice(i, i + PARALLEL_BATCHES).map(async (chunk) => {
+        const batch = writeBatch(db);
+        chunk.forEach(record => {
+          const recordDocRef = doc(recordsRef, record.id);
+          batch.set(recordDocRef, sanitizeForFirestore(record));
+        });
         await batch.commit();
         totalProcessed += chunk.length;
-        if (onProgress) {
-          const progress = Math.min((totalProcessed / totalRecords) * 100, 99);
-          onProgress(progress);
-        }
-        await new Promise(r => setTimeout(r, 20));
-      } catch (e) {
-        console.error("Batch Write Failed", e);
-        throw new Error("Error guardando registros en la nube (Batch Fail).");
+        if (onProgress) onProgress(Math.min((totalProcessed / totalRecords) * 100, 99));
+      });
+      try {
+        await Promise.all(pool);
+      } catch (e: any) {
+        console.error('Parallel batch failed:', e?.code, e?.message);
+        throw new Error(`Error guardando registros (${e?.code || e?.message || 'unknown'}).`);
       }
     }
 

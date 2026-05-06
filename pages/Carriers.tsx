@@ -5,8 +5,12 @@ import { Plus, Edit2, Trash2, Search, Filter, Download, UploadCloud, FileSpreads
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { parseCSV } from '../utils/csvHelpers';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { UserRole } from '../types';
 
 export const Carriers: React.FC = () => {
+  const { user } = useAuth();
+  const scacFilter = user?.role === UserRole.CARRIER ? (user?.scac || '').trim().toUpperCase() : null;
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -35,6 +39,10 @@ export const Carriers: React.FC = () => {
 
   const filteredCarriers = useMemo(() => {
       let result = carriers;
+      // CARRIER role: only show their own SCAC record
+      if (scacFilter) {
+          result = result.filter(c => c.codigo?.toUpperCase() === scacFilter);
+      }
       if (searchTerm) {
           const terms = searchTerm.toLowerCase().split(/[\s,]+/).filter(t => t);
           result = result.filter(c => 
@@ -54,7 +62,7 @@ export const Carriers: React.FC = () => {
           });
       }
       return result;
-  }, [carriers, searchTerm, activeMassQuery]);
+  }, [carriers, searchTerm, activeMassQuery, scacFilter]);
 
   const handleApplyMassQuery = () => {
       const valid = queryConditions.filter(c => c.operator === 'empty' || c.operator === 'not_empty' || c.input.trim());

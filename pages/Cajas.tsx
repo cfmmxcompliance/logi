@@ -12,8 +12,12 @@ import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../compo
 import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
 import { parseCSV } from '../utils/csvHelpers';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { UserRole } from '../types';
 
 export const Cajas: React.FC = () => {
+  const { user } = useAuth();
+  const scacFilter = user?.role === UserRole.CARRIER ? (user?.scac || '').trim().toUpperCase() : null;
   const [cajas, setCajas] = useState<CajaModel[]>([]);
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
   const [transportLines, setTransportLines] = useState<TransportLineModel[]>([]);
@@ -56,6 +60,10 @@ export const Cajas: React.FC = () => {
 
   const filteredCajas = useMemo(() => {
     let result = cajas;
+    // CARRIER role: only show cajas belonging to their SCAC
+    if (scacFilter) {
+        result = result.filter(c => c.carrierCodigo?.toUpperCase() === scacFilter);
+    }
     if (searchTerm) {
         const lowerTerm = searchTerm.toLowerCase();
         result = result.filter(c => 
@@ -75,7 +83,7 @@ export const Cajas: React.FC = () => {
         });
     }
     return result;
-  }, [cajas, searchTerm, activeMassQuery]);
+  }, [cajas, searchTerm, activeMassQuery, scacFilter]);
 
   const handleApplyMassQuery = () => {
       const valid = queryConditions.filter(c => c.operator === 'empty' || c.operator === 'not_empty' || c.input.trim());

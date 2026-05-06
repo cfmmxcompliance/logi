@@ -27,6 +27,7 @@ export const AsignacionesDiarias: React.FC = () => {
   // Roles con acceso de solo lectura — sin botones de escritura
   const isReadOnly = user?.role === UserRole.EMBARQUES || user?.role === UserRole.CLIENT;
   const isEmbarques = isReadOnly; // alias para compatibilidad con código existente
+  const scacFilter = user?.role === UserRole.CARRIER ? (user?.scac || '').trim().toUpperCase() : null;
   const [asignaciones, setAsignaciones] = useState<AsignacionCajaModel[]>([]);
   const [cajas, setCajas] = useState<CajaModel[]>([]);
   const [drivers, setDrivers] = useState<DriverModel[]>([]);
@@ -89,6 +90,11 @@ export const AsignacionesDiarias: React.FC = () => {
 
   const filteredData = useMemo(() => {
     let result = asignaciones;
+
+    // CARRIER role: only show assignments for their SCAC
+    if (scacFilter) {
+        result = result.filter(a => (a.carrierCodigo || '').toUpperCase() === scacFilter);
+    }
 
     // Date Range Filter
     if (dateRange.start) {
@@ -161,7 +167,7 @@ export const AsignacionesDiarias: React.FC = () => {
     }
 
     return result;
-  }, [asignaciones, searchTerm, dateRange, activeMassQuery, sortConfig, liberaciones]);
+  }, [asignaciones, searchTerm, dateRange, activeMassQuery, sortConfig, liberaciones, scacFilter]);
 
   const handleApplyMassQuery = () => {
     const valid = queryConditions.filter(c => c.operator === 'empty' || c.operator === 'not_empty' || c.input.trim());
@@ -303,7 +309,9 @@ export const AsignacionesDiarias: React.FC = () => {
       setFormData({
           fecha: today,
           horaAsignacion: new Date().toTimeString().substring(0, 5),
-          numeroOperacion: nextOp
+          numeroOperacion: nextOp,
+          // CARRIER role: pre-fill their SCAC
+          ...(scacFilter ? { carrierCodigo: scacFilter } : {})
       });
       setIsEditing(false);
       setShowModal(true);
@@ -765,6 +773,7 @@ export const AsignacionesDiarias: React.FC = () => {
                         onChange={val => setFormData({...formData, carrierCodigo: val, transportLineId: '', numeroCaja: '', driverId: '', subLinea: '', placasCaja: '', nombreDriver: '', placasTracto: ''})}
                         options={carriers.map(c => ({ value: c.codigo, label: c.nombre, sublabel: c.codigo }))}
                         placeholder="Seleccionar Carrier..."
+                        disabled={!!scacFilter}
                       />
                     </div>
 

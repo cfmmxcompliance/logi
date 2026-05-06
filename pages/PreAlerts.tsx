@@ -69,6 +69,28 @@ export const PreAlerts = () => {
     const [specialists, setSpecialists] = useState<User[]>([]);
     const [selectedSpecialist, setSelectedSpecialist] = useState<string>('');
 
+    // Rate Limit Countdown (Gemini 429)
+    const [rateLimitCountdown, setRateLimitCountdown] = useState<number>(0);
+    const rateLimitTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const startRateLimitCountdown = (seconds: number = 60) => {
+        setRateLimitCountdown(seconds);
+        if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
+        rateLimitTimerRef.current = setInterval(() => {
+            setRateLimitCountdown(prev => {
+                if (prev <= 1) {
+                    clearInterval(rateLimitTimerRef.current!);
+                    rateLimitTimerRef.current = null;
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+    // Cleanup on unmount
+    useEffect(() => { return () => { if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current); }; }, []);
+
     const handleForceNuke = async () => {
         if (!confirm("☢️ NUCLEAR LAUNCH DETECTED ☢️\n\nThis will scan ALL records for '143559588446' and destroy them. Are you sure?")) return;
 
@@ -542,6 +564,11 @@ export const PreAlerts = () => {
                     message = `Mismatch: Found ${containerCount}, Expected ${expected}`;
                 }
 
+                if (!extracted.bookingNo) {
+                    status = 'error';
+                    message = "Extraction Failed: No Booking/BL Number could be detected.";
+                }
+
                 // CONFLICT CHECK: Container belonging to DIFFERENT BL
                 const currentBLNorm = normalize(extracted.bookingNo || '');
                 for (const c of extracted.containers) {
@@ -571,12 +598,18 @@ export const PreAlerts = () => {
                 });
 
             } catch (err: any) {
+                let msg = err.message || "Extraction Failed";
+                if (msg.includes('429') || msg.includes('Resource exhausted') || msg.includes('quota')) {
+                    msg = "RATE_LIMIT_429"; // Sentinel — rendered as countdown in UI
+                    startRateLimitCountdown(60);
+                }
+                
                 batchResults.push({
                     file,
                     preAlert: {} as any,
                     containers: [],
                     status: 'error',
-                    message: err.message || "Extraction Failed"
+                    message: msg
                 });
             }
 
@@ -964,7 +997,20 @@ export const PreAlerts = () => {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 text-slate-600 text-xs">
-                                                {res.message}
+                                                {res.message === 'RATE_LIMIT_429' ? (
+                                                    <span className="flex items-center gap-2 text-orange-600 font-semibold">
+                                                        <span>⏱ Gemini Rate Limit (429)</span>
+                                                        {rateLimitCountdown > 0 ? (
+                                                            <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-mono text-xs animate-pulse">
+                                                                Retry in {rateLimitCountdown}s
+                                                            </span>
+                                                        ) : (
+                                                            <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-mono text-xs">
+                                                                ✓ Ready — upload again
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                ) : res.message}
                                             </td>
                                         </tr>
                                     ))}

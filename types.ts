@@ -22,7 +22,8 @@ export enum UserRole {
   OPERATOR = 'Operator', // Same as Editor (User requested alias)
   CONTROLLER = 'Controller', // Finance & Expense Control
   EXPO = 'Expo',         // Exporter partner
-  CARRIER = 'Carrier',   // Transport/Shipping partner
+  CARRIER = 'Carrier',   // Transport/Shipping partner (filtered by SCAC)
+  TRANSPORTISTA = 'Transportista', // Sub-línea partner (filtered by nombreSubLinea)
   VIEWER = 'Viewer',      // Read only
   PENDING = 'Pending',    // Default for new signups
   HANDHELD_USER = 'Handheld User', // Operario de piso con scanner (Sello)
@@ -38,7 +39,8 @@ export interface User {
   name: string;
   role: UserRole;
   avatarInitials: string;
-  scac?: string; // New field
+  scac?: string;    // Carrier SCAC code (for CARRIER role filtering)
+  subLinea?: string; // Sub-line name (for TRANSPORTISTA role filtering)
 }
 
 export interface Quotation {

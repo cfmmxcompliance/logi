@@ -8,4 +8,6 @@ export interface FianzaRecord {
     fechaPago?: string;
     saldoInicial: number;
     saldoFinal: number;
+    pedimentoPdfUrl?: string; // URL del PDF del pedimento subido a Google Drive
 }
+

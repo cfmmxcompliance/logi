@@ -27,12 +27,12 @@ const DataStageDashboard: React.FC<DashboardProps> = ({ data, rawFiles, onSync }
 
     // KPI Calculation: Count Unique Pedimentos
     const totalImports = React.useMemo(() => {
-        const unique = new Set(data.filter(r => r.tipoOperacion === '1').map(r => r.pedimento));
+    const unique = new Set(data.filter(r => (r.tipoOperacion||'').toUpperCase() === 'IMP').map(r => r.pedimento));
         return unique.size;
     }, [data]);
 
     const totalExports = React.useMemo(() => {
-        const unique = new Set(data.filter(r => r.tipoOperacion === '2').map(r => r.pedimento));
+    const unique = new Set(data.filter(r => (r.tipoOperacion||'').toUpperCase() === 'EXP').map(r => r.pedimento));
         return unique.size;
     }, [data]);
 
@@ -295,9 +295,9 @@ const DataStageDashboard: React.FC<DashboardProps> = ({ data, rawFiles, onSync }
                                         <tr key={row.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-6 py-3 font-medium text-slate-900">{row.patente}-{row.pedimento}</td>
                                             <td className="px-6 py-3">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${row.tipoOperacion === '1' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${(row.tipoOperacion||'').toUpperCase() === 'IMP' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
                                                     }`}>
-                                                    {row.tipoOperacion === '1' ? 'IMP' : 'EXP'}
+                                                    {(row.tipoOperacion||'').toUpperCase() === 'IMP' ? 'IMP' : 'EXP'}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-3">{row.claveDocumento}</td>

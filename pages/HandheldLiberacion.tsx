@@ -284,14 +284,24 @@ export const HandheldLiberacion = () => {
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
+        const ts = Date.now();
         const [cajaRes, puertasRes, selloRes] = await Promise.all([
-          uploadFileToDrive(cajaFile,   `Liberacion_${numeroCaja}_CAJA`,    FOLDER_ID),
-          uploadFileToDrive(puertasFile, `Liberacion_${numeroCaja}_PUERTAS`, FOLDER_ID),
-          uploadFileToDrive(selloFile,   `Liberacion_${numeroCaja}_SELLO`,   FOLDER_ID),
+          // Bug Fix #1: filenames con extensión .jpg y timestamp único para que Drive detecte MIME type
+          uploadFileToDrive(cajaFile,    `lib_${numeroCaja}_CAJA_${ts}.jpg`,    FOLDER_ID),
+          uploadFileToDrive(puertasFile, `lib_${numeroCaja}_PUERTAS_${ts}.jpg`, FOLDER_ID),
+          uploadFileToDrive(selloFile,   `lib_${numeroCaja}_SELLO_${ts}.jpg`,   FOLDER_ID),
         ]);
         const cajaUrl    = cajaRes?.webViewLink    || (cajaRes    as any)?.url || '';
         const puertasUrl = puertasRes?.webViewLink  || (puertasRes as any)?.url || '';
         const selloUrl   = selloRes?.webViewLink    || (selloRes   as any)?.url || '';
+
+        // Bug Fix #3: Si el GAS no devuelve URL, loguear y reportar error — no guardar silencioso
+        if (!cajaUrl || !puertasUrl || !selloUrl) {
+          console.error('[Drive] Una o más fotos no retornaron URL:', { cajaUrl, puertasUrl, selloUrl });
+          setUploadError('Drive respondió pero sin URLs. Verifica el GAS script.');
+          setUploadStatus('error');
+          return;
+        }
 
         // Actualiza Firestore con las URLs reales
         await liberacionService.updateLiberacion(liberacionId, {
@@ -518,11 +528,17 @@ export const HandheldLiberacion = () => {
                                             type="button" 
                                             onClick={(e) => { 
                                                 e.stopPropagation();
-                                                if (lib.fotos?.cajaUrl) setPreviewUrl(lib.fotos.cajaUrl.replace('/view', '/preview'));
+                                                // Bug Fix #2 & #4: Ignorar URL si es 'PENDING' o vacía
+                                                const url = lib.fotos?.cajaUrl;
+                                                if (url && url !== 'PENDING') setPreviewUrl(url.replace('/view', '/preview'));
                                             }}
-                                            className={`p-2.5 bg-slate-800 rounded-xl border transition-colors ${lib.fotos?.cajaUrl ? 'text-blue-400 hover:text-white border-slate-700 hover:border-blue-500' : 'text-slate-600 border-slate-800 cursor-not-allowed opacity-40'}`}
-                                            title="Ver foto Caja/Placas"
-                                            disabled={!lib.fotos?.cajaUrl}
+                                            className={`p-2.5 bg-slate-800 rounded-xl border transition-colors ${
+                                              lib.fotos?.cajaUrl && lib.fotos.cajaUrl !== 'PENDING'
+                                                ? 'text-blue-400 hover:text-white border-slate-700 hover:border-blue-500'
+                                                : 'text-slate-600 border-slate-800 cursor-not-allowed opacity-40'
+                                            }`}
+                                            title={lib.fotos?.cajaUrl === 'PENDING' ? 'Foto subiendo...' : 'Ver foto Caja/Placas'}
+                                            disabled={!lib.fotos?.cajaUrl || lib.fotos.cajaUrl === 'PENDING'}
                                           >
                                               <Car size={28} />
                                           </button>
@@ -530,11 +546,16 @@ export const HandheldLiberacion = () => {
                                             type="button" 
                                             onClick={(e) => { 
                                                 e.stopPropagation();
-                                                if (lib.fotos?.puertasUrl) setPreviewUrl(lib.fotos.puertasUrl.replace('/view', '/preview'));
+                                                const url = lib.fotos?.puertasUrl;
+                                                if (url && url !== 'PENDING') setPreviewUrl(url.replace('/view', '/preview'));
                                             }}
-                                            className={`p-2.5 bg-slate-800 rounded-xl border transition-colors ${lib.fotos?.puertasUrl ? 'text-orange-400 hover:text-white border-slate-700 hover:border-orange-500' : 'text-slate-600 border-slate-800 cursor-not-allowed opacity-40'}`}
-                                            title="Ver foto Puertas"
-                                            disabled={!lib.fotos?.puertasUrl}
+                                            className={`p-2.5 bg-slate-800 rounded-xl border transition-colors ${
+                                              lib.fotos?.puertasUrl && lib.fotos.puertasUrl !== 'PENDING'
+                                                ? 'text-orange-400 hover:text-white border-slate-700 hover:border-orange-500'
+                                                : 'text-slate-600 border-slate-800 cursor-not-allowed opacity-40'
+                                            }`}
+                                            title={lib.fotos?.puertasUrl === 'PENDING' ? 'Foto subiendo...' : 'Ver foto Puertas'}
+                                            disabled={!lib.fotos?.puertasUrl || lib.fotos.puertasUrl === 'PENDING'}
                                           >
                                               <DoorOpen size={28} />
                                           </button>
@@ -542,11 +563,16 @@ export const HandheldLiberacion = () => {
                                             type="button" 
                                             onClick={(e) => { 
                                                 e.stopPropagation();
-                                                if (lib.fotos?.selloUrl) setPreviewUrl(lib.fotos.selloUrl.replace('/view', '/preview'));
+                                                const url = lib.fotos?.selloUrl;
+                                                if (url && url !== 'PENDING') setPreviewUrl(url.replace('/view', '/preview'));
                                             }}
-                                            className={`p-2.5 bg-slate-800 rounded-xl border transition-colors ${lib.fotos?.selloUrl ? 'text-emerald-400 hover:text-white border-slate-700 hover:border-emerald-500' : 'text-slate-600 border-slate-800 cursor-not-allowed opacity-40'}`}
-                                            title="Ver foto Sello Asignado"
-                                            disabled={!lib.fotos?.selloUrl}
+                                            className={`p-2.5 bg-slate-800 rounded-xl border transition-colors ${
+                                              lib.fotos?.selloUrl && lib.fotos.selloUrl !== 'PENDING'
+                                                ? 'text-emerald-400 hover:text-white border-slate-700 hover:border-emerald-500'
+                                                : 'text-slate-600 border-slate-800 cursor-not-allowed opacity-40'
+                                            }`}
+                                            title={lib.fotos?.selloUrl === 'PENDING' ? 'Foto subiendo...' : 'Ver foto Sello Asignado'}
+                                            disabled={!lib.fotos?.selloUrl || lib.fotos.selloUrl === 'PENDING'}
                                           >
                                               <ShieldCheck size={28} />
                                           </button>

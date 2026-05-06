@@ -28,6 +28,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const isReadOnly = user?.role === UserRole.EMBARQUES || user?.role === UserRole.CLIENT;
   const isEmbarques = isReadOnly; // alias para compatibilidad con código existente
   const scacFilter = user?.role === UserRole.CARRIER ? (user?.scac || '').trim().toUpperCase() : null;
+  const subLineaFilter = user?.role === UserRole.TRANSPORTISTA ? (user?.subLinea || '').trim() : null;
   const [asignaciones, setAsignaciones] = useState<AsignacionCajaModel[]>([]);
   const [cajas, setCajas] = useState<CajaModel[]>([]);
   const [drivers, setDrivers] = useState<DriverModel[]>([]);
@@ -94,6 +95,11 @@ export const AsignacionesDiarias: React.FC = () => {
     // CARRIER role: only show assignments for their SCAC
     if (scacFilter) {
         result = result.filter(a => (a.carrierCodigo || '').toUpperCase() === scacFilter);
+    }
+
+    // TRANSPORTISTA role: only show assignments for their Sub-Línea
+    if (subLineaFilter) {
+        result = result.filter(a => (a.subLinea || '').toLowerCase() === subLineaFilter.toLowerCase());
     }
 
     // Date Range Filter
@@ -167,7 +173,7 @@ export const AsignacionesDiarias: React.FC = () => {
     }
 
     return result;
-  }, [asignaciones, searchTerm, dateRange, activeMassQuery, sortConfig, liberaciones, scacFilter]);
+  }, [asignaciones, searchTerm, dateRange, activeMassQuery, sortConfig, liberaciones, scacFilter, subLineaFilter]);
 
   const handleApplyMassQuery = () => {
     const valid = queryConditions.filter(c => c.operator === 'empty' || c.operator === 'not_empty' || c.input.trim());
@@ -773,7 +779,7 @@ export const AsignacionesDiarias: React.FC = () => {
                         onChange={val => setFormData({...formData, carrierCodigo: val, transportLineId: '', numeroCaja: '', driverId: '', subLinea: '', placasCaja: '', nombreDriver: '', placasTracto: ''})}
                         options={carriers.map(c => ({ value: c.codigo, label: c.nombre, sublabel: c.codigo }))}
                         placeholder="Seleccionar Carrier..."
-                        disabled={!!scacFilter}
+                        disabled={!!scacFilter || !!subLineaFilter}
                       />
                     </div>
 

@@ -40,6 +40,7 @@ import { ExpedienteElectronico } from '../pages/ExpedienteElectronico';
 import { BOMAnalyzer } from '../pages/BOMAnalyzer.tsx';
 import { SaldoFianza } from '../pages/SaldoFianza.tsx';
 import { AIAssistant } from '../pages/AIAssistant.tsx';
+import { CatalogoSAT } from '../pages/CatalogoSAT.tsx';
 import { HandheldHome } from '../pages/HandheldHome.tsx';
 import { HandheldSellos } from '../pages/HandheldSellos.tsx';
 import { HandheldLiberacion } from '../pages/HandheldLiberacion.tsx';
@@ -96,6 +97,12 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
         if (!allowed.includes(location.pathname)) return <Navigate to="/transport-lines" replace />;
     }
 
+    // Transportista constraints (same as Carrier but without /carriers)
+    if (user?.role === UserRole.TRANSPORTISTA) {
+        const allowed = ['/transport-lines', '/cajas', '/drivers', '/asignaciones-diarias'];
+        if (!allowed.includes(location.pathname)) return <Navigate to="/transport-lines" replace />;
+    }
+
     // Expo constraints
     if (user?.role === UserRole.EXPO) {
         const allowed = ['/models', '/pricing-matrix', '/shipping-schedules', '/asignaciones-diarias', '/daily-van-assignment', '/xml-ci', '/xml-invoices', '/macro', '/historial-capturas'];
@@ -122,6 +129,12 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
     if (user?.role === UserRole.CLIENT) {
         const allowed = ['/asignaciones-diarias'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/asignaciones-diarias" replace />;
+    }
+
+    // Finanzas constraints — solo lectura de Saldo Fianza
+    if (user?.role === UserRole.FINANZAS) {
+        const allowed = ['/saldo-fianza'];
+        if (!allowed.includes(location.pathname)) return <Navigate to="/saldo-fianza" replace />;
     }
 
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
@@ -191,6 +204,7 @@ const AppContent = () => {
             <Route path="/xml-invoices" element={<ProtectedRoute><XMLInvoiceExtractor /></ProtectedRoute>} />
             <Route path="/xml-ci" element={<ProtectedRoute><XMLCI /></ProtectedRoute>} />
             <Route path="/saldo-fianza" element={<ProtectedRoute><SaldoFianza /></ProtectedRoute>} />
+            <Route path="/catalogo-sat" element={<ProtectedRoute><CatalogoSAT /></ProtectedRoute>} />
             <Route path="/ccp-builder" element={<ProtectedRoute><CCPBuilder /></ProtectedRoute>} />
             <Route path="/data-stage" element={<ProtectedRoute><DataStage /></ProtectedRoute>} />
             <Route path="/controller" element={<ProtectedRoute><Controller /></ProtectedRoute>} />

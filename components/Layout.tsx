@@ -78,7 +78,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <SidebarItem to="/" icon={LayoutDashboard} label={sidebarOpen ? "Dashboard" : ""} />
           )}
 
-          {user?.role !== UserRole.AGENT && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && (
+          {user?.role !== UserRole.AGENT && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
             <>
               <SidebarItem to="/operations" icon={Ship} label={sidebarOpen ? "Shipment Plan" : ""} />
               <SidebarItem to="/pre-alerts" icon={Bell} label={sidebarOpen ? "Pre-Alerts" : ""} />
@@ -110,6 +110,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {user?.role === UserRole.ADMIN && (
             <>
               <SidebarItem to="/data-stage" icon={Scale} label={sidebarOpen ? "Data Stage (SAT)" : ""} />
+              <SidebarItem to="/catalogo-sat" icon={BookOpen} label={sidebarOpen ? "Catálogo SAT" : ""} />
               <SidebarItem to="/vucem" icon={Globe} label={sidebarOpen ? "VUCEM" : ""} />
               <SidebarItem to="/expediente-electronico" icon={FolderOpen} label={sidebarOpen ? "Expedientes Digitales" : ""} />
               <SidebarItem to="/proforma-validator" icon={FileCheck} label={sidebarOpen ? "Validador Proforma" : ""} />
@@ -189,7 +190,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           )}
 
           {/* Daily Audit: Accessible to Everyone (except Pending, Carrier, Expo, Embarques, Client) */}
-          {user?.role !== UserRole.PENDING && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && (
+          {user?.role !== UserRole.PENDING && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
             <SidebarItem to="/daily-audit" icon={Activity} label={sidebarOpen ? "Control de Auditoría" : ""} />
           )}
 

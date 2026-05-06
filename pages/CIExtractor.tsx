@@ -36,7 +36,8 @@ const applyMasterDataToItems = (
                 // If Invoice has weight but Master Data is 0, keep Invoice weight (safest assumption)
                 netWeight: (match.NETWEIGHT && Number(match.NETWEIGHT) > 0) ? Number(match.NETWEIGHT) : (item.netWeight || 0),
                 regimen: match.REGIMEN?.trim() || item.regimen,
-                prosec: match.PROSEC?.toString().trim() || item.prosec,
+                // Bug Fix #1: PROSEC=0 from Excel must NOT be stored as "0" — treat as empty
+                prosec: (() => { const p = match.PROSEC?.toString().trim(); return (p && p !== '0') ? p : item.prosec; })(),
                 // Correction of PartNo casing/trimming
                 partNo: match.PART_NUMBER?.trim() || item.partNo
             };
@@ -1086,7 +1087,9 @@ export const CIExtractor: React.FC = () => {
 
                         let msg = err.message || 'Unknown Parse Error';
                         if (msg.includes('Failed to fetch dynamically imported module')) {
-                            msg = "New version detected. Please REFRESH the page to update internal components.";
+                            alert("Se ha detectado una nueva versión de la plataforma. La página se recargará automáticamente para aplicar la actualización.");
+                            window.location.reload();
+                            return;
                         }
 
                         errors.push(`${file.name}: ${msg}`);
@@ -1729,9 +1732,16 @@ export const CIExtractor: React.FC = () => {
 
     // --- CSV EXPORT BLINDADO (Sin librerías, Sin basura, Sin UUIDs) ---
     const handleExportCSV = () => {
-        let itemsToExport = items;
-        if (selectedIds.size > 0) itemsToExport = items.filter(i => selectedIds.has(i.id));
-        else if (searchTerm) itemsToExport = filteredItems;
+        // Bug Fix #4: Siempre respetar filtros activos (chips + search + date + query builder).
+        // Antes: solo usaba filteredItems si había searchTerm → ignoraba todos los chips activos.
+        let itemsToExport: CommercialInvoiceItem[];
+        if (selectedIds.size > 0) {
+            // Priority 1: Selección explícita del usuario
+            itemsToExport = items.filter(i => selectedIds.has(i.id));
+        } else {
+            // Priority 2: SIEMPRE usar filteredItems (incluye searchTerm + chips + dateRange + queryBuilder)
+            itemsToExport = filteredItems;
+        }
 
         if (!itemsToExport || itemsToExport.length === 0) {
             showNotification('Export Info', "No data to export.", 'info');
@@ -1746,13 +1756,27 @@ export const CIExtractor: React.FC = () => {
                 'RB', 'QTY', 'UM', 'NETWEIGHT', 'UNIT PRICE', 'TOTAL AMOUNT', 'REGIMEN'
             ];
 
+            // Bug Fix #2 & #3: Normalizar valores inválidos en RB y PROSEC antes de exportar.
+            // Los valores textuales como 'NO APLICA', 'FALTA', 'N/A', 'NA', '0'
+            // deben salir como campo vacío en el CSV (igual que en la validación de UI).
+            const INVALID_FIELD_VALUES = new Set(['FALTA', 'N/A', 'NA', 'NO APLICA', '0', 'NONE', '']);
+            const cleanField = (val: any): string => {
+                if (val === null || val === undefined) return '';
+                const s = String(val).trim();
+                return INVALID_FIELD_VALUES.has(s.toUpperCase()) ? '' : s;
+            };
+
             // 2. CONSTRUCCIÓN MANUAL DEL CSV (Iteración rápida)
             const csvRows = itemsToExport.map((item, index) => {
-                // Hidratación de Master Data (R8) al vuelo
+                // Hidratación de Master Data (RB y PROSEC) al vuelo con normalización
                 const normalizedPart = String(item.partNo || '').trim();
                 const masterPart = masterDataMap[normalizedPart];
-                const r8Value = item.rb || (masterPart?.R8 || '');
-                const prosecValue = item.prosec || (masterPart?.PROSEC || '');
+
+                // Bug Fix #2: RB normalizado — 'NO APLICA'/'FALTA' → vacío
+                const r8Value = cleanField(item.rb) || cleanField(masterPart?.R8) || '';
+
+                // Bug Fix #3: PROSEC normalizado — '0'/'NO APLICA' → vacío
+                const prosecValue = cleanField(item.prosec) || cleanField(masterPart?.PROSEC) || '';
 
                 // Función auxiliar para escapar comas y comillas (Excel Standard)
                 const esc = (val: any) => {
@@ -1772,7 +1796,7 @@ export const CIExtractor: React.FC = () => {
                     esc(item.model),
                     esc(item.partNo),
                     esc(item.englishName),
-                    esc(item.spanishDescription), // Asegura descripciones limpias
+                    esc(item.spanishDescription),
                     esc(item.hts),
                     esc(prosecValue),
                     esc(r8Value),
@@ -1801,7 +1825,7 @@ export const CIExtractor: React.FC = () => {
             link.click();
             document.body.removeChild(link);
 
-            showNotification('Success', "CSV exported cleanly (Fixed Version)", 'success');
+            showNotification('Success', `CSV exported: ${itemsToExport.length} items`, 'success');
 
         } catch (error) {
             console.error("Manual Export Error:", error);

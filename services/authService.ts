@@ -41,7 +41,15 @@ export const authService = {
             } catch (e) {
                 // Falla si el caché está literal vacío (primer inicio)
                 // En ese caso, dependemos de la red obligatoriamente.
-                userSnap = await getDoc(doc(db, 'users', cleanEmail));
+                // Retry automático: si la primera llamada de red falla (wifi intermitente),
+                // esperamos 2s y reintentamos una vez antes de rendirse.
+                try {
+                    userSnap = await getDoc(doc(db, 'users', cleanEmail));
+                } catch (netErr) {
+                    console.warn('[Auth] First network attempt failed, retrying in 2s...', netErr);
+                    await new Promise(r => setTimeout(r, 2000));
+                    userSnap = await getDoc(doc(db, 'users', cleanEmail));
+                }
             }
             
             // Si resolvió del caché local (offline) y no encontró el usuario,
@@ -75,19 +83,52 @@ export const authService = {
                         }
                     });
             } else {
-                // 3. Fallback: Si no coincide en caché o la contraseña se cambió recientemente, 
-                //    forzamos a validar estrictamente contra los servidores de Firebase Auth.
+                // 3. Fallback: No password stored locally (legacy user) OR password mismatch.
+                //    Validate against Firebase Auth servers.
                 try {
                     const authResult = await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
                     firebaseUser = authResult.user;
                 } catch (e: any) {
                     if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') throw e;
                     
-                    // Si Auth falla por mala señal, verificamos si es que simplemente tipeó mal la suya local
-                    if (data.password) {
-                        throw { code: 'auth/wrong-password', message: 'Invalid password.' };
+                    // LEGACY USER FIX: User exists in Firestore but NOT in Firebase Auth.
+                    // Auto-create Auth account and store password for future offline logins.
+                    if (e.code === 'auth/user-not-found') {
+                        try {
+                            const newCred = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+                            firebaseUser = newCred.user;
+                            // Store password in Firestore for future offline login
+                            updateDoc(doc(db, 'users', cleanEmail), { password: cleanPassword }).catch(console.warn);
+                            console.log('[Auth] Legacy user auto-migrated to Firebase Auth:', cleanEmail);
+                        } catch (createErr: any) {
+                            console.error('[Auth] Failed to auto-create Auth account:', createErr);
+                            throw { code: 'auth/network-request-failed', message: 'No se pudo crear cuenta de autenticación. Verifica tu conexión.' };
+                        }
+                    } else if (e.code === 'auth/configuration-not-found' || e.code === 'auth/operation-not-allowed') {
+                        // Firebase Auth Email/Password provider is NOT enabled in Firebase Console.
+                        // Fall back to Firestore stored password as auth mechanism.
+                        console.warn('[Auth] Firebase Auth provider disabled. Falling back to Firestore password for:', cleanEmail);
+                        if (data.password && data.password === cleanPassword) {
+                            // ✅ Password matches Firestore record — allow login in degraded mode.
+                            // Store password to keep offline login working.
+                            updateDoc(doc(db, 'users', cleanEmail), { password: cleanPassword }).catch(console.warn);
+                            console.log('[Auth] Firestore password fallback succeeded for:', cleanEmail);
+                        } else if (data.password) {
+                            // Password stored but doesn't match
+                            throw { code: 'auth/invalid-credential', message: 'Contraseña incorrecta.' };
+                        } else {
+                            // No password stored at all — admin must reset
+                            throw { code: 'auth/network-request-failed', message: 'Tu cuenta no tiene contraseña registrada. Pide al administrador que te asigne una.' };
+                        }
+                    } else if (e.code === 'auth/too-many-requests') {
+                        throw { code: 'auth/too-many-requests', message: 'Demasiados intentos fallidos. Espera unos minutos e intenta de nuevo.' };
                     } else {
-                        throw { code: 'auth/network-request-failed', message: 'Fallo red: No se pudo validar contraseña nueva.' };
+                        // Genuine network failure
+                        if (data.password) {
+                            throw { code: 'auth/wrong-password', message: 'Invalid password.' };
+                        } else {
+                            throw { code: 'auth/network-request-failed', message: 'Se requiere conexión a internet para el primer inicio de sesión.' };
+                        }
                     }
                 }
             }
@@ -116,7 +157,8 @@ export const authService = {
                 email: cleanEmail,
                 role,
                 avatarInitials: cleanEmail.substring(0, 2).toUpperCase(),
-                scac: data.scac || ''
+                scac: data.scac || '',
+                subLinea: data.subLinea || ''
             };
 
             localStorage.setItem('logimaster_user', JSON.stringify(user));
@@ -150,7 +192,8 @@ export const authService = {
                     role: isRootAdmin ? UserRole.ADMIN : (data.role as UserRole),
                     email: email,
                     avatarInitials: (data.email || email).substring(0, 2).toUpperCase(),
-                    scac: data.scac || ''
+                    scac: data.scac || '',
+                    subLinea: data.subLinea || ''
                 };
             }
             
@@ -285,7 +328,8 @@ export const authService = {
                     name: data.username || data.name || data.email,
                     role: effectiveRole,
                     avatarInitials: (data.email || '??').substring(0, 2).toUpperCase(),
-                    scac: data.scac || ''
+                    scac: data.scac || '',
+                    subLinea: data.subLinea || ''
                 };
 
                 uniqueUsers.set(doc.id, userObj);
@@ -327,6 +371,17 @@ export const authService = {
             return true;
         } catch (e) {
             console.error("Error updating SCAC:", e);
+            return false;
+        }
+    },
+
+    updateUserSubLinea: async (email: string, subLinea: string) => {
+        if (!db) return false;
+        try {
+            await storageService.upsertUser({ email, subLinea } as any);
+            return true;
+        } catch (e) {
+            console.error("Error updating SubLinea:", e);
             return false;
         }
     },

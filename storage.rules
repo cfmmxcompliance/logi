@@ -1,0 +1,14 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // fianza-pdfs: acceso público de lectura/escritura
+    // (mismo patrón que Firestore — app usa auth propio sin Firebase Auth tokens)
+    match /fianza-pdfs/{allPaths=**} {
+      allow read, write: if true;
+    }
+    // Bloquear todo lo demás por defecto
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

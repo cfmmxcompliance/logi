@@ -18,6 +18,7 @@ import { UserRole } from '../types';
 export const Cajas: React.FC = () => {
   const { user } = useAuth();
   const scacFilter = user?.role === UserRole.CARRIER ? (user?.scac || '').trim().toUpperCase() : null;
+  const subLineaFilter = user?.role === UserRole.TRANSPORTISTA ? (user?.subLinea || '').trim() : null;
   const [cajas, setCajas] = useState<CajaModel[]>([]);
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
   const [transportLines, setTransportLines] = useState<TransportLineModel[]>([]);
@@ -64,6 +65,10 @@ export const Cajas: React.FC = () => {
     if (scacFilter) {
         result = result.filter(c => c.carrierCodigo?.toUpperCase() === scacFilter);
     }
+    // TRANSPORTISTA role: only show cajas matching their Sub-Línea
+    if (subLineaFilter) {
+        result = result.filter(c => (c.nombreSubLinea || '').toLowerCase() === subLineaFilter.toLowerCase());
+    }
     if (searchTerm) {
         const lowerTerm = searchTerm.toLowerCase();
         result = result.filter(c => 
@@ -83,7 +88,7 @@ export const Cajas: React.FC = () => {
         });
     }
     return result;
-  }, [cajas, searchTerm, activeMassQuery, scacFilter]);
+  }, [cajas, searchTerm, activeMassQuery, scacFilter, subLineaFilter]);
 
   const handleApplyMassQuery = () => {
       const valid = queryConditions.filter(c => c.operator === 'empty' || c.operator === 'not_empty' || c.input.trim());

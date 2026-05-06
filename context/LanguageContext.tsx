@@ -198,6 +198,167 @@ export const translations: Translations = {
     "ci.totalnetwt": { es: "Peso Neto Tot", en: "Total Net Wt" },
     "ci.unitprice": { es: "P. Unitario", en: "Unit Price" },
     "ci.total": { es: "Total", en: "Total" },
+
+    // Dashboard
+    "dash.title": { es: "Dashboard Operacional", en: "Operational Dashboard" },
+    "dash.subtitle_live": { es: "DataStage — pedimentos cargados", en: "DataStage — loaded pedimentos" },
+    "dash.subtitle_static": { es: "Customs Report PPT — YTD Ene–Sep 2024 (referencia)", en: "Customs Report PPT — YTD Jan–Sep 2024 (reference)" },
+    "dash.live_badge": { es: "Datos en Vivo", en: "Live Data" },
+    "dash.loading": { es: "Cargando pedimentos...", en: "Loading pedimentos..." },
+
+    // Live KPI section
+    "dash.sec_realtime": { es: "Operaciones en Tiempo Real", en: "Real-Time Operations" },
+    "dash.vessels": { es: "Buques en Tránsito", en: "Vessels in Transit" },
+    "dash.vessels_sub": { es: "Sin ATA Puerto", en: "No ATA Port" },
+    "dash.port": { es: "En Puerto", en: "At Port" },
+    "dash.port_sub": { es: "Pendiente Despacho", en: "Pending Clearance" },
+    "dash.delivered": { es: "Entregados (Mes)", en: "Delivered (Month)" },
+    "dash.delivered_sub": { es: "ATA Planta confirmado", en: "ATA Factory confirmed" },
+    "dash.spend": { es: "Gasto Logístico", en: "Logistics Spend" },
+    "dash.spend_sub": { es: "Flete+Aduana+Transporte", en: "Freight+Customs+Transport" },
+
+    // YTD Summary section
+    "dash.sec_ytd": { es: "Resumen Aduanal", en: "Customs Summary" },
+    "dash.imp_ped": { es: "Pedimentos Importación", en: "Import Pedimentos" },
+    "dash.exp_ped": { es: "Pedimentos Exportación", en: "Export Pedimentos" },
+    "dash.imp_val": { es: "Valor Importado", en: "Import Value" },
+    "dash.exp_val": { es: "Valor Exportado", en: "Export Value" },
+    "dash.ytd_sub": { es: "Total YTD", en: "Total YTD" },
+    "dash.usd_acc": { es: "USD acumulado", en: "USD accumulated" },
+    "dash.no_data_warn": { es: "Mostrando datos estáticos del PPT de referencia. Sube archivos M3 en DataStage para ver datos en vivo.", en: "Showing static reference PPT data. Upload M3 files in DataStage to see live data." },
+
+    // Alert badges
+    "dash.alert1": { es: "⚠ Exportaciones Julio −80%", en: "⚠ July Exports −80%" },
+    "dash.alert2": { es: "⚠ Aranceles Mat. Prima Julio $188K", en: "⚠ July Raw Material Duties $188K" },
+    "dash.alert3": { es: "50% revisiones concentradas en Q1", en: "50% of reviews concentrated in Q1" },
+    "dash.alert4": { es: "Ahorro GID $291,600 USD YTD", en: "GID Savings $291,600 USD YTD" },
+
+    // Import section
+    "dash.sec_import": { es: "Importación", en: "Import" },
+    "dash.chart_imp_vol": { es: "Volumen — Pedimentos de Importación", en: "Volume — Import Pedimentos" },
+    "dash.chart_imp_vol_sub": { es: "Cantidad mensual por régimen (IN / A1 / AF)", en: "Monthly count by regime (IN / A1 / AF)" },
+    "dash.chart_imp_val": { es: "Valor de Importación", en: "Import Value" },
+    "dash.chart_imp_val_sub": { es: "Millones USD por mes", en: "USD Millions per month" },
+
+    // Export section
+    "dash.sec_export": { es: "Exportación", en: "Export" },
+    "dash.chart_exp_vol": { es: "Volumen — Pedimentos de Exportación (RT)", en: "Volume — Export Pedimentos (RT)" },
+    "dash.chart_exp_vol_sub": { es: "Cantidad mensual régimen retorno", en: "Monthly count return regime" },
+    "dash.chart_exp_val": { es: "Valor de Exportación", en: "Export Value" },
+    "dash.chart_exp_val_sub": { es: "Millones USD por mes", en: "USD Millions per month" },
+
+    // Special ops + VAT
+    "dash.sec_special": { es: "Operaciones Especiales y Contribuciones", en: "Special Operations & Taxes" },
+    "dash.chart_special": { es: "Operaciones Especiales — Temporal a Definitivo", en: "Special Operations — Temp to Permanent" },
+    "dash.chart_special_sub": { es: "Cantidad de pedimentos convertidos (referencia PPT)", en: "Converted pedimentos count (PPT reference)" },
+    "dash.chart_contrib": { es: "Contribuciones Pagadas", en: "Taxes Paid" },
+    "dash.chart_contrib_sub_live": { es: "IGI + IVA por mes (DataStage)", en: "IGI + VAT per month (DataStage)" },
+    "dash.chart_contrib_sub_static": { es: "Referencia PPT (miles MXN)", en: "PPT reference (thousands MXN)" },
+
+    // Savings + Revisions
+    "dash.sec_savings": { es: "Ahorros GID y Revisiones", en: "GID Savings & Revisions" },
+    "dash.chart_gid": { es: "Ahorros GID Acumulados YTD", en: "GID Accumulated Savings YTD" },
+    "dash.chart_gid_sub": { es: "Miles USD — referencia PPT (clasificación arancelaria)", en: "USD Thousands — PPT reference (tariff classification)" },
+    "dash.chart_rev": { es: "Revisiones Aduanales Import / Export", en: "Import / Export Customs Reviews" },
+    "dash.chart_rev_sub": { es: "Referencia PPT", en: "PPT Reference" },
+    "dash.rev_import": { es: "Revisiones Import", en: "Import Reviews" },
+    "dash.rev_export": { es: "Revisiones Export", en: "Export Reviews" },
+
+    // Specialists
+    "dash.sec_specialists": { es: "Desempeño de Especialistas", en: "Specialists Performance" },
+
+    // ── Saldo Fianza Module ──────────────────────────────────────────────────
+    "sf.desktop_only":      { es: "Solo Versión de Escritorio",       en: "Desktop Version Only" },
+    "sf.desktop_msg":       { es: "El módulo de Saldo Fianza requiere una resolución de pantalla más amplia. Por favor, accede desde una computadora para utilizar estas herramientas.", en: "The Saldo Fianza module requires a wider screen resolution. Please access it from a desktop computer." },
+
+    // Metadata cards
+    "sf.forma_pago":        { es: "FORMA DE PAGO",         en: "PAYMENT METHOD" },
+    "sf.inst_emisora":      { es: "INSTITUCIÓN EMISORA",   en: "ISSUING INSTITUTION" },
+    "sf.fianza":            { es: "FIANZA",                en: "BOND" },
+    "sf.fecha_auth":        { es: "FECHA AUTORIZACIÓN",    en: "AUTHORIZATION DATE" },
+    "sf.importe_doc":       { es: "IMPORTE DEL DOCUMENTO", en: "DOCUMENT AMOUNT" },
+    "sf.imp_pagados":       { es: "IMPUESTOS PAGADOS",     en: "TAXES PAID" },
+    "sf.imp_provisionados": { es: "IMPUESTOS PROVISIONADOS", en: "PROVISIONED TAXES" },
+    "sf.imp_por_pagar":     { es: "IMPUESTOS POR PAGAR",  en: "TAXES PENDING PAYMENT" },
+    "sf.saldo_utilizado":   { es: "SALDO UTILIZADO",       en: "BALANCE USED" },
+    "sf.saldo_actual":      { es: "Saldo Actual de Fianza", en: "Current Bond Balance" },
+    "sf.saldo_desc":        { es: "Se actualiza en tiempo real con el dato de la columna saldo final del último pedimento procesado.", en: "Updated in real time with the final balance column of the last processed pedimento." },
+
+    // Header / toolbar
+    "sf.title":             { es: "Control de Saldo Fianza",                             en: "Bond Balance Control" },
+    "sf.subtitle":          { es: "Gestión contable y estado de pedimentos provisionados.", en: "Accounting management and provisioned pedimentos status." },
+    "sf.mass_query":        { es: "Mass Query",        en: "Mass Query" },
+    "sf.active_filters":    { es: "Filtros Activos",   en: "Active Filters" },
+    "sf.plantilla":         { es: "Plantilla",         en: "Template" },
+    "sf.cargar_datos":      { es: "Cargar Datos",      en: "Load Data" },
+    "sf.exportar":          { es: "Exportar",          en: "Export" },
+    "sf.nuevo":             { es: "Nuevo",             en: "New" },
+    "sf.pago":              { es: "Pago",              en: "Payment" },
+    "sf.start_date":        { es: "Fecha Inicio",      en: "Start Date" },
+    "sf.end_date":          { es: "Fecha Fin",         en: "End Date" },
+    "sf.borrar":            { es: "Borrar",            en: "Delete" },
+
+    // Table
+    "sf.historico":         { es: "Historial de Movimientos", en: "Movement History" },
+    "sf.mostrando":         { es: "Mostrando",   en: "Showing" },
+    "sf.de":                { es: "de",          en: "of" },
+    "sf.col_acciones":      { es: "Acciones",          en: "Actions" },
+    "sf.col_pedimento":     { es: "Pedimento",         en: "Pedimento" },
+    "sf.col_nombre":        { es: "Nombre",            en: "Name" },
+    "sf.col_provisionado":  { es: "Provisionado",      en: "Provisioned" },
+    "sf.col_fecha_reg":     { es: "Fecha de Registro", en: "Registration Date" },
+    "sf.col_pagado":        { es: "Pagado",            en: "Paid" },
+    "sf.col_fecha_pago":    { es: "Fecha de Pago",     en: "Payment Date" },
+    "sf.col_saldo_ini":     { es: "Saldo Inicial",     en: "Initial Balance" },
+    "sf.col_saldo_fin":     { es: "Saldo Final",       en: "Final Balance" },
+    "sf.no_records":        { es: "No se encontraron registros que coincidan con la búsqueda.", en: "No records found matching your search." },
+
+    // Mass Query builder
+    "sf.query_title":       { es: "Advanced Query Builder", en: "Advanced Query Builder" },
+    "sf.query_desc":        { es: "Configura múltiples condiciones para filtrar los pedimentos de Fianza.", en: "Configure multiple conditions to filter Bond pedimentos." },
+    "sf.q_column":          { es: "Columna",    en: "Column" },
+    "sf.q_operator":        { es: "Operador",   en: "Operator" },
+    "sf.q_datatype":        { es: "Tipo Dato",  en: "Data Type" },
+    "sf.q_string":          { es: "String (Texto/Fecha)", en: "String (Text/Date)" },
+    "sf.q_number":          { es: "Número (Montos)",      en: "Number (Amounts)" },
+    "sf.q_target":          { es: "Valor Objetivo",       en: "Target Value" },
+    "sf.q_values_per_line": { es: "Valores (uno por línea)", en: "Values (One per line)" },
+    "sf.q_not_required":    { es: "Valor (no requerido)",    en: "Value (Not required)" },
+    "sf.add_condition":     { es: "Agregar Condición", en: "Add Condition" },
+    "sf.clear_all":         { es: "Limpiar Todo",      en: "Clear All" },
+    "sf.run_query":         { es: "Ejecutar Búsqueda", en: "Run Query" },
+
+    // Payment modal
+    "sf.pay_title":         { es: "Registrar Pago",         en: "Register Payment" },
+    "sf.pay_desc":          { es: "Selecciona un pedimento sin pagar para asentar su pago. Selecciona la fecha de liquidación.", en: "Select an unpaid pedimento to record its payment. Select the settlement date." },
+    "sf.pay_pedimentos":    { es: "Pedimento(s) Sin Pagar", en: "Unpaid Pedimento(s)" },
+    "sf.pay_hint":          { es: "Usa Cmd o Ctrl para selección múltiple.", en: "Use Cmd or Ctrl for multiple selection." },
+    "sf.pay_fecha":         { es: "Fecha de Pago",  en: "Payment Date" },
+    "sf.pay_monto":         { es: "Monto Pagado",   en: "Amount Paid" },
+    "sf.pay_monto_sum":     { es: "Suma Total",      en: "Total Sum" },
+    "sf.cancelar":          { es: "Cancelar",        en: "Cancel" },
+    "sf.confirmar_pago":    { es: "Confirmar Pago",  en: "Confirm Payment" },
+
+    // New record modal
+    "sf.new_record_title":  { es: "Nuevo Registro de Pedimento", en: "New Pedimento Record" },
+    "sf.nombre_placeholder":{ es: "Ej. Luis",   en: "e.g. Luis" },
+    "sf.no_users":          { es: "No hay usuarios disponibles", en: "No users available" },
+    "sf.saldo_previsto":    { es: "Saldo Inicial Previsto:",     en: "Expected Initial Balance:" },
+    "sf.saldo_resultante":  { es: "Saldo Final Resultante:",     en: "Resulting Final Balance:" },
+    "sf.registrar_guardar": { es: "Registrar y Guardar",         en: "Register & Save" },
+
+    // Edit modal
+    "sf.edit_title":        { es: "Editar Registro",   en: "Edit Record" },
+    "sf.nombre_resp":       { es: "Nombre Responsable", en: "Responsible Name" },
+    "sf.fecha_reg_short":   { es: "Fecha Reg.",         en: "Reg. Date" },
+    "sf.fecha_pago_short":  { es: "Fecha Pago",         en: "Payment Date" },
+    "sf.guardar_edit":      { es: "Guardar Editado",    en: "Save Edited" },
+
+    // Shared labels repeated in forms
+    "sf.pedimento_label":   { es: "Pedimento",    en: "Pedimento" },
+    "sf.provisionado":      { es: "Provisionado", en: "Provisioned" },
+    "sf.pagado":            { es: "Pagado",       en: "Paid" },
+    "sf.fecha_registro":    { es: "Fecha de Registro", en: "Registration Date" },
 };
 
 interface LanguageContextProps {

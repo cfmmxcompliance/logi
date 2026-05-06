@@ -10,6 +10,7 @@ export const DataStage = () => {
     const [data, setData] = useState<PedimentoRecord[] | null>(null);
     const [rawFiles, setRawFiles] = useState<RawFileParsed[]>([]);
     const [currentFileName, setCurrentFileName] = useState<string>('');
+    const [reviewsByMonth, setReviewsByMonth] = useState<{ name: string; Import: number; Export: number }[]>([]);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -75,6 +76,16 @@ export const DataStage = () => {
                     if (result && (result.records.length > 0 || result.rawFiles.length > 0)) {
                         allRecords.push(...result.records);
                         allRawFiles.push(...result.rawFiles);
+                        // Accumulate revision counts from _Sel/_Inci files
+                        if (result.reviewsByMonth) {
+                            result.reviewsByMonth.forEach((m, i) => {
+                                setReviewsByMonth(prev => {
+                                    const updated = prev.length === 12 ? [...prev] : Array.from({ length: 12 }, (_, idx) => ({ name: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][idx], Import: 0, Export: 0 }));
+                                    updated[i] = { ...updated[i], Import: (updated[i].Import || 0) + m.Import, Export: (updated[i].Export || 0) + m.Export };
+                                    return updated;
+                                });
+                            });
+                        }
                     } else {
                         throw new Error(`El archivo ${file.name} no contiene datos válidos.`);
                     }
@@ -282,6 +293,7 @@ export const DataStage = () => {
             timestamp: new Date().toISOString(),
             records: data,
             rawFiles: rawFiles,
+            reviewsByMonth: reviewsByMonth.some(m => m.Import > 0 || m.Export > 0) ? reviewsByMonth : undefined,
             stats: {
                 filesProcessed: rawFiles.length,
                 pedimentosCount: data.length,
@@ -294,16 +306,20 @@ export const DataStage = () => {
             setLoading(true);
             setSaveStatus("Preparando datos...");
 
-            // 2. SAVE REPORT TO DB (Interpreted JSON Data)
-            setSaveStatus("Guardando Datos Interpretados...");
+            // Fixed 10 minute timeout — enough for any ZIP size on slow connections
+            const dynamicTimeout = 600000;
 
-            // Enforce 30s Timeout
-            const savePromise = storageService.saveDataStageReport(report);
+            const savePromise = storageService.saveDataStageReport(
+                report,
+                (percent) => setSaveStatus(`Subiendo registros... ${Math.round(percent)}%`)
+            );
             const timeoutPromise = new Promise<boolean>((_, reject) =>
-                setTimeout(() => reject(new Error("Tiempo agotado (30s) al guardar. Verifica tu conexión.")), 30000)
+                setTimeout(() => reject(new Error(
+                    `Tiempo agotado (${Math.round(dynamicTimeout / 1000)}s). Verifica tu conexión e intenta de nuevo.`
+                )), dynamicTimeout)
             );
 
-            const success = await Promise.race([savePromise, timeoutPromise]);
+            await Promise.race([savePromise, timeoutPromise]);
 
             setSaveStatus("Finalizando...");
             setLoading(false);
@@ -318,6 +334,7 @@ export const DataStage = () => {
             alert("❌ Error al guardar el reporte: " + (e instanceof Error ? e.message : "Error desconocido o límite de tamaño excedido. Intenta con menos archivos."));
         }
     };
+
 
     const loadReport = async (report: DataStageReport) => {
         if (window.confirm(`¿Cargar visualización del reporte "${report.name}"?`)) {

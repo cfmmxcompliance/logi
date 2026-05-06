@@ -5,10 +5,10 @@ service cloud.firestore {
     // Must allow public read/write for the app to function (until refactored).
     // TRANSITION RULES: Locking down business data, keeping users open for migration.
     
-    // 1. Users Collection (Open Read for Legacy Login check, Write requires Auth)
+    // 1. Users Collection (Open Read/Write for Legacy Login, Registration, and Offline Migration)
+    // Note: App uses custom Firestore-based auth; writes happen before Firebase Auth is established.
     match /users/{email} {
-      allow read: if true; // Temporary: Needed for unauthenticated users to verify legacy password
-      allow write: if request.auth != null; // Registration happens AFTER Auth creation
+      allow read, write: if true;
     }
 
     // 2. Business Data (EMERGENCY: Allowed read to restore visibility)
@@ -24,6 +24,7 @@ service cloud.firestore {
     match /data_stage_drafts/{docId} { allow read, write: if true; }
     match /snapshots/{docId} { allow read, write: if true; }
     match /data_stage_reports/{docId} { allow read, write: if true; }
+    match /data_stage_reports/{docId}/items/{itemId} { allow read, write: if true; }
     match /training_submissions/{docId} { allow read, write: if true; }
     match /audit_subscriptions/{docId} { allow read, write: if true; }
     match /suppliers/{docId} { allow read, write: if true; }

@@ -32,6 +32,7 @@ export const Settings = () => {
                     (u.name?.toLowerCase().includes(term)) ||
                     (u.role?.toLowerCase().includes(term)) ||
                     (u.scac?.toLowerCase().includes(term)) ||
+                    (u.subLinea?.toLowerCase().includes(term)) ||
                     (u.email?.toLowerCase().includes(term))
                 );
                 if (!matchesText) return false;
@@ -43,6 +44,7 @@ export const Settings = () => {
                     if (cond.column === 'name') val = u.name;
                     if (cond.column === 'role') val = u.role;
                     if (cond.column === 'scac') val = u.scac;
+                    if (cond.column === 'subLinea') val = u.subLinea;
                     return evaluateCondition(val, cond);
                 });
                 if (!matchesQuery) return false;
@@ -249,6 +251,7 @@ export const Settings = () => {
                                         <th className="px-6 py-3">Name</th>
                                         <th className="px-6 py-3">Role</th>
                                         <th className="px-6 py-3">SCAC</th>
+                                        <th className="px-6 py-3">Sub-Línea</th>
                                         <th className="px-6 py-3 text-right">Actions</th>
                                     </tr>
                                 </thead>
@@ -289,11 +292,13 @@ export const Settings = () => {
                                                         <option value={UserRole.OPERATOR}>Operator</option>
                                                         <option value={UserRole.EXPO}>Expo</option>
                                                         <option value={UserRole.CARRIER}>Carrier</option>
+                                                        <option value={UserRole.TRANSPORTISTA}>Transportista</option>
                                                         <option value={UserRole.VIEWER}>Viewer</option>
                                                         <option value={UserRole.HANDHELD_USER}>Handheld (Sellos)</option>
                                                         <option value={UserRole.HANDHELD_USER2}>Handheld 2 (Liberación)</option>
                                                         <option value={UserRole.EMBARQUES}>Embarques</option>
                                                         <option value={UserRole.CLIENT}>Cliente</option>
+                                                        <option value={UserRole.FINANZAS}>Finanzas</option>
                                                         <option value={UserRole.PENDING}>Pending</option>
                                                     </select>
                                                     {u.role === UserRole.PENDING && (
@@ -320,6 +325,27 @@ export const Settings = () => {
                                                         }
                                                     }}
                                                     className="w-24 border-slate-200 rounded text-xs font-mono py-1 px-2 bg-white outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                                />
+                                            </td>
+                                            <td className="px-6 py-3">
+                                                <input 
+                                                    key={`sublinea-${u.email || u.username}-${u.subLinea || ''}`}
+                                                    type="text" 
+                                                    placeholder="Sub-Línea"
+                                                    defaultValue={u.subLinea || ''}
+                                                    onBlur={async (e) => {
+                                                        const newSubLinea = e.target.value;
+                                                        if ((u.subLinea || '') !== newSubLinea) {
+                                                            // @ts-ignore
+                                                            await authService.updateUserSubLinea(u.email || u.username, newSubLinea);
+                                                            setSystemUsers(prev => prev.map(user => 
+                                                                (user.email || user.username) === (u.email || u.username) 
+                                                                    ? { ...user, subLinea: newSubLinea } 
+                                                                    : user
+                                                            ));
+                                                        }
+                                                    }}
+                                                    className="w-32 border-slate-200 rounded text-xs font-mono py-1 px-2 bg-white outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                                                 />
                                             </td>
                                             <td className="px-6 py-3 text-right">
@@ -616,7 +642,7 @@ export const Settings = () => {
             <CatalogQueryBuilder
                 isOpen={showUserQueryBuilder}
                 onClose={() => setShowUserQueryBuilder(false)}
-                columns={['username', 'name', 'role', 'scac']}
+                columns={['username', 'name', 'role', 'scac', 'subLinea']}
                 conditions={userQueryConditions}
                 setConditions={setUserQueryConditions}
                 onApply={() => setShowUserQueryBuilder(false)}

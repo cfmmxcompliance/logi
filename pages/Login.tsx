@@ -68,7 +68,7 @@ export const Login = () => {
       } else if (err.code === 'auth/email-already-in-use') {
         setError('Email already registered. Please login.');
       } else if (err.code === 'auth/network-request-failed' || err.code === 'unavailable') {
-        setError('Sin conexión. Verifica tu señal e intenta de nuevo.');
+        setError('Sin conexión a los servidores. Verifica tu WiFi, recarga la página (F5) e intenta de nuevo.');
       } else if (err.code === 'auth/role-pending') {
         // Explicit requirement: Pop-up for pending users
         setError('Access Denied. Contact Admin.');

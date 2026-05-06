@@ -16,6 +16,7 @@ import { UserRole } from '../types';
 export const Drivers: React.FC = () => {
   const { user } = useAuth();
   const scacFilter = user?.role === UserRole.CARRIER ? (user?.scac || '').trim().toUpperCase() : null;
+  const subLineaFilter = user?.role === UserRole.TRANSPORTISTA ? (user?.subLinea || '').trim() : null;
   const [drivers, setDrivers] = useState<DriverModel[]>([]);
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
   const [transportLines, setTransportLines] = useState<TransportLineModel[]>([]);
@@ -63,6 +64,13 @@ export const Drivers: React.FC = () => {
       if (scacFilter) {
           result = result.filter(c => c.carrierCodigo?.toUpperCase() === scacFilter);
       }
+      // TRANSPORTISTA role: filter drivers whose transport line matches their Sub-Línea
+      if (subLineaFilter) {
+          result = result.filter(c => {
+              const tl = transportLines.find(t => t.transportLineId === c.transportLineId);
+              return (tl?.nombreSubLinea || '').toLowerCase() === subLineaFilter.toLowerCase();
+          });
+      }
       if (searchTerm) {
           const lowerTerm = searchTerm.toLowerCase();
           result = result.filter(c =>
@@ -83,7 +91,7 @@ export const Drivers: React.FC = () => {
           });
       }
       return result;
-  }, [drivers, searchTerm, activeMassQuery, scacFilter, getTransportLineName]);
+  }, [drivers, searchTerm, activeMassQuery, scacFilter, subLineaFilter, getTransportLineName, transportLines]);
 
   const handleApplyMassQuery = () => {
       const valid = queryConditions.filter(c => c.operator === 'empty' || c.operator === 'not_empty' || c.input.trim());

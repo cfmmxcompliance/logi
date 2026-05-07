@@ -741,6 +741,23 @@ export const XMLInvoiceExtractor: React.FC = () => {
             setDuplicateModal(null);
             setUploading(true);
         }
+
+        // --- DELETE EXISTING RECORDS FOR APPROVED UUIDs ---
+        // addCFDIInvoices deduplicates by invoiceNo-partNo-qty, so if we don't delete
+        // the old records first, the new (corrected) items will be silently rejected.
+        if (approvedToOverwrite.length > 0) {
+            const existingToDelete = items.filter((it: any) => approvedToOverwrite.includes(it.uuid));
+            if (existingToDelete.length > 0) {
+                const idsToDelete = existingToDelete.map((it: any) => it.id);
+                try {
+                    await storageService.deleteCFDIInvoices(idsToDelete);
+                    // Remove from local state so deduplication check doesn't block new items
+                    setItems(prev => prev.filter((it: any) => !approvedToOverwrite.includes(it.uuid)));
+                } catch (e) {
+                    console.error('Error deleting old CFDI records before overwrite:', e);
+                }
+            }
+        }
         // --- VIN / MOTOR CONFLICT CHECK (for non-duplicate XMLs) ---
         // Build lookup maps from existing items
         const existingVINs = new Map<string, string>(); // vin -> invoiceNo

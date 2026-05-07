@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Upload, Trash2, FileText, CheckCircle, AlertCircle, RefreshCw, Plus, Search, Filter, X, ChevronDown, Download, Database } from 'lucide-react';
+import { Upload, Trash2, FileText, CheckCircle, AlertCircle, RefreshCw, RotateCcw, Plus, Search, Filter, X, ChevronDown, Download, Database } from 'lucide-react';
 import { storageService } from '../services/storageService.ts';
 import { CommercialInvoiceItem } from '../types.ts';
 import { xmlciService } from '../services/xmlciService.ts';

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { FileText, Search, Download, RefreshCw, Trash2, Filter, ChevronDown, Database, X, Plus, AlertCircle, Calendar } from 'lucide-react';
+import { FileText, Search, Download, RefreshCw, RotateCcw, Trash2, Filter, ChevronDown, Database, X, Plus, AlertCircle, Calendar } from 'lucide-react';
 import { storageService } from '../services/storageService.ts';
 import { XMLCIRecord } from '../types.ts';
 import { useNotification } from '../context/NotificationContext.tsx';

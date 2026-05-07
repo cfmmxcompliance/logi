@@ -675,19 +675,13 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium whitespace-nowrap">{a.placasTracto || '-'}</td>
                 <td className="p-4 font-medium text-slate-700 whitespace-nowrap">{a.modeloAsignado || '-'}</td>
                 
-                 <td className="p-4 bg-violet-50/20 border-l border-violet-100/50">
-                     {(a as any).createdBy ? (
-                         <div className="flex flex-col gap-0.5">
-                             <span className="text-[10px] font-bold text-violet-700 truncate max-w-[160px]" title={(a as any).createdBy}>{(a as any).createdBy}</span>
-                             {(a as any).createdAt && (
-                                 <span className="text-[9px] text-slate-400 font-mono">
-                                     {new Date((a as any).createdAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                     {' '}{new Date((a as any).createdAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                 </span>
-                             )}
-                         </div>
+                 <td className="p-4 bg-violet-50/20 border-l border-violet-100/50 whitespace-nowrap">
+                     {(a as any).createdAt ? (
+                         <span className="text-xs text-violet-700 font-mono">
+                             {new Date((a as any).createdAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                         </span>
                      ) : (
-                         <span className="text-[10px] text-slate-300">—</span>
+                         <span className="text-xs text-slate-300">—</span>
                      )}
                  </td>
                 

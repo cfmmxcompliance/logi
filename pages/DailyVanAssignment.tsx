@@ -153,7 +153,7 @@ export const DailyVanAssignment: React.FC = () => {
                     <th className="px-4 py-3">Driver</th>
                     <th className="px-4 py-3">Placas Tracto</th>
                     <th className="px-4 py-3">Placas Caja</th>
-                    <th className="px-4 py-3 text-violet-400 whitespace-nowrap">Creado Por</th>
+                    <th className="px-4 py-3 text-violet-400 whitespace-nowrap">Creado</th>
                     <th className="px-4 py-3 text-center">Estado</th>
                     <th className="px-4 py-3">Liberado por</th>
                   </tr>

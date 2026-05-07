@@ -246,7 +246,6 @@ export const XMLInvoiceExtractor: React.FC = () => {
         };
         loadInitialData();
     }, []);
-
     // Advanced Filtering Logic
     const filteredItems = useMemo(() => {
         return items.filter(item => {
@@ -254,8 +253,24 @@ export const XMLInvoiceExtractor: React.FC = () => {
             if (endDate && item.date > endDate) return false;
 
             if (searchTerm.trim()) {
-                const searchValues = searchTerm.split(',').map(v => v.trim().toLowerCase()).filter(v => v !== '');
-                if (searchValues.length > 0) {
+                // Split by comma OR newline to allow pasting a list of UUIDs
+                const rawTerms = searchTerm
+                    .split(/[\n,]/)
+                    .map(v => v.trim())
+                    .filter(v => v !== '');
+
+                if (rawTerms.length > 0) {
+                    // Normalize ambiguous hex chars: O→0, I→1, G→6
+                    const norm = (s: string) =>
+                        s.toUpperCase().replace(/O/g, '0').replace(/I/g, '1').replace(/G/g, '6');
+                    // Strip dashes for format-agnostic UUID comparison
+                    const stripDashes = (s: string) => s.replace(/-/g, '');
+
+                    const storedUUID     = (item.uuid || '').toLowerCase();
+                    const storedUUIDNorm = norm(item.uuid || '').toLowerCase();
+                    const storedUUIDNoDash     = stripDashes(storedUUID);
+                    const storedUUIDNormNoDash = stripDashes(storedUUIDNorm);
+
                     const searchableContent = [
                         item.invoiceNo,
                         item.partNo,
@@ -265,35 +280,71 @@ export const XMLInvoiceExtractor: React.FC = () => {
                         item.rawDescripcion,
                         item.spanishDescription,
                         item.unidad,
-                        item.uuid,
+                        storedUUID,
                         item.currency,
                         (item as any).archivo
                     ].map(v => (v || '').toString().toLowerCase());
 
-                    const matchesSearch = searchValues.every(term =>
-                        searchableContent.some(content => content.includes(term))
-                    );
+                    // OR logic: show the record if it matches ANY of the searched terms
+                    const matchesSearch = rawTerms.some(term => {
+                        const termLow          = term.toLowerCase();
+                        const termNorm         = norm(term).toLowerCase();
+                        const termNoDash       = stripDashes(termLow);
+                        const termNormNoDash   = stripDashes(termNorm);
+                        // 1. Standard substring match against all fields
+                        if (searchableContent.some(c => c.includes(termLow))) return true;
+                        // 2. Normalized match (O/0, I/1, G/6)
+                        if (storedUUIDNorm.includes(termNorm)) return true;
+                        // 3. Dash-stripped match (UUID stored without dashes)
+                        if (storedUUIDNoDash.includes(termNoDash)) return true;
+                        // 4. Normalized + dash-stripped match
+                        if (storedUUIDNormNoDash.includes(termNormNoDash)) return true;
+                        return false;
+                    });
                     if (!matchesSearch) return false;
                 }
             }
 
             if (appliedConditions.length > 0) {
+                // Same normalization helpers for Query Builder
+                const norm = (s: string) =>
+                    s.toUpperCase().replace(/O/g, '0').replace(/I/g, '1').replace(/G/g, '6');
+                const stripDashes = (s: string) => s.replace(/-/g, '');
+
                 const matchesConditions = appliedConditions.every(condition => {
-                    const columnValue = String((item as any)[condition.column] || '').toLowerCase();
-                    const filterValues = condition.values.split(/[\n,]/).map(v => v.trim().toLowerCase()).filter(v => v !== '');
+                    const rawColVal  = String((item as any)[condition.column] || '');
+                    const colLow     = rawColVal.toLowerCase();
+                    const colNorm    = norm(rawColVal).toLowerCase();
+                    const colNoDash  = stripDashes(colLow);
+                    const colNormND  = stripDashes(colNorm);
+                    const isUUID     = condition.column === 'uuid';
+
+                    const filterValues = condition.values
+                        .split(/[\n,]/)
+                        .map(v => v.trim().toLowerCase())
+                        .filter(v => v !== '');
 
                     if (filterValues.length === 0) return true;
 
-                    if (condition.operator === 'in list') {
-                        return filterValues.some(val => columnValue.includes(val));
-                    }
-                    if (condition.operator === 'equals') {
-                        return filterValues.some(val => columnValue === val);
-                    }
-                    if (condition.operator === 'contains') {
-                        return filterValues.some(val => columnValue.includes(val));
-                    }
-                    return true;
+                    return filterValues.some(val => {
+                        const valNorm  = isUUID ? norm(val).toLowerCase() : val;
+                        const valND    = stripDashes(val);
+                        const valNormND = stripDashes(valNorm);
+
+                        if (condition.operator === 'in list' || condition.operator === 'contains') {
+                            if (colLow.includes(val)) return true;
+                            if (isUUID && colNorm.includes(valNorm)) return true;
+                            if (isUUID && colNoDash.includes(valND)) return true;
+                            if (isUUID && colNormND.includes(valNormND)) return true;
+                        }
+                        if (condition.operator === 'equals') {
+                            if (colLow === val) return true;
+                            if (isUUID && colNorm === valNorm) return true;
+                            if (isUUID && colNoDash === valND) return true;
+                            if (isUUID && colNormND === valNormND) return true;
+                        }
+                        return false;
+                    });
                 });
                 if (!matchesConditions) return false;
             }
@@ -457,34 +508,45 @@ export const XMLInvoiceExtractor: React.FC = () => {
             const rootTag = wordDoc.documentElement?.tagName;
             if (rootTag !== 'w:wordDocument') return null;
 
-            // Concatenate all <w:t> text nodes — the CFDI lives here as plain text
+            // Concatenate <w:t> text nodes — but EXCLUDE nodes inside <w:del>
+            // (Word revision tracking stores deleted text in <w:del><w:t>...</w:t></w:del>;
+            //  including it corrupts UUIDs and other CFDI attributes)
+            const isInsideDel = (node: Element): boolean => {
+                let parent = node.parentElement;
+                while (parent) {
+                    if (parent.tagName === 'w:del') return true;
+                    parent = parent.parentElement;
+                }
+                return false;
+            };
             const embedded = Array.from(wordDoc.getElementsByTagName('w:t'))
+                .filter((n: Element) => !isInsideDel(n))
                 .map((n: Element) => n.textContent || '').join('');
             if (!embedded.includes('cfdi:Comprobante')) return null;
 
             // Slice only the CFDI XML portion — the embedded string may start with
             // Word metadata text before the actual <cfdi:Comprobante> block.
             const cfdiStart = embedded.indexOf('<cfdi:Comprobante');
-            const cfdiEnd   = embedded.lastIndexOf('</cfdi:Comprobante>');
+            const cfdiEnd = embedded.lastIndexOf('</cfdi:Comprobante>');
             if (cfdiStart === -1 || cfdiEnd === -1) return null;
             const cfdiXml = embedded.substring(cfdiStart, cfdiEnd + '</cfdi:Comprobante>'.length);
 
             // Re-parse the extracted CFDI string as a proper XML document
             const cfdiDoc = parser.parseFromString(cfdiXml, 'text/xml');
-            const comp  = cfdiDoc.getElementsByTagName('cfdi:Comprobante')[0] || cfdiDoc.getElementsByTagName('Comprobante')[0];
-            const emis  = cfdiDoc.getElementsByTagName('cfdi:Emisor')[0]      || cfdiDoc.getElementsByTagName('Emisor')[0];
+            const comp = cfdiDoc.getElementsByTagName('cfdi:Comprobante')[0] || cfdiDoc.getElementsByTagName('Comprobante')[0];
+            const emis = cfdiDoc.getElementsByTagName('cfdi:Emisor')[0] || cfdiDoc.getElementsByTagName('Emisor')[0];
             const concs = cfdiDoc.getElementsByTagName('cfdi:Concepto');
             if (!comp || !emis || concs.length === 0) return null;
 
-            const serie     = comp.getAttribute('Serie')  || '';
-            const folio     = comp.getAttribute('Folio')  || '';
-            const invoiceNo = (serie + folio).trim()      || 'S/F';
-            const dateRaw   = comp.getAttribute('Fecha')  || new Date().toISOString();
-            const date      = dateRaw.split('T')[0];
-            const currency  = comp.getAttribute('Moneda') || 'USD';
+            const serie = comp.getAttribute('Serie') || '';
+            const folio = comp.getAttribute('Folio') || '';
+            const invoiceNo = (serie + folio).trim() || 'S/F';
+            const dateRaw = comp.getAttribute('Fecha') || new Date().toISOString();
+            const date = dateRaw.split('T')[0];
+            const currency = comp.getAttribute('Moneda') || 'USD';
 
             const timbre = cfdiDoc.getElementsByTagName('tfd:TimbreFiscalDigital')[0] || cfdiDoc.getElementsByTagName('TimbreFiscalDigital')[0];
-            const uuid   = timbre?.getAttribute('UUID') || '';
+            const uuid = timbre?.getAttribute('UUID') || '';
 
             // Guard: UUID is required for deduplication — reject if missing
             if (!uuid) {
@@ -492,8 +554,8 @@ export const XMLInvoiceExtractor: React.FC = () => {
                 return null;
             }
 
-            const emisorRfc      = emis.getAttribute('Rfc')    || '';
-            const emisorNombre   = emis.getAttribute('Nombre') || '';
+            const emisorRfc = emis.getAttribute('Rfc') || '';
+            const emisorNombre = emis.getAttribute('Nombre') || '';
             const emisorDomicilio = comp.getAttribute('LugarExpedicion') || 'MÉXICO';
 
             let extractedIncoterm = 'FCA';
@@ -502,35 +564,35 @@ export const XMLInvoiceExtractor: React.FC = () => {
 
             const fileItems: CommercialInvoiceItem[] = [];
             for (let i = 0; i < concs.length; i++) {
-                const c          = concs[i];
-                const partNoRaw  = c.getAttribute('NoIdentificacion') || `ITEM-${i + 1}`;
-                const descripcion = c.getAttribute('Descripcion')     || 'Sin descripción';
-                const qty        = parseFloat(c.getAttribute('Cantidad')      || '1');
-                const unitPrice  = parseFloat(c.getAttribute('ValorUnitario') || '0');
+                const c = concs[i];
+                const partNoRaw = c.getAttribute('NoIdentificacion') || `ITEM-${i + 1}`;
+                const descripcion = c.getAttribute('Descripcion') || 'Sin descripción';
+                const qty = parseFloat(c.getAttribute('Cantidad') || '1');
+                const unitPrice = parseFloat(c.getAttribute('ValorUnitario') || '0');
                 const totalAmount = qty * unitPrice;
 
-                const vinMatch        = descripcion.match(/VIN\s+([A-Z0-9]+)/i);
-                const engineMatch     = descripcion.match(/ENGINE\s+([^/]+?)(?:\s*\/|\s*\)|\s*$)/i);
-                const modelMatch      = descripcion.match(/MODELO\s+(.+?)(?:,|\s*$)/i);
-                const netWeightMatch  = descripcion.match(/PESO NETO\s+([^/)]+)/i);
+                const vinMatch = descripcion.match(/VIN\s+([A-Z0-9]+)/i);
+                const engineMatch = descripcion.match(/ENGINE\s+([^/]+?)(?:\s*\/|\s*\)|\s*$)/i);
+                const modelMatch = descripcion.match(/MODELO\s+(.+?)(?:,|\s*$)/i);
+                const netWeightMatch = descripcion.match(/PESO NETO\s+([^/)]+)/i);
                 const grossWeightMatch = descripcion.match(/PESO BRUTO\s+([^/)]+)/i);
-                const addedValueMatch  = descripcion.match(/Val\.\s*Agregado\s+(.+)/i);
+                const addedValueMatch = descripcion.match(/Val\.\s*Agregado\s+(.+)/i);
 
-                const unidad          = c.getAttribute('Unidad') || '';
+                const unidad = c.getAttribute('Unidad') || '';
                 const cleanDescription = descripcion.split(/[(]|VIN|MODELO|Val\./i)[0].trim();
 
                 fileItems.push({
-                    id:                (vinMatch ? vinMatch[1].trim() : '') || `${uuid}-${i}` || `${invoiceNo}-${partNoRaw}-${i}`,
-                    invoiceNo, date,   item: String(i + 1),
-                    model:             modelMatch   ? modelMatch[1].trim()      : 'N/A',
-                    partNo:            partNoRaw,
+                    id: (vinMatch ? vinMatch[1].trim() : '') || `${uuid}-${i}` || `${invoiceNo}-${partNoRaw}-${i}`,
+                    invoiceNo, date, item: String(i + 1),
+                    model: modelMatch ? modelMatch[1].trim() : 'N/A',
+                    partNo: partNoRaw,
                     spanishDescription: cleanDescription,
                     qty, unitPrice, totalAmount, currency,
-                    vin:               vinMatch      ? vinMatch[1].trim()       : '',
-                    engine:            engineMatch   ? engineMatch[1].trim()    : '',
-                    pesoNetokg:        parseNum(netWeightMatch  ? netWeightMatch[1].trim()  : ''),
-                    pesoBrutokg:       parseNum(grossWeightMatch ? grossWeightMatch[1].trim() : ''),
-                    valAgregado:       parseNum(addedValueMatch  ? addedValueMatch[1].trim()  : ''),
+                    vin: vinMatch ? vinMatch[1].trim() : '',
+                    engine: engineMatch ? engineMatch[1].trim() : '',
+                    pesoNetokg: parseNum(netWeightMatch ? netWeightMatch[1].trim() : ''),
+                    pesoBrutokg: parseNum(grossWeightMatch ? grossWeightMatch[1].trim() : ''),
+                    valAgregado: parseNum(addedValueMatch ? addedValueMatch[1].trim() : ''),
                     unidad, rawDescripcion: descripcion, uuid,
                     vendorName: emisorNombre, vendorRfc: emisorRfc,
                     vendorAddress: emisorDomicilio, incoterm: extractedIncoterm,
@@ -954,31 +1016,47 @@ export const XMLInvoiceExtractor: React.FC = () => {
                     <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
                         <div className="flex items-center gap-2 px-3 py-1">
                             <span className="text-xs font-bold text-slate-400 uppercase">Desde</span>
-                            <input
-                                type="date"
-                                className="bg-transparent border-none text-sm text-slate-600 focus:ring-0 outline-none p-0 cursor-pointer"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                            />
+                            {startDate ? (
+                                <div className="flex items-center gap-1">
+                                    <span className="text-sm text-slate-600">{startDate}</span>
+                                    <button onClick={() => setStartDate('')} className="text-slate-400 hover:text-red-500 transition-colors ml-1">
+                                        <X size={12} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <label className="text-sm text-slate-400 italic cursor-pointer hover:text-slate-600 transition-colors">
+                                    Sin límite
+                                    <input
+                                        type="date"
+                                        className="sr-only"
+                                        value=""
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                    />
+                                </label>
+                            )}
                         </div>
                         <div className="w-px h-4 bg-slate-300"></div>
                         <div className="flex items-center gap-2 px-3 py-1">
                             <span className="text-xs font-bold text-slate-400 uppercase">Hasta</span>
-                            <input
-                                type="date"
-                                className="bg-transparent border-none text-sm text-slate-600 focus:ring-0 outline-none p-0 cursor-pointer"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                            />
+                            {endDate ? (
+                                <div className="flex items-center gap-1">
+                                    <span className="text-sm text-slate-600">{endDate}</span>
+                                    <button onClick={() => setEndDate('')} className="text-slate-400 hover:text-red-500 transition-colors ml-1">
+                                        <X size={12} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <label className="text-sm text-slate-400 italic cursor-pointer hover:text-slate-600 transition-colors">
+                                    Sin límite
+                                    <input
+                                        type="date"
+                                        className="sr-only"
+                                        value=""
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                    />
+                                </label>
+                            )}
                         </div>
-                        {(startDate || endDate) && (
-                            <button
-                                onClick={() => { setStartDate(''); setEndDate(''); }}
-                                className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
-                            >
-                                <X size={14} />
-                            </button>
-                        )}
                     </div>
                 </div>
 

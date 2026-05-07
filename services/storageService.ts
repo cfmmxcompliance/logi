@@ -1089,26 +1089,21 @@ export const storageService = {
   // --- CFDI Invoices CRUD (Isolated XML Extraction) ---
 
   addCFDIInvoices: async (newItems: CommercialInvoiceItem[]) => {
-    // 1. Deduplication against the new isolated collection
-    const normalize = (val: any) => String(val || '').trim().toUpperCase();
-
-    const existingMap = new Map(
-      (dbState.cfdiInvoices || []).map(
-        (i: any) => [`${normalize(i.invoiceNo)}-${normalize(i.partNo)}-${Number(i.qty || 0).toFixed(4)}`, i]
-      )
+    // 1. Deduplication by item.id (deterministic: VIN or uuid-index)
+    //    Using id instead of invoiceNo-partNo-qty allows re-uploads with corrected
+    //    UUIDs (which generate new IDs) to actually save without being silently rejected.
+    const existingIds = new Set(
+      (dbState.cfdiInvoices || []).map((i: any) => i.id)
     );
 
-    const uniqueNewItems = newItems.filter(item => {
-      const key = `${normalize(item.invoiceNo)}-${normalize(item.partNo)}-${Number(item.qty || 0).toFixed(4)}`;
-      return !existingMap.has(key);
-    });
+    const uniqueNewItems = newItems.filter(item => !existingIds.has(item.id));
 
-    // 2. Items that already exist but are missing the archivo field — patch them
+    // 2. Items that already exist (same id) but are missing the archivo field — patch them
+    const existingById = new Map((dbState.cfdiInvoices || []).map((i: any) => [i.id, i]));
     const itemsToUpdateArchivo = newItems.filter(item => {
-      const key = `${normalize(item.invoiceNo)}-${normalize(item.partNo)}-${Number(item.qty || 0).toFixed(4)}`;
-      const existing = existingMap.get(key);
+      const existing = existingById.get(item.id);
       const newArchivo = (item as any).archivo;
-      return existing && !existing.archivo && newArchivo; // only patch if archivo is now available
+      return existing && !existing.archivo && newArchivo;
     });
 
     if (!db) throw new Error("Sin conexión a Internet.");

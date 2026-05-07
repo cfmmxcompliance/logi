@@ -607,12 +607,12 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.operacion'), 'numeroOperacion')}</th>
               <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.caja'), 'numeroCaja')}</th>
               <th className="p-4 font-medium">{renderColumnHeader(t('col.placascaja'), 'placasCaja')}</th>
-              <th className="p-4 font-medium min-w-[170px] text-violet-700 bg-violet-50/40 whitespace-nowrap">CREADO POR</th>
               <th className="p-4 font-medium min-w-[160px] text-blue-600 uppercase text-xs">{renderColumnHeader(t('col.lineatransporte'), 'transportLineId')}</th>
               <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.driverid'), 'driverId')}</th>
               <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.driver'), 'nombreDriver')}</th>
               <th className="p-4 font-medium">{renderColumnHeader(t('col.placastracto'), 'placasTracto')}</th>
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.modelo'), 'modeloAsignado')}</th>
+              <th className="p-4 font-medium min-w-[170px] text-violet-700 bg-violet-50/40 whitespace-nowrap">CREADO POR</th>
               <th className="p-4 font-medium min-w-[100px]">{renderColumnHeader(t('col.sello'), 'selloLiberacion')}</th>
               <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">{t('col.cargado')}</th>
               <th className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap">{t('col.sellado_time')}</th>
@@ -665,6 +665,16 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 font-mono text-pink-700 font-bold tracking-wide whitespace-nowrap">{a.numeroOperacion || '-'}</td>
                 <td className="p-4 font-semibold text-emerald-700 font-mono tracking-wide">{a.numeroCaja}</td>
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium">{a.placasCaja || '-'}</td>
+                
+                <td className="p-4 text-xs font-bold text-blue-800 whitespace-nowrap">
+                    {transportLines.find(tl => tl.transportLineId === a.transportLineId)?.nombreSubLinea || a.transportLineId || '-'}
+                </td>
+
+                <td className="p-4 font-mono text-orange-600 font-medium whitespace-nowrap">{a.driverId}</td>
+                <td className="p-4 font-medium text-slate-800 whitespace-nowrap">{a.nombreDriver}</td>
+                <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium whitespace-nowrap">{a.placasTracto || '-'}</td>
+                <td className="p-4 font-medium text-slate-700 whitespace-nowrap">{a.modeloAsignado || '-'}</td>
+                
                  <td className="p-4 bg-violet-50/20 border-l border-violet-100/50">
                      {(a as any).createdBy ? (
                          <div className="flex flex-col gap-0.5">
@@ -680,15 +690,6 @@ export const AsignacionesDiarias: React.FC = () => {
                          <span className="text-[10px] text-slate-300">—</span>
                      )}
                  </td>
-                
-                <td className="p-4 text-xs font-bold text-blue-800 whitespace-nowrap">
-                    {transportLines.find(tl => tl.transportLineId === a.transportLineId)?.nombreSubLinea || a.transportLineId || '-'}
-                </td>
-
-                <td className="p-4 font-mono text-orange-600 font-medium whitespace-nowrap">{a.driverId}</td>
-                <td className="p-4 font-medium text-slate-800 whitespace-nowrap">{a.nombreDriver}</td>
-                <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium whitespace-nowrap">{a.placasTracto || '-'}</td>
-                <td className="p-4 font-medium text-slate-700 whitespace-nowrap">{a.modeloAsignado || '-'}</td>
                 
                 <td className="p-4 font-mono text-teal-700 font-bold whitespace-nowrap border-l border-teal-100/50 bg-teal-50/10">
                     {liberacion ? liberacion.selloValidado : '-'}

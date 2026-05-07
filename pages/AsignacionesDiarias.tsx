@@ -258,7 +258,12 @@ export const AsignacionesDiarias: React.FC = () => {
     if (isEditing && formData.id) {
       await asignacionCajaService.updateAsignacion(formData.id, formData);
     } else {
-      await asignacionCajaService.addAsignacion(formData as AsignacionCajaModel);
+      const newRecord: AsignacionCajaModel = {
+        ...(formData as AsignacionCajaModel),
+        createdBy: user?.email || 'sistema',
+        createdAt: new Date().toISOString()
+      };
+      await asignacionCajaService.addAsignacion(newRecord);
     }
     setShowModal(false);
     loadData();
@@ -602,6 +607,7 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.operacion'), 'numeroOperacion')}</th>
               <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.caja'), 'numeroCaja')}</th>
               <th className="p-4 font-medium">{renderColumnHeader(t('col.placascaja'), 'placasCaja')}</th>
+              <th className="p-4 font-medium min-w-[170px] text-violet-700 bg-violet-50/40 whitespace-nowrap">CREADO POR</th>
               <th className="p-4 font-medium min-w-[160px] text-blue-600 uppercase text-xs">{renderColumnHeader(t('col.lineatransporte'), 'transportLineId')}</th>
               <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.driverid'), 'driverId')}</th>
               <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.driver'), 'nombreDriver')}</th>
@@ -618,8 +624,12 @@ export const AsignacionesDiarias: React.FC = () => {
             {filteredData.map((a, index) => {
               const liberacion = liberaciones.find(lib => lib.asignacionCajaId === a.id);
               const hasLiberacion = !!liberacion;
-              
-              let rowColorClass = "hover:bg-slate-50";
+
+              // Base alternating stripe for visual consistency
+              const isEven = index % 2 === 0;
+              let rowColorClass = isEven ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/60 hover:bg-slate-100/60';
+
+              // Urgency overlay (no-liberacion + overtime)
               if (!hasLiberacion && a.fecha && a.horaAsignacion) {
                   let timeStr = (a.horaAsignacion || '').toLowerCase().trim();
                   let isPM = timeStr.includes('pm') || timeStr.includes('p.m.');
@@ -628,24 +638,15 @@ export const AsignacionesDiarias: React.FC = () => {
                   let h = parseInt(hours || '0', 10);
                   if (isPM && h < 12) h += 12;
                   if (isAM && h === 12) h = 0;
-                  
                   const asigDate = new Date(`${a.fecha}T${String(h).padStart(2, '0')}:${minutes || '00'}:00`);
-                  
                   if (!isNaN(asigDate.getTime())) {
-                      const now = new Date();
-                      const diffHours = (now.getTime() - asigDate.getTime()) / (1000 * 60 * 60);
-
-                      if (diffHours > 4) {
-                          rowColorClass = "bg-red-50 hover:bg-red-100 transition-colors";
-                      } else if (diffHours > 2) {
-                          rowColorClass = "bg-yellow-50 hover:bg-yellow-100 transition-colors";
-                      }
+                      const diffHours = (new Date().getTime() - asigDate.getTime()) / (1000 * 60 * 60);
+                      if (diffHours > 4)  rowColorClass = 'bg-red-50 hover:bg-red-100 transition-colors';
+                      else if (diffHours > 2) rowColorClass = 'bg-amber-50 hover:bg-amber-100 transition-colors';
                   }
               }
 
-              if (selectedIds.has(a.id!)) {
-                  rowColorClass = "bg-blue-50/50";
-              }
+              if (selectedIds.has(a.id!)) rowColorClass = 'bg-blue-50/70';
 
               return (
               <tr key={a.id} className={rowColorClass}>
@@ -664,6 +665,21 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 font-mono text-pink-700 font-bold tracking-wide whitespace-nowrap">{a.numeroOperacion || '-'}</td>
                 <td className="p-4 font-semibold text-emerald-700 font-mono tracking-wide">{a.numeroCaja}</td>
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium">{a.placasCaja || '-'}</td>
+                 <td className="p-4 bg-violet-50/20 border-l border-violet-100/50">
+                     {(a as any).createdBy ? (
+                         <div className="flex flex-col gap-0.5">
+                             <span className="text-[10px] font-bold text-violet-700 truncate max-w-[160px]" title={(a as any).createdBy}>{(a as any).createdBy}</span>
+                             {(a as any).createdAt && (
+                                 <span className="text-[9px] text-slate-400 font-mono">
+                                     {new Date((a as any).createdAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                     {' '}{new Date((a as any).createdAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                 </span>
+                             )}
+                         </div>
+                     ) : (
+                         <span className="text-[10px] text-slate-300">—</span>
+                     )}
+                 </td>
                 
                 <td className="p-4 text-xs font-bold text-blue-800 whitespace-nowrap">
                     {transportLines.find(tl => tl.transportLineId === a.transportLineId)?.nombreSubLinea || a.transportLineId || '-'}

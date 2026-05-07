@@ -1016,45 +1016,31 @@ export const XMLInvoiceExtractor: React.FC = () => {
                     <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
                         <div className="flex items-center gap-2 px-3 py-1">
                             <span className="text-xs font-bold text-slate-400 uppercase">Desde</span>
-                            {startDate ? (
-                                <div className="flex items-center gap-1">
-                                    <span className="text-sm text-slate-600">{startDate}</span>
-                                    <button onClick={() => setStartDate('')} className="text-slate-400 hover:text-red-500 transition-colors ml-1">
-                                        <X size={12} />
-                                    </button>
-                                </div>
-                            ) : (
-                                <label className="text-sm text-slate-400 italic cursor-pointer hover:text-slate-600 transition-colors">
-                                    Sin límite
-                                    <input
-                                        type="date"
-                                        className="sr-only"
-                                        value=""
-                                        onChange={(e) => setStartDate(e.target.value)}
-                                    />
-                                </label>
+                            <input
+                                type="date"
+                                className="bg-transparent border-none text-sm text-slate-600 focus:ring-0 outline-none p-0 cursor-pointer"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                            />
+                            {startDate && (
+                                <button onClick={() => setStartDate('')} className="text-slate-400 hover:text-red-500 transition-colors">
+                                    <X size={12} />
+                                </button>
                             )}
                         </div>
                         <div className="w-px h-4 bg-slate-300"></div>
                         <div className="flex items-center gap-2 px-3 py-1">
                             <span className="text-xs font-bold text-slate-400 uppercase">Hasta</span>
-                            {endDate ? (
-                                <div className="flex items-center gap-1">
-                                    <span className="text-sm text-slate-600">{endDate}</span>
-                                    <button onClick={() => setEndDate('')} className="text-slate-400 hover:text-red-500 transition-colors ml-1">
-                                        <X size={12} />
-                                    </button>
-                                </div>
-                            ) : (
-                                <label className="text-sm text-slate-400 italic cursor-pointer hover:text-slate-600 transition-colors">
-                                    Sin límite
-                                    <input
-                                        type="date"
-                                        className="sr-only"
-                                        value=""
-                                        onChange={(e) => setEndDate(e.target.value)}
-                                    />
-                                </label>
+                            <input
+                                type="date"
+                                className="bg-transparent border-none text-sm text-slate-600 focus:ring-0 outline-none p-0 cursor-pointer"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                            />
+                            {endDate && (
+                                <button onClick={() => setEndDate('')} className="text-slate-400 hover:text-red-500 transition-colors">
+                                    <X size={12} />
+                                </button>
                             )}
                         </div>
                     </div>

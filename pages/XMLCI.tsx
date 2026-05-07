@@ -186,8 +186,13 @@ export const XMLCI: React.FC = () => {
             }
 
             if (searchTerm.trim()) {
-                const searchValues = searchTerm.split(',').map(v => v.trim().toLowerCase()).filter(v => v !== '');
-                if (searchValues.length > 0) {
+                // Split by comma OR newline
+                const rawTerms = searchTerm.split(/[\n,]/).map(v => v.trim()).filter(v => v !== '');
+                if (rawTerms.length > 0) {
+                    const norm = (s: string) =>
+                        s.toUpperCase().replace(/O/g, '0').replace(/I/g, '1').replace(/G/g, '6');
+                    const storedUUIDNorm = norm(r.uuid || '').toLowerCase();
+
                     const searchableContent = [
                         r.idFiscal,
                         r.nombre,
@@ -196,13 +201,18 @@ export const XMLCI: React.FC = () => {
                         r.fecha,
                         r.incoterm,
                         r.moneda,
-                        r.uuid,
+                        (r.uuid || '').toLowerCase(),
                         (r as any).archivo
                     ].map(v => (v || '').toString().toLowerCase());
 
-                    const matchesSearch = searchValues.every(term =>
-                        searchableContent.some(content => content.includes(term))
-                    );
+                    // OR logic: match any term against any field
+                    const matchesSearch = rawTerms.some(term => {
+                        const tLow = term.toLowerCase();
+                        const tNorm = norm(term).toLowerCase();
+                        if (searchableContent.some(c => c.includes(tLow))) return true;
+                        if (storedUUIDNorm.includes(tNorm)) return true;
+                        return false;
+                    });
                     if (!matchesSearch) return false;
                 }
             }
@@ -222,10 +232,20 @@ export const XMLCI: React.FC = () => {
                     if (inputLines.length === 0) return true;
 
                     const normalizeStrict = (s: any) => String(s || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+                    const normUUID = (s: string) => s.toUpperCase().replace(/O/g, '0').replace(/I/g, '1').replace(/G/g, '6').toLowerCase();
 
                     if (cond.operator === 'in') {
+                        const colNorm = normalizeStrict(rawVal);
+                        const colUUIDNorm = normUUID(String(rawVal || ''));
+                        // For uuid column: use substring + char normalization; for others: exact match
+                        if (cond.column === 'uuid') {
+                            return inputLines.some(l =>
+                                colNorm.includes(normalizeStrict(l)) ||
+                                colUUIDNorm.includes(normUUID(l))
+                            );
+                        }
                         const set = new Set(inputLines.map(l => normalizeStrict(l)));
-                        return set.has(normalizeStrict(rawVal));
+                        return set.has(colNorm);
                     }
 
                     const cast = (val: any) => {

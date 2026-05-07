@@ -677,9 +677,14 @@ export const AsignacionesDiarias: React.FC = () => {
                 
                  <td className="p-4 bg-violet-50/20 border-l border-violet-100/50 whitespace-nowrap">
                      {(a as any).createdAt ? (
-                         <span className="text-xs text-violet-700 font-mono">
-                             {new Date((a as any).createdAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                         </span>
+                         <div className="flex flex-col gap-0">
+                             <span className="text-xs text-violet-700 font-mono">
+                                 {new Date((a as any).createdAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                             </span>
+                             <span className="text-[10px] text-slate-400 font-mono">
+                                 {new Date((a as any).createdAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                             </span>
+                         </div>
                      ) : (
                          <span className="text-xs text-slate-300">—</span>
                      )}

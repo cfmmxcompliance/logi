@@ -175,11 +175,16 @@ export const DailyVanAssignment: React.FC = () => {
                         <td className="px-4 py-3 font-medium">{asig.nombreDriver}</td>
                         <td className="px-4 py-3 font-mono text-slate-400">{asig.placasTracto}</td>
                         <td className="px-4 py-3 font-mono text-slate-400">{asig.placasCaja}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           {(asig as any).createdAt ? (
-                            <span className="text-xs text-violet-400 font-mono">
-                              {new Date((asig as any).createdAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                            </span>
+                            <div className="flex flex-col gap-0">
+                              <span className="text-xs text-violet-400 font-mono">
+                                {new Date((asig as any).createdAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-mono">
+                                {new Date((asig as any).createdAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                              </span>
+                            </div>
                           ) : (
                             <span className="text-slate-600 text-xs">—</span>
                           )}

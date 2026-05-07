@@ -153,6 +153,7 @@ export const DailyVanAssignment: React.FC = () => {
                     <th className="px-4 py-3">Driver</th>
                     <th className="px-4 py-3">Placas Tracto</th>
                     <th className="px-4 py-3">Placas Caja</th>
+                    <th className="px-4 py-3 text-violet-400 whitespace-nowrap">Creado Por</th>
                     <th className="px-4 py-3 text-center">Estado</th>
                     <th className="px-4 py-3">Liberado por</th>
                   </tr>
@@ -160,8 +161,10 @@ export const DailyVanAssignment: React.FC = () => {
                 <tbody className="divide-y divide-slate-700/50">
                   {filteredAssignments.map((asig, idx) => {
                     const lib = getLibForCaja(asig.id!);
+                    const isEven = idx % 2 === 0;
+                    const rowBg = isEven ? 'bg-slate-800/30' : 'bg-slate-900/40';
                     return (
-                      <tr key={asig.id} className="hover:bg-slate-800/70 transition-colors">
+                      <tr key={asig.id} className={`${rowBg} hover:bg-slate-700/50 transition-colors`}>
                         <td className="px-4 py-3 text-slate-500 text-xs">{idx + 1}</td>
                         <td className="px-4 py-3 font-mono font-bold text-blue-400">{asig.horaAsignacion || '—'}</td>
                         <td className="px-4 py-3 font-mono text-amber-300 font-semibold">{asig.arribo || '—'}</td>
@@ -172,6 +175,21 @@ export const DailyVanAssignment: React.FC = () => {
                         <td className="px-4 py-3 font-medium">{asig.nombreDriver}</td>
                         <td className="px-4 py-3 font-mono text-slate-400">{asig.placasTracto}</td>
                         <td className="px-4 py-3 font-mono text-slate-400">{asig.placasCaja}</td>
+                        <td className="px-4 py-3">
+                          {(asig as any).createdBy ? (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[10px] font-bold text-violet-400 truncate max-w-[150px]" title={(asig as any).createdBy}>{(asig as any).createdBy}</span>
+                              {(asig as any).createdAt && (
+                                <span className="text-[9px] text-slate-500 font-mono">
+                                  {new Date((asig as any).createdAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                  {' '}{new Date((asig as any).createdAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-600 text-xs">—</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-center">
                           {lib ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-900/40 text-emerald-400 border border-emerald-500/30">

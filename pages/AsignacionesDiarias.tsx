@@ -62,14 +62,22 @@ export const AsignacionesDiarias: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const ASIG_DOCS_FOLDER_ID = '1ETyhI2Zddsw_btLBMIQGcYfhkrsmIEQj';
-  const [uploadingFor, setUploadingFor] = useState<{ id: string; field: 'layoutUrl' | 'ccpUrl' } | null>(null);
+  const [uploadingFor, setUploadingFor] = useState<{ id: string; field: 'layoutUrl' | 'ccpUrl' | 'anexo29Url' } | null>(null);
 
-  const handleUploadDoc = async (recordId: string, field: 'layoutUrl' | 'ccpUrl', file: File, numeroCaja: string) => {
+  // Converts a Drive webViewLink to a direct download URL
+  const toDriveDownload = (viewUrl: string) => {
+    const match = viewUrl.match(/\/d\/([^/]+)\//);  
+    return match ? `https://drive.google.com/uc?export=download&id=${match[1]}` : viewUrl;
+  };
+
+  const handleUploadDoc = async (recordId: string, field: 'layoutUrl' | 'ccpUrl' | 'anexo29Url', file: File, numeroCaja: string) => {
     try {
       setUploadingFor({ id: recordId, field });
-      const label = field === 'layoutUrl' ? 'LAYOUT' : 'CCP';
+      const labelMap: Record<string, string> = { layoutUrl: 'LAYOUT', ccpUrl: 'CCP', anexo29Url: 'ANEXO29' };
+      const label = labelMap[field] || field.toUpperCase();
+      const ext = file.name.split('.').pop() || 'file';
       const ts = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `${label}_${numeroCaja}_${ts}.pdf`;
+      const filename = `${label}_${numeroCaja}_${ts}.${ext}`;
       const result = await uploadFileToDrive(file, filename, ASIG_DOCS_FOLDER_ID);
       const url = result?.webViewLink || '';
       const uploadedBy = user?.email || 'sistema';
@@ -84,7 +92,7 @@ export const AsignacionesDiarias: React.FC = () => {
         setAsignaciones(prev => prev.map(a => a.id === recordId
           ? { ...a, layoutUrl: url, layoutUploadedBy: uploadedBy, layoutUploadedAt: uploadedAt }
           : a));
-      } else {
+      } else if (field === 'ccpUrl') {
         await asignacionCajaService.updateAsignacion(recordId, {
           ccpUrl: url,
           ccpUploadedBy: uploadedBy,
@@ -92,6 +100,15 @@ export const AsignacionesDiarias: React.FC = () => {
         });
         setAsignaciones(prev => prev.map(a => a.id === recordId
           ? { ...a, ccpUrl: url, ccpUploadedBy: uploadedBy, ccpUploadedAt: uploadedAt }
+          : a));
+      } else {
+        await asignacionCajaService.updateAsignacion(recordId, {
+          anexo29Url: url,
+          anexo29UploadedBy: uploadedBy,
+          anexo29UploadedAt: uploadedAt,
+        });
+        setAsignaciones(prev => prev.map(a => a.id === recordId
+          ? { ...a, anexo29Url: url, anexo29UploadedBy: uploadedBy, anexo29UploadedAt: uploadedAt }
           : a));
       }
     } catch (e: any) {
@@ -655,6 +672,7 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 font-medium min-w-[170px] text-violet-700 bg-violet-50/40 whitespace-nowrap">CREADO</th>
               <th className="p-4 font-medium text-center text-indigo-700 bg-indigo-50/30 whitespace-nowrap">LAYOUT</th>
               <th className="p-4 font-medium text-center text-sky-700 bg-sky-50/30 whitespace-nowrap">CCP</th>
+              <th className="p-4 font-medium text-center text-emerald-700 bg-emerald-50/30 whitespace-nowrap">Anexo29</th>
               <th className="p-4 font-medium min-w-[100px]">{renderColumnHeader(t('col.sello'), 'selloLiberacion')}</th>
               <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">{t('col.cargado')}</th>
               <th className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap">{t('col.sellado_time')}</th>
@@ -732,21 +750,21 @@ export const AsignacionesDiarias: React.FC = () => {
                      )}
                  </td>
 
-                 {/* ── LAYOUT PDF ── */}
+                 {/* ── LAYOUT Excel ── (descarga forzada) */}
                  <td className="p-4 text-center bg-indigo-50/20 border-l border-indigo-100/50">
                    {uploadingFor?.id === a.id && uploadingFor.field === 'layoutUrl' ? (
                      <Loader2 size={18} className="animate-spin text-indigo-400 mx-auto" />
                    ) : a.layoutUrl ? (
-                     <a href={a.layoutUrl} target="_blank" rel="noopener noreferrer"
+                     <a href={toDriveDownload(a.layoutUrl)}
                         className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
-                        title="Ver LAYOUT en Drive" onClick={e => e.stopPropagation()}>
+                        title="Descargar LAYOUT" onClick={e => e.stopPropagation()}>
                        <FileText size={18} />
                      </a>
                    ) : (
                      <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer"
-                            title="Subir LAYOUT PDF" onClick={e => e.stopPropagation()}>
+                            title="Subir LAYOUT (Excel)" onClick={e => e.stopPropagation()}>
                        <FileText size={18} />
-                       <input type="file" accept="application/pdf" className="hidden"
+                       <input type="file" accept=".xlsx,.xls,.csv" className="hidden"
                               onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'layoutUrl', f, a.numeroCaja); e.target.value = ''; }} />
                      </label>
                    )}
@@ -768,6 +786,26 @@ export const AsignacionesDiarias: React.FC = () => {
                        <FileText size={18} />
                        <input type="file" accept="application/pdf" className="hidden"
                               onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'ccpUrl', f, a.numeroCaja); e.target.value = ''; }} />
+                     </label>
+                   )}
+                 </td>
+
+                 {/* ── Anexo29 PDF ── */}
+                 <td className="p-4 text-center bg-emerald-50/20 border-l border-emerald-100/50">
+                   {uploadingFor?.id === a.id && uploadingFor.field === 'anexo29Url' ? (
+                     <Loader2 size={18} className="animate-spin text-emerald-400 mx-auto" />
+                   ) : a.anexo29Url ? (
+                     <a href={a.anexo29Url} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
+                        title="Ver Anexo29 en Drive" onClick={e => e.stopPropagation()}>
+                       <FileText size={18} />
+                     </a>
+                   ) : (
+                     <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 transition-colors cursor-pointer"
+                            title="Subir Anexo29 PDF" onClick={e => e.stopPropagation()}>
+                       <FileText size={18} />
+                       <input type="file" accept="application/pdf" className="hidden"
+                              onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'anexo29Url', f, a.numeroCaja); e.target.value = ''; }} />
                      </label>
                    )}
                  </td>

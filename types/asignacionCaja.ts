@@ -25,4 +25,7 @@ export interface AsignacionCajaModel {
   ccpUrl?: string;
   ccpUploadedBy?: string;
   ccpUploadedAt?: string;
+  anexo29Url?: string;
+  anexo29UploadedBy?: string;
+  anexo29UploadedAt?: string;
 }

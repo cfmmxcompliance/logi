@@ -17,5 +17,8 @@ export interface AsignacionCajaModel {
   observaciones?: string;
   notas?: string;
   createdAt?: string;
+  createdBy?: string;
   updatedAt?: string;
+  layoutUrl?: string;
+  ccpUrl?: string;
 }

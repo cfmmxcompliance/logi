@@ -198,23 +198,23 @@ export const DailyVanAssignment: React.FC = () => {
                         </td>
 
                         {/* LAYOUT — read-only info from AsignacionesDiarias uploads */}
-                        <td className="px-4 py-3 text-center">
-                          {(asig as any).layoutUrl ? (
-                            <div className="flex flex-col items-center gap-0.5">
-                              <a href={(asig as any).layoutUrl} target="_blank" rel="noopener noreferrer"
-                                 className="text-blue-400 hover:text-blue-300 transition-colors" title="Ver LAYOUT en Drive">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                              </a>
+                        <td className="px-4 py-3">
+                          {(asig as any).layoutUploadedBy || (asig as any).layoutUploadedAt ? (
+                            <div className="flex flex-col gap-0">
                               {(asig as any).layoutUploadedBy && (
-                                <span className="text-[9px] text-indigo-400 font-medium truncate max-w-[120px]" title={(asig as any).layoutUploadedBy}>
+                                <span className="text-[10px] font-bold text-indigo-400 truncate max-w-[150px]" title={(asig as any).layoutUploadedBy}>
                                   {(asig as any).layoutUploadedBy}
                                 </span>
                               )}
                               {(asig as any).layoutUploadedAt && (
-                                <span className="text-[9px] text-slate-500 font-mono">
-                                  {new Date((asig as any).layoutUploadedAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                  {' '}{new Date((asig as any).layoutUploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit' })}
-                                </span>
+                                <>
+                                  <span className="text-[10px] text-slate-300 font-mono">
+                                    {new Date((asig as any).layoutUploadedAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                  </span>
+                                  <span className="text-[9px] text-slate-500 font-mono">
+                                    {new Date((asig as any).layoutUploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                  </span>
+                                </>
                               )}
                             </div>
                           ) : (
@@ -223,23 +223,23 @@ export const DailyVanAssignment: React.FC = () => {
                         </td>
 
                         {/* CCP — read-only info from AsignacionesDiarias uploads */}
-                        <td className="px-4 py-3 text-center">
-                          {(asig as any).ccpUrl ? (
-                            <div className="flex flex-col items-center gap-0.5">
-                              <a href={(asig as any).ccpUrl} target="_blank" rel="noopener noreferrer"
-                                 className="text-blue-400 hover:text-blue-300 transition-colors" title="Ver CCP en Drive">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                              </a>
+                        <td className="px-4 py-3">
+                          {(asig as any).ccpUploadedBy || (asig as any).ccpUploadedAt ? (
+                            <div className="flex flex-col gap-0">
                               {(asig as any).ccpUploadedBy && (
-                                <span className="text-[9px] text-sky-400 font-medium truncate max-w-[120px]" title={(asig as any).ccpUploadedBy}>
+                                <span className="text-[10px] font-bold text-sky-400 truncate max-w-[150px]" title={(asig as any).ccpUploadedBy}>
                                   {(asig as any).ccpUploadedBy}
                                 </span>
                               )}
                               {(asig as any).ccpUploadedAt && (
-                                <span className="text-[9px] text-slate-500 font-mono">
-                                  {new Date((asig as any).ccpUploadedAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                  {' '}{new Date((asig as any).ccpUploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit' })}
-                                </span>
+                                <>
+                                  <span className="text-[10px] text-slate-300 font-mono">
+                                    {new Date((asig as any).ccpUploadedAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                  </span>
+                                  <span className="text-[9px] text-slate-500 font-mono">
+                                    {new Date((asig as any).ccpUploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                  </span>
+                                </>
                               )}
                             </div>
                           ) : (

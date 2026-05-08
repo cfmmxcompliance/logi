@@ -71,19 +71,29 @@ export const AsignacionesDiarias: React.FC = () => {
       const ts = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `${label}_${numeroCaja}_${ts}.pdf`;
       const result = await uploadFileToDrive(file, filename, ASIG_DOCS_FOLDER_ID);
-      const url = result?.webViewLink || result?.url || '';
-      const byField = field === 'layoutUrl' ? 'layoutUploadedBy' : 'ccpUploadedBy';
-      const atField = field === 'layoutUrl' ? 'layoutUploadedAt' : 'ccpUploadedAt';
+      const url = result?.webViewLink || '';
       const uploadedBy = user?.email || 'sistema';
       const uploadedAt = new Date().toISOString();
-      await asignacionCajaService.updateAsignacion(recordId, {
-        [field]: url,
-        [byField]: uploadedBy,
-        [atField]: uploadedAt,
-      } as any);
-      setAsignaciones(prev => prev.map(a => a.id === recordId
-        ? { ...a, [field]: url, [byField]: uploadedBy, [atField]: uploadedAt }
-        : a));
+
+      if (field === 'layoutUrl') {
+        await asignacionCajaService.updateAsignacion(recordId, {
+          layoutUrl: url,
+          layoutUploadedBy: uploadedBy,
+          layoutUploadedAt: uploadedAt,
+        });
+        setAsignaciones(prev => prev.map(a => a.id === recordId
+          ? { ...a, layoutUrl: url, layoutUploadedBy: uploadedBy, layoutUploadedAt: uploadedAt }
+          : a));
+      } else {
+        await asignacionCajaService.updateAsignacion(recordId, {
+          ccpUrl: url,
+          ccpUploadedBy: uploadedBy,
+          ccpUploadedAt: uploadedAt,
+        });
+        setAsignaciones(prev => prev.map(a => a.id === recordId
+          ? { ...a, ccpUrl: url, ccpUploadedBy: uploadedBy, ccpUploadedAt: uploadedAt }
+          : a));
+      }
     } catch (e: any) {
       alert(`Error subiendo archivo: ${e.message}`);
     } finally {

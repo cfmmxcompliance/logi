@@ -20,5 +20,9 @@ export interface AsignacionCajaModel {
   createdBy?: string;
   updatedAt?: string;
   layoutUrl?: string;
+  layoutUploadedBy?: string;
+  layoutUploadedAt?: string;
   ccpUrl?: string;
+  ccpUploadedBy?: string;
+  ccpUploadedAt?: string;
 }

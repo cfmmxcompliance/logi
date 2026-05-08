@@ -72,8 +72,18 @@ export const AsignacionesDiarias: React.FC = () => {
       const filename = `${label}_${numeroCaja}_${ts}.pdf`;
       const result = await uploadFileToDrive(file, filename, ASIG_DOCS_FOLDER_ID);
       const url = result?.webViewLink || result?.url || '';
-      await asignacionCajaService.updateAsignacion(recordId, { [field]: url } as any);
-      setAsignaciones(prev => prev.map(a => a.id === recordId ? { ...a, [field]: url } : a));
+      const byField = field === 'layoutUrl' ? 'layoutUploadedBy' : 'ccpUploadedBy';
+      const atField = field === 'layoutUrl' ? 'layoutUploadedAt' : 'ccpUploadedAt';
+      const uploadedBy = user?.email || 'sistema';
+      const uploadedAt = new Date().toISOString();
+      await asignacionCajaService.updateAsignacion(recordId, {
+        [field]: url,
+        [byField]: uploadedBy,
+        [atField]: uploadedAt,
+      } as any);
+      setAsignaciones(prev => prev.map(a => a.id === recordId
+        ? { ...a, [field]: url, [byField]: uploadedBy, [atField]: uploadedAt }
+        : a));
     } catch (e: any) {
       alert(`Error subiendo archivo: ${e.message}`);
     } finally {

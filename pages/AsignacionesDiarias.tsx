@@ -642,16 +642,56 @@ export const AsignacionesDiarias: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-3">
-             <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input 
-                    type="text" 
-                    placeholder="Búsqueda multi-termino..." 
-                    value={searchTerm} 
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-56 shadow-sm"
+             <div className="relative flex flex-wrap items-center gap-1 pl-8 pr-3 py-1.5 border border-slate-300 rounded-lg bg-white shadow-sm w-80 min-h-[38px] focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-400 transition-all">
+                <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 flex-shrink-0" />
+                {searchTerm.split(/[,]+/).map(t => t.trim()).filter(t => t.length > 0).map((chip, idx) => (
+                  <span key={idx} className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                    {chip}
+                    <button
+                      onClick={() => {
+                        const terms = searchTerm.split(/[,]+/).map(t => t.trim()).filter(t => t.length > 0);
+                        terms.splice(idx, 1);
+                        setSearchTerm(terms.join(', '));
+                      }}
+                      className="hover:text-blue-900 leading-none"
+                      title="Quitar"
+                    >×</button>
+                  </span>
+                ))}
+                <input
+                  type="text"
+                  placeholder={searchTerm ? '' : 'Buscar... (coma para múltiples)'}
+                  value={(() => {
+                    // Show only the last partial term being typed
+                    const parts = searchTerm.split(',');
+                    return parts[parts.length - 1].trimStart();
+                  })()}
+                  onChange={e => {
+                    const parts = searchTerm.split(',');
+                    parts[parts.length - 1] = e.target.value;
+                    setSearchTerm(parts.join(','));
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Backspace' && e.currentTarget.value === '') {
+                      // Remove last chip
+                      const parts = searchTerm.split(',').map(t => t.trim()).filter(t => t.length > 0);
+                      parts.pop();
+                      setSearchTerm(parts.join(', '));
+                    }
+                    if (e.key === ',' || e.key === 'Enter') {
+                      e.preventDefault();
+                      const parts = searchTerm.split(',').map(t => t.trim()).filter(t => t.length > 0);
+                      setSearchTerm(parts.join(', ') + (parts.length ? ', ' : ''));
+                    }
+                  }}
+                  className="flex-1 min-w-[100px] text-sm outline-none bg-transparent py-0.5"
                 />
-             </div>
+                {searchTerm.trim() && (
+                  <button onClick={() => setSearchTerm('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500" title="Limpiar">
+                    <XCircle size={14} />
+                  </button>
+                )}
+              </div>
              
              <div className="flex items-center bg-white border border-slate-300 rounded-lg pr-2 overflow-hidden shadow-sm">
                 <button 

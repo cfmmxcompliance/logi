@@ -54,6 +54,7 @@ export const ReservaVentanas53: React.FC = () => {
   const [activeDemanda, setActiveDemanda] = useState<DemandaCarga53 | null>(null);
   const [formCarrierCodigo, setFormCarrierCodigo] = useState('');
   const [formCarrierNombre, setFormCarrierNombre] = useState('');
+  const [formNombreComercial, setFormNombreComercial] = useState(''); // selected TransportLine.TransportLine
   const [formVentanaId, setFormVentanaId] = useState('');
   const [formCajas, setFormCajas] = useState('');
   const [formNumeroCaja, setFormNumeroCaja] = useState('');
@@ -143,8 +144,23 @@ export const ReservaVentanas53: React.FC = () => {
     ]);
     setCajas(c); setTransportLines(tl); setDrivers(d);
     // Reset dependent fields when carrier changes
+    setFormNombreComercial('');
     setFormNumeroCaja(''); setFormPlacas(''); setFormEconomico(''); setFormOperador(''); setFormTelefono('');
   };
+
+  // Cajas filtradas por el Nombre Comercial (TransportLine) seleccionado
+  const cajasFiltradas = useMemo(() => {
+    if (!formNombreComercial) return cajas;
+    return cajas.filter(c => c.TransportLine === formNombreComercial);
+  }, [cajas, formNombreComercial]);
+
+  // Drivers filtrados por el transportLineId del Nombre Comercial seleccionado
+  const driversFiltrados = useMemo(() => {
+    if (!formNombreComercial) return drivers;
+    const tl = transportLines.find(t => t.TransportLine === formNombreComercial);
+    if (!tl) return drivers;
+    return drivers.filter(d => d.transportLineId === tl.transportLineId);
+  }, [drivers, transportLines, formNombreComercial]);
 
   // Ventanas filtradas por fecha de la demanda activa + disponibles
   const ventanasDisponibles = useMemo(() => {
@@ -565,6 +581,29 @@ export const ReservaVentanas53: React.FC = () => {
                   </div>
                 </div>
               )}
+              {/* Nombre Comercial — sub-line filter (only when carrier loaded transport lines) */}
+              {transportLines.length > 0 && (
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    Nombre Comercial
+                  </label>
+                  <select
+                    value={formNombreComercial}
+                    onChange={e => {
+                      setFormNombreComercial(e.target.value);
+                      // Reset dependent fields when sub-line changes
+                      setFormNumeroCaja(''); setFormPlacas(''); setFormOperador(''); setFormTelefono('');
+                    }}
+                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white"
+                  >
+                    <option value="">-- Todas las sub-líneas --</option>
+                    {/* Unique TransportLine names */}
+                    {[...new Set(transportLines.map(t => t.TransportLine))].sort().map(name => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Ventana de Carga *</label>
                 <select value={formVentanaId} onChange={e => setFormVentanaId(e.target.value)}
@@ -597,13 +636,13 @@ export const ReservaVentanas53: React.FC = () => {
                   <select value={formNumeroCaja}
                     onChange={e => {
                       setFormNumeroCaja(e.target.value);
-                      const caja = cajas.find(c => c.NumeroCaja === e.target.value);
+                      const caja = cajasFiltradas.find(c => c.NumeroCaja === e.target.value);
                       if (caja?.placas) setFormPlacas(caja.placas);
                     }}
                     className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white">
                     <option value="">-- Seleccionar caja --</option>
-                    {cajas.length === 0 && <option disabled value="">No hay cajas para este carrier</option>}
-                    {cajas.map(c => (
+                    {cajasFiltradas.length === 0 && <option disabled value="">{formNombreComercial ? `Sin cajas para "${formNombreComercial}"` : 'No hay cajas para este carrier'}</option>}
+                    {cajasFiltradas.map(c => (
                       <option key={c.NumeroCaja} value={c.NumeroCaja}>{c.NumeroCaja} · {c.TipoCaja}</option>
                     ))}
                   </select>
@@ -635,13 +674,13 @@ export const ReservaVentanas53: React.FC = () => {
                   <select value={formOperador}
                     onChange={e => {
                       setFormOperador(e.target.value);
-                      const drv = drivers.find(d => d.nombre === e.target.value);
+                      const drv = driversFiltrados.find(d => d.nombre === e.target.value);
                       if (drv?.telefono) setFormTelefono(drv.telefono);
                     }}
                     className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white">
                     <option value="">-- Seleccionar operador --</option>
-                    {drivers.length === 0 && <option disabled value="">No hay operadores para este carrier</option>}
-                    {drivers.map(d => (
+                    {driversFiltrados.length === 0 && <option disabled value="">{formNombreComercial ? `Sin operadores para "${formNombreComercial}"` : 'No hay operadores para este carrier'}</option>}
+                    {driversFiltrados.map(d => (
                       <option key={d.driverId} value={d.nombre}>{d.nombre}</option>
                     ))}
                   </select>

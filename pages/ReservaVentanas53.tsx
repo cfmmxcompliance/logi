@@ -27,7 +27,7 @@ export const ReservaVentanas53: React.FC = () => {
   const email = user?.email || user?.username || 'sistema';
   const carrierName = user?.name || email;
 
-  const [tab, setTab] = useState<'demandas' | 'mis-reservas'>(isAdmin ? 'mis-reservas' : 'demandas');
+  const [tab, setTab] = useState<'demandas' | 'mis-reservas'>('demandas');
   const [demandas, setDemandas] = useState<DemandaCarga53[]>([]);
   const [ventanas, setVentanas] = useState<VentanaCarga53[]>([]);
   const [reservas, setReservas] = useState<ReservaVentana53[]>([]);
@@ -215,7 +215,11 @@ export const ReservaVentanas53: React.FC = () => {
           {tab === 'demandas' && (
             <div className="space-y-3">
               {demandas.length === 0 && (
-                <div className="text-center py-16 text-slate-300">No hay demandas disponibles</div>
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center space-y-2">
+                  <p className="text-amber-700 font-bold">No hay demandas disponibles para reservar</p>
+                  {isAdmin && <p className="text-amber-600 text-sm">Crea una demanda en el módulo "Demanda Cajas 53'" y confírmala para que aparezca aquí.</p>}
+                  {!isAdmin && <p className="text-amber-600 text-sm">Las demandas deben estar en estatus <strong>Confirmada</strong> o <strong>Enviada a carriers</strong> para poder reservar.</p>}
+                </div>
               )}
               {demandas.map(d => {
                 const reservadasActivas = getDemandasReservadasActivas(d.id!);
@@ -375,12 +379,20 @@ export const ReservaVentanas53: React.FC = () => {
                 <select value={formVentanaId} onChange={e => setFormVentanaId(e.target.value)}
                   className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none">
                   <option value="">-- Seleccionar ventana --</option>
+                  {ventanasDisponibles.length === 0 && (
+                    <option disabled value="">⚠ No hay ventanas disponibles — crea una en Admin Ventanas 53'</option>
+                  )}
                   {ventanasDisponibles.map(v => (
                     <option key={v.id} value={v.id}>
-                      {v.fecha} · {v.horaInicio}–{v.horaFin} · {v.cajasDisponibles ?? (v.capacidadCajas - (v.cajasReservadas || 0))} disponibles
+                      {v.fecha} · {v.horaInicio}–{v.horaFin} · {v.cajasDisponibles ?? (v.capacidadCajas - (v.cajasReservadas || 0))} disp.
                     </option>
                   ))}
                 </select>
+                {ventanasDisponibles.length === 0 && (
+                  <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle size={12} /> No hay ventanas con estatus "Disponible" o "Parcial". Ve a <strong>Admin Ventanas 53'</strong> y crea una.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Cajas a Reservar *</label>

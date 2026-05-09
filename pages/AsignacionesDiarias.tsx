@@ -29,7 +29,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const isReadOnly = user?.role === UserRole.EMBARQUES || user?.role === UserRole.CLIENT;
   const isEmbarques = isReadOnly; // alias para compatibilidad con código existente
   const scacFilter = user?.role === UserRole.CARRIER ? (user?.scac || '').trim().toUpperCase() : null;
-  const subLineaFilter = user?.role === UserRole.TRANSPORTISTA ? (user?.subLinea || '').trim() : null;
+  const subLineaFilter = user?.role === UserRole.TRANSPORTISTA ? (user?.scac || '').trim().toUpperCase() : null;
   const [asignaciones, setAsignaciones] = useState<AsignacionCajaModel[]>([]);
   const [cajas, setCajas] = useState<CajaModel[]>([]);
   const [drivers, setDrivers] = useState<DriverModel[]>([]);

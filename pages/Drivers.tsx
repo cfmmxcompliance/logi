@@ -16,7 +16,7 @@ import { UserRole } from '../types';
 export const Drivers: React.FC = () => {
   const { user } = useAuth();
   const scacFilter = user?.role === UserRole.CARRIER ? (user?.scac || '').trim().toUpperCase() : null;
-  const subLineaFilter = user?.role === UserRole.TRANSPORTISTA ? (user?.subLinea || '').trim() : null;
+  const subLineaFilter = user?.role === UserRole.TRANSPORTISTA ? (user?.scac || '').trim().toUpperCase() : null;
   const [drivers, setDrivers] = useState<DriverModel[]>([]);
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
   const [transportLines, setTransportLines] = useState<TransportLineModel[]>([]);

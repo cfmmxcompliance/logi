@@ -92,8 +92,23 @@ export const AdminVentanas53: React.FC = () => {
     }
   };
 
-  const openNew = () => {
-    setForm(emptyForm());
+  /** Returns horaFin = horaInicio + 2 hours in HH:mm format. */
+  const addTwoHours = (hhmm: string): string => {
+    const [h, m] = hhmm.split(':').map(Number);
+    const total = h * 60 + m + 120;
+    const newH = Math.floor(total / 60) % 24;
+    const newM = total % 60;
+    return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+  };
+
+  const openNew = (demanda?: DemandaCarga53) => {
+    const horaInicio = emptyForm().horaInicio;
+    setForm({
+      ...emptyForm(),
+      fecha: demanda?.fechaDemanda ?? emptyForm().fecha,
+      modelo: demanda?.modelos?.[0] ?? '',
+      horaFin: addTwoHours(horaInicio),
+    } as any);
     setEditingId(null);
     setError(null);
     setShowModal(true);
@@ -120,6 +135,10 @@ export const AdminVentanas53: React.FC = () => {
   const handleSave = async () => {
     if (!form.fecha || !form.horaInicio || !form.horaFin) {
       setError('Fecha, hora inicio y hora fin son requeridos.');
+      return;
+    }
+    if (!(form as any).modelo || !(form as any).modelo.trim()) {
+      setError('El modelo es requerido.');
       return;
     }
     if (form.capacidadCajas <= 0) {
@@ -233,7 +252,7 @@ export const AdminVentanas53: React.FC = () => {
             {demandasSinCobertura.map(({ demanda, cajasAsignadas, pendientes }) => (
               <div key={demanda.id}
                 className="flex items-center gap-2 bg-white border border-amber-200 rounded-xl px-3 py-2 text-xs cursor-pointer hover:bg-amber-50 transition-colors"
-                onClick={() => openNew()}
+                onClick={() => openNew(demanda)}
                 title="Click para crear una nueva ventana"
               >
                 <Bell size={12} className="text-amber-500" />
@@ -367,7 +386,9 @@ export const AdminVentanas53: React.FC = () => {
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Modelo (opcional)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    Modelo <span className="text-red-400">*</span>
+                  </label>
                   <input value={(form as any).modelo || ''}
                     onChange={e => setForm(f => ({ ...f, modelo: e.target.value } as any))}
                     placeholder="Ej. NK300, CF800"
@@ -380,7 +401,13 @@ export const AdminVentanas53: React.FC = () => {
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Hora Inicio</label>
-                  <input type="time" value={form.horaInicio} onChange={e => setForm(f => ({ ...f, horaInicio: e.target.value }))}
+                  <input type="time" value={form.horaInicio}
+                    onChange={e => setForm(f => ({
+                      ...f,
+                      horaInicio: e.target.value,
+                      // Auto-update horaFin to horaInicio + 2h if user hasn't manually changed it
+                      horaFin: addTwoHours(e.target.value),
+                    }))}
                     className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-400 outline-none" />
                 </div>
                 <div>

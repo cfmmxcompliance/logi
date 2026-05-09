@@ -142,6 +142,15 @@ export const DemandaCajas53: React.FC = () => {
     } catch (e: any) { alert(e.message); }
   };
 
+  const handleEliminar = async (d: DemandaCarga53) => {
+    if (d.estatus !== 'Cancelada') return;
+    if (!window.confirm(`¿Eliminar permanentemente la demanda del ${d.fechaDemanda}? Esta acción no se puede deshacer.`)) return;
+    try {
+      await demandaCarga53Service.eliminarDemanda(d.id!);
+      await load();
+    } catch (e: any) { alert('Error al eliminar: ' + e.message); }
+  };
+
   const toggleExpand = async (d: DemandaCarga53) => {
     if (expandedId === d.id) { setExpandedId(null); return; }
     setExpandedId(d.id!);
@@ -225,6 +234,12 @@ export const DemandaCajas53: React.FC = () => {
                     <button onClick={() => handleCancelar(d)}
                       className="px-3 py-1.5 text-red-500 hover:bg-red-50 text-xs font-bold rounded-lg transition-colors border border-red-100">
                       Cancelar
+                    </button>
+                  )}
+                  {isAdmin && d.estatus === 'Cancelada' && (
+                    <button onClick={() => handleEliminar(d)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors">
+                      <Trash2 size={12} /> Eliminar
                     </button>
                   )}
                 </div>

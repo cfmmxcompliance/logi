@@ -70,4 +70,13 @@ export const demandaCarga53Service = {
   async deleteItem(demandaId: string, itemId: string): Promise<void> {
     await deleteDoc(doc(db, COL, demandaId, 'items', itemId));
   },
+
+  /** Permanently deletes a cancelled demand and all its items. */
+  async eliminarDemanda(id: string): Promise<void> {
+    // Delete subcollection items first
+    const itemsSnap = await getDocs(collection(db, COL, id, 'items'));
+    await Promise.all(itemsSnap.docs.map(d => deleteDoc(d.ref)));
+    // Delete parent document
+    await deleteDoc(doc(db, COL, id));
+  },
 };

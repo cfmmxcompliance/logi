@@ -8,7 +8,7 @@ import { ReservaVentana53 } from '../types/reservaVentana53';
 import { useAuth } from '../context/AuthContext';
 import {
   Loader2, Plus, CalendarDays, Clock, CheckCircle,
-  AlertCircle, XCircle, Minus, Edit2, X, Bell
+  AlertCircle, XCircle, Minus, Edit2, X, Bell, Trash2
 } from 'lucide-react';
 
 const ESTATUS_COLORS: Record<VentanaEstatus, string> = {
@@ -143,6 +143,19 @@ export const AdminVentanas53: React.FC = () => {
       setError(e.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleEliminarVentana = async (v: VentanaCarga53) => {
+    if (!window.confirm(
+      `¿Eliminar la ventana del ${v.fecha} (${v.horaInicio}–${v.horaFin})?\n` +
+      `Solo se puede eliminar si no tiene reservas activas.`
+    )) return;
+    try {
+      await ventanaCarga53Service.deleteVentana(v.id!);
+      await load();
+    } catch (e: any) {
+      alert(e.message);
     }
   };
 
@@ -288,13 +301,22 @@ export const AdminVentanas53: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <button
-                      onClick={() => openEdit(v)}
-                      className="p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors"
-                      title="Editar"
-                    >
-                      <Edit2 size={15} />
-                    </button>
+                    <div className="flex justify-end gap-1">
+                      <button
+                        onClick={() => openEdit(v)}
+                        className="p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors"
+                        title="Editar"
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                      <button
+                        onClick={() => handleEliminarVentana(v)}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

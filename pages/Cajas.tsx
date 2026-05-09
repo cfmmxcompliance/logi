@@ -65,9 +65,13 @@ export const Cajas: React.FC = () => {
     if (scacFilter) {
       result = result.filter(c => c.carrierCodigo?.toUpperCase() === scacFilter);
     }
-    // TRANSPORTISTA role: only show cajas matching their Sub-Línea
-    if (subLineaFilter) {
-      result = result.filter(c => (c.nombreSubLinea || '').toLowerCase() === subLineaFilter.toLowerCase());
+    // TRANSPORTISTA role: strictly filter by Nombre Comercial. If unconfigured → show nothing.
+    if (user?.role === UserRole.TRANSPORTISTA) {
+      if (!subLineaFilter) {
+        result = [];
+      } else {
+        result = result.filter(c => (c.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase());
+      }
     }
     if (searchTerm) {
       const lowerTerm = searchTerm.toLowerCase();
@@ -88,7 +92,8 @@ export const Cajas: React.FC = () => {
       });
     }
     return result;
-  }, [cajas, searchTerm, activeMassQuery, scacFilter, subLineaFilter]);
+  }, [cajas, searchTerm, activeMassQuery, scacFilter, subLineaFilter, transportLines, user]);
+
 
   const handleApplyMassQuery = () => {
     const valid = queryConditions.filter(c => c.operator === 'empty' || c.operator === 'not_empty' || c.input.trim());

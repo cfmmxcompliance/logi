@@ -64,12 +64,16 @@ export const Drivers: React.FC = () => {
       if (scacFilter) {
           result = result.filter(c => c.carrierCodigo?.toUpperCase() === scacFilter);
       }
-      // TRANSPORTISTA role: filter drivers whose transport line matches their Nombre Comercial
-      if (subLineaFilter) {
-          result = result.filter(c => {
-              const tl = transportLines.find(t => t.transportLineId === c.transportLineId);
-              return (tl?.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase();
-          });
+      // TRANSPORTISTA role: strictly filter by Nombre Comercial. If unconfigured → show nothing.
+      if (user?.role === UserRole.TRANSPORTISTA) {
+          if (!subLineaFilter) {
+              result = [];
+          } else {
+              result = result.filter(c => {
+                  const tl = transportLines.find(t => t.transportLineId === c.transportLineId);
+                  return (tl?.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase();
+              });
+          }
       }
       if (searchTerm) {
           const lowerTerm = searchTerm.toLowerCase();
@@ -91,7 +95,7 @@ export const Drivers: React.FC = () => {
           });
       }
       return result;
-  }, [drivers, searchTerm, activeMassQuery, scacFilter, subLineaFilter, getTransportLineName, transportLines]);
+  }, [drivers, searchTerm, activeMassQuery, scacFilter, subLineaFilter, getTransportLineName, transportLines, user]);
 
   const handleApplyMassQuery = () => {
       const valid = queryConditions.filter(c => c.operator === 'empty' || c.operator === 'not_empty' || c.input.trim());

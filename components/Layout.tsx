@@ -116,6 +116,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       } catch { /* silent */ }
     };
     check();
+    // Also listen for custom event fired when any module changes reserva/asignacion state
+    window.addEventListener('reserva:changed', check);
+    return () => window.removeEventListener('reserva:changed', check);
   }, [location.pathname]);
 
   return (

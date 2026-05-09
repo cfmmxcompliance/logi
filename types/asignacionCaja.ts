@@ -16,6 +16,13 @@ export interface AsignacionCajaModel {
   modeloAsignado?: string;
   observaciones?: string;
   notas?: string;
+  // Bridge fields (set when created from ReservaVentanas53)
+  reservaId?: string;         // ID of the linked ReservaVentana53
+  ventanaId?: string;         // ID of the linked VentanaCarga53
+  cajasReservadas?: number;   // How many cajas were reserved (for capacity restore)
+  demandaId?: string;
+  carrierId?: string;
+  origen?: string;
   createdAt?: string;
   createdBy?: string;
   updatedAt?: string;

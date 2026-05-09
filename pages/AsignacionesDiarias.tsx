@@ -6,6 +6,7 @@ import { carrierService } from '../services/carrierService';
 import { liberacionService } from '../services/liberacionService';
 import { selloService } from '../services/selloService';
 import { transportLineService } from '../services/transportLineService';
+import { reservaVentana53Service } from '../services/reservaVentana53Service';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
 import { CajaModel } from '../types/caja';
 import { DriverModel } from '../types/driver';
@@ -384,8 +385,29 @@ export const AsignacionesDiarias: React.FC = () => {
       // Segunda confirmación — ejecutar borrado
       setPendingDeleteId(null);
       try {
+        // 1. Fetch the record first to check for a linked reserva
+        const asignacion = asignaciones.find(a => a.id === id);
+
+        // 2. Delete the asignacion record
         await asignacionCajaService.deleteAsignacion(id);
         setSelectedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+
+        // 3. If linked to a reserva — cascade cancel (restores ventana capacity)
+        if (asignacion?.reservaId && asignacion.ventanaId) {
+          try {
+            await reservaVentana53Service.cancelarReserva(
+              asignacion.reservaId,
+              user?.email || 'sistema',
+              asignacion.ventanaId,
+              1, // each asignacion record = 1 caja
+            );
+            // Notify sidebar to refresh badge immediately
+            window.dispatchEvent(new Event('reserva:changed'));
+          } catch (e) {
+            console.warn('No se pudo cancelar la reserva vinculada (puede que ya esté cancelada):', e);
+          }
+        }
+
         loadData();
       } catch (error: any) {
         console.error('Error eliminando asignación:', error);
@@ -406,9 +428,22 @@ export const AsignacionesDiarias: React.FC = () => {
         setLoading(true);
         try {
             for (const id of selectedIds) {
+                const asignacion = asignaciones.find(a => a.id === id);
                 await asignacionCajaService.deleteAsignacion(id);
+                // Cascade cancel linked reserva if present
+                if (asignacion?.reservaId && asignacion.ventanaId) {
+                  try {
+                    await reservaVentana53Service.cancelarReserva(
+                      asignacion.reservaId,
+                      user?.email || 'sistema',
+                      asignacion.ventanaId,
+                      1,
+                    );
+                  } catch { /* silently skip if already cancelled */ }
+                }
             }
             setSelectedIds(new Set());
+            window.dispatchEvent(new Event('reserva:changed'));
             loadData();
         } catch (error) {
             console.error("Error deleting items", error);

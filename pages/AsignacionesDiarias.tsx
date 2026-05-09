@@ -154,17 +154,20 @@ export const AsignacionesDiarias: React.FC = () => {
         result = result.filter(a => (a.carrierCodigo || '').toUpperCase() === scacFilter);
     }
 
-    // TRANSPORTISTA role: strictly filter by Nombre Comercial. If unconfigured → show nothing.
+    // TRANSPORTISTA role: filter by carrierCodigo linked to their Nombre Comercial (TransportLine)
+    // Same approach as Cajas and Drivers: use carrierCodigo as the reliable link field.
     if (user?.role === UserRole.TRANSPORTISTA) {
         if (!subLineaFilter) {
             result = [];
         } else {
-            const matchingIds = new Set(
+            // Find all carrier codes that belong to transport lines with matching Nombre Comercial
+            const matchingCarriers = new Set(
                 transportLines
                     .filter(tl => (tl.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase())
-                    .map(tl => tl.transportLineId)
+                    .map(tl => (tl.carrierCodigo || '').toUpperCase())
+                    .filter(Boolean)
             );
-            result = result.filter(a => matchingIds.has(a.transportLineId || ''));
+            result = result.filter(a => matchingCarriers.has((a.carrierCodigo || '').toUpperCase()));
         }
     }
 

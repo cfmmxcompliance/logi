@@ -148,17 +148,17 @@ export const ReservaVentanas53: React.FC = () => {
     setFormNumeroCaja(''); setFormPlacas(''); setFormEconomico(''); setFormOperador(''); setFormTelefono('');
   };
 
-  // Cajas filtradas por el Nombre Comercial (TransportLine) seleccionado
+  // Cajas filtradas por el Nombre Comercial seleccionado — vacío si no hay selección
   const cajasFiltradas = useMemo(() => {
-    if (!formNombreComercial) return cajas;
+    if (!formNombreComercial) return [];
     return cajas.filter(c => c.TransportLine === formNombreComercial);
   }, [cajas, formNombreComercial]);
 
-  // Drivers filtrados por el transportLineId del Nombre Comercial seleccionado
+  // Drivers filtrados por el transportLineId del Nombre Comercial — vacío si no hay selección
   const driversFiltrados = useMemo(() => {
-    if (!formNombreComercial) return drivers;
+    if (!formNombreComercial) return [];
     const tl = transportLines.find(t => t.TransportLine === formNombreComercial);
-    if (!tl) return drivers;
+    if (!tl) return [];
     return drivers.filter(d => d.transportLineId === tl.transportLineId);
   }, [drivers, transportLines, formNombreComercial]);
 

@@ -108,6 +108,7 @@ export const DemandaCajas53: React.FC = () => {
         estatus: confirmar ? 'Confirmada' : 'Borrador',
         totalUnidadesDemandadas: totalUnidades,
         totalCajasSolicitadas: totalCajas,
+        modelos: [...new Set(formItems.map(i => i.modelo))] as string[],
         observaciones: formObs,
         creadoPor: email,
         creadoEn: now,
@@ -195,11 +196,20 @@ export const DemandaCajas53: React.FC = () => {
             <div key={d.id} className="border-b border-slate-50 last:border-0">
               <div className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50/50 cursor-pointer"
                 onClick={() => toggleExpand(d)}>
-                <div className="flex-1 grid grid-cols-2 sm:grid-cols-5 gap-3 items-center">
+                <div className="flex-1 grid grid-cols-2 sm:grid-cols-6 gap-3 items-center">
                   <span className="font-mono font-bold text-slate-800 text-sm">{d.fechaDemanda}</span>
                   <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border w-fit ${ESTATUS_COLORS[d.estatus]}`}>
                     {d.estatus}
                   </span>
+                  {/* Modelos column */}
+                  <div className="flex flex-wrap gap-1">
+                    {(d.modelos && d.modelos.length > 0)
+                      ? d.modelos.map(m => (
+                          <span key={m} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100">{m}</span>
+                        ))
+                      : <span className="text-xs text-slate-300">—</span>
+                    }
+                  </div>
                   <span className="text-slate-600 text-sm"><span className="font-bold">{d.totalUnidadesDemandadas}</span> uds</span>
                   <span className="text-slate-600 text-sm"><span className="font-bold text-blue-700">{d.totalCajasSolicitadas}</span> cajas</span>
                   <span className="text-xs text-slate-400 truncate">{d.observaciones || '—'}</span>

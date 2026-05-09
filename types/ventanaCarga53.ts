@@ -8,6 +8,7 @@ export interface VentanaCarga53 {
   capacidadCajas: number;
   cajasReservadas: number;
   cajasDisponibles: number; // = capacidadCajas - cajasReservadas
+  modelo?: string;         // optional product model tag
   estatus: VentanaEstatus;
   creadoPor: string;
   creadoEn: string;

@@ -227,8 +227,17 @@ export const ReservaVentanas53: React.FC = () => {
                 return (
                   <div key={d.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                     <div className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-slate-50/60" onClick={() => toggleDemanda(d)}>
-                      <div className="flex-1 grid grid-cols-2 sm:grid-cols-5 gap-3 items-center">
+                      <div className="flex-1 grid grid-cols-2 sm:grid-cols-6 gap-3 items-center">
                         <span className="font-mono font-bold text-slate-800">{d.fechaDemanda}</span>
+                        {/* Modelos */}
+                        <div className="flex flex-wrap gap-1">
+                          {(d.modelos && d.modelos.length > 0)
+                            ? d.modelos.map(m => (
+                                <span key={m} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100">{m}</span>
+                              ))
+                            : <span className="text-xs text-slate-300">—</span>
+                          }
+                        </div>
                         <div>
                           <p className="text-xs text-slate-400">Cajas Solicitadas</p>
                           <p className="font-black text-slate-800">{d.totalCajasSolicitadas}</p>

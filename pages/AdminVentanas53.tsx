@@ -28,6 +28,7 @@ const emptyForm = (): Omit<VentanaCarga53, 'id' | 'cajasReservadas' | 'cajasDisp
   horaInicio: '08:00',
   horaFin: '10:00',
   capacidadCajas: 5,
+  modelo: '',
   estatus: 'Disponible',
   creadoPor: '',
   creadoEn: '',
@@ -72,12 +73,13 @@ export const AdminVentanas53: React.FC = () => {
       horaInicio: v.horaInicio,
       horaFin: v.horaFin,
       capacidadCajas: v.capacidadCajas,
+      modelo: (v as any).modelo || '',
       estatus: v.estatus,
       creadoPor: v.creadoPor,
       creadoEn: v.creadoEn,
       actualizadoPor: v.actualizadoPor,
       actualizadoEn: v.actualizadoEn,
-    });
+    } as any);
     setEditingId(v.id!);
     setError(null);
     setShowModal(true);
@@ -188,6 +190,7 @@ export const AdminVentanas53: React.FC = () => {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-widest">
                 <th className="px-5 py-3 text-left">Fecha</th>
+                <th className="px-5 py-3 text-left">Modelo</th>
                 <th className="px-5 py-3 text-left">Horario</th>
                 <th className="px-5 py-3 text-center">Capacidad</th>
                 <th className="px-5 py-3 text-center">Reservadas</th>
@@ -198,11 +201,17 @@ export const AdminVentanas53: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="text-center py-12 text-slate-300 text-sm">Sin ventanas registradas</td></tr>
+                <tr><td colSpan={8} className="text-center py-12 text-slate-300 text-sm">Sin ventanas registradas</td></tr>
               )}
               {filtered.map(v => (
                 <tr key={v.id} className="hover:bg-slate-50/60 transition-colors">
                   <td className="px-5 py-3 font-mono text-sm font-bold text-slate-700">{v.fecha}</td>
+                  <td className="px-5 py-3">
+                    {(v as any).modelo
+                      ? <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100">{(v as any).modelo}</span>
+                      : <span className="text-slate-300 text-xs">—</span>
+                    }
+                  </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-1 text-sm text-slate-600">
                       <Clock size={14} className="text-slate-400" />
@@ -252,6 +261,13 @@ export const AdminVentanas53: React.FC = () => {
                 </div>
               )}
               <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Modelo (opcional)</label>
+                  <input value={(form as any).modelo || ''}
+                    onChange={e => setForm(f => ({ ...f, modelo: e.target.value } as any))}
+                    placeholder="Ej. NK300, CF800"
+                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-400 outline-none" />
+                </div>
                 <div className="col-span-2">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Fecha</label>
                   <input type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha: e.target.value }))}

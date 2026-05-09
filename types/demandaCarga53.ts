@@ -12,9 +12,10 @@ export interface DemandaCarga53 {
   estatus: DemandaEstatus;
   totalUnidadesDemandadas: number;
   totalCajasSolicitadas: number;
+  modelos?: string[];             // denormalized list of modelo names for quick display
   observaciones?: string;
-  creadoPor: string;              // email
-  creadoEn: string;              // ISO timestamp
+  creadoPor: string;
+  creadoEn: string;
   actualizadoPor: string;
   actualizadoEn: string;
   confirmadoPor?: string;

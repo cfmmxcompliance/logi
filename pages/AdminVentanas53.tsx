@@ -94,6 +94,10 @@ export const AdminVentanas53: React.FC = () => {
       setError('La capacidad debe ser mayor a cero.');
       return;
     }
+    if (form.capacidadCajas > 4) {
+      setError('Capacidad máxima permitida: 4 cajas por ventana.');
+      return;
+    }
     if (form.horaInicio >= form.horaFin) {
       setError('La hora de fin debe ser posterior a la hora de inicio.');
       return;
@@ -285,9 +289,13 @@ export const AdminVentanas53: React.FC = () => {
                 </div>
                 <div className="col-span-2">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Capacidad de Cajas</label>
-                  <input type="number" min="1" value={form.capacidadCajas}
-                    onChange={e => setForm(f => ({ ...f, capacidadCajas: parseInt(e.target.value) || 0 }))}
+                  <input type="number" min="1" max="4" value={form.capacidadCajas}
+                    onChange={e => setForm(f => ({ ...f, capacidadCajas: Math.min(4, parseInt(e.target.value) || 0) }))}
                     className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-violet-400 outline-none" />
+                  <p className="mt-1 text-xs text-slate-400 flex items-center gap-1">
+                    <span className="inline-block w-2 h-2 rounded-full bg-amber-400"></span>
+                    Máximo 4 cajas por ventana
+                  </p>
                 </div>
                 {editingId && (
                   <div className="col-span-2">

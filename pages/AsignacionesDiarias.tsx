@@ -387,12 +387,24 @@ export const AsignacionesDiarias: React.FC = () => {
   const openNew = async () => {
       const today = new Date().toISOString().split('T')[0];
       const nextOp = await asignacionCajaService.getNextOperationNumber(today);
+
+      // Auto-detect carrier for TRANSPORTISTA: find carrier from their Nombre Comercial
+      let autoCarrier = '';
+      if (subLineaFilter) {
+          const matchingTL = transportLines.find(
+              tl => (tl.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase()
+          );
+          autoCarrier = matchingTL?.carrierCodigo || '';
+      }
+
       setFormData({
           fecha: today,
           horaAsignacion: new Date().toTimeString().substring(0, 5),
           numeroOperacion: nextOp,
           // CARRIER role: pre-fill their SCAC
-          ...(scacFilter ? { carrierCodigo: scacFilter } : {})
+          ...(scacFilter ? { carrierCodigo: scacFilter } : {}),
+          // TRANSPORTISTA role: pre-fill the carrier of their Nombre Comercial
+          ...(autoCarrier ? { carrierCodigo: autoCarrier } : {})
       });
       setIsEditing(false);
       setShowModal(true);

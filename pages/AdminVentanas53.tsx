@@ -6,6 +6,8 @@ import { VentanaCarga53, VentanaEstatus } from '../types/ventanaCarga53';
 import { DemandaCarga53 } from '../types/demandaCarga53';
 import { ReservaVentana53 } from '../types/reservaVentana53';
 import { useAuth } from '../context/AuthContext';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../services/firebaseConfig';
 import {
   Loader2, Plus, CalendarDays, Clock, CheckCircle,
   AlertCircle, XCircle, Minus, Edit2, X, Bell, Trash2
@@ -45,6 +47,8 @@ export const AdminVentanas53: React.FC = () => {
   const [ventanas, setVentanas] = useState<VentanaCarga53[]>([]);
   const [demandas, setDemandas] = useState<DemandaCarga53[]>([]);
   const [reservas, setReservas] = useState<ReservaVentana53[]>([]);
+  // Map demandaId → number of asignacion_cajas records (direct assignments via bridge/manual)
+  const [asignacionesPorDemanda, setAsignacionesPorDemanda] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -65,8 +69,24 @@ export const AdminVentanas53: React.FC = () => {
       ]);
       data.sort((a, b) => (a.fecha + a.horaInicio).localeCompare(b.fecha + b.horaInicio));
       setVentanas(data);
-      setDemandas(allDemandas.filter(d => ['Confirmada', 'Enviada a carriers', 'En proceso de reserva'].includes(d.estatus)));
+      const activas = allDemandas.filter(d =>
+        ['Confirmada', 'Enviada a carriers', 'En proceso de reserva'].includes(d.estatus)
+      );
+      setDemandas(activas);
       setReservas(allReservas);
+
+      // Count asignacion_cajas records per demandaId (covers bridge + manual assignments)
+      if (activas.length > 0) {
+        const asnSnap = await getDocs(
+          query(collection(db, 'asignacion_cajas'), where('demandaId', 'in', activas.map(d => d.id).filter(Boolean)))
+        );
+        const counts: Record<string, number> = {};
+        asnSnap.docs.forEach(d => {
+          const did = d.data().demandaId;
+          if (did) counts[did] = (counts[did] || 0) + 1;
+        });
+        setAsignacionesPorDemanda(counts);
+      }
     } finally {
       setLoading(false);
     }
@@ -159,16 +179,18 @@ export const AdminVentanas53: React.FC = () => {
     }
   };
 
-  // Compute coverage: for each confirmed demand, how many cajas still unassigned
+  // Compute coverage: reservas + direct asignaciones must cover totalCajasSolicitadas
   const demandasSinCobertura = useMemo(() => {
     return demandas.map(d => {
-      const cajasAsignadas = reservas
+      const porReservas = reservas
         .filter(r => r.demandaId === d.id && ['Reservada', 'Confirmada'].includes(r.estatus))
         .reduce((s, r) => s + r.cajasReservadas, 0);
-      const pendientes = d.totalCajasSolicitadas - cajasAsignadas;
-      return { demanda: d, cajasAsignadas, pendientes };
+      const porAsignaciones = asignacionesPorDemanda[d.id!] || 0;
+      const totalCubierto = Math.max(porReservas, porAsignaciones);
+      const pendientes = d.totalCajasSolicitadas - totalCubierto;
+      return { demanda: d, cajasAsignadas: totalCubierto, pendientes };
     }).filter(x => x.pendientes > 0);
-  }, [demandas, reservas]);
+  }, [demandas, reservas, asignacionesPorDemanda]);
 
   const filtered = filterFecha
     ? ventanas.filter(v => v.fecha === filterFecha)

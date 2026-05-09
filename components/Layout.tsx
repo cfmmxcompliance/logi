@@ -10,6 +10,8 @@ import { storageService } from '../services/storageService.ts';
 import { useLanguage } from '../context/LanguageContext';
 import { demandaCarga53Service } from '../services/demandaCarga53Service.ts';
 import { reservaVentana53Service } from '../services/reservaVentana53Service.ts';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../services/firebaseConfig.ts';
 
 const SyncIndicator = () => {
   const [syncing, setSyncing] = React.useState(false);
@@ -85,11 +87,24 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         const activas = demandas.filter(d =>
           ['Confirmada', 'Enviada a carriers', 'En proceso de reserva'].includes(d.estatus)
         );
+        // Also count direct asignacion_cajas records per demandaId
+        let asignacionesPorDemanda: Record<string, number> = {};
+        if (activas.length > 0) {
+          const asnSnap = await getDocs(
+            query(collection(db, 'asignacion_cajas'), where('demandaId', 'in', activas.map(d => d.id).filter(Boolean)))
+          );
+          asnSnap.docs.forEach(d => {
+            const did = d.data().demandaId;
+            if (did) asignacionesPorDemanda[did] = (asignacionesPorDemanda[did] || 0) + 1;
+          });
+        }
         const count = activas.filter(d => {
-          const asignadas = reservas
+          const porReservas = reservas
             .filter(r => r.demandaId === d.id && ['Reservada', 'Confirmada'].includes(r.estatus))
             .reduce((s, r) => s + r.cajasReservadas, 0);
-          return (d.totalCajasSolicitadas - asignadas) > 0;
+          const porAsignaciones = asignacionesPorDemanda[d.id!] || 0;
+          const totalCubierto = Math.max(porReservas, porAsignaciones);
+          return (d.totalCajasSolicitadas - totalCubierto) > 0;
         }).length;
         setDemandasPendientes(count);
       } catch { /* silent */ }

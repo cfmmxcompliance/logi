@@ -160,18 +160,36 @@ export const ReservaVentanas53: React.FC = () => {
     )].sort();
   }, [transportLines, formNombreComercial]);
 
-  // Cajas filtradas: requiere Nombre Comercial + Nombre Sub-Línea (trim-safe)
+  // Cajas y operadores ya en uso en reservas activas (Reservada o Confirmada)
+  const usedCajas = useMemo(() =>
+    new Set(
+      reservas
+        .filter(r => (r.estatus === 'Reservada' || r.estatus === 'Confirmada') && r.numeroCaja)
+        .map(r => r.numeroCaja!.trim())
+    )
+  , [reservas]);
+
+  const usedOperadores = useMemo(() =>
+    new Set(
+      reservas
+        .filter(r => (r.estatus === 'Reservada' || r.estatus === 'Confirmada') && r.operador)
+        .map(r => r.operador!.trim())
+    )
+  , [reservas]);
+
+  // Cajas filtradas: requiere Nombre Comercial + Nombre Sub-Línea (trim-safe) + excluye ya reservadas
   const cajasFiltradas = useMemo(() => {
     if (!formNombreComercial || !formNombreSubLinea) return [];
     const nc = formNombreComercial.trim();
     const sl = formNombreSubLinea.trim();
     return cajas.filter(c =>
       c.TransportLine?.trim() === nc &&
-      c.nombreSubLinea?.trim() === sl
+      c.nombreSubLinea?.trim() === sl &&
+      !usedCajas.has(c.NumeroCaja?.trim())
     );
-  }, [cajas, formNombreComercial, formNombreSubLinea]);
+  }, [cajas, formNombreComercial, formNombreSubLinea, usedCajas]);
 
-  // Drivers filtrados: requiere Nombre Comercial + Nombre Sub-Línea (trim-safe)
+  // Drivers filtrados: requiere Nombre Comercial + Nombre Sub-Línea (trim-safe) + excluye ya asignados
   const driversFiltrados = useMemo(() => {
     if (!formNombreComercial || !formNombreSubLinea) return [];
     const nc = formNombreComercial.trim();
@@ -180,8 +198,11 @@ export const ReservaVentanas53: React.FC = () => {
       t.TransportLine?.trim() === nc && t.nombreSubLinea?.trim() === sl
     );
     if (!tl) return [];
-    return drivers.filter(d => d.transportLineId === tl.transportLineId);
-  }, [drivers, transportLines, formNombreComercial, formNombreSubLinea]);
+    return drivers.filter(d =>
+      d.transportLineId === tl.transportLineId &&
+      !usedOperadores.has(d.nombre?.trim())
+    );
+  }, [drivers, transportLines, formNombreComercial, formNombreSubLinea, usedOperadores]);
 
   // Ventanas filtradas por fecha de la demanda activa + disponibles
   const ventanasDisponibles = useMemo(() => {
@@ -710,7 +731,9 @@ export const ReservaVentanas53: React.FC = () => {
                     <option value="">-- Seleccionar caja --</option>
                     {cajasFiltradas.length === 0 && (
                       <option disabled value="">
-                        {formNombreSubLinea ? `Sin cajas para "${formNombreSubLinea}"` : 'Selecciona sub-línea primero'}
+                        {formNombreSubLinea
+                          ? `Sin cajas disponibles para "${formNombreSubLinea}" — todas ya reservadas o no registradas`
+                          : 'Selecciona sub-línea primero'}
                       </option>
                     )}
                     {cajasFiltradas.map(c => (
@@ -738,7 +761,9 @@ export const ReservaVentanas53: React.FC = () => {
                   <option value="">-- Seleccionar operador --</option>
                   {driversFiltrados.length === 0 && (
                     <option disabled value="">
-                      {formNombreSubLinea ? `Sin operadores para "${formNombreSubLinea}"` : 'Selecciona sub-línea primero'}
+                      {formNombreSubLinea
+                        ? `Sin operadores disponibles para "${formNombreSubLinea}" — todos ya asignados o no registrados`
+                        : 'Selecciona sub-línea primero'}
                     </option>
                   )}
                   {driversFiltrados.map(d => (

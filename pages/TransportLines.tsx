@@ -54,9 +54,9 @@ export const TransportLines: React.FC = () => {
       if (scacFilter) {
           result = result.filter(c => c.carrierCodigo?.toUpperCase() === scacFilter);
       }
-      // TRANSPORTISTA role: only show lines matching their Sub-Línea
+      // TRANSPORTISTA role: only show lines matching their Nombre Comercial (TransportLine)
       if (subLineaFilter) {
-          result = result.filter(c => (c.nombreSubLinea || '').toLowerCase() === subLineaFilter.toLowerCase());
+          result = result.filter(c => (c.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase());
       }
       if (searchTerm) {
           const lowerTerm = searchTerm.toLowerCase();

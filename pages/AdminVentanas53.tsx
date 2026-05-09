@@ -198,18 +198,17 @@ export const AdminVentanas53: React.FC = () => {
     }
   };
 
-  // Compute coverage: reservas + direct asignaciones must cover totalCajasSolicitadas
+  // Alert: demands whose total ventana capacity for that date < cajas solicitadas
+  // Disappears when admin creates enough ventanas — then moves to ReservaVentanas alert
   const demandasSinCobertura = useMemo(() => {
     return demandas.map(d => {
-      const porReservas = reservas
-        .filter(r => r.demandaId === d.id && ['Reservada', 'Confirmada'].includes(r.estatus))
-        .reduce((s, r) => s + r.cajasReservadas, 0);
-      const porAsignaciones = asignacionesPorDemanda[d.id!] || 0;
-      const totalCubierto = Math.max(porReservas, porAsignaciones);
-      const pendientes = d.totalCajasSolicitadas - totalCubierto;
-      return { demanda: d, cajasAsignadas: totalCubierto, pendientes };
+      const totalCapacidad = ventanas
+        .filter(v => v.fecha === d.fechaDemanda)
+        .reduce((s, v) => s + v.capacidadCajas, 0);
+      const pendientes = d.totalCajasSolicitadas - totalCapacidad;
+      return { demanda: d, pendientes };
     }).filter(x => x.pendientes > 0);
-  }, [demandas, reservas, asignacionesPorDemanda]);
+  }, [demandas, ventanas]);
 
   const filtered = filterFecha
     ? ventanas.filter(v => v.fecha === filterFecha)

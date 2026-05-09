@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import {
   Loader2, CalendarDays, Clock, Package, CheckCircle,
-  AlertCircle, XCircle, Plus, X, Truck, ChevronDown, ChevronUp
+  AlertCircle, XCircle, Plus, X, Truck, ChevronDown, ChevronUp, Bell
 } from 'lucide-react';
 
 const RESERVA_COLORS: Record<ReservaEstatus, string> = {
@@ -184,6 +184,24 @@ export const ReservaVentanas53: React.FC = () => {
 
   const misReservas = reservas.filter(r => isAdmin || r.carrierId === email);
 
+  // Demands that have enough ventana capacity but no active reserva yet → need carrier assignment
+  const demandasListasParaReserva = useMemo(() => {
+    if (!isAdmin) return [];
+    const activas = demandas.filter(d =>
+      ['Confirmada', 'Enviada a carriers', 'En proceso de reserva'].includes(d.estatus)
+    );
+    return activas.filter(d => {
+      const totalCapacidad = ventanas
+        .filter(v => v.fecha === d.fechaDemanda)
+        .reduce((s, v) => s + v.capacidadCajas, 0);
+      if (totalCapacidad < d.totalCajasSolicitadas) return false; // ventanas still insufficient
+      const cajasConReserva = reservas
+        .filter(r => r.demandaId === d.id && ['Reservada', 'Confirmada'].includes(r.estatus))
+        .reduce((s, r) => s + r.cajasReservadas, 0);
+      return cajasConReserva < d.totalCajasSolicitadas; // has capacity but no carrier assigned yet
+    });
+  }, [demandas, ventanas, reservas, isAdmin]);
+
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
@@ -196,6 +214,40 @@ export const ReservaVentanas53: React.FC = () => {
           <p className="text-slate-500 text-sm">Portal de reservas para carriers</p>
         </div>
       </div>
+
+      {/* Alert: demands with ventanas ready but no carrier assigned yet (admin only) */}
+      {!loading && isAdmin && demandasListasParaReserva.length > 0 && (
+        <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-teal-500"></span>
+            </span>
+            <p className="text-teal-800 font-black text-sm">
+              {demandasListasParaReserva.length} demanda(s) con ventanas listas — asigna carrier y transporte
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {demandasListasParaReserva.map(d => (
+              <div key={d.id}
+                className="flex items-center gap-2 bg-white border border-teal-200 rounded-xl px-3 py-2 text-xs cursor-pointer hover:bg-teal-50 transition-colors"
+                onClick={() => { setTab('demandas'); }}
+                title="Click para ir a Demandas Disponibles"
+              >
+                <Bell size={12} className="text-teal-500" />
+                <span className="font-mono font-bold text-slate-700">{d.fechaDemanda}</span>
+                {d.modelos && d.modelos.length > 0 && (
+                  <span className="text-slate-400">{d.modelos.join(', ')}</span>
+                )}
+                <span className="px-1.5 py-0.5 bg-teal-100 text-teal-700 font-black rounded-full">
+                  {d.totalCajasSolicitadas} cajas · Sin reserva
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-teal-600">Las ventanas están disponibles. Reserva un carrier para completar la asignación.</p>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">

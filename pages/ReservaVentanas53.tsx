@@ -3,6 +3,8 @@ import { demandaCarga53Service } from '../services/demandaCarga53Service';
 import { ventanaCarga53Service } from '../services/ventanaCarga53Service';
 import { reservaVentana53Service } from '../services/reservaVentana53Service';
 import { demandaAsignacionBridge, BridgeResult } from '../services/demandaAsignacionBridge';
+import { carrierService } from '../services/carrierService';
+import { CarrierModel } from '../types/carrier';
 import { DemandaCarga53, DemandaItem53 } from '../types/demandaCarga53';
 import { VentanaCarga53 } from '../types/ventanaCarga53';
 import { ReservaVentana53, ReservaEstatus } from '../types/reservaVentana53';
@@ -31,6 +33,7 @@ export const ReservaVentanas53: React.FC = () => {
   const [demandas, setDemandas] = useState<DemandaCarga53[]>([]);
   const [ventanas, setVentanas] = useState<VentanaCarga53[]>([]);
   const [reservas, setReservas] = useState<ReservaVentana53[]>([]);
+  const [carriers, setCarriers] = useState<CarrierModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedDemanda, setExpandedDemanda] = useState<string | null>(null);
   const [demandasItems, setDemandasItems] = useState<Record<string, DemandaItem53[]>>({});
@@ -39,6 +42,8 @@ export const ReservaVentanas53: React.FC = () => {
   // Modal nueva reserva
   const [showModal, setShowModal] = useState(false);
   const [activeDemanda, setActiveDemanda] = useState<DemandaCarga53 | null>(null);
+  const [formCarrierCodigo, setFormCarrierCodigo] = useState('');
+  const [formCarrierNombre, setFormCarrierNombre] = useState('');
   const [formVentanaId, setFormVentanaId] = useState('');
   const [formCajas, setFormCajas] = useState('');
   const [formNumeroCaja, setFormNumeroCaja] = useState('');
@@ -59,10 +64,11 @@ export const ReservaVentanas53: React.FC = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const [allDemandas, allVentanas, allReservas] = await Promise.all([
+      const [allDemandas, allVentanas, allReservas, allCarriers] = await Promise.all([
         demandaCarga53Service.getAllDemandas(),
         ventanaCarga53Service.getAllVentanas(),
         reservaVentana53Service.getAllReservas(),
+        carrierService.getAllCarriers(),
       ]);
       // Carriers only see Confirmada / Enviada a carriers / En proceso de reserva
       const visibleDemandas = isAdmin
@@ -72,6 +78,7 @@ export const ReservaVentanas53: React.FC = () => {
       setDemandas(visibleDemandas);
       setVentanas(allVentanas);
       setReservas(allReservas);
+      setCarriers(allCarriers.sort((a, b) => a.nombre.localeCompare(b.nombre)));
     } finally { setLoading(false); }
   };
 
@@ -95,21 +102,37 @@ export const ReservaVentanas53: React.FC = () => {
 
   const openReserva = (d: DemandaCarga53) => {
     setActiveDemanda(d);
+    // Auto-fill carrier for CARRIER role from user.subLinea
+    if (!isAdmin && user?.subLinea) {
+      const match = carriers.find(c =>
+        c.codigo.toLowerCase() === (user.subLinea || '').toLowerCase() ||
+        c.nombre.toLowerCase().includes((user.subLinea || '').toLowerCase())
+      );
+      setFormCarrierCodigo(match?.codigo || user.subLinea || email);
+      setFormCarrierNombre(match?.nombre || carrierName);
+    } else {
+      setFormCarrierCodigo(''); setFormCarrierNombre('');
+    }
     setFormVentanaId(''); setFormCajas(''); setFormNumeroCaja('');
     setFormPlacas(''); setFormEconomico(''); setFormOperador('');
     setFormTelefono(''); setFormComentarios(''); setModalError(null);
     setShowModal(true);
   };
 
-  const ventanasDisponibles = useMemo(() =>
-    ventanas.filter(v => v.estatus === 'Disponible' || v.estatus === 'Parcial'),
-    [ventanas]
-  );
+  // Ventanas filtradas por fecha de la demanda activa + disponibles
+  const ventanasDisponibles = useMemo(() => {
+    if (!activeDemanda) return ventanas.filter(v => v.estatus === 'Disponible' || v.estatus === 'Parcial');
+    return ventanas.filter(v =>
+      v.fecha === activeDemanda.fechaDemanda &&
+      (v.estatus === 'Disponible' || v.estatus === 'Parcial')
+    );
+  }, [ventanas, activeDemanda]);
 
   const selectedVentana = ventanas.find(v => v.id === formVentanaId);
 
   const handleCrearReserva = async () => {
     if (!activeDemanda || !formVentanaId) { setModalError('Selecciona una ventana.'); return; }
+    if (!formCarrierCodigo) { setModalError('Selecciona un carrier.'); return; }
     const cajas = parseInt(formCajas, 10);
     if (!cajas || cajas <= 0) { setModalError('El número de cajas debe ser mayor a 0.'); return; }
     if (!selectedVentana) { setModalError('Ventana no encontrada.'); return; }
@@ -123,8 +146,8 @@ export const ReservaVentanas53: React.FC = () => {
       await reservaVentana53Service.crearReservaConTransaccion({
         demandaId: activeDemanda.id!,
         ventanaId: formVentanaId,
-        carrierId: email,
-        carrierNombre: carrierName,
+        carrierId: formCarrierCodigo,
+        carrierNombre: formCarrierNombre,
         fechaCarga: selectedVentana.fecha,
         horaInicio: selectedVentana.horaInicio,
         horaFin: selectedVentana.horaFin,
@@ -483,6 +506,37 @@ export const ReservaVentanas53: React.FC = () => {
                 <p className="font-bold text-blue-700">Demanda: {activeDemanda.fechaDemanda}</p>
                 <p className="text-blue-600">{activeDemanda.totalCajasSolicitadas} cajas solicitadas · {getDemandasReservadasActivas(activeDemanda.id!)} reservadas · <span className="font-bold">{activeDemanda.totalCajasSolicitadas - getDemandasReservadasActivas(activeDemanda.id!)} pendientes</span></p>
               </div>
+              {/* Carrier selector */}
+              {isAdmin ? (
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    Carrier <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={formCarrierCodigo}
+                    onChange={e => {
+                      const c = carriers.find(x => x.codigo === e.target.value);
+                      setFormCarrierCodigo(e.target.value);
+                      setFormCarrierNombre(c?.nombre || e.target.value);
+                    }}
+                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white"
+                  >
+                    <option value="">-- Seleccionar carrier --</option>
+                    {carriers.map(c => (
+                      <option key={c.codigo} value={c.codigo}>
+                        {c.codigo} · {c.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Carrier</label>
+                  <div className="mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700">
+                    {formCarrierNombre || formCarrierCodigo || carrierName}
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Ventana de Carga *</label>
                 <select value={formVentanaId} onChange={e => setFormVentanaId(e.target.value)}

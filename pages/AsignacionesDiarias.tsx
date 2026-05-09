@@ -154,9 +154,14 @@ export const AsignacionesDiarias: React.FC = () => {
         result = result.filter(a => (a.carrierCodigo || '').toUpperCase() === scacFilter);
     }
 
-    // TRANSPORTISTA role: only show assignments for their Sub-Línea
+    // TRANSPORTISTA role: only show assignments whose transport line matches their Nombre Comercial
     if (subLineaFilter) {
-        result = result.filter(a => (a.subLinea || '').toLowerCase() === subLineaFilter.toLowerCase());
+        const matchingIds = new Set(
+            transportLines
+                .filter(tl => (tl.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase())
+                .map(tl => tl.transportLineId)
+        );
+        result = result.filter(a => matchingIds.has(a.transportLineId || ''));
     }
 
     // Date Range Filter
@@ -230,7 +235,7 @@ export const AsignacionesDiarias: React.FC = () => {
     }
 
     return result;
-  }, [asignaciones, searchTerm, dateRange, activeMassQuery, sortConfig, liberaciones, scacFilter, subLineaFilter]);
+  }, [asignaciones, searchTerm, dateRange, activeMassQuery, sortConfig, liberaciones, scacFilter, subLineaFilter, transportLines]);
 
   const handleApplyMassQuery = () => {
     const valid = queryConditions.filter(c => c.operator === 'empty' || c.operator === 'not_empty' || c.input.trim());

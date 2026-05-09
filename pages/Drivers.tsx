@@ -64,11 +64,11 @@ export const Drivers: React.FC = () => {
       if (scacFilter) {
           result = result.filter(c => c.carrierCodigo?.toUpperCase() === scacFilter);
       }
-      // TRANSPORTISTA role: filter drivers whose transport line matches their Sub-Línea
+      // TRANSPORTISTA role: filter drivers whose transport line matches their Nombre Comercial
       if (subLineaFilter) {
           result = result.filter(c => {
               const tl = transportLines.find(t => t.transportLineId === c.transportLineId);
-              return (tl?.nombreSubLinea || '').toLowerCase() === subLineaFilter.toLowerCase();
+              return (tl?.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase();
           });
       }
       if (searchTerm) {

@@ -251,7 +251,7 @@ export const Settings = () => {
                                         <th className="px-6 py-3">Name</th>
                                         <th className="px-6 py-3">Role</th>
                                         <th className="px-6 py-3">SCAC</th>
-                                        <th className="px-6 py-3">Sub-Línea</th>
+                                        <th className="px-6 py-3">Nombre Comercial</th>
                                         <th className="px-6 py-3 text-right">Actions</th>
                                     </tr>
                                 </thead>
@@ -331,7 +331,7 @@ export const Settings = () => {
                                                 <input 
                                                     key={`sublinea-${u.email || u.username}-${u.subLinea || ''}`}
                                                     type="text" 
-                                                    placeholder="Sub-Línea"
+                                                    placeholder="Nombre Comercial"
                                                     defaultValue={u.subLinea || ''}
                                                     onBlur={async (e) => {
                                                         const newSubLinea = e.target.value;

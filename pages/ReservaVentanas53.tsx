@@ -4,7 +4,13 @@ import { ventanaCarga53Service } from '../services/ventanaCarga53Service';
 import { reservaVentana53Service } from '../services/reservaVentana53Service';
 import { demandaAsignacionBridge, BridgeResult } from '../services/demandaAsignacionBridge';
 import { carrierService } from '../services/carrierService';
+import { cajaService } from '../services/cajaService';
+import { transportLineService } from '../services/transportLineService';
+import { driverService } from '../services/driverService';
 import { CarrierModel } from '../types/carrier';
+import { CajaModel } from '../types/caja';
+import { TransportLineModel } from '../types/transportLine';
+import { DriverModel } from '../types/driver';
 import { DemandaCarga53, DemandaItem53 } from '../types/demandaCarga53';
 import { VentanaCarga53 } from '../types/ventanaCarga53';
 import { ReservaVentana53, ReservaEstatus } from '../types/reservaVentana53';
@@ -34,6 +40,10 @@ export const ReservaVentanas53: React.FC = () => {
   const [ventanas, setVentanas] = useState<VentanaCarga53[]>([]);
   const [reservas, setReservas] = useState<ReservaVentana53[]>([]);
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
+  // Catalog lists filtered by selected carrier
+  const [cajas, setCajas] = useState<CajaModel[]>([]);
+  const [transportLines, setTransportLines] = useState<TransportLineModel[]>([]);
+  const [drivers, setDrivers] = useState<DriverModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedDemanda, setExpandedDemanda] = useState<string | null>(null);
   const [demandasItems, setDemandasItems] = useState<Record<string, DemandaItem53[]>>({});
@@ -102,14 +112,19 @@ export const ReservaVentanas53: React.FC = () => {
 
   const openReserva = (d: DemandaCarga53) => {
     setActiveDemanda(d);
+    // Reset catalog lists
+    setCajas([]); setTransportLines([]); setDrivers([]);
     // Auto-fill carrier for CARRIER role from user.subLinea
     if (!isAdmin && user?.subLinea) {
       const match = carriers.find(c =>
         c.codigo.toLowerCase() === (user.subLinea || '').toLowerCase() ||
         c.nombre.toLowerCase().includes((user.subLinea || '').toLowerCase())
       );
-      setFormCarrierCodigo(match?.codigo || user.subLinea || email);
-      setFormCarrierNombre(match?.nombre || carrierName);
+      const codigo = match?.codigo || user.subLinea || email;
+      const nombre = match?.nombre || carrierName;
+      setFormCarrierCodigo(codigo); setFormCarrierNombre(nombre);
+      // Pre-load catalogs for this carrier
+      loadCatalogsForCarrier(codigo);
     } else {
       setFormCarrierCodigo(''); setFormCarrierNombre('');
     }
@@ -117,6 +132,18 @@ export const ReservaVentanas53: React.FC = () => {
     setFormPlacas(''); setFormEconomico(''); setFormOperador('');
     setFormTelefono(''); setFormComentarios(''); setModalError(null);
     setShowModal(true);
+  };
+
+  const loadCatalogsForCarrier = async (carrierCodigo: string) => {
+    if (!carrierCodigo) { setCajas([]); setTransportLines([]); setDrivers([]); return; }
+    const [c, tl, d] = await Promise.all([
+      cajaService.getCajasByCarrier(carrierCodigo),
+      transportLineService.getTransportLinesByCarrier(carrierCodigo),
+      driverService.getDriversByCarrier(carrierCodigo),
+    ]);
+    setCajas(c); setTransportLines(tl); setDrivers(d);
+    // Reset dependent fields when carrier changes
+    setFormNumeroCaja(''); setFormPlacas(''); setFormEconomico(''); setFormOperador(''); setFormTelefono('');
   };
 
   // Ventanas filtradas por fecha de la demanda activa + disponibles
@@ -518,6 +545,7 @@ export const ReservaVentanas53: React.FC = () => {
                       const c = carriers.find(x => x.codigo === e.target.value);
                       setFormCarrierCodigo(e.target.value);
                       setFormCarrierNombre(c?.nombre || e.target.value);
+                      loadCatalogsForCarrier(e.target.value);
                     }}
                     className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white"
                   >
@@ -563,25 +591,60 @@ export const ReservaVentanas53: React.FC = () => {
                   className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-teal-400 outline-none" />
               </div>
               <div className="grid grid-cols-2 gap-3">
+                {/* No. Caja / Trailer — from catalog, auto-fills placas */}
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">No. Caja / Trailer</label>
-                  <input value={formNumeroCaja} onChange={e => setFormNumeroCaja(e.target.value)} placeholder="PENDIENTE"
-                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none" />
+                  <select value={formNumeroCaja}
+                    onChange={e => {
+                      setFormNumeroCaja(e.target.value);
+                      const caja = cajas.find(c => c.NumeroCaja === e.target.value);
+                      if (caja?.placas) setFormPlacas(caja.placas);
+                    }}
+                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white">
+                    <option value="">-- Seleccionar caja --</option>
+                    {cajas.length === 0 && <option disabled value="">No hay cajas para este carrier</option>}
+                    {cajas.map(c => (
+                      <option key={c.NumeroCaja} value={c.NumeroCaja}>{c.NumeroCaja} · {c.TipoCaja}</option>
+                    ))}
+                  </select>
                 </div>
+                {/* Placas — auto-filled from caja, editable */}
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Placas</label>
-                  <input value={formPlacas} onChange={e => setFormPlacas(e.target.value)} placeholder="Opcional"
+                  <input value={formPlacas} onChange={e => setFormPlacas(e.target.value)} placeholder="Auto desde caja"
                     className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none" />
                 </div>
+                {/* Línea de Tracto — from catalog, fills Económico */}
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Económico</label>
-                  <input value={formEconomico} onChange={e => setFormEconomico(e.target.value)} placeholder="Opcional"
-                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none" />
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Línea de Tracto</label>
+                  <select value={formEconomico}
+                    onChange={e => setFormEconomico(e.target.value)}
+                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white">
+                    <option value="">-- Seleccionar línea --</option>
+                    {transportLines.length === 0 && <option disabled value="">No hay líneas para este carrier</option>}
+                    {transportLines.map(tl => (
+                      <option key={tl.transportLineId} value={tl.transportLineId}>
+                        {tl.TransportLine}{tl.nombreSubLinea ? ` · ${tl.nombreSubLinea}` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+                {/* Operador — from driver catalog, auto-fills teléfono */}
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Operador</label>
-                  <input value={formOperador} onChange={e => setFormOperador(e.target.value)} placeholder="Nombre"
-                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none" />
+                  <select value={formOperador}
+                    onChange={e => {
+                      setFormOperador(e.target.value);
+                      const drv = drivers.find(d => d.nombre === e.target.value);
+                      if (drv?.telefono) setFormTelefono(drv.telefono);
+                    }}
+                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white">
+                    <option value="">-- Seleccionar operador --</option>
+                    {drivers.length === 0 && <option disabled value="">No hay operadores para este carrier</option>}
+                    {drivers.map(d => (
+                      <option key={d.driverId} value={d.nombre}>{d.nombre}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div>

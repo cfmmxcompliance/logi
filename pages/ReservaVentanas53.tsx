@@ -219,6 +219,8 @@ export const ReservaVentanas53: React.FC = () => {
         numeroCaja: formNumeroCaja || '',
         placas: formPlacas || '',
         economico: formEconomico || '',
+        nombreComercial: formNombreComercial || '',
+        nombreSubLinea: formNombreSubLinea || '',
         operador: formOperador || '',
         telefonoOperador: formTelefono || '',
         comentarios: formComentarios || '',
@@ -265,6 +267,14 @@ export const ReservaVentanas53: React.FC = () => {
     if (!window.confirm('¿Cancelar esta reserva? Se liberará la capacidad en la ventana.')) return;
     try {
       await reservaVentana53Service.cancelarReserva(r.id!, email, r.ventanaId, r.cajasReservadas);
+      await load();
+    } catch (e: any) { alert(e.message); }
+  };
+
+  const handleEliminarReserva = async (r: ReservaVentana53) => {
+    if (!window.confirm('¿Eliminar definitivamente esta reserva cancelada? Esta acción no se puede deshacer.')) return;
+    try {
+      await reservaVentana53Service.deleteReserva(r.id!);
       await load();
     } catch (e: any) { alert(e.message); }
   };
@@ -464,6 +474,8 @@ export const ReservaVentanas53: React.FC = () => {
                     <th className="px-5 py-3 text-left">Fecha Carga</th>
                     <th className="px-5 py-3 text-left">Horario</th>
                     <th className="px-5 py-3 text-left">Carrier</th>
+                    <th className="px-5 py-3 text-left">Nom. Comercial</th>
+                    <th className="px-5 py-3 text-left">Sub-Línea</th>
                     <th className="px-5 py-3 text-center">Cajas</th>
                     <th className="px-5 py-3 text-left">Unidad/Placas</th>
                     <th className="px-5 py-3 text-center">Estatus</th>
@@ -477,6 +489,8 @@ export const ReservaVentanas53: React.FC = () => {
                         <td className="px-5 py-3 font-mono font-bold text-slate-700">{r.fechaCarga}</td>
                         <td className="px-5 py-3 text-sm text-slate-600">{r.horaInicio}–{r.horaFin}</td>
                         <td className="px-5 py-3 text-sm text-slate-600">{r.carrierNombre}</td>
+                        <td className="px-5 py-3 text-xs text-slate-500">{r.nombreComercial || '—'}</td>
+                        <td className="px-5 py-3 text-xs text-slate-500">{r.nombreSubLinea || '—'}</td>
                         <td className="px-5 py-3 text-center font-black text-teal-700">{r.cajasReservadas}</td>
                         <td className="px-5 py-3 text-xs text-slate-500 font-mono">
                           {r.numeroCaja || '—'} {r.placas ? `· ${r.placas}` : ''}
@@ -517,12 +531,18 @@ export const ReservaVentanas53: React.FC = () => {
                                 Cancelar
                               </button>
                             )}
+                            {r.estatus === 'Cancelada' && isAdmin && (
+                              <button onClick={() => handleEliminarReserva(r)}
+                                className="px-3 py-1.5 text-red-600 border border-red-200 hover:bg-red-50 text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
+                                🗑 Eliminar
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
                       {expandedReserva === r.id && r.estatus === 'Confirmada' && (
                         <tr>
-                          <td colSpan={7} className="bg-emerald-50 border-t border-emerald-100">
+                          <td colSpan={9} className="bg-emerald-50 border-t border-emerald-100">
                             <div className="px-6 py-3">
                               {!linkedAsignaciones[r.id] ? (
                                 <span className="text-xs text-slate-400 flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> Cargando...</span>

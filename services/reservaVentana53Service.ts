@@ -1,5 +1,5 @@
 import {
-  collection, doc, getDocs, setDoc, updateDoc,
+  collection, doc, getDocs, setDoc, updateDoc, deleteDoc,
   runTransaction, query, where,
 } from 'firebase/firestore';
 import { db } from './firebaseConfig';
@@ -134,5 +134,10 @@ export const reservaVentana53Service = {
         actualizadoEn: now,
       });
     });
+  },
+
+  /** Permanently deletes a cancelled reservation (no ventana rollback needed as it was already freed on cancel). */
+  async deleteReserva(id: string): Promise<void> {
+    await deleteDoc(doc(db, COL_RESERVAS, id));
   },
 };

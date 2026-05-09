@@ -13,6 +13,8 @@ export interface ReservaVentana53 {
   numeroCaja?: string;       // Trailer / unit number (optional at reservation time)
   placas?: string;
   economico?: string;
+  nombreComercial?: string;  // TransportLine.TransportLine (Nombre Comercial)
+  nombreSubLinea?: string;   // TransportLine.nombreSubLinea
   driverId?: string;
   operador?: string;
   telefonoOperador?: string;

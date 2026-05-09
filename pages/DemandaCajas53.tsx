@@ -144,7 +144,13 @@ export const DemandaCajas53: React.FC = () => {
 
   const handleEliminar = async (d: DemandaCarga53) => {
     if (d.estatus !== 'Cancelada') return;
-    if (!window.confirm(`¿Eliminar permanentemente la demanda del ${d.fechaDemanda}? Esta acción no se puede deshacer.`)) return;
+    if (!window.confirm(
+      `¿Eliminar permanentemente la demanda del ${d.fechaDemanda}?\n\n` +
+      `Esto también eliminará:\n` +
+      `• Todas las reservas de ventanas vinculadas\n` +
+      `• Se restaurará la capacidad en cada ventana afectada\n\n` +
+      `Esta acción no se puede deshacer.`
+    )) return;
     try {
       await demandaCarga53Service.eliminarDemanda(d.id!);
       await load();

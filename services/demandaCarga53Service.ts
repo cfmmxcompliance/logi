@@ -1,6 +1,6 @@
 import {
   collection, doc, getDocs, getDoc,
-  setDoc, updateDoc, deleteDoc,
+  setDoc, updateDoc, deleteDoc, query, where, increment,
 } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { DemandaCarga53, DemandaItem53, DemandaEstatus } from '../types/demandaCarga53';
@@ -71,12 +71,46 @@ export const demandaCarga53Service = {
     await deleteDoc(doc(db, COL, demandaId, 'items', itemId));
   },
 
-  /** Permanently deletes a cancelled demand and all its items. */
+  /**
+   * Permanently deletes a cancelled demand and cascades:
+   * 1. Restores cajasDisponibles in each affected ventana (for active reservas)
+   * 2. Deletes all linked reservas
+   * 3. Deletes the demand's items subcollection
+   * 4. Deletes the demand document
+   */
   async eliminarDemanda(id: string): Promise<void> {
-    // Delete subcollection items first
-    const itemsSnap = await getDocs(collection(db, COL, id, 'items'));
+    // ── 1. Find all reservas linked to this demanda ──────────────────────────
+    const reservasSnap = await getDocs(
+      query(collection(db, 'reservasVentanasCarga53'), where('demandaId', '==', id))
+    );
+
+    // ── 2. Restore ventana capacity for active reservas ──────────────────────
+    for (const r of reservasSnap.docs) {
+      const data = r.data();
+      if (['Reservada', 'Confirmada'].includes(data.estatus) && data.ventanaId && data.cajasReservadas > 0) {
+        const ventanaRef = doc(db, 'ventanasCarga53', data.ventanaId);
+        const ventanaSnap = await getDoc(ventanaRef);
+        if (ventanaSnap.exists()) {
+          const v = ventanaSnap.data();
+          const newReservadas = Math.max(0, (v.cajasReservadas || 0) - data.cajasReservadas);
+          const newDisponibles = v.capacidadCajas - newReservadas;
+          await updateDoc(ventanaRef, {
+            cajasReservadas: newReservadas,
+            cajasDisponibles: newDisponibles,
+            estatus: newReservadas === 0 ? 'Disponible' : newDisponibles > 0 ? 'Parcial' : 'Llena',
+            actualizadoEn: new Date().toISOString(),
+          });
+        }
+      }
+      // ── 3. Delete each reserva ─────────────────────────────────────────────
+      await deleteDoc(r.ref);
+    }
+
+    // ── 4. Delete items subcollection ────────────────────────────────────────
+    const itemsSnap = await getDocs(collection(db, 'demandasCarga53', id, 'items'));
     await Promise.all(itemsSnap.docs.map(d => deleteDoc(d.ref)));
-    // Delete parent document
-    await deleteDoc(doc(db, COL, id));
+
+    // ── 5. Delete parent demand document ─────────────────────────────────────
+    await deleteDoc(doc(db, 'demandasCarga53', id));
   },
 };

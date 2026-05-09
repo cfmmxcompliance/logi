@@ -106,9 +106,10 @@ export const ReservaVentanas53: React.FC = () => {
     }
   };
 
+  // Reads from the globally-loaded `reservas` state so counters are correct without needing to expand the row
   const getDemandasReservadasActivas = (demandaId: string) =>
-    (demandasReservas[demandaId] || [])
-      .filter(r => r.estatus === 'Reservada' || r.estatus === 'Confirmada')
+    reservas
+      .filter(r => r.demandaId === demandaId && (r.estatus === 'Reservada' || r.estatus === 'Confirmada'))
       .reduce((s, r) => s + r.cajasReservadas, 0);
 
   const openReserva = (d: DemandaCarga53) => {

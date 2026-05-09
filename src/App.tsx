@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from '../components/Layout.tsx';
 import { Dashboard } from '../pages/Dashboard.tsx';
@@ -151,9 +151,12 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 const AppContent = () => {
     const [isReady, setIsReady] = useState(false);
     const { isAuthenticated, loading, user } = useAuth();
+    const initCalledRef = useRef(false); // Guard: prevent re-init on background session re-validation
 
     useEffect(() => {
         if (loading) return;
+        if (initCalledRef.current) return; // Already initialized — don't re-run on user object changes
+        initCalledRef.current = true;
 
         // Async Init for IndexedDB and Services
         const init = async () => {
@@ -175,7 +178,7 @@ const AppContent = () => {
             }
         };
         init();
-    }, [loading, user?.role]);
+    }, [loading, isAuthenticated]);
 
     if (!isReady) {
         return (

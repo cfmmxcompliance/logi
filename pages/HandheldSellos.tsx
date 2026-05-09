@@ -2,23 +2,33 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { selloService } from '../services/selloService.ts';
+import { liberacionService } from '../services/liberacionService.ts';
 import { geminiService } from '../services/geminiService.ts';
 import { uploadSelloPhoto } from '../services/sellosUploadService.ts';
 import { AsignacionCajaModel } from '../types/asignacionCaja.ts';
-import { SelloRecord } from '../types.ts';
+import { SelloRecord, LiberacionRecord } from '../types.ts';
 import { Camera, Check, ArrowLeft, Loader2, Save, X, Box, ImageIcon, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUploadGuard } from '../hooks/useUploadGuard.ts';
 import { waitForOnline } from '../hooks/useOnlineStatus.ts';
 import { UploadStatusBanner, UploadStatus } from '../components/UploadStatusBanner.tsx';
+import { SelloMismatchAlert } from '../components/SelloMismatchAlert.tsx';
 
 export const HandheldSellos = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [cajasDelDia, setCajasDelDia] = useState<AsignacionCajaModel[]>([]);
   const [sellosDelDia, setSellosDelDia] = useState<SelloRecord[]>([]);
+  const [liberacionesDelDia, setLiberacionesDelDia] = useState<LiberacionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Alerta de sello cambiado
+  const [mismatchAlert, setMismatchAlert] = useState<{
+    numeroCaja: string;
+    selloOriginal: string;
+    selloLiberacion: string;
+  } | null>(null);
 
   // Initialize date to local today YYYY-MM-DD
   const getLocalToday = () => {
@@ -86,10 +96,11 @@ export const HandheldSellos = () => {
 
     // STEP 2: Refresh from network silently in background
     try {
-      const [cajasParaFecha, sellosParaFecha] = await fetchWithTimeout(
+      const [cajasParaFecha, sellosParaFecha, liberacionesParaFecha] = await fetchWithTimeout(
         Promise.all([
           asignacionCajaService.getAsignacionesByDate(targetDate),
-          selloService.getSellosByDate(targetDate)
+          selloService.getSellosByDate(targetDate),
+          liberacionService.getLiberacionesByDate(targetDate),
         ]),
         12000 // 12 seconds max wait
       );
@@ -110,6 +121,7 @@ export const HandheldSellos = () => {
       
       setCajasDelDia(cajasParaFecha);
       setSellosDelDia(sellosParaFecha);
+      setLiberacionesDelDia(liberacionesParaFecha);
     } catch (e: any) {
       console.warn('fetchDataForDate error:', e.message);
       // Sin alert() bloqueante — si hay datos en caché el usuario los ve sin interrupción
@@ -313,6 +325,22 @@ export const HandheldSellos = () => {
       setSelloValue('');
       setCurrentImageFile(null);
       setSelectedCaja(null); // cierra modal INMEDIATAMENTE
+
+      // Verificar si ya existe una liberación para esta caja y comparar sellos
+      const liberacionExistente = liberacionesDelDia.find(
+        l => l.asignacionCajaId === selectedCaja.id || l.numeroCaja === selectedCaja.numeroCaja
+      );
+      if (liberacionExistente) {
+        const selloNuevo = selloValue.toUpperCase().trim();
+        const selloLib = liberacionExistente.selloValidado?.toUpperCase().trim();
+        if (selloLib && selloNuevo !== selloLib) {
+          setMismatchAlert({
+            numeroCaja: selectedCaja.numeroCaja,
+            selloOriginal: selloNuevo,
+            selloLiberacion: selloLib,
+          });
+        }
+      }
 
       // Upload foto en SEGUNDO PLANO si existe (fire & forget — no bloquea)
       if (currentImageFile) {
@@ -669,6 +697,15 @@ export const HandheldSellos = () => {
                 </div>
             </div>
       )}
+
+      {/* Alerta crítica de sello cambiado */}
+      <SelloMismatchAlert
+        isOpen={!!mismatchAlert}
+        numeroCaja={mismatchAlert?.numeroCaja || ''}
+        selloOriginal={mismatchAlert?.selloOriginal || ''}
+        selloLiberacion={mismatchAlert?.selloLiberacion || ''}
+        onClose={() => setMismatchAlert(null)}
+      />
     </div>
   );
 };

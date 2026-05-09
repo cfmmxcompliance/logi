@@ -270,18 +270,43 @@ export const Settings = () => {
                                                         value={u.role}
                                                         onChange={async (e) => {
                                                             const newRole = e.target.value as UserRole;
-                                                            if (window.confirm(`Change role of ${u.username} to ${newRole}?`)) {
+                                                            const selectEl = e.target;
+                                                            const roleLabels: Record<string, string> = {
+                                                                [UserRole.ADMIN]: 'Admin',
+                                                                [UserRole.EDITOR]: 'Editor',
+                                                                [UserRole.AGENT]: 'Agent',
+                                                                [UserRole.OPERATOR]: 'Operator',
+                                                                [UserRole.EXPO]: 'Expo',
+                                                                [UserRole.CARRIER]: 'Carrier',
+                                                                [UserRole.TRANSPORTISTA]: 'Transportista',
+                                                                [UserRole.VIEWER]: 'Viewer',
+                                                                [UserRole.HANDHELD_USER]: 'Handheld (Sellos)',
+                                                                [UserRole.HANDHELD_USER2]: 'Handheld 2 (Liberación)',
+                                                                [UserRole.EMBARQUES]: 'Embarques',
+                                                                [UserRole.CLIENT]: 'Cliente',
+                                                                [UserRole.FINANZAS]: 'Finanzas',
+                                                                [UserRole.PENDING]: 'Pending',
+                                                            };
+                                                            const roleLabel = roleLabels[newRole] || newRole;
+                                                            if (window.confirm(`¿Cambiar rol de "${u.username}" a "${roleLabel}"?`)) {
+                                                                selectEl.disabled = true;
                                                                 // @ts-ignore
-                                                                const success = await authService.updateUserRole(u.email || u.username, newRole); // Use email (doc ID) if available
+                                                                const success = await authService.updateUserRole(u.email || u.username, newRole);
+                                                                selectEl.disabled = false;
                                                                 if (success) {
-                                                                    alert("Role updated!");
+                                                                    alert(`✅ Rol actualizado a "${roleLabel}" correctamente.`);
                                                                     // Refresh list
                                                                     // @ts-ignore
                                                                     const updated = await authService.getUsers();
                                                                     setSystemUsers(updated);
                                                                 } else {
-                                                                    alert("Failed to update role.");
+                                                                    alert("❌ No se pudo actualizar el rol. Revisa la consola para más detalles.");
+                                                                    // Reset select back to original value
+                                                                    selectEl.value = u.role;
                                                                 }
+                                                            } else {
+                                                                // User cancelled — reset select to original value
+                                                                selectEl.value = u.role;
                                                             }
                                                         }}
                                                         className={`border-slate-200 rounded text-xs font-medium py-1 px-2 bg-white ${u.role === UserRole.PENDING ? 'border-amber-300 text-amber-700 bg-amber-50' : ''}`}

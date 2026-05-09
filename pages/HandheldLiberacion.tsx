@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUploadGuard } from '../hooks/useUploadGuard.ts';
 import { waitForOnline } from '../hooks/useOnlineStatus.ts';
 import { UploadStatusBanner, UploadStatus } from '../components/UploadStatusBanner.tsx';
+import { SelloMismatchAlert } from '../components/SelloMismatchAlert.tsx';
 
 export const HandheldLiberacion = () => {
   const navigate = useNavigate();
@@ -48,6 +49,13 @@ export const HandheldLiberacion = () => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [networkWarning, setNetworkWarning] = useState<string | null>(null);
+
+  // Alerta de sello cambiado
+  const [mismatchAlert, setMismatchAlert] = useState<{
+    numeroCaja: string;
+    selloOriginal: string;
+    selloLiberacion: string;
+  } | null>(null);
 
   // ── Upload state ──
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
@@ -368,14 +376,18 @@ export const HandheldLiberacion = () => {
 
       // 2. Guarda el registro de liberación INMEDIATAMENTE con fotos=PENDING
       // La operación queda registrada, las URLs se rellenan en background
+      const selloFinal = extractedSello.toUpperCase().trim();
+      const selloInicial = assignedSelloRecord.selloAsignado;
+      const selloCoincide = selloInicial === selloFinal;
+
       const liberacionId = `lib_${selectedCaja.id}_${Date.now()}`;
       const newLiberacion: LiberacionRecord = {
         id: liberacionId,
         fechaLiberacion: selectedDate,
         asignacionCajaId: selectedCaja.id || '',
         numeroCaja: selectedCaja.numeroCaja,
-        selloValidado: extractedSello.toUpperCase().trim(),
-        coincideConOriginal: true,
+        selloValidado: selloFinal,
+        coincideConOriginal: selloCoincide,
         usuario: user.email || user.username || 'unknown',
         fechaHoraRegistro: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),
         fotos: { cajaUrl: 'PENDING', puertasUrl: 'PENDING', selloUrl: 'PENDING' },
@@ -388,8 +400,17 @@ export const HandheldLiberacion = () => {
       setLiberacionesDelDia(prev => [...prev, newLiberacion]);
       setSaveSuccess(true);
 
-      // 3. Cierra modal INMEDIATAMENTE (operación completada)
-      setTimeout(() => closeModal(), 2500);
+      // 3. Si los sellos no coinciden → mostrar alerta crítica ANTES de cerrar el modal
+      if (!selloCoincide) {
+        setMismatchAlert({
+          numeroCaja: selectedCaja.numeroCaja,
+          selloOriginal: selloInicial,
+          selloLiberacion: selloFinal,
+        });
+      } else {
+        // Solo cerrar automáticamente si todo está bien
+        setTimeout(() => closeModal(), 2500);
+      }
 
       // 4. Sube las 3 fotos en SEGUNDO PLANO (fire & forget)
       const cajaSnap    = fotoCajaFile;
@@ -414,6 +435,7 @@ export const HandheldLiberacion = () => {
       setValidationError(null);
       setSaveSuccess(false);
       setActiveCameraStep(null);
+      setMismatchAlert(null);
   };
 
   // Helper check
@@ -788,6 +810,18 @@ export const HandheldLiberacion = () => {
                 </div>
             </div>
       )}
+
+      {/* Alerta crítica de sello cambiado */}
+      <SelloMismatchAlert
+        isOpen={!!mismatchAlert}
+        numeroCaja={mismatchAlert?.numeroCaja || ''}
+        selloOriginal={mismatchAlert?.selloOriginal || ''}
+        selloLiberacion={mismatchAlert?.selloLiberacion || ''}
+        onClose={() => {
+          setMismatchAlert(null);
+          closeModal();
+        }}
+      />
     </div>
   );
 };

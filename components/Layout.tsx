@@ -78,7 +78,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <SidebarItem to="/" icon={LayoutDashboard} label={sidebarOpen ? "Dashboard" : ""} />
           )}
 
-          {user?.role !== UserRole.AGENT && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
+          {user?.role !== UserRole.AGENT && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
             <>
               <SidebarItem to="/operations" icon={Ship} label={sidebarOpen ? "Shipment Plan" : ""} />
               <SidebarItem to="/pre-alerts" icon={Bell} label={sidebarOpen ? "Pre-Alerts" : ""} />
@@ -94,7 +94,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           )}
 
           {/* Saldo Fianza: Desktop Only */ }
-          {![UserRole.CLIENT, UserRole.CARRIER, UserRole.EMBARQUES, UserRole.EXPO].includes(user?.role as UserRole) && (
+          {![UserRole.CLIENT, UserRole.CARRIER, UserRole.TRANSPORTISTA, UserRole.EMBARQUES, UserRole.EXPO].includes(user?.role as UserRole) && (
              <div className="hidden lg:block">
                  <SidebarItem to="/saldo-fianza" icon={DollarSign} label={sidebarOpen ? "Saldo Fianza" : ""} />
              </div>
@@ -160,9 +160,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           )}
 
           {/* Operational Transport -> Admin, Controller, Carrier, Embarques (NOT Agent/Expo/Editor) */}
-          {[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.CARRIER, UserRole.EMBARQUES].includes(user?.role as UserRole) && (
+          {[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.CARRIER, UserRole.TRANSPORTISTA, UserRole.EMBARQUES].includes(user?.role as UserRole) && (
             <>
-              {user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && (
+              {/* Carriers catalog: solo ADMIN y CONTROLLER (no CARRIER, no TRANSPORTISTA, no EMBARQUES) */}
+              {user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && (
                   <SidebarItem to="/carriers" icon={Anchor} label={sidebarOpen ? t("menu.carriers") : ""} />
               )}
               {user?.role !== UserRole.EMBARQUES && (
@@ -190,7 +191,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           )}
 
           {/* Daily Audit: Accessible to Everyone (except Pending, Carrier, Expo, Embarques, Client) */}
-          {user?.role !== UserRole.PENDING && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
+          {user?.role !== UserRole.PENDING && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
             <SidebarItem to="/daily-audit" icon={Activity} label={sidebarOpen ? "Control de Auditoría" : ""} />
           )}
 

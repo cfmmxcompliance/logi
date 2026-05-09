@@ -4,14 +4,15 @@ import { cajaService } from '../services/cajaService';
 import { driverService } from '../services/driverService';
 import { carrierService } from '../services/carrierService';
 import { liberacionService } from '../services/liberacionService';
+import { selloService } from '../services/selloService';
 import { transportLineService } from '../services/transportLineService';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
 import { CajaModel } from '../types/caja';
 import { DriverModel } from '../types/driver';
 import { CarrierModel } from '../types/carrier';
 import { TransportLineModel } from '../types/transportLine';
-import { LiberacionRecord } from '../types';
-import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle, ChevronUp, ChevronDown, RefreshCw, FileText, Loader2 } from 'lucide-react';
+import { LiberacionRecord, SelloRecord } from '../types';
+import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle, ChevronUp, ChevronDown, RefreshCw, FileText, Loader2, AlertTriangle } from 'lucide-react';
 import { uploadFileToDrive } from '../services/googleDriveService.ts';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
@@ -21,6 +22,7 @@ import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import modelosCaja from '../utils/modelosCaja.json';
 import { useLanguage } from '../context/LanguageContext';
+import { SelloMismatchAlert } from '../components/SelloMismatchAlert';
 
 export const AsignacionesDiarias: React.FC = () => {
   const { user } = useAuth();
@@ -36,6 +38,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
   const [transportLines, setTransportLines] = useState<TransportLineModel[]>([]);
   const [liberaciones, setLiberaciones] = useState<LiberacionRecord[]>([]);
+  const [sellos, setSellos] = useState<SelloRecord[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [importErrors, setImportErrors] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +51,13 @@ export const AsignacionesDiarias: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  // Alerta de sello cambiado
+  const [mismatchAlert, setMismatchAlert] = useState<{
+    numeroCaja: string;
+    selloOriginal: string;
+    selloLiberacion: string;
+  } | null>(null);
 
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
@@ -138,13 +148,14 @@ export const AsignacionesDiarias: React.FC = () => {
 
   const loadData = async () => {
     try {
-        const [asigData, cajasData, driversData, carriersData, liberacionesData, linesData] = await Promise.all([
+        const [asigData, cajasData, driversData, carriersData, liberacionesData, linesData, sellosData] = await Promise.all([
             asignacionCajaService.getAllAsignaciones().catch(() => []),
             cajaService.getAllCajas().catch(() => []),
             driverService.getAllDrivers().catch(() => []),
             carrierService.getAllCarriers().catch(() => []),
             liberacionService.getAllLiberaciones().catch(() => []),
-            transportLineService.getAllTransportLines().catch(() => [])
+            transportLineService.getAllTransportLines().catch(() => []),
+            selloService.getAllSellos().catch(() => []),
         ]);
         setAsignaciones(asigData.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()));
         setCajas(cajasData);
@@ -152,6 +163,7 @@ export const AsignacionesDiarias: React.FC = () => {
         setCarriers(carriersData);
         setLiberaciones(liberacionesData);
         setTransportLines(linesData);
+        setSellos(sellosData);
     } catch (e) {
         console.error("Error cargando dependencias de Asignación:", e);
     } finally {
@@ -874,10 +886,59 @@ export const AsignacionesDiarias: React.FC = () => {
                      </label>
                    )}
                  </td>
-                
-                <td className="p-4 font-mono text-teal-700 font-bold whitespace-nowrap border-l border-teal-100/50 bg-teal-50/10">
-                    {liberacion ? liberacion.selloValidado : '-'}
-                </td>
+                                {/* Sello Liberación — muestra sello asignado siempre que exista */}
+                 <td className="p-4 font-mono font-bold whitespace-nowrap border-l border-teal-100/50 bg-teal-50/10">
+                   {(() => {
+                     const selloInicial = sellos.find(s =>
+                       s.asignacionCajaId === a.id ||
+                       (s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha)
+                     );
+
+                     // Sin sello asignado aún
+                     if (!selloInicial) return <span className="text-slate-300">—</span>;
+
+                     // Hay sello asignado pero aún no liberada
+                     if (!liberacion) {
+                       return (
+                         <span className="text-blue-600 font-mono font-bold">
+                           {selloInicial.selloAsignado}
+                         </span>
+                       );
+                     }
+
+                     // Liberada — verificar si hay mismatch
+                     const hayMismatch =
+                       selloInicial.selloAsignado?.toUpperCase().trim() !==
+                       liberacion.selloValidado?.toUpperCase().trim();
+
+                     if (hayMismatch) {
+                       return (
+                         <button
+                           onClick={() => setMismatchAlert({
+                             numeroCaja: a.numeroCaja,
+                             selloOriginal: selloInicial.selloAsignado,
+                             selloLiberacion: liberacion.selloValidado,
+                           })}
+                           className="flex flex-col items-start gap-0.5 group text-left"
+                           title="Sello cambiado — click para ver alerta"
+                         >
+                           <div className="flex items-center gap-1.5">
+                             <AlertTriangle size={13} className="text-red-500 flex-shrink-0" />
+                             <span className="text-red-600 font-black text-[10px] uppercase tracking-wide">SELLO CAMBIADO</span>
+                           </div>
+                           <div className="flex gap-1.5 items-center">
+                             <span className="line-through text-slate-400 text-xs font-mono">{selloInicial.selloAsignado}</span>
+                             <span className="text-red-400 text-xs">→</span>
+                             <span className="text-red-600 font-mono text-xs font-black">{liberacion.selloValidado}</span>
+                           </div>
+                         </button>
+                       );
+                     }
+
+                     // Liberada con sello coincidente ✓
+                     return <span className="text-teal-700">{liberacion.selloValidado}</span>;
+                   })()}
+                 </td>
                 
                 <td className="p-4 text-center">
                     {hasLiberacion ? (
@@ -1155,6 +1216,14 @@ export const AsignacionesDiarias: React.FC = () => {
           </div>
       )}
 
+      {/* Alerta crítica de sello cambiado */}
+      <SelloMismatchAlert
+        isOpen={!!mismatchAlert}
+        numeroCaja={mismatchAlert?.numeroCaja || ''}
+        selloOriginal={mismatchAlert?.selloOriginal || ''}
+        selloLiberacion={mismatchAlert?.selloLiberacion || ''}
+        onClose={() => setMismatchAlert(null)}
+      />
     </div>
   );
 };

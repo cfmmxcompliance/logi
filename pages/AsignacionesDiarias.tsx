@@ -409,17 +409,19 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // CSV EXPORT
   const exportCSV = () => {
-      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "SUB-LÍNEA", "PLACAS CAJA", "TRANSPORT LINE ID", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO", "SELLO LIBERACIÓN", "FECHA SELLADO", "OBSERVACIONES"];
+      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "CARRIER (SCAC)", "NOMBRE COMERCIAL", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO", "SELLO LIBERACIÓN", "FECHA SELLADO", "OBSERVACIONES"];
       const rows = filteredData.map(a => {
           const lib = liberaciones.find(l => l.asignacionCajaId === a.id);
+          const tl = transportLines.find(t => t.carrierCodigo === a.carrierCodigo);
           return [
               a.fecha,
               a.horaAsignacion || '',
               a.numeroOperacion || '',
               a.numeroCaja,
+              a.carrierCodigo || '',
+              tl?.TransportLine || '',
               a.subLinea || '',
               a.placasCaja || '',
-              a.transportLineId || '',
               a.driverId,
               a.nombreDriver || '',
               a.placasTracto || '',
@@ -442,8 +444,9 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // CSV TEMPLATE
   const downloadTemplate = () => {
-      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "TRANSPORT LINE ID (Opcional)", "DRIVER ID", "MODELO", "OBSERVACIONES"];
-      const example = ["2026-03-25", "09:30", "OP-001", "EMCU-123456", "TL-001", "ARC-001", "MODEL A, MODEL B", "Carga prioritaria"];
+      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "DRIVER ID", "MODELO", "OBSERVACIONES"];
+      const example = ["2026-03-25", "09:30", "OP-001", "EMCU-123456", "ARC-001", "MODEL A, MODEL B", "Carga prioritaria"];
+      // Nota: CARRIER (SCAC) y NOMBRE COMERCIAL se derivan automaticamente del NUMERO CAJA al importar
       const csvContent = [headers, example].map(e => e.join(",")).join("\n");
       const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);

@@ -164,7 +164,7 @@ export const Drivers: React.FC = () => {
   };
 
   const exportCSV = () => {
-      const headers = ["DRIVER ID", "CARRIER", "TRANSPORT LINE ID", "NOMBRE", "LICENCIA", "TELÉFONO", "PLACAS TRACTO"];
+      const headers = ["DRIVER ID", "CARRIER (SCAC)", "TRANSPORT LINE ID", "NOMBRE", "LICENCIA", "TELÉFONO", "PLACAS TRACTO"];
       const rows = filteredDrivers.map(c => [
           c.driverId,
           c.carrierCodigo,

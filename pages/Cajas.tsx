@@ -170,7 +170,7 @@ export const Cajas: React.FC = () => {
 
   // --- CSV LOGIC ---
   const exportToCSV = () => {
-    const headers = ["NÚMERO CAJA", "CARRIER (SCAC)", "LÍNEA TRANSPORTE", "NOMBRE SUB-LÍNEA", "APÉNDICE 10", "TIPO CAJA", "PLACAS"];
+    const headers = ["NÚMERO CAJA", "CARRIER (SCAC)", "LÍNEA TRANSPORTE", "NOMBRE SUB-LÍNEA", "APÉNDICE 10 (CLAVE)", "TIPO CAJA", "PLACAS"];
     const rows = filteredCajas.map(c => [
       c.NumeroCaja,
       c.carrierCodigo,

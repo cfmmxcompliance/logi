@@ -72,7 +72,8 @@ const SidebarItem = ({ to, icon: Icon, label, badge }: { to: string; icon: any; 
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [demandasPendientes, setDemandasPendientes] = useState(0);
+  const [ventanasBadge, setVentanasBadge] = useState(0);
+  const [reservasBadge, setReservasBadge] = useState(0);
   const { user, logout } = useAuth();
   const { toggleLanguage, language, t } = useLanguage();
   const location = useLocation();
@@ -80,33 +81,38 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   useEffect(() => {
     const check = async () => {
       try {
-        const [demandas, reservas] = await Promise.all([
+        const [demandas, allVentanas, reservas] = await Promise.all([
           demandaCarga53Service.getAllDemandas(),
+          // Use direct Firestore to avoid circular service dep
+          getDocs(collection(db, 'ventanasCarga53')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() } as any))),
           reservaVentana53Service.getAllReservas(),
         ]);
-        const activas = demandas.filter(d =>
+        const activas = demandas.filter((d: any) =>
           ['Confirmada', 'Enviada a carriers', 'En proceso de reserva'].includes(d.estatus)
         );
-        // Also count direct asignacion_cajas records per demandaId
-        let asignacionesPorDemanda: Record<string, number> = {};
-        if (activas.length > 0) {
-          const asnSnap = await getDocs(
-            query(collection(db, 'asignacion_cajas'), where('demandaId', 'in', activas.map(d => d.id).filter(Boolean)))
-          );
-          asnSnap.docs.forEach(d => {
-            const did = d.data().demandaId;
-            if (did) asignacionesPorDemanda[did] = (asignacionesPorDemanda[did] || 0) + 1;
-          });
-        }
-        const count = activas.filter(d => {
-          const porReservas = reservas
-            .filter(r => r.demandaId === d.id && ['Reservada', 'Confirmada'].includes(r.estatus))
-            .reduce((s, r) => s + r.cajasReservadas, 0);
-          const porAsignaciones = asignacionesPorDemanda[d.id!] || 0;
-          const totalCubierto = Math.max(porReservas, porAsignaciones);
-          return (d.totalCajasSolicitadas - totalCubierto) > 0;
+
+        // Badge 1 — Ventanas 53': demands where total ventana capacity < cajas solicitadas
+        const needVentanas = activas.filter((d: any) => {
+          const cap = allVentanas
+            .filter((v: any) => v.fecha === d.fechaDemanda)
+            .reduce((s: number, v: any) => s + v.capacidadCajas, 0);
+          return cap < d.totalCajasSolicitadas;
         }).length;
-        setDemandasPendientes(count);
+
+        // Badge 2 — Reserva Ventanas 53': demands with enough capacity but no active reserva
+        const needCarrier = activas.filter((d: any) => {
+          const cap = allVentanas
+            .filter((v: any) => v.fecha === d.fechaDemanda)
+            .reduce((s: number, v: any) => s + v.capacidadCajas, 0);
+          if (cap < d.totalCajasSolicitadas) return false; // still needs ventanas first
+          const reserved = (reservas as any[])
+            .filter(r => r.demandaId === d.id && ['Reservada', 'Confirmada'].includes(r.estatus))
+            .reduce((s: number, r: any) => s + r.cajasReservadas, 0);
+          return reserved < d.totalCajasSolicitadas;
+        }).length;
+
+        setVentanasBadge(needVentanas);
+        setReservasBadge(needCarrier);
       } catch { /* silent */ }
     };
     check();
@@ -231,12 +237,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 <>
                   <SidebarItem to="/admin-productos-53" icon={Package} label={sidebarOpen ? 'Productos 53\'' : ''} />
                   <SidebarItem to="/admin-ventanas-53" icon={CalendarDays} label={sidebarOpen ? 'Ventanas 53\'' : ''}
-                    badge={demandasPendientes > 0 ? demandasPendientes : undefined} />
+                    badge={ventanasBadge > 0 ? ventanasBadge : undefined} />
                   <SidebarItem to="/demanda-cajas-53" icon={ClipboardList} label={sidebarOpen ? 'Demanda 53\'' : ''} />
                 </>
               )}
               {/* Reserva: visible para Admin, Controller, Carrier y Transportista */}
-              <SidebarItem to="/reserva-ventanas-53" icon={Truck} label={sidebarOpen ? 'Reserva Ventanas 53\'' : ''} />
+              <SidebarItem to="/reserva-ventanas-53" icon={Truck} label={sidebarOpen ? 'Reserva Ventanas 53\'' : ''}
+                badge={reservasBadge > 0 ? reservasBadge : undefined} />
             </>
           )}
 

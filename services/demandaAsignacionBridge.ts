@@ -61,26 +61,30 @@ export const demandaAsignacionBridge = {
       // Shared fields that enrich/overwrite the asignacion record
       const mergeData: Record<string, any> = {
         // ── Campos visibles en la UI existente ──
-        numeroCaja: reserva.numeroCaja || 'PENDIENTE',
-        placasCaja: reserva.placas || 'PENDIENTE',
-        driverId: reserva.driverId || 'PENDIENTE',
-        nombreDriver: reserva.operador || 'PENDIENTE',
-        placasTracto: reserva.placas || 'PENDIENTE',
+        numeroCaja:      reserva.numeroCaja || 'PENDIENTE',
+        placasCaja:      reserva.placas     || 'PENDIENTE',
+        driverId:        reserva.operador   || 'PENDIENTE',   // nombre del operador como ID visible
+        nombreDriver:    reserva.operador   || 'PENDIENTE',
+        placasTracto:    '',                                   // no disponible en reserva; se completa después en UI
+        transportLineId: reserva.economico  || '',             // transportLineId guardado al seleccionar sub-línea
+        subLinea:        reserva.nombreSubLinea || '',          // nombre sub-línea
         modeloAsignado: modelos,
-        carrierCodigo: reserva.carrierId,
+        carrierCodigo:  reserva.carrierId,
         observaciones: [
           `Demanda: ${reserva.demandaId}`,
           `Reserva: ${reserva.id}`,
           `Carrier: ${reserva.carrierNombre}`,
+          `Nom. Comercial: ${reserva.nombreComercial || ''}`,
+          `Sub-Línea: ${reserva.nombreSubLinea || ''}`,
           `Caja ${cajaN} de ${reserva.cajasReservadas}`,
         ].join(' | '),
         // ── Campos de trazabilidad ──
-        demandaId: reserva.demandaId,
-        reservaId: reserva.id,
-        ventanaId: reserva.ventanaId,
-        carrierId: reserva.carrierId,
-        origen: 'demanda_reserva',
-        updatedAt: now,
+        demandaId:  reserva.demandaId,
+        reservaId:  reserva.id,
+        ventanaId:  reserva.ventanaId,
+        carrierId:  reserva.carrierId,
+        origen:     'demanda_reserva',
+        updatedAt:  now,
       };
 
       const unlinkedDoc = unlinked[cajaN - 1]; // try to match an existing record
@@ -98,9 +102,8 @@ export const demandaAsignacionBridge = {
         await setDoc(ref, {
           id: docId,
           fecha,
-          horaAsignacion: reserva.horaInicio,
-          numeroOperacion: operacion,
-          subLinea: '',
+          horaAsignacion:   reserva.horaInicio,
+          numeroOperacion:  operacion,
           estatusAsignacion: 'Pendiente',
           createdAt: now,
           createdBy: userEmail,

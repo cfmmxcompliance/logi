@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck, Globe, Activity, FolderOpen,
   Navigation,
@@ -8,6 +8,8 @@ import { ConnectionStatus } from './ConnectionStatus.tsx';
 import { UserRole } from '../types.ts';
 import { storageService } from '../services/storageService.ts';
 import { useLanguage } from '../context/LanguageContext';
+import { demandaCarga53Service } from '../services/demandaCarga53Service.ts';
+import { reservaVentana53Service } from '../services/reservaVentana53Service.ts';
 
 const SyncIndicator = () => {
   const [syncing, setSyncing] = React.useState(false);
@@ -38,7 +40,7 @@ const SyncIndicator = () => {
   );
 };
 
-const SidebarItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => {
+const SidebarItem = ({ to, icon: Icon, label, badge }: { to: string; icon: any; label: string; badge?: number }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
   return (
@@ -49,16 +51,51 @@ const SidebarItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: 
         : 'text-slate-400 hover:bg-slate-800 hover:text-white'
         }`}
     >
-      <Icon size={20} />
-      <span className="font-medium">{label}</span>
+      <div className="relative">
+        <Icon size={20} />
+        {badge != null && badge > 0 && (
+          <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+          </span>
+        )}
+      </div>
+      <span className="font-medium flex-1">{label}</span>
+      {badge != null && badge > 0 && label && (
+        <span className="ml-auto bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">{badge}</span>
+      )}
     </NavLink>
   );
 };
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = React.useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [demandasPendientes, setDemandasPendientes] = useState(0);
   const { user, logout } = useAuth();
   const { toggleLanguage, language, t } = useLanguage();
+  const location = useLocation();
+
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const [demandas, reservas] = await Promise.all([
+          demandaCarga53Service.getAllDemandas(),
+          reservaVentana53Service.getAllReservas(),
+        ]);
+        const activas = demandas.filter(d =>
+          ['Confirmada', 'Enviada a carriers', 'En proceso de reserva'].includes(d.estatus)
+        );
+        const count = activas.filter(d => {
+          const asignadas = reservas
+            .filter(r => r.demandaId === d.id && ['Reservada', 'Confirmada'].includes(r.estatus))
+            .reduce((s, r) => s + r.cajasReservadas, 0);
+          return (d.totalCajasSolicitadas - asignadas) > 0;
+        }).length;
+        setDemandasPendientes(count);
+      } catch { /* silent */ }
+    };
+    check();
+  }, [location.pathname]);
 
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden">
@@ -178,7 +215,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               {user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && (
                 <>
                   <SidebarItem to="/admin-productos-53" icon={Package} label={sidebarOpen ? 'Productos 53\'' : ''} />
-                  <SidebarItem to="/admin-ventanas-53" icon={CalendarDays} label={sidebarOpen ? 'Ventanas 53\'' : ''} />
+                  <SidebarItem to="/admin-ventanas-53" icon={CalendarDays} label={sidebarOpen ? 'Ventanas 53\'' : ''}
+                    badge={demandasPendientes > 0 ? demandasPendientes : undefined} />
                   <SidebarItem to="/demanda-cajas-53" icon={ClipboardList} label={sidebarOpen ? 'Demanda 53\'' : ''} />
                 </>
               )}

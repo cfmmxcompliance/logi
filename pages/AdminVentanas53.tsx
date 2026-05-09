@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ventanaCarga53Service } from '../services/ventanaCarga53Service';
+import { demandaCarga53Service } from '../services/demandaCarga53Service';
+import { reservaVentana53Service } from '../services/reservaVentana53Service';
 import { VentanaCarga53, VentanaEstatus } from '../types/ventanaCarga53';
+import { DemandaCarga53 } from '../types/demandaCarga53';
+import { ReservaVentana53 } from '../types/reservaVentana53';
 import { useAuth } from '../context/AuthContext';
 import {
-  Loader2, Plus, CalendarDays, Clock, Package, CheckCircle,
-  AlertCircle, XCircle, Minus, Edit2, X
+  Loader2, Plus, CalendarDays, Clock, CheckCircle,
+  AlertCircle, XCircle, Minus, Edit2, X, Bell
 } from 'lucide-react';
 
 const ESTATUS_COLORS: Record<VentanaEstatus, string> = {
@@ -39,6 +43,8 @@ const emptyForm = (): Omit<VentanaCarga53, 'id' | 'cajasReservadas' | 'cajasDisp
 export const AdminVentanas53: React.FC = () => {
   const { user } = useAuth();
   const [ventanas, setVentanas] = useState<VentanaCarga53[]>([]);
+  const [demandas, setDemandas] = useState<DemandaCarga53[]>([]);
+  const [reservas, setReservas] = useState<ReservaVentana53[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -52,9 +58,15 @@ export const AdminVentanas53: React.FC = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const data = await ventanaCarga53Service.getAllVentanas();
+      const [data, allDemandas, allReservas] = await Promise.all([
+        ventanaCarga53Service.getAllVentanas(),
+        demandaCarga53Service.getAllDemandas(),
+        reservaVentana53Service.getAllReservas(),
+      ]);
       data.sort((a, b) => (a.fecha + a.horaInicio).localeCompare(b.fecha + b.horaInicio));
       setVentanas(data);
+      setDemandas(allDemandas.filter(d => ['Confirmada', 'Enviada a carriers', 'En proceso de reserva'].includes(d.estatus)));
+      setReservas(allReservas);
     } finally {
       setLoading(false);
     }
@@ -134,6 +146,17 @@ export const AdminVentanas53: React.FC = () => {
     }
   };
 
+  // Compute coverage: for each confirmed demand, how many cajas still unassigned
+  const demandasSinCobertura = useMemo(() => {
+    return demandas.map(d => {
+      const cajasAsignadas = reservas
+        .filter(r => r.demandaId === d.id && ['Reservada', 'Confirmada'].includes(r.estatus))
+        .reduce((s, r) => s + r.cajasReservadas, 0);
+      const pendientes = d.totalCajasSolicitadas - cajasAsignadas;
+      return { demanda: d, cajasAsignadas, pendientes };
+    }).filter(x => x.pendientes > 0);
+  }, [demandas, reservas]);
+
   const filtered = filterFecha
     ? ventanas.filter(v => v.fecha === filterFecha)
     : ventanas;
@@ -158,6 +181,40 @@ export const AdminVentanas53: React.FC = () => {
           <Plus size={18} /> Nueva Ventana
         </button>
       </div>
+
+      {/* Alert banner: demands needing ventana windows */}
+      {!loading && demandasSinCobertura.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+            </span>
+            <p className="text-amber-800 font-black text-sm">
+              {demandasSinCobertura.length} demanda(s) confirmada(s) sin ventanas suficientes
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {demandasSinCobertura.map(({ demanda, cajasAsignadas, pendientes }) => (
+              <div key={demanda.id}
+                className="flex items-center gap-2 bg-white border border-amber-200 rounded-xl px-3 py-2 text-xs cursor-pointer hover:bg-amber-50 transition-colors"
+                onClick={() => openNew()}
+                title="Click para crear una nueva ventana"
+              >
+                <Bell size={12} className="text-amber-500" />
+                <span className="font-mono font-bold text-slate-700">{demanda.fechaDemanda}</span>
+                {demanda.modelos && demanda.modelos.length > 0 && (
+                  <span className="text-slate-400">{demanda.modelos.join(', ')}</span>
+                )}
+                <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 font-black rounded-full">
+                  {pendientes} caja(s) sin ventana
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-amber-600">Crea ventanas con suficiente capacidad para cubrir estas demandas.</p>
+        </div>
+      )}
 
       {/* Filter */}
       <div className="flex items-center gap-3">

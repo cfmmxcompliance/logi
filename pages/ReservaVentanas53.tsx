@@ -150,30 +150,34 @@ export const ReservaVentanas53: React.FC = () => {
     setFormNumeroCaja(''); setFormPlacas(''); setFormEconomico(''); setFormOperador(''); setFormTelefono('');
   };
 
-  // Sub-líneas disponibles según el Nombre Comercial seleccionado
+  // Sub-líneas disponibles según el Nombre Comercial seleccionado (trimmed)
   const subLineasDisponibles = useMemo(() => {
     if (!formNombreComercial) return [];
     return [...new Set(
       transportLines
-        .filter(t => t.TransportLine === formNombreComercial && t.nombreSubLinea)
-        .map(t => t.nombreSubLinea!)
+        .filter(t => t.TransportLine?.trim() === formNombreComercial.trim() && t.nombreSubLinea)
+        .map(t => t.nombreSubLinea!.trim())
     )].sort();
   }, [transportLines, formNombreComercial]);
 
-  // Cajas filtradas: requiere Nombre Comercial + Nombre Sub-Línea
+  // Cajas filtradas: requiere Nombre Comercial + Nombre Sub-Línea (trim-safe)
   const cajasFiltradas = useMemo(() => {
     if (!formNombreComercial || !formNombreSubLinea) return [];
+    const nc = formNombreComercial.trim();
+    const sl = formNombreSubLinea.trim();
     return cajas.filter(c =>
-      c.TransportLine === formNombreComercial &&
-      (c.nombreSubLinea === formNombreSubLinea)
+      c.TransportLine?.trim() === nc &&
+      c.nombreSubLinea?.trim() === sl
     );
   }, [cajas, formNombreComercial, formNombreSubLinea]);
 
-  // Drivers filtrados: requiere Nombre Comercial + Nombre Sub-Línea
+  // Drivers filtrados: requiere Nombre Comercial + Nombre Sub-Línea (trim-safe)
   const driversFiltrados = useMemo(() => {
     if (!formNombreComercial || !formNombreSubLinea) return [];
+    const nc = formNombreComercial.trim();
+    const sl = formNombreSubLinea.trim();
     const tl = transportLines.find(t =>
-      t.TransportLine === formNombreComercial && t.nombreSubLinea === formNombreSubLinea
+      t.TransportLine?.trim() === nc && t.nombreSubLinea?.trim() === sl
     );
     if (!tl) return [];
     return drivers.filter(d => d.transportLineId === tl.transportLineId);

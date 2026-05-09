@@ -366,14 +366,21 @@ export const AsignacionesDiarias: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
+    if (!id) return;
     if (confirm("¿Seguro que deseas eliminar esta asignación diaria?")) {
-      await asignacionCajaService.deleteAsignacion(id);
-      setSelectedIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(id);
-          return newSet;
-      });
-      loadData();
+      try {
+        await asignacionCajaService.deleteAsignacion(id);
+        setSelectedIds(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(id);
+            return newSet;
+        });
+        loadData();
+      } catch (error: any) {
+        console.error("Error eliminando asignación:", error);
+        alert(`Error al eliminar: ${error?.message || 'Verifica tu conexión e intenta de nuevo.'}`);
+        loadData();
+      }
     }
   };
 

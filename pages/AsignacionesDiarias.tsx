@@ -123,6 +123,18 @@ export const AsignacionesDiarias: React.FC = () => {
     loadData();
   }, []);
 
+  // TRANSPORTISTA: si transportLines carga DESPUES de abrir el modal, auto-rellena el carrier
+  useEffect(() => {
+    if (showModal && !isEditing && subLineaFilter && !formData.carrierCodigo && transportLines.length > 0) {
+      const matchingTL = transportLines.find(
+        tl => (tl.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase()
+      );
+      if (matchingTL?.carrierCodigo) {
+        setFormData(prev => ({ ...prev, carrierCodigo: matchingTL.carrierCodigo }));
+      }
+    }
+  }, [showModal, isEditing, subLineaFilter, transportLines]);
+
   const loadData = async () => {
     try {
         const [asigData, cajasData, driversData, carriersData, liberacionesData, linesData] = await Promise.all([
@@ -325,11 +337,25 @@ export const AsignacionesDiarias: React.FC = () => {
       return;
     }
 
+    // FAILSAFE: garantizar carrierCodigo antes de guardar
+    let finalCarrier = formData.carrierCodigo || '';
+    if (!finalCarrier && subLineaFilter) {
+      const matchingTL = transportLines.find(
+        tl => (tl.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase()
+      );
+      finalCarrier = matchingTL?.carrierCodigo || '';
+    }
+    if (!finalCarrier) {
+      const matchCaja = cajas.find(c => c.NumeroCaja === formData.numeroCaja);
+      finalCarrier = matchCaja?.carrierCodigo || '';
+    }
+    const finalFormData = { ...formData, carrierCodigo: finalCarrier };
+
     if (isEditing && formData.id) {
-      await asignacionCajaService.updateAsignacion(formData.id, formData);
+      await asignacionCajaService.updateAsignacion(formData.id, finalFormData);
     } else {
       const newRecord: AsignacionCajaModel = {
-        ...(formData as AsignacionCajaModel),
+        ...(finalFormData as AsignacionCajaModel),
         createdBy: user?.email || 'sistema',
         createdAt: new Date().toISOString()
       };

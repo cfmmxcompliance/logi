@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { demandaCarga53Service } from '../services/demandaCarga53Service';
 import { ventanaCarga53Service } from '../services/ventanaCarga53Service';
 import { reservaVentana53Service } from '../services/reservaVentana53Service';
-import { demandaAsignacionBridge } from '../services/demandaAsignacionBridge';
+import { demandaAsignacionBridge, BridgeResult } from '../services/demandaAsignacionBridge';
 import { DemandaCarga53, DemandaItem53 } from '../types/demandaCarga53';
 import { VentanaCarga53 } from '../types/ventanaCarga53';
 import { ReservaVentana53, ReservaEstatus } from '../types/reservaVentana53';
@@ -50,6 +50,9 @@ export const ReservaVentanas53: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [bridgeSaving, setBridgeSaving] = useState<string | null>(null);
+  // For confirmed reservas: show linked TL asignaciones
+  const [linkedAsignaciones, setLinkedAsignaciones] = useState<Record<string, { id: string; numeroOperacion: string; numeroCaja: string }[]>>({});
+  const [expandedReserva, setExpandedReserva] = useState<string | null>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -151,16 +154,20 @@ export const ReservaVentanas53: React.FC = () => {
   };
 
   const handleConfirmarReserva = async (r: ReservaVentana53) => {
-    if (!window.confirm('¿Confirmar esta reserva y generar registros en Asignación Diaria?')) return;
+    if (!window.confirm('¿Confirmar esta reserva y generar/vincular registros en Asignación Diaria?')) return;
     setBridgeSaving(r.id!);
     try {
       await reservaVentana53Service.confirmarReserva(r.id!, email);
-      // Bridge → asignacion_cajas
       const demanda = await demandaCarga53Service.getDemandaById(r.demandaId);
       const items = await demandaCarga53Service.getItemsByDemanda(r.demandaId);
       if (demanda) {
         const result = await demandaAsignacionBridge.generarAsignacionesDesdeReserva(r, demanda, items, email);
-        alert(`✅ Reserva confirmada. ${result.creados} registro(s) generados en Asignación Diaria. ${result.omitidos > 0 ? `(${result.omitidos} ya existían)` : ''}`);
+        const partes = [
+          result.creados > 0 ? `${result.creados} registro(s) creado(s)` : '',
+          result.actualizados > 0 ? `${result.actualizados} registro(s) vinculado(s) desde asignación existente` : '',
+          result.omitidos > 0 ? `${result.omitidos} ya sincronizado(s)` : '',
+        ].filter(Boolean).join(' · ');
+        alert(`✅ Reserva confirmada.\n${partes || 'Sin cambios adicionales.'}\n\nVe al módulo "Asignación Diaria de Cajas Secas 53'" para verificar.`);
       }
       await load();
     } catch (e: any) { alert('Error: ' + e.message); }
@@ -326,37 +333,78 @@ export const ReservaVentanas53: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {misReservas.map(r => (
-                    <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-5 py-3 font-mono font-bold text-slate-700">{r.fechaCarga}</td>
-                      <td className="px-5 py-3 text-sm text-slate-600">{r.horaInicio}–{r.horaFin}</td>
-                      <td className="px-5 py-3 text-sm text-slate-600">{r.carrierNombre}</td>
-                      <td className="px-5 py-3 text-center font-black text-teal-700">{r.cajasReservadas}</td>
-                      <td className="px-5 py-3 text-xs text-slate-500 font-mono">
-                        {r.numeroCaja || '—'} {r.placas ? `· ${r.placas}` : ''}
-                      </td>
-                      <td className="px-5 py-3 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${RESERVA_COLORS[r.estatus]}`}>
-                          {r.estatus}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        <div className="flex justify-end gap-2">
-                          {isAdmin && r.estatus === 'Reservada' && (
-                            <button onClick={() => handleConfirmarReserva(r)} disabled={bridgeSaving === r.id}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50">
-                              {bridgeSaving === r.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
-                              Confirmar
-                            </button>
-                          )}
-                          {r.estatus === 'Reservada' && (
-                            <button onClick={() => handleCancelarReserva(r)}
-                              className="px-3 py-1.5 text-red-500 border border-red-100 hover:bg-red-50 text-xs font-bold rounded-lg transition-colors">
-                              Cancelar
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
+                    <React.Fragment key={r.id}>
+                      <tr className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-5 py-3 font-mono font-bold text-slate-700">{r.fechaCarga}</td>
+                        <td className="px-5 py-3 text-sm text-slate-600">{r.horaInicio}–{r.horaFin}</td>
+                        <td className="px-5 py-3 text-sm text-slate-600">{r.carrierNombre}</td>
+                        <td className="px-5 py-3 text-center font-black text-teal-700">{r.cajasReservadas}</td>
+                        <td className="px-5 py-3 text-xs text-slate-500 font-mono">
+                          {r.numeroCaja || '—'} {r.placas ? `· ${r.placas}` : ''}
+                        </td>
+                        <td className="px-5 py-3 text-center">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${RESERVA_COLORS[r.estatus]}`}>
+                            {r.estatus}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <div className="flex justify-end gap-2">
+                            {r.estatus === 'Confirmada' && (
+                              <button
+                                onClick={async () => {
+                                  if (expandedReserva === r.id) { setExpandedReserva(null); return; }
+                                  setExpandedReserva(r.id!);
+                                  if (!linkedAsignaciones[r.id!]) {
+                                    const linked = await demandaAsignacionBridge.getAsignacionesByReserva(r.id!);
+                                    setLinkedAsignaciones(prev => ({ ...prev, [r.id!]: linked }));
+                                  }
+                                }}
+                                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors flex items-center gap-1"
+                              >
+                                {expandedReserva === r.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                Asignaciones
+                              </button>
+                            )}
+                            {isAdmin && r.estatus === 'Reservada' && (
+                              <button onClick={() => handleConfirmarReserva(r)} disabled={bridgeSaving === r.id}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50">
+                                {bridgeSaving === r.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
+                                Confirmar
+                              </button>
+                            )}
+                            {r.estatus === 'Reservada' && (
+                              <button onClick={() => handleCancelarReserva(r)}
+                                className="px-3 py-1.5 text-red-500 border border-red-100 hover:bg-red-50 text-xs font-bold rounded-lg transition-colors">
+                                Cancelar
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                      {expandedReserva === r.id && r.estatus === 'Confirmada' && (
+                        <tr>
+                          <td colSpan={7} className="bg-emerald-50 border-t border-emerald-100">
+                            <div className="px-6 py-3">
+                              {!linkedAsignaciones[r.id] ? (
+                                <span className="text-xs text-slate-400 flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> Cargando...</span>
+                              ) : linkedAsignaciones[r.id].length === 0 ? (
+                                <span className="text-xs text-amber-600">No se encontraron registros vinculados en Asignación Diaria.</span>
+                              ) : (
+                                <div className="flex flex-wrap gap-2">
+                                  <span className="text-xs font-bold text-emerald-700 mr-2">Asignaciones vinculadas:</span>
+                                  {linkedAsignaciones[r.id].map(a => (
+                                    <span key={a.id} className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-emerald-200 rounded-lg text-xs">
+                                      <span className="font-black text-emerald-700">{a.numeroOperacion}</span>
+                                      {a.numeroCaja && a.numeroCaja !== '—' && <span className="text-slate-400">· Caja {a.numeroCaja}</span>}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

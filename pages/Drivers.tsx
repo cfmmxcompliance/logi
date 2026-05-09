@@ -354,7 +354,12 @@ export const Drivers: React.FC = () => {
               </tr>
             ))}
             {filteredDrivers.length === 0 && !loading && (
-              <tr><td colSpan={7} className="p-12 text-center text-slate-400">No hay choferes que coincidan.</td></tr>
+              <tr><td colSpan={7} className="p-12 text-center">
+                {user?.role === UserRole.TRANSPORTISTA && !subLineaFilter
+                  ? <span className="text-amber-600 font-medium">⚠️ Tu perfil no tiene Nombre Comercial asignado. Contacta al administrador para configurarlo.</span>
+                  : <span className="text-slate-400">No hay choferes que coincidan.</span>
+                }
+              </td></tr>
             )}
             {loading && <tr><td colSpan={7} className="p-12 text-center text-slate-400">Cargando base de datos...</td></tr>}
           </tbody>

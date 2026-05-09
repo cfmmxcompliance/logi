@@ -176,9 +176,11 @@ export const authService = {
             const userRef = doc(db, 'users', email);
             let userSnap;
             try {
-                userSnap = await getDocFromCache(userRef);
-            } catch (e) {
+                // Always try network first so updated fields (subLinea, role) are always fresh
                 userSnap = await getDoc(userRef);
+            } catch (e) {
+                // Network unavailable — fall back to local Firestore cache
+                userSnap = await getDocFromCache(userRef);
             }
 
             if (userSnap.exists()) {

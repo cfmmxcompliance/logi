@@ -65,12 +65,20 @@ export const Cajas: React.FC = () => {
     if (scacFilter) {
       result = result.filter(c => c.carrierCodigo?.toUpperCase() === scacFilter);
     }
-    // TRANSPORTISTA role: strictly filter by Nombre Comercial. If unconfigured → show nothing.
+    // TRANSPORTISTA role: filter by carrierCodigo linked to their Nombre Comercial (TransportLine)
+    // Same approach as Drivers: carrierCodigo is always present on cajas.
     if (user?.role === UserRole.TRANSPORTISTA) {
       if (!subLineaFilter) {
         result = [];
       } else {
-        result = result.filter(c => (c.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase());
+        // Find all carrier codes that belong to transport lines with matching Nombre Comercial
+        const matchingCarriers = new Set(
+          transportLines
+            .filter(tl => (tl.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase())
+            .map(tl => (tl.carrierCodigo || '').toUpperCase())
+            .filter(Boolean)
+        );
+        result = result.filter(c => matchingCarriers.has((c.carrierCodigo || '').toUpperCase()));
       }
     }
     if (searchTerm) {

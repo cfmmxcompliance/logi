@@ -629,7 +629,13 @@ export const ReservaVentanas53: React.FC = () => {
                   <select
                     value={formNombreSubLinea}
                     onChange={e => {
-                      setFormNombreSubLinea(e.target.value);
+                      const sl = e.target.value;
+                      setFormNombreSubLinea(sl);
+                      // Auto-derive transportLineId (economico) from the matching TL
+                      const matchedTL = transportLines.find(
+                        t => t.TransportLine === formNombreComercial && t.nombreSubLinea === sl
+                      );
+                      setFormEconomico(matchedTL?.transportLineId || '');
                       setFormNumeroCaja(''); setFormPlacas(''); setFormOperador(''); setFormTelefono('');
                     }}
                     className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white"
@@ -667,7 +673,7 @@ export const ReservaVentanas53: React.FC = () => {
                   className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-teal-400 outline-none" />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {/* No. Caja / Trailer — from catalog, auto-fills placas */}
+                {/* No. Caja / Trailer — filtered by Nombre Comercial + Sub-Línea */}
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">No. Caja / Trailer</label>
                   <select value={formNumeroCaja}
@@ -678,50 +684,43 @@ export const ReservaVentanas53: React.FC = () => {
                     }}
                     className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white">
                     <option value="">-- Seleccionar caja --</option>
-                    {cajasFiltradas.length === 0 && <option disabled value="">{formNombreComercial ? `Sin cajas para "${formNombreComercial}"` : 'No hay cajas para este carrier'}</option>}
+                    {cajasFiltradas.length === 0 && (
+                      <option disabled value="">
+                        {formNombreSubLinea ? `Sin cajas para "${formNombreSubLinea}"` : 'Selecciona sub-línea primero'}
+                      </option>
+                    )}
                     {cajasFiltradas.map(c => (
                       <option key={c.NumeroCaja} value={c.NumeroCaja}>{c.NumeroCaja} · {c.TipoCaja}</option>
                     ))}
                   </select>
                 </div>
-                {/* Placas — auto-filled from caja, editable */}
+                {/* Placas — auto-filled from caja */}
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Placas</label>
                   <input value={formPlacas} onChange={e => setFormPlacas(e.target.value)} placeholder="Auto desde caja"
                     className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none" />
                 </div>
-                {/* Línea de Tracto — from catalog, fills Económico */}
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Línea de Tracto</label>
-                  <select value={formEconomico}
-                    onChange={e => setFormEconomico(e.target.value)}
-                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white">
-                    <option value="">-- Seleccionar línea --</option>
-                    {transportLines.length === 0 && <option disabled value="">No hay líneas para este carrier</option>}
-                    {transportLines.map(tl => (
-                      <option key={tl.transportLineId} value={tl.transportLineId}>
-                        {tl.TransportLine}{tl.nombreSubLinea ? ` · ${tl.nombreSubLinea}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {/* Operador — from driver catalog, auto-fills teléfono */}
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Operador</label>
-                  <select value={formOperador}
-                    onChange={e => {
-                      setFormOperador(e.target.value);
-                      const drv = driversFiltrados.find(d => d.nombre === e.target.value);
-                      if (drv?.telefono) setFormTelefono(drv.telefono);
-                    }}
-                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white">
-                    <option value="">-- Seleccionar operador --</option>
-                    {driversFiltrados.length === 0 && <option disabled value="">{formNombreComercial ? `Sin operadores para "${formNombreComercial}"` : 'No hay operadores para este carrier'}</option>}
-                    {driversFiltrados.map(d => (
-                      <option key={d.driverId} value={d.nombre}>{d.nombre}</option>
-                    ))}
-                  </select>
-                </div>
+              </div>
+              {/* Operador — filtered by Nombre Comercial + Sub-Línea */}
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Operador</label>
+                <select value={formOperador}
+                  onChange={e => {
+                    setFormOperador(e.target.value);
+                    const drv = driversFiltrados.find(d => d.nombre === e.target.value);
+                    if (drv?.telefono) setFormTelefono(drv.telefono);
+                  }}
+                  className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white">
+                  <option value="">-- Seleccionar operador --</option>
+                  {driversFiltrados.length === 0 && (
+                    <option disabled value="">
+                      {formNombreSubLinea ? `Sin operadores para "${formNombreSubLinea}"` : 'Selecciona sub-línea primero'}
+                    </option>
+                  )}
+                  {driversFiltrados.map(d => (
+                    <option key={d.driverId} value={d.nombre}>{d.nombre}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Comentarios</label>

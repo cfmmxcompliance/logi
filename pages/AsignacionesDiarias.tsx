@@ -47,6 +47,7 @@ export const AsignacionesDiarias: React.FC = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
@@ -367,22 +368,25 @@ export const AsignacionesDiarias: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!id) return;
-    if (confirm("¿Seguro que deseas eliminar esta asignación diaria?")) {
+    if (pendingDeleteId === id) {
+      // Segunda confirmación — ejecutar borrado
+      setPendingDeleteId(null);
       try {
         await asignacionCajaService.deleteAsignacion(id);
-        setSelectedIds(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(id);
-            return newSet;
-        });
+        setSelectedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
         loadData();
       } catch (error: any) {
-        console.error("Error eliminando asignación:", error);
+        console.error('Error eliminando asignación:', error);
         alert(`Error al eliminar: ${error?.message || 'Verifica tu conexión e intenta de nuevo.'}`);
         loadData();
       }
+    } else {
+      // Primera interacción — mostrar confirmación inline
+      setPendingDeleteId(id);
+      setTimeout(() => setPendingDeleteId(prev => prev === id ? null : prev), 3000);
     }
   };
+
 
   const handleMassDelete = async () => {
     if (selectedIds.size === 0) return;
@@ -896,13 +900,23 @@ export const AsignacionesDiarias: React.FC = () => {
                 </td>
 
                 {!isEmbarques && (
-                  <td className="p-4 flex gap-2 justify-end items-center">
-                    <button onClick={() => openEdit(a)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors" title="Editar">
-                      <Edit2 size={16} />
-                    </button>
-                    <button onClick={() => handleDelete(a.id!)} className="p-1.5 text-red-600 hover:bg-red-100 rounded transition-colors" title="Eliminar">
-                      <Trash2 size={16} />
-                    </button>
+                  <td className="p-4 flex gap-1.5 justify-end items-center min-w-[130px]">
+                    {pendingDeleteId === a.id ? (
+                      <>
+                        <span className="text-xs text-red-600 font-semibold whitespace-nowrap">¿Eliminar?</span>
+                        <button onClick={() => handleDelete(a.id!)} className="px-2 py-0.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 font-medium">Sí</button>
+                        <button onClick={() => setPendingDeleteId(null)} className="px-2 py-0.5 text-xs bg-slate-200 text-slate-600 rounded hover:bg-slate-300 font-medium">No</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => openEdit(a)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors" title="Editar">
+                          <Edit2 size={16} />
+                        </button>
+                        <button onClick={() => handleDelete(a.id!)} className="p-1.5 text-red-600 hover:bg-red-100 rounded transition-colors" title="Eliminar">
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    )}
                   </td>
                 )}
               </tr>

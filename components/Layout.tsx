@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck, Globe, Activity, FolderOpen,
   Navigation,
-  Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles, CalendarCheck, History } from 'lucide-react';
+  Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles, CalendarCheck, History, Package, CalendarDays, ClipboardList } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ConnectionStatus } from './ConnectionStatus.tsx';
 import { UserRole } from '../types.ts';
@@ -174,6 +174,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 </>
               )}
               <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? t("menu.asignaciones") : ""} />
+              {/* Módulos Demanda / Reserva 53' — Admin y Controller */}
+              {user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && (
+                <>
+                  <SidebarItem to="/admin-productos-53" icon={Package} label={sidebarOpen ? 'Productos 53\'' : ''} />
+                  <SidebarItem to="/admin-ventanas-53" icon={CalendarDays} label={sidebarOpen ? 'Ventanas 53\'' : ''} />
+                  <SidebarItem to="/demanda-cajas-53" icon={ClipboardList} label={sidebarOpen ? 'Demanda 53\'' : ''} />
+                </>
+              )}
+              {/* Reserva: visible para Admin, Controller, Carrier y Transportista */}
+              <SidebarItem to="/reserva-ventanas-53" icon={Truck} label={sidebarOpen ? 'Reserva Ventanas 53\'' : ''} />
             </>
           )}
 

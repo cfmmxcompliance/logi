@@ -47,6 +47,10 @@ import { HandheldLiberacion } from '../pages/HandheldLiberacion.tsx';
 import { HandheldArribo } from '../pages/HandheldArribo.tsx';
 import { BPMClasificacion } from '../pages/BPMClasificacion.tsx';
 import { DailyVanAssignment } from '../pages/DailyVanAssignment.tsx';
+import { AdminProductos53 } from '../pages/AdminProductos53.tsx';
+import { AdminVentanas53 } from '../pages/AdminVentanas53.tsx';
+import { DemandaCajas53 } from '../pages/DemandaCajas53.tsx';
+import { ReservaVentanas53 } from '../pages/ReservaVentanas53.tsx';
 import { storageService } from '../services/storageService.ts';
 import { trackingService } from '../services/trackingService.ts';
 import { AuthProvider, useAuth } from '../context/AuthContext.tsx';
@@ -93,13 +97,13 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Carrier constraints
     if (user?.role === UserRole.CARRIER) {
-        const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/asignaciones-diarias'];
+        const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/asignaciones-diarias', '/reserva-ventanas-53'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/transport-lines" replace />;
     }
 
     // Transportista constraints (same as Carrier but without /carriers)
     if (user?.role === UserRole.TRANSPORTISTA) {
-        const allowed = ['/transport-lines', '/cajas', '/drivers', '/asignaciones-diarias'];
+        const allowed = ['/transport-lines', '/cajas', '/drivers', '/asignaciones-diarias', '/reserva-ventanas-53'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/transport-lines" replace />;
     }
 
@@ -243,6 +247,12 @@ const AppContent = () => {
             <Route path="/daily-audit" element={<ProtectedRoute><DailyAudit /></ProtectedRoute>} />
             <Route path="/bpm" element={<ProtectedRoute><BPMClasificacion /></ProtectedRoute>} />
             <Route path="/daily-van-assignment" element={<ProtectedRoute><DailyVanAssignment /></ProtectedRoute>} />
+
+            {/* Módulos Demanda y Reserva de Cajas 53' */}
+            <Route path="/admin-productos-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER]}><AdminProductos53 /></ProtectedRoute>} />
+            <Route path="/admin-ventanas-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER]}><AdminVentanas53 /></ProtectedRoute>} />
+            <Route path="/demanda-cajas-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER]}><DemandaCajas53 /></ProtectedRoute>} />
+            <Route path="/reserva-ventanas-53" element={<ProtectedRoute><ReservaVentanas53 /></ProtectedRoute>} />
 
             {/* Handheld Routes */}
             <Route path="/m/home" element={<ProtectedRoute><HandheldHome /></ProtectedRoute>} />

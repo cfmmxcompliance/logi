@@ -53,6 +53,10 @@ service cloud.firestore {
     match /counters/{docId} { allow read, write: if true; }
     match /fianzas/{docId} { allow read, write: if true; }
     match /spare_parts_tracking/{docId} { allow read, write: if true; }
+    match /demandasCarga53/{docId} { allow read, write: if true; }
+    match /demandasCarga53/{docId}/items/{itemId} { allow read, write: if true; }
+    match /ventanasCarga53/{docId} { allow read, write: if true; }
+    match /reservasVentanasCarga53/{docId} { allow read, write: if true; }
 
     // 4. Default Block (Catch-all)
     match /{document=**} {

@@ -54,7 +54,8 @@ export const ReservaVentanas53: React.FC = () => {
   const [activeDemanda, setActiveDemanda] = useState<DemandaCarga53 | null>(null);
   const [formCarrierCodigo, setFormCarrierCodigo] = useState('');
   const [formCarrierNombre, setFormCarrierNombre] = useState('');
-  const [formNombreComercial, setFormNombreComercial] = useState(''); // selected TransportLine.TransportLine
+  const [formNombreComercial, setFormNombreComercial] = useState('');   // TransportLine.TransportLine
+  const [formNombreSubLinea, setFormNombreSubLinea] = useState('');      // TransportLine.nombreSubLinea
   const [formVentanaId, setFormVentanaId] = useState('');
   const [formCajas, setFormCajas] = useState('');
   const [formNumeroCaja, setFormNumeroCaja] = useState('');
@@ -144,24 +145,39 @@ export const ReservaVentanas53: React.FC = () => {
       driverService.getDriversByCarrier(carrierCodigo),
     ]);
     setCajas(c); setTransportLines(tl); setDrivers(d);
-    // Reset dependent fields when carrier changes
-    setFormNombreComercial('');
+    // Reset all dependent fields when carrier changes
+    setFormNombreComercial(''); setFormNombreSubLinea('');
     setFormNumeroCaja(''); setFormPlacas(''); setFormEconomico(''); setFormOperador(''); setFormTelefono('');
   };
 
-  // Cajas filtradas por el Nombre Comercial seleccionado — vacío si no hay selección
-  const cajasFiltradas = useMemo(() => {
+  // Sub-líneas disponibles según el Nombre Comercial seleccionado
+  const subLineasDisponibles = useMemo(() => {
     if (!formNombreComercial) return [];
-    return cajas.filter(c => c.TransportLine === formNombreComercial);
-  }, [cajas, formNombreComercial]);
+    return [...new Set(
+      transportLines
+        .filter(t => t.TransportLine === formNombreComercial && t.nombreSubLinea)
+        .map(t => t.nombreSubLinea!)
+    )].sort();
+  }, [transportLines, formNombreComercial]);
 
-  // Drivers filtrados por el transportLineId del Nombre Comercial — vacío si no hay selección
+  // Cajas filtradas: requiere Nombre Comercial + Nombre Sub-Línea
+  const cajasFiltradas = useMemo(() => {
+    if (!formNombreComercial || !formNombreSubLinea) return [];
+    return cajas.filter(c =>
+      c.TransportLine === formNombreComercial &&
+      (c.nombreSubLinea === formNombreSubLinea)
+    );
+  }, [cajas, formNombreComercial, formNombreSubLinea]);
+
+  // Drivers filtrados: requiere Nombre Comercial + Nombre Sub-Línea
   const driversFiltrados = useMemo(() => {
-    if (!formNombreComercial) return [];
-    const tl = transportLines.find(t => t.TransportLine === formNombreComercial);
+    if (!formNombreComercial || !formNombreSubLinea) return [];
+    const tl = transportLines.find(t =>
+      t.TransportLine === formNombreComercial && t.nombreSubLinea === formNombreSubLinea
+    );
     if (!tl) return [];
     return drivers.filter(d => d.transportLineId === tl.transportLineId);
-  }, [drivers, transportLines, formNombreComercial]);
+  }, [drivers, transportLines, formNombreComercial, formNombreSubLinea]);
 
   // Ventanas filtradas por fecha de la demanda activa + disponibles
   const ventanasDisponibles = useMemo(() => {
@@ -582,7 +598,7 @@ export const ReservaVentanas53: React.FC = () => {
                   </div>
                 </div>
               )}
-              {/* Nombre Comercial — sub-line filter (only when carrier loaded transport lines) */}
+              {/* Nombre Comercial — first sub-line filter */}
               {transportLines.length > 0 && (
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">
@@ -592,15 +608,35 @@ export const ReservaVentanas53: React.FC = () => {
                     value={formNombreComercial}
                     onChange={e => {
                       setFormNombreComercial(e.target.value);
-                      // Reset dependent fields when sub-line changes
+                      setFormNombreSubLinea('');
                       setFormNumeroCaja(''); setFormPlacas(''); setFormOperador(''); setFormTelefono('');
                     }}
                     className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white"
                   >
-                    <option value="">-- Todas las sub-líneas --</option>
-                    {/* Unique TransportLine names */}
+                    <option value="">-- Seleccionar nombre comercial --</option>
                     {[...new Set(transportLines.map(t => t.TransportLine))].sort().map(name => (
                       <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {/* Nombre Sub-Línea — second filter, appears after Nombre Comercial is selected */}
+              {formNombreComercial && subLineasDisponibles.length > 0 && (
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    Nombre Sub-Línea
+                  </label>
+                  <select
+                    value={formNombreSubLinea}
+                    onChange={e => {
+                      setFormNombreSubLinea(e.target.value);
+                      setFormNumeroCaja(''); setFormPlacas(''); setFormOperador(''); setFormTelefono('');
+                    }}
+                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white"
+                  >
+                    <option value="">-- Seleccionar sub-línea --</option>
+                    {subLineasDisponibles.map(sl => (
+                      <option key={sl} value={sl}>{sl}</option>
                     ))}
                   </select>
                 </div>

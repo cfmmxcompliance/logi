@@ -811,11 +811,11 @@ export const AsignacionesDiarias: React.FC = () => {
         <table className="w-full text-left">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider sticky top-0 z-10 shadow-sm">
             <tr>
-              <th className="p-4 w-[50px] min-w-[50px] max-w-[50px] border-r border-slate-200 bg-slate-100 text-center sticky left-0 z-30">
+              <th className="p-4 w-[50px] min-w-[50px] max-w-[50px] border-r border-slate-200 bg-slate-100 text-center sticky top-0 left-0 z-30">
                   {!isEmbarques && <input type="checkbox" checked={filteredData.length > 0 && selectedIds.size === filteredData.length} onChange={toggleSelectAll} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
               </th>
-              <th className="p-4 font-medium w-[130px] min-w-[130px] max-w-[130px] bg-slate-50 sticky left-[50px] z-30 border-r border-slate-200">{renderColumnHeader(t('col.operacion'), 'numeroOperacion')}</th>
-              <th className="p-4 font-medium w-[140px] min-w-[140px] max-w-[140px] bg-slate-50 sticky left-[180px] z-30 shadow-[4px_0_10px_-3px_rgba(0,0,0,0.1)]">{renderColumnHeader(t('col.caja'), 'numeroCaja')}</th>
+              <th className="p-4 font-medium w-[130px] min-w-[130px] max-w-[130px] bg-slate-50 sticky top-0 left-[50px] z-30 border-r border-slate-200">{renderColumnHeader(t('col.operacion'), 'numeroOperacion')}</th>
+              <th className="p-4 font-medium w-[140px] min-w-[140px] max-w-[140px] bg-slate-50 sticky top-0 left-[180px] z-30 shadow-[4px_0_10px_-3px_rgba(0,0,0,0.1)]">{renderColumnHeader(t('col.caja'), 'numeroCaja')}</th>
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.fecha'), 'fecha')}</th>
               <th className="p-4 font-medium min-w-[100px]">{renderColumnHeader(t('col.arribo'), 'arribo')}</th>
               <th className="p-4 font-medium min-w-[180px]">{renderColumnHeader(t('col.comentariosArribo'), 'comentariosArribo')}</th>

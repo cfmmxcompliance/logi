@@ -5,6 +5,8 @@ import { db } from './firebaseConfig';
 import { ReservaVentana53 } from '../types/reservaVentana53';
 import { DemandaCarga53, DemandaItem53 } from '../types/demandaCarga53';
 import { asignacionCajaService } from './asignacionCajaService';
+import { cajaService } from './cajaService';
+import { driverService } from './driverService';
 
 const COL_ASIGNACIONES = 'asignacion_cajas';
 
@@ -54,6 +56,24 @@ export const demandaAsignacionBridge = {
     const modelos = [...new Set(items.map(i => i.modelo))].join(', ');
     const now = new Date().toISOString();
 
+    // ── Catalog enrichment (parallel lookups) ─────────────────────────────────
+    // Fetch the caja record to get real placasCaja
+    const [cajasCatalogo, driversCatalogo] = await Promise.all([
+      reserva.numeroCaja
+        ? cajaService.getCajasByCarrier(reserva.carrierId).catch(() => [])
+        : Promise.resolve([]),
+      reserva.operador
+        ? driverService.getDriversByCarrier(reserva.carrierId).catch(() => [])
+        : Promise.resolve([]),
+    ]);
+
+    const cajaRecord = cajasCatalogo.find(c =>
+      c.NumeroCaja?.trim() === reserva.numeroCaja?.trim()
+    );
+    const driverRecord = driversCatalogo.find(d =>
+      d.nombre?.trim().toLowerCase() === reserva.operador?.trim().toLowerCase()
+    );
+
     let totalCreados = 0;
     let totalActualizados = 0;
 
@@ -62,12 +82,12 @@ export const demandaAsignacionBridge = {
       const mergeData: Record<string, any> = {
         // ── Campos visibles en la UI existente ──
         numeroCaja:      reserva.numeroCaja || 'PENDIENTE',
-        placasCaja:      reserva.placas     || 'PENDIENTE',
-        driverId:        reserva.operador   || 'PENDIENTE',   // nombre del operador como ID visible
-        nombreDriver:    reserva.operador   || 'PENDIENTE',
-        placasTracto:    '',                                   // no disponible en reserva; se completa después en UI
-        transportLineId: reserva.economico  || '',             // transportLineId guardado al seleccionar sub-línea
-        subLinea:        reserva.nombreSubLinea || '',          // nombre sub-línea
+        placasCaja:      cajaRecord?.placas  || reserva.placas || 'PENDIENTE',
+        driverId:        driverRecord?.driverId || reserva.operador || 'PENDIENTE',
+        nombreDriver:    driverRecord?.nombre   || reserva.operador || 'PENDIENTE',
+        placasTracto:    driverRecord?.placasTracto || '',
+        transportLineId: reserva.economico  || '',             // transportLineId al seleccionar sub-línea
+        subLinea:        reserva.nombreSubLinea || '',
         modeloAsignado: modelos,
         carrierCodigo:  reserva.carrierId,
         observaciones: [

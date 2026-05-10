@@ -803,10 +803,11 @@ export const AsignacionesDiarias: React.FC = () => {
                  </button>
              )}
         </div>
+        </div>
       </div>
       {/* ── SCROLLABLE TABLE AREA ──────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-14 py-6 relative z-10">
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto" style={{ overflowY: 'clip' }}>
+      <div className="flex-1 flex flex-col min-h-0 px-14 py-6 relative z-10">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto flex-1 relative">
         <table className="w-full text-left">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider sticky top-0 z-10 shadow-sm">
             <tr>

@@ -1,11 +1,20 @@
 export const TestScroll = () => {
   return (
-    <div className="flex flex-col -mt-8 -mx-8 bg-slate-100 overflow-hidden" style={{ height: 'calc(100vh - 4rem)' }}>
-      <div className="flex-shrink-0 px-14 pt-8 pb-4 z-20 bg-slate-100 shadow-sm border-b border-slate-200">
-         Header
-      </div>
-      <div className="flex-1 overflow-y-auto px-14 py-6 relative z-10">
-         <div className="bg-white h-[2000px]">Content</div>
+    <div className="h-screen flex flex-col bg-slate-100 p-8">
+      <div className="h-20 bg-blue-200 flex-shrink-0">Header Fixed</div>
+      <div className="flex-1 overflow-hidden py-6 flex flex-col">
+        <div className="bg-white border rounded-xl overflow-auto flex-1">
+          <table className="w-full">
+            <thead className="sticky top-0 bg-gray-300">
+              <tr><th>Col 1</th><th>Col 2</th></tr>
+            </thead>
+            <tbody>
+              {Array.from({length: 100}).map((_, i) => (
+                <tr key={i}><td>Row {i}</td><td>Data</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

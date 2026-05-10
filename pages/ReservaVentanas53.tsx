@@ -66,10 +66,10 @@ export const ReservaVentanas53: React.FC = () => {
   const [formComentarios, setFormComentarios] = useState('');
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [selectedCanceladas, setSelectedCanceladas] = useState<Set<string>>(new Set());
   const [bridgeSaving, setBridgeSaving] = useState<string | null>(null);
-  // For confirmed reservas: show linked TL asignaciones
-  const [linkedAsignaciones, setLinkedAsignaciones] = useState<Record<string, { id: string; numeroOperacion: string; numeroCaja: string }[]>>({});
   const [expandedReserva, setExpandedReserva] = useState<string | null>(null);
+  const [linkedAsignaciones, setLinkedAsignaciones] = useState<Record<string, { id: string; numeroOperacion: string; numeroCaja: string }[]>>({});
 
   useEffect(() => { load(); }, []);
 
@@ -314,6 +314,26 @@ export const ReservaVentanas53: React.FC = () => {
     } catch (e: any) { alert(e.message); }
   };
 
+  const handleBulkEliminarCanceladas = async () => {
+    if (selectedCanceladas.size === 0) return;
+    if (!window.confirm(`¿Eliminar las ${selectedCanceladas.size} reservas canceladas seleccionadas?`)) return;
+    try {
+      for (const id of selectedCanceladas) {
+        await reservaVentana53Service.deleteReserva(id);
+      }
+      setSelectedCanceladas(new Set());
+      await load();
+    } catch (e: any) { alert(e.message); }
+  };
+
+  const toggleSelectCancelada = (id: string) => {
+    setSelectedCanceladas(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
   // Filter reservas visible to current user:
   // - ADMIN/CONTROLLER: all reservations
   // - CARRIER: reservations where carrierId matches user.scac (actual SCAC, e.g. "ARCB")
@@ -525,6 +545,22 @@ export const ReservaVentanas53: React.FC = () => {
           {/* RESERVAS TAB */}
           {tab === 'mis-reservas' && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              {/* Bulk-delete toolbar for selected canceladas */}
+              {selectedCanceladas.size > 0 && (
+                <div className="flex items-center gap-3 px-5 py-3 bg-red-50 border-b border-red-100">
+                  <span className="text-sm text-red-700 font-semibold">
+                    {selectedCanceladas.size} cancelada{selectedCanceladas.size > 1 ? 's' : ''} seleccionada{selectedCanceladas.size > 1 ? 's' : ''}
+                  </span>
+                  <button onClick={handleBulkEliminarCanceladas}
+                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
+                    🗑 Eliminar Seleccionadas
+                  </button>
+                  <button onClick={() => setSelectedCanceladas(new Set())}
+                    className="text-xs text-red-400 hover:text-red-600 underline">
+                    Deseleccionar
+                  </button>
+                </div>
+              )}
               {misReservas.length === 0 && (
                 <div className="text-center py-16 text-slate-300">Sin reservas registradas</div>
               )}
@@ -578,7 +614,7 @@ export const ReservaVentanas53: React.FC = () => {
                                 Asignaciones
                               </button>
                             )}
-                            {isAdmin && r.estatus === 'Reservada' && (
+                            {r.estatus === 'Reservada' && (
                               <button onClick={() => handleConfirmarReserva(r)} disabled={bridgeSaving === r.id}
                                 className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50">
                                 {bridgeSaving === r.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
@@ -591,11 +627,20 @@ export const ReservaVentanas53: React.FC = () => {
                                 Cancelar
                               </button>
                             )}
-                            {r.estatus === 'Cancelada' && isAdmin && (
-                              <button onClick={() => handleEliminarReserva(r)}
-                                className="px-3 py-1.5 text-red-600 border border-red-200 hover:bg-red-50 text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
-                                🗑 Eliminar
-                              </button>
+                            {r.estatus === 'Cancelada' && (
+                              <>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedCanceladas.has(r.id!)}
+                                  onChange={() => toggleSelectCancelada(r.id!)}
+                                  className="w-3.5 h-3.5 accent-red-500 cursor-pointer"
+                                  title="Seleccionar para eliminar"
+                                />
+                                <button onClick={() => handleEliminarReserva(r)}
+                                  className="px-3 py-1.5 text-red-600 border border-red-200 hover:bg-red-50 text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
+                                  🗑 Eliminar
+                                </button>
+                              </>
                             )}
                           </div>
                         </td>

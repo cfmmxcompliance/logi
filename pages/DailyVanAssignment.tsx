@@ -62,7 +62,7 @@ export const DailyVanAssignment: React.FC = () => {
   const pending = assignments.filter(a => !getLibForCaja(a.id!));
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden animate-fade-in bg-slate-900 w-full mx-auto">
+    <div className="h-[calc(100vh-4rem)] -mt-8 -mx-8 flex flex-col overflow-hidden animate-fade-in bg-slate-900 w-full mx-auto">
       {/* ── FIXED HEADER / CONTROLS ── */}
       <div className="flex-shrink-0 p-4 sm:p-6 md:p-8 md:pb-4 space-y-6 relative z-20">
         {/* Header */}

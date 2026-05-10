@@ -272,7 +272,7 @@ export const Cajas: React.FC = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden animate-fade-in w-full mx-auto">
+    <div className="h-[calc(100vh-4rem)] -mt-8 -mx-8 flex flex-col overflow-hidden animate-fade-in w-full mx-auto">
       {/* ── FIXED HEADER / CONTROLS ── */}
       <div className="flex-shrink-0 p-6 pb-2 relative z-20">
         <div className="flex justify-between items-center mb-4">
@@ -318,6 +318,7 @@ export const Cajas: React.FC = () => {
           <button onClick={openNew} className="bg-violet-600 text-white px-4 py-2 flex items-center rounded-lg hover:bg-violet-700 shadow-md shadow-violet-500/30 transition-all font-medium text-sm">
             <Plus size={18} className="mr-2" /> Nueva Caja
           </button>
+        </div>
         </div>
       </div>
 

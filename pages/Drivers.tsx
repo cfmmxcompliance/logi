@@ -266,7 +266,7 @@ export const Drivers: React.FC = () => {
     }));
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden animate-fade-in w-full mx-auto">
+    <div className="h-[calc(100vh-4rem)] -mt-8 -mx-8 flex flex-col overflow-hidden animate-fade-in w-full mx-auto">
       {/* ── FIXED HEADER / CONTROLS ── */}
       <div className="flex-shrink-0 p-6 pb-2 relative z-20">
         <div className="flex justify-between items-center mb-4">

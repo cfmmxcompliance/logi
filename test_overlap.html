@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 p-8 h-[2000px] text-white">
+  <div class="h-[400px] w-[600px] flex flex-col border border-slate-700">
+    <div class="h-[100px] bg-red-500">Header</div>
+    <div class="flex-1 overflow-auto relative">
+      <table class="w-full">
+        <thead class="bg-slate-900/80 backdrop-blur-md sticky top-0 z-30 text-white">
+          <tr><th>Col 1</th><th>Col 2</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="h-[200px] bg-blue-500">Row 1</td><td>Row 1</td></tr>
+          <tr><td class="h-[200px] bg-green-500">Row 2</td><td>Row 2</td></tr>
+          <tr><td class="h-[200px] bg-purple-500">Row 3</td><td>Row 3</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

@@ -312,7 +312,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white shadow-sm h-16 flex items-center justify-between px-8 sticky top-0 z-10">
+        <header className="bg-white shadow-sm h-16 flex items-center justify-between px-8 sticky top-0 z-[100]">
           <h2 className="text-lg font-semibold text-slate-700">CFMoto Import/Export Control</h2>
           <div className="flex items-center space-x-4">
             <button

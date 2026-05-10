@@ -666,10 +666,11 @@ export const AsignacionesDiarias: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* ── STICKY HEADER BAR (title + controls) ─────────────────────── */}
-      <div className="sticky top-0 z-20 bg-slate-100 px-6 pt-6 pb-3">
-        <div>
+    <div className="flex-1 flex flex-col -mt-8 -mx-8 bg-slate-100 overflow-hidden" style={{ height: 'calc(100vh - 4rem)' }}>
+      {/* ── FIXED HEADER BAR (title + controls) ─────────────────────── */}
+      <div className="flex-shrink-0 px-14 pt-8 pb-4 z-20 bg-slate-100 border-b border-slate-200 shadow-sm">
+        <div className="flex justify-between items-center">
+          <div>
            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
               <Navigation className="text-blue-600" />
               {t('asig.title')}
@@ -804,10 +805,10 @@ export const AsignacionesDiarias: React.FC = () => {
         </div>
       </div>
       {/* ── SCROLLABLE TABLE AREA ──────────────────────────────────────── */}
-      <div className="px-6 pb-6 flex-1 min-h-0">
+      <div className="flex-1 overflow-y-auto px-14 py-6 relative z-10">
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto" style={{ overflowY: 'clip' }}>
         <table className="w-full text-left">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider sticky top-0 z-10">
+          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider sticky top-0 z-10 shadow-sm">
             <tr>
               <th className="p-4 w-12 border-r border-slate-100 bg-slate-100 text-center">
                   {!isEmbarques && <input type="checkbox" checked={filteredData.length > 0 && selectedIds.size === filteredData.length} onChange={toggleSelectAll} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}

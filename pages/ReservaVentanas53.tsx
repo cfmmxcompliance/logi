@@ -117,22 +117,37 @@ export const ReservaVentanas53: React.FC = () => {
     setActiveDemanda(d);
     // Reset catalog lists
     setCajas([]); setTransportLines([]); setDrivers([]);
-    // Auto-fill carrier for CARRIER role from user.subLinea
-    if (!isAdmin && user?.subLinea) {
-      const match = carriers.find(c =>
-        c.codigo.toLowerCase() === (user.subLinea || '').toLowerCase() ||
-        c.nombre.toLowerCase().includes((user.subLinea || '').toLowerCase())
-      );
-      const codigo = match?.codigo || user.subLinea || email;
-      const nombre = match?.nombre || carrierName;
-      setFormCarrierCodigo(codigo); setFormCarrierNombre(nombre);
-      // Pre-load catalogs for this carrier
-      loadCatalogsForCarrier(codigo);
+    // Auto-fill carrier fields based on role
+    if (!isAdmin && (user?.scac || user?.subLinea)) {
+      if (user.role === UserRole.TRANSPORTISTA) {
+        // TRANSPORTISTA: identified by scac (carrier) + subLinea (Nombre Comercial)
+        const match = carriers.find(c =>
+          c.codigo.toLowerCase() === (user.scac || '').toLowerCase()
+        );
+        const codigo = match?.codigo || user.scac || '';
+        const nombre = match?.nombre || user.scac || '';
+        setFormCarrierCodigo(codigo);
+        setFormCarrierNombre(nombre);
+        loadCatalogsForCarrier(codigo).then(() => {
+          // After loading, auto-select their Nombre Comercial
+          if (user.subLinea) setFormNombreComercial(user.subLinea.trim());
+        });
+      } else {
+        // CARRIER role: identified purely by scac
+        const match = carriers.find(c =>
+          c.codigo.toLowerCase() === (user.scac || '').toLowerCase()
+        );
+        const codigo = match?.codigo || user.scac || '';
+        const nombre = match?.nombre || user.scac || '';
+        setFormCarrierCodigo(codigo);
+        setFormCarrierNombre(nombre);
+        loadCatalogsForCarrier(codigo);
+      }
     } else {
       setFormCarrierCodigo(''); setFormCarrierNombre('');
     }
-    setFormVentanaId(''); setFormCajas(''); setFormNumeroCaja('');
-    setFormPlacas(''); setFormEconomico(''); setFormOperador('');
+    setFormVentanaId(''); setFormCajas(''); setFormNombreComercial(''); setFormNombreSubLinea('');
+    setFormNumeroCaja(''); setFormPlacas(''); setFormEconomico(''); setFormOperador('');
     setFormTelefono(''); setFormComentarios(''); setModalError(null);
     setShowModal(true);
   };
@@ -300,7 +315,28 @@ export const ReservaVentanas53: React.FC = () => {
     } catch (e: any) { alert(e.message); }
   };
 
-  const misReservas = reservas.filter(r => isAdmin || r.carrierId === email);
+  // Filter reservas visible to current user:
+  // - ADMIN/CONTROLLER: all reservations
+  // - CARRIER: reservations where carrierId matches user.scac
+  // - TRANSPORTISTA: reservations for their carrier (scac) AND their sub-line (subLinea)
+  const misReservas = reservas.filter(r => {
+    if (isAdmin) return true;
+    if (user?.role === UserRole.TRANSPORTISTA && user.scac) {
+      const scacMatch = r.carrierId?.toLowerCase() === user.scac.toLowerCase();
+      if (user.subLinea) {
+        // Restrict to their specific Nombre Comercial sub-line
+        return scacMatch && (
+          r.nombreComercial?.trim().toLowerCase() === user.subLinea.trim().toLowerCase() ||
+          r.nombreSubLinea?.trim().toLowerCase() === user.subLinea.trim().toLowerCase()
+        );
+      }
+      return scacMatch;
+    }
+    // CARRIER role: match by scac code
+    if (user?.scac) return r.carrierId?.toLowerCase() === user.scac.toLowerCase();
+    // Legacy fallback: email match
+    return r.carrierId === email;
+  });
 
   // Demands that have enough ventana capacity but no active reserva yet → need carrier assignment
   const demandasListasParaReserva = useMemo(() => {

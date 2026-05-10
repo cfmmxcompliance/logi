@@ -146,7 +146,7 @@ export const DailyVanAssignment: React.FC = () => {
               </div>
             ) : (
               <table className="w-full text-sm text-left text-slate-300 whitespace-nowrap">
-                <thead className="bg-slate-900/90 backdrop-blur-md text-xs uppercase text-slate-400 font-semibold sticky top-0 z-30 shadow-sm">
+                <thead className="bg-slate-900 text-xs uppercase text-slate-400 font-semibold sticky top-0 z-50 shadow-sm border-b border-slate-700/50">
                   <tr>
                     <th className="px-4 py-3">#</th>
                     <th className="px-4 py-3">Hora</th>

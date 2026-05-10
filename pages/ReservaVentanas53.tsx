@@ -115,42 +115,41 @@ export const ReservaVentanas53: React.FC = () => {
 
   const openReserva = (d: DemandaCarga53) => {
     setActiveDemanda(d);
-    // Reset catalog lists
+    // Reset everything immediately so the modal opens cleanly
     setCajas([]); setTransportLines([]); setDrivers([]);
-    // Auto-fill carrier fields based on role
-    if (!isAdmin && (user?.scac || user?.subLinea)) {
-      if (user.role === UserRole.TRANSPORTISTA) {
-        // TRANSPORTISTA: identified by scac (carrier) + subLinea (Nombre Comercial)
-        const match = carriers.find(c =>
-          c.codigo.toLowerCase() === (user.scac || '').toLowerCase()
-        );
-        const codigo = match?.codigo || user.scac || '';
-        const nombre = match?.nombre || user.scac || '';
-        setFormCarrierCodigo(codigo);
-        setFormCarrierNombre(nombre);
-        loadCatalogsForCarrier(codigo).then(() => {
-          // After loading, auto-select their Nombre Comercial
-          if (user.subLinea) setFormNombreComercial(user.subLinea.trim());
-        });
-      } else {
-        // CARRIER role: identified purely by scac
-        const match = carriers.find(c =>
-          c.codigo.toLowerCase() === (user.scac || '').toLowerCase()
-        );
-        const codigo = match?.codigo || user.scac || '';
-        const nombre = match?.nombre || user.scac || '';
-        setFormCarrierCodigo(codigo);
-        setFormCarrierNombre(nombre);
-        loadCatalogsForCarrier(codigo);
-      }
-    } else {
-      setFormCarrierCodigo(''); setFormCarrierNombre('');
-    }
-    setFormVentanaId(''); setFormCajas(''); setFormNombreComercial(''); setFormNombreSubLinea('');
+    setFormVentanaId(''); setFormCajas('');
+    setFormNombreComercial(''); setFormNombreSubLinea('');
     setFormNumeroCaja(''); setFormPlacas(''); setFormEconomico(''); setFormOperador('');
     setFormTelefono(''); setFormComentarios(''); setModalError(null);
+    setFormCarrierCodigo(''); setFormCarrierNombre('');
     setShowModal(true);
+
+    if (isAdmin) return; // admin selects carrier manually
+
+    (async () => {
+      if (user?.role === UserRole.TRANSPORTISTA && user.scac) {
+        // TRANSPORTISTA: user.scac = Nombre Comercial (e.g. "MXTL")
+        // Need to resolve the actual carrier SCAC from transport_lines
+        const nombreComercial = user.scac.trim();
+        const carrierCodigo = await transportLineService.getCarrierCodigoByNombreComercial(nombreComercial);
+        if (!carrierCodigo) return;
+        const match = carriers.find(c => c.codigo?.toLowerCase() === carrierCodigo.toLowerCase());
+        setFormCarrierCodigo(carrierCodigo);
+        setFormCarrierNombre(match?.nombre || carrierCodigo);
+        await loadCatalogsForCarrier(carrierCodigo);
+        // Auto-select their Nombre Comercial so cascading dropdowns work immediately
+        setFormNombreComercial(nombreComercial);
+      } else if (user?.scac) {
+        // CARRIER role: user.scac = actual SCAC (e.g. "ARCB")
+        const match = carriers.find(c => c.codigo?.toLowerCase() === user.scac!.toLowerCase());
+        const codigo = match?.codigo || user.scac;
+        setFormCarrierCodigo(codigo);
+        setFormCarrierNombre(match?.nombre || codigo);
+        await loadCatalogsForCarrier(codigo);
+      }
+    })();
   };
+
 
   const loadCatalogsForCarrier = async (carrierCodigo: string) => {
     if (!carrierCodigo) { setCajas([]); setTransportLines([]); setDrivers([]); return; }

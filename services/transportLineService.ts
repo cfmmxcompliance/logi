@@ -62,6 +62,18 @@ export const transportLineService = {
     }
   },
 
+  /** Given a Nombre Comercial (TransportLine.TransportLine), returns the carrier SCAC code.
+   *  Used for TRANSPORTISTA role where user.scac stores the Nombre Comercial, not the carrier SCAC. */
+  async getCarrierCodigoByNombreComercial(nombreComercial: string): Promise<string> {
+    const q = query(
+      collection(db, TRANSPORT_LINES_COLLECTION),
+      where('TransportLine', '==', nombreComercial.trim())
+    );
+    const snap = await getDocs(q);
+    if (snap.empty) return '';
+    return (snap.docs[0].data() as TransportLineModel).carrierCodigo || '';
+  },
+
   async getAllTransportLines(): Promise<TransportLineModel[]> {
     try {
       const q = query(collection(db, TRANSPORT_LINES_COLLECTION));

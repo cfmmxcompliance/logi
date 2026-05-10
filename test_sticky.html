@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  .table-row { background-color: #fff; }
+  .table-row:hover { background-color: #f1f5f9; }
+  .table-row.odd { background-color: #f8fafc; }
+  .table-row.odd:hover { background-color: #e2e8f0; }
+  .sticky-col { position: sticky; background-color: inherit; }
+</style>
+</head>
+<body class="p-8 bg-gray-200">
+  <div class="overflow-auto w-96 h-64 border bg-white">
+    <table class="w-[800px]">
+      <thead>
+        <tr>
+          <th class="sticky top-0 left-0 bg-gray-300 z-20 w-32 border">Sticky H1</th>
+          <th class="sticky top-0 left-32 bg-gray-300 z-20 w-32 border">Sticky H2</th>
+          <th class="sticky top-0 bg-gray-300 border">H3</th>
+          <th class="sticky top-0 bg-gray-300 border">H4</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="table-row">
+          <td class="sticky-col left-0 z-10 border">R1 C1</td>
+          <td class="sticky-col left-32 z-10 border">R1 C2</td>
+          <td class="border">Data</td><td class="border">Data</td>
+        </tr>
+        <tr class="table-row odd">
+          <td class="sticky-col left-0 z-10 border">R2 C1</td>
+          <td class="sticky-col left-32 z-10 border">R2 C2</td>
+          <td class="border">Data</td><td class="border">Data</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

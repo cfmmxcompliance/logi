@@ -811,11 +811,11 @@ export const AsignacionesDiarias: React.FC = () => {
         <table className="w-full text-left">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider sticky top-0 z-10 shadow-sm">
             <tr>
-              <th className="p-4 w-12 border-r border-slate-100 bg-slate-100 text-center">
+              <th className="p-4 w-[50px] min-w-[50px] max-w-[50px] border-r border-slate-200 bg-slate-100 text-center sticky left-0 z-30">
                   {!isEmbarques && <input type="checkbox" checked={filteredData.length > 0 && selectedIds.size === filteredData.length} onChange={toggleSelectAll} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
               </th>
-              <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.operacion'), 'numeroOperacion')}</th>
-              <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.caja'), 'numeroCaja')}</th>
+              <th className="p-4 font-medium w-[130px] min-w-[130px] max-w-[130px] bg-slate-50 sticky left-[50px] z-30 border-r border-slate-200">{renderColumnHeader(t('col.operacion'), 'numeroOperacion')}</th>
+              <th className="p-4 font-medium w-[140px] min-w-[140px] max-w-[140px] bg-slate-50 sticky left-[180px] z-30 shadow-[4px_0_10px_-3px_rgba(0,0,0,0.1)]">{renderColumnHeader(t('col.caja'), 'numeroCaja')}</th>
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.fecha'), 'fecha')}</th>
               <th className="p-4 font-medium min-w-[100px]">{renderColumnHeader(t('col.arribo'), 'arribo')}</th>
               <th className="p-4 font-medium min-w-[180px]">{renderColumnHeader(t('col.comentariosArribo'), 'comentariosArribo')}</th>
@@ -843,7 +843,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
               // Base alternating stripe for visual consistency
               const isEven = index % 2 === 0;
-              let rowColorClass = isEven ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/60 hover:bg-slate-100/60';
+              let rowColorClass = isEven ? 'bg-white hover:bg-slate-50' : 'bg-slate-50 hover:bg-slate-100';
 
               // Urgency overlay (no-liberacion + overtime)
               if (!hasLiberacion && a.fecha && a.horaAsignacion) {
@@ -862,15 +862,15 @@ export const AsignacionesDiarias: React.FC = () => {
                   }
               }
 
-              if (selectedIds.has(a.id!)) rowColorClass = 'bg-blue-50/70';
+              if (selectedIds.has(a.id!)) rowColorClass = 'bg-blue-50';
 
               return (
               <tr key={a.id} className={rowColorClass}>
-                <td className="p-4 bg-slate-50/30 border-r border-slate-100 text-center">
+                <td className="p-4 w-[50px] min-w-[50px] max-w-[50px] bg-inherit border-r border-slate-200 text-center sticky left-0 z-20">
                     {!isEmbarques && <input type="checkbox" checked={selectedIds.has(a.id!)} onChange={() => toggleSelectRow(a.id!)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
                 </td>
-                <td className="p-4 font-mono text-pink-700 font-bold tracking-wide whitespace-nowrap">{a.numeroOperacion || '-'}</td>
-                <td className="p-4 font-semibold text-emerald-700 font-mono tracking-wide">{a.numeroCaja}</td>
+                <td className="p-4 w-[130px] min-w-[130px] max-w-[130px] bg-inherit border-r border-slate-200 font-mono text-pink-700 font-bold tracking-wide whitespace-nowrap sticky left-[50px] z-20">{a.numeroOperacion || '-'}</td>
+                <td className="p-4 w-[140px] min-w-[140px] max-w-[140px] bg-inherit font-semibold text-emerald-700 font-mono tracking-wide sticky left-[180px] z-20 shadow-[4px_0_10px_-3px_rgba(0,0,0,0.05)]">{a.numeroCaja}</td>
                 <td className="p-4 font-medium text-slate-700 border-r border-slate-100 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                        <span className="flex items-center gap-1.5"><Calendar size={12} className="text-blue-500" /> {a.fecha}</span>

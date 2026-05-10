@@ -64,20 +64,19 @@ export const Drivers: React.FC = () => {
       if (scacFilter) {
           result = result.filter(c => c.carrierCodigo?.toUpperCase() === scacFilter);
       }
-      // TRANSPORTISTA role: filter by carrierCodigo linked to their Nombre Comercial (TransportLine)
-      // Drivers always have carrierCodigo; transportLineId is optional and often missing.
+      // TRANSPORTISTA role: filter by transportLineId linked to their Nombre Comercial (user.scac = "MXTL")
+      // Find TL IDs where TransportLine === user.scac, then keep drivers with matching transportLineId
       if (user?.role === UserRole.TRANSPORTISTA) {
           if (!subLineaFilter) {
               result = [];
           } else {
-              // Find all carrier codes that belong to transport lines with matching Nombre Comercial
-              const matchingCarriers = new Set(
+              const matchingTLIds = new Set(
                   transportLines
-                      .filter(tl => (tl.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase())
-                      .map(tl => (tl.carrierCodigo || '').toUpperCase())
+                      .filter(tl => (tl.TransportLine || '').trim().toUpperCase() === subLineaFilter)
+                      .map(tl => tl.transportLineId)
                       .filter(Boolean)
               );
-              result = result.filter(d => matchingCarriers.has((d.carrierCodigo || '').toUpperCase()));
+              result = result.filter(d => d.transportLineId && matchingTLIds.has(d.transportLineId));
           }
       }
       if (searchTerm) {

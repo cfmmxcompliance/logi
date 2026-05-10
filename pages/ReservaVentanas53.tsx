@@ -316,22 +316,26 @@ export const ReservaVentanas53: React.FC = () => {
 
   // Filter reservas visible to current user:
   // - ADMIN/CONTROLLER: all reservations
-  // - CARRIER: reservations where carrierId matches user.scac
-  // - TRANSPORTISTA: reservations for their carrier (scac) AND their sub-line (subLinea)
+  // - CARRIER: reservations where carrierId matches user.scac (actual SCAC, e.g. "ARCB")
+  // - TRANSPORTISTA: user.scac = Nombre Comercial (e.g. "MXTL") → match by r.nombreComercial
+  //                  user.subLinea = Sub-Línea → restrict further if set
   const misReservas = reservas.filter(r => {
     if (isAdmin) return true;
     if (user?.role === UserRole.TRANSPORTISTA && user.scac) {
-      const scacMatch = r.carrierId?.toLowerCase() === user.scac.toLowerCase();
+      const nc = user.scac.trim().toLowerCase();
+      // Match by Nombre Comercial stored in the reservation
+      const ncMatch =
+        r.nombreComercial?.trim().toLowerCase() === nc ||
+        r.nombreSubLinea?.trim().toLowerCase() === nc;
+      if (!ncMatch) return false;
+      // If user also has a subLinea, restrict to their specific sub-line
       if (user.subLinea) {
-        // Restrict to their specific Nombre Comercial sub-line
-        return scacMatch && (
-          r.nombreComercial?.trim().toLowerCase() === user.subLinea.trim().toLowerCase() ||
-          r.nombreSubLinea?.trim().toLowerCase() === user.subLinea.trim().toLowerCase()
-        );
+        const sl = user.subLinea.trim().toLowerCase();
+        return r.nombreSubLinea?.trim().toLowerCase() === sl;
       }
-      return scacMatch;
+      return true;
     }
-    // CARRIER role: match by scac code
+    // CARRIER role: match by scac code (actual carrier SCAC)
     if (user?.scac) return r.carrierId?.toLowerCase() === user.scac.toLowerCase();
     // Legacy fallback: email match
     return r.carrierId === email;

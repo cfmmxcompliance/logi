@@ -266,14 +266,16 @@ export const Drivers: React.FC = () => {
     }));
 
   return (
-    <div className="p-6 max-w-6xl mx-auto animate-fade-in relative">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-           <h1 className="text-2xl font-bold text-slate-800">Directorio de Choferes</h1>
-           <p className="text-slate-500 text-sm mt-1">Gestión de operadores físicos asignados a los carriers.</p>
-        </div>
+    <div className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden animate-fade-in w-full mx-auto">
+      {/* ── FIXED HEADER / CONTROLS ── */}
+      <div className="flex-shrink-0 p-6 pb-2 relative z-20">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+             <h1 className="text-2xl font-bold text-slate-800">Directorio de Choferes</h1>
+             <p className="text-slate-500 text-sm mt-1">Gestión de operadores físicos asignados a los carriers.</p>
+          </div>
 
-        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
              <div className="relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
@@ -308,13 +310,16 @@ export const Drivers: React.FC = () => {
              <button onClick={openNew} className="bg-teal-600 text-white px-4 py-2 flex items-center rounded-lg hover:bg-teal-700 shadow-md shadow-teal-500/30 transition-all font-medium text-sm">
                 <Plus size={18} className="mr-2" /> {t('btn.new')}
              </button>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
-        <table className="w-full text-left">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
-            <tr>
+      {/* ── SCROLLABLE TABLE AREA ── */}
+      <div className="flex-1 flex flex-col min-h-0 p-6 pt-2 relative z-10">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto flex-1 relative">
+          <table className="w-full text-left">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider sticky top-0 z-30 shadow-sm">
+              <tr>
               <th className="p-4 font-medium">{t('driver.name')}</th>
               <th className="p-4 font-medium">{t('driver.carrier')}</th>
               <th className="p-4 font-medium">{t('driver.linea')}</th>
@@ -368,6 +373,7 @@ export const Drivers: React.FC = () => {
             {loading && <tr><td colSpan={7} className="p-12 text-center text-slate-400">Cargando base de datos...</td></tr>}
           </tbody>
         </table>
+        </div>
       </div>
 
       <CatalogQueryBuilder

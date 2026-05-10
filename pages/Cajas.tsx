@@ -272,12 +272,14 @@ export const Cajas: React.FC = () => {
   };
 
   return (
-    <div className="p-6 w-full mx-auto animate-fade-in">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Catálogo de Cajas y Contenedores</h1>
-          <p className="text-slate-500 text-sm mt-1">Gestión de remolques relacionales con Transportistas</p>
-        </div>
+    <div className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden animate-fade-in w-full mx-auto">
+      {/* ── FIXED HEADER / CONTROLS ── */}
+      <div className="flex-shrink-0 p-6 pb-2 relative z-20">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Catálogo de Cajas y Contenedores</h1>
+            <p className="text-slate-500 text-sm mt-1">Gestión de remolques relacionales con Transportistas</p>
+          </div>
 
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -319,10 +321,12 @@ export const Cajas: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
-            <tr>
+      {/* ── SCROLLABLE TABLE AREA ── */}
+      <div className="flex-1 flex flex-col min-h-0 p-6 pt-2 relative z-10">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto flex-1 relative">
+          <table className="w-full text-left">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider sticky top-0 z-30 shadow-sm">
+              <tr>
               <th className="p-4 font-medium">{t('cajas.num')}</th>
               <th className="p-4 font-medium">{t('cajas.carrier')}</th>
               <th className="p-4 font-medium">{t('cajas.linea')}</th>
@@ -371,6 +375,7 @@ export const Cajas: React.FC = () => {
             {loading && <tr><td colSpan={7} className="p-12 text-center text-slate-400">Cargando flota...</td></tr>}
           </tbody>
         </table>
+        </div>
       </div>
 
       <CatalogQueryBuilder

@@ -62,9 +62,9 @@ export const DailyVanAssignment: React.FC = () => {
   const pending = assignments.filter(a => !getLibForCaja(a.id!));
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 bg-slate-900 min-h-screen">
-      <div className="w-full mx-auto space-y-6">
-
+    <div className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden animate-fade-in bg-slate-900 w-full mx-auto">
+      {/* ── FIXED HEADER / CONTROLS ── */}
+      <div className="flex-shrink-0 p-4 sm:p-6 md:p-8 md:pb-4 space-y-6 relative z-20">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -127,10 +127,13 @@ export const DailyVanAssignment: React.FC = () => {
             </button>
           )}
         </div>
+      </div>
 
+      {/* ── SCROLLABLE TABLE AREA ── */}
+      <div className="flex-1 flex flex-col min-h-0 px-4 sm:px-6 md:px-8 pb-8 relative z-10 space-y-4">
         {/* Table */}
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-auto flex-1 relative">
+          <div className="min-w-max h-full">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 text-slate-500">
                 <RefreshCcw className="animate-spin mb-4" size={28} />
@@ -143,7 +146,7 @@ export const DailyVanAssignment: React.FC = () => {
               </div>
             ) : (
               <table className="w-full text-sm text-left text-slate-300 whitespace-nowrap">
-                <thead className="bg-slate-900/80 text-xs uppercase text-slate-400 font-semibold">
+                <thead className="bg-slate-900/90 backdrop-blur-md text-xs uppercase text-slate-400 font-semibold sticky top-0 z-30 shadow-sm">
                   <tr>
                     <th className="px-4 py-3">#</th>
                     <th className="px-4 py-3">Hora</th>
@@ -276,7 +279,7 @@ export const DailyVanAssignment: React.FC = () => {
 
         {/* Progress Bar */}
         {assignments.length > 0 && (
-          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+          <div className="flex-shrink-0 bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
             <div className="flex justify-between text-sm mb-2">
               <span className="text-slate-400">Progreso de Liberación</span>
               <span className="text-white font-semibold">{released.length} / {assignments.length} cajas</span>

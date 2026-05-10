@@ -814,11 +814,11 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 w-12 border-r border-slate-100 bg-slate-100 text-center">
                   {!isEmbarques && <input type="checkbox" checked={filteredData.length > 0 && selectedIds.size === filteredData.length} onChange={toggleSelectAll} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
               </th>
+              <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.operacion'), 'numeroOperacion')}</th>
+              <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.caja'), 'numeroCaja')}</th>
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.fecha'), 'fecha')}</th>
               <th className="p-4 font-medium min-w-[100px]">{renderColumnHeader(t('col.arribo'), 'arribo')}</th>
               <th className="p-4 font-medium min-w-[180px]">{renderColumnHeader(t('col.comentariosArribo'), 'comentariosArribo')}</th>
-              <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.operacion'), 'numeroOperacion')}</th>
-              <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.caja'), 'numeroCaja')}</th>
               <th className="p-4 font-medium">{renderColumnHeader(t('col.placascaja'), 'placasCaja')}</th>
               <th className="p-4 font-medium min-w-[160px] text-blue-600 uppercase text-xs">{renderColumnHeader(t('col.lineatransporte'), 'transportLineId')}</th>
               <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.driverid'), 'driverId')}</th>
@@ -869,6 +869,8 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 bg-slate-50/30 border-r border-slate-100 text-center">
                     {!isEmbarques && <input type="checkbox" checked={selectedIds.has(a.id!)} onChange={() => toggleSelectRow(a.id!)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
                 </td>
+                <td className="p-4 font-mono text-pink-700 font-bold tracking-wide whitespace-nowrap">{a.numeroOperacion || '-'}</td>
+                <td className="p-4 font-semibold text-emerald-700 font-mono tracking-wide">{a.numeroCaja}</td>
                 <td className="p-4 font-medium text-slate-700 border-r border-slate-100 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                        <span className="flex items-center gap-1.5"><Calendar size={12} className="text-blue-500" /> {a.fecha}</span>
@@ -877,9 +879,6 @@ export const AsignacionesDiarias: React.FC = () => {
                 </td>
                 <td className="p-4 font-mono text-amber-600 font-semibold whitespace-nowrap">{(a as any).arribo || '—'}</td>
                 <td className="p-4 text-slate-500 text-xs max-w-[180px] truncate" title={(a as any).comentariosArribo || ''}>{(a as any).comentariosArribo || '—'}</td>
-                
-                <td className="p-4 font-mono text-pink-700 font-bold tracking-wide whitespace-nowrap">{a.numeroOperacion || '-'}</td>
-                <td className="p-4 font-semibold text-emerald-700 font-mono tracking-wide">{a.numeroCaja}</td>
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium">{a.placasCaja || '-'}</td>
                 
                 <td className="p-4 text-xs font-bold text-blue-800 whitespace-nowrap">

@@ -135,7 +135,14 @@ export const DemandaCajas53: React.FC = () => {
   };
 
   const handleCancelar = async (d: DemandaCarga53) => {
-    if (!window.confirm('¿Cancelar esta demanda? No se eliminará del historial.')) return;
+    if (!window.confirm(
+      `¿Cancelar esta demanda?\n\n` +
+      `Se cancelarán automáticamente:\n` +
+      `• Todas las reservas vinculadas\n` +
+      `• Las ventanas que se queden sin reservas\n` +
+      `• Las confirmaciones en Asignación Diaria\n\n` +
+      `No se eliminará del historial.`
+    )) return;
     try {
       await demandaCarga53Service.cancelarDemanda(d.id!, email);
       await load();
@@ -146,9 +153,10 @@ export const DemandaCajas53: React.FC = () => {
     if (d.estatus !== 'Cancelada') return;
     if (!window.confirm(
       `¿Eliminar permanentemente la demanda del ${d.fechaDemanda}?\n\n` +
-      `Esto también eliminará:\n` +
-      `• Todas las reservas de ventanas vinculadas\n` +
-      `• Se restaurará la capacidad en cada ventana afectada\n\n` +
+      `Esto también eliminará de la base de datos:\n` +
+      `• Todas las reservas vinculadas\n` +
+      `• Las ventanas que se queden sin reservas\n` +
+      `• Las confirmaciones en Asignación Diaria\n\n` +
       `Esta acción no se puede deshacer.`
     )) return;
     try {

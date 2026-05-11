@@ -252,18 +252,37 @@ export const Drivers: React.FC = () => {
   };
 
   // Combobox options
-  const carrierOptions: ComboOption[] = carriers.map(c => ({
-    value: c.codigo,
-    label: c.nombre,
-    sublabel: c.codigo
-  }));
+  const carrierOptions: ComboOption[] = useMemo(() => {
+    let allowedCarriers = carriers;
+    if (scacFilter) {
+      allowedCarriers = carriers.filter(c => c.codigo.toUpperCase() === scacFilter);
+    } else if (user?.role === UserRole.TRANSPORTISTA && subLineaFilter) {
+      const linkedTLs = transportLines.filter(tl => (tl.TransportLine || '').trim().toUpperCase() === subLineaFilter);
+      const linkedScacs = new Set(linkedTLs.map(tl => tl.carrierCodigo?.toUpperCase()));
+      allowedCarriers = carriers.filter(c => linkedScacs.has(c.codigo.toUpperCase()));
+    }
+    return allowedCarriers.map(c => ({
+      value: c.codigo,
+      label: c.nombre,
+      sublabel: c.codigo
+    }));
+  }, [carriers, scacFilter, user, subLineaFilter, transportLines]);
 
-  const transportLineOptions: ComboOption[] = transportLines
-    .filter(tl => !formData.carrierCodigo || tl.carrierCodigo === formData.carrierCodigo)
-    .map(tl => ({
+  const transportLineOptions: ComboOption[] = useMemo(() => {
+    let filtered = transportLines.filter(tl => !formData.carrierCodigo || tl.carrierCodigo === formData.carrierCodigo);
+    if (user?.role === UserRole.TRANSPORTISTA && subLineaFilter) {
+       filtered = filtered.filter(tl => (tl.TransportLine || '').trim().toUpperCase() === subLineaFilter);
+       // Also restrict by subLinea if configured
+       if (user.subLinea) {
+         const sl = user.subLinea.trim().toUpperCase();
+         filtered = filtered.filter(tl => !tl.nombreSubLinea || tl.nombreSubLinea.trim().toUpperCase() === sl);
+       }
+    }
+    return filtered.map(tl => ({
       value: tl.transportLineId,
       label: tl.nombreSubLinea || tl.TransportLine
     }));
+  }, [transportLines, formData.carrierCodigo, user, subLineaFilter]);
 
   return (
     <div className="h-[calc(100vh-4rem)] -mt-8 -mx-8 flex flex-col overflow-hidden animate-fade-in w-full mx-auto">

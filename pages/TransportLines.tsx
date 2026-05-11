@@ -342,11 +342,21 @@ export const TransportLines: React.FC = () => {
                   required
                   value={formData.carrierCodigo || ''}
                   onChange={val => setFormData({...formData, carrierCodigo: val})}
-                  options={carriers.map(car => ({
-                    value: car.codigo,
-                    label: car.nombre,
-                    sublabel: car.codigo
-                  }))}
+                  options={(() => {
+                    let allowedCarriers = carriers;
+                    if (scacFilter) {
+                      allowedCarriers = carriers.filter(c => c.codigo.toUpperCase() === scacFilter);
+                    } else if (user?.role === UserRole.TRANSPORTISTA && subLineaFilter) {
+                      const linkedTLs = lines.filter(tl => (tl.TransportLine || '').trim().toUpperCase() === subLineaFilter);
+                      const linkedScacs = new Set(linkedTLs.map(tl => tl.carrierCodigo?.toUpperCase()));
+                      allowedCarriers = carriers.filter(c => linkedScacs.has(c.codigo.toUpperCase()));
+                    }
+                    return allowedCarriers.map(car => ({
+                      value: car.codigo,
+                      label: car.nombre,
+                      sublabel: car.codigo
+                    }));
+                  })()}
                   placeholder="Selecciona el Carrier matriz..."
                 />
               </div>

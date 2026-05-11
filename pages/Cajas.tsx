@@ -412,7 +412,17 @@ export const Cajas: React.FC = () => {
                   disabled={isEditing}
                   value={formData.carrierCodigo || ''}
                   onChange={val => setFormData({ ...formData, carrierCodigo: val, TransportLine: '', nombreSubLinea: '' })}
-                  options={carriers.map(c => ({ value: c.codigo, label: c.nombre, sublabel: c.codigo }))}
+                  options={(() => {
+                    let allowedCarriers = carriers;
+                    if (scacFilter) {
+                      allowedCarriers = carriers.filter(c => c.codigo.toUpperCase() === scacFilter);
+                    } else if (user?.role === UserRole.TRANSPORTISTA && subLineaFilter) {
+                      const linkedTLs = transportLines.filter(tl => (tl.TransportLine || '').trim().toUpperCase() === subLineaFilter);
+                      const linkedScacs = new Set(linkedTLs.map(tl => tl.carrierCodigo?.toUpperCase()));
+                      allowedCarriers = carriers.filter(c => linkedScacs.has(c.codigo.toUpperCase()));
+                    }
+                    return allowedCarriers.map(c => ({ value: c.codigo, label: c.nombre, sublabel: c.codigo }));
+                  })()}
                   placeholder="Selecciona el SCAC (Carrier)..."
                 />
               </div>
@@ -425,12 +435,20 @@ export const Cajas: React.FC = () => {
                   value={formData.TransportLine || ''}
                   onChange={val => {
                     const validSubs = getValidSublines(val);
-                    setFormData({ ...formData, TransportLine: val, nombreSubLinea: validSubs[0] || '' });
+                    // Si el usuario tiene una sublinea asignada, forzar esa como default si es válida
+                    let defSub = validSubs[0] || '';
+                    if (user?.role === UserRole.TRANSPORTISTA && user?.subLinea && validSubs.some(s => s.toUpperCase() === user.subLinea?.trim().toUpperCase())) {
+                      defSub = user.subLinea.trim().toUpperCase();
+                    }
+                    setFormData({ ...formData, TransportLine: val, nombreSubLinea: defSub });
                   }}
-                  options={Array.from(new Set(transportLines
-                    .filter(l => String(l.carrierCodigo || '').trim().toUpperCase() === String(formData.carrierCodigo || '').trim().toUpperCase())
-                    .map(l => l.TransportLine)))
-                    .map(tl => ({ value: tl, label: tl }))}
+                  options={(() => {
+                    let filteredTLs = transportLines.filter(l => String(l.carrierCodigo || '').trim().toUpperCase() === String(formData.carrierCodigo || '').trim().toUpperCase());
+                    if (user?.role === UserRole.TRANSPORTISTA && subLineaFilter) {
+                      filteredTLs = filteredTLs.filter(l => (l.TransportLine || '').trim().toUpperCase() === subLineaFilter);
+                    }
+                    return Array.from(new Set(filteredTLs.map(l => l.TransportLine))).map(tl => ({ value: tl, label: tl }));
+                  })()}
                   placeholder="Selecciona la Transport Line..."
                 />
               </div>
@@ -442,7 +460,14 @@ export const Cajas: React.FC = () => {
                   disabled={!formData.TransportLine}
                   value={formData.nombreSubLinea || ''}
                   onChange={val => setFormData({ ...formData, nombreSubLinea: val })}
-                  options={getValidSublines(formData.TransportLine || '').map(sl => ({ value: sl, label: sl }))}
+                  options={(() => {
+                    let allSubs = getValidSublines(formData.TransportLine || '');
+                    if (user?.role === UserRole.TRANSPORTISTA && user?.subLinea) {
+                      const userSub = user.subLinea.trim().toUpperCase();
+                      allSubs = allSubs.filter(s => s.toUpperCase() === userSub);
+                    }
+                    return allSubs.map(sl => ({ value: sl, label: sl }));
+                  })()}
                   placeholder="Selecciona la Sub-Línea..."
                 />
               </div>

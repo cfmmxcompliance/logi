@@ -43,11 +43,68 @@ export const demandaCarga53Service = {
   },
 
   async cancelarDemanda(id: string, userEmail: string): Promise<void> {
+    const now = new Date().toISOString();
+    
+    // Fetch demanda to know date and models for aggressive window cleanup
+    const demandaSnap = await getDoc(doc(db, COL, id));
+    const demanda = demandaSnap.exists() ? demandaSnap.data() as DemandaCarga53 : null;
+
+    // 1. Cancel the demand
     await updateDoc(doc(db, COL, id), {
       estatus: 'Cancelada' as DemandaEstatus,
       actualizadoPor: userEmail,
-      actualizadoEn: new Date().toISOString(),
+      actualizadoEn: now,
     });
+
+    // 2. Cascade cancel to Reservas and update/cancel Ventanas
+    const reservasSnap = await getDocs(query(collection(db, 'reservasVentanasCarga53'), where('demandaId', '==', id)));
+    for (const r of reservasSnap.docs) {
+      const data = r.data();
+      if (['Reservada', 'Confirmada'].includes(data.estatus) && data.ventanaId && data.cajasReservadas > 0) {
+        const ventanaRef = doc(db, 'ventanasCarga53', data.ventanaId);
+        const ventanaSnap = await getDoc(ventanaRef);
+        if (ventanaSnap.exists()) {
+          const v = ventanaSnap.data();
+          const newReservadas = Math.max(0, (v.cajasReservadas || 0) - data.cajasReservadas);
+          const newDisponibles = v.capacidadCajas - newReservadas;
+          
+          await updateDoc(ventanaRef, {
+            cajasReservadas: newReservadas,
+            cajasDisponibles: newDisponibles,
+            // If the window is now completely empty, cancel it so it's not a ghost window
+            estatus: newReservadas === 0 ? 'Cancelada' : (newDisponibles > 0 ? 'Parcial' : 'Llena'),
+            actualizadoEn: now,
+          });
+        }
+      }
+      // Cancel the reservation
+      await updateDoc(r.ref, {
+        estatus: 'Cancelada',
+        actualizadoPor: userEmail,
+        actualizadoEn: now,
+      });
+    }
+
+    // 3. Delete any linked Asignaciones Diarias (Confirmaciones)
+    const asignacionesSnap = await getDocs(query(collection(db, 'asignacion_cajas'), where('demandaId', '==', id)));
+    await Promise.all(asignacionesSnap.docs.map(d => deleteDoc(d.ref)));
+
+    // 4. Aggressive cleanup: cancel any unreserved Ventana for this date & models
+    if (demanda) {
+      const ventanasSnap = await getDocs(query(collection(db, 'ventanasCarga53'), where('fecha', '==', demanda.fechaDemanda)));
+      for (const vSnap of ventanasSnap.docs) {
+        const v = vSnap.data();
+        if ((v.cajasReservadas || 0) === 0 && v.estatus !== 'Cancelada') {
+          // If it matches the model or has no model
+          if (!v.modelo || (demanda.modelos && demanda.modelos.includes(v.modelo))) {
+            await updateDoc(vSnap.ref, {
+              estatus: 'Cancelada',
+              actualizadoEn: now,
+            });
+          }
+        }
+      }
+    }
   },
 
   // ── Items subcolección ──────────────────────────────────────────────
@@ -79,6 +136,10 @@ export const demandaCarga53Service = {
    * 4. Deletes the demand document
    */
   async eliminarDemanda(id: string): Promise<void> {
+    // ── 0. Fetch Demanda first to know date and models ───────────────────────
+    const demandaSnap = await getDoc(doc(db, 'demandasCarga53', id));
+    const demanda = demandaSnap.exists() ? demandaSnap.data() as DemandaCarga53 : null;
+
     // ── 1. Find all reservas linked to this demanda ──────────────────────────
     const reservasSnap = await getDocs(
       query(collection(db, 'reservasVentanasCarga53'), where('demandaId', '==', id))
@@ -93,13 +154,19 @@ export const demandaCarga53Service = {
         if (ventanaSnap.exists()) {
           const v = ventanaSnap.data();
           const newReservadas = Math.max(0, (v.cajasReservadas || 0) - data.cajasReservadas);
-          const newDisponibles = v.capacidadCajas - newReservadas;
-          await updateDoc(ventanaRef, {
-            cajasReservadas: newReservadas,
-            cajasDisponibles: newDisponibles,
-            estatus: newReservadas === 0 ? 'Disponible' : newDisponibles > 0 ? 'Parcial' : 'Llena',
-            actualizadoEn: new Date().toISOString(),
-          });
+          
+          if (newReservadas === 0) {
+            // Delete the window completely since we are eliminating the demand and it has no other reservations
+            await deleteDoc(ventanaRef);
+          } else {
+            const newDisponibles = v.capacidadCajas - newReservadas;
+            await updateDoc(ventanaRef, {
+              cajasReservadas: newReservadas,
+              cajasDisponibles: newDisponibles,
+              estatus: newDisponibles > 0 ? 'Parcial' : 'Llena',
+              actualizadoEn: new Date().toISOString(),
+            });
+          }
         }
       }
       // ── 3. Delete each reserva ─────────────────────────────────────────────
@@ -110,7 +177,24 @@ export const demandaCarga53Service = {
     const itemsSnap = await getDocs(collection(db, 'demandasCarga53', id, 'items'));
     await Promise.all(itemsSnap.docs.map(d => deleteDoc(d.ref)));
 
-    // ── 5. Delete parent demand document ─────────────────────────────────────
+    // ── 5. Delete any linked Asignaciones Diarias (Confirmaciones) ───────────
+    const asignacionesSnap = await getDocs(query(collection(db, 'asignacion_cajas'), where('demandaId', '==', id)));
+    await Promise.all(asignacionesSnap.docs.map(d => deleteDoc(d.ref)));
+
+    // ── 6. Aggressive cleanup: delete unreserved Ventanas for this date/model
+    if (demanda) {
+      const ventanasSnap = await getDocs(query(collection(db, 'ventanasCarga53'), where('fecha', '==', demanda.fechaDemanda)));
+      for (const vSnap of ventanasSnap.docs) {
+        const v = vSnap.data();
+        if ((v.cajasReservadas || 0) === 0) {
+          if (!v.modelo || (demanda.modelos && demanda.modelos.includes(v.modelo))) {
+            await deleteDoc(vSnap.ref);
+          }
+        }
+      }
+    }
+
+    // ── 7. Delete parent demand document ─────────────────────────────────────
     await deleteDoc(doc(db, 'demandasCarga53', id));
   },
 };

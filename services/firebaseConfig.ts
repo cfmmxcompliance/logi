@@ -1,7 +1,7 @@
 // @ts-ignore
 import { initializeApp } from 'firebase/app';
 // @ts-ignore
-import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 // @ts-ignore
 import { getAuth } from 'firebase/auth';
 // @ts-ignore
@@ -19,11 +19,10 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// forceOwnership:false — comparte IndexedDB sin forzar acceso exclusivo
-// Resuelve crash en Android sin sacrificar el caché persistente entre sesiones
+// Use multiple tab manager to prevent infinite hangs when opening the app in multiple tabs
 const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
-    tabManager: persistentSingleTabManager({ forceOwnership: false })
+    tabManager: persistentMultipleTabManager()
   })
 });
 

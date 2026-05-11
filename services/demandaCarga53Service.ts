@@ -58,7 +58,7 @@ export const demandaCarga53Service = {
 
     // 2. Cascade cancel to Reservas and update/cancel Ventanas
     const reservasSnap = await getDocs(query(collection(db, 'reservasVentanasCarga53'), where('demandaId', '==', id)));
-    for (const r of reservasSnap.docs) {
+    const reservaPromises = reservasSnap.docs.map(async (r) => {
       const data = r.data();
       if (['Reservada', 'Confirmada'].includes(data.estatus) && data.ventanaId && data.cajasReservadas > 0) {
         const ventanaRef = doc(db, 'ventanasCarga53', data.ventanaId);
@@ -83,7 +83,8 @@ export const demandaCarga53Service = {
         actualizadoPor: userEmail,
         actualizadoEn: now,
       });
-    }
+    });
+    await Promise.all(reservaPromises);
 
     // 3. Delete any linked Asignaciones Diarias (Confirmaciones)
     const asignacionesSnap = await getDocs(query(collection(db, 'asignacion_cajas'), where('demandaId', '==', id)));
@@ -92,7 +93,7 @@ export const demandaCarga53Service = {
     // 4. Aggressive cleanup: cancel any unreserved Ventana for this date & models
     if (demanda) {
       const ventanasSnap = await getDocs(query(collection(db, 'ventanasCarga53'), where('fecha', '==', demanda.fechaDemanda)));
-      for (const vSnap of ventanasSnap.docs) {
+      const ventanaPromises = ventanasSnap.docs.map(async (vSnap) => {
         const v = vSnap.data();
         if ((v.cajasReservadas || 0) === 0 && v.estatus !== 'Cancelada') {
           // If it matches the model or has no model
@@ -103,7 +104,8 @@ export const demandaCarga53Service = {
             });
           }
         }
-      }
+      });
+      await Promise.all(ventanaPromises);
     }
   },
 
@@ -146,7 +148,7 @@ export const demandaCarga53Service = {
     );
 
     // ── 2. Restore ventana capacity for active reservas ──────────────────────
-    for (const r of reservasSnap.docs) {
+    const reservaPromises = reservasSnap.docs.map(async (r) => {
       const data = r.data();
       if (['Reservada', 'Confirmada'].includes(data.estatus) && data.ventanaId && data.cajasReservadas > 0) {
         const ventanaRef = doc(db, 'ventanasCarga53', data.ventanaId);
@@ -171,7 +173,8 @@ export const demandaCarga53Service = {
       }
       // ── 3. Delete each reserva ─────────────────────────────────────────────
       await deleteDoc(r.ref);
-    }
+    });
+    await Promise.all(reservaPromises);
 
     // ── 4. Delete items subcollection ────────────────────────────────────────
     const itemsSnap = await getDocs(collection(db, 'demandasCarga53', id, 'items'));
@@ -184,14 +187,15 @@ export const demandaCarga53Service = {
     // ── 6. Aggressive cleanup: delete unreserved Ventanas for this date/model
     if (demanda) {
       const ventanasSnap = await getDocs(query(collection(db, 'ventanasCarga53'), where('fecha', '==', demanda.fechaDemanda)));
-      for (const vSnap of ventanasSnap.docs) {
+      const ventanaPromises = ventanasSnap.docs.map(async (vSnap) => {
         const v = vSnap.data();
         if ((v.cajasReservadas || 0) === 0) {
           if (!v.modelo || (demanda.modelos && demanda.modelos.includes(v.modelo))) {
             await deleteDoc(vSnap.ref);
           }
         }
-      }
+      });
+      await Promise.all(ventanaPromises);
     }
 
     // ── 7. Delete parent demand document ─────────────────────────────────────

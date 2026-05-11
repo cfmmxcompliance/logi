@@ -190,12 +190,11 @@ export const AdminVentanas53: React.FC = () => {
       `¿Eliminar la ventana del ${v.fecha} (${v.horaInicio}–${v.horaFin})?\n` +
       `Solo se puede eliminar si no tiene reservas activas.`
     )) return;
+    setLoading(true);
     try {
       await ventanaCarga53Service.deleteVentana(v.id!);
       await load();
-    } catch (e: any) {
-      alert(e.message);
-    }
+    } catch (e: any) { alert(e.message); setLoading(false); }
   };
 
   // Alert: demands whose total ventana capacity for that date < cajas solicitadas

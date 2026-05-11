@@ -128,10 +128,11 @@ export const DemandaCajas53: React.FC = () => {
 
   const handleConfirmar = async (d: DemandaCarga53) => {
     if (!window.confirm(`¿Confirmar la demanda del ${d.fechaDemanda}? Quedará visible para carriers.`)) return;
+    setLoading(true);
     try {
       await demandaCarga53Service.confirmarDemanda(d.id!, email);
       await load();
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { alert(e.message); setLoading(false); }
   };
 
   const handleCancelar = async (d: DemandaCarga53) => {
@@ -143,10 +144,11 @@ export const DemandaCajas53: React.FC = () => {
       `• Las confirmaciones en Asignación Diaria\n\n` +
       `No se eliminará del historial.`
     )) return;
+    setLoading(true);
     try {
       await demandaCarga53Service.cancelarDemanda(d.id!, email);
       await load();
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { alert(e.message); setLoading(false); }
   };
 
   const handleEliminar = async (d: DemandaCarga53) => {
@@ -159,10 +161,11 @@ export const DemandaCajas53: React.FC = () => {
       `• Las confirmaciones en Asignación Diaria\n\n` +
       `Esta acción no se puede deshacer.`
     )) return;
+    setLoading(true);
     try {
       await demandaCarga53Service.eliminarDemanda(d.id!);
       await load();
-    } catch (e: any) { alert('Error al eliminar: ' + e.message); }
+    } catch (e: any) { alert('Error al eliminar: ' + e.message); setLoading(false); }
   };
 
   const toggleExpand = async (d: DemandaCarga53) => {

@@ -300,30 +300,33 @@ export const ReservaVentanas53: React.FC = () => {
 
   const handleCancelarReserva = async (r: ReservaVentana53) => {
     if (!window.confirm('¿Cancelar esta reserva? Se liberará la capacidad en la ventana.')) return;
+    setLoading(true);
     try {
       await reservaVentana53Service.cancelarReserva(r.id!, email, r.ventanaId, r.cajasReservadas);
       await load();
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { alert(e.message); setLoading(false); }
   };
 
   const handleEliminarReserva = async (r: ReservaVentana53) => {
     if (!window.confirm('¿Eliminar definitivamente esta reserva cancelada? Esta acción no se puede deshacer.')) return;
+    setLoading(true);
     try {
       await reservaVentana53Service.deleteReserva(r.id!);
       await load();
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { alert(e.message); setLoading(false); }
   };
 
   const handleBulkEliminarCanceladas = async () => {
     if (selectedCanceladas.size === 0) return;
     if (!window.confirm(`¿Eliminar las ${selectedCanceladas.size} reservas canceladas seleccionadas?`)) return;
+    setLoading(true);
     try {
       for (const id of selectedCanceladas) {
         await reservaVentana53Service.deleteReserva(id);
       }
       setSelectedCanceladas(new Set());
       await load();
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { alert(e.message); setLoading(false); }
   };
 
   const toggleSelectCancelada = (id: string) => {

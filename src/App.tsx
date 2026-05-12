@@ -154,49 +154,53 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
 const AppContent = () => {
     const [isReady, setIsReady] = useState(false);
+    const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
     const { isAuthenticated, loading, user } = useAuth();
     const initCalledRef = useRef(false); // Guard: prevent re-init on background session re-validation
 
     useEffect(() => {
         if (loading) return;
-        if (initCalledRef.current) return; // Already initialized — don't re-run on user object changes
+        if (initCalledRef.current) return;
         initCalledRef.current = true;
 
-        // Async Init for IndexedDB and Services
-        const init = async () => {
-            try {
-                // Handheld users no necesitan init de escritorio (indexedDB, tracking)
-                const isHandheld = user?.role === UserRole.HANDHELD_USER || user?.role === UserRole.HANDHELD_USER2;
-                
-                // Solo inicializamos bases de datos masivas si el usuario está autenticado y no es handheld
-                if (isAuthenticated && !isHandheld) {
-                    await storageService.init(user?.role);
-                    await trackingService.init();
-                }
-                setIsReady(true);
-            } catch (e) {
-                console.error("Failed to initialize DB", e);
-                console.warn("Database init failure. App loading anyway.");
-            } finally {
-                setIsReady(true);
-            }
-        };
-        init();
+        const isHandheld = user?.role === UserRole.HANDHELD_USER || user?.role === UserRole.HANDHELD_USER2;
+
+        // ── STEP 1: Unblock the UI immediately ──────────────────────────────
+        // Show routes as soon as auth resolves. No more full-screen DB blocker.
+        setIsReady(true);
+
+        // ── STEP 2: Run heavy init in the background ─────────────────────────
+        if (isAuthenticated && !isHandheld) {
+            setIsBackgroundLoading(true);
+            Promise.all([
+                storageService.init(user?.role),
+                trackingService.init(),
+            ])
+            .catch(e => console.warn("Background DB init warning (non-critical):", e))
+            .finally(() => setIsBackgroundLoading(false));
+        }
     }, [loading, isAuthenticated]);
 
+    // While auth is still resolving, show a minimal spinner (not the heavy DB one)
     if (!isReady) {
         return (
-            <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50 text-slate-400 gap-4">
-                <div className="animate-spin text-blue-600">
-                    <Database size={48} />
+            <div className="h-screen w-full flex items-center justify-center bg-slate-50">
+                <div className="animate-spin text-blue-500">
+                    <Database size={36} />
                 </div>
-                <p className="font-medium animate-pulse">Loading Database...</p>
-                <p className="text-xs">Migrating and indexing large datasets (High Capacity Mode)</p>
             </div>
         );
     }
 
     return (
+        <>
+        {/* Subtle background-sync indicator — only visible while storageService initializes */}
+        {isBackgroundLoading && (
+            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 bg-slate-800/90 text-white text-xs px-4 py-2 rounded-full shadow-lg backdrop-blur-sm animate-fade-in">
+                <Database size={14} className="animate-pulse text-blue-400" />
+                <span>Sincronizando base de datos...</span>
+            </div>
+        )}
         <Routes>
             <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
 
@@ -262,6 +266,7 @@ const AppContent = () => {
 
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </>
     );
 };
 

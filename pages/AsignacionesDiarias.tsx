@@ -910,15 +910,23 @@ export const AsignacionesDiarias: React.FC = () => {
                    {uploadingFor?.id === a.id && uploadingFor.field === 'layoutUrl' ? (
                      <Loader2 size={18} className="animate-spin text-indigo-400 mx-auto" />
                    ) : a.layoutUrl ? (
-                     <a href={toDriveDownload(a.layoutUrl)}
-                        className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
-                        title="Descargar LAYOUT" onClick={e => e.stopPropagation()}>
-                       <FileText size={18} />
-                     </a>
+                     <div className="flex items-center justify-center gap-1">
+                       <a href={toDriveDownload(a.layoutUrl)}
+                          className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
+                          title="Descargar LAYOUT" onClick={e => e.stopPropagation()}>
+                         <FileText size={18} />
+                       </a>
+                       <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer"
+                              title="Reemplazar LAYOUT (Excel)" onClick={e => e.stopPropagation()}>
+                         <UploadCloud size={16} />
+                         <input type="file" accept=".xlsx,.xls,.csv" className="hidden"
+                                onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'layoutUrl', f, a.numeroCaja); e.target.value = ''; }} />
+                       </label>
+                     </div>
                    ) : (
                      <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer"
                             title="Subir LAYOUT (Excel)" onClick={e => e.stopPropagation()}>
-                       <FileText size={18} />
+                       <UploadCloud size={18} />
                        <input type="file" accept=".xlsx,.xls,.csv" className="hidden"
                               onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'layoutUrl', f, a.numeroCaja); e.target.value = ''; }} />
                      </label>
@@ -930,15 +938,23 @@ export const AsignacionesDiarias: React.FC = () => {
                    {uploadingFor?.id === a.id && uploadingFor.field === 'ccpUrl' ? (
                      <Loader2 size={18} className="animate-spin text-sky-400 mx-auto" />
                    ) : a.ccpUrl ? (
-                     <a href={a.ccpUrl} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
-                        title="Ver CCP en Drive" onClick={e => e.stopPropagation()}>
-                       <FileText size={18} />
-                     </a>
+                     <div className="flex items-center justify-center gap-1">
+                       <a href={a.ccpUrl} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
+                          title="Ver CCP en Drive" onClick={e => e.stopPropagation()}>
+                         <FileText size={18} />
+                       </a>
+                       <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
+                              title="Reemplazar CCP PDF" onClick={e => e.stopPropagation()}>
+                         <UploadCloud size={16} />
+                         <input type="file" accept="application/pdf" className="hidden"
+                                onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'ccpUrl', f, a.numeroCaja); e.target.value = ''; }} />
+                       </label>
+                     </div>
                    ) : (
                      <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-sky-500 hover:bg-sky-50 transition-colors cursor-pointer"
                             title="Subir CCP PDF" onClick={e => e.stopPropagation()}>
-                       <FileText size={18} />
+                       <UploadCloud size={18} />
                        <input type="file" accept="application/pdf" className="hidden"
                               onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'ccpUrl', f, a.numeroCaja); e.target.value = ''; }} />
                      </label>
@@ -950,15 +966,23 @@ export const AsignacionesDiarias: React.FC = () => {
                    {uploadingFor?.id === a.id && uploadingFor.field === 'anexo29Url' ? (
                      <Loader2 size={18} className="animate-spin text-emerald-400 mx-auto" />
                    ) : a.anexo29Url ? (
-                     <a href={a.anexo29Url} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
-                        title="Ver Anexo29 en Drive" onClick={e => e.stopPropagation()}>
-                       <FileText size={18} />
-                     </a>
+                     <div className="flex items-center justify-center gap-1">
+                       <a href={a.anexo29Url} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
+                          title="Ver Anexo29 en Drive" onClick={e => e.stopPropagation()}>
+                         <FileText size={18} />
+                       </a>
+                       <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer"
+                              title="Reemplazar Anexo29 PDF" onClick={e => e.stopPropagation()}>
+                         <UploadCloud size={16} />
+                         <input type="file" accept="application/pdf" className="hidden"
+                                onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'anexo29Url', f, a.numeroCaja); e.target.value = ''; }} />
+                       </label>
+                     </div>
                    ) : (
                      <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 transition-colors cursor-pointer"
                             title="Subir Anexo29 PDF" onClick={e => e.stopPropagation()}>
-                       <FileText size={18} />
+                       <UploadCloud size={18} />
                        <input type="file" accept="application/pdf" className="hidden"
                               onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'anexo29Url', f, a.numeroCaja); e.target.value = ''; }} />
                      </label>

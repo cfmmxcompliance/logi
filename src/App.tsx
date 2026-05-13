@@ -61,6 +61,22 @@ import { NotificationPopup } from '../components/NotificationPopup.tsx';
 import { Database } from 'lucide-react';
 import { UserRole } from '../types.ts';
 
+import AppLoader from '../components/AppLoader.tsx';
+
+// App version — bump this string when you want to force a fresh load for all users
+const APP_VERSION = '2.1.0';
+
+// Detect if this is a first load / cache miss / new app version
+const checkIsFirstLoad = () => {
+    try {
+        const hasDb     = !!localStorage.getItem('logimaster_db');
+        const hasReady  = localStorage.getItem('logimaster_app_ready') === APP_VERSION;
+        return !hasDb || !hasReady;
+    } catch {
+        return true; // localStorage unavailable (private mode etc.) — treat as first load
+    }
+};
+
 // Authenticated Route Wrapper
 const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode, allowedRoles?: string[] }) => {
     const { isAuthenticated, user } = useAuth();
@@ -153,52 +169,149 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 };
 
 const AppContent = () => {
-    const [isReady, setIsReady] = useState(false);
+    const [isReady, setIsReady]               = useState(false);
     const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
+    const [showFullLoader, setShowFullLoader] = useState(false);
+    const [loaderStep, setLoaderStep]         = useState('auth');
+    const [loaderProgress, setLoaderProgress] = useState(0);
+    const [loaderError, setLoaderError]       = useState<string | null>(null);
+
     const { isAuthenticated, loading, user } = useAuth();
-    const initCalledRef = useRef(false); // Guard: prevent re-init on background session re-validation
+    const initCalledRef = useRef(false);
 
     useEffect(() => {
         if (loading) return;
-        if (initCalledRef.current) return;
+
+        // ── Not authenticated: show login, reset guard so re-login works ────
+        if (!isAuthenticated) {
+            initCalledRef.current = false;  // allow re-run after next login
+            setIsReady(true);               // let Routes render /login
+            return;
+        }
+
+        if (initCalledRef.current) return;  // already initialised this session
         initCalledRef.current = true;
 
         const isHandheld = user?.role === UserRole.HANDHELD_USER || user?.role === UserRole.HANDHELD_USER2;
 
-        // ── STEP 1: Unblock the UI immediately ──────────────────────────────
-        // Show routes as soon as auth resolves. No more full-screen DB blocker.
-        setIsReady(true);
+        // ── Handheld users: skip heavy DB init entirely ─────────────────────
+        if (isHandheld) {
+            setIsReady(true);
+            return;
+        }
 
-        // ── STEP 2: Run heavy init in the background ─────────────────────────
-        if (isAuthenticated && !isHandheld) {
+        // ── Decide: first-load vs return visit ──────────────────────────────
+        const firstLoad = checkIsFirstLoad();
+
+        if (firstLoad) {
+            setShowFullLoader(true);
+
+            // Safety timeout: if init takes > 60 s, allow entry anyway
+            const safetyTimer = setTimeout(() => {
+                console.warn('[AppLoader] Safety timeout reached — allowing entry.');
+                try { localStorage.setItem('logimaster_app_ready', APP_VERSION); } catch {}
+                setShowFullLoader(false);
+                setIsReady(true);
+            }, 60_000);
+
+            const runInit = async () => {
+                try {
+                    // ── Start ALL real work immediately — zero artificial delay ──────
+                    setLoaderStep('auth');  setLoaderProgress(8);
+
+                    // Launch both services in parallel right away
+                    const initPromise     = storageService.init(user?.role);
+                    const trackingPromise = trackingService.init();
+
+                    // ── Smooth progress animation while real work runs ───────────────
+                    // Moves from 8 → 88% over time using a live interval.
+                    // Steps through realistic phase labels so the screen feels active.
+                    const PHASES = [
+                        { at: 15, step: 'idb'      },
+                        { at: 30, step: 'parts'    },
+                        { at: 50, step: 'invoices' },
+                        { at: 68, step: 'firebase' },
+                        { at: 83, step: 'tracking' },
+                    ];
+                    let currentProgress = 8;
+                    const animInterval = setInterval(() => {
+                        currentProgress = Math.min(88, currentProgress + 0.8); // ~110 ticks to reach 88%
+                        setLoaderProgress(currentProgress);
+                        const nextPhase = PHASES.find(p => currentProgress >= p.at && currentProgress < p.at + 1);
+                        if (nextPhase) setLoaderStep(nextPhase.step);
+                    }, 80); // fires every 80 ms → smooth 60-fps feel, ~8.8 seconds to reach 88%
+
+                    // ── Wait for the REAL work to finish ────────────────────────────
+                    await Promise.all([initPromise, trackingPromise]);
+
+                    // Real work done — clear animation, snap to 100%
+                    clearInterval(animInterval);
+                    setLoaderStep('ready'); setLoaderProgress(100);
+
+                    // Brief "¡Listo!" moment (400ms only, not blocking data)
+                    await new Promise(r => setTimeout(r, 400));
+
+                    clearTimeout(safetyTimer);
+                    try { localStorage.setItem('logimaster_app_ready', APP_VERSION); } catch {}
+                    setShowFullLoader(false);
+                    setIsReady(true);
+                } catch (e: any) {
+                    clearTimeout(safetyTimer);
+                    console.error('[AppLoader] Init failed:', e);
+                    setLoaderError(e?.message || 'Error desconocido durante la inicialización.');
+                    // Auto-recover after 8 s — never leave user stuck
+                    setTimeout(() => {
+                        setLoaderError(null);
+                        setShowFullLoader(false);
+                        setIsReady(true);
+                    }, 8_000);
+                }
+            };
+
+            runInit();
+        } else {
+            // ── RETURN VISIT: instant UI, silent background init ─────────────
+            setIsReady(true);
             setIsBackgroundLoading(true);
             Promise.all([
                 storageService.init(user?.role),
                 trackingService.init(),
             ])
-            .catch(e => console.warn("Background DB init warning (non-critical):", e))
+            .catch(e => console.warn('[AppLoader] Background init (non-critical):', e))
             .finally(() => setIsBackgroundLoading(false));
         }
     }, [loading, isAuthenticated]);
 
-    // While auth is still resolving, show a minimal spinner (not the heavy DB one)
-    if (!isReady) {
+    // Auth still resolving — tiny neutral spinner
+    if (!isReady && !showFullLoader) {
         return (
-            <div className="h-screen w-full flex items-center justify-center bg-slate-50">
-                <div className="animate-spin text-blue-500">
+            <div className="h-screen w-full flex items-center justify-center bg-slate-900">
+                <div className="animate-spin text-indigo-500">
                     <Database size={36} />
                 </div>
             </div>
         );
     }
 
+    // First load — full animated loader
+    if (showFullLoader) {
+        return (
+            <AppLoader
+                currentStep={loaderStep}
+                targetProgress={loaderProgress}
+                error={loaderError}
+                onRetry={() => { initCalledRef.current = false; window.location.reload(); }}
+            />
+        );
+    }
+
     return (
         <>
-        {/* Subtle background-sync indicator — only visible while storageService initializes */}
+        {/* Subtle background-sync indicator on return visits */}
         {isBackgroundLoading && (
-            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 bg-slate-800/90 text-white text-xs px-4 py-2 rounded-full shadow-lg backdrop-blur-sm animate-fade-in">
+            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 bg-slate-800/90 text-white text-xs px-4 py-2 rounded-full shadow-lg backdrop-blur-sm">
                 <Database size={14} className="animate-pulse text-blue-400" />
-                <span>Sincronizando base de datos...</span>
+                <span>Sincronizando datos...</span>
             </div>
         )}
         <Routes>

@@ -24,6 +24,7 @@ import { UserRole } from '../types';
 import modelosCaja from '../utils/modelosCaja.json';
 import { useLanguage } from '../context/LanguageContext';
 import { SelloMismatchAlert } from '../components/SelloMismatchAlert';
+import BarcodePanelModal from '../components/BarcodePanelModal';
 
 export const AsignacionesDiarias: React.FC = () => {
   const { user } = useAuth();
@@ -58,6 +59,13 @@ export const AsignacionesDiarias: React.FC = () => {
     numeroCaja: string;
     selloOriginal: string;
     selloLiberacion: string;
+  } | null>(null);
+
+  // Popup de códigos de barras
+  const [barcodeTarget, setBarcodeTarget] = useState<{
+    numeroOperacion: string;
+    numeroCaja: string;
+    sello: string;
   } | null>(null);
 
   // Search & Filters state
@@ -869,7 +877,42 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 w-[50px] min-w-[50px] max-w-[50px] bg-inherit border-r border-slate-200 text-center sticky left-0 z-20">
                     {!isEmbarques && <input type="checkbox" checked={selectedIds.has(a.id!)} onChange={() => toggleSelectRow(a.id!)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
                 </td>
-                <td className="p-4 w-[130px] min-w-[130px] max-w-[130px] bg-inherit border-r border-slate-200 font-mono text-pink-700 font-bold tracking-wide whitespace-nowrap sticky left-[50px] z-20">{a.numeroOperacion || '-'}</td>
+                <td className="p-4 w-[130px] min-w-[130px] max-w-[130px] bg-inherit border-r border-slate-200 font-mono font-bold tracking-wide whitespace-nowrap sticky left-[50px] z-20">
+                  {(() => {
+                    // Buscar si tiene sello asignado para esta fila
+                    const selloRow = sellos.find(s =>
+                      s.asignacionCajaId === a.id ||
+                      (s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha)
+                    );
+                    const selloValor = liberacion?.selloValidado || selloRow?.selloAsignado || '';
+
+                    if (selloValor) {
+                      // Con sello → acceso directo al popup de códigos de barras
+                      return (
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            setBarcodeTarget({
+                              numeroOperacion: a.numeroOperacion || '-',
+                              numeroCaja: a.numeroCaja,
+                              sello: selloValor,
+                            });
+                          }}
+                          title="Ver códigos de barras"
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-400 transition-all group"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500 group-hover:text-blue-700">
+                            <path d="M3 5v3M3 16v3M8 5v3M8 16v3M13 5v3M13 16v3M18 5v3M18 16v3M3 8h5M3 19h5M13 8h8M13 19h8"/>
+                          </svg>
+                          <span className="font-mono font-black text-sm">{a.numeroOperacion || '-'}</span>
+                        </button>
+                      );
+                    }
+
+                    // Sin sello → texto estático rosa como antes
+                    return <span className="text-pink-700">{a.numeroOperacion || '-'}</span>;
+                  })()}
+                </td>
                 <td className="p-4 w-[140px] min-w-[140px] max-w-[140px] bg-inherit font-semibold text-emerald-700 font-mono tracking-wide sticky left-[180px] z-20 border-r border-slate-200">{a.numeroCaja}</td>
                 <td className="p-4 w-[150px] min-w-[150px] max-w-[150px] bg-inherit font-medium text-slate-700 whitespace-nowrap sticky left-[320px] z-20 shadow-[4px_0_10px_-3px_rgba(0,0,0,0.05)]">
                     <div className="flex items-center gap-2">
@@ -1327,6 +1370,16 @@ export const AsignacionesDiarias: React.FC = () => {
         selloLiberacion={mismatchAlert?.selloLiberacion || ''}
         onClose={() => setMismatchAlert(null)}
       />
+
+      {/* Popup de códigos de barras — se abre al hacer clic en No. Operación con sello */}
+      {barcodeTarget && (
+        <BarcodePanelModal
+          numeroOperacion={barcodeTarget.numeroOperacion}
+          numeroCaja={barcodeTarget.numeroCaja}
+          sello={barcodeTarget.sello}
+          onClose={() => setBarcodeTarget(null)}
+        />
+      )}
     </div>
   );
 };

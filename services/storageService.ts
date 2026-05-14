@@ -54,7 +54,8 @@ const notifyListeners = () => listeners.forEach(l => l());
 export const isQuotaError = (e: any): boolean => {
   if (!e) return false;
   const errMsg = (e.message || e.toString() || '').toLowerCase();
-  const code = (e.code || '').toLowerCase();
+  // e.code can be a string ('resource-exhausted'), a number (429, 400) or undefined
+  const code = String(e.code ?? '').toLowerCase();
   return (
     errMsg.includes('quota') ||
     errMsg.includes('exhausted') ||
@@ -62,9 +63,11 @@ export const isQuotaError = (e: any): boolean => {
     errMsg.includes('rebasado') || // Spanish variant
     code === 'resource-exhausted' ||
     code === 'quota-exceeded' ||
-    code.includes('quota')
+    code.includes('quota') ||
+    code === '429'   // HTTP Too Many Requests
   );
 };
+
 
 // Helper to convert undefined to null for Firestore
 const sanitizeForFirestore = (obj: any): any => {

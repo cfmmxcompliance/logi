@@ -199,6 +199,10 @@ export const Dashboard = () => {
   const [reports, setReports] = useState(storageService.getDataStageReports());
   const [allRecordsHydrated, setAllRecordsHydrated] = useState<PedimentoRecord[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
+  // monthlyDuties patched from hydrated records (triggers re-render after hydration)
+  const MONTHS_INIT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const ZERO_DUTIES = { 'IGI Import':0,'IVA Import':0,'DTA Import':0,'IGI Export':0,'IVA Export':0,'DTA Export':0 };
+  const [patchedMonthlyDuties, setPatchedMonthlyDuties] = useState<typeof ZERO_DUTIES[] | null>(null);
   const [seeding, setSeeding] = useState(false);
   const curYear = new Date().getFullYear();
   const [startDate, setStartDate] = useState(`${curYear}-01-01`);
@@ -359,6 +363,9 @@ export const Dashboard = () => {
         // Recorre los reportes sin monthlyDuties y los actualiza en Firestore con los datos
         // calculados desde los records ya hidratados — no requiere re-subir ZIPs.
         const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const ZD = { 'IGI Import':0,'IVA Import':0,'DTA Import':0,'IGI Export':0,'IVA Export':0,'DTA Export':0 };
+        let allPatched = MONTHS_SHORT.map(name => ({ name, ...ZD }));
+
         const parseDateMonth = (s: string): number => {
           if (!s) return -1;
           const raw = s.trim();
@@ -372,7 +379,19 @@ export const Dashboard = () => {
 
         for (const report of reports) {
           if (cancelled) break;
-          if (report.monthlyDuties && report.monthlyDuties.length > 0) continue; // ya tiene datos
+          if (report.monthlyDuties && report.monthlyDuties.length > 0) {
+            // Already has monthlyDuties — just accumulate into allPatched for re-render
+            allPatched = allPatched.map((row, i) => ({
+              name: row.name,
+              'IGI Import': (row['IGI Import'] || 0) + (report.monthlyDuties![i]?.['IGI Import'] || 0),
+              'IVA Import': (row['IVA Import'] || 0) + (report.monthlyDuties![i]?.['IVA Import'] || 0),
+              'DTA Import': (row['DTA Import'] || 0) + (report.monthlyDuties![i]?.['DTA Import'] || 0),
+              'IGI Export': (row['IGI Export'] || 0) + (report.monthlyDuties![i]?.['IGI Export'] || 0),
+              'IVA Export': (row['IVA Export'] || 0) + (report.monthlyDuties![i]?.['IVA Export'] || 0),
+              'DTA Export': (row['DTA Export'] || 0) + (report.monthlyDuties![i]?.['DTA Export'] || 0),
+            }));
+            continue;
+          }
 
           const recs = recordsByReport.get(report.id) || [];
           if (recs.length === 0) continue;
@@ -413,13 +432,25 @@ export const Dashboard = () => {
             const { db: fsDb } = await import('../services/firebaseConfig');
             if (fsDb) {
               await updateDoc(fsDoc(fsDb, 'dataStageReports', report.id), { monthlyDuties });
-              // Actualizar en memoria también
-              (report as any).monthlyDuties = monthlyDuties;
-              console.log(`[Dashboard] Patched monthlyDuties for report ${report.id}`);
+              console.log(`[Dashboard] Patched monthlyDuties for report ${report.id}`, monthlyDuties.filter(m => Object.values(m).some(v => typeof v === 'number' && v > 0)));
             }
           } catch (patchErr) {
             console.warn('[Dashboard] Could not patch monthlyDuties (non-critical):', patchErr);
           }
+          // Accumulate into combined duties (one per month, across all reports)
+          allPatched = allPatched.map((row, i) => ({
+            name: row.name,
+            'IGI Import': (row['IGI Import'] || 0) + (monthlyDuties[i]?.['IGI Import'] || 0),
+            'IVA Import': (row['IVA Import'] || 0) + (monthlyDuties[i]?.['IVA Import'] || 0),
+            'DTA Import': (row['DTA Import'] || 0) + (monthlyDuties[i]?.['DTA Import'] || 0),
+            'IGI Export': (row['IGI Export'] || 0) + (monthlyDuties[i]?.['IGI Export'] || 0),
+            'IVA Export': (row['IVA Export'] || 0) + (monthlyDuties[i]?.['IVA Export'] || 0),
+            'DTA Export': (row['DTA Export'] || 0) + (monthlyDuties[i]?.['DTA Export'] || 0),
+          }));
+        }
+        // Trigger re-render with computed duties so dutiesData picks them up
+        if (allPatched.some(m => Object.values(m).some(v => typeof v === 'number' && v > 0))) {
+          setPatchedMonthlyDuties(allPatched);
         }
       }
     };
@@ -496,13 +527,18 @@ export const Dashboard = () => {
     'Valor (M USD)': parseFloat((allRecords.filter(r=>recordMonth(r)===i&&isExport(r)).reduce((s,r)=>s+r.totalValueUsd,0)/1e6).toFixed(3)),
   })), [allRecords]);
 
-  // Duties — usa monthlyDuties precomputado si existe (reportes nuevos),
-  // si no, reconstruye desde allRecords ya cargados de Firestore (backward-compatible)
+  // Duties — prioridad: 1) patchedMonthlyDuties (calculado en vivo tras hidratación)
+  // 2) monthlyDuties precomputado en Firestore, 3) fallback desde records individuales
   const dutiesData = useMemo(() => {
     const ZERO = { 'IGI Import':0,'IVA Import':0,'DTA Import':0,'IGI Export':0,'IVA Export':0,'DTA Export':0 };
     const acc = MONTHS.map((name) => ({ name, ...ZERO }));
 
-    // Intentar usar monthlyDuties precomputado (reportes subidos después del fix)
+    // Prioridad 1: duties calculados en vivo tras patch de hidratación (dispara re-render)
+    if (patchedMonthlyDuties && patchedMonthlyDuties.length > 0) {
+      return MONTHS.map((name, i) => ({ name, ...patchedMonthlyDuties[i] }));
+    }
+
+    // Prioridad 2: monthlyDuties precomputado guardado en Firestore (reportes nuevos)
     const hasPrecomputed = reports.some(rep => rep.monthlyDuties && rep.monthlyDuties.length > 0);
     if (hasPrecomputed) {
       reports.forEach(rep => {
@@ -518,7 +554,7 @@ export const Dashboard = () => {
         });
       });
     } else {
-      // Fallback: reconstruir desde allRecordsHydrated (datos ya en Firestore)
+      // Prioridad 3: reconstruir desde allRecords (igiTotal por record en Firestore)
       allRecords.forEach(r => {
         const i = recordMonth(r);
         if (i < 0 || i > 11) return;
@@ -544,7 +580,7 @@ export const Dashboard = () => {
       'IVA Export': parseFloat(row['IVA Export'].toFixed(1)),
       'DTA Export': parseFloat(row['DTA Export'].toFixed(1)),
     }));
-  }, [reports, allRecords]);
+  }, [reports, allRecords, patchedMonthlyDuties]);
 
   // Contenedores por mes (504 → 501)
   const containerVolumeData = useMemo(() => MONTHS.map((name, i) => ({

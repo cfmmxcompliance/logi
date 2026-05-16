@@ -102,20 +102,20 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
             const cols = line.split('|');
             if (cols.length < 10) return;
             tempGeneral.push({
-              patente: cols[0],
-              pedimento: cols[1],
-              seccion: cols[2],
-              tipoOperacion: normalizeTipoOperacion(cols[3]), // normalized: 'IMP' | 'EXP'
-              claveDocumento: cols[4],
-              rfc: cols[7],
+              patente:    (cols[0] || '').trim(),
+              pedimento:  (cols[1] || '').trim(),
+              seccion:    (cols[2] || '').trim(),
+              tipoOperacion: normalizeTipoOperacion(cols[3]),
+              claveDocumento: (cols[4] || '').trim(),
+              rfc: (cols[7] || '').trim(),
               tipoCambio: parseFloatSafe(cols[9]),
               fletes: parseFloatSafe(cols[10]),
               seguros: parseFloatSafe(cols[11]),
               embalajes: parseFloatSafe(cols[12]),
               otrosIncrementables: parseFloatSafe(cols[13]),
               pesoBruto: parseFloatSafe(cols[15]),
-              fechaEntrada: cols[29] || '',
-              fechaPago: cols[30] || '',
+              fechaEntrada: (cols[29] || '').trim(),
+              fechaPago: (cols[30] || '').trim(),
               isFixedAsset: (cols[4] || '').trim().toUpperCase() === 'AF',
             });
           });
@@ -191,17 +191,19 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
             });
           });
         } else if (fileCode === DataStageRecordType.TAXES) {
-          // 510: Contribuciones — cols: Patente|Pedimento|Seccion|Clave|Tasa|TipoTasa|FormaPago|Importe
+          // 510: Contribuciones
+          // Cols SAT M3: Patente|Pedimento|Seccion|Clave|Tasa|TipoTasa|FormaPago|Importe
+          // CRITICAL: use .trim() on ALL key parts — whitespace differences between files
+          // cause 100% key mismatch and all taxes appear as 0.
           lines.forEach(line => {
             if (line.startsWith('Patente|') || line.startsWith('NUM_PED|')) return;
             const cols = line.split('|');
-            if (cols.length < 8) return;
-            const key = `${cols[0]}-${cols[1]}-${cols[2]}`;
-            tempTaxes.push({
-              key,
-              clave: (cols[3] || '').trim().toUpperCase(),
-              importe: parseFloatSafe(cols[7]),
-            });
+            if (cols.length < 7) return;
+            const key = `${(cols[0]||'').trim()}-${(cols[1]||'').trim()}-${(cols[2]||'').trim()}`;
+            const rawClave = (cols[3] || '').trim().toUpperCase();
+            // Importe: col 7 in most versions, col 6 in some older M3 exports
+            const importe = parseFloatSafe(cols[7]) || parseFloatSafe(cols[6]);
+            tempTaxes.push({ key, clave: rawClave, importe });
           });
         } else if (fileCode === '507') {
           // 507: Casos de pedimento
@@ -361,17 +363,23 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
   });
 
   // Link taxes: accumulate IVA, IGI, DTA, CNT per pedimento
+  // Extended clave matching: SAT M3 uses variants across versions
   tempTaxes.forEach(tax => {
     const record = pedimentoMap.get(tax.key);
     if (!record) return;
     const amt = tax.importe;
-    if (tax.clave === 'IGI' || tax.clave === 'DBA') {
+    const c = tax.clave;
+    // IGI variants: IGI, DBA (derecho de barco/aeronave), IGI1, IGI2
+    if (c === 'IGI' || c === 'DBA' || c.startsWith('IGI')) {
       record.igiTotal = (record.igiTotal || 0) + amt;
-    } else if (tax.clave === 'IVA' || tax.clave === 'PRV') {
+    // IVA variants: IVA, IVA16, PRV (provisional), RIVA (IVA retención), PIVA
+    } else if (c === 'IVA' || c === 'PRV' || c === 'IVA16' || c === 'RIVA' || c === 'PIVA' || c.startsWith('IVA')) {
       record.ivaPrvTotal = (record.ivaPrvTotal || 0) + amt;
-    } else if (tax.clave === 'DTA') {
+    // DTA variants: DTA, DAN (derecho de almacenaje/no-almacenaje)
+    } else if (c === 'DTA' || c === 'DAN') {
       record.dtaTotal = (record.dtaTotal || 0) + amt;
-    } else if (tax.clave === 'CNT') {
+    // CNT = Cuota Compensatoria
+    } else if (c === 'CNT') {
       record.cntTotal = (record.cntTotal || 0) + amt;
     }
   });

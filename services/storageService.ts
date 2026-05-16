@@ -2568,13 +2568,17 @@ export const storageService = {
 
     // 2. Cloud Persistence
     try {
-      // ALWAYS Try Lean Report to Firestore First (Metadata only)
+      // ALWAYS Try Lean Report to Firestore First (Metadata + precomputed aggregates)
       const leanReport = {
         ...report,
         records: [],
+        // monthlyDuties is kept — it's lightweight scalar data (~12×6 numbers) computed
+        // by the parser from file 510 and is critical for Dashboard Contribuciones chart.
+        monthlyDuties: report.monthlyDuties ?? [],
         rawFiles: report.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
       };
       await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), leanReport);
+
     } catch (e: any) {
       console.warn("Firestore save failed (lean):", e);
       if (e.code === 'resource-exhausted') {

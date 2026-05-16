@@ -2566,31 +2566,62 @@ export const storageService = {
     // 1. Memory Update (Optimistic)
     dbState.dataStageReports.unshift(report);
 
+    // Validate monthlyDuties: only save if it has at least one non-zero value.
+    // If all zeros, omit it so Dashboard knows tax data wasn't extracted.
+    const hasRealDuties = (report.monthlyDuties ?? []).some(m =>
+      (m['IGI Import'] || 0) + (m['IVA Import'] || 0) + (m['DTA Import'] || 0) +
+      (m['IGI Export'] || 0) + (m['IVA Export'] || 0) + (m['DTA Export'] || 0) > 0
+    );
+
+    // Quick tax totals for validation / debugging in Firestore console
+    const taxSummary = hasRealDuties ? {
+      totalIGI: (report.monthlyDuties ?? []).reduce((s, m) => s + (m['IGI Import'] || 0) + (m['IGI Export'] || 0), 0),
+      totalIVA: (report.monthlyDuties ?? []).reduce((s, m) => s + (m['IVA Import'] || 0) + (m['IVA Export'] || 0), 0),
+      totalDTA: (report.monthlyDuties ?? []).reduce((s, m) => s + (m['DTA Import'] || 0) + (m['DTA Export'] || 0), 0),
+    } : null;
+
+    if (!hasRealDuties) {
+      console.warn('[DataStage] monthlyDuties are all zeros — tax data may not have been extracted from file 510. Check parser key matching.');
+    }
+
     // 2. Cloud Persistence
     try {
-      // ALWAYS Try Lean Report to Firestore First (Metadata + precomputed aggregates)
+      // Save lean report to Firestore (metadata + precomputed aggregates)
       const leanReport = {
         ...report,
         records: [],
-        // monthlyDuties is kept — it's lightweight scalar data (~12×6 numbers) computed
-        // by the parser from file 510 and is critical for Dashboard Contribuciones chart.
-        monthlyDuties: report.monthlyDuties ?? [],
+        // monthlyDuties: only save when we have real tax values
+        monthlyDuties: hasRealDuties ? report.monthlyDuties : [],
+        ...(taxSummary ? { taxSummary } : {}),
         rawFiles: report.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
       };
       await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), leanReport);
 
     } catch (e: any) {
       console.warn("Firestore save failed (lean):", e);
-      if (e.code === 'resource-exhausted') {
+      if (String(e.code ?? '').toLowerCase().includes('resource-exhausted') || String(e.code ?? '') === '429') {
         throw new Error("Cuota de Firestore Excedida.");
       }
     }
 
-    // 3. Batch Write Records (parallel pools of 4)
-    console.log("Saving records via parallel Batch Writes...");
-    const { writeBatch, collection } = await import('firebase/firestore');
-
+    // 3. Delete existing subcollection items before writing new ones
+    // This prevents stale/duplicate records when overwriting an existing report.
+    const { writeBatch, collection, getDocs: getSubDocs } = await import('firebase/firestore');
     const recordsRef = collection(db, COLS.DATA_STAGE_REPORTS, report.id, 'items');
+
+    try {
+      const existingSnap = await getSubDocs(recordsRef);
+      if (!existingSnap.empty) {
+        console.log(`[DataStage] Deleting ${existingSnap.size} existing records before overwrite...`);
+        const deleteBatch = writeBatch(db);
+        existingSnap.docs.forEach(d => deleteBatch.delete(d.ref));
+        await deleteBatch.commit();
+      }
+    } catch (delErr) {
+      console.warn('[DataStage] Could not clean existing subcollection (non-fatal):', delErr);
+    }
+
+
     const BATCH_SIZE = 200;
     const PARALLEL_BATCHES = 4;
     const chunks: PedimentoRecord[][] = [];

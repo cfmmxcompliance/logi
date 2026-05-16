@@ -311,17 +311,20 @@ export const Dashboard = () => {
     const hydrate = async () => {
       setLoadingRecords(true);
       const allRecords: PedimentoRecord[] = [];
+
+      // Track records per report for monthlyDuties patch
+      const recordsByReport = new Map<string, PedimentoRecord[]>();
+
       for (const report of reports) {
         if (cancelled) break;
         const recs = report.records && report.records.length > 0
           ? report.records
           : await (storageService as any).getDataStageReportWithRecords(report.id);
         allRecords.push(...recs);
+        recordsByReport.set(report.id, recs);
       }
       if (!cancelled) {
         // === CRUCE 507→501 EN VIVO ===
-        // Los registros de Firestore guardados antes del fix no tienen edDocuments.
-        // Lo recalculamos desde rawFiles (código '507') usando el tipoOperacion del registro.
         const recordMap = new Map<string, PedimentoRecord>();
         allRecords.forEach(r => recordMap.set(r.id, r));
 
@@ -331,18 +334,16 @@ export const Dashboard = () => {
           const file507 = rawFiles.find(f => f.code === '507');
           if (!file507) continue;
 
-          // Contar ED por pedimento (cols: 0=Patente, 1=Pedimento, 2=Seccion, 3=ClaveCaso)
           const edCounts = new Map<string, number>();
           file507.rows.forEach(row => {
             if (!row || row.length < 4) return;
-            if ((row[0]||'').startsWith('Patente')) return; // header
+            if ((row[0]||'').startsWith('Patente')) return;
             const clave = (row[3]||'').trim().toUpperCase();
             if (clave !== 'ED') return;
             const id = `${row[0]}-${row[1]}-${row[2]}`;
             edCounts.set(id, (edCounts.get(id)||0) + 1);
           });
 
-          // Asignar solo a pedimentos EXP (cruce con 501 via tipoOperacion del record)
           edCounts.forEach((count, id) => {
             const record = recordMap.get(id);
             if (record && record.tipoOperacion === 'EXP') {
@@ -353,11 +354,79 @@ export const Dashboard = () => {
 
         setAllRecordsHydrated([...allRecords]);
         setLoadingRecords(false);
+
+        // === PATCH SILENCIOSO: calcular monthlyDuties para reportes que no lo tienen ===
+        // Recorre los reportes sin monthlyDuties y los actualiza en Firestore con los datos
+        // calculados desde los records ya hidratados — no requiere re-subir ZIPs.
+        const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const parseDateMonth = (s: string): number => {
+          if (!s) return -1;
+          const raw = s.trim();
+          let d = new Date(raw.length > 10 ? raw : raw + 'T12:00:00');
+          if (!isNaN(d.getTime())) return d.getMonth();
+          const sl = raw.split('/');
+          if (sl.length === 3) { d = new Date(`${sl[2]}-${sl[1].padStart(2,'0')}-${sl[0].padStart(2,'0')}T12:00:00`); if (!isNaN(d.getTime())) return d.getMonth(); }
+          if (/^\d{8}$/.test(raw)) { d = new Date(`${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}T12:00:00`); if (!isNaN(d.getTime())) return d.getMonth(); }
+          return -1;
+        };
+
+        for (const report of reports) {
+          if (cancelled) break;
+          if (report.monthlyDuties && report.monthlyDuties.length > 0) continue; // ya tiene datos
+
+          const recs = recordsByReport.get(report.id) || [];
+          if (recs.length === 0) continue;
+
+          const acc = Array.from({length: 12}, () => ({
+            igi_imp: 0, iva_imp: 0, dta_imp: 0,
+            igi_exp: 0, iva_exp: 0, dta_exp: 0,
+          }));
+
+          recs.forEach(r => {
+            const m = parseDateMonth(r.fechaPago || r.fechaEntrada || '');
+            if (m < 0 || m > 11) return;
+            const isExp = r.tipoOperacion === 'EXP';
+            if (isExp) {
+              acc[m].igi_exp += r.igiTotal   || 0;
+              acc[m].iva_exp += r.ivaPrvTotal || 0;
+              acc[m].dta_exp += r.dtaTotal    || 0;
+            } else {
+              acc[m].igi_imp += r.igiTotal   || 0;
+              acc[m].iva_imp += r.ivaPrvTotal || 0;
+              acc[m].dta_imp += r.dtaTotal    || 0;
+            }
+          });
+
+          const monthlyDuties = MONTHS_SHORT.map((name, i) => ({
+            name,
+            'IGI Import': parseFloat(acc[i].igi_imp.toFixed(1)),
+            'IVA Import': parseFloat(acc[i].iva_imp.toFixed(1)),
+            'DTA Import': parseFloat(acc[i].dta_imp.toFixed(1)),
+            'IGI Export': parseFloat(acc[i].igi_exp.toFixed(1)),
+            'IVA Export': parseFloat(acc[i].iva_exp.toFixed(1)),
+            'DTA Export': parseFloat(acc[i].dta_exp.toFixed(1)),
+          }));
+
+          // Patch en Firestore silenciosamente (best-effort)
+          try {
+            const { doc: fsDoc, updateDoc } = await import('firebase/firestore');
+            const { db: fsDb } = await import('../services/firebaseConfig');
+            if (fsDb) {
+              await updateDoc(fsDoc(fsDb, 'dataStageReports', report.id), { monthlyDuties });
+              // Actualizar en memoria también
+              (report as any).monthlyDuties = monthlyDuties;
+              console.log(`[Dashboard] Patched monthlyDuties for report ${report.id}`);
+            }
+          } catch (patchErr) {
+            console.warn('[Dashboard] Could not patch monthlyDuties (non-critical):', patchErr);
+          }
+        }
       }
     };
     hydrate();
     return () => { cancelled = true; };
   }, [reports]);
+
 
   // Live KPIs
   const now = new Date();

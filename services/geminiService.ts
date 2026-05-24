@@ -1355,5 +1355,60 @@ export const geminiService = {
       contents: messages,
     });
     return response.text || "";
+  },
+
+  /**
+   * Extrae datos estructurados de una foto de licencia de conducir mexicana.
+   */
+  async extractLicenciaData(base64Image: string): Promise<{
+    nombre?: string;
+    numeroLicencia?: string;
+    tipo?: string;
+    fechaNacimiento?: string;
+    fechaVencimiento?: string;
+    estado?: string;
+    curp?: string;
+  }> {
+    try {
+      const ai = getClient();
+      const prompt = `
+        Eres un sistema de OCR especializado en licencias de conducir mexicanas.
+        Analiza esta imagen de una licencia de conducir y extrae los siguientes datos en formato JSON.
+
+        CAMPOS A EXTRAER:
+        - nombre: Nombre completo del titular (como aparece en la licencia)
+        - numeroLicencia: Número o folio de la licencia
+        - tipo: Tipo o categoría de licencia (ej: "A", "B", "C", "D", "E", "Automovilista", "Chofer")
+        - fechaNacimiento: Fecha de nacimiento en formato DD/MM/YYYY
+        - fechaVencimiento: Fecha de vencimiento/vigencia en formato DD/MM/YYYY
+        - estado: Estado o municipio que expidió la licencia
+        - curp: CURP del titular (18 caracteres alfanuméricos) si es visible
+
+        REGLAS:
+        1. Retorna ÚNICAMENTE un objeto JSON válido, sin markdown ni texto adicional.
+        2. Si un campo no es legible o no existe, usa null.
+        3. No inventes datos — solo extrae lo que sea claramente visible.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: {
+          parts: [{ inlineData: { mimeType: 'image/jpeg', data: base64Image } }, { text: prompt }]
+        },
+        config: {
+          responseMimeType: 'application/json',
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+          ] as any
+        }
+      });
+      return JSON.parse(response.text?.trim() || '{}');
+    } catch (e) {
+      console.error("Licencia Extraction Error:", e);
+      return {};
+    }
   }
 };

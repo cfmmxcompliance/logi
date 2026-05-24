@@ -2655,6 +2655,7 @@ export const storageService = {
     // Notify Success
     console.log("Report Saved Successfully to Cloud.");
     saveLocal(); // Save meta-data locally
+    notifyListeners(); // ← Notifica al Dashboard y demás suscriptores para refrescar la gráfica
   },
 
   deleteDataStageReport: async (id: string) => {

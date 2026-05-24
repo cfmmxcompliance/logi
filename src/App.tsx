@@ -28,6 +28,7 @@ import { XMLCI } from '../pages/XMLCI.tsx';
 import { Models } from '../pages/Models';
 import { Cajas } from '../pages/Cajas.tsx';
 import { AsignacionesDiarias } from '../pages/AsignacionesDiarias.tsx';
+import { IncidenciasVigilancia } from '../pages/IncidenciasVigilancia.tsx';
 import { Apendice10 } from '../pages/Apendice10.tsx';
 import { CaptureModule } from '../pages/CaptureModule.tsx';
 import { HistorialCapturas } from '../pages/HistorialCapturas.tsx';
@@ -44,7 +45,9 @@ import { CatalogoSAT } from '../pages/CatalogoSAT.tsx';
 import { HandheldHome } from '../pages/HandheldHome.tsx';
 import { HandheldSellos } from '../pages/HandheldSellos.tsx';
 import { HandheldLiberacion } from '../pages/HandheldLiberacion.tsx';
+import { HandheldLiberacionDock } from '../pages/HandheldLiberacionDock.tsx';
 import { HandheldArribo } from '../pages/HandheldArribo.tsx';
+import { HandheldVigilancia } from '../pages/HandheldVigilancia.tsx';
 import { BPMClasificacion } from '../pages/BPMClasificacion.tsx';
 import { DailyVanAssignment } from '../pages/DailyVanAssignment.tsx';
 import { AdminProductos53 } from '../pages/AdminProductos53.tsx';
@@ -338,6 +341,7 @@ const AppContent = () => {
             <Route path="/pricing-matrix" element={<ProtectedRoute><PricingMatrix /></ProtectedRoute>} />
             <Route path="/cajas" element={<ProtectedRoute><Cajas /></ProtectedRoute>} />
             <Route path="/asignaciones-diarias" element={<ProtectedRoute><AsignacionesDiarias /></ProtectedRoute>} />
+            <Route path="/incidencias-vigilancia" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]}><IncidenciasVigilancia /></ProtectedRoute>} />
             <Route path="/macro" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO]}><CaptureModule /></ProtectedRoute>} />
             <Route path="/historial-capturas" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO]}><HistorialCapturas /></ProtectedRoute>} />
             <Route path="/apendice10" element={<ProtectedRoute><Apendice10 /></ProtectedRoute>} />
@@ -375,7 +379,9 @@ const AppContent = () => {
             <Route path="/m/home" element={<ProtectedRoute><HandheldHome /></ProtectedRoute>} />
             <Route path="/m/sellos" element={<ProtectedRoute><HandheldSellos /></ProtectedRoute>} />
             <Route path="/m/liberacion" element={<ProtectedRoute><HandheldLiberacion /></ProtectedRoute>} />
+            <Route path="/m/liberacion-dock" element={<ProtectedRoute><HandheldLiberacionDock /></ProtectedRoute>} />
             <Route path="/m/arribo" element={<ProtectedRoute><HandheldArribo /></ProtectedRoute>} />
+            <Route path="/m/vigilancia" element={<ProtectedRoute><HandheldVigilancia /></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -4,6 +4,7 @@ export interface AsignacionCajaModel {
   horaAsignacion?: string; // HH:mm
   arribo?: string;          // HH:mm — hora real de arribo
   comentariosArribo?: string; // max 50 chars
+  dockArribo?: string;      // DOCK 1..13 — asignado desde handheld
   carrierCodigo?: string;
   transportLineId?: string; // FK -> TransportLine (Razón Social)
   numeroCaja: string;

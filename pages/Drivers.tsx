@@ -163,13 +163,14 @@ export const Drivers: React.FC = () => {
   };
 
   const exportCSV = () => {
-      const headers = ["DRIVER ID", "CARRIER (SCAC)", "TRANSPORT LINE ID", "NOMBRE", "LICENCIA", "TELÉFONO", "PLACAS TRACTO"];
+      const headers = ["DRIVER ID", "CARRIER (SCAC)", "TRANSPORT LINE ID", "NOMBRE", "LICENCIA", "TIPO LICENCIA", "TELÉFONO", "PLACAS TRACTO"];
       const rows = filteredDrivers.map(c => [
           c.driverId,
           c.carrierCodigo,
           c.transportLineId || '',
           c.nombre,
           c.licencia,
+          c.tipoLicencia || '',
           c.telefono,
           c.placasTracto || ''
       ]);
@@ -185,8 +186,8 @@ export const Drivers: React.FC = () => {
   };
 
   const downloadTemplate = () => {
-      const headers = ["DRIVER ID", "CARRIER (SCAC)", "TRANSPORT LINE ID", "NOMBRE", "LICENCIA", "TELÉFONO", "PLACAS TRACTO"];
-      const example = ["ARC-001", "EGLV", "TL-001", "Juan Perez", "123456789", "555-1234", "ABC-123"];
+      const headers = ["DRIVER ID", "CARRIER (SCAC)", "TRANSPORT LINE ID", "NOMBRE", "LICENCIA", "TIPO LICENCIA", "TELÉFONO", "PLACAS TRACTO"];
+      const example = ["ARC-001", "EGLV", "TL-001", "Juan Perez", "123456789", "FEDERAL", "555-1234", "ABC-123"];
       const csvContent = [headers, example].map(e => e.join(",")).join("\n");
       const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -213,7 +214,8 @@ export const Drivers: React.FC = () => {
           const cIdx = headers.findIndex(h => h.includes('CARRIER') || h.includes('SCAC'));
           const tlIdx = headers.findIndex(h => h.includes('TRANSPORT LINE') || h.includes('TRANSPORT_LINE'));
           const nIdx = headers.findIndex(h => h.includes('NOMBRE'));
-          const lIdx = headers.findIndex(h => h.includes('LICENCIA'));
+          const lIdx = headers.findIndex(h => h.includes('LICENCIA') && !h.includes('TIPO'));
+          const tlicIdx = headers.findIndex(h => h.includes('TIPO LICENCIA') || h.includes('TIPO_LICENCIA'));
           const tIdx = headers.findIndex(h => h.includes('TEL'));
           const pIdx = headers.findIndex(h => h.includes('PLACAS'));
 
@@ -233,6 +235,7 @@ export const Drivers: React.FC = () => {
                   transportLineId: tlIdx !== -1 ? r[tlIdx]?.trim() || '' : '',
                   nombre: r[nIdx]?.trim() || '',
                   licencia: r[lIdx]?.trim() || '',
+                  tipoLicencia: tlicIdx !== -1 ? r[tlicIdx]?.trim().toUpperCase() || '' : '',
                   telefono: r[tIdx]?.trim() || '',
                   placasTracto: r[pIdx]?.trim() || ''
               };
@@ -343,6 +346,7 @@ export const Drivers: React.FC = () => {
               <th className="p-4 font-medium">{t('driver.carrier')}</th>
               <th className="p-4 font-medium">{t('driver.linea')}</th>
               <th className="p-4 font-medium">{t('driver.licencia')}</th>
+              <th className="p-4 font-medium">TIPO LICENCIA</th>
               <th className="p-4 font-medium">{t('driver.tel')}</th>
               <th className="p-4 font-medium">{t('driver.placas')}</th>
               <th className="p-4 font-medium text-right">{t('btn.acciones')}</th>
@@ -369,6 +373,7 @@ export const Drivers: React.FC = () => {
                     {getTransportLineName(c.transportLineId)}
                 </td>
                 <td className="p-4 font-medium text-slate-600">{c.licencia}</td>
+                <td className="p-4 text-slate-500 text-xs">{c.tipoLicencia || '-'}</td>
                 <td className="p-4 text-slate-500">{c.telefono}</td>
                 <td className="p-4 text-slate-500">{c.placasTracto || '-'}</td>
                 <td className="p-4 flex gap-2 justify-end items-center">
@@ -462,10 +467,14 @@ export const Drivers: React.FC = () => {
               </div>
 
               {/* Licencia, Teléfono, Placas */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Licencia</label>
                     <input required value={formData.licencia || ''} onChange={e => setFormData({...formData, licencia: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder="No. de Licencia" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Tipo Licencia</label>
+                    <input value={formData.tipoLicencia || ''} onChange={e => setFormData({...formData, tipoLicencia: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder="Ej. FEDERAL, ESTATAL" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Teléfono</label>

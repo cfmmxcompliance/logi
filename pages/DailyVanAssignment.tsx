@@ -70,9 +70,9 @@ export const DailyVanAssignment: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
               <Truck className="text-blue-400" size={32} />
-              Daily 53-ft Dry Van Assignment
+              TRUCK_TRACKING
             </h1>
-            <p className="text-slate-400 mt-1 text-sm">Asignaciones diarias de cajas secas y estado de liberación operativa</p>
+            <p className="text-slate-400 mt-1 text-sm">Seguimiento de unidades y estado de liberación operativa</p>
           </div>
           <div className="flex items-center gap-3">
             <input
@@ -159,7 +159,7 @@ export const DailyVanAssignment: React.FC = () => {
                     <th className="px-4 py-3 text-violet-400 whitespace-nowrap">Creado</th>
                     <th className="px-4 py-3 text-indigo-400 text-center whitespace-nowrap">Layout</th>
                     <th className="px-4 py-3 text-sky-400 text-center whitespace-nowrap">CCP</th>
-                    <th className="px-4 py-3 text-center">Estado</th>
+                    <th className="px-4 py-3 text-sky-300 whitespace-nowrap">Liberación Dock</th>
                     <th className="px-4 py-3">Liberado por</th>
                   </tr>
                 </thead>
@@ -192,7 +192,7 @@ export const DailyVanAssignment: React.FC = () => {
                                 {new Date((asig as any).createdAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
                               </span>
                               <span className="text-[10px] text-slate-500 font-mono">
-                                {new Date((asig as any).createdAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                {new Date((asig as any).createdAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
                               </span>
                             </div>
                           ) : (
@@ -200,7 +200,7 @@ export const DailyVanAssignment: React.FC = () => {
                           )}
                         </td>
 
-                        {/* LAYOUT — read-only info from AsignacionesDiarias uploads */}
+                        {/* LAYOUT */}
                         <td className="px-4 py-3">
                           {(asig as any).layoutUploadedBy || (asig as any).layoutUploadedAt ? (
                             <div className="flex flex-col gap-0">
@@ -215,7 +215,7 @@ export const DailyVanAssignment: React.FC = () => {
                                     {new Date((asig as any).layoutUploadedAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
                                   </span>
                                   <span className="text-[9px] text-slate-500 font-mono">
-                                    {new Date((asig as any).layoutUploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                    {new Date((asig as any).layoutUploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
                                   </span>
                                 </>
                               )}
@@ -225,7 +225,7 @@ export const DailyVanAssignment: React.FC = () => {
                           )}
                         </td>
 
-                        {/* CCP — read-only info from AsignacionesDiarias uploads */}
+                        {/* CCP */}
                         <td className="px-4 py-3">
                           {(asig as any).ccpUploadedBy || (asig as any).ccpUploadedAt ? (
                             <div className="flex flex-col gap-0">
@@ -240,7 +240,7 @@ export const DailyVanAssignment: React.FC = () => {
                                     {new Date((asig as any).ccpUploadedAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
                                   </span>
                                   <span className="text-[9px] text-slate-500 font-mono">
-                                    {new Date((asig as any).ccpUploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                    {new Date((asig as any).ccpUploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
                                   </span>
                                 </>
                               )}
@@ -249,17 +249,12 @@ export const DailyVanAssignment: React.FC = () => {
                             <span className="text-slate-700 text-xs">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          {lib ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-900/40 text-emerald-400 border border-emerald-500/30">
-                              <CheckCircle size={12} /> LIBERADA
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-900/30 text-amber-400 border border-amber-500/30">
-                              <Clock size={12} /> PENDIENTE
-                            </span>
-                          )}
+
+                        {/* LIBERACION DOCK */}
+                        <td className="px-4 py-3 font-mono font-bold text-sky-300 text-sm whitespace-nowrap">
+                          {lib?.dockLiberacion || '—'}
                         </td>
+
                         <td className="px-4 py-3 text-xs text-slate-500">
                           {lib ? (
                             <div className="flex flex-col">

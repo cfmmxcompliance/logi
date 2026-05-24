@@ -11,6 +11,7 @@ export const DataStage = () => {
     const [rawFiles, setRawFiles] = useState<RawFileParsed[]>([]);
     const [currentFileName, setCurrentFileName] = useState<string>('');
     const [reviewsByMonth, setReviewsByMonth] = useState<{ name: string; Import: number; Export: number }[]>([]);
+    const [monthlyDuties, setMonthlyDuties] = useState<DataStageReport['monthlyDuties']>(undefined);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -86,6 +87,23 @@ export const DataStage = () => {
                                 });
                             });
                         }
+                    // Capturar monthlyDuties (IGI/IVA/DTA por mes) del parser
+                    if ((result as any).monthlyDuties) {
+                        const incoming = (result as any).monthlyDuties as NonNullable<DataStageReport['monthlyDuties']>;
+                        setMonthlyDuties(prev => {
+                            if (!prev || prev.length === 0) return incoming;
+                            // Acumular si ya hay datos de otro archivo cargado
+                            return prev.map((row, i) => ({
+                                ...row,
+                                'IGI Import': (row['IGI Import'] || 0) + (incoming[i]?.['IGI Import'] || 0),
+                                'IVA Import': (row['IVA Import'] || 0) + (incoming[i]?.['IVA Import'] || 0),
+                                'DTA Import': (row['DTA Import'] || 0) + (incoming[i]?.['DTA Import'] || 0),
+                                'IGI Export': (row['IGI Export'] || 0) + (incoming[i]?.['IGI Export'] || 0),
+                                'IVA Export': (row['IVA Export'] || 0) + (incoming[i]?.['IVA Export'] || 0),
+                                'DTA Export': (row['DTA Export'] || 0) + (incoming[i]?.['DTA Export'] || 0),
+                            }));
+                        });
+                    }
                     } else {
                         throw new Error(`El archivo ${file.name} no contiene datos válidos.`);
                     }
@@ -159,6 +177,7 @@ export const DataStage = () => {
                 setData(null);
                 setRawFiles([]);
                 setCurrentFileName('');
+                setMonthlyDuties(undefined);
                 setError(null);
             } catch (e) {
                 console.error("Error clearing draft", e);
@@ -294,6 +313,7 @@ export const DataStage = () => {
             records: data,
             rawFiles: rawFiles,
             reviewsByMonth: reviewsByMonth.some(m => m.Import > 0 || m.Export > 0) ? reviewsByMonth : undefined,
+            monthlyDuties: monthlyDuties && monthlyDuties.some(m => m['IGI Import'] > 0 || m['IVA Import'] > 0 || m['DTA Import'] > 0 || m['IGI Export'] > 0 || m['IVA Export'] > 0 || m['DTA Export'] > 0) ? monthlyDuties : undefined,
             stats: {
                 filesProcessed: rawFiles.length,
                 pedimentosCount: data.length,

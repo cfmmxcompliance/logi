@@ -315,8 +315,10 @@ export enum DataStageRecordType {
   INVOICE = '505',
   ITEM = '551',
   TAXES = '510',
-  COVE_ASSOCIATION = '506',
-  DIGITALIZED_DOC = '520',
+  // NOTA: '506' = Fechas del pedimento (manejado explícitamente en parser.ts, NO como COVE)
+  // NOTA: '520' = Destinatarios de la mercancía (manejado explícitamente en parser.ts)
+  COVE_ASSOCIATION = '_COVE', // COVEs vienen de archivos con nomenclatura especial (no 5xx del formato M3)
+  DIGITALIZED_DOC = '_EDIGITAL', // Documentos digitalizados — no corresponden al número 520 del SAT
 }
 
 export interface GeneralData {
@@ -618,10 +620,25 @@ export interface LiberacionRecord {
   usuario: string; // email of the user who closed the box
   fechaHoraRegistro?: string; // Local time string
   fotos: {
-    cajaUrl?: string; // URL in Google Drive
-    puertasUrl?: string; // URL in Google Drive
+    cajaUrl?: string; // URL in Google Drive (legacy - now in LiberacionDockRecord)
+    puertasUrl?: string; // URL in Google Drive (legacy)
     selloUrl?: string; // URL in Google Drive
   };
+  createdAt?: string;
+}
+
+export interface LiberacionDockRecord {
+  id?: string;
+  fechaLiberacion: string; // YYYY-MM-DD
+  asignacionCajaId: string;
+  numeroCaja: string;
+  usuario: string;
+  fechaHoraRegistro?: string;
+  fotos: {
+    cajaUrl?: string;    // Foto Placas/Caja
+    puertasUrl?: string; // Foto Puertas
+  };
+  uploadStatus?: string;
   createdAt?: string;
 }
 

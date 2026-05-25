@@ -46,15 +46,6 @@ export const HandheldSellos = () => {
   const [currentImageFile, setCurrentImageFile] = useState<File | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
-
-  // Crea / revoca la URL local del preview cuando cambia la imagen capturada
-  React.useEffect(() => {
-    if (!currentImageFile) { setLocalPreviewUrl(null); return; }
-    const url = URL.createObjectURL(currentImageFile);
-    setLocalPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [currentImageFile]);
   
   const [replaceConfirm, setReplaceConfirm] = useState<{ caja: AsignacionCajaModel; sello: SelloRecord } | null>(null);
   const [networkWarning, setNetworkWarning] = useState<string | null>(null);
@@ -667,25 +658,6 @@ export const HandheldSellos = () => {
                               </div>
                           )}
                       </div>
-
-                      {/* PREVIEW DE LA IMAGEN CAPTURADA */}
-                      {(localPreviewUrl || isProcessingImage) && (
-                        <div className="relative rounded-2xl overflow-hidden border border-slate-700 bg-slate-950 mt-2">
-                          {localPreviewUrl && (
-                            <img
-                              src={localPreviewUrl}
-                              alt="Foto del sello"
-                              className="w-full max-h-52 object-contain"
-                            />
-                          )}
-                          {isProcessingImage && (
-                            <div className="absolute inset-0 bg-slate-950/70 flex flex-col items-center justify-center gap-2">
-                              <Loader2 size={28} className="animate-spin text-blue-400" />
-                              <span className="text-xs text-blue-300 font-medium">Gemini extrayendo número...</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
 
                       {/* GUARDAR A TODO ANCHO */}
                       <button

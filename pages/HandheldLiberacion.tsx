@@ -657,7 +657,7 @@ export const HandheldLiberacion = () => {
                          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-4 relative">
                              <div className="flex justify-between items-center mb-3">
                                 <div className="flex items-center gap-2 text-sm font-bold text-slate-300">
-                                   <Car size={18} className="text-blue-400"/> 1. Foto de Placas/Caja
+                                   <Car size={18} className="text-blue-400"/> 1. Foto de Caja Cargada
                                 </div>
                              </div>
                              <input 

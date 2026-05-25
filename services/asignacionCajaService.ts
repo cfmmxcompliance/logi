@@ -60,10 +60,10 @@ export const asignacionCajaService = {
 
   async updateAsignacion(id: string, asignacion: Partial<AsignacionCajaModel>): Promise<void> {
     const docRef = doc(db, COLLECTION_NAME, id);
-    await setDoc(docRef, {
+    await updateDoc(docRef, {
       ...asignacion,
       updatedAt: new Date().toISOString()
-    }, { merge: true });
+    });
   },
 
   async deleteAsignacion(id: string): Promise<void> {

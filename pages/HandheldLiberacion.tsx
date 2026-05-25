@@ -48,6 +48,9 @@ export const HandheldLiberacion = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [dockLiberacion, setDockLiberacion] = useState<string>('');
+
+  const DOCK_OPTIONS = Array.from({ length: 13 }, (_, i) => `DOCK ${i + 1}`);
   const [networkWarning, setNetworkWarning] = useState<string | null>(null);
 
   // Alerta de sello cambiado
@@ -388,10 +391,11 @@ export const HandheldLiberacion = () => {
         numeroCaja: selectedCaja.numeroCaja,
         selloValidado: selloFinal,
         coincideConOriginal: selloCoincide,
-        usuario: user.email || user.username || 'unknown',
-        fechaHoraRegistro: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),
+        usuario: user?.email || user?.username || user?.name || 'operario',
+        fechaHoraRegistro: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City', hour12: false }),
         fotos: { cajaUrl: 'PENDING', puertasUrl: 'PENDING', selloUrl: 'PENDING' },
         createdAt: new Date().toISOString(),
+        ...(dockLiberacion ? { dockLiberacion } : {}),
       };
 
       await liberacionService.addLiberacion(newLiberacion);
@@ -436,6 +440,7 @@ export const HandheldLiberacion = () => {
       setSaveSuccess(false);
       setActiveCameraStep(null);
       setMismatchAlert(null);
+      setDockLiberacion('');
   };
 
   // Helper check
@@ -757,7 +762,27 @@ export const HandheldLiberacion = () => {
 
                      </div>
                  )}
-              </div>
+               </div>
+
+              {/* DOCK DE LIBERACIÓN */}
+              {!saveSuccess && (
+                <div className="px-5 pb-4">
+                  <div className="bg-slate-900 border border-sky-900/50 rounded-2xl p-4">
+                    <label className="text-xs text-sky-400 font-bold tracking-widest uppercase mb-3 block">Dock de Liberación (Opcional)</label>
+                    <select
+                      value={dockLiberacion}
+                      onChange={e => setDockLiberacion(e.target.value)}
+                      disabled={isSaving}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition-all appearance-none"
+                    >
+                      <option value="">— Sin dock asignado —</option>
+                      {DOCK_OPTIONS.map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
 
               {/* FOOTER ACTIONS */}
               {!saveSuccess && (

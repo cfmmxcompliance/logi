@@ -199,10 +199,6 @@ export const Dashboard = () => {
   const [reports, setReports] = useState(storageService.getDataStageReports());
   const [allRecordsHydrated, setAllRecordsHydrated] = useState<PedimentoRecord[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
-  // monthlyDuties patched from hydrated records (triggers re-render after hydration)
-  const MONTHS_INIT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const ZERO_DUTIES = { 'IGI Import':0,'IVA Import':0,'DTA Import':0,'IGI Export':0,'IVA Export':0,'DTA Export':0 };
-  const [patchedMonthlyDuties, setPatchedMonthlyDuties] = useState<typeof ZERO_DUTIES[] | null>(null);
   const [seeding, setSeeding] = useState(false);
   const curYear = new Date().getFullYear();
   const [startDate, setStartDate] = useState(`${curYear}-01-01`);
@@ -315,20 +311,17 @@ export const Dashboard = () => {
     const hydrate = async () => {
       setLoadingRecords(true);
       const allRecords: PedimentoRecord[] = [];
-
-      // Track records per report for monthlyDuties patch
-      const recordsByReport = new Map<string, PedimentoRecord[]>();
-
       for (const report of reports) {
         if (cancelled) break;
         const recs = report.records && report.records.length > 0
           ? report.records
           : await (storageService as any).getDataStageReportWithRecords(report.id);
         allRecords.push(...recs);
-        recordsByReport.set(report.id, recs);
       }
       if (!cancelled) {
         // === CRUCE 507→501 EN VIVO ===
+        // Los registros de Firestore guardados antes del fix no tienen edDocuments.
+        // Lo recalculamos desde rawFiles (código '507') usando el tipoOperacion del registro.
         const recordMap = new Map<string, PedimentoRecord>();
         allRecords.forEach(r => recordMap.set(r.id, r));
 
@@ -338,16 +331,18 @@ export const Dashboard = () => {
           const file507 = rawFiles.find(f => f.code === '507');
           if (!file507) continue;
 
+          // Contar ED por pedimento (cols: 0=Patente, 1=Pedimento, 2=Seccion, 3=ClaveCaso)
           const edCounts = new Map<string, number>();
           file507.rows.forEach(row => {
             if (!row || row.length < 4) return;
-            if ((row[0]||'').startsWith('Patente')) return;
+            if ((row[0]||'').startsWith('Patente')) return; // header
             const clave = (row[3]||'').trim().toUpperCase();
             if (clave !== 'ED') return;
             const id = `${row[0]}-${row[1]}-${row[2]}`;
             edCounts.set(id, (edCounts.get(id)||0) + 1);
           });
 
+          // Asignar solo a pedimentos EXP (cruce con 501 via tipoOperacion del record)
           edCounts.forEach((count, id) => {
             const record = recordMap.get(id);
             if (record && record.tipoOperacion === 'EXP') {
@@ -358,106 +353,11 @@ export const Dashboard = () => {
 
         setAllRecordsHydrated([...allRecords]);
         setLoadingRecords(false);
-
-        // === PATCH SILENCIOSO: calcular monthlyDuties para reportes que no lo tienen ===
-        // Recorre los reportes sin monthlyDuties y los actualiza en Firestore con los datos
-        // calculados desde los records ya hidratados — no requiere re-subir ZIPs.
-        const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        const ZD = { 'IGI Import':0,'IVA Import':0,'DTA Import':0,'IGI Export':0,'IVA Export':0,'DTA Export':0 };
-        let allPatched = MONTHS_SHORT.map(name => ({ name, ...ZD }));
-
-        const parseDateMonth = (s: string): number => {
-          if (!s) return -1;
-          const raw = s.trim();
-          let d = new Date(raw.length > 10 ? raw : raw + 'T12:00:00');
-          if (!isNaN(d.getTime())) return d.getMonth();
-          const sl = raw.split('/');
-          if (sl.length === 3) { d = new Date(`${sl[2]}-${sl[1].padStart(2,'0')}-${sl[0].padStart(2,'0')}T12:00:00`); if (!isNaN(d.getTime())) return d.getMonth(); }
-          if (/^\d{8}$/.test(raw)) { d = new Date(`${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}T12:00:00`); if (!isNaN(d.getTime())) return d.getMonth(); }
-          return -1;
-        };
-
-        for (const report of reports) {
-          if (cancelled) break;
-          if (report.monthlyDuties && report.monthlyDuties.length > 0) {
-            // Already has monthlyDuties — just accumulate into allPatched for re-render
-            allPatched = allPatched.map((row, i) => ({
-              name: row.name,
-              'IGI Import': (row['IGI Import'] || 0) + (report.monthlyDuties![i]?.['IGI Import'] || 0),
-              'IVA Import': (row['IVA Import'] || 0) + (report.monthlyDuties![i]?.['IVA Import'] || 0),
-              'DTA Import': (row['DTA Import'] || 0) + (report.monthlyDuties![i]?.['DTA Import'] || 0),
-              'IGI Export': (row['IGI Export'] || 0) + (report.monthlyDuties![i]?.['IGI Export'] || 0),
-              'IVA Export': (row['IVA Export'] || 0) + (report.monthlyDuties![i]?.['IVA Export'] || 0),
-              'DTA Export': (row['DTA Export'] || 0) + (report.monthlyDuties![i]?.['DTA Export'] || 0),
-            }));
-            continue;
-          }
-
-          const recs = recordsByReport.get(report.id) || [];
-          if (recs.length === 0) continue;
-
-          const acc = Array.from({length: 12}, () => ({
-            igi_imp: 0, iva_imp: 0, dta_imp: 0,
-            igi_exp: 0, iva_exp: 0, dta_exp: 0,
-          }));
-
-          recs.forEach(r => {
-            const m = parseDateMonth(r.fechaPago || r.fechaEntrada || '');
-            if (m < 0 || m > 11) return;
-            const isExp = r.tipoOperacion === 'EXP';
-            if (isExp) {
-              acc[m].igi_exp += r.igiTotal   || 0;
-              acc[m].iva_exp += r.ivaPrvTotal || 0;
-              acc[m].dta_exp += r.dtaTotal    || 0;
-            } else {
-              acc[m].igi_imp += r.igiTotal   || 0;
-              acc[m].iva_imp += r.ivaPrvTotal || 0;
-              acc[m].dta_imp += r.dtaTotal    || 0;
-            }
-          });
-
-          const monthlyDuties = MONTHS_SHORT.map((name, i) => ({
-            name,
-            'IGI Import': parseFloat(acc[i].igi_imp.toFixed(1)),
-            'IVA Import': parseFloat(acc[i].iva_imp.toFixed(1)),
-            'DTA Import': parseFloat(acc[i].dta_imp.toFixed(1)),
-            'IGI Export': parseFloat(acc[i].igi_exp.toFixed(1)),
-            'IVA Export': parseFloat(acc[i].iva_exp.toFixed(1)),
-            'DTA Export': parseFloat(acc[i].dta_exp.toFixed(1)),
-          }));
-
-          // Patch en Firestore silenciosamente (best-effort)
-          try {
-            const { doc: fsDoc, updateDoc } = await import('firebase/firestore');
-            const { db: fsDb } = await import('../services/firebaseConfig');
-            if (fsDb) {
-              await updateDoc(fsDoc(fsDb, 'dataStageReports', report.id), { monthlyDuties });
-              console.log(`[Dashboard] Patched monthlyDuties for report ${report.id}`, monthlyDuties.filter(m => Object.values(m).some(v => typeof v === 'number' && v > 0)));
-            }
-          } catch (patchErr) {
-            console.warn('[Dashboard] Could not patch monthlyDuties (non-critical):', patchErr);
-          }
-          // Accumulate into combined duties (one per month, across all reports)
-          allPatched = allPatched.map((row, i) => ({
-            name: row.name,
-            'IGI Import': (row['IGI Import'] || 0) + (monthlyDuties[i]?.['IGI Import'] || 0),
-            'IVA Import': (row['IVA Import'] || 0) + (monthlyDuties[i]?.['IVA Import'] || 0),
-            'DTA Import': (row['DTA Import'] || 0) + (monthlyDuties[i]?.['DTA Import'] || 0),
-            'IGI Export': (row['IGI Export'] || 0) + (monthlyDuties[i]?.['IGI Export'] || 0),
-            'IVA Export': (row['IVA Export'] || 0) + (monthlyDuties[i]?.['IVA Export'] || 0),
-            'DTA Export': (row['DTA Export'] || 0) + (monthlyDuties[i]?.['DTA Export'] || 0),
-          }));
-        }
-        // Trigger re-render with computed duties so dutiesData picks them up
-        if (allPatched.some(m => Object.values(m).some(v => typeof v === 'number' && v > 0))) {
-          setPatchedMonthlyDuties(allPatched);
-        }
       }
     };
     hydrate();
     return () => { cancelled = true; };
   }, [reports]);
-
 
   // Live KPIs
   const now = new Date();
@@ -527,18 +427,15 @@ export const Dashboard = () => {
     'Valor (M USD)': parseFloat((allRecords.filter(r=>recordMonth(r)===i&&isExport(r)).reduce((s,r)=>s+r.totalValueUsd,0)/1e6).toFixed(3)),
   })), [allRecords]);
 
-  // Duties — prioridad: 1) patchedMonthlyDuties (calculado en vivo tras hidratación)
-  // 2) monthlyDuties precomputado en Firestore, 3) fallback desde records individuales
+  // Duties — 3 rutas en orden de prioridad:
+  // 1) monthlyDuties precomputado (reportes guardados después del fix de mayo 2025)
+  // 2) Reconstruir desde rawFiles[510] ya almacenados en Firestore (sin re-subir)
+  // 3) Último recurso: leer igiTotal/ivaPrvTotal/dtaTotal de allRecordsHydrated
   const dutiesData = useMemo(() => {
     const ZERO = { 'IGI Import':0,'IVA Import':0,'DTA Import':0,'IGI Export':0,'IVA Export':0,'DTA Export':0 };
     const acc = MONTHS.map((name) => ({ name, ...ZERO }));
 
-    // Prioridad 1: duties calculados en vivo tras patch de hidratación (dispara re-render)
-    if (patchedMonthlyDuties && patchedMonthlyDuties.length > 0) {
-      return MONTHS.map((name, i) => ({ name, ...patchedMonthlyDuties[i] }));
-    }
-
-    // Prioridad 2: monthlyDuties precomputado guardado en Firestore (reportes nuevos)
+    // ── RUTA 1: monthlyDuties precomputado (óptimo) ───────────────────────
     const hasPrecomputed = reports.some(rep => rep.monthlyDuties && rep.monthlyDuties.length > 0);
     if (hasPrecomputed) {
       reports.forEach(rep => {
@@ -554,21 +451,70 @@ export const Dashboard = () => {
         });
       });
     } else {
-      // Prioridad 3: reconstruir desde allRecords (igiTotal por record en Firestore)
-      allRecords.forEach(r => {
-        const i = recordMonth(r);
-        if (i < 0 || i > 11) return;
-        const isExp = isExport(r);
-        if (isExp) {
-          acc[i]['IGI Export'] += r.igiTotal   || 0;
-          acc[i]['IVA Export'] += r.ivaPrvTotal || 0;
-          acc[i]['DTA Export'] += r.dtaTotal    || 0;
-        } else {
-          acc[i]['IGI Import'] += r.igiTotal   || 0;
-          acc[i]['IVA Import'] += r.ivaPrvTotal || 0;
-          acc[i]['DTA Import'] += r.dtaTotal    || 0;
-        }
+      // ── RUTA 2: Recalcular desde rawFiles[510] ya guardados ────────────
+      // Esto evita tener que re-subir archivos. Se cruza 510 (impuestos) con 501 (fechaPago + tipoOperacion).
+      let recomputedFromRaw = false;
+      reports.forEach(rep => {
+        const rawFiles = (rep as any).rawFiles as Array<{code:string; rows:string[][]}> | undefined;
+        if (!rawFiles) return;
+        const file510 = rawFiles.find(f => f.code === '510');
+        const file501 = rawFiles.find(f => f.code === '501');
+        if (!file510 || !file501) return;
+
+        // Construir mapa de claves de pedimento → { tipoOperacion, fechaPago }
+        const pedMap = new Map<string, { tipo: string; fecha: string }>();
+        file501.rows.forEach(row => {
+          if (!row || row.length < 4) return;
+          if ((row[0]||'').startsWith('Patente')) return;
+          const key = `${row[0]}-${row[1]}-${row[2]}`;
+          const tipo = (row[3]||'').trim().toUpperCase();
+          const tipoNorm = (tipo==='1'||tipo==='IMP'||tipo.startsWith('I')) ? 'IMP' : 'EXP';
+          const fecha = (row[30]||row[29]||'').trim(); // fechaPago col[30], fechaEntrada col[29]
+          pedMap.set(key, { tipo: tipoNorm, fecha });
+        });
+
+        // Acumular contribuciones del 510 cruzadas con el 501
+        file510.rows.forEach(row => {
+          if (!row || row.length < 8) return;
+          if ((row[0]||'').startsWith('Patente')) return;
+          const key = `${row[0]}-${row[1]}-${row[2]}`;
+          const ped = pedMap.get(key);
+          if (!ped) return;
+          const clave = (row[3]||'').trim().toUpperCase();
+          const importe = parseFloat(row[7]||'0') || 0; // col[7] = Importe (Patente|Ped|Sec|Clave|Tasa|TipoTasa|FormaPago|Importe)
+          if (!importe) return;
+          const month = parseSATMonth(ped.fecha);
+          if (month < 0 || month > 11) return;
+          recomputedFromRaw = true;
+          const isExp = ped.tipo === 'EXP';
+          if (clave === 'IGI' || clave === 'DBA') {
+            isExp ? (acc[month]['IGI Export'] += importe) : (acc[month]['IGI Import'] += importe);
+          } else if (clave === 'IVA' || clave === 'PRV') {
+            isExp ? (acc[month]['IVA Export'] += importe) : (acc[month]['IVA Import'] += importe);
+          } else if (clave === 'DTA') {
+            isExp ? (acc[month]['DTA Export'] += importe) : (acc[month]['DTA Import'] += importe);
+          }
+        });
       });
+
+      // ── RUTA 3: Último recurso desde igiTotal/ivaPrvTotal/dtaTotal ─────
+      // Usa allRecordsHydrated (SIN filtro de fecha) para no excluir datos de años anteriores
+      if (!recomputedFromRaw) {
+        allRecordsHydrated.forEach(r => {
+          const i = recordMonth(r);
+          if (i < 0 || i > 11) return;
+          const isExp = isExport(r);
+          if (isExp) {
+            acc[i]['IGI Export'] += r.igiTotal   || 0;
+            acc[i]['IVA Export'] += r.ivaPrvTotal || 0;
+            acc[i]['DTA Export'] += r.dtaTotal    || 0;
+          } else {
+            acc[i]['IGI Import'] += r.igiTotal   || 0;
+            acc[i]['IVA Import'] += r.ivaPrvTotal || 0;
+            acc[i]['DTA Import'] += r.dtaTotal    || 0;
+          }
+        });
+      }
     }
 
     return acc.map(row => ({
@@ -580,7 +526,8 @@ export const Dashboard = () => {
       'IVA Export': parseFloat(row['IVA Export'].toFixed(1)),
       'DTA Export': parseFloat(row['DTA Export'].toFixed(1)),
     }));
-  }, [reports, allRecords, patchedMonthlyDuties]);
+  }, [reports, allRecordsHydrated]);
+
 
   // Contenedores por mes (504 → 501)
   const containerVolumeData = useMemo(() => MONTHS.map((name, i) => ({

@@ -170,13 +170,14 @@ export const Cajas: React.FC = () => {
 
   // --- CSV LOGIC ---
   const exportToCSV = () => {
-    const headers = ["NÚMERO CAJA", "CARRIER (SCAC)", "LÍNEA TRANSPORTE", "NOMBRE SUB-LÍNEA", "APÉNDICE 10 (CLAVE)", "TIPO CAJA", "PLACAS"];
+    const headers = ["NÚMERO CAJA", "CARRIER (SCAC)", "LÍNEA TRANSPORTE", "NOMBRE SUB-LÍNEA", "APÉNDICE 10 (CLAVE)", "TIPO", "TIPO CAJA", "PLACAS"];
     const rows = filteredCajas.map(c => [
       c.NumeroCaja,
       c.carrierCodigo,
       c.TransportLine,
       c.nombreSubLinea || '',
       c.claveApendice10 || '',
+      (c as any).tipo || '',
       c.TipoCaja,
       c.placas || ''
     ]);
@@ -192,8 +193,8 @@ export const Cajas: React.FC = () => {
   };
 
   const downloadTemplate = () => {
-    const headers = ["NÚMERO CAJA", "CARRIER (SCAC)", "LÍNEA TRANSPORTE", "NOMBRE SUB-LÍNEA", "APÉNDICE 10 (CLAVE)", "TIPO CAJA", "PLACAS"];
-    const example = ["EMCU-123456", "EGLV", "APL Logistics", "DIVISION REEFER", "8", "40HC", "123-AB-4C"];
+    const headers = ["NÚMERO CAJA", "CARRIER (SCAC)", "LÍNEA TRANSPORTE", "NOMBRE SUB-LÍNEA", "APÉNDICE 10 (CLAVE)", "TIPO", "TIPO CAJA", "PLACAS"];
+    const example = ["EMCU-123456", "EGLV", "APL Logistics", "DIVISION REEFER", "8", "OTR", "40HC", "123-AB-4C"];
     const csvContent = [headers, example].map(e => e.join(",")).join("\n");
     const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -221,7 +222,8 @@ export const Cajas: React.FC = () => {
       const lIdx = headers.findIndex(h => h.includes('LÍNEA TRANSPORTE') || h.includes('LINEA') || h.includes('LÍNEA'));
       const sIdx = headers.findIndex(h => h.includes('NOMBRE SUB-LÍNEA') || h.includes('SUB') || h.includes('SUB-LINEA'));
       const aIdx = headers.findIndex(h => h.includes('APÉNDICE') || h.includes('APENDICE') || h.includes('10'));
-      const tIdx = headers.findIndex(h => h.includes('TIPO CAJA') || h.includes('TIPO'));
+      const tipoIdx = headers.findIndex(h => h === 'TIPO' && !h.includes('CAJA'));
+      const tIdx = headers.findIndex(h => h.includes('TIPO CAJA'));
       const pIdx = headers.findIndex(h => h.includes('PLACAS'));
 
       if (nIdx === -1 || cIdx === -1) {
@@ -241,9 +243,10 @@ export const Cajas: React.FC = () => {
           TransportLine: lIdx !== -1 ? r[lIdx]?.trim() : '',
           nombreSubLinea: sIdx !== -1 ? r[sIdx]?.trim().toUpperCase() : '',
           claveApendice10: aIdx !== -1 ? r[aIdx]?.trim() : '',
+          tipo: tipoIdx !== -1 ? r[tipoIdx]?.trim().toUpperCase() : '',
           TipoCaja: tIdx !== -1 ? r[tIdx]?.trim().toUpperCase() : '',
           placas: pIdx !== -1 ? r[pIdx]?.trim().toUpperCase() : ''
-        });
+        } as any);
       }
 
       if (records.length === 0) {
@@ -331,6 +334,7 @@ export const Cajas: React.FC = () => {
               <th className="p-4 font-medium">{t('cajas.num')}</th>
               <th className="p-4 font-medium">{t('cajas.carrier')}</th>
               <th className="p-4 font-medium">{t('cajas.linea')}</th>
+              <th className="p-4 font-medium">TIPO</th>
               <th className="p-4 font-medium">{t('cajas.sublinea')}</th>
               <th className="p-4 font-medium">{t('cajas.clave')}</th>
               <th className="p-4 font-medium">{t('cajas.tipo')}</th>
@@ -347,6 +351,7 @@ export const Cajas: React.FC = () => {
                 </td>
                 <td className="p-4 text-indigo-600 font-medium">{c.carrierCodigo}</td>
                 <td className="p-4 text-slate-600">{c.TransportLine}</td>
+                <td className="p-4 text-slate-500 text-xs font-medium">{c.tipo || '-'}</td>
                 <td className="p-4 text-slate-600 font-medium">{c.nombreSubLinea || '-'}</td>
                 <td className="p-4 text-slate-500 font-mono font-semibold text-center">{c.claveApendice10 || '-'}</td>
                 <td className="p-4 text-slate-600">
@@ -486,6 +491,14 @@ export const Cajas: React.FC = () => {
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1">Tipo</label>
+                <select value={(formData as any).tipo || ''} onChange={e => setFormData({ ...formData, tipo: e.target.value } as any)} className="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-violet-500 outline-none">
+                  <option value="">— Selecciona —</option>
+                  <option value="OTR">OTR</option>
+                  <option value="IMDL">IMDL</option>
+                </select>
+              </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">Tipo de Caja (Seca, Plana Refr.)</label>
                 <input required value={formData.TipoCaja || ''} onChange={e => setFormData({ ...formData, TipoCaja: e.target.value })} className="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-violet-500 outline-none uppercase" placeholder="Ej. CONTENEDOR ESTÁNDAR 40'" />

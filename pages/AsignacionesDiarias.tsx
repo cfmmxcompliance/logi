@@ -4,16 +4,16 @@ import { cajaService } from '../services/cajaService';
 import { driverService } from '../services/driverService';
 import { carrierService } from '../services/carrierService';
 import { liberacionService } from '../services/liberacionService';
-import { selloService } from '../services/selloService';
 import { transportLineService } from '../services/transportLineService';
-import { reservaVentana53Service } from '../services/reservaVentana53Service';
+import { vigilanciaService } from '../services/vigilanciaService';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
 import { CajaModel } from '../types/caja';
 import { DriverModel } from '../types/driver';
 import { CarrierModel } from '../types/carrier';
 import { TransportLineModel } from '../types/transportLine';
-import { LiberacionRecord, SelloRecord } from '../types';
-import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle, ChevronUp, ChevronDown, RefreshCw, FileText, Loader2, AlertTriangle } from 'lucide-react';
+import { LiberacionRecord } from '../types';
+import { VigilanciaRecord } from '../types/vigilancia';
+import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle, ChevronUp, ChevronDown, RefreshCw, FileText, Loader2, Shield, AlertTriangle } from 'lucide-react';
 import { uploadFileToDrive } from '../services/googleDriveService.ts';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
@@ -23,8 +23,6 @@ import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import modelosCaja from '../utils/modelosCaja.json';
 import { useLanguage } from '../context/LanguageContext';
-import { SelloMismatchAlert } from '../components/SelloMismatchAlert';
-import BarcodePanelModal from '../components/BarcodePanelModal';
 
 export const AsignacionesDiarias: React.FC = () => {
   const { user } = useAuth();
@@ -40,7 +38,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
   const [transportLines, setTransportLines] = useState<TransportLineModel[]>([]);
   const [liberaciones, setLiberaciones] = useState<LiberacionRecord[]>([]);
-  const [sellos, setSellos] = useState<SelloRecord[]>([]);
+  const [vigilancias, setVigilancias] = useState<VigilanciaRecord[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [importErrors, setImportErrors] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,20 +51,6 @@ export const AsignacionesDiarias: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-
-  // Alerta de sello cambiado
-  const [mismatchAlert, setMismatchAlert] = useState<{
-    numeroCaja: string;
-    selloOriginal: string;
-    selloLiberacion: string;
-  } | null>(null);
-
-  // Popup de códigos de barras
-  const [barcodeTarget, setBarcodeTarget] = useState<{
-    numeroOperacion: string;
-    numeroCaja: string;
-    sello: string;
-  } | null>(null);
 
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
@@ -157,14 +141,14 @@ export const AsignacionesDiarias: React.FC = () => {
 
   const loadData = async () => {
     try {
-        const [asigData, cajasData, driversData, carriersData, liberacionesData, linesData, sellosData] = await Promise.all([
+        const [asigData, cajasData, driversData, carriersData, liberacionesData, linesData, vigilanciasData] = await Promise.all([
             asignacionCajaService.getAllAsignaciones().catch(() => []),
             cajaService.getAllCajas().catch(() => []),
             driverService.getAllDrivers().catch(() => []),
             carrierService.getAllCarriers().catch(() => []),
             liberacionService.getAllLiberaciones().catch(() => []),
             transportLineService.getAllTransportLines().catch(() => []),
-            selloService.getAllSellos().catch(() => []),
+            vigilanciaService.getByDate(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' })).catch(() => [])
         ]);
         setAsignaciones(asigData.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()));
         setCajas(cajasData);
@@ -172,7 +156,7 @@ export const AsignacionesDiarias: React.FC = () => {
         setCarriers(carriersData);
         setLiberaciones(liberacionesData);
         setTransportLines(linesData);
-        setSellos(sellosData);
+        setVigilancias(vigilanciasData);
     } catch (e) {
         console.error("Error cargando dependencias de Asignación:", e);
     } finally {
@@ -393,29 +377,8 @@ export const AsignacionesDiarias: React.FC = () => {
       // Segunda confirmación — ejecutar borrado
       setPendingDeleteId(null);
       try {
-        // 1. Fetch the record first to check for a linked reserva
-        const asignacion = asignaciones.find(a => a.id === id);
-
-        // 2. Delete the asignacion record
         await asignacionCajaService.deleteAsignacion(id);
         setSelectedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
-
-        // 3. If linked to a reserva — cascade cancel (restores ventana capacity)
-        if (asignacion?.reservaId && asignacion.ventanaId) {
-          try {
-            await reservaVentana53Service.cancelarReserva(
-              asignacion.reservaId,
-              user?.email || 'sistema',
-              asignacion.ventanaId,
-              1, // each asignacion record = 1 caja
-            );
-            // Notify sidebar to refresh badge immediately
-            window.dispatchEvent(new Event('reserva:changed'));
-          } catch (e) {
-            console.warn('No se pudo cancelar la reserva vinculada (puede que ya esté cancelada):', e);
-          }
-        }
-
         loadData();
       } catch (error: any) {
         console.error('Error eliminando asignación:', error);
@@ -436,22 +399,9 @@ export const AsignacionesDiarias: React.FC = () => {
         setLoading(true);
         try {
             for (const id of selectedIds) {
-                const asignacion = asignaciones.find(a => a.id === id);
                 await asignacionCajaService.deleteAsignacion(id);
-                // Cascade cancel linked reserva if present
-                if (asignacion?.reservaId && asignacion.ventanaId) {
-                  try {
-                    await reservaVentana53Service.cancelarReserva(
-                      asignacion.reservaId,
-                      user?.email || 'sistema',
-                      asignacion.ventanaId,
-                      1,
-                    );
-                  } catch { /* silently skip if already cancelled */ }
-                }
             }
             setSelectedIds(new Set());
-            window.dispatchEvent(new Event('reserva:changed'));
             loadData();
         } catch (error) {
             console.error("Error deleting items", error);
@@ -513,7 +463,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // CSV EXPORT
   const exportCSV = () => {
-      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "CARRIER (SCAC)", "NOMBRE COMERCIAL", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO", "SELLO LIBERACIÓN", "FECHA SELLADO", "OBSERVACIONES"];
+      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "CARRIER (SCAC)", "NOMBRE COMERCIAL", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO", "ARRIBO", "DOCK", "COMENTARIOS ARRIBO", "TIPO", "LIBERACION DOCK", "LAYOUT", "CCP", "ANEXO29", "SELLO LIBERACIÓN", "FECHA SELLADO", "OBSERVACIONES"];
       const rows = filteredData.map(a => {
           const lib = liberaciones.find(l => l.asignacionCajaId === a.id);
           const tl = transportLines.find(t => t.carrierCodigo === a.carrierCodigo);
@@ -530,6 +480,14 @@ export const AsignacionesDiarias: React.FC = () => {
               a.nombreDriver || '',
               a.placasTracto || '',
               a.modeloAsignado || '',
+              (a as any).arribo || '',
+              (a as any).dockArribo || '',
+              (a as any).comentariosArribo || '',
+              cajas.find(c => c.NumeroCaja === a.numeroCaja)?.tipo || '',
+              lib?.dockLiberacion || '',
+              a.layoutUploadedAt ? new Date(a.layoutUploadedAt).toLocaleString('es-MX', { timeZone: 'America/Monterrey', hour12: false }) : '',
+              a.ccpUploadedAt ? new Date(a.ccpUploadedAt).toLocaleString('es-MX', { timeZone: 'America/Monterrey', hour12: false }) : '',
+              a.anexo29UploadedAt ? new Date(a.anexo29UploadedAt).toLocaleString('es-MX', { timeZone: 'America/Monterrey', hour12: false }) : '',
               lib ? lib.selloValidado : '',
               lib && lib.fechaHoraRegistro ? lib.fechaHoraRegistro : '',
               a.observaciones || ''
@@ -675,10 +633,9 @@ export const AsignacionesDiarias: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col -mt-8 -mx-8 bg-slate-100 overflow-hidden" style={{ height: 'calc(100vh - 4rem)' }}>
-      {/* ── FIXED HEADER BAR (title + controls) ─────────────────────── */}
       <div className="flex-shrink-0 px-14 pt-8 pb-4 z-20 bg-slate-100 border-b border-slate-200 shadow-sm">
         <div className="flex justify-between items-center">
-          <div>
+        <div>
            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
               <Navigation className="text-blue-600" />
               {t('asig.title')}
@@ -687,56 +644,16 @@ export const AsignacionesDiarias: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-3">
-             <div className="relative flex flex-wrap items-center gap-1 pl-8 pr-3 py-1.5 border border-slate-300 rounded-lg bg-white shadow-sm w-80 min-h-[38px] focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-400 transition-all">
-                <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 flex-shrink-0" />
-                {searchTerm.split(/[,]+/).map(t => t.trim()).filter(t => t.length > 0).map((chip, idx) => (
-                  <span key={idx} className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">
-                    {chip}
-                    <button
-                      onClick={() => {
-                        const terms = searchTerm.split(/[,]+/).map(t => t.trim()).filter(t => t.length > 0);
-                        terms.splice(idx, 1);
-                        setSearchTerm(terms.join(', '));
-                      }}
-                      className="hover:text-blue-900 leading-none"
-                      title="Quitar"
-                    >×</button>
-                  </span>
-                ))}
-                <input
-                  type="text"
-                  placeholder={searchTerm ? '' : 'Buscar... (coma para múltiples)'}
-                  value={(() => {
-                    // Show only the last partial term being typed
-                    const parts = searchTerm.split(',');
-                    return parts[parts.length - 1].trimStart();
-                  })()}
-                  onChange={e => {
-                    const parts = searchTerm.split(',');
-                    parts[parts.length - 1] = e.target.value;
-                    setSearchTerm(parts.join(','));
-                  }}
-                  onKeyDown={e => {
-                    if (e.key === 'Backspace' && e.currentTarget.value === '') {
-                      // Remove last chip
-                      const parts = searchTerm.split(',').map(t => t.trim()).filter(t => t.length > 0);
-                      parts.pop();
-                      setSearchTerm(parts.join(', '));
-                    }
-                    if (e.key === ',' || e.key === 'Enter') {
-                      e.preventDefault();
-                      const parts = searchTerm.split(',').map(t => t.trim()).filter(t => t.length > 0);
-                      setSearchTerm(parts.join(', ') + (parts.length ? ', ' : ''));
-                    }
-                  }}
-                  className="flex-1 min-w-[100px] text-sm outline-none bg-transparent py-0.5"
+             <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                    type="text" 
+                    placeholder="Búsqueda multi-termino..." 
+                    value={searchTerm} 
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-56 shadow-sm"
                 />
-                {searchTerm.trim() && (
-                  <button onClick={() => setSearchTerm('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500" title="Limpiar">
-                    <XCircle size={14} />
-                  </button>
-                )}
-              </div>
+             </div>
              
              <div className="flex items-center bg-white border border-slate-300 rounded-lg pr-2 overflow-hidden shadow-sm">
                 <button 
@@ -766,6 +683,22 @@ export const AsignacionesDiarias: React.FC = () => {
                     title={t('common.fecha_final')}
                 />
              </div>
+
+             {/* ── Discrepancy alert badge ── */}
+             {(() => {
+               const discCount = filteredData.filter(a =>
+                 vigilancias.some(v => v.asignacionCajaId === a.id && v.discrepancia === true)
+               ).length;
+               return discCount > 0 ? (
+                 <div
+                   className="flex items-center gap-1.5 bg-red-50 border border-red-300 text-red-700 px-3 py-2 rounded-lg shadow-sm font-bold text-xs animate-pulse"
+                   title={`${discCount} discrepancia(s) detectada(s)`}
+                 >
+                   <AlertTriangle size={14} className="text-red-600" />
+                   {discCount} Discrepancia{discCount !== 1 ? 's' : ''}
+                 </div>
+               ) : null;
+             })()}
 
              {!isEmbarques && selectedIds.size > 0 && (
                  <button onClick={handleMassDelete} className="px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg border border-red-200 transition-colors shadow-sm flex items-center text-sm font-bold animate-fade-in" title="Eliminar Seleccionados">
@@ -812,8 +745,8 @@ export const AsignacionesDiarias: React.FC = () => {
              )}
         </div>
         </div>
-      </div>
-      {/* ── SCROLLABLE TABLE AREA ──────────────────────────────────────── */}
+      </div>{/* end controls panel */}
+
       <div className="flex-1 flex flex-col min-h-0 px-14 py-6 relative z-10">
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto flex-1 relative">
         <table className="w-full text-left">
@@ -826,7 +759,9 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 font-medium w-[140px] min-w-[140px] max-w-[140px] bg-slate-50 sticky top-0 left-[180px] z-40 border-r border-slate-200">{renderColumnHeader(t('col.caja'), 'numeroCaja')}</th>
               <th className="p-4 font-medium w-[150px] min-w-[150px] max-w-[150px] bg-slate-50 sticky top-0 left-[320px] z-40 shadow-[4px_0_10px_-3px_rgba(0,0,0,0.1)]">{renderColumnHeader(t('col.fecha'), 'fecha')}</th>
               <th className="p-4 font-medium min-w-[100px]">{renderColumnHeader(t('col.arribo'), 'arribo')}</th>
+              <th className="p-4 font-medium min-w-[100px]">DOCK</th>
               <th className="p-4 font-medium min-w-[180px]">{renderColumnHeader(t('col.comentariosArribo'), 'comentariosArribo')}</th>
+              <th className="p-4 font-medium min-w-[80px] text-violet-700 bg-violet-50/40 whitespace-nowrap">TIPO</th>
               <th className="p-4 font-medium">{renderColumnHeader(t('col.placascaja'), 'placasCaja')}</th>
               <th className="p-4 font-medium min-w-[160px] text-blue-600 uppercase text-xs">{renderColumnHeader(t('col.lineatransporte'), 'transportLineId')}</th>
               <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.driverid'), 'driverId')}</th>
@@ -834,6 +769,7 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 font-medium">{renderColumnHeader(t('col.placastracto'), 'placasTracto')}</th>
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.modelo'), 'modeloAsignado')}</th>
               <th className="p-4 font-medium min-w-[170px] text-violet-700 bg-violet-50/40 whitespace-nowrap">CREADO</th>
+              <th className="p-4 font-medium min-w-[110px] text-sky-700 bg-sky-50/30 whitespace-nowrap">LIBERACION DOCK</th>
               <th className="p-4 font-medium text-center text-indigo-700 bg-indigo-50/30 whitespace-nowrap">LAYOUT</th>
               <th className="p-4 font-medium text-center text-sky-700 bg-sky-50/30 whitespace-nowrap">CCP</th>
               <th className="p-4 font-medium text-center text-emerald-700 bg-emerald-50/30 whitespace-nowrap">Anexo29</th>
@@ -878,50 +814,19 @@ export const AsignacionesDiarias: React.FC = () => {
                     {!isEmbarques && <input type="checkbox" checked={selectedIds.has(a.id!)} onChange={() => toggleSelectRow(a.id!)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
                 </td>
                 <td className="p-4 w-[130px] min-w-[130px] max-w-[130px] bg-inherit border-r border-slate-200 font-mono font-bold tracking-wide whitespace-nowrap sticky left-[50px] z-20">
-                  {(() => {
-                    // Buscar si tiene sello asignado para esta fila
-                    const selloRow = sellos.find(s =>
-                      s.asignacionCajaId === a.id ||
-                      (s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha)
-                    );
-                    const selloValor = liberacion?.selloValidado || selloRow?.selloAsignado || '';
-
-                    if (selloValor) {
-                      // Con sello → acceso directo al popup de códigos de barras
-                      return (
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            setBarcodeTarget({
-                              numeroOperacion: a.numeroOperacion || '-',
-                              numeroCaja: a.numeroCaja,
-                              sello: selloValor,
-                            });
-                          }}
-                          title="Ver códigos de barras"
-                          className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-400 transition-all group"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500 group-hover:text-blue-700">
-                            <path d="M3 5v3M3 16v3M8 5v3M8 16v3M13 5v3M13 16v3M18 5v3M18 16v3M3 8h5M3 19h5M13 8h8M13 19h8"/>
-                          </svg>
-                          <span className="font-mono font-black text-sm">{a.numeroOperacion || '-'}</span>
-                        </button>
-                      );
-                    }
-
-                    // Sin sello → texto estático rosa como antes
-                    return <span className="text-pink-700">{a.numeroOperacion || '-'}</span>;
-                  })()}
+                  <span className="text-pink-700">{a.numeroOperacion || '-'}</span>
                 </td>
                 <td className="p-4 w-[140px] min-w-[140px] max-w-[140px] bg-inherit font-semibold text-emerald-700 font-mono tracking-wide sticky left-[180px] z-20 border-r border-slate-200">{a.numeroCaja}</td>
                 <td className="p-4 w-[150px] min-w-[150px] max-w-[150px] bg-inherit font-medium text-slate-700 whitespace-nowrap sticky left-[320px] z-20 shadow-[4px_0_10px_-3px_rgba(0,0,0,0.05)]">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-0.5">
                        <span className="flex items-center gap-1.5"><Calendar size={12} className="text-blue-500" /> {a.fecha}</span>
-                       {a.horaAsignacion && <span className="text-xs text-slate-400 font-mono">| {a.horaAsignacion}</span>}
+                       {a.horaAsignacion && <span className="text-xs text-slate-400 font-mono pl-0.5">{a.horaAsignacion}</span>}
                     </div>
                 </td>
                 <td className="p-4 font-mono text-amber-600 font-semibold whitespace-nowrap">{(a as any).arribo || '—'}</td>
+                <td className="p-4 font-mono text-sky-700 font-semibold whitespace-nowrap text-xs">{(a as any).dockArribo || '—'}</td>
                 <td className="p-4 text-slate-500 text-xs max-w-[180px] truncate" title={(a as any).comentariosArribo || ''}>{(a as any).comentariosArribo || '—'}</td>
+                <td className="p-4 text-violet-700 text-xs font-bold whitespace-nowrap">{cajas.find(c => c.NumeroCaja === a.numeroCaja)?.tipo || '—'}</td>
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium">{a.placasCaja || '-'}</td>
                 
                 <td className="p-4 text-xs font-bold text-blue-800 whitespace-nowrap">
@@ -948,28 +853,42 @@ export const AsignacionesDiarias: React.FC = () => {
                      )}
                  </td>
 
+                 {/* ── LIBERACION DOCK ── */}
+                 <td className="p-4 text-center bg-sky-50/20 border-l border-sky-100/50 whitespace-nowrap">
+                   <span className="font-mono font-bold text-sky-700 text-xs">
+                     {liberacion?.dockLiberacion || '—'}
+                   </span>
+                 </td>
+
                  {/* ── LAYOUT Excel ── (descarga forzada) */}
                  <td className="p-4 text-center bg-indigo-50/20 border-l border-indigo-100/50">
                    {uploadingFor?.id === a.id && uploadingFor.field === 'layoutUrl' ? (
                      <Loader2 size={18} className="animate-spin text-indigo-400 mx-auto" />
                    ) : a.layoutUrl ? (
-                     <div className="flex items-center justify-center gap-1">
-                       <a href={toDriveDownload(a.layoutUrl)}
-                          className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
-                          title="Descargar LAYOUT" onClick={e => e.stopPropagation()}>
-                         <FileText size={18} />
-                       </a>
-                       <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer"
-                              title="Reemplazar LAYOUT (Excel)" onClick={e => e.stopPropagation()}>
-                         <UploadCloud size={16} />
-                         <input type="file" accept=".xlsx,.xls,.csv" className="hidden"
-                                onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'layoutUrl', f, a.numeroCaja); e.target.value = ''; }} />
-                       </label>
+                     <div className="flex flex-col items-center gap-0.5">
+                       <div className="flex items-center justify-center gap-1">
+                         <a href={toDriveDownload(a.layoutUrl)}
+                            className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
+                            title="Descargar LAYOUT" onClick={e => e.stopPropagation()}>
+                           <FileText size={18} />
+                         </a>
+                         <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer"
+                                title="Reemplazar LAYOUT" onClick={e => e.stopPropagation()}>
+                           <UploadCloud size={16} />
+                           <input type="file" accept=".xlsx,.xls,.csv" className="hidden"
+                                  onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'layoutUrl', f, a.numeroCaja); e.target.value = ''; }} />
+                         </label>
+                       </div>
+                       {(a as any).layoutUploadedAt && (
+                         <span className="text-[10px] text-indigo-400 font-mono whitespace-nowrap">
+                           {new Date((a as any).layoutUploadedAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit' })} {new Date((a as any).layoutUploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', hour12: false })}
+                         </span>
+                       )}
                      </div>
                    ) : (
                      <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer"
                             title="Subir LAYOUT (Excel)" onClick={e => e.stopPropagation()}>
-                       <UploadCloud size={18} />
+                       <FileText size={18} />
                        <input type="file" accept=".xlsx,.xls,.csv" className="hidden"
                               onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'layoutUrl', f, a.numeroCaja); e.target.value = ''; }} />
                      </label>
@@ -981,23 +900,30 @@ export const AsignacionesDiarias: React.FC = () => {
                    {uploadingFor?.id === a.id && uploadingFor.field === 'ccpUrl' ? (
                      <Loader2 size={18} className="animate-spin text-sky-400 mx-auto" />
                    ) : a.ccpUrl ? (
-                     <div className="flex items-center justify-center gap-1">
-                       <a href={a.ccpUrl} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
-                          title="Ver CCP en Drive" onClick={e => e.stopPropagation()}>
-                         <FileText size={18} />
-                       </a>
-                       <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
-                              title="Reemplazar CCP PDF" onClick={e => e.stopPropagation()}>
-                         <UploadCloud size={16} />
-                         <input type="file" accept="application/pdf" className="hidden"
-                                onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'ccpUrl', f, a.numeroCaja); e.target.value = ''; }} />
-                       </label>
+                     <div className="flex flex-col items-center gap-0.5">
+                       <div className="flex items-center justify-center gap-1">
+                         <a href={a.ccpUrl} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
+                            title="Ver CCP en Drive" onClick={e => e.stopPropagation()}>
+                           <FileText size={18} />
+                         </a>
+                         <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
+                                title="Reemplazar CCP" onClick={e => e.stopPropagation()}>
+                           <UploadCloud size={16} />
+                           <input type="file" accept="application/pdf" className="hidden"
+                                  onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'ccpUrl', f, a.numeroCaja); e.target.value = ''; }} />
+                         </label>
+                       </div>
+                       {(a as any).ccpUploadedAt && (
+                         <span className="text-[10px] text-sky-400 font-mono whitespace-nowrap">
+                           {new Date((a as any).ccpUploadedAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit' })} {new Date((a as any).ccpUploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', hour12: false })}
+                         </span>
+                       )}
                      </div>
                    ) : (
                      <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-sky-500 hover:bg-sky-50 transition-colors cursor-pointer"
                             title="Subir CCP PDF" onClick={e => e.stopPropagation()}>
-                       <UploadCloud size={18} />
+                       <FileText size={18} />
                        <input type="file" accept="application/pdf" className="hidden"
                               onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'ccpUrl', f, a.numeroCaja); e.target.value = ''; }} />
                      </label>
@@ -1009,81 +935,39 @@ export const AsignacionesDiarias: React.FC = () => {
                    {uploadingFor?.id === a.id && uploadingFor.field === 'anexo29Url' ? (
                      <Loader2 size={18} className="animate-spin text-emerald-400 mx-auto" />
                    ) : a.anexo29Url ? (
-                     <div className="flex items-center justify-center gap-1">
-                       <a href={a.anexo29Url} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
-                          title="Ver Anexo29 en Drive" onClick={e => e.stopPropagation()}>
-                         <FileText size={18} />
-                       </a>
-                       <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer"
-                              title="Reemplazar Anexo29 PDF" onClick={e => e.stopPropagation()}>
-                         <UploadCloud size={16} />
-                         <input type="file" accept="application/pdf" className="hidden"
-                                onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'anexo29Url', f, a.numeroCaja); e.target.value = ''; }} />
-                       </label>
+                     <div className="flex flex-col items-center gap-0.5">
+                       <div className="flex items-center justify-center gap-1">
+                         <a href={a.anexo29Url} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
+                            title="Ver Anexo29 en Drive" onClick={e => e.stopPropagation()}>
+                           <FileText size={18} />
+                         </a>
+                         <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer"
+                                title="Reemplazar Anexo29" onClick={e => e.stopPropagation()}>
+                           <UploadCloud size={16} />
+                           <input type="file" accept="application/pdf" className="hidden"
+                                  onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'anexo29Url', f, a.numeroCaja); e.target.value = ''; }} />
+                         </label>
+                       </div>
+                       {(a as any).anexo29UploadedAt && (
+                         <span className="text-[10px] text-emerald-400 font-mono whitespace-nowrap">
+                           {new Date((a as any).anexo29UploadedAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit' })} {new Date((a as any).anexo29UploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', hour12: false })}
+                         </span>
+                       )}
                      </div>
                    ) : (
                      <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 transition-colors cursor-pointer"
                             title="Subir Anexo29 PDF" onClick={e => e.stopPropagation()}>
-                       <UploadCloud size={18} />
+                       <FileText size={18} />
                        <input type="file" accept="application/pdf" className="hidden"
                               onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'anexo29Url', f, a.numeroCaja); e.target.value = ''; }} />
                      </label>
                    )}
                  </td>
-                                {/* Sello Liberación — muestra sello asignado siempre que exista */}
-                 <td className="p-4 font-mono font-bold whitespace-nowrap border-l border-teal-100/50 bg-teal-50/10">
-                   {(() => {
-                     const selloInicial = sellos.find(s =>
-                       s.asignacionCajaId === a.id ||
-                       (s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha)
-                     );
-
-                     // Sin sello asignado aún
-                     if (!selloInicial) return <span className="text-slate-300">—</span>;
-
-                     // Hay sello asignado pero aún no liberada
-                     if (!liberacion) {
-                       return (
-                         <span className="text-blue-600 font-mono font-bold">
-                           {selloInicial.selloAsignado}
-                         </span>
-                       );
-                     }
-
-                     // Liberada — verificar si hay mismatch
-                     const hayMismatch =
-                       selloInicial.selloAsignado?.toUpperCase().trim() !==
-                       liberacion.selloValidado?.toUpperCase().trim();
-
-                     if (hayMismatch) {
-                       return (
-                         <button
-                           onClick={() => setMismatchAlert({
-                             numeroCaja: a.numeroCaja,
-                             selloOriginal: selloInicial.selloAsignado,
-                             selloLiberacion: liberacion.selloValidado,
-                           })}
-                           className="flex flex-col items-start gap-0.5 group text-left"
-                           title="Sello cambiado — click para ver alerta"
-                         >
-                           <div className="flex items-center gap-1.5">
-                             <AlertTriangle size={13} className="text-red-500 flex-shrink-0" />
-                             <span className="text-red-600 font-black text-[10px] uppercase tracking-wide">SELLO CAMBIADO</span>
-                           </div>
-                           <div className="flex gap-1.5 items-center">
-                             <span className="line-through text-slate-400 text-xs font-mono">{selloInicial.selloAsignado}</span>
-                             <span className="text-red-400 text-xs">→</span>
-                             <span className="text-red-600 font-mono text-xs font-black">{liberacion.selloValidado}</span>
-                           </div>
-                         </button>
-                       );
-                     }
-
-                     // Liberada con sello coincidente ✓
-                     return <span className="text-teal-700">{liberacion.selloValidado}</span>;
-                   })()}
-                 </td>
+                
+                <td className="p-4 font-mono text-teal-700 font-bold whitespace-nowrap border-l border-teal-100/50 bg-teal-50/10">
+                    {liberacion ? liberacion.selloValidado : '-'}
+                </td>
                 
                 <td className="p-4 text-center">
                     {hasLiberacion ? (
@@ -1134,8 +1018,10 @@ export const AsignacionesDiarias: React.FC = () => {
             {loading && <tr><td colSpan={12} className="p-12 text-center text-slate-400">Cargando operación diaria...</td></tr>}
           </tbody>
         </table>
-      </div>
-      </div>{/* end scrollable table area */}
+      </div>{/* end table container */}
+      </div>{/* end table area */}
+
+
 
       <CatalogQueryBuilder 
           isOpen={isMassQueryOpen}
@@ -1172,7 +1058,9 @@ export const AsignacionesDiarias: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-1">Hora (24h)</label>
-                    <input type="time" required value={formData.horaAsignacion || ''} onChange={e => setFormData({...formData, horaAsignacion: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <div lang="en-GB">
+                      <input type="time" required value={formData.horaAsignacion || ''} onChange={e => setFormData({...formData, horaAsignacion: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-1">No. Operación</label>
@@ -1362,24 +1250,6 @@ export const AsignacionesDiarias: React.FC = () => {
           </div>
       )}
 
-      {/* Alerta crítica de sello cambiado */}
-      <SelloMismatchAlert
-        isOpen={!!mismatchAlert}
-        numeroCaja={mismatchAlert?.numeroCaja || ''}
-        selloOriginal={mismatchAlert?.selloOriginal || ''}
-        selloLiberacion={mismatchAlert?.selloLiberacion || ''}
-        onClose={() => setMismatchAlert(null)}
-      />
-
-      {/* Popup de códigos de barras — se abre al hacer clic en No. Operación con sello */}
-      {barcodeTarget && (
-        <BarcodePanelModal
-          numeroOperacion={barcodeTarget.numeroOperacion}
-          numeroCaja={barcodeTarget.numeroCaja}
-          sello={barcodeTarget.sello}
-          onClose={() => setBarcodeTarget(null)}
-        />
-      )}
     </div>
   );
 };

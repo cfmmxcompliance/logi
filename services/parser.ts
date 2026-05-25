@@ -53,6 +53,10 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
   const tempEdCounts = new Map<string, number>(); // pedimentoId -> count
   // Containers from 504 (NumContenedor por pedimento)
   const tempContainerCounts = new Map<string, number>(); // pedimentoId -> count
+  // 506: Fechas del pedimento — enriquece fechaEntrada/fechaPago del 501
+  const tempFechas: { key: string; claveTipo: string; fechaOp: string; fechaPagoReal: string }[] = [];
+  // 520: Destinatarios de la mercancía
+  const tempDestinatarios: { key: string; idFiscal: string; nombre: string }[] = [];
   // Revisiones: _Sel.asc (semáforo rojo/naranja) + _Inci.asc (reconocimientos)
   // monthRevisions[monthIndex] = { imp: count, exp: count }
   const monthRevisions: { imp: number; exp: number }[] = Array.from({ length: 12 }, () => ({ imp: 0, exp: 0 }));
@@ -205,6 +209,39 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
             const importe = parseFloatSafe(cols[7]) || parseFloatSafe(cols[6]);
             tempTaxes.push({ key, clave: rawClave, importe });
           });
+        } else if (fileCode === '506') {
+          // 506: Fechas del pedimento (ANTES mappeado erróneamente como COVE — BUG CORREGIDO)
+          // Cols: Patente|Pedimento|Seccion|ClaveTipoFecha|FechaOperacion|FechaValidacionPagoReal
+          // ClaveTipoFecha: ENTRADA, PAGO, EXTRACCION, PRESENTACION, IMP.EUA/CAN, ORIGINAL
+          lines.forEach(line => {
+            if (line.startsWith('Patente|') || line.startsWith('NUM_PED|')) return;
+            const cols = line.split('|');
+            if (cols.length < 5) return;
+            const key = `${cols[0]}-${cols[1]}-${cols[2]}`;
+            tempFechas.push({
+              key,
+              claveTipo: (cols[3] || '').trim().toUpperCase(),
+              fechaOp: (cols[4] || '').trim(),
+              fechaPagoReal: (cols[5] || '').trim(),
+            });
+          });
+        } else if (fileCode === '520') {
+          // 520: Destinatarios de la mercancía (ANTES mappeado erróneamente como eDigital — BUG CORREGIDO)
+          // Cols: Patente|Pedimento|Seccion|IdFiscalDestinatario|NombreDestinatario|Calle|...|Pais|FechaPago
+          lines.forEach(line => {
+            if (line.startsWith('Patente|') || line.startsWith('NUM_PED|')) return;
+            const cols = line.split('|');
+            if (cols.length < 5) return;
+            const key = `${cols[0]}-${cols[1]}-${cols[2]}`;
+            // Solo guardar el primer destinatario por pedimento
+            if (!tempDestinatarios.find(d => d.key === key)) {
+              tempDestinatarios.push({
+                key,
+                idFiscal: (cols[3] || '').trim(),
+                nombre: (cols[4] || '').trim(),
+              });
+            }
+          });
         } else if (fileCode === '507') {
           // 507: Casos de pedimento
           // Cols: Patente|Pedimento|Seccion|ClaveCaso|IdentificadorCaso|TipoPedimento|ComplementoCaso|FechaPago
@@ -303,6 +340,8 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
       cntTotal: 0,
       edDocuments: 0,
       containerCount: 0,
+      destinatario: '',
+      destinatarioRfc: '',
     });
   });
 
@@ -334,24 +373,40 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
     }
   });
 
-  // === CRUCE EXPLÍCITO: 504 → 501 ===
-  // Cada contenedor (504) se asigna al pedimento identificado por Patente|Pedimento|Seccion.
-  // La clave IMP/EXP viene del tipoOperacion del pedimento (501).
+  // === CRUCE: 504 → 501 (Contenedores) ===
   tempContainerCounts.forEach((count, id) => {
     const record = pedimentoMap.get(id);
     if (record) record.containerCount = count;
   });
 
-  // === CRUCE EXPLÍCITO: 507-ED → 501 ===
-  // Regla: Un CFDI del 507 (ClaveCaso='ED') solo cuenta como factura de EXPORTACIÓN.
-  // Validación: el Patente|Pedimento|Seccion del 507 debe existir en 501 Y tener TipoOperacion=2 (EXP).
-  // Si el pedimento es tipo 1 (IMP), el ED no se cuenta (no aplica para importaciones).
+  // === CRUCE: 507-ED → 501 (CFDIs de Exportación) ===
   tempEdCounts.forEach((count, id) => {
     const record = pedimentoMap.get(id);
     if (record && record.tipoOperacion === 'EXP') {
       record.edDocuments = count;
     }
-    // Si record.tipoOperacion === 'IMP' o el pedimento no existe en 501: se descarta.
+  });
+
+  // === CRUCE: 506 → 501 (Fechas del pedimento — BUG CORREGIDO) ===
+  // Enriquece fechaEntrada y fechaPago con datos más precisos que los cols[29]/[30] del 501.
+  // Solo sobreescribe si el campo del 501 estaba vacío o si el 506 tiene dato.
+  tempFechas.forEach(f => {
+    const record = pedimentoMap.get(f.key);
+    if (!record) return;
+    if (f.claveTipo === 'ENTRADA' && f.fechaOp && !record.fechaEntrada) {
+      record.fechaEntrada = f.fechaOp;
+    } else if (f.claveTipo === 'PAGO' && f.fechaPagoReal && !record.fechaPago) {
+      record.fechaPago = f.fechaPagoReal;
+    }
+  });
+
+  // === CRUCE: 520 → 501 (Destinatarios de la mercancía — BUG CORREGIDO) ===
+  tempDestinatarios.forEach(d => {
+    const record = pedimentoMap.get(d.key);
+    if (record) {
+      (record as any).destinatario = d.nombre;
+      (record as any).destinatarioRfc = d.idFiscal;
+    }
   });
 
   tempDigitalized.forEach(doc => {

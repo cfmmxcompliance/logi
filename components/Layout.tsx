@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck, Globe, Activity, FolderOpen,
   Navigation,
-  Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles, CalendarCheck, History, Package, CalendarDays, ClipboardList } from 'lucide-react';
+  Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles, CalendarCheck, History, Package, CalendarDays, ClipboardList, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ConnectionStatus } from './ConnectionStatus.tsx';
 import { UserRole } from '../types.ts';
@@ -178,6 +178,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <SidebarItem to="/bom-analyzer" icon={Cpu} label={sidebarOpen ? "BOM Analyzer" : ""} />
               <SidebarItem to="/documents" icon={FileText} label={sidebarOpen ? "Smart Docs" : ""} />
               <SidebarItem to="/ai-assistant" icon={Sparkles} label={sidebarOpen ? t("menu.ai") : ""} />
+              <SidebarItem to="/incidencias-vigilancia" icon={AlertTriangle} label={sidebarOpen ? "Incidencias Vigilancia" : ""} />
             </>
           )}
 

@@ -144,7 +144,7 @@ export const HandheldLiberacionDock = () => {
 
             <div className="space-y-4">
               <div className={`border-2 rounded-2xl p-5 transition-all ${fotoCajaFile ? 'bg-sky-900/20 border-sky-500/50' : 'bg-slate-900 border-slate-700'}`}>
-                <h3 className="font-bold text-white mb-3">1. Foto Placas y Caja</h3>
+                <h3 className="font-bold text-white mb-3">1. Foto de Caja Cargada</h3>
                 <button onClick={() => triggerCamera(1)} className={`w-full py-4 rounded-xl flex justify-center items-center gap-2 font-bold ${fotoCajaFile ? 'bg-slate-950 text-sky-400' : 'bg-sky-600 text-white'}`}>
                   <Camera size={20} /> {fotoCajaFile ? 'Tomar de nuevo' : 'Capturar Foto 1'}
                 </button>

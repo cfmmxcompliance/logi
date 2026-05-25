@@ -69,7 +69,7 @@ export const HandheldHome = () => {
                        </div>
                        <div>
                            <h2 className="text-lg font-bold text-white tracking-tight">Liberación de Dock</h2>
-                           <p className="text-slate-400 text-sm mt-1 font-medium">Foto Placas y Puertas</p>
+                           <p className="text-slate-400 text-sm mt-1 font-medium">Foto Caja Cargada y Puertas</p>
                        </div>
                     </button>
 

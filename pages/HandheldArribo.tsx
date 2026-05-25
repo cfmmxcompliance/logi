@@ -12,8 +12,11 @@ export const HandheldArribo = () => {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
 
-  // Per-card comment state: { [cajaId]: string }
+  // Per-card state: { [cajaId]: value }
   const [comentarios, setComentarios] = useState<Record<string, string>>({});
+  const [docks, setDocks] = useState<Record<string, string>>({});
+
+  const DOCK_OPTIONS = Array.from({ length: 13 }, (_, i) => `DOCK ${i + 1}`);
 
   const getLocalToday = () => {
     const today = new Date();
@@ -36,12 +39,13 @@ export const HandheldArribo = () => {
         });
         setCajasDelDia(cached);
         const initialComentarios: Record<string, string> = {};
+        const initialDocks: Record<string, string> = {};
         cached.forEach(c => {
-          if (c.id && c.comentariosArribo) {
-            initialComentarios[c.id] = c.comentariosArribo;
-          }
+          if (c.id && c.comentariosArribo) initialComentarios[c.id] = c.comentariosArribo;
+          if (c.id && c.dockArribo) initialDocks[c.id] = c.dockArribo;
         });
         setComentarios(initialComentarios);
+        setDocks(initialDocks);
         setLoading(false); // UI unblocked instantly
       }
     } catch { /* cache miss */ }
@@ -58,12 +62,13 @@ export const HandheldArribo = () => {
 
       // Pre-fill comments from existing data
       const initialComentarios: Record<string, string> = {};
+      const initialDocks: Record<string, string> = {};
       cajas.forEach(c => {
-        if (c.id && c.comentariosArribo) {
-          initialComentarios[c.id] = c.comentariosArribo;
-        }
+        if (c.id && c.comentariosArribo) initialComentarios[c.id] = c.comentariosArribo;
+        if (c.id && c.dockArribo) initialDocks[c.id] = c.dockArribo;
       });
       setComentarios(initialComentarios);
+      setDocks(initialDocks);
     } catch (e: any) {
       console.error('Error fetching cajas:', e);
       alert('Error al consultar la base de datos. Verifique su red.');
@@ -92,15 +97,16 @@ export const HandheldArribo = () => {
     try {
       const arribo = getNow();
       const comentariosArribo = (comentarios[caja.id] || '').slice(0, 50);
-      await asignacionCajaService.updateAsignacion(caja.id, { arribo, comentariosArribo });
+      const dockArribo = docks[caja.id] || '';
+      await asignacionCajaService.updateAsignacion(caja.id, { arribo, comentariosArribo, dockArribo });
 
       // Optimistic local update
       setCajasDelDia(prev =>
-        prev.map(c => c.id === caja.id ? { ...c, arribo, comentariosArribo } : c)
+        prev.map(c => c.id === caja.id ? { ...c, arribo, comentariosArribo, dockArribo } : c)
       );
     } catch (e: any) {
       console.error('Error registrando arribo:', e);
-      alert('Error al guardar el arribo. Intente nuevamente.');
+      alert('Error al guardar el arribo: ' + (e.message || JSON.stringify(e)));
     } finally {
       setSavingId(null);
     }
@@ -191,6 +197,19 @@ export const HandheldArribo = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Dock Selector */}
+                <select
+                  value={docks[caja.id!] ?? (caja.dockArribo || '')}
+                  onChange={e => setDocks(prev => ({ ...prev, [caja.id!]: e.target.value }))}
+                  disabled={isSaving}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition-all appearance-none"
+                >
+                  <option value="">— Seleccionar Dock —</option>
+                  {DOCK_OPTIONS.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
 
                 {/* Comment Textbox */}
                 <input

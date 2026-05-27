@@ -1017,7 +1017,7 @@ export const AsignacionesDiarias: React.FC = () => {
                       </>
                     ) : (
                       <>
-                        {user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && (
+                        {!isEmbarques && (
                           <button onClick={() => openEdit(a)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors" title="Editar">
                             <Edit2 size={16} />
                           </button>
@@ -1067,170 +1067,176 @@ export const AsignacionesDiarias: React.FC = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-              {/* Scrollable body */}
-              <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
-                
-                {/* Row 1: Fecha / Hora / No. Operación */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Fecha Operativa</label>
-                    <input type="date" required value={formData.fecha || ''} onChange={e => setFormData({...formData, fecha: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Hora (24h)</label>
-                    <div lang="en-GB">
-                      <input type="time" required value={formData.horaAsignacion || ''} onChange={e => setFormData({...formData, horaAsignacion: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">No. Operación</label>
-                    <input type="text" value={formData.numeroOperacion || ''} onChange={e => setFormData({...formData, numeroOperacion: e.target.value.toUpperCase()})} placeholder="Auto" className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-pink-500 outline-none font-mono uppercase" />
-                  </div>
-                </div>
-
-                {/* Row 2: Two columns — Left: Carrier + Transport Line | Right: Caja + Driver */}
-                <div className="grid grid-cols-2 gap-4">
-
-                  {/* LEFT COLUMN */}
-                  <div className="space-y-3">
-
-                    {/* Carrier */}
-                    <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100 space-y-2">
-                      <h3 className="text-xs font-bold text-indigo-800 uppercase flex items-center gap-1.5">
-                        <Navigation size={12}/> Carrier Padre (SCAC)
-                      </h3>
-                      <SearchableComboBox
-                        required
-                        value={formData.carrierCodigo || ''}
-                        onChange={val => setFormData({...formData, carrierCodigo: val, transportLineId: '', numeroCaja: '', driverId: '', subLinea: '', placasCaja: '', nombreDriver: '', placasTracto: ''})}
-                        options={carriers.map(c => ({ value: c.codigo, label: c.nombre, sublabel: c.codigo }))}
-                        placeholder="Seleccionar Carrier..."
-                        disabled={!!scacFilter || !!subLineaFilter}
-                      />
-                    </div>
-
-                    {/* Transport Line */}
-                    <div className="p-3 bg-violet-50 rounded-xl border border-violet-100 space-y-2">
-                      <h3 className="text-xs font-bold text-violet-800 uppercase flex items-center gap-1.5">
-                        <Truck size={12}/> Línea de Transporte
-                      </h3>
-                      <SearchableComboBox
-                        value={formData.transportLineId || ''}
-                        onChange={val => setFormData({...formData, transportLineId: val, driverId: '', nombreDriver: '', placasTracto: ''})}
-                        options={transportLines
-                          .filter(tl => !formData.carrierCodigo || tl.carrierCodigo === formData.carrierCodigo)
-                          .map(tl => ({ value: tl.transportLineId, label: tl.nombreSubLinea || tl.TransportLine }))}
-                        placeholder={formData.carrierCodigo ? 'Seleccionar Sub-Línea...' : 'Selecciona un Carrier primero'}
-                        disabled={!formData.carrierCodigo}
-                      />
-                    </div>
-
-                    {/* Observaciones — fills empty left space */}
-                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                      <h3 className="text-xs font-bold text-slate-600 uppercase">Observaciones</h3>
-                      <input
-                        type="text"
-                        maxLength={50}
-                        value={formData.observaciones || ''}
-                        onChange={e => setFormData({...formData, observaciones: e.target.value})}
-                        placeholder="Opcional... (máx. 50 caracteres)"
-                        className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                    </div>
-
-                  </div>
-
-                  {/* RIGHT COLUMN */}
-                  <div className="space-y-3">
-
-                    {/* Caja */}
-                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 space-y-2">
-                      <h3 className="text-xs font-bold text-emerald-800 uppercase flex items-center gap-1.5">
-                        <Container size={12}/> {t('form.caja_sec')}
-                      </h3>
-                      <SearchableComboBox
-                        required
-                        value={formData.numeroCaja || ''}
-                        onChange={val => handleCajaChange(val)}
-                        options={cajas
-                          .filter(c => {
-                            if (!formData.carrierCodigo) return false;
-                            if (c.carrierCodigo !== formData.carrierCodigo) return false;
-                            if (formData.transportLineId) {
-                              const selectedTL = transportLines.find(tl => tl.transportLineId === formData.transportLineId);
-                              const targetSubLinea = selectedTL?.nombreSubLinea?.trim().toUpperCase();
-                              const cajaSubLinea = (c.nombreSubLinea || '').trim().toUpperCase();
-                              if (targetSubLinea && cajaSubLinea !== targetSubLinea) return false;
-                            }
-                            return true;
-                          })
-                          .map(c => ({ value: c.NumeroCaja, label: c.NumeroCaja, sublabel: c.nombreSubLinea || '' }))}
-                        placeholder={formData.transportLineId ? 'Seleccionar Caja...' : (formData.carrierCodigo ? 'Selecciona la Línea primero' : 'Selecciona un Carrier primero')}
-                        disabled={!formData.carrierCodigo}
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-xs text-emerald-700 mb-0.5">Sub-Línea</label>
-                          <input disabled value={formData.subLinea || ''} className="w-full bg-emerald-100/50 border-transparent rounded p-1.5 text-xs text-emerald-800 font-medium" placeholder="Auto" />
+              {(() => {
+                const isRestrictedRole = isEditing && (user?.role === UserRole.CARRIER || user?.role === UserRole.TRANSPORTISTA);
+                return (
+                  <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+                    
+                    {/* Row 1: Fecha / Hora / No. Operación */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">Fecha Operativa</label>
+                        <input disabled={isRestrictedRole} type="date" required value={formData.fecha || ''} onChange={e => setFormData({...formData, fecha: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">Hora (24h)</label>
+                        <div lang="en-GB">
+                          <input disabled={isRestrictedRole} type="time" required value={formData.horaAsignacion || ''} onChange={e => setFormData({...formData, horaAsignacion: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100" />
                         </div>
-                        <div>
-                          <label className="block text-xs text-emerald-700 mb-0.5">Placas Caja</label>
-                          <input disabled value={formData.placasCaja || ''} className="w-full bg-emerald-100/50 border-transparent rounded p-1.5 text-xs text-emerald-800 font-mono" placeholder="Auto" />
-                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">No. Operación</label>
+                        <input disabled={isRestrictedRole} type="text" value={formData.numeroOperacion || ''} onChange={e => setFormData({...formData, numeroOperacion: e.target.value.toUpperCase()})} placeholder="Auto" className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-pink-500 outline-none font-mono uppercase disabled:bg-slate-100" />
                       </div>
                     </div>
 
-                    {/* Driver */}
-                    <div className="p-3 bg-orange-50 rounded-xl border border-orange-100 space-y-2">
-                      <h3 className="text-xs font-bold text-orange-800 uppercase flex items-center gap-1.5">
-                        <Truck size={12}/> {t('form.tracto_sec')}
-                      </h3>
-                      <SearchableComboBox
-                        required
-                        value={formData.driverId || ''}
-                        onChange={val => handleDriverChange(val)}
-                        options={drivers
-                          .filter(d => {
-                            if (!formData.carrierCodigo) return false;
-                            if (formData.transportLineId) return d.transportLineId === formData.transportLineId;
-                            return d.carrierCodigo === formData.carrierCodigo;
-                          })
-                          .map(d => ({ value: d.driverId, label: d.nombre, sublabel: d.driverId }))}
-                        placeholder={formData.transportLineId ? 'Seleccionar Driver...' : (formData.carrierCodigo ? 'Selecciona la Línea primero' : 'Selecciona un Carrier primero')}
-                        disabled={!formData.carrierCodigo}
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-xs text-orange-700 mb-0.5">Nombre</label>
-                          <input disabled value={formData.nombreDriver || ''} className="w-full bg-orange-100/50 border-transparent rounded p-1.5 text-xs text-orange-800" placeholder="Auto" />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-orange-700 mb-0.5">Placas Tracto</label>
-                          <input
-                            value={formData.placasTracto || ''}
-                            onChange={e => setFormData({...formData, placasTracto: e.target.value.toUpperCase()})}
-                            className="w-full bg-white border border-orange-200 rounded p-1.5 text-xs text-orange-800 font-mono focus:ring-2 focus:ring-orange-400 outline-none"
-                            placeholder="Ej. ABC-123"
+                    {/* Row 2: Two columns */}
+                    <div className="grid grid-cols-2 gap-4">
+
+                      {/* LEFT COLUMN */}
+                      <div className="space-y-3">
+
+                        {/* Carrier */}
+                        <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100 space-y-2">
+                          <h3 className="text-xs font-bold text-indigo-800 uppercase flex items-center gap-1.5">
+                            <Navigation size={12}/> Carrier Padre (SCAC)
+                          </h3>
+                          <SearchableComboBox
+                            required
+                            value={formData.carrierCodigo || ''}
+                            onChange={val => setFormData({...formData, carrierCodigo: val, transportLineId: '', numeroCaja: '', driverId: '', subLinea: '', placasCaja: '', nombreDriver: '', placasTracto: ''})}
+                            options={carriers.map(c => ({ value: c.codigo, label: c.nombre, sublabel: c.codigo }))}
+                            placeholder="Seleccionar Carrier..."
+                            disabled={isRestrictedRole || !!scacFilter || !!subLineaFilter}
                           />
                         </div>
+
+                        {/* Transport Line */}
+                        <div className="p-3 bg-violet-50 rounded-xl border border-violet-100 space-y-2">
+                          <h3 className="text-xs font-bold text-violet-800 uppercase flex items-center gap-1.5">
+                            <Truck size={12}/> Línea de Transporte
+                          </h3>
+                          <SearchableComboBox
+                            value={formData.transportLineId || ''}
+                            onChange={val => setFormData({...formData, transportLineId: val, driverId: '', nombreDriver: '', placasTracto: ''})}
+                            options={transportLines
+                              .filter(tl => !formData.carrierCodigo || tl.carrierCodigo === formData.carrierCodigo)
+                              .map(tl => ({ value: tl.transportLineId, label: tl.nombreSubLinea || tl.TransportLine }))}
+                            placeholder={formData.carrierCodigo ? 'Seleccionar Sub-Línea...' : 'Selecciona un Carrier primero'}
+                            disabled={isRestrictedRole || !formData.carrierCodigo}
+                          />
+                        </div>
+
+                        {/* Observaciones — (NOT disabled for restricted roles) */}
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                          <h3 className="text-xs font-bold text-slate-600 uppercase">Observaciones</h3>
+                          <input
+                            type="text"
+                            maxLength={50}
+                            value={formData.observaciones || ''}
+                            onChange={e => setFormData({...formData, observaciones: e.target.value})}
+                            placeholder="Opcional... (máx. 50 caracteres)"
+                            className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                          />
+                        </div>
+
+                      </div>
+
+                      {/* RIGHT COLUMN */}
+                      <div className="space-y-3">
+
+                        {/* Caja */}
+                        <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 space-y-2">
+                          <h3 className="text-xs font-bold text-emerald-800 uppercase flex items-center gap-1.5">
+                            <Container size={12}/> {t('form.caja_sec')}
+                          </h3>
+                          <SearchableComboBox
+                            required
+                            value={formData.numeroCaja || ''}
+                            onChange={val => handleCajaChange(val)}
+                            options={cajas
+                              .filter(c => {
+                                if (!formData.carrierCodigo) return false;
+                                if (c.carrierCodigo !== formData.carrierCodigo) return false;
+                                if (formData.transportLineId) {
+                                  const selectedTL = transportLines.find(tl => tl.transportLineId === formData.transportLineId);
+                                  const targetSubLinea = selectedTL?.nombreSubLinea?.trim().toUpperCase();
+                                  const cajaSubLinea = (c.nombreSubLinea || '').trim().toUpperCase();
+                                  if (targetSubLinea && cajaSubLinea !== targetSubLinea) return false;
+                                }
+                                return true;
+                              })
+                              .map(c => ({ value: c.NumeroCaja, label: c.NumeroCaja, sublabel: c.nombreSubLinea || '' }))}
+                            placeholder={formData.transportLineId ? 'Seleccionar Caja...' : (formData.carrierCodigo ? 'Selecciona la Línea primero' : 'Selecciona un Carrier primero')}
+                            disabled={isRestrictedRole || !formData.carrierCodigo}
+                          />
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-xs text-emerald-700 mb-0.5">Sub-Línea</label>
+                              <input disabled value={formData.subLinea || ''} className="w-full bg-emerald-100/50 border-transparent rounded p-1.5 text-xs text-emerald-800 font-medium" placeholder="Auto" />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-emerald-700 mb-0.5">Placas Caja</label>
+                              <input disabled value={formData.placasCaja || ''} className="w-full bg-emerald-100/50 border-transparent rounded p-1.5 text-xs text-emerald-800 font-mono" placeholder="Auto" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Driver */}
+                        <div className="p-3 bg-orange-50 rounded-xl border border-orange-100 space-y-2">
+                          <h3 className="text-xs font-bold text-orange-800 uppercase flex items-center gap-1.5">
+                            <Truck size={12}/> {t('form.tracto_sec')}
+                          </h3>
+                          <SearchableComboBox
+                            required
+                            value={formData.driverId || ''}
+                            onChange={val => handleDriverChange(val)}
+                            options={drivers
+                              .filter(d => {
+                                if (!formData.carrierCodigo) return false;
+                                if (formData.transportLineId) return d.transportLineId === formData.transportLineId;
+                                return d.carrierCodigo === formData.carrierCodigo;
+                              })
+                              .map(d => ({ value: d.driverId, label: d.nombre, sublabel: d.driverId }))}
+                            placeholder={formData.transportLineId ? 'Seleccionar Driver...' : (formData.carrierCodigo ? 'Selecciona la Línea primero' : 'Selecciona un Carrier primero')}
+                            disabled={isRestrictedRole || !formData.carrierCodigo}
+                          />
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-xs text-orange-700 mb-0.5">Nombre</label>
+                              <input disabled value={formData.nombreDriver || ''} className="w-full bg-orange-100/50 border-transparent rounded p-1.5 text-xs text-orange-800" placeholder="Auto" />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-orange-700 mb-0.5">Placas Tracto</label>
+                              <input
+                                disabled={isRestrictedRole}
+                                value={formData.placasTracto || ''}
+                                onChange={e => setFormData({...formData, placasTracto: e.target.value.toUpperCase()})}
+                                className="w-full bg-white border border-orange-200 rounded p-1.5 text-xs text-orange-800 font-mono focus:ring-2 focus:ring-orange-400 outline-none disabled:bg-slate-100"
+                                placeholder="Ej. ABC-123"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
                       </div>
                     </div>
 
+                    {/* Row 3: Producto (Modelo) — full width */}
+                    <div className="p-3 bg-purple-50 rounded-xl border border-purple-100 space-y-2">
+                      <h3 className="text-xs font-bold text-purple-800 uppercase flex items-center gap-1.5"><Box size={12}/> Producto (Modelo)</h3>
+                      <MultiSearchableComboBox
+                        options={modelosCaja.map((m: string) => ({ value: m, label: m }))}
+                        value={formData.modeloAsignado ? formData.modeloAsignado.split(', ') : []}
+                        onChange={values => setFormData({...formData, modeloAsignado: values.join(', ')})}
+                        placeholder="Seleccionar modelos de producto..."
+                        disabled={isRestrictedRole}
+                      />
+                    </div>
+
                   </div>
-                </div>
-
-                {/* Row 3: Producto (Modelo) — full width */}
-                <div className="p-3 bg-purple-50 rounded-xl border border-purple-100 space-y-2">
-                  <h3 className="text-xs font-bold text-purple-800 uppercase flex items-center gap-1.5"><Box size={12}/> Producto (Modelo)</h3>
-                  <MultiSearchableComboBox
-                    options={modelosCaja.map((m: string) => ({ value: m, label: m }))}
-                    value={formData.modeloAsignado ? formData.modeloAsignado.split(', ') : []}
-                    onChange={values => setFormData({...formData, modeloAsignado: values.join(', ')})}
-                    placeholder="Seleccionar modelos de producto..."
-                  />
-                </div>
-
-              </div>
+                );
+              })()}
 
               {/* Footer */}
               <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 shrink-0 bg-slate-50 rounded-b-2xl">

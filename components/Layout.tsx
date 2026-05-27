@@ -10,7 +10,7 @@ import { storageService } from '../services/storageService.ts';
 import { useLanguage } from '../context/LanguageContext';
 import { demandaCarga53Service } from '../services/demandaCarga53Service.ts';
 import { reservaVentana53Service } from '../services/reservaVentana53Service.ts';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig.ts';
 
 const SyncIndicator = () => {
@@ -74,24 +74,29 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [ventanasBadge, setVentanasBadge] = useState(0);
   const [reservasBadge, setReservasBadge] = useState(0);
+  const [asignacionesBadge, setAsignacionesBadge] = useState(0);       // Carrier/Transportista
+  const [asignacionesBadgeAdmin, setAsignacionesBadgeAdmin] = useState(0); // Admin/Expo/Embarques
   const { user, logout } = useAuth();
   const { toggleLanguage, language, t } = useLanguage();
   const location = useLocation();
 
+  // useRef so the event listener always reads the latest values without stale closures
+  const checkRef = React.useRef<() => Promise<void>>(async () => {});
+
   useEffect(() => {
     const check = async () => {
       try {
+        // --- Badges 1 y 2: Ventanas 53 ---
         const [demandas, allVentanas, reservas] = await Promise.all([
-          demandaCarga53Service.getAllDemandas(),
-          // Use direct Firestore to avoid circular service dep
-          getDocs(collection(db, 'ventanasCarga53')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() } as any))),
-          reservaVentana53Service.getAllReservas(),
+          demandaCarga53Service.getAllDemandas().catch(() => []),
+          getDocs(collection(db, 'ventanasCarga53')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() } as any))).catch(() => []),
+          reservaVentana53Service.getAllReservas().catch(() => []),
         ]);
+
         const activas = demandas.filter((d: any) =>
           ['Confirmada', 'Enviada a carriers', 'En proceso de reserva'].includes(d.estatus)
         );
 
-        // Badge 1 — Ventanas 53': demands where total ventana capacity < cajas solicitadas
         const needVentanas = activas.filter((d: any) => {
           const cap = allVentanas
             .filter((v: any) => v.fecha === d.fechaDemanda)
@@ -99,12 +104,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           return cap < d.totalCajasSolicitadas;
         }).length;
 
-        // Badge 2 — Reserva Ventanas 53': demands with enough capacity but no active reserva
         const needCarrier = activas.filter((d: any) => {
           const cap = allVentanas
             .filter((v: any) => v.fecha === d.fechaDemanda)
             .reduce((s: number, v: any) => s + v.capacidadCajas, 0);
-          if (cap < d.totalCajasSolicitadas) return false; // still needs ventanas first
+          if (cap < d.totalCajasSolicitadas) return false;
           const reserved = (reservas as any[])
             .filter(r => r.demandaId === d.id && ['Reservada', 'Confirmada'].includes(r.estatus))
             .reduce((s: number, r: any) => s + r.cajasReservadas, 0);
@@ -113,13 +117,56 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
         setVentanasBadge(needVentanas);
         setReservasBadge(needCarrier);
+
+        // --- Badge 3: Asignación Diaria de Cajas ---
+        // getDocs directo igual que Ventana 53
+        let badge = 0;
+        try {
+          const snapAsig = await getDocs(collection(db, 'asignacion_cajas'));
+          const snapLib = await getDocs(collection(db, 'liberacionesCaja'));
+          const asignaciones = snapAsig.docs.map(d => ({ id: d.id, ...d.data() as any }));
+          const liberaciones = snapLib.docs.map(d => ({ id: d.id, ...d.data() as any }));
+
+          // Leer el rango de fechas que el usuario tiene seleccionado en el módulo
+          const savedRange = (() => { try { return JSON.parse(localStorage.getItem('asig_dateRange') || 'null'); } catch { return null; } })();
+          const today = new Date().toISOString().split('T')[0];
+          const rangeStart = savedRange?.start || today;
+          const rangeEnd = savedRange?.end || today;
+
+          badge = asignaciones.filter(a => {
+            const fecha = (a as any).fecha || '';
+            const inRange = fecha >= rangeStart && fecha <= rangeEnd;
+            const hasLayout = !!(a as any).layoutUrl || !!(a as any).layoutUploadedAt;
+            const hasCCP = !!(a as any).ccpUrl || !!(a as any).ccpUploadedAt;
+            const isClosed = liberaciones.some(l => (l as any).asignacionCajaId === a.id && !!(l as any).selloValidado);
+            return inRange && hasLayout && !hasCCP && !isClosed;
+          }).length;
+
+          // Admin/Expo/Embarques: CCP subido pero sin cierre (selloValidado)
+          const badgeAdmin = asignaciones.filter(a => {
+            const fecha = (a as any).fecha || '';
+            const inRange = fecha >= rangeStart && fecha <= rangeEnd;
+            const hasCCP = !!(a as any).ccpUrl || !!(a as any).ccpUploadedAt;
+            const isClosed = liberaciones.some(l => (l as any).asignacionCajaId === a.id && !!(l as any).selloValidado);
+            return inRange && hasCCP && !isClosed;
+          }).length;
+          setAsignacionesBadgeAdmin(badgeAdmin);
+        } catch { /* sin permisos o sin datos */ }
+        setAsignacionesBadge(badge);
       } catch { /* silent */ }
     };
+
+    // Ref siempre apunta a la versión más reciente de check()
+    checkRef.current = check;
     check();
-    // Also listen for custom event fired when any module changes reserva/asignacion state
-    window.addEventListener('reserva:changed', check);
-    return () => window.removeEventListener('reserva:changed', check);
-  }, [location.pathname]);
+  }, [location.pathname, user?.email]);
+
+  // Listener registrado UNA sola vez, llama siempre al check() más reciente
+  useEffect(() => {
+    const handler = () => checkRef.current();
+    window.addEventListener('reserva:changed', handler);
+    return () => window.removeEventListener('reserva:changed', handler);
+  }, []);
 
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden">
@@ -235,7 +282,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   <SidebarItem to="/cajas" icon={Container} label={sidebarOpen ? t("menu.cajas") : ""} />
                 </>
               )}
-              <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? t("menu.asignaciones") : ""} />
+              <SidebarItem 
+                to="/asignaciones-diarias" 
+                icon={Navigation} 
+                label={sidebarOpen ? t("menu.asignaciones") : ""} 
+                badge={
+                  (user?.role === UserRole.CARRIER || user?.role === UserRole.TRANSPORTISTA)
+                    ? (asignacionesBadge > 0 ? asignacionesBadge : undefined)
+                    : (asignacionesBadgeAdmin > 0 ? asignacionesBadgeAdmin : undefined)
+                }
+              />
               {/* Módulos Demanda / Reserva 53' — Admin y Controller */}
               {user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && (
                 <>
@@ -254,7 +310,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {/* Expo: only Daily Van Assignment and Asignaciones (read-only) */}
           {user?.role === UserRole.EXPO && (
             <>
-              <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? t("menu.asignaciones") : ""} />
+              <SidebarItem 
+                to="/asignaciones-diarias" 
+                icon={Navigation} 
+                label={sidebarOpen ? t("menu.asignaciones") : ""} 
+                badge={asignacionesBadgeAdmin > 0 ? asignacionesBadgeAdmin : undefined} 
+              />
               <SidebarItem to="/xml-invoices" icon={Database} label={sidebarOpen ? "XML Invoice Extractor" : ""} />
               <SidebarItem to="/xml-ci" icon={FileText} label={sidebarOpen ? "XMLCI Consolidated" : ""} />
             </>

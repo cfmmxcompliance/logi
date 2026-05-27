@@ -11,9 +11,10 @@ import { CajaModel } from '../types/caja';
 import { DriverModel } from '../types/driver';
 import { CarrierModel } from '../types/carrier';
 import { TransportLineModel } from '../types/transportLine';
-import { LiberacionRecord } from '../types';
+import { LiberacionRecord, LiberacionDockRecord } from '../types';
 import { VigilanciaRecord } from '../types/vigilancia';
 import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle, ChevronUp, ChevronDown, RefreshCw, FileText, Loader2, Shield, AlertTriangle } from 'lucide-react';
+import { liberacionDockService } from '../services/liberacionDockService';
 import { uploadFileToDrive } from '../services/googleDriveService.ts';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
@@ -38,6 +39,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
   const [transportLines, setTransportLines] = useState<TransportLineModel[]>([]);
   const [liberaciones, setLiberaciones] = useState<LiberacionRecord[]>([]);
+  const [liberacionesDock, setLiberacionesDock] = useState<LiberacionDockRecord[]>([]);
   const [vigilancias, setVigilancias] = useState<VigilanciaRecord[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [importErrors, setImportErrors] = useState<string[] | null>(null);
@@ -54,9 +56,11 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
+  const today = new Date().toISOString().split('T')[0];
+  const savedRange = (() => { try { return JSON.parse(localStorage.getItem('asig_dateRange') || 'null'); } catch { return null; } })();
   const [dateRange, setDateRange] = useState({ 
-    start: new Date().toISOString().split('T')[0], 
-    end: new Date().toISOString().split('T')[0] 
+    start: savedRange?.start || today, 
+    end: savedRange?.end || today 
   });
   const [isMassQueryOpen, setIsMassQueryOpen] = useState(false);
   const [queryConditions, setQueryConditions] = useState<QueryCondition[]>([
@@ -115,10 +119,14 @@ export const AsignacionesDiarias: React.FC = () => {
           ? { ...a, anexo29Url: url, anexo29UploadedBy: uploadedBy, anexo29UploadedAt: uploadedAt }
           : a));
       }
+      
+      // DISPARAR EVENTO PARA ACTUALIZAR BADGES EN LA BARRA LATERAL
+      window.dispatchEvent(new Event('reserva:changed'));
     } catch (e: any) {
       alert(`Error subiendo archivo: ${e.message}`);
     } finally {
       setUploadingFor(null);
+      window.dispatchEvent(new Event('reserva:changed'));
     }
   };
   const columns = ['fecha', 'horaAsignacion', 'numeroOperacion', 'numeroCaja', 'subLinea', 'placasCaja', 'transportLineId', 'driverId', 'nombreDriver', 'placasTracto', 'modeloAsignado'];
@@ -141,12 +149,13 @@ export const AsignacionesDiarias: React.FC = () => {
 
   const loadData = async () => {
     try {
-        const [asigData, cajasData, driversData, carriersData, liberacionesData, linesData, vigilanciasData] = await Promise.all([
+        const [asigData, cajasData, driversData, carriersData, liberacionesData, liberacionesDockData, linesData, vigilanciasData] = await Promise.all([
             asignacionCajaService.getAllAsignaciones().catch(() => []),
             cajaService.getAllCajas().catch(() => []),
             driverService.getAllDrivers().catch(() => []),
             carrierService.getAllCarriers().catch(() => []),
             liberacionService.getAllLiberaciones().catch(() => []),
+            liberacionDockService.getAllLiberacionesDock().catch(() => []),
             transportLineService.getAllTransportLines().catch(() => []),
             vigilanciaService.getByDate(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' })).catch(() => [])
         ]);
@@ -155,12 +164,14 @@ export const AsignacionesDiarias: React.FC = () => {
         setDrivers(driversData);
         setCarriers(carriersData);
         setLiberaciones(liberacionesData);
+        setLiberacionesDock(liberacionesDockData);
         setTransportLines(linesData);
         setVigilancias(vigilanciasData);
     } catch (e) {
         console.error("Error cargando dependencias de Asignación:", e);
     } finally {
         setLoading(false);
+        window.dispatchEvent(new Event('reserva:changed'));
     }
   };
 
@@ -260,7 +271,7 @@ export const AsignacionesDiarias: React.FC = () => {
     }
 
     return result;
-  }, [asignaciones, searchTerm, dateRange, activeMassQuery, sortConfig, liberaciones, scacFilter, subLineaFilter, transportLines, user]);
+  }, [asignaciones, searchTerm, dateRange, activeMassQuery, sortConfig, liberaciones, liberacionesDock, scacFilter, subLineaFilter, transportLines, user]);
 
 
   const handleApplyMassQuery = () => {
@@ -659,7 +670,10 @@ export const AsignacionesDiarias: React.FC = () => {
                 <button 
                   onClick={() => {
                     const today = new Date().toISOString().split('T')[0];
-                    setDateRange({ start: today, end: today });
+                    const newRange = { start: today, end: today };
+                    setDateRange(newRange);
+                    localStorage.setItem('asig_dateRange', JSON.stringify(newRange));
+                    window.dispatchEvent(new Event('reserva:changed'));
                   }}
                   className="bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold px-3 py-2 text-xs border-r border-slate-200 transition-colors h-full"
                   title="Filtrar por Hoy"
@@ -670,7 +684,7 @@ export const AsignacionesDiarias: React.FC = () => {
                 <input 
                     type="date"
                     value={dateRange.start}
-                    onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                    onChange={e => { const v = { ...dateRange, start: e.target.value }; setDateRange(v); localStorage.setItem('asig_dateRange', JSON.stringify(v)); window.dispatchEvent(new Event('reserva:changed')); }}
                     className="py-2 px-2 text-sm outline-none text-slate-600 bg-transparent"
                     title={t('common.fecha_inicial')}
                 />
@@ -678,7 +692,7 @@ export const AsignacionesDiarias: React.FC = () => {
                 <input 
                     type="date"
                     value={dateRange.end}
-                    onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                    onChange={e => { const v = { ...dateRange, end: e.target.value }; setDateRange(v); localStorage.setItem('asig_dateRange', JSON.stringify(v)); window.dispatchEvent(new Event('reserva:changed')); }}
                     className="py-2 px-2 text-sm outline-none text-slate-600 bg-transparent"
                     title={t('common.fecha_final')}
                 />
@@ -856,7 +870,11 @@ export const AsignacionesDiarias: React.FC = () => {
                  {/* ── LIBERACION DOCK ── */}
                  <td className="p-4 text-center bg-sky-50/20 border-l border-sky-100/50 whitespace-nowrap">
                    <span className="font-mono font-bold text-sky-700 text-xs">
-                     {liberacion?.dockLiberacion || '—'}
+                     {(() => {
+                        const dockRec = liberacionesDock.find(ld => ld.asignacionCajaId === a.id);
+                        if (!dockRec) return '—';
+                        return dockRec.fechaHoraRegistro || dockRec.fechaLiberacion || '—';
+                     })()}
                    </span>
                  </td>
 
@@ -999,9 +1017,11 @@ export const AsignacionesDiarias: React.FC = () => {
                       </>
                     ) : (
                       <>
-                        <button onClick={() => openEdit(a)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors" title="Editar">
-                          <Edit2 size={16} />
-                        </button>
+                        {user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && (
+                          <button onClick={() => openEdit(a)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors" title="Editar">
+                            <Edit2 size={16} />
+                          </button>
+                        )}
                         <button onClick={() => handleDelete(a.id!)} className="p-1.5 text-red-600 hover:bg-red-100 rounded transition-colors" title="Eliminar">
                           <Trash2 size={16} />
                         </button>

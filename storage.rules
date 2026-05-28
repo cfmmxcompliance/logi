@@ -6,6 +6,9 @@ service firebase.storage {
     match /fianza-pdfs/{allPaths=**} {
       allow read, write: if true;
     }
+    match /training_data/{allPaths=**} {
+      allow read, write: if true;
+    }
     // Bloquear todo lo demás por defecto
     match /{allPaths=**} {
       allow read, write: if false;

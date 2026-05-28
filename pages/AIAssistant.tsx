@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, Loader2, Sparkles, User as UserIcon, ShieldAlert } from 'lucide-react';
+import { Send, Bot, Loader2, Sparkles, User as UserIcon, Database, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 import { geminiService } from '../services/geminiService';
+import { storageService } from '../services/storageService';
 import { useAuth } from '../context/AuthContext';
 
 interface ChatMessage {
@@ -13,8 +14,21 @@ export const AIAssistant: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [partsCount, setPartsCount] = useState(storageService.getParts().length);
+  const [isMDLoading, setIsMDLoading] = useState(storageService.isMasterDataLoading());
+  const [isSyncing, setIsSyncing] = useState(storageService.isBackgroundSyncing());
   const scrollRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+
+  useEffect(() => {
+    // Subscribe to storageService to get live parts count updates
+    const unsub = storageService.subscribe(() => {
+      setPartsCount(storageService.getParts().length);
+      setIsMDLoading(storageService.isMasterDataLoading());
+      setIsSyncing(storageService.isBackgroundSyncing());
+    });
+    return unsub;
+  }, []);
 
   useEffect(() => {
     // Scroll to bottom whenever messages change
@@ -44,6 +58,41 @@ export const AIAssistant: React.FC = () => {
           parts: [{ text: m.parts[0].text }]
       }));
 
+      // Inject context on the first message or continuously if needed
+      // We prepend a pseudo-system message with DB context.
+      const dbState = storageService.getLocalState();
+      
+      // Build a concise summary to avoid token bloat
+      const contextSummary = `
+Contexto de la Base de Datos Logimaster (Solo Lectura):
+- Master Data (Parts): ${dbState.parts?.length || 0}
+- Embarques activos: ${dbState.shipments?.length || 0}
+- Contenedores en tránsito: ${dbState.vesselTracking?.length || 0}
+- Despachos aduanales: ${dbState.customsClearance?.length || 0}
+- Alertas Previas: ${dbState.preAlerts?.length || 0}
+- Reportes DataStage: ${dbState.dataStageReports?.length || 0}
+
+Instrucciones para el AI: Eres el asistente experto de Logimaster. 
+TIENES UNA HERRAMIENTA DISPONIBLE:
+1. "queryLogimasterData": Úsala para buscar detalles exactos o contar registros. TIENE 3 ACCIONES:
+- action="count": Solo para contar el total histórico en la nube.
+- action="search": Para buscar un término específico (ej. "CFM-123").
+- action="analyze": Para contar cuántos registros cumplen una condición en una columna específica (ej. filterColumn="CLAVESAT", filterOperator="not_empty"). Úsala si te piden "cuántos de esos tienen X". 
+
+REGLA DE ORO: 
+- Tu primera obligación es usar "queryLogimasterData" para cualquier consulta operativa.
+- ¡NUNCA EXPLIQUES EN TEXTO LOS PARÁMETROS QUE VAS A USAR! Debes invocar la herramienta directamente de forma invisible (Function Calling). Si el usuario te pide un análisis, NO le digas "Usaré la acción analyze...", simplemente EJECUTA LA HERRAMIENTA y dale el resultado final.
+- Si te hacen una pregunta externa (ej. clima, tipo de cambio) o si buscas en la base de datos y no encuentras la respuesta, DEBES responder ÚNICAMENTE con esta frase exacta: "RETRY_WITH_GOOGLE".
+- No des explicaciones si usas la frase. El sistema la interceptará y automáticamente buscará en internet por ti.
+
+Responde de forma concisa, directa y profesional.
+`;
+
+      if (historyToSend.length > 0) {
+          // Prepend context to the very first message of the conversation
+          historyToSend[0].parts[0].text = contextSummary + "\\n\\nPregunta del usuario:\\n" + historyToSend[0].parts[0].text;
+      }
+
       const replyText = await geminiService.chatAssistant(historyToSend);
 
       setMessages(prev => [...prev, {
@@ -51,11 +100,11 @@ export const AIAssistant: React.FC = () => {
         parts: [{ text: replyText }],
         timestamp: new Date()
       }]);
-    } catch (error) {
-       console.error(error);
+    } catch (error: any) {
+       console.error("AI Error:", error);
        setMessages(prev => [...prev, {
         role: 'model',
-        parts: [{ text: "Error de conexión con el Asistente AI. Por favor, reintenta más tarde." }],
+        parts: [{ text: `Error: ${error?.message || "Desconocido"}. Revisa la consola.` }],
         timestamp: new Date()
       }]);
     } finally {
@@ -82,6 +131,25 @@ export const AIAssistant: React.FC = () => {
                 <h1 className="text-xl font-bold text-slate-800">Logimaster AI Assistant</h1>
                 <p className="text-xs text-slate-500 font-medium">Powered by Gemini 2.0 Flash</p>
              </div>
+         </div>
+         {/* DB Load Indicator */}
+         <div className="flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold"
+           style={{
+             background: isMDLoading ? '#fef9c3' : isSyncing ? '#eff6ff' : partsCount > 1000 ? '#f0fdf4' : '#fef2f2',
+             borderColor: isMDLoading ? '#fde047' : isSyncing ? '#93c5fd' : partsCount > 1000 ? '#86efac' : '#fca5a5',
+             color: isMDLoading ? '#854d0e' : isSyncing ? '#1d4ed8' : partsCount > 1000 ? '#15803d' : '#b91c1c'
+           }}
+         >
+           <Database size={13} />
+           {isMDLoading ? (
+             <><Loader2 size={11} className="animate-spin" /> Cargando Master Data...</>
+           ) : isSyncing ? (
+             <><RefreshCw size={11} className="animate-spin" /> Sincronizando... {partsCount.toLocaleString()} registros</>             
+           ) : partsCount > 1000 ? (
+             <><CheckCircle2 size={11} /> {partsCount.toLocaleString()} registros listos</>
+           ) : (
+             <><AlertCircle size={11} /> Solo {partsCount.toLocaleString()} registros en memoria &mdash; espera la sincronización</>
+           )}
          </div>
       </div>
 

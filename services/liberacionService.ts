@@ -37,6 +37,22 @@ export const liberacionService = {
     }
   },
 
+  async getLiberacionesByDateRange(start: string, end: string): Promise<LiberacionRecord[]> {
+    if (!db) return [];
+    try {
+      const q = query(
+        collection(db, COLLECTION_NAME),
+        where('fechaLiberacion', '>=', start),
+        where('fechaLiberacion', '<=', end)
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as LiberacionRecord));
+    } catch (error) {
+      console.error('Error fetching liberaciones by date range:', error);
+      return [];
+    }
+  },
+
   async getAllLiberaciones(): Promise<LiberacionRecord[]> {
     if (!db) return [];
     try {

@@ -2,12 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { asignacionCajaService } from '../services/asignacionCajaService';
 import { liberacionService } from '../services/liberacionService';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
-import { LiberacionRecord } from '../types';
+import { LiberacionRecord, LiberacionDockRecord } from '../types';
 import { Truck, CheckCircle, Clock, Calendar, RefreshCcw, Search, XCircle, Package2 } from 'lucide-react';
+import { liberacionDockService } from '../services/liberacionDockService';
 
 export const DailyVanAssignment: React.FC = () => {
   const [assignments, setAssignments] = useState<AsignacionCajaModel[]>([]);
   const [liberaciones, setLiberaciones] = useState<LiberacionRecord[]>([]);
+  const [liberacionesDock, setLiberacionesDock] = useState<LiberacionDockRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -22,9 +24,10 @@ export const DailyVanAssignment: React.FC = () => {
   const fetchData = async (date: string) => {
     setLoading(true);
     try {
-      const [asigData, libData] = await Promise.all([
+      const [asigData, libData, libDockData] = await Promise.all([
         asignacionCajaService.getAsignacionesByDate(date),
         liberacionService.getLiberacionesByDate(date),
+        liberacionDockService.getLiberacionesDockByDate(date),
       ]);
       asigData.sort((a, b) => {
         const timeA = a.horaAsignacion || '00:00';
@@ -33,6 +36,7 @@ export const DailyVanAssignment: React.FC = () => {
       });
       setAssignments(asigData);
       setLiberaciones(libData);
+      setLiberacionesDock(libDockData);
     } catch (e) {
       console.error('Error loading van assignments:', e);
     } finally {
@@ -57,6 +61,9 @@ export const DailyVanAssignment: React.FC = () => {
 
   const getLibForCaja = (asigId: string) =>
     liberaciones.find(l => l.asignacionCajaId === asigId);
+
+  const getLibDockForCaja = (asigId: string) =>
+    liberacionesDock.find(l => l.asignacionCajaId === asigId);
 
   const released = assignments.filter(a => getLibForCaja(a.id!));
   const pending = assignments.filter(a => !getLibForCaja(a.id!));
@@ -251,8 +258,23 @@ export const DailyVanAssignment: React.FC = () => {
                         </td>
 
                         {/* LIBERACION DOCK */}
-                        <td className="px-4 py-3 font-mono font-bold text-sky-300 text-sm whitespace-nowrap">
-                          {lib?.dockLiberacion || '—'}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {(() => {
+                             const dockRec = getLibDockForCaja(asig.id!);
+                             if (!dockRec) return <span className="text-slate-700 text-xs">—</span>;
+                             return (
+                               <div className="flex flex-col gap-0">
+                                 {dockRec.usuario && (
+                                   <span className="text-[10px] font-bold text-sky-400 truncate max-w-[150px]" title={dockRec.usuario}>
+                                     {dockRec.usuario}
+                                   </span>
+                                 )}
+                                 <span className="text-xs font-mono font-bold text-sky-300">
+                                   {dockRec.fechaHoraRegistro || dockRec.fechaLiberacion || '—'}
+                                 </span>
+                               </div>
+                             );
+                          })()}
                         </td>
 
                         <td className="px-4 py-3 text-xs text-slate-500">

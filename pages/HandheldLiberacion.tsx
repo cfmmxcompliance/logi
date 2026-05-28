@@ -35,8 +35,6 @@ export const HandheldLiberacion = () => {
   const [selectedCaja, setSelectedCaja] = useState<AsignacionCajaModel | null>(null);
   
   // Progress State
-  const [fotoCajaFile, setFotoCajaFile] = useState<File | null>(null);
-  const [fotoPuertasFile, setFotoPuertasFile] = useState<File | null>(null);
   const [fotoSelloFile, setFotoSelloFile] = useState<File | null>(null);
   const [extractedSello, setExtractedSello] = useState<string>('');
   const [aiRenderKey, setAiRenderKey] = useState(0);
@@ -48,9 +46,6 @@ export const HandheldLiberacion = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [dockLiberacion, setDockLiberacion] = useState<string>('');
-
-  const DOCK_OPTIONS = Array.from({ length: 13 }, (_, i) => `DOCK ${i + 1}`);
   const [networkWarning, setNetworkWarning] = useState<string | null>(null);
 
   // Alerta de sello cambiado
@@ -225,13 +220,7 @@ export const HandheldLiberacion = () => {
       const compressedFile = new File([blob], `compressed_${file.name}`, { type: 'image/jpeg' });
 
       // 2. Set State based on Step - unblock UI immediately
-      if (step === 'CAJA') {
-        setFotoCajaFile(compressedFile);
-        setIsProcessingImage(false);
-      } else if (step === 'PUERTAS') {
-        setFotoPuertasFile(compressedFile);
-        setIsProcessingImage(false);
-      } else if (step === 'SELLO') {
+      if (step === 'SELLO') {
         setFotoSelloFile(compressedFile);
         setExtractedSello("Analizando...");
         setIsProcessingImage(false); // Unblock UI
@@ -274,8 +263,6 @@ export const HandheldLiberacion = () => {
    * Actualiza el registro de Firestore con las URLs reales cuando termina.
    */
   const uploadEvidenciasBackground = useCallback(async (
-    cajaFile: File,
-    puertasFile: File,
     selloFile: File,
     liberacionId: string,
     numeroCaja: string
@@ -285,45 +272,39 @@ export const HandheldLiberacion = () => {
 
     if (!navigator.onLine) {
       setUploadStatus('waiting-online');
-      setUploadStatusLabel('Sin señal — esperando conexión para subir 3 evidencias...');
+      setUploadStatusLabel('Sin señal — esperando conexión para subir la evidencia...');
       await waitForOnline();
     }
 
     setUploadStatus('uploading');
-    setUploadStatusLabel('Subiendo 3 evidencias a Drive...');
+    setUploadStatusLabel('Subiendo evidencia a Drive...');
     setUploadError(undefined);
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
         const ts = Date.now();
-        const [cajaRes, puertasRes, selloRes] = await Promise.all([
-          // Bug Fix #1: filenames con extensión .jpg y timestamp único para que Drive detecte MIME type
-          uploadFileToDrive(cajaFile,    `lib_${numeroCaja}_CAJA_${ts}.jpg`,    FOLDER_ID),
-          uploadFileToDrive(puertasFile, `lib_${numeroCaja}_PUERTAS_${ts}.jpg`, FOLDER_ID),
+        const [selloRes] = await Promise.all([
           uploadFileToDrive(selloFile,   `lib_${numeroCaja}_SELLO_${ts}.jpg`,   FOLDER_ID),
         ]);
-        const cajaUrl    = cajaRes?.webViewLink    || (cajaRes    as any)?.url || '';
-        const puertasUrl = puertasRes?.webViewLink  || (puertasRes as any)?.url || '';
         const selloUrl   = selloRes?.webViewLink    || (selloRes   as any)?.url || '';
 
-        // Bug Fix #3: Si el GAS no devuelve URL, loguear y reportar error — no guardar silencioso
-        if (!cajaUrl || !puertasUrl || !selloUrl) {
-          console.error('[Drive] Una o más fotos no retornaron URL:', { cajaUrl, puertasUrl, selloUrl });
-          setUploadError('Drive respondió pero sin URLs. Verifica el GAS script.');
+        if (!selloUrl) {
+          console.error('[Drive] La foto no retornó URL:', { selloUrl });
+          setUploadError('Drive respondió pero sin URL. Verifica el GAS script.');
           setUploadStatus('error');
           return;
         }
 
         // Actualiza Firestore con las URLs reales
         await liberacionService.updateLiberacion(liberacionId, {
-          fotos: { cajaUrl, puertasUrl, selloUrl },
+          fotos: { cajaUrl: '', puertasUrl: '', selloUrl },
           uploadStatus: 'done',
         } as any);
 
         // Actualiza optimistic local state
         setLiberacionesDelDia(prev =>
           prev.map(l => l.id === liberacionId
-            ? { ...l, fotos: { cajaUrl, puertasUrl, selloUrl } }
+            ? { ...l, fotos: { cajaUrl: '', puertasUrl: '', selloUrl } }
             : l
           )
         );
@@ -355,7 +336,7 @@ export const HandheldLiberacion = () => {
   // --- VALIDATION AND SAVE ---
   const handleCierreCaja = async () => {
     if (!selectedCaja) return;
-    if (!fotoCajaFile || !fotoPuertasFile || !fotoSelloFile) {
+    if (!fotoSelloFile) {
       setValidationError('Aún faltan evidencias por capturar.');
       return;
     }
@@ -393,9 +374,8 @@ export const HandheldLiberacion = () => {
         coincideConOriginal: selloCoincide,
         usuario: user?.email || user?.username || user?.name || 'operario',
         fechaHoraRegistro: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City', hour12: false }),
-        fotos: { cajaUrl: 'PENDING', puertasUrl: 'PENDING', selloUrl: 'PENDING' },
+        fotos: { cajaUrl: '', puertasUrl: '', selloUrl: 'PENDING' },
         createdAt: new Date().toISOString(),
-        ...(dockLiberacion ? { dockLiberacion } : {}),
       };
 
       await liberacionService.addLiberacion(newLiberacion);
@@ -403,6 +383,7 @@ export const HandheldLiberacion = () => {
       // Optimistic update local
       setLiberacionesDelDia(prev => [...prev, newLiberacion]);
       setSaveSuccess(true);
+      window.dispatchEvent(new Event('reserva:changed'));
 
       // 3. Si los sellos no coinciden → mostrar alerta crítica ANTES de cerrar el modal
       if (!selloCoincide) {
@@ -417,10 +398,8 @@ export const HandheldLiberacion = () => {
       }
 
       // 4. Sube las 3 fotos en SEGUNDO PLANO (fire & forget)
-      const cajaSnap    = fotoCajaFile;
-      const puertasSnap = fotoPuertasFile;
       const selloSnap   = fotoSelloFile;
-      uploadEvidenciasBackground(cajaSnap, puertasSnap, selloSnap, liberacionId, selectedCaja.numeroCaja);
+      uploadEvidenciasBackground(selloSnap, liberacionId, selectedCaja.numeroCaja);
       // sin await intencionalmente — no bloquea el cierre del modal
 
     } catch (e: any) {
@@ -432,15 +411,12 @@ export const HandheldLiberacion = () => {
 
   const closeModal = () => {
       setSelectedCaja(null);
-      setFotoCajaFile(null);
-      setFotoPuertasFile(null);
       setFotoSelloFile(null);
       setExtractedSello('');
       setValidationError(null);
       setSaveSuccess(false);
       setActiveCameraStep(null);
       setMismatchAlert(null);
-      setDockLiberacion('');
   };
 
   // Helper check
@@ -653,67 +629,11 @@ export const HandheldLiberacion = () => {
                  {/* FOTOGRAFÍAS */}
                  {!saveSuccess && (
                      <div className="space-y-4">
-                         {/* FOTO CAJA */}
-                         <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-4 relative">
-                             <div className="flex justify-between items-center mb-3">
-                                <div className="flex items-center gap-2 text-sm font-bold text-slate-300">
-                                   <Car size={18} className="text-blue-400"/> 1. Foto de Caja Cargada
-                                </div>
-                             </div>
-                             <input 
-                                type="file" 
-                                accept="image/*" 
-                                capture="environment" 
-                                id="camera-caja"
-                                onChange={(e) => handleCaptureFile(e, 'CAJA')}
-                                className="hidden" 
-                             />
-                             <label
-                                htmlFor="camera-caja"
-                                className={`w-full py-4 rounded-xl cursor-pointer flex items-center justify-center gap-2 font-semibold transition-all shadow-sm ${
-                                    fotoCajaFile 
-                                       ? 'bg-blue-900/30 text-blue-400 border border-blue-800/50' 
-                                       : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-900/20'
-                                } ${(isProcessingImage || isSaving) ? 'opacity-50 pointer-events-none' : ''}`}
-                             >
-                                 <Camera size={20} />
-                                 {fotoCajaFile ? 'Tomar Nueva Foto' : 'Abrir Cámara'}
-                             </label>
-                         </div>
-
-                         {/* FOTO PUERTAS */}
-                         <div className={`bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-4 relative transition-all ${!fotoCajaFile ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
-                             <div className="flex justify-between items-center mb-3">
-                                <div className="flex items-center gap-2 text-sm font-bold text-slate-300">
-                                   <DoorOpen size={18} className="text-orange-400"/> 2. Foto de Puertas
-                                </div>
-                             </div>
-                             <input 
-                                type="file" 
-                                accept="image/*" 
-                                capture="environment" 
-                                id="camera-puertas"
-                                onChange={(e) => handleCaptureFile(e, 'PUERTAS')}
-                                className="hidden" 
-                             />
-                             <label
-                                htmlFor="camera-puertas"
-                                className={`w-full py-4 rounded-xl cursor-pointer flex items-center justify-center gap-2 font-semibold transition-all shadow-sm ${
-                                    fotoPuertasFile 
-                                       ? 'bg-orange-900/30 text-orange-400 border border-orange-800/50' 
-                                       : 'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-900/20'
-                                } ${(isProcessingImage || isSaving) ? 'opacity-50 pointer-events-none' : ''}`}
-                             >
-                                 <Camera size={20} />
-                                 {fotoPuertasFile ? 'Tomar Nueva Foto' : 'Abrir Cámara'}
-                             </label>
-                         </div>
-
                          {/* FOTO SELLO & ANALISIS */}
-                         <div className={`bg-slate-900 border border-slate-800 rounded-2xl p-4 transition-all ${(!fotoCajaFile || !fotoPuertasFile) ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
+                         <div className={`bg-slate-900 border border-slate-800 rounded-2xl p-4 transition-all`}>
                              <div className="flex justify-between items-center mb-3">
                                 <div className="flex items-center gap-2 text-sm font-bold text-slate-300">
-                                   <ShieldCheck size={18} className="text-emerald-400"/> 3. Foto de Sello Físico
+                                   <ShieldCheck size={18} className="text-emerald-400"/> 1. Foto de Sello Físico
                                 </div>
                              </div>
                              <input 
@@ -764,34 +684,14 @@ export const HandheldLiberacion = () => {
                  )}
                </div>
 
-              {/* DOCK DE LIBERACIÓN */}
-              {!saveSuccess && (
-                <div className="px-5 pb-4">
-                  <div className="bg-slate-900 border border-sky-900/50 rounded-2xl p-4">
-                    <label className="text-xs text-sky-400 font-bold tracking-widest uppercase mb-3 block">Dock de Liberación (Opcional)</label>
-                    <select
-                      value={dockLiberacion}
-                      onChange={e => setDockLiberacion(e.target.value)}
-                      disabled={isSaving}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition-all appearance-none"
-                    >
-                      <option value="">— Sin dock asignado —</option>
-                      {DOCK_OPTIONS.map(d => (
-                        <option key={d} value={d}>{d}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
-
               {/* FOOTER ACTIONS */}
               {!saveSuccess && (
                   <div className="bg-slate-900 border-t border-slate-800 p-4 pb-8 sticky bottom-0 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
                       <button
                         onClick={handleCierreCaja}
-                        disabled={isSaving || !fotoCajaFile || !fotoPuertasFile || !fotoSelloFile || !extractedSello}
-                        className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-bold text-lg transition-all ${
-                          (!fotoCajaFile || !fotoPuertasFile || !fotoSelloFile || !extractedSello)
+                        disabled={isSaving || !fotoSelloFile || !extractedSello}
+                        className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg ${
+                          (!fotoSelloFile || !extractedSello)
                           ? 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-none border border-slate-700'
                           : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20 shadow-xl'
                         }`}

@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUploadGuard } from '../hooks/useUploadGuard.ts';
 import { waitForOnline } from '../hooks/useOnlineStatus.ts';
 import { UploadStatusBanner, UploadStatus } from '../components/UploadStatusBanner.tsx';
+import { HandheldToolbar } from '../components/HandheldToolbar.tsx';
 
 // ── Carpeta Drive exclusiva de Vigilancia ──
 const VIGILANCIA_FOLDER_ID = '1GuT11oaQaws1WGpPgQdqpZeJfRf6U_iU';
@@ -55,7 +56,8 @@ export const HandheldVigilancia = () => {
   // ── Date ──
   const getLocalToday = () =>
     new Date().toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' });
-  const [selectedDate, setSelectedDate] = useState(getLocalToday());
+  const [dateStart, setDateStart] = useState(getLocalToday());
+  const [dateEnd, setDateEnd] = useState(getLocalToday());
 
   // ── Data ──
   const [cajasDelDia, setCajasDelDia]         = useState<AsignacionCajaModel[]>([]);
@@ -100,25 +102,27 @@ export const HandheldVigilancia = () => {
   const fetchWithTimeout = <T,>(p: Promise<T>, ms = 12000): Promise<T> =>
     Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_EXCEEDED')), ms))]);
 
-  const fetchData = async (date: string) => {
+  const fetchDataForRange = async () => {
     setLoading(true);
-    try {
-      const [cc, vv] = await Promise.all([
-        asignacionCajaService.getAsignacionesByDateCached(date),
-        vigilanciaService.getByDateCached(date),
-      ]);
-      if (cc.length > 0) {
-        cc.sort((a, b) => (a.horaAsignacion || '00:00') < (b.horaAsignacion || '00:00') ? -1 : 1);
-        setCajasDelDia(cc);
-        setVigilancias(vv);
-        setLoading(false);
-      }
-    } catch { /* cache miss */ }
+    if (dateStart === dateEnd) {
+      try {
+        const [cc, vv] = await Promise.all([
+          asignacionCajaService.getAsignacionesByDateCached(dateStart),
+          vigilanciaService.getByDateCached(dateStart),
+        ]);
+        if (cc.length > 0) {
+          cc.sort((a, b) => (a.horaAsignacion || '00:00') < (b.horaAsignacion || '00:00') ? -1 : 1);
+          setCajasDelDia(cc);
+          setVigilancias(vv);
+          setLoading(false);
+        }
+      } catch { /* cache miss */ }
+    }
 
     try {
       const [cajas, vigs] = await fetchWithTimeout(Promise.all([
-        asignacionCajaService.getAsignacionesByDate(date),
-        vigilanciaService.getByDate(date),
+        dateStart === dateEnd ? asignacionCajaService.getAsignacionesByDate(dateStart) : asignacionCajaService.getAsignacionesByDateRange(dateStart, dateEnd),
+        dateStart === dateEnd ? vigilanciaService.getByDate(dateStart) : vigilanciaService.getByDateRange(dateStart, dateEnd),
       ]));
       cajas.sort((a, b) => (a.horaAsignacion || '00:00') < (b.horaAsignacion || '00:00') ? -1 : 1);
       setCajasDelDia(cajas);
@@ -135,7 +139,7 @@ export const HandheldVigilancia = () => {
     }
   };
 
-  useEffect(() => { fetchData(selectedDate); }, [selectedDate]);
+  useEffect(() => { fetchDataForRange(); }, [dateStart, dateEnd]);
 
   const filteredCajas = searchQuery.trim()
     ? cajasDelDia.filter(c => {
@@ -282,7 +286,7 @@ export const HandheldVigilancia = () => {
     setIsSaving(true);
     try {
       const record: VigilanciaRecord = {
-        fecha: selectedDate,
+        fecha: dateEnd,
         asignacionCajaId: selectedCaja.id || '',
         numeroCaja: selectedCaja.numeroCaja,
         usuario: user?.email || user?.username || 'unknown',
@@ -370,7 +374,7 @@ export const HandheldVigilancia = () => {
     const detalle = `Discrepancia en: ${items.join(', ')}. ${discrepanciaNote}`.trim();
     try {
       const record: VigilanciaRecord = {
-        fecha: selectedDate,
+        fecha: dateEnd,
         asignacionCajaId: selectedCaja.id || '',
         numeroCaja: selectedCaja.numeroCaja,
         usuario: user?.email || user?.username || 'unknown',
@@ -409,32 +413,15 @@ export const HandheldVigilancia = () => {
           </h1>
           <p className="text-xs text-slate-400">Inspección 7 puntos + Placas</p>
         </div>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={e => setSelectedDate(e.target.value)}
-          className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none"
-        />
       </div>
 
-      {/* ── SEARCH BAR ── */}
-      <div className="flex-shrink-0 px-4 py-2 bg-slate-900 border-b border-slate-800">
-        <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 focus-within:border-red-500 transition-colors">
-          <Search size={16} className="text-slate-400 flex-shrink-0" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Buscar caja, operación, chofer, placas..."
-            className="flex-1 bg-transparent border-none outline-none text-white placeholder:text-slate-500 text-sm"
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery('')} className="text-slate-500 hover:text-white transition-colors">
-              <XCircle size={16} />
-            </button>
-          )}
-        </div>
-      </div>
+      {!selectedCaja && (
+        <HandheldToolbar
+          dateStart={dateStart} setDateStart={setDateStart}
+          dateEnd={dateEnd} setDateEnd={setDateEnd}
+          searchTerm={searchQuery} setSearchTerm={setSearchQuery}
+        />
+      )}
 
       {/* ── placeholder to close the original header div ── */}
       <div style={{display:'none'}}>

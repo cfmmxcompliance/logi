@@ -1,7 +1,7 @@
 # Engagement Rules for Antigravity
 
-1. **MANDATORY PLANNING**: Every code change must be preceded by an `implementation_plan.md`.
-2. **EXPLICIT APPROVAL**: No execution tools (`replace_file_content`, `run_command`, etc.) shall be used without a textual "APPROVED" or "PROCEED" from the user for that specific plan.
+1. **MANDATORY PLANNING & SYSTEM LOCK**: Every code change MUST be preceded by an `implementation_plan.md` artifact with `request_feedback = true`. This is a hard requirement to lock the execution environment.
+2. **EXPLICIT APPROVAL**: ABSOLUTELY NO execution tools (`replace_file_content`, `multi_replace_file_content`, `run_command`, etc.) shall be used before receiving a direct, unambiguous textual "APROBADO" or "PROCEDE" from the user for that specific plan. If you restart, you must still wait for an explicit command before executing any pending plan.
 3. **NO AUTONOMY**: Do not add features, icons, or visual "improvements" that have not been explicitly requested, regardless of perceived benefit.
 4. **ANALYSIS ONLY**: When an impact analysis is requested, provide only textual/log information. Do not perform the action being analyzed until results are approved.
 5. **VERIFIABLE DRILL-DOWN**: At the start of every session, acknowledge these rules and ensure the current `task.md` follows this protocol.

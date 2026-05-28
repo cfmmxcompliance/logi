@@ -49,6 +49,22 @@ export const selloService = {
     }
   },
 
+  async getSellosByDateRange(start: string, end: string): Promise<SelloRecord[]> {
+    if (!db) return [];
+    try {
+      const q = query(
+        collection(db, COLLECTION_NAME),
+        where('fechaAsignacion', '>=', start),
+        where('fechaAsignacion', '<=', end)
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as SelloRecord));
+    } catch (error) {
+      console.error('Error fetching by date range:', error);
+      return [];
+    }
+  },
+
   async addSello(sello: SelloRecord): Promise<boolean> {
     if (!db) throw new Error("Sin conexión a la base de datos (db nulo).");
     try {

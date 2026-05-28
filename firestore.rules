@@ -48,6 +48,7 @@ service cloud.firestore {
     match /asignacion_cajas/{docId} { allow read, write: if true; }
     match /sellos/{docId} { allow read, write: if true; }
     match /liberacionesCaja/{docId} { allow read, write: if true; }
+    match /liberacionesDock/{docId} { allow read, write: if true; }
     match /productos/{docId} { allow read, write: if true; }
     match /BPM/{docId} { allow read, write: if true; }
     match /counters/{docId} { allow read, write: if true; }

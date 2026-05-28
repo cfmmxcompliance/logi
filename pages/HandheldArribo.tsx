@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { AsignacionCajaModel } from '../types/asignacionCaja.ts';
 import { ArrowLeft, Loader2, Box, Clock, CheckCircle, Truck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { HandheldToolbar } from '../components/HandheldToolbar.tsx';
 
 export const HandheldArribo = () => {
   const navigate = useNavigate();
@@ -24,35 +25,18 @@ export const HandheldArribo = () => {
     return new Date(today.getTime() - tzOffset).toISOString().split('T')[0];
   };
 
-  const [selectedDate, setSelectedDate] = useState<string>(getLocalToday());
+  const [dateStart, setDateStart] = useState<string>(getLocalToday());
+  const [dateEnd, setDateEnd] = useState<string>(getLocalToday());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredCajas, setFilteredCajas] = useState<AsignacionCajaModel[]>([]);
 
-  const fetchDataForDate = async (targetDate: string) => {
+  const fetchDataForRange = async () => {
     setLoading(true);
-    // ⚡ STEP 1: Show cached data instantly
     try {
-      const cached = await asignacionCajaService.getAsignacionesByDateCached(targetDate);
-      if (cached.length > 0) {
-        cached.sort((a, b) => {
-          const tA = a.horaAsignacion || '00:00';
-          const tB = b.horaAsignacion || '00:00';
-          return tA < tB ? -1 : tA > tB ? 1 : 0;
-        });
-        setCajasDelDia(cached);
-        const initialComentarios: Record<string, string> = {};
-        const initialDocks: Record<string, string> = {};
-        cached.forEach(c => {
-          if (c.id && c.comentariosArribo) initialComentarios[c.id] = c.comentariosArribo;
-          if (c.id && c.dockArribo) initialDocks[c.id] = c.dockArribo;
-        });
-        setComentarios(initialComentarios);
-        setDocks(initialDocks);
-        setLoading(false); // UI unblocked instantly
-      }
-    } catch { /* cache miss */ }
-
-    // STEP 2: Refresh from network silently in background
-    try {
-      const cajas = await asignacionCajaService.getAsignacionesByDate(targetDate);
+      const cajas = dateStart === dateEnd 
+        ? await asignacionCajaService.getAsignacionesByDate(dateStart)
+        : await asignacionCajaService.getAsignacionesByDateRange(dateStart, dateEnd);
+      
       cajas.sort((a, b) => {
         const tA = a.horaAsignacion || '00:00';
         const tB = b.horaAsignacion || '00:00';
@@ -60,7 +44,6 @@ export const HandheldArribo = () => {
       });
       setCajasDelDia(cajas);
 
-      // Pre-fill comments and docks from existing data
       const initialComentarios: Record<string, string> = {};
       const initialDocks: Record<string, string> = {};
       cajas.forEach(c => {
@@ -78,8 +61,22 @@ export const HandheldArribo = () => {
   };
 
   useEffect(() => {
-    fetchDataForDate(selectedDate);
-  }, [selectedDate]);
+    fetchDataForRange();
+  }, [dateStart, dateEnd]);
+
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredCajas(cajasDelDia);
+      return;
+    }
+    const term = searchTerm.toLowerCase();
+    setFilteredCajas(cajasDelDia.filter(c => 
+      (c.numeroCaja || '').toLowerCase().includes(term) ||
+      (c.placas || '').toLowerCase().includes(term) ||
+      (c.numeroOperacion || '').toLowerCase().includes(term) ||
+      (c.transportista || '').toLowerCase().includes(term)
+    ));
+  }, [cajasDelDia, searchTerm]);
 
   const getNow = (): string => {
     const now = new Date();
@@ -100,7 +97,6 @@ export const HandheldArribo = () => {
       const dockArribo = docks[caja.id] || '';
       await asignacionCajaService.updateAsignacion(caja.id, { arribo, comentariosArribo, dockArribo });
 
-      // Optimistic local update
       setCajasDelDia(prev =>
         prev.map(c => c.id === caja.id ? { ...c, arribo, comentariosArribo, dockArribo } : c)
       );
@@ -114,8 +110,6 @@ export const HandheldArribo = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col font-sans">
-
-      {/* Header */}
       <div className="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-10 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
           <button
@@ -133,33 +127,26 @@ export const HandheldArribo = () => {
         </div>
       </div>
 
-      {/* Date Selector */}
-      <div className="bg-slate-900 border-b border-slate-800 p-4 sticky top-[68px] z-[9]">
-        <div className="flex items-center bg-slate-800 rounded-xl p-1 border border-slate-700">
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={e => setSelectedDate(e.target.value)}
-            className="w-full bg-transparent text-slate-300 font-bold px-3 py-2 outline-none [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
-          />
-        </div>
-      </div>
+      <HandheldToolbar
+        dateStart={dateStart} setDateStart={setDateStart}
+        dateEnd={dateEnd} setDateEnd={setDateEnd}
+        searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+      />
 
-      {/* List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-10">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-500">
             <Loader2 className="animate-spin mb-4" size={32} />
             <p>Consultando cajas...</p>
           </div>
-        ) : cajasDelDia.length === 0 ? (
+        ) : filteredCajas.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-500 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-900/30 px-4">
             <Box size={48} className="mb-4 opacity-50" />
             <p className="font-medium text-lg text-slate-400">Sin Movimientos</p>
             <p className="text-sm mt-1">No hay cajas asignadas para esta fecha.</p>
           </div>
         ) : (
-          cajasDelDia.map(caja => {
+          filteredCajas.map(caja => {
             const isSaving = savingId === caja.id;
             const yaRegistrado = !!caja.arribo;
 

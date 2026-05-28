@@ -29,6 +29,22 @@ export const asignacionCajaService = {
     return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AsignacionCajaModel));
   },
 
+  async getAsignacionesByDateRange(start: string, end: string): Promise<AsignacionCajaModel[]> {
+    if (!db) return [];
+    try {
+      const q = query(
+        collection(db, COLLECTION_NAME),
+        where('fecha', '>=', start),
+        where('fecha', '<=', end)
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AsignacionCajaModel));
+    } catch (error) {
+      console.error('Error fetching by date range:', error);
+      return [];
+    }
+  },
+
   async addAsignacion(asignacion: AsignacionCajaModel): Promise<void> {
     const docId = asignacion.id || doc(collection(db, COLLECTION_NAME)).id;
     const docRef = doc(db, COLLECTION_NAME, docId);

@@ -3,8 +3,13 @@ import { useAuth } from '../context/AuthContext.tsx';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { liberacionDockService } from '../services/liberacionDockService.ts';
 import { AsignacionCajaModel, LiberacionDockRecord } from '../types.ts';
-import { Camera, Anchor, CheckCircle2, ChevronLeft, Loader2, ArrowRight } from 'lucide-react';
+import { Camera, Anchor, CheckCircle2, ChevronLeft, Loader2, ArrowRight, DoorOpen, Box, X, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { HandheldToolbar } from '../components/HandheldToolbar.tsx';
+import { uploadFileToDrive } from '../services/googleDriveService.ts';
+import { waitForOnline } from '../hooks/useOnlineStatus.ts';
+import { useUploadGuard } from '../hooks/useUploadGuard.ts';
+import { UploadStatusBanner, UploadStatus } from '../components/UploadStatusBanner.tsx';
 
 export const HandheldLiberacionDock = () => {
   const { user } = useAuth();
@@ -12,7 +17,14 @@ export const HandheldLiberacionDock = () => {
 
   const [loading, setLoading] = useState(true);
   const [cajasAsignadas, setCajasAsignadas] = useState<AsignacionCajaModel[]>([]);
+  const [liberacionesDock, setLiberacionesDock] = useState<LiberacionDockRecord[]>([]);
+  const [filteredCajas, setFilteredCajas] = useState<AsignacionCajaModel[]>([]);
   const [selectedCaja, setSelectedCaja] = useState<AsignacionCajaModel | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const [dateStart, setDateStart] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }));
+  const [dateEnd, setDateEnd] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }));
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [fotoCajaFile, setFotoCajaFile] = useState<File | null>(null);
   const [fotoPuertasFile, setFotoPuertasFile] = useState<File | null>(null);
@@ -22,11 +34,24 @@ export const HandheldLiberacionDock = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const fetchDataForDate = async (targetDate: string) => {
+  // Upload state
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
+  const [uploadStatusLabel, setUploadStatusLabel] = useState<string | undefined>(undefined);
+  const [uploadError, setUploadError] = useState<string | undefined>(undefined);
+
+  useUploadGuard(uploadStatus === 'uploading' || uploadStatus === 'waiting-online');
+
+  const fetchDataForRange = async () => {
     setLoading(true);
     try {
-      const data = await asignacionCajaService.getAsignacionesByDate(targetDate);
-      setCajasAsignadas(data);
+      const [dataCajas, dataLibs] = await Promise.all([
+        asignacionCajaService.getAsignacionesByDateRange(dateStart, dateEnd),
+        dateStart === dateEnd 
+          ? liberacionDockService.getLiberacionesDockByDate(dateStart) 
+          : liberacionDockService.getLiberacionesDockByDateRange(dateStart, dateEnd)
+      ]);
+      setCajasAsignadas(dataCajas);
+      setLiberacionesDock(dataLibs);
     } catch (error) {
       console.error(error);
     } finally {
@@ -35,16 +60,50 @@ export const HandheldLiberacionDock = () => {
   };
 
   useEffect(() => {
-    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
-    fetchDataForDate(today);
-  }, []);
+    fetchDataForRange();
+  }, [dateStart, dateEnd]);
 
-  const handleCaptureImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredCajas(cajasAsignadas);
+      return;
+    }
+    const term = searchTerm.toLowerCase();
+    setFilteredCajas(cajasAsignadas.filter(c => 
+      (c.numeroCaja || '').toLowerCase().includes(term) ||
+      (c.placas || '').toLowerCase().includes(term) ||
+      (c.numeroOperacion || '').toLowerCase().includes(term) ||
+      (c.transportista || '').toLowerCase().includes(term)
+    ));
+  }, [cajasAsignadas, searchTerm]);
+
+  const getLiberacionDockForCaja = (cajaId: string) => liberacionesDock.find(l => l.asignacionCajaId === cajaId);
+
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+
+  const handleCaptureImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (activeCameraStep === 1) setFotoCajaFile(file);
-      else if (activeCameraStep === 2) setFotoPuertasFile(file);
+      const step = activeCameraStep;
+      // Limpiar el input
+      e.target.value = '';
       setActiveCameraStep(null);
+      setIsProcessingImage(true);
+
+      try {
+        const compressedBase64 = await compressImage(file);
+        const res = await fetch(compressedBase64);
+        const blob = await res.blob();
+        const compressedFile = new File([blob], `compressed_${file.name}`, { type: 'image/jpeg' });
+
+        if (step === 1) setFotoCajaFile(compressedFile);
+        else if (step === 2) setFotoPuertasFile(compressedFile);
+      } catch (err) {
+        console.error("Error comprimiendo foto:", err);
+        alert("No se pudo procesar la foto.");
+      } finally {
+        setIsProcessingImage(false);
+      }
     }
   };
 
@@ -53,14 +112,96 @@ export const HandheldLiberacionDock = () => {
     document.getElementById('hidden-camera-input')?.click();
   };
 
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          const MAX_SIZE = 1440;
+          if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } }
+          else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
+          canvas.width = Math.round(width);
+          canvas.height = Math.round(height);
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        };
+        img.onerror = () => reject(new Error('Error al cargar imagen.'));
+      };
+      reader.onerror = () => reject(new Error('Error al leer archivo.'));
+    });
+  };
+
+  const uploadEvidenciasBackground = async (
+    cajaFile: File,
+    puertasFile: File,
+    libId: string,
+    numeroCaja: string
+  ) => {
+    const FOLDER_ID = '1jBIvDIbXAP2eGFyVM3J2i5iZWjaEdO9X';
+    const MAX_RETRIES = 3;
+
+    if (!navigator.onLine) {
+      setUploadStatus('waiting-online');
+      setUploadStatusLabel('Sin señal — esperando conexión para subir fotos...');
+      await waitForOnline();
+    }
+
+    setUploadStatus('uploading');
+    setUploadStatusLabel('Subiendo 2 fotos a Drive...');
+    setUploadError(undefined);
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const ts = Date.now();
+        const [cajaRes, puertasRes] = await Promise.all([
+          uploadFileToDrive(cajaFile, `libdock_${numeroCaja}_CAJA_${ts}.jpg`, FOLDER_ID),
+          uploadFileToDrive(puertasFile, `libdock_${numeroCaja}_PUERTAS_${ts}.jpg`, FOLDER_ID),
+        ]);
+        const cajaUrl = cajaRes?.webViewLink || (cajaRes as any)?.url || '';
+        const puertasUrl = puertasRes?.webViewLink || (puertasRes as any)?.url || '';
+
+        if (!cajaUrl || !puertasUrl) {
+          setUploadError('Drive respondió pero sin URLs.');
+          setUploadStatus('error');
+          return;
+        }
+
+        await liberacionDockService.updateLiberacionDock(libId, {
+          fotos: { cajaUrl, puertasUrl },
+        });
+
+        setUploadStatus('done');
+        setUploadStatusLabel('2 fotos subidas ✔');
+        setTimeout(() => setUploadStatus('idle'), 4000);
+        return;
+      } catch (err: any) {
+        setUploadError(err.message);
+        if (attempt < MAX_RETRIES) {
+          if (!navigator.onLine) { setUploadStatus('waiting-online'); await waitForOnline(); }
+          setUploadStatus('uploading');
+          setUploadStatusLabel(`Reintentando (${attempt + 1}/${MAX_RETRIES})...`);
+          await new Promise(r => setTimeout(r, 2000 * attempt));
+        } else {
+          setUploadStatus('error');
+        }
+      }
+    }
+  };
+
   const handleSave = async () => {
     if (!selectedCaja || !fotoCajaFile || !fotoPuertasFile) return;
     setIsSaving(true);
     setErrorMsg(null);
     try {
-      const selectedDate = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+      // 1. Guardar en Firestore con PENDING
       const record: LiberacionDockRecord = {
-        fechaLiberacion: selectedDate,
+        fechaLiberacion: selectedCaja.fecha || dateStart,
         asignacionCajaId: selectedCaja.id || '',
         numeroCaja: selectedCaja.numeroCaja,
         usuario: user?.email || user?.username || user?.name || 'operario',
@@ -68,15 +209,22 @@ export const HandheldLiberacionDock = () => {
         fotos: { cajaUrl: 'PENDING', puertasUrl: 'PENDING' },
         createdAt: new Date().toISOString(),
       };
-      await liberacionDockService.addLiberacionDock(record);
+      const libId = await liberacionDockService.addLiberacionDock(record);
+      
+      // Optimistic update so it shows as closed immediately
+      setLiberacionesDock(prev => [...prev, { ...record, id: libId }]);
       setSaveSuccess(true);
+      
+      // 2. Iniciar subida a Drive en segundo plano y limpiar UI instantáneamente
+      uploadEvidenciasBackground(fotoCajaFile, fotoPuertasFile, libId, selectedCaja.numeroCaja);
+
       setTimeout(() => {
         setSaveSuccess(false);
         setSelectedCaja(null);
         setFotoCajaFile(null);
         setFotoPuertasFile(null);
-        fetchDataForDate(selectedDate);
-      }, 2000);
+        fetchDataForRange();
+      }, 1500);
     } catch (e: any) {
       setErrorMsg(e.message || 'Error al guardar');
     } finally {
@@ -90,6 +238,7 @@ export const HandheldLiberacionDock = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col text-slate-100 font-sans relative">
+      <UploadStatusBanner status={uploadStatus} label={uploadStatusLabel} error={uploadError} />
       <div className="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-10 flex items-center shadow-md">
         <button onClick={() => navigate('/m/home')} className="p-2 -ml-2 rounded-full hover:bg-slate-800 text-slate-400 transition-colors">
           <ChevronLeft size={24} />
@@ -99,6 +248,15 @@ export const HandheldLiberacionDock = () => {
           <h1 className="text-lg font-bold text-white tracking-tight leading-none">Liberación de Dock</h1>
         </div>
       </div>
+
+      {!selectedCaja && !saveSuccess && (
+        <HandheldToolbar
+          dateStart={dateStart} setDateStart={setDateStart}
+          dateEnd={dateEnd} setDateEnd={setDateEnd}
+          searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+          onSearch={() => {}}
+        />
+      )}
 
       <div className="flex-1 overflow-y-auto p-4 pb-24">
         {errorMsg && (
@@ -117,17 +275,62 @@ export const HandheldLiberacionDock = () => {
           </div>
         ) : !selectedCaja ? (
           <div>
-            <h2 className="text-xs font-bold text-slate-500 tracking-widest uppercase mb-4 px-1">SELECCIONA UNA CAJA ({cajasAsignadas.length})</h2>
+            <h2 className="text-xs font-bold text-slate-500 tracking-widest uppercase mb-4 px-1 mt-4">CAJAS ENCONTRADAS ({filteredCajas.length})</h2>
             <div className="grid grid-cols-1 gap-3">
-              {cajasAsignadas.map(c => (
-                <button key={c.id} onClick={() => setSelectedCaja(c)} className="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-5 rounded-2xl flex items-center justify-between text-left transition-all active:scale-95 shadow-sm">
-                  <div>
-                    <h3 className="text-2xl font-black text-white tracking-tight">{c.numeroCaja}</h3>
-                    <p className="text-sky-400 text-sm font-semibold mt-1">Op: {c.numeroOperacion || 'N/A'}</p>
+              {filteredCajas.map(c => {
+                const lib = getLiberacionDockForCaja(c.id!);
+                const yaLiberada = !!lib;
+                return (
+                  <div key={c.id} onClick={() => { if (!yaLiberada) setSelectedCaja(c); }} className={`relative p-5 rounded-2xl border transition-all ${yaLiberada ? 'bg-emerald-950/20 border-emerald-900/50 opacity-90' : 'bg-slate-900 hover:bg-slate-800 border-slate-800 active:scale-95 cursor-pointer shadow-sm'}`}>
+                    {yaLiberada && (
+                      <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1 shadow-sm">
+                        <CheckCircle size={12} /> LIBERADA
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between text-left">
+                      <div>
+                        <h3 className="text-2xl font-black text-white tracking-tight">{c.numeroCaja}</h3>
+                        <p className="text-sky-400 text-sm font-semibold mt-1">Op: {c.numeroOperacion || 'N/A'}</p>
+                        <p className="text-slate-400 text-xs mt-1">{c.fecha}</p>
+                      </div>
+                      {!yaLiberada && <ArrowRight size={24} className="text-slate-600" />}
+                    </div>
+
+                    {yaLiberada && (
+                      <div className="mt-4 bg-emerald-900/30 p-3 rounded-xl border border-emerald-800/50 flex flex-col gap-2">
+                        <span className="text-[10px] text-emerald-400 uppercase font-bold tracking-widest">Evidencias Guardadas</span>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const url = lib.fotos?.cajaUrl;
+                              if (url && url !== 'PENDING') setPreviewUrl(url.replace('/view', '/preview'));
+                            }}
+                            className={`p-3 rounded-xl border transition-colors ${lib.fotos?.cajaUrl && lib.fotos.cajaUrl !== 'PENDING' ? 'bg-slate-800 text-blue-400 hover:text-white border-slate-700 hover:border-blue-500' : 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed opacity-40'}`}
+                            title={lib.fotos?.cajaUrl === 'PENDING' ? 'Subiendo...' : 'Ver foto Caja'}
+                          >
+                            <Box size={24} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const url = lib.fotos?.puertasUrl;
+                              if (url && url !== 'PENDING') setPreviewUrl(url.replace('/view', '/preview'));
+                            }}
+                            className={`p-3 rounded-xl border transition-colors ${lib.fotos?.puertasUrl && lib.fotos.puertasUrl !== 'PENDING' ? 'bg-slate-800 text-orange-400 hover:text-white border-slate-700 hover:border-orange-500' : 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed opacity-40'}`}
+                            title={lib.fotos?.puertasUrl === 'PENDING' ? 'Subiendo...' : 'Ver foto Puertas'}
+                          >
+                            <DoorOpen size={24} />
+                          </button>
+                        </div>
+                        <span className="text-[10px] text-emerald-500/70 pt-1 mt-1 block border-t border-emerald-800/50">{lib.fechaHoraRegistro} - {lib.usuario}</span>
+                      </div>
+                    )}
                   </div>
-                  <ArrowRight size={24} className="text-slate-600" />
-                </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         ) : (
@@ -172,6 +375,25 @@ export const HandheldLiberacionDock = () => {
           </div>
         )}
       </div>
+
+      {/* IMAGE PREVIEW MODAL */}
+      {previewUrl && (
+        <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col animate-in fade-in duration-200">
+          <div className="flex justify-end p-4">
+            <button onClick={() => setPreviewUrl(null)} className="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-full text-white transition-colors">
+              <X size={28} />
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-4">
+            <iframe 
+              src={previewUrl}
+              className="w-full h-full max-w-4xl max-h-[85vh] rounded-lg bg-slate-800"
+              allow="autoplay"
+              sandbox="allow-scripts allow-same-origin"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

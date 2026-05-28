@@ -432,8 +432,9 @@ export const storageService = {
         notifyListeners();
       }));
 
-      // [NEW] Incremental Parts Listener (Real-time sync for Master Data)
-      const qParts = query(collection(db, COLS.PARTS), orderBy('UPDATE_TIME', 'desc'), limit(50));
+      // Real-time Parts Listener — tracks ALL documents for live edits/additions
+      // No limit: Firestore caches locally after first download, subsequent sessions are instant.
+      const qParts = collection(db, COLS.PARTS);
       unsubscribers.push(onSnapshot(qParts, (snap) => {
         let changed = false;
         let newParts = [...dbState.parts];
@@ -547,117 +548,91 @@ export const storageService = {
       isMDLoading = true;
       notifyListeners();
 
-      // 1. HYDRATE FROM INDEXEDDB
-      if (dbState.parts.length < 10) {
-        const localParts = await indexedDbService.getAllParts();
-        if (localParts.length > 0) {
-          dbState.parts = localParts;
+      // 1. HYDRATE FROM INDEXEDDB (instant load on repeat visits)
+      const localParts = await indexedDbService.getAllParts();
+
+      if (localParts.length > 1000) {
+        // IndexedDB has the full dataset — merge with any real-time listener changes
+        const listenerIds = new Set(dbState.parts.map(p => p.id));
+        const fromIdb = localParts.filter(p => !listenerIds.has(p.id));
+        dbState.parts = [...dbState.parts, ...fromIdb];
+        console.log(`[MD] Hydrated ${dbState.parts.length} parts from IndexedDB.`);
+        notifyListeners();
+        isMDLoading = false;
+        notifyListeners();
+      } else {
+        // IndexedDB is empty or stale — do ONE full batched download from Firebase
+        console.log('[MD] IndexedDB cold start. Downloading full Master Data from Firebase...');
+        isMDLoading = false; // Show progress as we go
+        notifyListeners();
+
+        const BATCH = 2000;
+        let allCloud: RawMaterialPart[] = [];
+        let lastDoc: any = null;
+        let hasMore = true;
+
+        while (hasMore) {
+          const q = lastDoc
+            ? query(collection(db, COLS.PARTS), orderBy('PART_NUMBER'), startAfter(lastDoc), limit(BATCH))
+            : query(collection(db, COLS.PARTS), orderBy('PART_NUMBER'), limit(BATCH));
+
+          const snap = await getDocs(q);
+          const batch = snap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
+          allCloud = [...allCloud, ...batch];
+
+          // Update UI progressively
+          const listenerIds = new Set(dbState.parts.map(p => p.id));
+          const fresh = batch.filter(p => !listenerIds.has(p.id));
+          dbState.parts = [...dbState.parts, ...fresh];
           notifyListeners();
+
+          if (snap.docs.length < BATCH) {
+            hasMore = false;
+          } else {
+            lastDoc = snap.docs[snap.docs.length - 1];
+          }
         }
+
+        // Save everything to IndexedDB so next load is instant
+        await indexedDbService.clearParts();
+        await indexedDbService.saveParts(allCloud);
+        console.log(`[MD] Full download complete. ${allCloud.length} parts saved to IndexedDB.`);
         notifyListeners();
       }
 
-      isMDLoading = false;
-      notifyListeners();
 
-      // 2. BACKGROUND SYNC (Bidirectional cleanup)
+      // 2. BACKGROUND DELTA SYNC — only pulls records changed since last sync
       (async () => {
         try {
           isBackgroundSyncing = true;
           notifyListeners();
 
-          const partsSnap = await getDocs(collection(db, COLS.PARTS));
-          const cloudParts = partsSnap.docs.map(d => {
-            const data = d.data();
-            return {
-              ...data,
-              id: d.id,
-              PART_NUMBER: (data.PART_NUMBER || data.PartNo || data.PARTNUMBER || '').toString().toUpperCase().trim(),
-              UPDATE_TIME: data.UPDATE_TIME || '1970-01-01T00:00:00.000Z'
-            } as RawMaterialPart;
-          }).filter(p => !!p.PART_NUMBER);
-
-          const cloudIds = new Set(cloudParts.map(p => p.id));
-          // 1. Get Delta Sync (Only what changed since last load)
           const lastSyncTime = localStorage.getItem('last_parts_sync_time') || '1970-01-01T00:00:00.000Z';
           const qRecent = query(collection(db, COLS.PARTS), where('UPDATE_TIME', '>', lastSyncTime));
           const recentSnap = await getDocs(qRecent);
-
-          let updatedParts = [...dbState.parts];
-          let recentData = recentSnap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
+          const recentData = recentSnap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
 
           if (recentData.length > 0) {
-            console.log(`[Sync] Found ${recentData.length} recent changes.`);
+            console.log(`[Sync] ${recentData.length} recent changes found. Merging...`);
+            let updatedParts = [...dbState.parts];
             recentData.forEach(cloudP => {
               const standardPN = (cloudP.PART_NUMBER || '').toString().toUpperCase().trim();
-              // Kill all local ghosts of this PN
               updatedParts = updatedParts.filter(p =>
                 p.id !== cloudP.id &&
                 (p.PART_NUMBER || '').toString().toUpperCase().trim() !== standardPN
               );
               updatedParts.push(cloudP);
             });
-            localStorage.setItem('last_parts_sync_time', new Date().toISOString());
-          }
-
-          // 2. COUNTER DISCREPANCY CHECK (Fixing the 50 vs 12K issue)
-          const localCount = updatedParts.length;
-          const cloudCount = cloudIds.size;
-
-          // Trigger full sync if:
-          // 1. Force is true
-          // 2. Local count is significantly more than cloud (legacy fix)
-          // 3. Local count is significantly LESS than cloud (the current bug)
-          // 4. Local count is zero but cloud has data
-          const needsFullSync = force ||
-            localCount > 15000 ||
-            (cloudCount > 100 && localCount < (cloudCount * 0.8)) ||
-            (localCount === 0 && cloudCount > 0);
-
-          if (needsFullSync) {
-            console.log(`[Sync] Discrepancy detected (Local: ${localCount}, Cloud: ${cloudCount}) or forced. Refreshing full state...`);
-
-            // If we already have cloudParts from step 1, we can just use those instead of re-fetching in batches
-            // unless the collection is so gargantuan that we prefer the batched memory management.
-            // For 12K-20K, cloudParts is already in memory from line 559.
-
-            if (cloudParts.length > 0) {
-              dbState.parts = cloudParts;
-              await indexedDbService.clearParts();
-              await indexedDbService.saveParts(cloudParts);
-            } else {
-              // Fallback to batched logic if cloudParts was somehow lost or empty but ids exist
-              let allCloud: RawMaterialPart[] = [];
-              let lastVisible = null;
-              let hasMore = true;
-              const BATCH_SIZE = 2000;
-
-              while (hasMore) {
-                let qAll = lastVisible
-                  ? query(collection(db, COLS.PARTS), orderBy('UPDATE_TIME', 'desc'), startAfter(lastVisible), limit(BATCH_SIZE))
-                  : query(collection(db, COLS.PARTS), orderBy('UPDATE_TIME', 'desc'), limit(BATCH_SIZE));
-
-                const batchSnap = await getDocs(qAll);
-                const batchData = batchSnap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
-                allCloud = [...allCloud, ...batchData];
-                if (batchSnap.docs.length < BATCH_SIZE) hasMore = false;
-                else lastVisible = batchSnap.docs[batchSnap.docs.length - 1];
-              }
-              dbState.parts = allCloud;
-              await indexedDbService.clearParts();
-              await indexedDbService.saveParts(allCloud);
-            }
-
-            localStorage.setItem('last_parts_sync_time', new Date().toISOString());
-            console.log(`[Sync] Full state synchronization complete. Total items: ${dbState.parts.length}`);
-          } else if (recentData.length > 0) {
             dbState.parts = updatedParts;
+            // Persist deltas to IndexedDB so next load picks them up
             await indexedDbService.saveParts(recentData);
+            localStorage.setItem('last_parts_sync_time', new Date().toISOString());
+            notifyListeners();
+          } else {
+            console.log('[Sync] No recent changes. Master Data is up to date.');
           }
-
-          notifyListeners();
         } catch (err: any) {
-          console.error("⚠️ Background Sync Failed:", err);
+          console.error('⚠️ Background Sync Failed:', err);
         } finally {
           isBackgroundSyncing = false;
           notifyListeners();
@@ -1999,7 +1974,13 @@ export const storageService = {
     const batch = writeBatch(db);
 
     // 1. Pre-Alert UPSERT (Idempotent)
-    let preAlertId = record.id || record.bookingAbw;
+    let preAlertId = (record.id || record.bookingAbw || '').trim();
+    if (!preAlertId) {
+      throw new Error(
+        'No se puede guardar: el número de BL/AWB no fue detectado en el documento. ' +
+        'Por favor edita el campo "Booking/BL" manualmente en la pantalla de revisión antes de guardar.'
+      );
+    }
     const preAlertRef = doc(db, COLS.PRE_ALERTS, preAlertId);
     batch.set(preAlertRef, sanitizeForFirestore({ ...record, processed: true, id: preAlertId, linkedContainers: containers.map(c => c.containerNo) }), { merge: true });
 

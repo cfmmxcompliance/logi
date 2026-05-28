@@ -13,6 +13,7 @@ import { useUploadGuard } from '../hooks/useUploadGuard.ts';
 import { waitForOnline } from '../hooks/useOnlineStatus.ts';
 import { UploadStatusBanner, UploadStatus } from '../components/UploadStatusBanner.tsx';
 import { SelloMismatchAlert } from '../components/SelloMismatchAlert.tsx';
+import { HandheldToolbar } from '../components/HandheldToolbar.tsx';
 
 export const HandheldSellos = () => {
   const navigate = useNavigate();
@@ -37,7 +38,10 @@ export const HandheldSellos = () => {
     return (new Date(today.getTime() - tzOffset)).toISOString().split('T')[0];
   };
 
-  const [selectedDate, setSelectedDate] = useState<string>(getLocalToday());
+  const [dateStart, setDateStart] = useState<string>(getLocalToday());
+  const [dateEnd, setDateEnd] = useState<string>(getLocalToday());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredCajas, setFilteredCajas] = useState<AsignacionCajaModel[]>([]);
 
   // Modal State
   const [selectedCaja, setSelectedCaja] = useState<AsignacionCajaModel | null>(null);
@@ -75,15 +79,15 @@ export const HandheldSellos = () => {
     ]);
   };
 
-  const fetchDataForDate = async (targetDate: string) => {
+  const fetchDataForRange = async () => {
     setLoading(true);
     
-    // ⚡ STEP 1: Show cached data instantly (< 50ms on revisits)
-    try {
-      const [cachedCajas, cachedSellos] = await Promise.all([
-        asignacionCajaService.getAsignacionesByDateCached(targetDate),
-        selloService.getSellosByDateCached(targetDate)
-      ]);
+    if (dateStart === dateEnd) {
+      try {
+        const [cachedCajas, cachedSellos] = await Promise.all([
+          asignacionCajaService.getAsignacionesByDateCached(dateStart),
+          selloService.getSellosByDateCached(dateStart)
+        ]);
       
       if (cachedCajas.length > 0) {
         cachedCajas.sort((a, b) => {
@@ -103,13 +107,14 @@ export const HandheldSellos = () => {
       }
     } catch { /* cache miss */ }
 
-    // STEP 2: Refresh from network silently in background
+    }
+
     try {
       const [cajasParaFecha, sellosParaFecha, liberacionesParaFecha] = await fetchWithTimeout(
         Promise.all([
-          asignacionCajaService.getAsignacionesByDate(targetDate),
-          selloService.getSellosByDate(targetDate),
-          liberacionService.getLiberacionesByDate(targetDate),
+          dateStart === dateEnd ? asignacionCajaService.getAsignacionesByDate(dateStart) : asignacionCajaService.getAsignacionesByDateRange(dateStart, dateEnd),
+          dateStart === dateEnd ? selloService.getSellosByDate(dateStart) : selloService.getSellosByDateRange(dateStart, dateEnd),
+          dateStart === dateEnd ? liberacionService.getLiberacionesByDate(dateStart) : liberacionService.getLiberacionesByDateRange(dateStart, dateEnd),
         ]),
         12000 // 12 seconds max wait
       );
@@ -149,8 +154,22 @@ export const HandheldSellos = () => {
   };
 
   useEffect(() => {
-    fetchDataForDate(selectedDate);
-  }, [selectedDate]);
+    fetchDataForRange();
+  }, [dateStart, dateEnd]);
+
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredCajas(cajasDelDia);
+      return;
+    }
+    const term = searchTerm.toLowerCase();
+    setFilteredCajas(cajasDelDia.filter(c => 
+      (c.numeroCaja || '').toLowerCase().includes(term) ||
+      (c.placas || '').toLowerCase().includes(term) ||
+      (c.numeroOperacion || '').toLowerCase().includes(term) ||
+      (c.transportista || '').toLowerCase().includes(term)
+    ));
+  }, [cajasDelDia, searchTerm]);
 
   // --- IMAGE COMPRESSION UTILITY ---
   const compressImage = (file: File): Promise<string> => {
@@ -304,7 +323,7 @@ export const HandheldSellos = () => {
       const selloExistente = getSelloForCaja(selectedCaja.id || '');
 
       const newSello: SelloRecord = {
-        fechaAsignacion: selectedDate,
+        fechaAsignacion: selectedCaja.fecha || dateStart,
         asignacionCajaId: selectedCaja.id || '',
         numeroCaja: selectedCaja.numeroCaja,
         selloAsignado: selloValue.toUpperCase().trim(),
@@ -406,17 +425,15 @@ export const HandheldSellos = () => {
           <h1 className="text-xl font-bold tracking-tight">Asignación de Sellos</h1>
           <div className="w-8"></div> {/* Spacer for centering */}
         </div>
-        
-        {/* Date Selector */}
-        <div className="flex items-center justify-between bg-slate-900 rounded-xl p-1 border border-slate-700">
-           <input 
-             type="date"
-             value={selectedDate}
-             onChange={(e) => setSelectedDate(e.target.value)}
-             className="w-full bg-transparent text-slate-300 font-bold px-3 py-2 outline-none focus:ring-0 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
-           />
-        </div>
       </header>
+
+      {!selectedCaja && !mismatchAlert && !replaceConfirm && (
+        <HandheldToolbar
+          dateStart={dateStart} setDateStart={setDateStart}
+          dateEnd={dateEnd} setDateEnd={setDateEnd}
+          searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+        />
+      )}
 
       {/* CONTENT */}
       <main className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -425,26 +442,26 @@ export const HandheldSellos = () => {
             <Loader2 size={36} className="animate-spin mb-4" />
             <p className="font-medium animate-pulse">Cargando cajas de la fecha...</p>
           </div>
-        ) : cajasDelDia.length === 0 ? (
+        ) : filteredCajas.length === 0 ? (
           <div className="bg-slate-800/50 rounded-2xl p-8 border border-slate-700/50 text-center flex flex-col items-center">
              <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mb-4">
                  <Box size={32} className="text-slate-500" />
              </div>
              <h2 className="text-xl font-bold text-slate-300">No hay cajas asignadas</h2>
              <p className="text-slate-500 mt-2 text-sm max-w-[250px]">
-               No se encontraron asignaciones terrestres para esta fecha en Master Data.
+               No se encontraron asignaciones terrestres para este rango.
              </p>
           </div>
         ) : (
           <div className="space-y-3">
              <div className="flex justify-between items-end pb-2">
-                 <h2 className="text-slate-400 text-sm font-bold uppercase tracking-wider">Cajas ({cajasDelDia.length})</h2>
+                 <h2 className="text-slate-400 text-sm font-bold uppercase tracking-wider">Cajas ({filteredCajas.length})</h2>
                  <span className="text-xs bg-slate-800 px-2 py-1 rounded-md text-slate-300 border border-slate-700">
                      {sellosDelDia.length} Selladas
                  </span>
              </div>
              
-             {cajasDelDia.map((caja, index) => {
+             {filteredCajas.map((caja, index) => {
                 const selloExistente = getSelloForCaja(caja.id || "");
                 const isCompleted = !!selloExistente;
 
@@ -497,12 +514,22 @@ export const HandheldSellos = () => {
                                     >
                                         <ImageIcon size={20} />
                                     </button>
+                                ) : selloExistente.fotoUrl === 'PENDING' ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); }}
+                                      className="p-2 bg-slate-800 rounded-full text-slate-500 border border-slate-700 opacity-50 cursor-wait shadow-sm flex items-center justify-center"
+                                      title="Subiendo foto a Drive..."
+                                      disabled
+                                    >
+                                        <Loader2 size={20} className="animate-spin" />
+                                    </button>
                                 ) : (
                                     <button
                                       type="button"
                                       onClick={(e) => { e.stopPropagation(); setSelectedCaja(caja); setSelloValue(selloExistente?.selloAsignado || ""); setCurrentImageFile(null); }}
                                       className="p-2 bg-slate-800 rounded-full text-amber-400 hover:text-white border border-slate-700 hover:border-amber-500 transition-colors shadow-sm"
-                                      title="Foto pendiente — toca para agregar"
+                                      title="Foto faltante — toca para agregar"
                                     >
                                         <ImageIcon size={20} />
                                     </button>

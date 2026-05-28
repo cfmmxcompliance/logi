@@ -2,6 +2,9 @@ import { GoogleGenAI } from "@google/genai";
 import { PedimentoRecord } from '../types.ts';
 import { PDFDocument } from 'pdf-lib';
 import { PedimentoData as DomainPedimentoData } from './pedimentoParser';
+import { storageService } from './storageService';
+import { db } from './firebaseConfig';
+import { collection, getDocs, getCountFromServer, query, where, limit, orderBy } from 'firebase/firestore';
 
 // Senior Frontend Engineer: Use GoogleGenAI with the recommended direct API key access.
 const getClient = () => {
@@ -854,8 +857,7 @@ export const geminiService = {
     Analyze this shipping document (Bill of Lading, AWB, or Arrival Notice) EXPERTLY.
     Extract the following data into a strict JSON object:
 
-    - docType: "BL" or "AWB"
-    - bookingNo: The FULL Alphanumeric Booking/BL Number. (e.g. "EGLV12345678" NOT "12345678"). MUST include the carrier prefix (EGLV, COSU, MAEU, ONEY, MEDU, etc.).
+    - bookingNo: The FULL Alphanumeric Booking/BL/MBL/HBL Number. Can be standard (e.g., "EGLV12345678") or non-standard (e.g., "NGB26041832", "C232154202").
     - vesselOrFlight: Vessel Name and Voyage.
     - etd: YYYY-MM-DD.
     - eta: YYYY-MM-DD.
@@ -869,13 +871,13 @@ export const geminiService = {
 
     CRITICAL INSTRUCTIONS:
     1. **EXTRACT THE BOOKING / BL NUMBER.**
-       - Look for "B/L No", "Booking Ref", "Bill of Lading", "Waybill Number".
-       - Must include the carrier prefix (e.g. EGLV, COSU, MAEU, HLCU).
-       - Example: "EGLV143574071475" (Letters + Numbers).
+       - Look for "B/L No", "Booking Ref", "Bill of Lading", "Waybill Number", "MBL", or "HBL".
+       - Do NOT restrict to 4-letter carrier prefixes. Accept 3-letter prefixes (e.g., NGB), 1-letter (e.g., C), or purely alphanumeric strings if they clearly represent the BL.
+       - If multiple exist, prefer the Master BL (MBL) or the most prominent one.
     2. **EXTRACT ALL CONTAINERS.**
        - Scan the ENTIRE document for standard container patterns (4 Letters + 7 Numbers, e.g. TGBU6578012).
        - Check "Marks & Numbers", "Description", and "Container No" columns.
-       - Do not miss containers listed in the body text or description.
+       - CRITICAL: Some documents list containers inside the body text in the exact format "CONT_NO/SEAL_NO/SIZE" followed by "PKGS/WEIGHT/CBM". For example: "YMMU6693614/YMAW477556/40HC". You MUST extract these. Do not miss them!
     3. If multiple dates exist, use the most prominent ETD/ETA.
     4. Do NOT hallucinate. If a field is missing, return null.
   `;
@@ -1350,11 +1352,206 @@ export const geminiService = {
 
   async chatAssistant(messages: any[]): Promise<string> {
     const ai = getClient();
-    const response = await ai.models.generateContent({
+    
+    // Configurar herramientas: Búsqueda en DB interna (Function Calling)
+    const chatTools = [
+      {
+        functionDeclarations: [
+          {
+            name: "queryLogimasterData",
+            description: "Busca en la base de datos interna de Logimaster (Master Data, Embarques, Contenedores, Aduanas, etc.). Úsala SIEMPRE que te pregunten sobre datos operativos antes de decir que no sabes.",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                action: {
+                  type: "STRING",
+                  description: "Obligatorio. 'count' (total en la nube), 'search' (buscar un término), 'analyze' (filtrar o contar registros basados en una columna específica, ej. CLAVESAT vacía)."
+                },
+                collection: {
+                  type: "STRING",
+                  description: "Colección a consultar. Valores permitidos: 'parts' (Master Data), 'shipments' (Embarques), 'vesselTracking', 'customsClearance'."
+                },
+                searchTerm: {
+                  type: "STRING",
+                  description: "Opcional. Término a buscar si action es 'search'."
+                },
+                filterColumn: {
+                  type: "STRING",
+                  description: "Nombre exacto de la columna a evaluar (ej. 'CLAVESAT', 'PART_NUMBER') si action es 'analyze'."
+                },
+                filterOperator: {
+                  type: "STRING",
+                  description: "Operador de filtro: 'not_empty', 'empty', 'equals', 'contains' si action es 'analyze'."
+                },
+                filterValue: {
+                  type: "STRING",
+                  description: "Valor a comparar si el operador es 'equals' o 'contains'."
+                }
+              },
+              required: ["action", "collection"]
+            }
+          }
+        ]
+      }
+    ];
+
+    let currentMessages = [...messages];
+
+    // Primer intento de generación
+    let response = await ai.models.generateContent({
       model: 'gemini-2.0-flash',
-      contents: messages,
+      contents: currentMessages,
+      config: {
+        tools: chatTools as any
+      }
     });
-    return response.text || "";
+
+    // Manejar llamadas a funciones
+    if (response.functionCalls && response.functionCalls.length > 0) {
+      // Agregar la respuesta del asistente (con el function call) al historial
+      const call = response.functionCalls[0];
+      
+      currentMessages.push({
+        role: "model",
+        parts: [{ functionCall: call }]
+      });
+
+      let functionResponseData = {};
+
+      if (call.name === "queryLogimasterData") {
+        try {
+          const args = call.args || {};
+          const action = args.action || 'search';
+          const col = args.collection || 'parts';
+          const searchTerm = args.searchTerm || '';
+          const filterColumn = args.filterColumn || '';
+          const filterOperator = args.filterOperator || 'not_empty';
+          const filterValue = args.filterValue || '';
+
+          if (action === 'analyze' && filterColumn) {
+            // Local memory scan — accurate because onSnapshot now loads ALL parts (no limit)
+            const dbState = storageService.getLocalState();
+            const dataArray: any[] = (
+              col === 'parts' ? dbState.parts :
+              col === 'shipments' ? dbState.shipments :
+              col === 'vesselTracking' ? dbState.vesselTracking :
+              dbState.customsClearance
+            ) || [];
+
+            let matchCount = 0;
+            const sample: any[] = [];
+
+            for (const item of dataArray) {
+              const raw = item[filterColumn];
+              const strVal = raw !== undefined && raw !== null ? String(raw).trim() : '';
+              let matches = false;
+
+              if (filterOperator === 'not_empty') matches = strVal !== '';
+              else if (filterOperator === 'empty')  matches = strVal === '';
+              else if (filterOperator === 'equals') matches = strVal.toLowerCase() === String(filterValue).trim().toLowerCase();
+              else if (filterOperator === 'contains') matches = strVal.toLowerCase().includes(String(filterValue).trim().toLowerCase());
+
+              if (matches) {
+                matchCount++;
+                if (sample.length < 5) sample.push({ PART_NUMBER: item.PART_NUMBER, [filterColumn]: strVal });
+              }
+            }
+
+            functionResponseData = {
+              totalLoaded: dataArray.length,
+              matchesFound: matchCount,
+              columnAnalyzed: filterColumn,
+              operatorUsed: filterOperator,
+              filterValue: filterValue || null,
+              sample,
+              message: `De ${dataArray.length} registros en memoria, ${matchCount} cumplen: ${filterColumn} ${filterOperator} ${filterValue || ''}`
+            };
+          } else if (action === 'count') {
+            const snapshot = await getCountFromServer(collection(db, col));
+            const totalEnDB = snapshot.data().count;
+            functionResponseData = { totalEnDB, note: `Esta es la cantidad real e histórica de registros en la nube para la colección ${col}.` };
+          } else {
+            // Search: intenta primero Firebase con índice, luego escaneo local en TODOS los campos
+            const term = (searchTerm || '').trim();
+            const termUpper = term.toUpperCase();
+            let cloudResults: any[] = [];
+
+            try {
+              let q;
+              if (termUpper && col === 'parts') {
+                q = query(collection(db, col), where('PART_NUMBER', '>=', termUpper), where('PART_NUMBER', '<=', termUpper + '\uf8ff'), limit(50));
+              } else if (termUpper && col === 'shipments') {
+                q = query(collection(db, col), where('BL_NUMBER', '>=', termUpper), where('BL_NUMBER', '<=', termUpper + '\uf8ff'), limit(50));
+              } else {
+                q = query(collection(db, col), orderBy('UPDATE_TIME', 'desc'), limit(50));
+              }
+              const snap = await getDocs(q);
+              cloudResults = snap.docs.map(d => d.data());
+            } catch (e) {
+              console.warn('Firebase search failed:', e);
+            }
+
+            if (cloudResults.length > 0) {
+              functionResponseData = { results: cloudResults, count: cloudResults.length, source: 'firebase_cloud' };
+            } else {
+              // Escaneo local en TODOS los campos del objeto (no solo PART_NUMBER)
+              const dbState = storageService.getLocalState();
+              const dataArray: any[] = (col === 'parts' ? dbState.parts : col === 'shipments' ? dbState.shipments : col === 'vesselTracking' ? dbState.vesselTracking : dbState.customsClearance) || [];
+              const termLower = term.toLowerCase();
+              const localResults = dataArray.filter(item =>
+                Object.values(item).some(val => val && String(val).toLowerCase().includes(termLower))
+              ).slice(0, 100);
+              functionResponseData = { results: localResults, count: localResults.length, source: 'local_full_scan', totalLoaded: dataArray.length };
+            }
+          }
+        } catch (err) {
+          console.error("Function Calling Firebase Error:", err);
+          functionResponseData = { error: String(err) };
+        }
+      }
+
+      // Enviar la respuesta de la función a Gemini
+      currentMessages.push({
+        role: "user",
+        parts: [{
+          functionResponse: {
+            name: call.name,
+            response: functionResponseData
+          }
+        }]
+      });
+
+      // Segundo intento de generación con el contexto de la función
+      response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: currentMessages,
+        config: {
+          tools: chatTools as any
+        }
+      });
+    }
+
+    let finalAnswer = response.text || "";
+
+    if (finalAnswer.includes("RETRY_WITH_GOOGLE")) {
+      // El modelo determinó que necesita internet (no está en BD o es consulta general)
+      // Hacemos una nueva llamada limpia, esta vez activando SÓLO la herramienta de Google Search.
+      try {
+        const googleResponse = await ai.models.generateContent({
+          model: 'gemini-2.0-flash',
+          contents: messages, // Utilizamos los mensajes originales limpios de function calling
+          config: {
+            tools: [{ googleSearch: {} }] as any
+          }
+        });
+        finalAnswer = googleResponse.text || "Lo siento, no pude encontrar esa información ni en la base de datos ni en internet.";
+      } catch (err) {
+        console.error("Google Search Fallback Error:", err);
+        finalAnswer = "Hubo un problema intentando buscar en internet. Por favor, intenta de nuevo.";
+      }
+    }
+
+    return finalAnswer;
   },
 
   /**

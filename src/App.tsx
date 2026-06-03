@@ -54,6 +54,7 @@ import { AdminProductos53 } from '../pages/AdminProductos53.tsx';
 import { AdminVentanas53 } from '../pages/AdminVentanas53.tsx';
 import { DemandaCajas53 } from '../pages/DemandaCajas53.tsx';
 import { ReservaVentanas53 } from '../pages/ReservaVentanas53.tsx';
+import { WMSControl } from '../pages/wms/WMSControl.tsx';
 import { storageService } from '../services/storageService.ts';
 import { trackingService } from '../services/trackingService.ts';
 import { AuthProvider, useAuth } from '../context/AuthContext.tsx';
@@ -368,6 +369,8 @@ const AppContent = () => {
             <Route path="/daily-audit" element={<ProtectedRoute><DailyAudit /></ProtectedRoute>} />
             <Route path="/bpm" element={<ProtectedRoute><BPMClasificacion /></ProtectedRoute>} />
             <Route path="/daily-van-assignment" element={<ProtectedRoute><DailyVanAssignment /></ProtectedRoute>} />
+            
+            <Route path="/wms-control" element={<ProtectedRoute><WMSControl /></ProtectedRoute>} />
 
             {/* Módulos Demanda y Reserva de Cajas 53' */}
             <Route path="/admin-productos-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER]}><AdminProductos53 /></ProtectedRoute>} />

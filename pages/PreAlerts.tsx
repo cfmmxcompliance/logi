@@ -139,18 +139,18 @@ export const PreAlerts = () => {
 
     useEffect(() => {
         setRecords(storageService.getPreAlerts());
-        const unsub = storageService.subscribe(() => {
-            setRecords([...storageService.getPreAlerts()]);
-        });
-
-        // Load specialists (roles: Admin, Editor, Embarques)
         const loadSpecialists = () => {
              const state = storageService.getLocalState();
              const users = state.users || [];
-             const editors = users.filter(u => [UserRole.ADMIN, UserRole.EDITOR, UserRole.EMBARQUES].includes(u.role));
+             const editors = users.filter(u => u.role === UserRole.EDITOR && u.scac && u.scac.trim().length > 0);
              setSpecialists(editors);
         };
         loadSpecialists();
+
+        const unsub = storageService.subscribe(() => {
+            setRecords([...storageService.getPreAlerts()]);
+            loadSpecialists();
+        });
 
         return unsub;
     }, []);

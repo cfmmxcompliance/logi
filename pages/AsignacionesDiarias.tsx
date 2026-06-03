@@ -11,10 +11,11 @@ import { CajaModel } from '../types/caja';
 import { DriverModel } from '../types/driver';
 import { CarrierModel } from '../types/carrier';
 import { TransportLineModel } from '../types/transportLine';
-import { LiberacionRecord, LiberacionDockRecord } from '../types';
+import { LiberacionRecord, LiberacionDockRecord, SelloRecord } from '../types';
 import { VigilanciaRecord } from '../types/vigilancia';
 import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle, ChevronUp, ChevronDown, RefreshCw, FileText, Loader2, Shield, AlertTriangle } from 'lucide-react';
 import { liberacionDockService } from '../services/liberacionDockService';
+import { selloService } from '../services/selloService';
 import { uploadFileToDrive } from '../services/googleDriveService.ts';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
@@ -24,6 +25,8 @@ import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import modelosCaja from '../utils/modelosCaja.json';
 import { useLanguage } from '../context/LanguageContext';
+import { SelloMismatchAlert } from '../components/SelloMismatchAlert';
+import BarcodePanelModal from '../components/BarcodePanelModal';
 
 export const AsignacionesDiarias: React.FC = () => {
   const { user } = useAuth();
@@ -41,6 +44,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [liberaciones, setLiberaciones] = useState<LiberacionRecord[]>([]);
   const [liberacionesDock, setLiberacionesDock] = useState<LiberacionDockRecord[]>([]);
   const [vigilancias, setVigilancias] = useState<VigilanciaRecord[]>([]);
+  const [sellos, setSellos] = useState<SelloRecord[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [importErrors, setImportErrors] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,6 +57,18 @@ export const AsignacionesDiarias: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [mismatchAlert, setMismatchAlert] = useState<{
+    numeroCaja: string;
+    selloOriginal: string;
+    selloLiberacion: string;
+  } | null>(null);
+
+  // Popup de códigos de barras
+  const [barcodeTarget, setBarcodeTarget] = useState<{
+    numeroOperacion: string;
+    numeroCaja: string;
+    sello: string;
+  } | null>(null);
 
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
@@ -149,7 +165,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
   const loadData = async () => {
     try {
-        const [asigData, cajasData, driversData, carriersData, liberacionesData, liberacionesDockData, linesData, vigilanciasData] = await Promise.all([
+        const [asigData, cajasData, driversData, carriersData, liberacionesData, liberacionesDockData, linesData, vigilanciasData, sellosData] = await Promise.all([
             asignacionCajaService.getAllAsignaciones().catch(() => []),
             cajaService.getAllCajas().catch(() => []),
             driverService.getAllDrivers().catch(() => []),
@@ -157,7 +173,8 @@ export const AsignacionesDiarias: React.FC = () => {
             liberacionService.getAllLiberaciones().catch(() => []),
             liberacionDockService.getAllLiberacionesDock().catch(() => []),
             transportLineService.getAllTransportLines().catch(() => []),
-            vigilanciaService.getByDate(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' })).catch(() => [])
+            vigilanciaService.getByDate(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' })).catch(() => []),
+            selloService.getAllSellos().catch(() => [])
         ]);
         setAsignaciones(asigData.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()));
         setCajas(cajasData);
@@ -167,6 +184,7 @@ export const AsignacionesDiarias: React.FC = () => {
         setLiberacionesDock(liberacionesDockData);
         setTransportLines(linesData);
         setVigilancias(vigilanciasData);
+        setSellos(sellosData);
     } catch (e) {
         console.error("Error cargando dependencias de Asignación:", e);
     } finally {
@@ -828,7 +846,36 @@ export const AsignacionesDiarias: React.FC = () => {
                     {!isEmbarques && <input type="checkbox" checked={selectedIds.has(a.id!)} onChange={() => toggleSelectRow(a.id!)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
                 </td>
                 <td className="p-4 w-[130px] min-w-[130px] max-w-[130px] bg-inherit border-r border-slate-200 font-mono font-bold tracking-wide whitespace-nowrap sticky left-[50px] z-20">
-                  <span className="text-pink-700">{a.numeroOperacion || '-'}</span>
+                  {(() => {
+                    // Logic to display barcode link if a stamp exists
+                    const selloRow = sellos.find(s =>
+                      s.asignacionCajaId === a.id ||
+                      (s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha)
+                    );
+                    const selloValor = liberacion?.selloValidado || selloRow?.selloAsignado || '';
+                    if (selloValor) {
+                      return (
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            setBarcodeTarget({
+                              numeroOperacion: a.numeroOperacion || '-',
+                              numeroCaja: a.numeroCaja,
+                              sello: selloValor,
+                            });
+                          }}
+                          title="Ver códigos de barras"
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-400 transition-all group"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500 group-hover:text-blue-700">
+                            <path d="M3 5v3M3 16v3M8 5v3M8 16v3M13 5v3M13 16v3M18 5v3M18 16v3M3 8h5M3 19h5M13 8h8M13 19h8"/>
+                          </svg>
+                          <span className="font-mono font-black text-sm">{a.numeroOperacion || '-'}</span>
+                        </button>
+                      );
+                    }
+                    return <span className="text-pink-700">{a.numeroOperacion || '-'}</span>;
+                  })()}
                 </td>
                 <td className="p-4 w-[140px] min-w-[140px] max-w-[140px] bg-inherit font-semibold text-emerald-700 font-mono tracking-wide sticky left-[180px] z-20 border-r border-slate-200">{a.numeroCaja}</td>
                 <td className="p-4 w-[150px] min-w-[150px] max-w-[150px] bg-inherit font-medium text-slate-700 whitespace-nowrap sticky left-[320px] z-20 shadow-[4px_0_10px_-3px_rgba(0,0,0,0.05)]">
@@ -1041,7 +1088,25 @@ export const AsignacionesDiarias: React.FC = () => {
       </div>{/* end table container */}
       </div>{/* end table area */}
 
+      {/* Alerta crítica de sello cambiado */}
+      <SelloMismatchAlert
+        isOpen={!!mismatchAlert}
+        numeroCaja={mismatchAlert?.numeroCaja || ''}
+        selloOriginal={mismatchAlert?.selloOriginal || ''}
+        selloLiberacion={mismatchAlert?.selloLiberacion || ''}
+        onClose={() => setMismatchAlert(null)}
+      />
 
+      {/* Popup de códigos de barras — se abre al hacer clic en No. Operación con sello */}
+      {barcodeTarget && (
+        <BarcodePanelModal
+          numeroOperacion={barcodeTarget.numeroOperacion}
+          numeroCaja={barcodeTarget.numeroCaja}
+          sello={barcodeTarget.sello}
+          onClose={() => setBarcodeTarget(null)}
+        />
+      )
+      }
 
       <CatalogQueryBuilder 
           isOpen={isMassQueryOpen}

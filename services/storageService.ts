@@ -1974,7 +1974,7 @@ export const storageService = {
     const batch = writeBatch(db);
 
     // 1. Pre-Alert UPSERT (Idempotent)
-    let preAlertId = (record.id || record.bookingAbw || '').trim();
+    let preAlertId = String(record.id || record.bookingAbw || '').replace(/[\/\\]/g, '-').trim();
     if (!preAlertId) {
       throw new Error(
         'No se puede guardar: el número de BL/AWB no fue detectado en el documento. ' +

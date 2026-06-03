@@ -1,5 +1,5 @@
 const functions = require("firebase-functions");
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onCall, HttpsError, onRequest } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const MX_TIMEZONE = 'America/Mexico_City';
@@ -616,3 +616,7 @@ exports.sendPublicationEmail = onCall({
         throw new functions.https.HttpsError("internal", err.message);
     }
 });
+
+// WMS Floor App REST API
+const wmsApi = require('./wmsApi');
+exports.api = onRequest({ cors: true, memory: "256MiB" }, wmsApi);

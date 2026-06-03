@@ -252,7 +252,7 @@ export const Settings = () => {
                                         <th className="px-6 py-3">Role</th>
                                         <th className="px-6 py-3">SCAC</th>
                                         <th className="px-6 py-3">Nombre Comercial</th>
-                                        <th className="px-6 py-3 text-right">Actions</th>
+                                        <th className="px-6 py-3 text-right sticky right-0 bg-slate-50 z-10 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -373,7 +373,7 @@ export const Settings = () => {
                                                     className="w-32 border-slate-200 rounded text-xs font-mono py-1 px-2 bg-white outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                                                 />
                                             </td>
-                                            <td className="px-6 py-3 text-right">
+                                            <td className="px-6 py-3 text-right sticky right-0 bg-white z-10 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.02)] border-l border-slate-100">
                                                 <div className="flex items-center justify-end gap-3">
                                                     {u.role === UserRole.PENDING ? (
                                                         <span className="text-xs text-amber-600 font-bold">Needs Approval</span>

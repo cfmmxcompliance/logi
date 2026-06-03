@@ -9,7 +9,7 @@ import { VigilanciaRecord } from '../types/vigilancia.ts';
 import {
   Camera, ArrowLeft, Loader2, CheckCircle, Shield,
   AlertCircle, Truck, Box, Search, XCircle,
-  AlertTriangle, Check, X
+  AlertTriangle, Check, X, ImageIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUploadGuard } from '../hooks/useUploadGuard.ts';
@@ -67,6 +67,7 @@ export const HandheldVigilancia = () => {
 
   // ── Modal ──
   const [selectedCaja, setSelectedCaja]       = useState<AsignacionCajaModel | null>(null);
+  const [drivePreviewUrl, setDrivePreviewUrl] = useState<string | null>(null);
   const [photos, setPhotos]                   = useState<Partial<Record<SectionKey, File>>>({});
   const [previews, setPreviews]               = useState<Partial<Record<SectionKey, string>>>({});
   const [isProcessing, setIsProcessing]       = useState(false);
@@ -206,7 +207,12 @@ export const HandheldVigilancia = () => {
     }
   };
 
-  // ── Background upload of all captured photos ──
+  /**
+   * uploadAllBackground — sube todas las fotos a Drive en segundo plano (fire & forget).
+   * Si no hay señal, espera sin bloquear la UI. Reintenta hasta 3 veces con back-off.
+   * Actualiza el registro de Firestore con la URL real de cada foto cuando termina.
+   * Patrón idéntico a uploadPhotoBackground en HandheldSellos.
+   */
   const uploadAllBackground = useCallback(async (
     capturedPhotos: Partial<Record<SectionKey, File>>,
     vigId: string,
@@ -229,6 +235,7 @@ export const HandheldVigilancia = () => {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
         const ts = Date.now();
+        // Upload all photos in parallel
         const uploadResults = await Promise.all(
           entries.map(([key, file]) =>
             uploadFileToDrive(
@@ -239,7 +246,7 @@ export const HandheldVigilancia = () => {
           )
         );
 
-        // Build URL map
+        // Build URL map from results
         const urlMap: Partial<Record<SectionKey, string>> = {};
         entries.forEach(([key], idx) => {
           const url = uploadResults[idx]?.webViewLink || (uploadResults[idx] as any)?.url || '';
@@ -247,12 +254,15 @@ export const HandheldVigilancia = () => {
         });
 
         if (Object.keys(urlMap).length === 0) {
-          setUploadError('Drive respondió pero sin URLs.');
+          console.error('[Drive] Upload respondió pero sin URLs:', uploadResults);
+          setUploadError('Drive subió los archivos pero no devolvió URLs.');
           setUploadStatus('error');
           return;
         }
 
+        // Update Firestore with real URLs (same as selloService.updateSello)
         await vigilanciaService.update(vigId, urlMap as any);
+        // Update local state so UI shows "Respaldado" links
         setVigilancias(prev =>
           prev.map(v => v.id === vigId ? { ...v, ...urlMap } : v)
         );
@@ -262,9 +272,13 @@ export const HandheldVigilancia = () => {
         setTimeout(() => setUploadStatus('idle'), 4000);
         return;
       } catch (err: any) {
+        console.warn(`Drive upload intento ${attempt}/${MAX_RETRIES}:`, err.message);
         setUploadError(err.message);
         if (attempt < MAX_RETRIES) {
-          if (!navigator.onLine) { setUploadStatus('waiting-online'); await waitForOnline(); }
+          if (!navigator.onLine) {
+            setUploadStatus('waiting-online');
+            await waitForOnline();
+          }
           setUploadStatus('uploading');
           setUploadLabel(`Reintentando (${attempt + 1}/${MAX_RETRIES})...`);
           await new Promise(r => setTimeout(r, 2000 * attempt));
@@ -275,7 +289,7 @@ export const HandheldVigilancia = () => {
     }
   }, []);
 
-  // ── Save inspection ──
+  // ── Save inspection — patrón idéntico a handleSaveSello ──
   const handleSave = async () => {
     if (!selectedCaja) return;
     if (Object.keys(photos).length === 0) {
@@ -285,24 +299,36 @@ export const HandheldVigilancia = () => {
 
     setIsSaving(true);
     try {
+      const vig = getVigilanciaForCaja(selectedCaja.id || '');
+
       const record: VigilanciaRecord = {
         fecha: dateEnd,
         asignacionCajaId: selectedCaja.id || '',
         numeroCaja: selectedCaja.numeroCaja,
         usuario: user?.email || user?.username || 'unknown',
         fechaHoraRegistro: new Date().toLocaleString('es-MX', { timeZone: 'America/Monterrey' }),
-        validacionChofer: true,
-        validacionCaja: true,
-        validacionTracto: true,
-        placasCajaFisica: validPlacasCaja,
-        placasTractoFisica: validPlacasTracto,
-        discrepancia: false,
+        validacionChofer: vig ? vig.validacionChofer : true,
+        validacionCaja: vig ? vig.validacionCaja : true,
+        validacionTracto: vig ? vig.validacionTracto : true,
+        placasCajaFisica: vig ? vig.placasCajaFisica : validPlacasCaja,
+        placasTractoFisica: vig ? vig.placasTractoFisica : validPlacasTracto,
+        discrepancia: vig ? vig.discrepancia : false,
+        ...(vig?.discrepanciaDetalle && { discrepanciaDetalle: vig.discrepanciaDetalle }),
       };
 
-      const vigId = await vigilanciaService.create(record);
+      // Guardar en Firestore PRIMERO — igual que addSello/updateSello
+      let vigId: string;
+      if (vig && vig.id) {
+        await vigilanciaService.update(vig.id, record);
+        vigId = vig.id;
+      } else {
+        vigId = await vigilanciaService.create(record);
+      }
 
-      // Optimistic local update
-      const newRec = { ...record, id: vigId };
+      // Optimistic local update — preserva URLs existentes + marca nuevas como PENDING
+      const pendingUrlMap: Partial<Record<SectionKey, string>> = {};
+      Object.keys(photos).forEach(k => { pendingUrlMap[k as SectionKey] = 'PENDING'; });
+      const newRec = { ...(vig || {}), ...record, ...pendingUrlMap, id: vigId };
       setVigilancias(prev => {
         const idx = prev.findIndex(v => v.id === vigId);
         return idx >= 0 ? prev.map(v => v.id === vigId ? newRec : v) : [...prev, newRec];
@@ -311,17 +337,18 @@ export const HandheldVigilancia = () => {
       const capturedPhotos = { ...photos };
       const caja = selectedCaja;
 
-      // Close modal immediately
+      // Cierra modal INMEDIATAMENTE — igual que en Sellos
       setSaveSuccess(true);
       setPhotos({});
       setPreviews({});
       setSelectedCaja(null);
       setTimeout(() => setSaveSuccess(false), 3000);
 
-      // Upload in background
+      // Sube fotos en SEGUNDO PLANO (fire & forget — sin await)
       uploadAllBackground(capturedPhotos, vigId, caja.numeroCaja);
 
     } catch (err: any) {
+      console.error(err);
       alert('Error al guardar: ' + (err.message || 'Desconocido'));
     } finally {
       setIsSaving(false);
@@ -334,7 +361,10 @@ export const HandheldVigilancia = () => {
 
   const countPhotos = (v?: VigilanciaRecord) => {
     if (!v) return 0;
-    return SECTIONS.filter(s => !!v[s.key]).length;
+    return SECTIONS.filter(s => {
+      const val = v[s.key];
+      return !!val && val !== 'PENDING';
+    }).length;
   };
 
   const openModal = (caja: AsignacionCajaModel) => {
@@ -343,15 +373,21 @@ export const HandheldVigilancia = () => {
     setPreviews({});
     setSaveSuccess(false);
     setLicenciaData({});
-    // Reset validation
-    setModalStep('validation');
-    setConfirmChofer(null);
-    setConfirmCaja(null);
-    setConfirmTracto(null);
-    setValidPlacasCaja(caja.placasCaja || '');
-    setValidPlacasTracto(caja.placasTracto || '');
-    setShowDiscrepancia(false);
-    setDiscrepanciaNote('');
+    
+    const vig = getVigilanciaForCaja(caja.id || '');
+    
+    if (vig) {
+      setModalStep('inspection');
+    } else {
+      setModalStep('validation');
+      setConfirmChofer(null);
+      setConfirmCaja(null);
+      setConfirmTracto(null);
+      setValidPlacasCaja(caja.placasCaja || '');
+      setValidPlacasTracto(caja.placasTracto || '');
+      setShowDiscrepancia(false);
+      setDiscrepanciaNote('');
+    }
   };
 
   // ── Confirm validation → decide if proceed or show discrepancy ──
@@ -794,8 +830,27 @@ export const HandheldVigilancia = () => {
                         className="mt-2 w-full max-h-28 object-cover rounded-xl border border-slate-600"
                       />
                     )}
-                    {existingUrl && !previewUrl && (
-                      <p className="text-xs text-blue-400 mt-1 truncate">📎 Ya guardada en Drive</p>
+                    {existingUrl === 'PENDING' && (
+                      <div className="text-xs text-amber-500 mt-1 flex items-center gap-1 font-medium">
+                        <Loader2 size={12} className="animate-spin" /> Subiendo...
+                      </div>
+                    )}
+                    {existingUrl && existingUrl !== 'PENDING' && !previewUrl && (
+                      <button
+                        type="button" 
+                        onClick={(e) => { 
+                            e.stopPropagation();
+                            let safePreview = existingUrl;
+                            if (safePreview.includes('/view')) {
+                                safePreview = safePreview.replace('/view', '/preview');
+                            }
+                            setDrivePreviewUrl(safePreview);
+                        }}
+                        className="p-2 bg-slate-800 rounded-full text-blue-400 hover:text-white border border-slate-700 hover:border-blue-500 transition-colors shadow-sm mt-1"
+                        title="Ver foto"
+                      >
+                          <ImageIcon size={20} />
+                      </button>
                     )}
 
                     {/* ── Tarjeta de datos extraídos (solo para licencia) ── */}
@@ -892,6 +947,33 @@ export const HandheldVigilancia = () => {
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-2 z-50 animate-fade-in">
           <CheckCircle size={20} /> Inspección guardada
         </div>
+      )}
+
+      {/* ── IMAGE PREVIEW MODAL (iFrame) ── */}
+      {drivePreviewUrl && (
+            <div 
+              className="fixed inset-0 z-50 bg-black/90 flex flex-col backdrop-blur-sm"
+              onClick={() => setDrivePreviewUrl(null)}
+            >
+                <div className="p-4 flex justify-between items-center bg-slate-900 border-b border-white/10">
+                    <span className="text-white font-semibold">Evidencia (Solo Lectura)</span>
+                    <button 
+                        onClick={() => setDrivePreviewUrl(null)}
+                        className="bg-red-500/20 text-red-400 p-2 rounded-full hover:bg-red-500/40 transition-colors"
+                    >
+                        <X size={24} />
+                    </button>
+                </div>
+                <div className="flex-1 w-full h-full p-2 bg-black flex justify-center items-center">
+                    {/* El iframe con modo preview aísla el archivo del entorno de Google Drive general */}
+                    <iframe 
+                      src={drivePreviewUrl}
+                      className="w-full h-full max-w-4xl max-h-[85vh] rounded-lg bg-slate-800"
+                      allow="autoplay"
+                      sandbox="allow-scripts allow-same-origin"
+                    />
+                </div>
+            </div>
       )}
     </div>
   );

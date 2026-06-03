@@ -1,0 +1,1914 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/0kfkHZmZvm4TwIkp6xFw",
+      "fields": {
+        "vin": {
+          "stringValue": "3"
+        },
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T02:00:57.717Z"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "to_location": {
+          "stringValue": "L2"
+        }
+      },
+      "createTime": "2026-06-02T02:00:57.845419Z",
+      "updateTime": "2026-06-02T02:00:57.845419Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/1xXe1vCilN0Q2qEQZxpL",
+      "fields": {
+        "vin": {
+          "stringValue": "5"
+        },
+        "observations": {
+          "stringValue": "QA APPROVE: "
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:56:26.392Z"
+        },
+        "from_location": {
+          "stringValue": "L3"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "to_location": {
+          "stringValue": "L3"
+        }
+      },
+      "createTime": "2026-06-02T18:56:26.496919Z",
+      "updateTime": "2026-06-02T18:56:26.496919Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/351iIrmqm7IxoMDws4Ox",
+      "fields": {
+        "vin": {
+          "stringValue": "4"
+        },
+        "observations": {
+          "stringValue": "QA APPROVE: "
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "to_location": {
+          "stringValue": "L3"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T14:53:56.676Z"
+        },
+        "from_location": {
+          "stringValue": "L3"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        }
+      },
+      "createTime": "2026-06-02T14:53:56.831274Z",
+      "updateTime": "2026-06-02T14:53:56.831274Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/4Yp6r4jptaAdPAhszB8e",
+      "fields": {
+        "type": {
+          "stringValue": "REVERSAL"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T14:25:41.120Z"
+        },
+        "reversed_by": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "vin": {
+          "stringValue": "6"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "reason": {
+          "stringValue": "prueba"
+        },
+        "observations": {
+          "stringValue": "⚠️ REVERSA ADMIN: prueba"
+        }
+      },
+      "createTime": "2026-06-03T14:25:42.595758Z",
+      "updateTime": "2026-06-03T14:25:42.595758Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/4iKvbj5TtIrwJ1SNQdiX",
+      "fields": {
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-05-29T18:56:51.531Z"
+        },
+        "from_location": {
+          "nullValue": null
+        },
+        "vin": {
+          "stringValue": "3"
+        },
+        "observations": {
+          "stringValue": "Initial Registration"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        }
+      },
+      "createTime": "2026-05-29T18:56:51.641313Z",
+      "updateTime": "2026-05-29T18:56:51.641313Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/5ZskWThCGAlfkIDKh9RP",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-06-02T18:47:52.505Z"
+        },
+        "from_location": {
+          "nullValue": null
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "vin": {
+          "stringValue": "7"
+        },
+        "observations": {
+          "stringValue": "Initial Registration"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        }
+      },
+      "createTime": "2026-06-02T18:47:52.682695Z",
+      "updateTime": "2026-06-02T18:47:52.682695Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/607CBvY8xfkPVJE2fHA9",
+      "fields": {
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "Re-entry to L1 after REJECT"
+        },
+        "vin": {
+          "stringValue": "1"
+        },
+        "from_location": {
+          "stringValue": "REJECTED_AREA"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-01T20:57:55.603Z"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        }
+      },
+      "createTime": "2026-06-01T20:57:55.957049Z",
+      "updateTime": "2026-06-01T20:57:55.957049Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/6D3rPFXxj9NRsoOntoRd",
+      "fields": {
+        "to_location": {
+          "stringValue": "L3"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T02:01:53.895Z"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "vin": {
+          "stringValue": "3"
+        }
+      },
+      "createTime": "2026-06-02T02:01:54.019987Z",
+      "updateTime": "2026-06-02T02:01:54.019987Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/6W7PqeLRa6PtgtHH1o8l",
+      "fields": {
+        "observations": {
+          "stringValue": "Initial Registration"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "vin": {
+          "stringValue": "9"
+        },
+        "from_location": {
+          "nullValue": null
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:48:00.522Z"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        }
+      },
+      "createTime": "2026-06-02T18:48:00.727160Z",
+      "updateTime": "2026-06-02T18:48:00.727160Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/ABYgTQbuyWmbHcP1kfSm",
+      "fields": {
+        "vin": {
+          "stringValue": "3"
+        },
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T02:02:27.511Z"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "from_location": {
+          "stringValue": "L3"
+        },
+        "to_location": {
+          "stringValue": "L3"
+        }
+      },
+      "createTime": "2026-06-02T02:02:27.644189Z",
+      "updateTime": "2026-06-02T02:02:27.644189Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/AFOpTXbDEFFbMTzHbziw",
+      "fields": {
+        "vin": {
+          "stringValue": "1"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        },
+        "to_location": {
+          "stringValue": "L3"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T02:01:12.150Z"
+        },
+        "from_location": {
+          "stringValue": "L3"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        }
+      },
+      "createTime": "2026-06-02T02:01:12.271176Z",
+      "updateTime": "2026-06-02T02:01:12.271176Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/B6eMKcTwbITt245z74G4",
+      "fields": {
+        "vin": {
+          "stringValue": "1"
+        },
+        "observations": {
+          "stringValue": "QA REJECTED: "
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-05-29T18:23:59.036Z"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "from_location": {
+          "stringValue": "L1"
+        }
+      },
+      "createTime": "2026-05-29T18:23:59.154458Z",
+      "updateTime": "2026-05-29T18:23:59.154458Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/Blc9pJAI8OTJDu4pCSyX",
+      "fields": {
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T01:56:45.136Z"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "vin": {
+          "stringValue": "2"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        }
+      },
+      "createTime": "2026-06-02T01:56:45.265771Z",
+      "updateTime": "2026-06-02T01:56:45.265771Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/BoXgLDvy5qQApSgiILiw",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-06-02T01:57:38.302Z"
+        },
+        "from_location": {
+          "stringValue": "L3"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "to_location": {
+          "stringValue": "L3"
+        },
+        "vin": {
+          "stringValue": "2"
+        },
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        }
+      },
+      "createTime": "2026-06-02T01:57:38.431208Z",
+      "updateTime": "2026-06-02T01:57:38.431208Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/C4xJNqrzaeZD70Sc90td",
+      "fields": {
+        "to_location": {
+          "stringValue": "SHIPPED"
+        },
+        "from_location": {
+          "stringValue": "L3"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T02:02:43.025Z"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "vin": {
+          "stringValue": "3"
+        }
+      },
+      "createTime": "2026-06-02T02:02:43.143236Z",
+      "updateTime": "2026-06-02T02:02:43.143236Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/Cr2UH5B07vc4ql6PKXuS",
+      "fields": {
+        "from_location": {
+          "stringValue": "L3"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T02:02:38.033Z"
+        },
+        "to_location": {
+          "stringValue": "SHIPPED"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "vin": {
+          "stringValue": "1"
+        }
+      },
+      "createTime": "2026-06-02T02:02:38.159837Z",
+      "updateTime": "2026-06-02T02:02:38.159837Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/D2CqbnRFDEiCMzl0g8M5",
+      "fields": {
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "vin": {
+          "stringValue": "2"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T01:57:02.881Z"
+        },
+        "to_location": {
+          "stringValue": "L2"
+        }
+      },
+      "createTime": "2026-06-02T01:57:03.000222Z",
+      "updateTime": "2026-06-02T01:57:03.000222Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/D6SJlN2e20owPJ6HCuao",
+      "fields": {
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA REJECTED: "
+        },
+        "vin": {
+          "stringValue": "1"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-05-29T18:12:03.680Z"
+        }
+      },
+      "createTime": "2026-05-29T18:12:03.798356Z",
+      "updateTime": "2026-05-29T18:12:03.798356Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/EFcLnZdiwz0s7coONHwL",
+      "fields": {
+        "vin": {
+          "stringValue": "5"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA APPROVE: "
+        },
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:55:59.869Z"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        }
+      },
+      "createTime": "2026-06-02T18:55:59.973583Z",
+      "updateTime": "2026-06-02T18:55:59.973583Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/EIDFE0yCbjEN8d6kDh3k",
+      "fields": {
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA REJECTED: rechazo 2 demo"
+        },
+        "vin": {
+          "stringValue": "1"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-01T20:58:37.716Z"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        }
+      },
+      "createTime": "2026-06-01T20:58:37.889734Z",
+      "updateTime": "2026-06-01T20:58:37.889734Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/GXqfcRuqxFn6GJM4NqZY",
+      "fields": {
+        "from_location": {
+          "nullValue": null
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T13:49:33.552Z"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "Initial Registration"
+        },
+        "vin": {
+          "stringValue": "4"
+        }
+      },
+      "createTime": "2026-06-02T13:49:33.832770Z",
+      "updateTime": "2026-06-02T13:49:33.832770Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/IMabNQ5EB00HDZo98FC8",
+      "fields": {
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T02:00:47.767Z"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "vin": {
+          "stringValue": "3"
+        }
+      },
+      "createTime": "2026-06-02T02:00:47.898321Z",
+      "updateTime": "2026-06-02T02:00:47.898321Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/Iil9GZKgNHmXhxYNZ3VW",
+      "fields": {
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T13:49:45.657Z"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        },
+        "vin": {
+          "stringValue": "4"
+        }
+      },
+      "createTime": "2026-06-02T13:49:45.745546Z",
+      "updateTime": "2026-06-02T13:49:45.745546Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/JAe8jQmHZgg9pl5iVchL",
+      "fields": {
+        "vin": {
+          "stringValue": "3"
+        },
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T02:01:24.996Z"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "to_location": {
+          "stringValue": "L2"
+        }
+      },
+      "createTime": "2026-06-02T02:01:25.132285Z",
+      "updateTime": "2026-06-02T02:01:25.132285Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/LrbDQoSye0ImAbbeCXFI",
+      "fields": {
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "vin": {
+          "stringValue": "4"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T14:52:41.641Z"
+        },
+        "to_location": {
+          "stringValue": "L3"
+        }
+      },
+      "createTime": "2026-06-02T14:52:41.789857Z",
+      "updateTime": "2026-06-02T14:52:41.789857Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/Njoh4hyLf2JVPHvSAzBN",
+      "fields": {
+        "observations": {
+          "stringValue": ""
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "vin": {
+          "stringValue": "5"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:56:17.953Z"
+        },
+        "to_location": {
+          "stringValue": "L3"
+        }
+      },
+      "createTime": "2026-06-02T18:56:18.056337Z",
+      "updateTime": "2026-06-02T18:56:18.056337Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/OBfHCt1YhzX8K709xeA2",
+      "fields": {
+        "vin": {
+          "stringValue": "1"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T02:00:32.027Z"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "to_location": {
+          "stringValue": "L3"
+        }
+      },
+      "createTime": "2026-06-02T02:00:32.154120Z",
+      "updateTime": "2026-06-02T02:00:32.154120Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/OueDTut9MfH1I47VpT5e",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-06-02T18:49:28.534Z"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "vin": {
+          "stringValue": "6"
+        },
+        "observations": {
+          "stringValue": "QA APPROVE: "
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        }
+      },
+      "createTime": "2026-06-02T18:49:28.642209Z",
+      "updateTime": "2026-06-02T18:49:28.642209Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/QaAPXavNiMOjrWBavtND",
+      "fields": {
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "vin": {
+          "stringValue": "TESTVIN0000000007"
+        },
+        "reversed_by": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T14:26:17.536Z"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "type": {
+          "stringValue": "REVERSAL"
+        },
+        "observations": {
+          "stringValue": "⚠️ REVERSA ADMIN: preuba n"
+        },
+        "reason": {
+          "stringValue": "preuba n"
+        }
+      },
+      "createTime": "2026-06-03T14:26:18.918017Z",
+      "updateTime": "2026-06-03T14:26:18.918017Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/RYBUpKGZSozTJHi1zES4",
+      "fields": {
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "from_location": {
+          "stringValue": "L3"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T14:53:06.370Z"
+        },
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA RETURN: RETURN DE L3 A L2"
+        },
+        "vin": {
+          "stringValue": "4"
+        }
+      },
+      "createTime": "2026-06-02T14:53:06.529699Z",
+      "updateTime": "2026-06-02T14:53:06.529699Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/SJDQExO1awJmTLy0n0RQ",
+      "fields": {
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T14:48:02.128Z"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "vin": {
+          "stringValue": "4"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA APPROVE: "
+        }
+      },
+      "createTime": "2026-06-02T14:48:02.326701Z",
+      "updateTime": "2026-06-02T14:48:02.326701Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/SWlQ1LzbuTTn6iqdvTHS",
+      "fields": {
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "vin": {
+          "stringValue": "6"
+        },
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:55:05.634Z"
+        }
+      },
+      "createTime": "2026-06-02T18:55:05.737583Z",
+      "updateTime": "2026-06-02T18:55:05.737583Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/SvM33LcuwEEzuyMm8O98",
+      "fields": {
+        "vin": {
+          "stringValue": "3"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T02:02:05.518Z"
+        },
+        "from_location": {
+          "stringValue": "L3"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "to_location": {
+          "stringValue": "L3"
+        }
+      },
+      "createTime": "2026-06-02T02:02:05.632431Z",
+      "updateTime": "2026-06-02T02:02:05.632431Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/TOLe98xYSot5ffVGAOQm",
+      "fields": {
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T14:03:15.377Z"
+        },
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "vin": {
+          "stringValue": "4"
+        }
+      },
+      "createTime": "2026-06-02T14:03:15.539542Z",
+      "updateTime": "2026-06-02T14:03:15.539542Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/TdUYmP8uMVMmib0dzq1b",
+      "fields": {
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:49:47.353Z"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "vin": {
+          "stringValue": "6"
+        }
+      },
+      "createTime": "2026-06-02T18:49:47.464530Z",
+      "updateTime": "2026-06-02T18:49:47.464530Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/Tt7hn4TeASxtQUkpPlqs",
+      "fields": {
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "Initial Registration"
+        },
+        "vin": {
+          "stringValue": "6"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "from_location": {
+          "nullValue": null
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:47:48.961Z"
+        }
+      },
+      "createTime": "2026-06-02T18:47:49.142765Z",
+      "updateTime": "2026-06-02T18:47:49.142765Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/Uyc2c3zSJeLnVtHOItBG",
+      "fields": {
+        "vin": {
+          "stringValue": "1"
+        },
+        "observations": {
+          "stringValue": "Initial Registration"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "timestamp": {
+          "stringValue": "2026-05-29T17:01:06.980Z"
+        },
+        "from_location": {
+          "nullValue": null
+        },
+        "to_location": {
+          "stringValue": "L1"
+        }
+      },
+      "createTime": "2026-05-29T17:01:07.200567Z",
+      "updateTime": "2026-05-29T17:01:07.200567Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/Vyhu5cEKPr6xWwUK0q5z",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-06-02T18:50:42.977Z"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "vin": {
+          "stringValue": "6"
+        },
+        "observations": {
+          "stringValue": "QA RETURN: regreso L1"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        }
+      },
+      "createTime": "2026-06-02T18:50:43.083907Z",
+      "updateTime": "2026-06-02T18:50:43.083907Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/XAvspoH0jlw7yIC11BZZ",
+      "fields": {
+        "vin": {
+          "stringValue": "5"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA APPROVE: "
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:48:25.885Z"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "to_location": {
+          "stringValue": "L1"
+        }
+      },
+      "createTime": "2026-06-02T18:48:25.980760Z",
+      "updateTime": "2026-06-02T18:48:25.980760Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/YAN94krQHGFXPXXjarb2",
+      "fields": {
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        },
+        "vin": {
+          "stringValue": "1"
+        },
+        "to_location": {
+          "stringValue": "L3"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "from_location": {
+          "stringValue": "L3"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T02:02:20.734Z"
+        }
+      },
+      "createTime": "2026-06-02T02:02:20.885234Z",
+      "updateTime": "2026-06-02T02:02:20.885234Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/YHP2pa2xYg10JUhB0iw1",
+      "fields": {
+        "observations": {
+          "stringValue": "⚠️ REVERSA ADMIN: prueba 2"
+        },
+        "reason": {
+          "stringValue": "prueba 2"
+        },
+        "vin": {
+          "stringValue": "TESTVIN0000000005"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T14:25:59.035Z"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "reversed_by": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "type": {
+          "stringValue": "REVERSAL"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        }
+      },
+      "createTime": "2026-06-03T14:26:00.392590Z",
+      "updateTime": "2026-06-03T14:26:00.392590Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/YgIszK6fS8sD9fX1MU2H",
+      "fields": {
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T01:59:58.402Z"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "vin": {
+          "stringValue": "1"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        }
+      },
+      "createTime": "2026-06-02T01:59:58.538236Z",
+      "updateTime": "2026-06-02T01:59:58.538236Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/ZFSNdyzg29QpqbzhpzHi",
+      "fields": {
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "from_location": {
+          "stringValue": "REJECTED_AREA"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:49:00.715Z"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "Re-entry to L1 after REJECT"
+        },
+        "vin": {
+          "stringValue": "6"
+        }
+      },
+      "createTime": "2026-06-02T18:49:01.005681Z",
+      "updateTime": "2026-06-02T18:49:01.005681Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/atrRem0jd6UDjIOaEiNu",
+      "fields": {
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-01T16:56:59.056Z"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA REJECTED: prueba de rechazo"
+        },
+        "vin": {
+          "stringValue": "1"
+        }
+      },
+      "createTime": "2026-06-01T16:56:59.188390Z",
+      "updateTime": "2026-06-01T16:56:59.188390Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/b3isulxU1VYF2BqiPc7Z",
+      "fields": {
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "vin": {
+          "stringValue": "5"
+        },
+        "from_location": {
+          "stringValue": "L3"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:56:59.550Z"
+        },
+        "to_location": {
+          "stringValue": "SHIPPED"
+        }
+      },
+      "createTime": "2026-06-02T18:56:59.681799Z",
+      "updateTime": "2026-06-02T18:56:59.681799Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/bkv1EMKmkNxmuCYyl04T",
+      "fields": {
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T14:53:18.020Z"
+        },
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA APPROVE: "
+        },
+        "vin": {
+          "stringValue": "4"
+        }
+      },
+      "createTime": "2026-06-02T14:53:18.167417Z",
+      "updateTime": "2026-06-02T14:53:18.167417Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/dgFUmKEkXRVAF3mscZGZ",
+      "fields": {
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "vin": {
+          "stringValue": "4"
+        },
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T14:51:06.071Z"
+        }
+      },
+      "createTime": "2026-06-02T14:51:06.231496Z",
+      "updateTime": "2026-06-02T14:51:06.231496Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/fzz8SdGPbBB4LnDi95gQ",
+      "fields": {
+        "vin": {
+          "stringValue": "4"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "to_location": {
+          "stringValue": "L3"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T14:51:51.832Z"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        }
+      },
+      "createTime": "2026-06-02T14:51:51.983550Z",
+      "updateTime": "2026-06-02T14:51:51.983550Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/hRB3xlByuKREMZNdN9wO",
+      "fields": {
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T14:51:41.105Z"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA APPROVE: "
+        },
+        "vin": {
+          "stringValue": "4"
+        }
+      },
+      "createTime": "2026-06-02T14:51:41.261797Z",
+      "updateTime": "2026-06-02T14:51:41.261797Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/hrqw8S6wr7FDnu3jVVUn",
+      "fields": {
+        "vin": {
+          "stringValue": "2"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "to_location": {
+          "stringValue": "SHIPPED"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T01:58:08.729Z"
+        },
+        "from_location": {
+          "stringValue": "L3"
+        }
+      },
+      "createTime": "2026-06-02T01:58:08.850246Z",
+      "updateTime": "2026-06-02T01:58:08.850246Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/iL8E5H18orisuGNmwpbE",
+      "fields": {
+        "observations": {
+          "stringValue": ""
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "vin": {
+          "stringValue": "2"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T01:57:13.771Z"
+        },
+        "to_location": {
+          "stringValue": "L3"
+        }
+      },
+      "createTime": "2026-06-02T01:57:13.895584Z",
+      "updateTime": "2026-06-02T01:57:13.895584Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/igXRlTzdNHm0YOdGZNEL",
+      "fields": {
+        "vin": {
+          "stringValue": "3"
+        },
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T02:00:05.967Z"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        }
+      },
+      "createTime": "2026-06-02T02:00:06.099555Z",
+      "updateTime": "2026-06-02T02:00:06.099555Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/ijEtWTL5GCmHJ5w0xULt",
+      "fields": {
+        "observations": {
+          "stringValue": "⚠️ REVERSA ADMIN: prueba 2"
+        },
+        "reason": {
+          "stringValue": "prueba 2"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "vin": {
+          "stringValue": "TESTVIN0000000006"
+        },
+        "reversed_by": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T14:26:08.101Z"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "type": {
+          "stringValue": "REVERSAL"
+        }
+      },
+      "createTime": "2026-06-03T14:26:09.474005Z",
+      "updateTime": "2026-06-03T14:26:09.474005Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/iuwOd5zeAMmEHpTeR8Wd",
+      "fields": {
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA REJECT: prueba de rechazo"
+        },
+        "vin": {
+          "stringValue": "6"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:48:38.758Z"
+        },
+        "to_location": {
+          "stringValue": "REJECTED_AREA"
+        }
+      },
+      "createTime": "2026-06-02T18:48:38.871049Z",
+      "updateTime": "2026-06-02T18:48:38.871049Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/kIfqEUgKeBuqi5jK0G4C",
+      "fields": {
+        "vin": {
+          "stringValue": "4"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA APPROVE: "
+        },
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T14:52:32.112Z"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        }
+      },
+      "createTime": "2026-06-02T14:52:32.263463Z",
+      "updateTime": "2026-06-02T14:52:32.263463Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/kfdGElNoq9lUV7Zach3S",
+      "fields": {
+        "vin": {
+          "stringValue": "1"
+        },
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-01T21:01:59.920Z"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        }
+      },
+      "createTime": "2026-06-01T21:02:00.079967Z",
+      "updateTime": "2026-06-01T21:02:00.079967Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/kpFVWFIChv6sGiNIJmHo",
+      "fields": {
+        "vin": {
+          "stringValue": "4"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T14:53:27.594Z"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "to_location": {
+          "stringValue": "L3"
+        }
+      },
+      "createTime": "2026-06-02T14:53:27.761524Z",
+      "updateTime": "2026-06-02T14:53:27.761524Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/lj2lqAjrJlaBdDS9OX0d",
+      "fields": {
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        },
+        "vin": {
+          "stringValue": "1"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T01:46:02.581Z"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        }
+      },
+      "createTime": "2026-06-02T01:46:02.684659Z",
+      "updateTime": "2026-06-02T01:46:02.684659Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/mpkWOQMsva3J4ikHwfkM",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-05-29T17:01:12.586Z"
+        },
+        "from_location": {
+          "nullValue": null
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "vin": {
+          "stringValue": "2"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "Initial Registration"
+        }
+      },
+      "createTime": "2026-05-29T17:01:12.761005Z",
+      "updateTime": "2026-05-29T17:01:12.761005Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/nYneHofGtC2ZpxdUr9Xn",
+      "fields": {
+        "vin": {
+          "stringValue": "1"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "Re-entry to L1 after REJECT"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-01T20:58:56.976Z"
+        },
+        "from_location": {
+          "stringValue": "REJECTED_AREA"
+        }
+      },
+      "createTime": "2026-06-01T20:58:57.220180Z",
+      "updateTime": "2026-06-01T20:58:57.220180Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/o0uylJMYIprWi5c8dNxI",
+      "fields": {
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:54:22.110Z"
+        },
+        "observations": {
+          "stringValue": "QA APPROVE: "
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "vin": {
+          "stringValue": "6"
+        }
+      },
+      "createTime": "2026-06-02T18:54:22.223030Z",
+      "updateTime": "2026-06-02T18:54:22.223030Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/odLSS3Ml3AC1NbWYtD0A",
+      "fields": {
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T14:52:14.721Z"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "from_location": {
+          "stringValue": "L3"
+        },
+        "vin": {
+          "stringValue": "4"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA RETURN: PRUEBA EN L3 A L2"
+        }
+      },
+      "createTime": "2026-06-02T14:52:14.877776Z",
+      "updateTime": "2026-06-02T14:52:14.877776Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/pChl769UYWhHY2HT9tmP",
+      "fields": {
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T14:27:45.670Z"
+        },
+        "from_location": {
+          "stringValue": "L2"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "vin": {
+          "stringValue": "4"
+        },
+        "observations": {
+          "stringValue": "QA RETURN: PRUEBA PARA L1"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        }
+      },
+      "createTime": "2026-06-02T14:27:45.863666Z",
+      "updateTime": "2026-06-02T14:27:45.863666Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/rKw6PYB4q3qS5uTS7TV8",
+      "fields": {
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "vin": {
+          "stringValue": "2"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T01:55:55.928Z"
+        }
+      },
+      "createTime": "2026-06-02T01:55:56.063046Z",
+      "updateTime": "2026-06-02T01:55:56.063046Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/rR45T9P5hN4hhCywOK2q",
+      "fields": {
+        "vin": {
+          "stringValue": "5"
+        },
+        "observations": {
+          "stringValue": "Initial Registration"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:47:43.524Z"
+        },
+        "from_location": {
+          "nullValue": null
+        }
+      },
+      "createTime": "2026-06-02T18:47:43.706899Z",
+      "updateTime": "2026-06-02T18:47:43.706899Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/tG17R4QRF5lJO3WBvS0r",
+      "fields": {
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:49:41.253Z"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "vin": {
+          "stringValue": "5"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        }
+      },
+      "createTime": "2026-06-02T18:49:41.358648Z",
+      "updateTime": "2026-06-02T18:49:41.358648Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/tx_1",
+      "fields": {
+        "from_location": {
+          "stringValue": "RECEIVING"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T03:33:28.438Z"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "operator_id": {
+          "stringValue": "TestAdmin"
+        },
+        "vin": {
+          "stringValue": "TESTVIN0000000001"
+        }
+      },
+      "createTime": "2026-06-03T03:33:28.565119Z",
+      "updateTime": "2026-06-03T03:33:28.565119Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/uT4W6sHP9akLr9199AAl",
+      "fields": {
+        "vin": {
+          "stringValue": "1"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "to_location": {
+          "stringValue": "L2"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T01:48:24.828Z"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        }
+      },
+      "createTime": "2026-06-02T01:48:24.971461Z",
+      "updateTime": "2026-06-02T01:48:24.971461Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/vqQwECBlklbc6PG6ZLhL",
+      "fields": {
+        "from_location": {
+          "stringValue": "L3"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T14:54:33.376Z"
+        },
+        "to_location": {
+          "stringValue": "SHIPPED"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": ""
+        },
+        "vin": {
+          "stringValue": "4"
+        }
+      },
+      "createTime": "2026-06-02T14:54:33.528593Z",
+      "updateTime": "2026-06-02T14:54:33.528593Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/zboojk62wqHTRwNUVYK9",
+      "fields": {
+        "vin": {
+          "stringValue": "1"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "QA APPROVED: "
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-01T21:36:37.810Z"
+        },
+        "from_location": {
+          "stringValue": "L1"
+        },
+        "is_qa_action": {
+          "booleanValue": true
+        }
+      },
+      "createTime": "2026-06-01T21:36:37.909641Z",
+      "updateTime": "2026-06-01T21:36:37.909641Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_transfers/zjpLwew4bYgAJLAx6fR2",
+      "fields": {
+        "from_location": {
+          "nullValue": null
+        },
+        "timestamp": {
+          "stringValue": "2026-06-02T18:47:56.425Z"
+        },
+        "to_location": {
+          "stringValue": "L1"
+        },
+        "operator_id": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "observations": {
+          "stringValue": "Initial Registration"
+        },
+        "vin": {
+          "stringValue": "8"
+        }
+      },
+      "createTime": "2026-06-02T18:47:56.632378Z",
+      "updateTime": "2026-06-02T18:47:56.632378Z"
+    }
+  ]
+}

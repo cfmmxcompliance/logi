@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/master_data_reports/2026-01-23",
+      "fields": {
+        "fullCsvUrl": {
+          "stringValue": "https://docs.google.com/spreadsheets/d/test_full"
+        },
+        "id": {
+          "stringValue": "2026-01-23"
+        },
+        "changesCsvUrl": {
+          "stringValue": "https://docs.google.com/spreadsheets/d/test_changes"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-23T20:55:52.217Z"
+        },
+        "itemsAffected": {
+          "integerValue": "0"
+        }
+      },
+      "createTime": "2026-01-23T20:50:36.989575Z",
+      "updateTime": "2026-01-23T20:55:52.569066Z"
+    }
+  ]
+}

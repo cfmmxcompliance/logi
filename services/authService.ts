@@ -38,11 +38,13 @@ export const authService = {
             let userSnap;
             try {
                 userSnap = await getDocFromCache(doc(db, 'users', cleanEmail));
+                
+                // Si el caché dice que NO existe, forzamos la red porque pudo haber sido borrado localmente
+                // o restaurado en la nube recientemente.
+                if (!userSnap.exists()) {
+                    userSnap = await getDoc(doc(db, 'users', cleanEmail));
+                }
             } catch (e) {
-                // Falla si el caché está literal vacío (primer inicio)
-                // En ese caso, dependemos de la red obligatoriamente.
-                // Retry automático: si la primera llamada de red falla (wifi intermitente),
-                // esperamos 2s y reintentamos una vez antes de rendirse.
                 try {
                     userSnap = await getDoc(doc(db, 'users', cleanEmail));
                 } catch (netErr) {
@@ -52,13 +54,7 @@ export const authService = {
                 }
             }
             
-            // Si resolvió del caché local (offline) y no encontró el usuario,
-
-            // el caché está vacío y necesita internet para bajarse por primera vez.
             if (!userSnap.exists()) {
-                if (userSnap.metadata?.fromCache) {
-                   throw { code: 'auth/network-request-failed', message: 'Sin conexión: Acércate al módem para descargar tu perfil por primera vez.' };
-                }
                 throw { code: 'auth/user-not-found', message: 'User not registered.' };
             }
 

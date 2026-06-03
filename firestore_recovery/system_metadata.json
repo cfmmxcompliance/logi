@@ -1,0 +1,17 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/system_metadata/parts_version",
+      "fields": {
+        "version": {
+          "integerValue": "817"
+        },
+        "lastUpdated": {
+          "stringValue": "2026-06-03T02:20:00.642Z"
+        }
+      },
+      "createTime": "2026-01-19T23:59:22.044405Z",
+      "updateTime": "2026-06-03T02:20:00.349037Z"
+    }
+  ]
+}

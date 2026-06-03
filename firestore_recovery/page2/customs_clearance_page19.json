@@ -1,0 +1,1046 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/feafa697-ab54-4ef5-ae00-de350233cd74",
+      "fields": {
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-06-06 19:18:01"
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-06-06 19:18:01"
+        },
+        "blNo": {
+          "stringValue": ""
+        },
+        "pedimentoNo": {
+          "stringValue": "5011269"
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "feafa697-ab54-4ef5-ae00-de350233cd74"
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "Multiple"
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-08T19:23:40.557Z"
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-08T19:23:40.728198Z",
+      "updateTime": "2026-01-08T19:23:40.728198Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/febb6d44-006e-4f4a-993d-a7b5bcdf2d1d",
+      "fields": {
+        "containerNo": {
+          "stringValue": "Multiple"
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-08T19:21:55.185Z"
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "febb6d44-006e-4f4a-993d-a7b5bcdf2d1d"
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-09-05 17:06:03"
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-09-05 17:06:03"
+        },
+        "blNo": {
+          "stringValue": ""
+        },
+        "pedimentoNo": {
+          "stringValue": "5001218"
+        }
+      },
+      "createTime": "2026-01-08T19:21:55.340681Z",
+      "updateTime": "2026-01-08T19:21:55.340681Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/febbce25-48f4-4aef-9d10-9b691926abe8",
+      "fields": {
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-09-24 11:47:01"
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-09-24 11:47:01"
+        },
+        "pedimentoNo": {
+          "stringValue": "5100683"
+        },
+        "blNo": {
+          "stringValue": ""
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "febbce25-48f4-4aef-9d10-9b691926abe8"
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "Multiple"
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-08T19:21:56.757Z"
+        }
+      },
+      "createTime": "2026-01-08T19:21:56.934624Z",
+      "updateTime": "2026-01-08T19:21:56.934624Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/fecbb0c9-86c9-4d42-b22e-b4028653a05d",
+      "fields": {
+        "containerNo": {
+          "stringValue": "Multiple"
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-08T19:20:15.301Z"
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "fecbb0c9-86c9-4d42-b22e-b4028653a05d"
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-11-19 09:51:01"
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-11-19 09:51:01"
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": ""
+        },
+        "pedimentoNo": {
+          "stringValue": "5700275"
+        }
+      },
+      "createTime": "2026-01-08T19:20:15.472068Z",
+      "updateTime": "2026-01-08T19:20:15.472068Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/fed4aaeb-e4cc-4282-8d7e-0abf0f1c1d4e",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-01-08T19:23:30.446Z"
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "Multiple"
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        },
+        "id": {
+          "stringValue": "fed4aaeb-e4cc-4282-8d7e-0abf0f1c1d4e"
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": ""
+        },
+        "pedimentoNo": {
+          "stringValue": "5002011"
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-06-02 20:21:01"
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-06-02 20:21:01"
+        },
+        "ataFactory": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-08T19:23:30.635325Z",
+      "updateTime": "2026-01-08T19:23:30.635325Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/ff108beb-b674-420c-9f58-98c1d5147a16",
+      "fields": {
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-11-21 23:58:01"
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-11-21 23:58:01"
+        },
+        "blNo": {
+          "stringValue": ""
+        },
+        "pedimentoNo": {
+          "stringValue": "5000891"
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "ff108beb-b674-420c-9f58-98c1d5147a16"
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "Multiple"
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-06T19:22:30.526Z"
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-06T19:22:30.653573Z",
+      "updateTime": "2026-01-06T19:22:30.653573Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/ff1271e2-f595-47e3-8cf3-4d2740bb8c50",
+      "fields": {
+        "id": {
+          "stringValue": "ff1271e2-f595-47e3-8cf3-4d2740bb8c50"
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "pedimentoNo": {
+          "stringValue": "5600079"
+        },
+        "blNo": {
+          "stringValue": ""
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-07-18 11:19:02"
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-07-18 11:19:02"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-08T19:19:14.988Z"
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "Multiple"
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        }
+      },
+      "createTime": "2026-01-08T19:19:15.144335Z",
+      "updateTime": "2026-01-08T19:19:15.144335Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/ff340594-4fa0-4318-b8c9-a75219f6c865",
+      "fields": {
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-09-06 10:40:01"
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-09-06 10:40:01"
+        },
+        "pedimentoNo": {
+          "stringValue": "5100648"
+        },
+        "blNo": {
+          "stringValue": ""
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "ff340594-4fa0-4318-b8c9-a75219f6c865"
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "Multiple"
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-08T19:22:26.875Z"
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-08T19:22:27.129012Z",
+      "updateTime": "2026-01-08T19:22:27.129012Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/ff42e6c4-1f89-4641-85af-be9035e4b65a",
+      "fields": {
+        "containerNo": {
+          "stringValue": "Multiple"
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-08T19:21:38.469Z"
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "ff42e6c4-1f89-4641-85af-be9035e4b65a"
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-10-23 15:21:13"
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-10-23 15:21:13"
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": ""
+        },
+        "pedimentoNo": {
+          "stringValue": "5016182"
+        }
+      },
+      "createTime": "2026-01-08T19:21:38.637139Z",
+      "updateTime": "2026-01-08T19:21:38.637139Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/ff4f57f7-5e50-487d-a03c-551b1b98f8f7",
+      "fields": {
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "Multiple"
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-06T19:26:13.112Z"
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-07-31 11:17:01"
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-07-31 11:17:01"
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": ""
+        },
+        "pedimentoNo": {
+          "stringValue": "5600252"
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "ff4f57f7-5e50-487d-a03c-551b1b98f8f7"
+        }
+      },
+      "createTime": "2026-01-06T19:26:13.271391Z",
+      "updateTime": "2026-01-06T19:26:13.271391Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/ff54911e-d602-4c74-87da-f23f543b1941",
+      "fields": {
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-06-09 16:21:04"
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-06-09 16:21:04"
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoNo": {
+          "stringValue": "5002229"
+        },
+        "blNo": {
+          "stringValue": ""
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "ff54911e-d602-4c74-87da-f23f543b1941"
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "Multiple"
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-08T19:23:21.796Z"
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-08T19:23:22.009773Z",
+      "updateTime": "2026-01-08T19:23:22.009773Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/ff730547-b495-40e6-b263-c5c5f37de4fa",
+      "fields": {
+        "ataPort": {
+          "stringValue": ""
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-06T19:26:28.889Z"
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "Multiple"
+        },
+        "blNo": {
+          "stringValue": ""
+        },
+        "pedimentoNo": {
+          "stringValue": "5600115"
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-07-18 12:59:04"
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-07-18 12:59:04"
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "ff730547-b495-40e6-b263-c5c5f37de4fa"
+        },
+        "eirDate": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-06T19:26:29.050890Z",
+      "updateTime": "2026-01-06T19:26:29.050890Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/ff8f82bb-da9d-4b27-9f4a-78fc9af009ec",
+      "fields": {
+        "pedimentoNo": {
+          "stringValue": "5600268"
+        },
+        "blNo": {
+          "stringValue": ""
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-08-09 13:30:02"
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-08-09 13:30:02"
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "ff8f82bb-da9d-4b27-9f4a-78fc9af009ec"
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-08T19:22:56.726Z"
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "Multiple"
+        }
+      },
+      "createTime": "2026-01-08T19:22:56.890933Z",
+      "updateTime": "2026-01-08T19:22:56.890933Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/ffbcf962-8f22-4114-beb8-e95d62285e94",
+      "fields": {
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-08-14 12:19:02"
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-08-14 12:19:02"
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoNo": {
+          "stringValue": "5001129"
+        },
+        "blNo": {
+          "stringValue": ""
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "ffbcf962-8f22-4114-beb8-e95d62285e94"
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "Multiple"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-08T19:22:51.995Z"
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-08T19:22:52.165184Z",
+      "updateTime": "2026-01-08T19:22:52.165184Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/ffdecf87-5d82-41eb-b79a-bcd1ecd52738",
+      "fields": {
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "proformaRevisionBy": {
+          "stringValue": ""
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "CAAU7061310"
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": ""
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": ""
+        },
+        "pedimentoNo": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "143481090429"
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "ffdecf87-5d82-41eb-b79a-bcd1ecd52738"
+        }
+      },
+      "createTime": "2026-01-06T20:36:19.289177Z",
+      "updateTime": "2026-01-06T20:36:19.289177Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/ffeefe4b-a86f-4e3d-bbe8-3e774762db35",
+      "fields": {
+        "blNo": {
+          "stringValue": ""
+        },
+        "pedimentoNo": {
+          "stringValue": "5600764"
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": "2025-11-19 19:00:03"
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": "2025-11-19 19:00:03"
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "ffeefe4b-a86f-4e3d-bbe8-3e774762db35"
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "proformaRevisionBy": {
+          "stringValue": "DataStage"
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-08T19:20:40.169Z"
+        },
+        "containerNo": {
+          "stringValue": "Multiple"
+        }
+      },
+      "createTime": "2026-01-08T19:20:40.353592Z",
+      "updateTime": "2026-01-08T19:20:40.353592Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/mpXcU0p2S9eTCLoh1KVS",
+      "fields": {
+        "proformaRevisionBy": {
+          "stringValue": ""
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "EITU1067208"
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-26T12:55:36.126Z"
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": ""
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574068164"
+        },
+        "pedimentoNo": {
+          "stringValue": ""
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "mpXcU0p2S9eTCLoh1KVS"
+        }
+      },
+      "createTime": "2025-12-31T02:07:43.934303Z",
+      "updateTime": "2026-01-26T12:55:37.229326Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/qZyARDOZMEKhWL24TElp",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143574068164"
+        },
+        "pedimentoNo": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": ""
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "qZyARDOZMEKhWL24TElp"
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        },
+        "proformaRevisionBy": {
+          "stringValue": ""
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-26T12:55:36.126Z"
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "GAOU6676945"
+        }
+      },
+      "createTime": "2025-12-31T02:07:43.934303Z",
+      "updateTime": "2026-01-26T12:55:37.229326Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/customs_clearance/wb1pbcx2SvYZli57URYR",
+      "fields": {
+        "proformaRevisionBy": {
+          "stringValue": ""
+        },
+        "peceRequestDate": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        },
+        "truckAppointmentDate": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "EISU8309146"
+        },
+        "proformaSentDate": {
+          "stringValue": ""
+        },
+        "peceAuthDate": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-26T12:55:36.126Z"
+        },
+        "pedimentoPaymentDate": {
+          "stringValue": ""
+        },
+        "ataFactory": {
+          "stringValue": ""
+        },
+        "pedimentoAuthorizedDate": {
+          "stringValue": ""
+        },
+        "targetReviewDate": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574068164"
+        },
+        "pedimentoNo": {
+          "stringValue": ""
+        },
+        "eirDate": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "wb1pbcx2SvYZli57URYR"
+        }
+      },
+      "createTime": "2025-12-31T02:07:43.934303Z",
+      "updateTime": "2026-01-26T12:55:37.229326Z"
+    }
+  ]
+}

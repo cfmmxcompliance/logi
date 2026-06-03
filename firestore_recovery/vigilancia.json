@@ -1,0 +1,53 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vigilancia/vig_JjL3SJgHRI0Ekg60oT20_2026-06-01",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "2006"
+        },
+        "createdAt": {
+          "stringValue": "2026-06-02T01:23:24.207Z"
+        },
+        "validacionCaja": {
+          "booleanValue": true
+        },
+        "id": {
+          "stringValue": "vig_JjL3SJgHRI0Ekg60oT20_2026-06-01"
+        },
+        "fecha": {
+          "stringValue": "2026-06-01"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "placasTractoFisica": {
+          "stringValue": "43BC1P"
+        },
+        "discrepancia": {
+          "booleanValue": false
+        },
+        "placasCajaFisica": {
+          "stringValue": "DL6129"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "1/6/2026, 7:40:38 p.m."
+        },
+        "fotoPlacasCaja": {
+          "stringValue": "https://drive.google.com/file/d/1IBnSm0FJbmt_nS701cFZjOf-rxzOZ_r1/view?usp=drivesdk"
+        },
+        "asignacionCajaId": {
+          "stringValue": "JjL3SJgHRI0Ekg60oT20"
+        },
+        "validacionChofer": {
+          "booleanValue": true
+        },
+        "validacionTracto": {
+          "booleanValue": true
+        }
+      },
+      "createTime": "2026-06-02T01:23:24.547736Z",
+      "updateTime": "2026-06-02T01:41:01.096179Z"
+    }
+  ]
+}

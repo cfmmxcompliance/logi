@@ -1,0 +1,35 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/training_submissions/nGNs5f2TE787av5yoDI3",
+      "fields": {
+        "uploadedAt": {
+          "stringValue": "2026-05-28T16:54:56.777Z"
+        },
+        "id": {
+          "stringValue": "129f7ef4-e5b8-4407-92fa-72b321040c3e"
+        },
+        "comments": {
+          "stringValue": ""
+        },
+        "user": {
+          "stringValue": "Admin"
+        },
+        "provider": {
+          "stringValue": "Safround"
+        },
+        "fileUrl": {
+          "stringValue": "https://firebasestorage.googleapis.com/v0/b/logimaster-cfmoto.firebasestorage.app/o/training_data%2F1779987293560_C232154202-HBL%C2%A0Draft.pdf?alt=media&token=2cdf5687-784e-4257-a370-351b3f75e46e"
+        },
+        "fileName": {
+          "stringValue": "C232154202-HBL Draft.pdf"
+        },
+        "status": {
+          "stringValue": "PENDING_ANALYSIS"
+        }
+      },
+      "createTime": "2026-05-28T16:54:57.230652Z",
+      "updateTime": "2026-05-28T16:54:57.230652Z"
+    }
+  ]
+}

@@ -1,0 +1,2933 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-342",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-05-22T14:03:40.271Z"
+        },
+        "nombre": {
+          "stringValue": "ARTURO BENJAMIN SALAZAR GARZA"
+        },
+        "licencia": {
+          "stringValue": "LFD01003260"
+        },
+        "telefono": {
+          "stringValue": "+52 1 81 2065 5198"
+        },
+        "placasTracto": {
+          "stringValue": " "
+        },
+        "transportLineId": {
+          "stringValue": "SNCY-001"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-22T14:03:40.271Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-342"
+        }
+      },
+      "createTime": "2026-05-22T14:03:41.080965Z",
+      "updateTime": "2026-05-22T14:03:41.080965Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-343",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARC-343"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-22T15:11:23.236Z"
+        },
+        "nombre": {
+          "stringValue": "Adonal Beaz Zamora"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-22T15:11:23.236Z"
+        },
+        "licencia": {
+          "stringValue": "pendiente "
+        },
+        "telefono": {
+          "stringValue": "pendiente"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-24"
+        }
+      },
+      "createTime": "2026-05-22T15:11:25.066988Z",
+      "updateTime": "2026-05-22T15:11:25.066988Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-344",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-013"
+        },
+        "licencia": {
+          "stringValue": "pendiente"
+        },
+        "telefono": {
+          "stringValue": "pendiente"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-22T16:51:37.897Z"
+        },
+        "nombre": {
+          "stringValue": "Ramon Rivera García"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-22T16:51:37.897Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-344"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        }
+      },
+      "createTime": "2026-05-22T16:51:39.263809Z",
+      "updateTime": "2026-05-22T16:51:39.263809Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-345",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-22T16:53:59.893Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-345"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-031"
+        },
+        "placasTracto": {
+          "stringValue": "21AR5R"
+        },
+        "telefono": {
+          "stringValue": "8281053183"
+        },
+        "licencia": {
+          "stringValue": "PENDIENTE"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-22T16:53:59.893Z"
+        },
+        "nombre": {
+          "stringValue": "DANIEL ENRIQUE BALLI GARCIA"
+        }
+      },
+      "createTime": "2026-05-22T16:54:01.328137Z",
+      "updateTime": "2026-05-22T16:54:01.328137Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-346",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "driverId": {
+          "stringValue": "ARC-346"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-22T18:31:47.003Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "licencia": {
+          "stringValue": "PENDIENTE"
+        },
+        "telefono": {
+          "stringValue": "PDTE"
+        },
+        "nombre": {
+          "stringValue": "JOSE LUIS LOERA"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-22T18:27:38.017Z"
+        },
+        "placasTracto": {
+          "stringValue": "75LA2J"
+        }
+      },
+      "createTime": "2026-05-22T18:27:42.343998Z",
+      "updateTime": "2026-05-22T18:31:48.834519Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-347",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-22T18:28:05.062Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-347"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-22T18:28:05.062Z"
+        },
+        "nombre": {
+          "stringValue": "Salvador de Jesus Vazquez"
+        },
+        "licencia": {
+          "stringValue": "PDTE"
+        },
+        "telefono": {
+          "stringValue": "PDTE"
+        },
+        "placasTracto": {
+          "stringValue": "56LA1H"
+        }
+      },
+      "createTime": "2026-05-22T18:28:06.533437Z",
+      "updateTime": "2026-05-22T18:28:06.533437Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-348",
+      "fields": {
+        "nombre": {
+          "stringValue": "Laura Gonzalez"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-22T18:28:36.113Z"
+        },
+        "telefono": {
+          "stringValue": "PDTE"
+        },
+        "licencia": {
+          "stringValue": "PDTE"
+        },
+        "placasTracto": {
+          "stringValue": "41-LA1H"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARC-348"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-22T18:28:36.113Z"
+        }
+      },
+      "createTime": "2026-05-22T18:28:37.348230Z",
+      "updateTime": "2026-05-22T18:28:37.348230Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-349",
+      "fields": {
+        "placasTracto": {
+          "stringValue": "4UV6776"
+        },
+        "telefono": {
+          "stringValue": "PDTE"
+        },
+        "licencia": {
+          "stringValue": "PDTE "
+        },
+        "nombre": {
+          "stringValue": "Victor Salinas Chapa"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-22T19:25:14.043Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-349"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-22T19:25:14.043Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-009"
+        }
+      },
+      "createTime": "2026-05-22T19:25:11.855356Z",
+      "updateTime": "2026-05-22T19:25:15.591502Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-350",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-22T22:20:27.168Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-350"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "placasTracto": {
+          "stringValue": "61LA2J"
+        },
+        "telefono": {
+          "stringValue": "PDTE"
+        },
+        "licencia": {
+          "stringValue": "PDTE"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-22T22:20:27.168Z"
+        },
+        "nombre": {
+          "stringValue": "Jose Manuel Bustos"
+        }
+      },
+      "createTime": "2026-05-22T22:20:48.111207Z",
+      "updateTime": "2026-05-22T22:20:48.251213Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-351",
+      "fields": {
+        "driverId": {
+          "stringValue": "ARC-351"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-22T23:06:53.253Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-25"
+        },
+        "placasTracto": {
+          "stringValue": "43BC1P"
+        },
+        "licencia": {
+          "stringValue": "PDTE"
+        },
+        "telefono": {
+          "stringValue": "PDTE"
+        },
+        "nombre": {
+          "stringValue": "Arturo Treviño"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-22T23:06:53.253Z"
+        }
+      },
+      "createTime": "2026-05-22T23:06:54.990497Z",
+      "updateTime": "2026-05-22T23:06:54.990497Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-352",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-017"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARC-352"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-23T04:45:54.568Z"
+        },
+        "nombre": {
+          "stringValue": "Jesús Alejandro Aldana Galindo"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-23T04:45:54.568Z"
+        },
+        "licencia": {
+          "stringValue": "PDTE"
+        },
+        "telefono": {
+          "stringValue": "PDTE"
+        },
+        "placasTracto": {
+          "stringValue": "44AH3X"
+        }
+      },
+      "createTime": "2026-05-23T04:46:00.024295Z",
+      "updateTime": "2026-05-23T04:46:00.073649Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-353",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-017"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-23T04:47:14.972Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-353"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "licencia": {
+          "stringValue": "PDTE"
+        },
+        "telefono": {
+          "stringValue": "PDTE "
+        },
+        "createdAt": {
+          "stringValue": "2026-05-23T04:47:14.972Z"
+        },
+        "nombre": {
+          "stringValue": "Efren Elizondo Molina"
+        },
+        "placasTracto": {
+          "stringValue": "58BM4V"
+        }
+      },
+      "createTime": "2026-05-23T04:47:15.497059Z",
+      "updateTime": "2026-05-23T04:47:15.497059Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-354",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-011"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-23T13:07:53.773Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-354"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-23T13:07:53.773Z"
+        },
+        "nombre": {
+          "stringValue": "JUAN CARLOS GUTIERREZ "
+        },
+        "telefono": {
+          "stringValue": "8671681924"
+        },
+        "licencia": {
+          "stringValue": "PDTE"
+        },
+        "placasTracto": {
+          "stringValue": "10AT9V"
+        }
+      },
+      "createTime": "2026-05-23T13:07:54.160027Z",
+      "updateTime": "2026-05-23T13:07:54.160027Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-355",
+      "fields": {
+        "placasTracto": {
+          "stringValue": "85AM1Z"
+        },
+        "nombre": {
+          "stringValue": "Angel Bernardo Ambriz Torres"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-23T14:20:37.703Z"
+        },
+        "telefono": {
+          "stringValue": "Pending"
+        },
+        "licencia": {
+          "stringValue": "3629642"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARC-355"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-23T14:20:37.703Z"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-002"
+        }
+      },
+      "createTime": "2026-05-23T14:20:38.351123Z",
+      "updateTime": "2026-05-23T14:20:38.351123Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-356",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-002"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-23T14:22:04.991Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-356"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-23T14:22:04.991Z"
+        },
+        "nombre": {
+          "stringValue": "Aldo Erick Aguilar Garcia"
+        },
+        "telefono": {
+          "stringValue": "pending"
+        },
+        "licencia": {
+          "stringValue": "4906756"
+        },
+        "placasTracto": {
+          "stringValue": "695DM2"
+        }
+      },
+      "createTime": "2026-05-23T14:22:06.006755Z",
+      "updateTime": "2026-05-23T14:22:06.006755Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-357",
+      "fields": {
+        "telefono": {
+          "stringValue": "PDTE"
+        },
+        "licencia": {
+          "stringValue": "PDTE"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-23T16:39:13.752Z"
+        },
+        "nombre": {
+          "stringValue": "JOSE YNES CAMACHO"
+        },
+        "placasTracto": {
+          "stringValue": "09AS7K"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-031"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-23T16:39:13.752Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-357"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        }
+      },
+      "createTime": "2026-05-23T16:39:27.845158Z",
+      "updateTime": "2026-05-23T16:39:57.418582Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-358",
+      "fields": {
+        "placasTracto": {
+          "stringValue": "61BD3A"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-25T13:42:01.672Z"
+        },
+        "nombre": {
+          "stringValue": "Luis de la Fuente"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-25T13:42:01.672Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-358"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-24"
+        }
+      },
+      "createTime": "2026-05-25T13:42:02.991938Z",
+      "updateTime": "2026-05-25T13:42:02.991938Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-359",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "SNCY-001"
+        },
+        "tipoLicencia": {
+          "stringValue": " "
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARC-359"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-25T14:15:09.359Z"
+        },
+        "nombre": {
+          "stringValue": "JUAN MANUEL CHARLES CERVANTES"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-25T14:15:09.359Z"
+        },
+        "licencia": {
+          "stringValue": "  "
+        },
+        "telefono": {
+          "stringValue": "81 1631 8807"
+        },
+        "placasTracto": {
+          "stringValue": " "
+        }
+      },
+      "createTime": "2026-05-25T14:15:10.498443Z",
+      "updateTime": "2026-05-25T14:15:10.498443Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-360",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-24"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "tipoLicencia": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-25T15:24:53.223Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-360"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-25T15:24:53.223Z"
+        },
+        "nombre": {
+          "stringValue": "Felipe de Jesus Gonzalez Contreras"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "placasTracto": {
+          "stringValue": "772EX6"
+        }
+      },
+      "createTime": "2026-05-25T15:24:59.566989Z",
+      "updateTime": "2026-05-25T15:24:59.566989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-361",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-05-25T16:03:28.303Z"
+        },
+        "nombre": {
+          "stringValue": "Pedro Dena"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "placasTracto": {
+          "stringValue": "5282548"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-25T16:03:28.303Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-361"
+        }
+      },
+      "createTime": "2026-05-25T16:03:29.378699Z",
+      "updateTime": "2026-05-25T16:03:29.378699Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-362",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-014"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARC-362"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-25T16:50:43.835Z"
+        },
+        "nombre": {
+          "stringValue": "Omar Leal"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-25T16:50:43.835Z"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "placasTracto": {
+          "stringValue": "40AR4G"
+        }
+      },
+      "createTime": "2026-05-25T16:50:45.012365Z",
+      "updateTime": "2026-05-25T16:50:45.012365Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-363",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-25T16:56:37.524Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-363"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-25T16:56:37.524Z"
+        },
+        "nombre": {
+          "stringValue": "Gregorio Gonzalez"
+        }
+      },
+      "createTime": "2026-05-25T16:56:38.599025Z",
+      "updateTime": "2026-05-25T16:56:38.599025Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-364",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-05-25T18:17:48.123Z"
+        },
+        "nombre": {
+          "stringValue": "Hector Resendez"
+        },
+        "telefono": {
+          "stringValue": "8117988407"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "placasTracto": {
+          "stringValue": "77BE1U"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-014"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "tipoLicencia": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-25T18:17:48.123Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-364"
+        }
+      },
+      "createTime": "2026-05-25T18:17:49.237473Z",
+      "updateTime": "2026-05-25T18:17:49.237473Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-365",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-002"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "tipoLicencia": {
+          "stringValue": " "
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-25T18:44:17.220Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-365"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-25T18:44:17.220Z"
+        },
+        "nombre": {
+          "stringValue": "JOSE ELIAS PUENTE ROMERO"
+        },
+        "licencia": {
+          "stringValue": "NVOL029310"
+        },
+        "telefono": {
+          "stringValue": " "
+        },
+        "placasTracto": {
+          "stringValue": " "
+        }
+      },
+      "createTime": "2026-05-25T18:44:18.128937Z",
+      "updateTime": "2026-05-25T18:44:18.128937Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-366",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-002"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-25T20:45:41.434Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-366"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "tipoLicencia": {
+          "stringValue": " "
+        },
+        "telefono": {
+          "stringValue": " "
+        },
+        "licencia": {
+          "stringValue": "JULIO CESAR GARCIA ROJAS"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-25T20:45:41.434Z"
+        },
+        "nombre": {
+          "stringValue": "JULIO CESAR GARCIA ROJAS"
+        },
+        "placasTracto": {
+          "stringValue": " "
+        }
+      },
+      "createTime": "2026-05-25T20:45:42.582640Z",
+      "updateTime": "2026-05-25T20:45:42.582640Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-367",
+      "fields": {
+        "placasTracto": {
+          "stringValue": "26BD1P"
+        },
+        "licencia": {
+          "stringValue": "NVOL029099"
+        },
+        "telefono": {
+          "stringValue": "6511048978"
+        },
+        "nombre": {
+          "stringValue": "Juan Pablo Vazquez Hernandez"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-26T14:36:31.045Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-367"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-26T14:36:31.045Z"
+        },
+        "tipoLicencia": {
+          "stringValue": ""
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "transportLineId": {
+          "stringValue": "SNCY-001"
+        }
+      },
+      "createTime": "2026-05-26T14:36:14.005630Z",
+      "updateTime": "2026-05-26T14:36:32.013219Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-368",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARC-368"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-26T14:36:50.984Z"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-24"
+        },
+        "placasTracto": {
+          "stringValue": "50AG1L"
+        },
+        "nombre": {
+          "stringValue": "Braulio Gonzalez Bautista"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-26T14:36:50.984Z"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        }
+      },
+      "createTime": "2026-05-26T14:36:52.121695Z",
+      "updateTime": "2026-05-26T14:36:52.121695Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-369",
+      "fields": {
+        "nombre": {
+          "stringValue": "Carlos Adonal Baez Zamora"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-26T14:39:05.964Z"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "placasTracto": {
+          "stringValue": "767EX6"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-24"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARC-369"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-26T14:39:05.964Z"
+        }
+      },
+      "createTime": "2026-05-26T14:39:20.895849Z",
+      "updateTime": "2026-05-26T14:39:20.895849Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-370",
+      "fields": {
+        "nombre": {
+          "stringValue": "Luis Flores Javier"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-26T16:24:34.120Z"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARC-370"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:24:34.120Z"
+        }
+      },
+      "createTime": "2026-05-26T16:24:35.727154Z",
+      "updateTime": "2026-05-26T16:24:35.727154Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-371",
+      "fields": {
+        "nombre": {
+          "stringValue": "Juan Jose Loyola"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-26T16:25:04.063Z"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARC-371"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:25:04.063Z"
+        }
+      },
+      "createTime": "2026-05-26T16:25:05.869440Z",
+      "updateTime": "2026-05-26T16:25:05.869440Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-372",
+      "fields": {
+        "placasTracto": {
+          "stringValue": "40AR4G"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "8186568320"
+        },
+        "nombre": {
+          "stringValue": "Omar Alanis"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-27T12:53:45.703Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-372"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-27T12:53:45.703Z"
+        },
+        "tipoLicencia": {
+          "stringValue": ""
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-014"
+        }
+      },
+      "createTime": "2026-05-27T12:53:47.352104Z",
+      "updateTime": "2026-05-27T12:53:47.421320Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-373",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-27T14:06:07.952Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-373"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-013"
+        },
+        "placasTracto": {
+          "stringValue": "14AZ1V"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-27T14:06:07.952Z"
+        },
+        "nombre": {
+          "stringValue": "Ramiro Tamez"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        }
+      },
+      "createTime": "2026-05-27T14:06:09.422266Z",
+      "updateTime": "2026-05-27T14:06:09.422266Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-374",
+      "fields": {
+        "placasTracto": {
+          "stringValue": " "
+        },
+        "createdAt": {
+          "stringValue": "2026-05-27T14:28:07.078Z"
+        },
+        "nombre": {
+          "stringValue": "JUAN RAMON HERNANDEZ GARCIA"
+        },
+        "licencia": {
+          "stringValue": "NVOL071749"
+        },
+        "telefono": {
+          "stringValue": "52 1 81 2196 6859"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "tipoLicencia": {
+          "stringValue": " "
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-27T14:28:07.078Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-374"
+        },
+        "transportLineId": {
+          "stringValue": "SNCY-001"
+        }
+      },
+      "createTime": "2026-05-27T14:28:07.916794Z",
+      "updateTime": "2026-05-27T14:28:07.916794Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-375",
+      "fields": {
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "nombre": {
+          "stringValue": "Daniel Carranza De La Rosa"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-27T15:13:10.137Z"
+        },
+        "placasTracto": {
+          "stringValue": "26BC2P"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-24"
+        },
+        "driverId": {
+          "stringValue": "ARC-375"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-27T15:13:10.137Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        }
+      },
+      "createTime": "2026-05-27T15:13:13.108111Z",
+      "updateTime": "2026-05-27T15:13:13.108111Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-376",
+      "fields": {
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-007"
+        },
+        "nombre": {
+          "stringValue": "Eusebio Vallejo"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-27T16:41:17.202Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-376"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-27T16:41:17.202Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        }
+      },
+      "createTime": "2026-05-27T16:41:20.005974Z",
+      "updateTime": "2026-05-27T16:41:20.005974Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-377",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-002"
+        },
+        "driverId": {
+          "stringValue": "ARC-377"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-27T19:37:28.973Z"
+        },
+        "tipoLicencia": {
+          "stringValue": " "
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "licencia": {
+          "stringValue": "3065132"
+        },
+        "telefono": {
+          "stringValue": " "
+        },
+        "nombre": {
+          "stringValue": "JOSE HIPOLITO RODRIGUEZ SANCHEZ"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-27T19:37:28.973Z"
+        },
+        "placasTracto": {
+          "stringValue": " "
+        }
+      },
+      "createTime": "2026-05-27T19:37:39.297574Z",
+      "updateTime": "2026-05-27T19:37:39.558215Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-378",
+      "fields": {
+        "placasTracto": {
+          "stringValue": "200EN3"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-28T12:54:26.616Z"
+        },
+        "nombre": {
+          "stringValue": "MARIO ALBERTO LOA HERRERA"
+        },
+        "licencia": {
+          "stringValue": "3882157"
+        },
+        "telefono": {
+          "stringValue": " "
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "tipoLicencia": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-28T12:54:26.616Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-378"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-002"
+        }
+      },
+      "createTime": "2026-05-28T12:54:28.710447Z",
+      "updateTime": "2026-05-28T12:54:28.710447Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-379",
+      "fields": {
+        "placasTracto": {
+          "stringValue": " "
+        },
+        "createdAt": {
+          "stringValue": "2026-05-28T16:25:58.869Z"
+        },
+        "nombre": {
+          "stringValue": "ORACIO AGUNDIS SEGURA"
+        },
+        "licencia": {
+          "stringValue": "NVOL059108"
+        },
+        "telefono": {
+          "stringValue": " "
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "tipoLicencia": {
+          "stringValue": " "
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-28T16:25:58.869Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-379"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-002"
+        }
+      },
+      "createTime": "2026-05-28T16:26:01.578319Z",
+      "updateTime": "2026-05-28T16:26:01.578319Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-380",
+      "fields": {
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "nombre": {
+          "stringValue": "Luis Cordova"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-28T20:21:08.105Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-380"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-28T20:21:08.105Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        }
+      },
+      "createTime": "2026-05-28T20:21:09.549394Z",
+      "updateTime": "2026-05-28T20:21:09.549394Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-381",
+      "fields": {
+        "driverId": {
+          "stringValue": "ARC-381"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-29T12:34:57.712Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "8674687730"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-008"
+        },
+        "nombre": {
+          "stringValue": "Carlos Martinez"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-29T12:34:57.712Z"
+        }
+      },
+      "createTime": "2026-05-29T12:34:59.694864Z",
+      "updateTime": "2026-05-29T12:34:59.694864Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-382",
+      "fields": {
+        "driverId": {
+          "stringValue": "ARC-382"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-29T12:43:00.737Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-014"
+        },
+        "nombre": {
+          "stringValue": "Oscar Nicolas Perez"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-29T12:43:00.737Z"
+        }
+      },
+      "createTime": "2026-05-29T12:43:02.134866Z",
+      "updateTime": "2026-05-29T12:43:02.134866Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-383",
+      "fields": {
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-016"
+        },
+        "nombre": {
+          "stringValue": "Miguel Aguillon"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-29T14:00:48.000Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-383"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-29T14:00:48.000Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        }
+      },
+      "createTime": "2026-05-29T14:00:48.948228Z",
+      "updateTime": "2026-05-29T14:00:48.948228Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-384",
+      "fields": {
+        "licencia": {
+          "stringValue": " "
+        },
+        "telefono": {
+          "stringValue": " "
+        },
+        "createdAt": {
+          "stringValue": "2026-05-29T14:52:56.101Z"
+        },
+        "nombre": {
+          "stringValue": "ERIK IRAM VAZQUEZ CASTILLO"
+        },
+        "placasTracto": {
+          "stringValue": " "
+        },
+        "transportLineId": {
+          "stringValue": "SNCY-001"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-29T14:52:56.101Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-384"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "tipoLicencia": {
+          "stringValue": " "
+        }
+      },
+      "createTime": "2026-05-29T14:52:57.386895Z",
+      "updateTime": "2026-05-29T14:52:57.386895Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-385",
+      "fields": {
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "nombre": {
+          "stringValue": "Filiberto Solis"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-29T18:08:39.149Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-385"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-29T18:08:39.149Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        }
+      },
+      "createTime": "2026-05-29T18:08:40.083003Z",
+      "updateTime": "2026-05-29T18:08:40.083003Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-386",
+      "fields": {
+        "driverId": {
+          "stringValue": "ARC-386"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-29T18:22:44.058Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-24"
+        },
+        "placasTracto": {
+          "stringValue": "19BC2P"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "nombre": {
+          "stringValue": "Ricardo Tepatzi Lara"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-29T18:22:44.058Z"
+        }
+      },
+      "createTime": "2026-05-29T18:22:45.322458Z",
+      "updateTime": "2026-05-29T18:22:45.322458Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-387",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-007"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-30T12:35:57.943Z"
+        },
+        "nombre": {
+          "stringValue": "Emanuel Montoya"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-30T12:35:57.943Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-387"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        }
+      },
+      "createTime": "2026-05-30T12:35:59.999352Z",
+      "updateTime": "2026-05-30T12:35:59.999352Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-388",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-05-30T12:42:41.903Z"
+        },
+        "nombre": {
+          "stringValue": "Jose Israel "
+        },
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-30T12:42:41.903Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-388"
+        }
+      },
+      "createTime": "2026-05-30T12:42:43.290539Z",
+      "updateTime": "2026-05-30T12:42:43.290539Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-389",
+      "fields": {
+        "nombre": {
+          "stringValue": "Ruben Contreras"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-30T12:43:07.364Z"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARC-389"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-30T12:43:07.364Z"
+        }
+      },
+      "createTime": "2026-05-30T12:43:08.482065Z",
+      "updateTime": "2026-05-30T12:43:08.482065Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-390",
+      "fields": {
+        "driverId": {
+          "stringValue": "ARC-390"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-30T12:43:39.321Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "nombre": {
+          "stringValue": "Juan Marques Escobedo"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-30T12:43:39.321Z"
+        }
+      },
+      "createTime": "2026-05-30T12:43:41.088413Z",
+      "updateTime": "2026-05-30T12:43:41.088413Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-391",
+      "fields": {
+        "nombre": {
+          "stringValue": "Nestor Guillermo Rodriguez"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-30T12:44:17.107Z"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARC-391"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-30T12:44:17.107Z"
+        }
+      },
+      "createTime": "2026-05-30T12:44:18.309277Z",
+      "updateTime": "2026-05-30T12:44:18.309277Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-392",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-013"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-30T12:50:22.754Z"
+        },
+        "nombre": {
+          "stringValue": "Jose Benito de Leon Sanchez"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-30T12:50:22.754Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-392"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        }
+      },
+      "createTime": "2026-05-30T12:50:24.333353Z",
+      "updateTime": "2026-05-30T12:50:24.333353Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-393",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-01T12:32:05.406Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-393"
+        },
+        "createdAt": {
+          "stringValue": "2026-06-01T12:32:05.406Z"
+        },
+        "nombre": {
+          "stringValue": "Jorge Fermin"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-014"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        }
+      },
+      "createTime": "2026-06-01T12:32:06.238314Z",
+      "updateTime": "2026-06-01T12:32:06.238314Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-394",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-06-01T13:29:04.327Z"
+        },
+        "nombre": {
+          "stringValue": "Sergio Eduardo Rios Gonzalez"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-23"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-01T13:29:04.327Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-394"
+        }
+      },
+      "createTime": "2026-06-01T13:29:06.100598Z",
+      "updateTime": "2026-06-01T13:29:06.100598Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-395",
+      "fields": {
+        "driverId": {
+          "stringValue": "ARC-395"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-01T15:36:42.179Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-007"
+        },
+        "nombre": {
+          "stringValue": "Emmanuel Montoya"
+        },
+        "createdAt": {
+          "stringValue": "2026-06-01T15:36:42.179Z"
+        }
+      },
+      "createTime": "2026-06-01T15:36:44.492563Z",
+      "updateTime": "2026-06-01T15:36:44.492563Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-396",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-06-01T15:37:15.060Z"
+        },
+        "nombre": {
+          "stringValue": "Jose Rivas"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-007"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-01T15:37:15.060Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-396"
+        }
+      },
+      "createTime": "2026-06-01T15:37:16.553297Z",
+      "updateTime": "2026-06-01T15:37:16.553297Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-397",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARC-397"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-01T16:47:08.170Z"
+        },
+        "nombre": {
+          "stringValue": "Luis Carlos De La Fuente"
+        },
+        "createdAt": {
+          "stringValue": "2026-06-01T16:47:08.170Z"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-24"
+        }
+      },
+      "createTime": "2026-06-01T16:47:11.259317Z",
+      "updateTime": "2026-06-01T16:47:11.379068Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-398",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARC-398"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-02T13:39:22.678Z"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-032"
+        },
+        "placasTracto": {
+          "stringValue": "57AW7Y"
+        },
+        "nombre": {
+          "stringValue": "Yovanny Alfaro Verdin"
+        },
+        "createdAt": {
+          "stringValue": "2026-06-02T13:39:22.678Z"
+        },
+        "telefono": {
+          "stringValue": "4643597119"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        }
+      },
+      "createTime": "2026-06-02T13:39:30.929802Z",
+      "updateTime": "2026-06-02T13:39:30.929802Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-399",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-02T13:40:21.183Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-399"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-032"
+        },
+        "placasTracto": {
+          "stringValue": "03AT1P"
+        },
+        "createdAt": {
+          "stringValue": "2026-06-02T13:40:21.183Z"
+        },
+        "nombre": {
+          "stringValue": "Cesar Salazar Gomez"
+        },
+        "licencia": {
+          "stringValue": "Pendiete"
+        },
+        "telefono": {
+          "stringValue": "4621300288"
+        }
+      },
+      "createTime": "2026-06-02T13:40:41.842033Z",
+      "updateTime": "2026-06-02T13:40:41.842033Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-400",
+      "fields": {
+        "telefono": {
+          "stringValue": "999999999"
+        },
+        "licencia": {
+          "stringValue": "NVOL063410"
+        },
+        "nombre": {
+          "stringValue": "Arturo Cano Pineda"
+        },
+        "createdAt": {
+          "stringValue": "2026-06-02T13:44:07.722Z"
+        },
+        "transportLineId": {
+          "stringValue": "JBH-001"
+        },
+        "driverId": {
+          "stringValue": "ARC-400"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-02T13:44:07.722Z"
+        },
+        "tipoLicencia": {
+          "stringValue": "FEDERAL"
+        },
+        "carrierCodigo": {
+          "stringValue": "JBHT"
+        }
+      },
+      "createTime": "2026-06-02T13:44:09.777241Z",
+      "updateTime": "2026-06-02T13:44:09.777241Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-401",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-02T16:36:59.357Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-401"
+        },
+        "createdAt": {
+          "stringValue": "2026-06-02T16:36:59.357Z"
+        },
+        "nombre": {
+          "stringValue": "Angel Osorio"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-24"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        }
+      },
+      "createTime": "2026-06-02T16:37:16.461306Z",
+      "updateTime": "2026-06-02T16:37:26.966657Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-402",
+      "fields": {
+        "driverId": {
+          "stringValue": "ARC-402"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-02T17:06:33.779Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "licencia": {
+          "stringValue": "Pendiente"
+        },
+        "telefono": {
+          "stringValue": "Pendiente"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-004"
+        },
+        "nombre": {
+          "stringValue": "Nestor Soto"
+        },
+        "createdAt": {
+          "stringValue": "2026-06-02T17:06:33.779Z"
+        }
+      },
+      "createTime": "2026-06-02T17:06:35.459282Z",
+      "updateTime": "2026-06-02T17:06:35.459282Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-51",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-21T19:02:50.742Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-51"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-012"
+        },
+        "placasTracto": {
+          "stringValue": "TC.2105"
+        },
+        "licencia": {
+          "stringValue": " "
+        },
+        "telefono": {
+          "stringValue": "867 171 2584"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T13:11:15.670Z"
+        },
+        "nombre": {
+          "stringValue": "Antonio Sosa"
+        }
+      },
+      "createTime": "2026-04-07T13:11:16.110762Z",
+      "updateTime": "2026-04-21T19:02:51.358413Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-52",
+      "fields": {
+        "telefono": {
+          "stringValue": "  Pendiente"
+        },
+        "licencia": {
+          "stringValue": "  Pendiente"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T13:11:55.647Z"
+        },
+        "nombre": {
+          "stringValue": "Angel Rodriguez"
+        },
+        "placasTracto": {
+          "stringValue": "Estado TN "
+        },
+        "transportLineId": {
+          "stringValue": "ARC-013"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-09T00:06:06.097Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-52"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        }
+      },
+      "createTime": "2026-04-07T13:11:56.022100Z",
+      "updateTime": "2026-04-09T00:06:06.648968Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-54",
+      "fields": {
+        "licencia": {
+          "stringValue": " "
+        },
+        "telefono": {
+          "stringValue": "81 3444 8651"
+        },
+        "nombre": {
+          "stringValue": "Benavides rosales jerónimo Jaziel"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T13:16:54.910Z"
+        },
+        "placasTracto": {
+          "stringValue": "0005"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-008"
+        },
+        "driverId": {
+          "stringValue": "ARC-54"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-09T00:01:12.380Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        }
+      },
+      "createTime": "2026-04-07T13:16:55.239831Z",
+      "updateTime": "2026-04-09T00:01:12.767660Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-55",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-07T13:17:33.202Z"
+        },
+        "nombre": {
+          "stringValue": "Juan Carlos Hernández Garcia"
+        },
+        "licencia": {
+          "stringValue": " Pending"
+        },
+        "telefono": {
+          "stringValue": "81 2096 9529"
+        },
+        "placasTracto": {
+          "stringValue": "94BF2R"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-008"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-14T00:39:46.156Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-55"
+        }
+      },
+      "createTime": "2026-04-07T13:17:33.530204Z",
+      "updateTime": "2026-04-14T00:39:46.836114Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-56",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-09T00:02:12.563Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-56"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-014"
+        },
+        "placasTracto": {
+          "stringValue": "55AY4V"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T14:58:59.606Z"
+        },
+        "nombre": {
+          "stringValue": "Andres Salazar Gonzalez "
+        },
+        "licencia": {
+          "stringValue": " "
+        },
+        "telefono": {
+          "stringValue": "8126152318"
+        }
+      },
+      "createTime": "2026-04-07T14:59:00.023791Z",
+      "updateTime": "2026-04-09T00:02:12.923642Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-57",
+      "fields": {
+        "placasTracto": {
+          "stringValue": "759446T"
+        },
+        "licencia": {
+          "stringValue": "   "
+        },
+        "telefono": {
+          "stringValue": "8713821952"
+        },
+        "nombre": {
+          "stringValue": "Jonathan Omar Quezada Coronado"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T15:24:15.900Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-57"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-09T00:04:29.678Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-014"
+        }
+      },
+      "createTime": "2026-04-07T15:24:16.420820Z",
+      "updateTime": "2026-04-09T00:04:30.029931Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-76",
+      "fields": {
+        "transportLineId": {
+          "stringValue": "ARC-009"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-09T00:09:38.015Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-76"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-08T14:13:48.569Z"
+        },
+        "nombre": {
+          "stringValue": "Angel Daniel Martinez"
+        },
+        "telefono": {
+          "stringValue": "5218115541494"
+        },
+        "licencia": {
+          "stringValue": "Pending"
+        },
+        "placasTracto": {
+          "stringValue": "489AP4"
+        }
+      },
+      "createTime": "2026-04-08T14:13:49.014471Z",
+      "updateTime": "2026-04-09T00:09:38.331773Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARC-80",
+      "fields": {
+        "licencia": {
+          "stringValue": "Pending "
+        },
+        "telefono": {
+          "stringValue": "8114961163"
+        },
+        "nombre": {
+          "stringValue": "Tenorio Molina Alexis Antonio "
+        },
+        "createdAt": {
+          "stringValue": "2026-04-09T11:58:19.888Z"
+        },
+        "driverId": {
+          "stringValue": "ARC-80"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-09T11:58:19.888Z"
+        },
+        "placasTracto": {
+          "stringValue": "75AU5D"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        }
+      },
+      "createTime": "2026-04-09T11:58:20.677760Z",
+      "updateTime": "2026-04-09T11:58:20.677760Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARCB 60",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-07T15:32:48.003Z"
+        },
+        "nombre": {
+          "stringValue": "José de la Paz González Macías"
+        },
+        "telefono": {
+          "stringValue": "+52 873 100 1541"
+        },
+        "licencia": {
+          "stringValue": "555555"
+        },
+        "placasTracto": {
+          "stringValue": "96Bk4k"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-014"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-15T12:58:13.846Z"
+        },
+        "driverId": {
+          "stringValue": "ARCB 60"
+        }
+      },
+      "createTime": "2026-04-07T15:32:48.504852Z",
+      "updateTime": "2026-04-15T12:58:15.582800Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARCB 61",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-07T15:32:48.690Z"
+        },
+        "nombre": {
+          "stringValue": "Michael Alexander Camarillo Jasso"
+        },
+        "telefono": {
+          "stringValue": "\t8117647871"
+        },
+        "licencia": {
+          "stringValue": "555555"
+        },
+        "placasTracto": {
+          "stringValue": "67BF9S"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-014"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-17T12:47:46.616Z"
+        },
+        "driverId": {
+          "stringValue": "ARCB 61"
+        }
+      },
+      "createTime": "2026-04-07T15:32:49.019547Z",
+      "updateTime": "2026-04-17T12:47:47.500174Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARCB 62",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARCB 62"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-14T13:44:09.661Z"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-011"
+        },
+        "placasTracto": {
+          "stringValue": ""
+        },
+        "nombre": {
+          "stringValue": "JOSE GONZALEZ"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T15:32:49.200Z"
+        },
+        "licencia": {
+          "stringValue": "Pending"
+        },
+        "telefono": {
+          "stringValue": "8110694909"
+        }
+      },
+      "createTime": "2026-04-07T15:32:49.501305Z",
+      "updateTime": "2026-04-14T13:44:10.217373Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARCB 63",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-14T13:33:58.299Z"
+        },
+        "driverId": {
+          "stringValue": "ARCB 63"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-016"
+        },
+        "placasTracto": {
+          "stringValue": "25AU8U"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T15:32:49.698Z"
+        },
+        "nombre": {
+          "stringValue": "ANGEL OSORIO"
+        },
+        "telefono": {
+          "stringValue": "8262958189"
+        },
+        "licencia": {
+          "stringValue": "555555"
+        }
+      },
+      "createTime": "2026-04-07T15:32:50.000319Z",
+      "updateTime": "2026-04-14T13:33:59.013322Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARCB 64",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "placasTracto": {
+          "stringValue": "77AP4W"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-07T15:32:50.187Z"
+        },
+        "driverId": {
+          "stringValue": "ARCB 64"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T15:32:50.187Z"
+        },
+        "nombre": {
+          "stringValue": "Aldo Pérez"
+        },
+        "licencia": {
+          "stringValue": "555555"
+        },
+        "telefono": {
+          "stringValue": "56 2212 1199"
+        }
+      },
+      "createTime": "2026-04-07T15:32:50.489117Z",
+      "updateTime": "2026-04-07T15:32:50.489117Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARCB 65",
+      "fields": {
+        "placasTracto": {
+          "stringValue": "23DC5N"
+        },
+        "licencia": {
+          "stringValue": "555555"
+        },
+        "telefono": {
+          "stringValue": "+52 867 167 3005"
+        },
+        "nombre": {
+          "stringValue": "PEDRO ADRIAN SANCHEZ MELENDEZ"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T15:32:50.687Z"
+        },
+        "driverId": {
+          "stringValue": "ARCB 65"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-09T00:10:12.541Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-009"
+        }
+      },
+      "createTime": "2026-04-07T15:32:50.992587Z",
+      "updateTime": "2026-04-09T00:10:12.877170Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARCB 66",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "placasTracto": {
+          "stringValue": "163DN5"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-07T15:32:51.190Z"
+        },
+        "driverId": {
+          "stringValue": "ARCB 66"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T15:32:51.190Z"
+        },
+        "nombre": {
+          "stringValue": "HORACIO CAVAZOS RODRIGUEZ"
+        },
+        "telefono": {
+          "stringValue": "555-555-5555"
+        },
+        "licencia": {
+          "stringValue": "555555"
+        }
+      },
+      "createTime": "2026-04-07T15:32:51.486140Z",
+      "updateTime": "2026-04-07T15:32:51.486140Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARCB 67",
+      "fields": {
+        "placasTracto": {
+          "stringValue": "RL3050B"
+        },
+        "telefono": {
+          "stringValue": "+52 1 81 3081 5933"
+        },
+        "licencia": {
+          "stringValue": "555555"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T15:32:51.684Z"
+        },
+        "nombre": {
+          "stringValue": "GILBERTO LOREDO RIVERA"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-11T14:40:23.349Z"
+        },
+        "driverId": {
+          "stringValue": "ARCB 67"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-009"
+        }
+      },
+      "createTime": "2026-04-07T15:32:51.983602Z",
+      "updateTime": "2026-04-11T14:40:23.684227Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARCB 68",
+      "fields": {
+        "placasTracto": {
+          "stringValue": "01BM9S"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T15:32:52.171Z"
+        },
+        "nombre": {
+          "stringValue": "JOSE DANIEL MACIAS RODRIGUEZ"
+        },
+        "telefono": {
+          "stringValue": "+52 1 81 1554 1494"
+        },
+        "licencia": {
+          "stringValue": "555555"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-14T14:30:06.133Z"
+        },
+        "driverId": {
+          "stringValue": "ARCB 68"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-009"
+        }
+      },
+      "createTime": "2026-04-07T15:32:52.462523Z",
+      "updateTime": "2026-04-14T14:30:06.465848Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARCB 69",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARCB 69"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-11T13:05:57.618Z"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-009"
+        },
+        "placasTracto": {
+          "stringValue": "50BL1M"
+        },
+        "nombre": {
+          "stringValue": "Daniel Mosqueda Torres"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T15:32:52.662Z"
+        },
+        "licencia": {
+          "stringValue": "Pending"
+        },
+        "telefono": {
+          "stringValue": "+52 1 81 1249 8489"
+        }
+      },
+      "createTime": "2026-04-07T15:32:52.967548Z",
+      "updateTime": "2026-04-11T13:05:57.914258Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARCB 70",
+      "fields": {
+        "nombre": {
+          "stringValue": "Alfonso Mar Garcia"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T15:32:53.167Z"
+        },
+        "telefono": {
+          "stringValue": "+52 1 81 2893 7165"
+        },
+        "licencia": {
+          "stringValue": "555555"
+        },
+        "placasTracto": {
+          "stringValue": "87BF4U"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-009"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "ARCB 70"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-14T14:29:56.613Z"
+        }
+      },
+      "createTime": "2026-04-07T15:32:53.436488Z",
+      "updateTime": "2026-04-14T14:29:56.912772Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/ARCB-54",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "placasTracto": {
+          "stringValue": "821"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-07T13:16:34.535Z"
+        },
+        "driverId": {
+          "stringValue": "ARCB-54"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T13:16:34.535Z"
+        },
+        "nombre": {
+          "stringValue": "Tovar Sergio Meza"
+        },
+        "telefono": {
+          "stringValue": "81 2424 6241"
+        },
+        "licencia": {
+          "stringValue": " "
+        }
+      },
+      "createTime": "2026-04-07T13:16:34.876055Z",
+      "updateTime": "2026-04-07T13:16:34.876055Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/CIN",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-08T12:57:03.038Z"
+        },
+        "nombre": {
+          "stringValue": "Valadez Luevano Jorge Luis"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-008"
+        },
+        "licencia": {
+          "stringValue": " "
+        },
+        "telefono": {
+          "stringValue": "+528181783582"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-23T13:25:32.959Z"
+        },
+        "driverId": {
+          "stringValue": "CIN"
+        }
+      },
+      "createTime": "2026-04-08T12:57:03.579564Z",
+      "updateTime": "2026-04-23T13:25:33.318624Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/CIN-01",
+      "fields": {
+        "placasTracto": {
+          "stringValue": " "
+        },
+        "licencia": {
+          "stringValue": " "
+        },
+        "telefono": {
+          "stringValue": "+52 867 198 9295"
+        },
+        "nombre": {
+          "stringValue": "Vicente Eluid Montalvo Cortez"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-08T12:56:00.798Z"
+        },
+        "driverId": {
+          "stringValue": "CIN-01"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-09T00:00:36.914Z"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "transportLineId": {
+          "stringValue": "ARC-008"
+        }
+      },
+      "createTime": "2026-04-08T12:56:01.359993Z",
+      "updateTime": "2026-04-09T00:00:37.260941Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/EJShelby ",
+      "fields": {
+        "placasTracto": {
+          "stringValue": "123"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "driverId": {
+          "stringValue": "EJShelby "
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:46:28.067Z"
+        },
+        "nombre": {
+          "stringValue": "EJ Shelby in Route"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-03T19:46:28.067Z"
+        },
+        "licencia": {
+          "stringValue": "12345678"
+        },
+        "telefono": {
+          "stringValue": "55555555"
+        }
+      },
+      "createTime": "2026-04-03T19:46:28.662902Z",
+      "updateTime": "2026-04-03T19:46:28.662902Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/JBH-001",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-14T22:12:59.169Z"
+        },
+        "driverId": {
+          "stringValue": "JBH-001"
+        },
+        "carrierCodigo": {
+          "stringValue": "JBHT"
+        },
+        "transportLineId": {
+          "stringValue": "JBH-001"
+        },
+        "placasTracto": {
+          "stringValue": "JBH-001"
+        },
+        "telefono": {
+          "stringValue": "123456789"
+        },
+        "licencia": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-14T22:12:59.169Z"
+        },
+        "nombre": {
+          "stringValue": "Juan López"
+        }
+      },
+      "createTime": "2026-05-14T22:13:00.327417Z",
+      "updateTime": "2026-05-14T22:13:00.327417Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/JBH-002",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "JBHT"
+        },
+        "driverId": {
+          "stringValue": "JBH-002"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-18T15:44:35.758Z"
+        },
+        "nombre": {
+          "stringValue": "Ramiro Ramirez"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-18T15:44:35.758Z"
+        },
+        "licencia": {
+          "stringValue": "123456"
+        },
+        "telefono": {
+          "stringValue": "123456"
+        },
+        "transportLineId": {
+          "stringValue": "JBH-001"
+        }
+      },
+      "createTime": "2026-05-18T15:44:36.723436Z",
+      "updateTime": "2026-05-18T15:44:36.723436Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/SCH-001",
+      "fields": {
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "placasTracto": {
+          "stringValue": " "
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-07T20:02:35.512Z"
+        },
+        "driverId": {
+          "stringValue": "SCH-001"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T20:02:35.512Z"
+        },
+        "nombre": {
+          "stringValue": "CONTRERAS GARCIA ALEXIS JAIR"
+        },
+        "licencia": {
+          "stringValue": " LFD01064400"
+        },
+        "telefono": {
+          "stringValue": "  "
+        }
+      },
+      "createTime": "2026-04-07T20:02:35.969639Z",
+      "updateTime": "2026-04-07T20:02:35.969639Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/drivers/SCH-002",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-07T20:02:58.286Z"
+        },
+        "driverId": {
+          "stringValue": "SCH-002"
+        },
+        "carrierCodigo": {
+          "stringValue": "ARCB"
+        },
+        "placasTracto": {
+          "stringValue": " "
+        },
+        "licencia": {
+          "stringValue": "NVOL17416"
+        },
+        "telefono": {
+          "stringValue": " "
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T20:02:58.286Z"
+        },
+        "nombre": {
+          "stringValue": "MORALES RIVERA TOMAS "
+        }
+      },
+      "createTime": "2026-04-07T20:02:58.601592Z",
+      "updateTime": "2026-04-07T20:02:58.601592Z"
+    }
+  ]
+}

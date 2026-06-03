@@ -1,0 +1,1985 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/1devany.ramos@cfmoto.com",
+      "fields": {
+        "password": {
+          "stringValue": "cfmoto08"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-10T13:45:07.338Z"
+        },
+        "username": {
+          "stringValue": "1devany.ramos"
+        },
+        "requireReset": {
+          "booleanValue": false
+        },
+        "email": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "role": {
+          "stringValue": "Handheld User"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-10T13:45:14.676Z"
+        }
+      },
+      "createTime": "2026-04-10T13:45:06.153496Z",
+      "updateTime": "2026-06-03T13:30:50.101379Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/1edgarivan.desantiago@cfmoto.com",
+      "fields": {
+        "lastLogin": {
+          "stringValue": "2026-04-02T22:55:18.758Z"
+        },
+        "role": {
+          "stringValue": "Handheld User"
+        },
+        "email": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "requireReset": {
+          "booleanValue": false
+        },
+        "username": {
+          "stringValue": "1edgarivan.desantiago"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-02T22:55:11.546Z"
+        },
+        "password": {
+          "stringValue": "Sekirei123."
+        }
+      },
+      "createTime": "2026-04-02T22:55:11.861027Z",
+      "updateTime": "2026-06-03T13:33:24.381056Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/1lizeth.flores@cfmoto.com",
+      "fields": {
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-11T16:54:18.618Z"
+        },
+        "email": {
+          "stringValue": "1lizeth.flores@cfmoto.com"
+        },
+        "requireReset": {
+          "booleanValue": true
+        },
+        "username": {
+          "stringValue": "1lizeth.flores"
+        },
+        "role": {
+          "stringValue": "Handheld User"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-11T16:54:28.133Z"
+        }
+      },
+      "createTime": "2026-04-11T16:54:21.044552Z",
+      "updateTime": "2026-06-03T02:38:42.620823Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/admin@example.com",
+      "fields": {
+        "scac": {
+          "stringValue": "0000"
+        },
+        "username": {
+          "stringValue": "admin"
+        },
+        "email": {
+          "stringValue": "admin@example.com"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T16:48:07.804Z"
+        },
+        "role": {
+          "stringValue": "Admin"
+        },
+        "createdAt": {
+          "stringValue": "2026-01-03T19:01:58.315Z"
+        },
+        "password": {
+          "stringValue": "cfmoto2024"
+        }
+      },
+      "createTime": "2026-01-03T19:01:58.940813Z",
+      "updateTime": "2026-04-22T15:50:59.537650Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/admin@logimaster.com",
+      "fields": {
+        "password": {
+          "stringValue": "cfmoto2024"
+        },
+        "createdAt": {
+          "stringValue": "2025-12-30T18:26:43.763Z"
+        },
+        "role": {
+          "stringValue": "Admin"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T16:48:11.068Z"
+        },
+        "username": {
+          "stringValue": "admin"
+        },
+        "email": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "scac": {
+          "stringValue": "0000"
+        }
+      },
+      "createTime": "2025-12-30T18:26:44.038572Z",
+      "updateTime": "2026-04-22T15:50:59.829736Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/alan@alan.com",
+      "fields": {
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-21T14:41:40.871Z"
+        },
+        "role": {
+          "stringValue": "Editor"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-21T14:43:53.485Z"
+        },
+        "username": {
+          "stringValue": "alan"
+        },
+        "email": {
+          "stringValue": "alan@alan.com"
+        },
+        "scac": {
+          "stringValue": "11"
+        }
+      },
+      "createTime": "2026-04-21T14:41:41.249114Z",
+      "updateTime": "2026-04-21T14:43:53.908668Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/alberto.lara@cfmoto.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-02-27T20:21:10.586Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "username": {
+          "stringValue": "alberto.lara"
+        },
+        "email": {
+          "stringValue": "alberto.lara@cfmoto.com"
+        },
+        "lastLogin": {
+          "stringValue": "2026-03-30T22:35:58.795Z"
+        },
+        "role": {
+          "stringValue": "Expo"
+        }
+      },
+      "createTime": "2026-02-27T20:21:10.474192Z",
+      "updateTime": "2026-03-30T22:35:59.223147Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/angel.lozano@cfmoto.com",
+      "fields": {
+        "username": {
+          "stringValue": "angel.lozano"
+        },
+        "email": {
+          "stringValue": "angel.lozano@cfmoto.com"
+        },
+        "role": {
+          "stringValue": "Expo"
+        },
+        "lastLogin": {
+          "stringValue": "2026-03-30T22:39:29.396Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-03-30T22:39:17.033Z"
+        }
+      },
+      "createTime": "2026-03-30T22:39:17.313466Z",
+      "updateTime": "2026-03-30T22:39:29.725290Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/arcbestcfmotomexico@arcb.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-03T15:43:24.548Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "scac": {
+          "stringValue": "ARCB"
+        },
+        "email": {
+          "stringValue": "arcbestcfmotomexico@arcb.com"
+        },
+        "username": {
+          "stringValue": "arcbestcfmotomexico"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-06T20:03:33.803Z"
+        },
+        "role": {
+          "stringValue": "Carrier"
+        }
+      },
+      "createTime": "2026-04-03T15:43:24.364343Z",
+      "updateTime": "2026-05-06T20:03:34.375338Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/arcbestmex@ajcgroup.com",
+      "fields": {
+        "lastLogin": {
+          "stringValue": "2026-06-01T19:27:02.212Z"
+        },
+        "role": {
+          "stringValue": "Transportista"
+        },
+        "scac": {
+          "stringValue": "AJAR"
+        },
+        "email": {
+          "stringValue": "arcbestmex@ajcgroup.com"
+        },
+        "username": {
+          "stringValue": "arcbestmex"
+        },
+        "createdAt": {
+          "stringValue": "2026-06-01T19:24:28.165Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        }
+      },
+      "createTime": "2026-06-01T19:24:27.488566Z",
+      "updateTime": "2026-06-01T19:27:23.560926Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/brenda.garza@wisdomfo.com",
+      "fields": {
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T18:53:34.179Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-22T19:20:31.029Z"
+        },
+        "username": {
+          "stringValue": "brenda.garza"
+        },
+        "email": {
+          "stringValue": "brenda.garza@wisdomfo.com"
+        },
+        "scac": {
+          "stringValue": "3694"
+        }
+      },
+      "createTime": "2026-04-22T18:53:34.233720Z",
+      "updateTime": "2026-04-22T19:20:31.295924Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/carlos.chavez@cfmoto.com",
+      "fields": {
+        "role": {
+          "stringValue": "Editor"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:15:50.263Z"
+        },
+        "email": {
+          "stringValue": "carlos.chavez@cfmoto.com"
+        },
+        "username": {
+          "stringValue": "carlos.chavez"
+        },
+        "scac": {
+          "stringValue": "12"
+        },
+        "password": {
+          "stringValue": "cfmoto2024"
+        },
+        "createdAt": {
+          "stringValue": "2025-12-31T14:14:21.121Z"
+        }
+      },
+      "createTime": "2025-12-31T14:14:21.576543Z",
+      "updateTime": "2026-04-22T15:51:00.217741Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/carrier@carrier.com",
+      "fields": {
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-02T18:36:35.925Z"
+        },
+        "username": {
+          "stringValue": "carrier"
+        },
+        "email": {
+          "stringValue": "carrier@carrier.com"
+        },
+        "role": {
+          "stringValue": "Carrier"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-02T18:36:57.567Z"
+        }
+      },
+      "createTime": "2026-04-02T18:36:38.109379Z",
+      "updateTime": "2026-04-02T18:36:57.869877Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/cfmops@chasenshipping.com",
+      "fields": {
+        "email": {
+          "stringValue": "cfmops@chasenshipping.com"
+        },
+        "username": {
+          "stringValue": "cfmops"
+        },
+        "scac": {
+          "stringValue": "1925"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-23T22:51:48.244Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-01-26T20:14:30.293Z"
+        }
+      },
+      "createTime": "2026-01-26T20:14:30.594899Z",
+      "updateTime": "2026-04-23T22:51:51.283837Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/coordinacion.mzo02@grupogts.mx",
+      "fields": {
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:05:48.820Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "scac": {
+          "stringValue": "3471"
+        },
+        "email": {
+          "stringValue": "coordinacion.mzo02@grupogts.mx"
+        },
+        "username": {
+          "stringValue": "coordinacion.mzo02"
+        },
+        "createdAt": {
+          "stringValue": "2026-02-25T16:17:40.135Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        }
+      },
+      "createTime": "2026-02-25T16:17:40.770567Z",
+      "updateTime": "2026-04-20T17:05:49.961445Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/damian.acevedo@expresslinecorp.com",
+      "fields": {
+        "email": {
+          "stringValue": "damian.acevedo@expresslinecorp.com"
+        },
+        "username": {
+          "stringValue": "damian.acevedo"
+        },
+        "scac": {
+          "stringValue": "1925"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-21T22:56:52.765Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-03-25T13:53:59.748Z"
+        }
+      },
+      "createTime": "2026-03-25T13:53:59.497716Z",
+      "updateTime": "2026-04-21T22:56:52.994621Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/daniela.aldape@cfmoto",
+      "fields": {
+        "role": {
+          "stringValue": "Editor"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:14:54.449Z"
+        },
+        "username": {
+          "stringValue": "daniela.aldape"
+        },
+        "email": {
+          "stringValue": "daniela.aldape@cfmoto"
+        },
+        "scac": {
+          "stringValue": "07"
+        },
+        "password": {
+          "stringValue": "cfmoto2024"
+        },
+        "createdAt": {
+          "stringValue": "2026-01-06T15:46:12.743Z"
+        }
+      },
+      "createTime": "2026-01-06T15:46:13.503561Z",
+      "updateTime": "2026-04-22T15:51:00.347018Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/daniela.aldape@cfmoto.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-01-13T20:35:18.331Z"
+        },
+        "password": {
+          "stringValue": "Cfmoto2026"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:14:57.695Z"
+        },
+        "role": {
+          "stringValue": "Editor"
+        },
+        "scac": {
+          "stringValue": "07"
+        },
+        "email": {
+          "stringValue": "daniela.aldape@cfmoto.com"
+        },
+        "username": {
+          "stringValue": "daniela.aldape"
+        }
+      },
+      "createTime": "2026-01-13T20:35:19.244690Z",
+      "updateTime": "2026-04-20T17:14:58.107408Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/dariana.cabrera@jbhunt.com",
+      "fields": {
+        "role": {
+          "stringValue": "Carrier"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-14T21:52:23.340Z"
+        },
+        "email": {
+          "stringValue": "dariana.cabrera@jbhunt.com"
+        },
+        "username": {
+          "stringValue": "dariana.cabrera"
+        },
+        "scac": {
+          "stringValue": "JBHT"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-14T21:51:29.135Z"
+        }
+      },
+      "createTime": "2026-05-14T21:51:30.970765Z",
+      "updateTime": "2026-05-14T21:52:33.134157Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/demo@demo.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-01-06T23:33:51.254Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "scac": {
+          "stringValue": ""
+        },
+        "email": {
+          "stringValue": "demo@demo.com"
+        },
+        "requireReset": {
+          "booleanValue": false
+        },
+        "username": {
+          "stringValue": "demo"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-29T18:58:32.810Z"
+        },
+        "role": {
+          "stringValue": "Handheld User"
+        }
+      },
+      "createTime": "2026-01-06T23:33:51.517327Z",
+      "updateTime": "2026-06-03T02:39:20.697222Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/devany.ramos@cfmoto.com",
+      "fields": {
+        "lastLogin": {
+          "stringValue": "2026-04-10T13:44:48.649Z"
+        },
+        "role": {
+          "stringValue": "Embarques"
+        },
+        "email": {
+          "stringValue": "devany.ramos@cfmoto.com"
+        },
+        "username": {
+          "stringValue": "devany.ramos"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-10T13:44:13.852Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        }
+      },
+      "createTime": "2026-04-10T13:44:12.928335Z",
+      "updateTime": "2026-04-10T13:44:47.513875Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/dstandafer@cfmotousa.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-14T18:50:24.969Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-14T18:50:40.037Z"
+        },
+        "role": {
+          "stringValue": "Cliente"
+        },
+        "email": {
+          "stringValue": "dstandafer@cfmotousa.com"
+        },
+        "username": {
+          "stringValue": "dstandafer"
+        }
+      },
+      "createTime": "2026-04-14T18:50:25.934650Z",
+      "updateTime": "2026-04-14T18:50:40.872374Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/earanda@jamcointl.com",
+      "fields": {
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-15T00:11:31.274Z"
+        },
+        "email": {
+          "stringValue": "earanda@jamcointl.com"
+        },
+        "username": {
+          "stringValue": "earanda"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-15T00:11:53.386Z"
+        }
+      },
+      "createTime": "2026-04-15T00:11:32.719919Z",
+      "updateTime": "2026-04-15T00:11:54.619414Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/edgarivan.desantiago@cfmoto.com",
+      "fields": {
+        "role": {
+          "stringValue": "Embarques"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-02T22:44:57.631Z"
+        },
+        "email": {
+          "stringValue": "edgarivan.desantiago@cfmoto.com"
+        },
+        "username": {
+          "stringValue": "edgarivan.desantiago"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-02T22:33:27.030Z"
+        }
+      },
+      "createTime": "2026-04-02T22:33:27.454271Z",
+      "updateTime": "2026-04-02T22:44:58.095173Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/egonzalez@grupoborder.com.mx",
+      "fields": {
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:22:11.742Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "scac": {
+          "stringValue": "1614"
+        },
+        "email": {
+          "stringValue": "egonzalez@grupoborder.com.mx"
+        },
+        "username": {
+          "stringValue": "egonzalez"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-17T01:00:29.926Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        }
+      },
+      "createTime": "2026-04-17T01:00:36.424435Z",
+      "updateTime": "2026-04-20T17:22:12.164414Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/ejecutivo02@impopacific.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-08T16:42:27.712Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "username": {
+          "stringValue": "ejecutivo02"
+        },
+        "email": {
+          "stringValue": "ejecutivo02@impopacific.com"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-08T16:42:48.997Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        }
+      },
+      "createTime": "2026-04-08T16:42:27.367587Z",
+      "updateTime": "2026-04-08T16:42:48.536395Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/ejecutivo08@impopacific.com",
+      "fields": {
+        "lastLogin": {
+          "stringValue": "2026-03-30T15:57:21.436Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "email": {
+          "stringValue": "ejecutivo08@impopacific.com"
+        },
+        "username": {
+          "stringValue": "ejecutivo08"
+        },
+        "createdAt": {
+          "stringValue": "2026-03-30T15:57:05.117Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        }
+      },
+      "createTime": "2026-03-30T15:57:04.576298Z",
+      "updateTime": "2026-03-30T15:57:20.771876Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/erick.ramos@jbhunt.com",
+      "fields": {
+        "role": {
+          "stringValue": "Carrier"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-14T21:50:43.312Z"
+        },
+        "email": {
+          "stringValue": "erick.ramos@jbhunt.com"
+        },
+        "username": {
+          "stringValue": "erick.ramos"
+        },
+        "scac": {
+          "stringValue": "JBHT"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-14T21:49:59.643Z"
+        }
+      },
+      "createTime": "2026-05-14T21:50:01.255316Z",
+      "updateTime": "2026-05-14T21:50:44.622028Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/erick.velazquez@jbhunt.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-05-14T21:56:55.428Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "scac": {
+          "stringValue": "JBHT"
+        },
+        "email": {
+          "stringValue": "erick.velazquez@jbhunt.com"
+        },
+        "username": {
+          "stringValue": "erick.velazquez"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-14T21:58:09.180Z"
+        },
+        "role": {
+          "stringValue": "Carrier"
+        }
+      },
+      "createTime": "2026-05-14T21:56:57.087394Z",
+      "updateTime": "2026-05-14T21:58:37.596723Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/export10@cfmoto.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-09T20:34:58.085Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "email": {
+          "stringValue": "export10@cfmoto.com"
+        },
+        "username": {
+          "stringValue": "export10"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-09T20:35:38.147Z"
+        },
+        "role": {
+          "stringValue": "Admin"
+        }
+      },
+      "createTime": "2026-04-09T20:34:57.661061Z",
+      "updateTime": "2026-04-09T20:35:37.740517Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/felipe.badillo@wisdomfo.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-22T18:55:13.044Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-22T19:03:58.698Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "scac": {
+          "stringValue": "3153"
+        },
+        "email": {
+          "stringValue": "felipe.badillo@wisdomfo.com"
+        },
+        "username": {
+          "stringValue": "felipe.badillo"
+        }
+      },
+      "createTime": "2026-04-22T18:55:13.116218Z",
+      "updateTime": "2026-04-22T19:04:18.983497Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/gabriel.garcia@jbhunt.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-05-14T21:53:09.536Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-14T21:56:29.678Z"
+        },
+        "role": {
+          "stringValue": "Carrier"
+        },
+        "scac": {
+          "stringValue": "JBHT"
+        },
+        "username": {
+          "stringValue": "gabriel.garcia"
+        },
+        "email": {
+          "stringValue": "gabriel.garcia@jbhunt.com"
+        }
+      },
+      "createTime": "2026-05-14T21:53:11.376245Z",
+      "updateTime": "2026-05-14T21:56:31.368860Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/grodriguez@daiweb.mx",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-05-06T21:24:41.125Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "scac": {
+          "stringValue": "1759"
+        },
+        "username": {
+          "stringValue": "grodriguez"
+        },
+        "email": {
+          "stringValue": "grodriguez@daiweb.mx"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-06T21:24:53.619Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        }
+      },
+      "createTime": "2026-05-06T21:24:40.511681Z",
+      "updateTime": "2026-05-06T21:24:53.764848Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/guadalupe.cruz@wisdomfo.com",
+      "fields": {
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T18:54:32.787Z"
+        },
+        "email": {
+          "stringValue": "guadalupe.cruz@wisdomfo.com"
+        },
+        "username": {
+          "stringValue": "guadalupe.cruz"
+        },
+        "scac": {
+          "stringValue": "3471"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-06T19:02:17.394Z"
+        }
+      },
+      "createTime": "2026-04-22T18:54:32.905678Z",
+      "updateTime": "2026-05-06T19:02:18.169750Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/hanniacfmoto@gmail.com",
+      "fields": {
+        "password": {
+          "stringValue": "Hanniacfmoto"
+        },
+        "createdAt": {
+          "stringValue": "2026-01-12T15:32:03.863Z"
+        },
+        "role": {
+          "stringValue": "Editor"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:15:10.349Z"
+        },
+        "email": {
+          "stringValue": "hanniacfmoto@gmail.com"
+        },
+        "username": {
+          "stringValue": "hanniacfmoto"
+        },
+        "scac": {
+          "stringValue": "08"
+        }
+      },
+      "createTime": "2026-01-12T15:32:02.030285Z",
+      "updateTime": "2026-04-20T17:15:10.762031Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/hector.benitez@cfmoto.com",
+      "fields": {
+        "username": {
+          "stringValue": "hector.benitez"
+        },
+        "email": {
+          "stringValue": "hector.benitez@cfmoto.com"
+        },
+        "scac": {
+          "stringValue": "11"
+        },
+        "role": {
+          "stringValue": "Editor"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:15:43.280Z"
+        },
+        "password": {
+          "stringValue": "cfmoto2024"
+        },
+        "createdAt": {
+          "stringValue": "2026-01-06T22:11:03.304Z"
+        }
+      },
+      "createTime": "2026-01-06T22:11:03.862470Z",
+      "updateTime": "2026-04-22T15:51:00.471113Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/hector.elizondo@cfmoto.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-05-11T19:05:54.539Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-11T19:06:44.356Z"
+        },
+        "role": {
+          "stringValue": "Editor"
+        },
+        "scac": {
+          "stringValue": "04"
+        },
+        "username": {
+          "stringValue": "hector.elizondo"
+        },
+        "email": {
+          "stringValue": "hector.elizondo@cfmoto.com"
+        }
+      },
+      "createTime": "2026-05-11T19:05:54.012327Z",
+      "updateTime": "2026-05-11T19:06:43.724263Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/imelda.cardiel@cfmoto.com",
+      "fields": {
+        "password": {
+          "stringValue": "cfmoto2024"
+        },
+        "createdAt": {
+          "stringValue": "2025-12-31T14:15:04.085Z"
+        },
+        "username": {
+          "stringValue": "imelda.cardiel"
+        },
+        "email": {
+          "stringValue": "imelda.cardiel@cfmoto.com"
+        },
+        "scac": {
+          "stringValue": "02"
+        },
+        "role": {
+          "stringValue": "Editor"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:10:59.119Z"
+        }
+      },
+      "createTime": "2025-12-31T14:15:04.284502Z",
+      "updateTime": "2026-04-22T15:51:00.611927Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/jessica.reyes@cfmoto.com",
+      "fields": {
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-20T17:19:07.330Z"
+        },
+        "email": {
+          "stringValue": "jessica.reyes@cfmoto.com"
+        },
+        "username": {
+          "stringValue": "jessica.reyes"
+        },
+        "scac": {
+          "stringValue": "06"
+        },
+        "role": {
+          "stringValue": "Editor"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:19:38.528Z"
+        }
+      },
+      "createTime": "2026-04-20T17:19:07.197187Z",
+      "updateTime": "2026-04-20T17:19:39.053939Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/jessicaimpexp@gmail.com",
+      "fields": {
+        "lastLogin": {
+          "stringValue": "2026-02-11T13:37:31.362Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "username": {
+          "stringValue": "jessicaimpexp"
+        },
+        "email": {
+          "stringValue": "jessicaimpexp@gmail.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-02-11T13:37:09.508Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        }
+      },
+      "createTime": "2026-02-11T13:37:10.103162Z",
+      "updateTime": "2026-02-11T13:37:31.647150Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/jesus.hernandez@cfmoto.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2025-12-31T16:48:12.395Z"
+        },
+        "password": {
+          "stringValue": "cfmoto2024"
+        },
+        "scac": {
+          "stringValue": "05"
+        },
+        "username": {
+          "stringValue": "jesus.hernandez"
+        },
+        "email": {
+          "stringValue": "jesus.hernandez@cfmoto.com"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:13:51.750Z"
+        },
+        "role": {
+          "stringValue": "Admin"
+        }
+      },
+      "createTime": "2025-12-31T16:48:12.846559Z",
+      "updateTime": "2026-04-22T15:51:00.726680Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/jmonreal@daiweb.mx",
+      "fields": {
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-06T21:23:28.756Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-06T21:23:42.760Z"
+        },
+        "username": {
+          "stringValue": "jmonreal"
+        },
+        "email": {
+          "stringValue": "jmonreal@daiweb.mx"
+        },
+        "scac": {
+          "stringValue": "1759"
+        }
+      },
+      "createTime": "2026-05-06T21:23:28.182572Z",
+      "updateTime": "2026-05-06T21:23:42.898123Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/jortiz@grupoborder.com.mx",
+      "fields": {
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-18T03:53:08.649Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:22:22.491Z"
+        },
+        "email": {
+          "stringValue": "jortiz@grupoborder.com.mx"
+        },
+        "username": {
+          "stringValue": "jortiz"
+        },
+        "scac": {
+          "stringValue": "1614"
+        }
+      },
+      "createTime": "2026-04-18T03:53:09.568832Z",
+      "updateTime": "2026-04-20T17:22:22.898013Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/josterberg@cfmotousa.com",
+      "fields": {
+        "lastLogin": {
+          "stringValue": "2026-04-20T20:50:00.056Z"
+        },
+        "role": {
+          "stringValue": "Cliente"
+        },
+        "email": {
+          "stringValue": "josterberg@cfmotousa.com"
+        },
+        "username": {
+          "stringValue": "josterberg"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-20T20:49:45.041Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        }
+      },
+      "createTime": "2026-04-20T20:49:43.630911Z",
+      "updateTime": "2026-04-20T20:49:58.632932Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/jtopete@daiweb.mx",
+      "fields": {
+        "scac": {
+          "stringValue": "1759"
+        },
+        "email": {
+          "stringValue": "jtopete@daiweb.mx"
+        },
+        "username": {
+          "stringValue": "jtopete"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-06T21:24:11.813Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-06T21:23:58.264Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        }
+      },
+      "createTime": "2026-05-06T21:23:57.670030Z",
+      "updateTime": "2026-05-06T21:24:11.815574Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/kacuautla@grupoborder.com.mx",
+      "fields": {
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-18T03:54:31.084Z"
+        },
+        "username": {
+          "stringValue": "kacuautla"
+        },
+        "email": {
+          "stringValue": "kacuautla@grupoborder.com.mx"
+        },
+        "scac": {
+          "stringValue": "1614"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:22:45.208Z"
+        }
+      },
+      "createTime": "2026-04-18T03:54:31.997656Z",
+      "updateTime": "2026-04-20T17:22:45.685753Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/karen.villanueva@cfmoto.com",
+      "fields": {
+        "username": {
+          "stringValue": "karen.villanueva"
+        },
+        "email": {
+          "stringValue": "karen.villanueva@cfmoto.com"
+        },
+        "scac": {
+          "stringValue": "10"
+        },
+        "role": {
+          "stringValue": "Editor"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:15:32.116Z"
+        },
+        "password": {
+          "stringValue": "cfmoto2024"
+        },
+        "createdAt": {
+          "stringValue": "2025-12-31T14:12:14.756Z"
+        }
+      },
+      "createTime": "2025-12-31T14:12:15.344570Z",
+      "updateTime": "2026-04-22T15:51:01.001551Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/kristian.kelly@cfmoto.com",
+      "fields": {
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-07T23:32:14.724Z"
+        },
+        "email": {
+          "stringValue": "kristian.kelly@cfmoto.com"
+        },
+        "username": {
+          "stringValue": "kristian.kelly"
+        },
+        "role": {
+          "stringValue": "Expo"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-07T23:32:26.735Z"
+        }
+      },
+      "createTime": "2026-05-07T23:32:14.625102Z",
+      "updateTime": "2026-05-07T23:32:26.281254Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/lihh@cfmoto.com",
+      "fields": {
+        "username": {
+          "stringValue": "lihh"
+        },
+        "email": {
+          "stringValue": "lihh@cfmoto.com"
+        },
+        "role": {
+          "stringValue": "Finanzas"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-22T16:50:15.669Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T16:49:59.100Z"
+        }
+      },
+      "createTime": "2026-04-22T16:49:59.013923Z",
+      "updateTime": "2026-04-22T16:50:15.432595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/lizeth.flores@cfmoto.com",
+      "fields": {
+        "username": {
+          "stringValue": "lizeth.flores"
+        },
+        "email": {
+          "stringValue": "lizeth.flores@cfmoto.com"
+        },
+        "role": {
+          "stringValue": "Expo"
+        },
+        "lastLogin": {
+          "stringValue": "2026-03-30T22:38:44.060Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-03-30T22:38:34.497Z"
+        }
+      },
+      "createTime": "2026-03-30T22:38:34.903570Z",
+      "updateTime": "2026-03-30T22:38:44.434648Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/luis.rocha@cfmoto.com",
+      "fields": {
+        "email": {
+          "stringValue": "luis.rocha@cfmoto.com"
+        },
+        "username": {
+          "stringValue": "luis.rocha"
+        },
+        "requireReset": {
+          "booleanValue": false
+        },
+        "scac": {
+          "stringValue": "09"
+        },
+        "role": {
+          "stringValue": "Admin"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:15:19.616Z"
+        },
+        "password": {
+          "stringValue": "Cfmoto01-"
+        },
+        "createdAt": {
+          "stringValue": "2026-01-08T20:46:35.968Z"
+        }
+      },
+      "createTime": "2026-01-08T20:46:36.374265Z",
+      "updateTime": "2026-04-20T17:15:20.023376Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/manuel.juarez@expresslinecorp.com",
+      "fields": {
+        "role": {
+          "stringValue": "Agent"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-21T22:57:06.127Z"
+        },
+        "email": {
+          "stringValue": "manuel.juarez@expresslinecorp.com"
+        },
+        "username": {
+          "stringValue": "manuel.juarez"
+        },
+        "scac": {
+          "stringValue": "1925"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-03-25T13:54:25.731Z"
+        }
+      },
+      "createTime": "2026-03-25T13:54:25.487185Z",
+      "updateTime": "2026-04-21T22:57:06.332183Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/mcollins@cfmotousa.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-14T18:51:45.168Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "email": {
+          "stringValue": "mcollins@cfmotousa.com"
+        },
+        "username": {
+          "stringValue": "mcollins"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-14T18:51:58.098Z"
+        },
+        "role": {
+          "stringValue": "Cliente"
+        }
+      },
+      "createTime": "2026-04-14T18:51:45.978861Z",
+      "updateTime": "2026-04-14T18:51:58.952763Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/mschmitz@cfmotousa.com",
+      "fields": {
+        "role": {
+          "stringValue": "Cliente"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T20:49:22.197Z"
+        },
+        "email": {
+          "stringValue": "mschmitz@cfmotousa.com"
+        },
+        "username": {
+          "stringValue": "mschmitz"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-20T20:49:08.623Z"
+        }
+      },
+      "createTime": "2026-04-20T20:49:08.537022Z",
+      "updateTime": "2026-04-20T20:49:20.926248Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/operario@logimaster.com",
+      "fields": {
+        "lastLogin": {
+          "stringValue": "2026-03-27T22:54:18.524Z"
+        },
+        "role": {
+          "stringValue": "Handheld User"
+        },
+        "username": {
+          "stringValue": "operario"
+        },
+        "email": {
+          "stringValue": "operario@logimaster.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-03-27T22:54:09.547Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        }
+      },
+      "createTime": "2026-03-27T22:54:09.911829Z",
+      "updateTime": "2026-03-27T22:54:18.805995Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/pda1@cfmoto.com",
+      "fields": {
+        "role": {
+          "stringValue": "Handheld User 2"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-10T18:00:55.066Z"
+        },
+        "username": {
+          "stringValue": "pda1"
+        },
+        "requireReset": {
+          "booleanValue": false
+        },
+        "email": {
+          "stringValue": "pda1@cfmoto.com"
+        },
+        "password": {
+          "stringValue": "embarques"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-10T18:00:21.755Z"
+        }
+      },
+      "createTime": "2026-04-10T18:00:21.005776Z",
+      "updateTime": "2026-06-03T13:44:13.537069Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/pda2@cfmoto.com",
+      "fields": {
+        "username": {
+          "stringValue": "pda2"
+        },
+        "requireReset": {
+          "booleanValue": true
+        },
+        "email": {
+          "stringValue": "pda2@cfmoto.com"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-10T18:01:05.136Z"
+        },
+        "role": {
+          "stringValue": "Handheld User 2"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-10T18:00:42.922Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        }
+      },
+      "createTime": "2026-04-10T18:00:42.173152Z",
+      "updateTime": "2026-06-03T02:38:58.477548Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/pda4@cfmoto.com",
+      "fields": {
+        "email": {
+          "stringValue": "pda4@cfmoto.com"
+        },
+        "requireReset": {
+          "booleanValue": true
+        },
+        "username": {
+          "stringValue": "pda4"
+        },
+        "role": {
+          "stringValue": "Handheld User 2"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-16T19:30:44.604Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-16T19:30:25.924Z"
+        }
+      },
+      "createTime": "2026-04-16T19:30:26.644266Z",
+      "updateTime": "2026-06-03T02:39:02.711351Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/pda@cfmoto.com",
+      "fields": {
+        "email": {
+          "stringValue": "pda@cfmoto.com"
+        },
+        "requireReset": {
+          "booleanValue": true
+        },
+        "username": {
+          "stringValue": "pda"
+        },
+        "role": {
+          "stringValue": "Handheld User 2"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-10T18:01:17.174Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-10T18:00:02.685Z"
+        }
+      },
+      "createTime": "2026-04-10T18:00:02.112927Z",
+      "updateTime": "2026-06-03T02:39:07.505500Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/pedro.portillo@wisdomfo.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-22T18:51:41.858Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "scac": {
+          "stringValue": "3153"
+        },
+        "email": {
+          "stringValue": "pedro.portillo@wisdomfo.com"
+        },
+        "username": {
+          "stringValue": "pedro.portillo"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-22T18:59:24.536Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        }
+      },
+      "createTime": "2026-04-22T18:51:42.097960Z",
+      "updateTime": "2026-04-22T18:59:24.868212Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/raul.medina@cfmoto.com",
+      "fields": {
+        "lastLogin": {
+          "stringValue": "2026-05-11T19:25:46.840Z"
+        },
+        "role": {
+          "stringValue": "Editor"
+        },
+        "username": {
+          "stringValue": "raul.medina"
+        },
+        "email": {
+          "stringValue": "raul.medina@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-11T19:25:35.986Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        }
+      },
+      "createTime": "2026-05-11T19:25:36.964150Z",
+      "updateTime": "2026-05-11T19:25:47.790617Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/rbarreto@jamcointl.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-15T00:12:40.713Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "username": {
+          "stringValue": "rbarreto"
+        },
+        "email": {
+          "stringValue": "rbarreto@jamcointl.com"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-15T00:12:57.019Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        }
+      },
+      "createTime": "2026-04-15T00:12:41.856749Z",
+      "updateTime": "2026-04-15T00:12:58.238219Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/rrodriguez@daiweb.mx",
+      "fields": {
+        "role": {
+          "stringValue": "Agent"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-06T21:02:43.719Z"
+        },
+        "email": {
+          "stringValue": "rrodriguez@daiweb.mx"
+        },
+        "username": {
+          "stringValue": "rrodriguez"
+        },
+        "scac": {
+          "stringValue": "1759"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-03-12T16:57:47.832Z"
+        }
+      },
+      "createTime": "2026-03-12T16:57:48.323543Z",
+      "updateTime": "2026-05-06T21:02:43.274811Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/rsalas@grupoborder.com.mx",
+      "fields": {
+        "role": {
+          "stringValue": "Agent"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:22:33.741Z"
+        },
+        "email": {
+          "stringValue": "rsalas@grupoborder.com.mx"
+        },
+        "username": {
+          "stringValue": "rsalas"
+        },
+        "scac": {
+          "stringValue": "1614"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-18T03:53:37.490Z"
+        }
+      },
+      "createTime": "2026-04-18T03:53:38.423771Z",
+      "updateTime": "2026-04-20T17:22:34.133100Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/rzaragoza@daiweb.mx",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-05-06T21:22:42.307Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "scac": {
+          "stringValue": "1759"
+        },
+        "email": {
+          "stringValue": "rzaragoza@daiweb.mx"
+        },
+        "username": {
+          "stringValue": "rzaragoza"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-06T21:23:04.347Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        }
+      },
+      "createTime": "2026-05-06T21:22:42.023515Z",
+      "updateTime": "2026-05-06T21:23:03.960292Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/sdelacruz@daiweb.mx",
+      "fields": {
+        "lastLogin": {
+          "stringValue": "2026-05-06T21:25:26.834Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "scac": {
+          "stringValue": "1759"
+        },
+        "email": {
+          "stringValue": "sdelacruz@daiweb.mx"
+        },
+        "username": {
+          "stringValue": "sdelacruz"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-06T21:25:14.025Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        }
+      },
+      "createTime": "2026-05-06T21:25:13.430272Z",
+      "updateTime": "2026-05-06T21:25:26.765011Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/sheller@cfmotousa.com",
+      "fields": {
+        "role": {
+          "stringValue": "Cliente"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-14T18:54:41.313Z"
+        },
+        "email": {
+          "stringValue": "sheller@cfmotousa.com"
+        },
+        "username": {
+          "stringValue": "sheller"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-14T18:54:17.668Z"
+        }
+      },
+      "createTime": "2026-04-14T18:54:18.832414Z",
+      "updateTime": "2026-04-14T18:54:42.296616Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/srodriguez@grupoborder.com.mx",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-17T00:58:22.950Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-20T17:21:57.891Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "scac": {
+          "stringValue": "1614"
+        },
+        "email": {
+          "stringValue": "srodriguez@grupoborder.com.mx"
+        },
+        "username": {
+          "stringValue": "srodriguez"
+        }
+      },
+      "createTime": "2026-04-17T00:58:23.405037Z",
+      "updateTime": "2026-04-20T17:21:58.931369Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/tanya.flores@wisdomfo.com",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-22T18:56:35.086Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "scac": {
+          "stringValue": "3577"
+        },
+        "username": {
+          "stringValue": "tanya.flores"
+        },
+        "email": {
+          "stringValue": "tanya.flores@wisdomfo.com"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-22T19:00:33.797Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        }
+      },
+      "createTime": "2026-04-22T18:56:35.237427Z",
+      "updateTime": "2026-04-22T19:00:33.890372Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/test@test.com",
+      "fields": {
+        "username": {
+          "stringValue": "test"
+        },
+        "email": {
+          "stringValue": "test@test.com"
+        },
+        "lastLogin": {
+          "stringValue": "2026-04-14T14:33:15.273Z"
+        },
+        "role": {
+          "stringValue": "Cliente"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-14T14:32:57.061Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        }
+      },
+      "createTime": "2026-04-14T14:32:57.977802Z",
+      "updateTime": "2026-04-14T14:33:16.101667Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/tlmexico@arcb.com",
+      "fields": {
+        "username": {
+          "stringValue": "tlmexico"
+        },
+        "email": {
+          "stringValue": "tlmexico@arcb.com"
+        },
+        "scac": {
+          "stringValue": "MXTL"
+        },
+        "role": {
+          "stringValue": "Transportista"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-11T13:40:11.243Z"
+        },
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-11T13:39:40.963Z"
+        }
+      },
+      "createTime": "2026-05-11T13:39:41.269040Z",
+      "updateTime": "2026-05-11T13:40:11.464870Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/trafico04@grupogts.mx",
+      "fields": {
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-03-06T20:11:02.491Z"
+        },
+        "email": {
+          "stringValue": "trafico04@grupogts.mx"
+        },
+        "username": {
+          "stringValue": "trafico04"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-09T00:41:20.126Z"
+        }
+      },
+      "createTime": "2026-03-06T20:11:02.538097Z",
+      "updateTime": "2026-05-09T00:41:20.489890Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/users/viridiana.martinez@daiweb.mx",
+      "fields": {
+        "password": {
+          "stringValue": "1234"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-06T21:20:35.732Z"
+        },
+        "role": {
+          "stringValue": "Agent"
+        },
+        "lastLogin": {
+          "stringValue": "2026-05-06T21:21:05.466Z"
+        },
+        "email": {
+          "stringValue": "viridiana.martinez@daiweb.mx"
+        },
+        "username": {
+          "stringValue": "viridiana.martinez"
+        },
+        "scac": {
+          "stringValue": "1759"
+        }
+      },
+      "createTime": "2026-05-06T21:20:35.343216Z",
+      "updateTime": "2026-05-06T21:21:09.417904Z"
+    }
+  ]
+}

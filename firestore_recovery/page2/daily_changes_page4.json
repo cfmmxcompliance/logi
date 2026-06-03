@@ -1,0 +1,5452 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f4a65d4e-0602-4810-bc9d-67c3ae92303f",
+      "fields": {
+        "partNumber": {
+          "stringValue": "JXJ06070100"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "id": {
+          "stringValue": "f4a65d4e-0602-4810-bc9d-67c3ae92303f"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f4f59267-17a8-4332-aafd-62e9ddc6d791",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "partNumber": {
+          "stringValue": "5BWV-060610-5000"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "id": {
+          "stringValue": "f4f59267-17a8-4332-aafd-62e9ddc6d791"
+        },
+        "user": {
+          "stringValue": "admin"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f581bee8-7c09-4b60-ac2b-12bc2358f3f3",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "id": {
+          "stringValue": "f581bee8-7c09-4b60-ac2b-12bc2358f3f3"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "partNumber": {
+          "stringValue": "5SYV-230600-8000-27"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f587acd4-23e7-40f8-a3cc-0fbfabe0f8fa",
+      "fields": {
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "0NYV-066203-1000"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "f587acd4-23e7-40f8-a3cc-0fbfabe0f8fa"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f58cea33-ebc7-4cd2-964b-765ce36c8c3f",
+      "fields": {
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "f58cea33-ebc7-4cd2-964b-765ce36c8c3f"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "5HYV-234000-6003-0BP00"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f5a46f1e-cc24-46d1-8fdc-961866225f3c",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "partNumber": {
+          "stringValue": "5HY0-030450"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "id": {
+          "stringValue": "f5a46f1e-cc24-46d1-8fdc-961866225f3c"
+        },
+        "user": {
+          "stringValue": "admin"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f64c72c3-6616-4fca-a803-23781859aea3",
+      "fields": {
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "f64c72c3-6616-4fca-a803-23781859aea3"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "TP319"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f6c0787b-bf60-460e-85e5-868a9fb463aa",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "f6c0787b-bf60-460e-85e5-868a9fb463aa"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "0NYV-061021-3000"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f6c6e8c5-c162-4e4b-9644-811518164daf",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "id": {
+          "stringValue": "f6c6e8c5-c162-4e4b-9644-811518164daf"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "partNumber": {
+          "stringValue": "5HYV-237120-6000-H1M"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f6e50db0-2530-4b5f-97ed-770ebd03a68b",
+      "fields": {
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "5SYV-230650-8000-H1M"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "f6e50db0-2530-4b5f-97ed-770ebd03a68b"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f74ed2bd-1634-439f-b511-a26837954feb",
+      "fields": {
+        "id": {
+          "stringValue": "f74ed2bd-1634-439f-b511-a26837954feb"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "partNumber": {
+          "stringValue": "5HYV-041021-6000"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f77d0b6b-3372-4ee4-b6a2-13f8dfcd2439",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "f77d0b6b-3372-4ee4-b6a2-13f8dfcd2439"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "5KWV-171000-1000"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f7b5ef1e-c127-4e47-a289-6507ec688dfc",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "partNumber": {
+          "stringValue": "5HYV-237000-6000-28"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "id": {
+          "stringValue": "f7b5ef1e-c127-4e47-a289-6507ec688dfc"
+        },
+        "user": {
+          "stringValue": "admin"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f7e4e81f-bb69-451a-bc27-cb1880cabc9a",
+      "fields": {
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "f7e4e81f-bb69-451a-bc27-cb1880cabc9a"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "5SYV-043084-8000"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f7fa7e06-2157-49ae-bec0-34d7076f636c",
+      "fields": {
+        "id": {
+          "stringValue": "f7fa7e06-2157-49ae-bec0-34d7076f636c"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "partNumber": {
+          "stringValue": "5KWV-034070-1000-H1M"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f81164e6-9780-4f31-8e83-ad56c0f44aed",
+      "fields": {
+        "partNumber": {
+          "stringValue": "5HYV-032160-6000-H1M"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "id": {
+          "stringValue": "f81164e6-9780-4f31-8e83-ad56c0f44aed"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f86007ac-5201-46a6-8646-f47576a101a0",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "f86007ac-5201-46a6-8646-f47576a101a0"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "5HY1-133400-6000"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f8e2eaee-0c1c-478c-9a2b-6a63902e0c8b",
+      "fields": {
+        "id": {
+          "stringValue": "f8e2eaee-0c1c-478c-9a2b-6a63902e0c8b"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "partNumber": {
+          "stringValue": "6BMV-180003-1000"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f9aa1f38-fb87-4fc9-982e-7e2f31ce2886",
+      "fields": {
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "5HYV-260224-9000"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "f9aa1f38-fb87-4fc9-982e-7e2f31ce2886"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f9c8c3d2-b2cd-419c-ac84-653fcd938a09",
+      "fields": {
+        "id": {
+          "stringValue": "f9c8c3d2-b2cd-419c-ac84-653fcd938a09"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "partNumber": {
+          "stringValue": "601401-00812"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/f9d0f65e-26a8-4ac8-ac84-df603c88acb4",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "f9d0f65e-26a8-4ac8-ac84-df603c88acb4"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "5HYV-043081-6000"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fa65e21c-765f-4e2f-acd6-6d7043cee1c3",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "9AYV-804106-6700"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "fa65e21c-765f-4e2f-acd6-6d7043cee1c3"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fa881285-f291-4ee1-9637-563ba77ec331",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "partNumber": {
+          "stringValue": "5KWV-032900-1000-H1M"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "id": {
+          "stringValue": "fa881285-f291-4ee1-9637-563ba77ec331"
+        },
+        "user": {
+          "stringValue": "admin"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fa9f8a68-c67c-4a69-bff6-fc30d3776d40",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "JXMF-MX-0203"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "fa9f8a68-c67c-4a69-bff6-fc30d3776d40"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/faca6cb6-8495-419c-94e9-eadada482945",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "id": {
+          "stringValue": "faca6cb6-8495-419c-94e9-eadada482945"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "partNumber": {
+          "stringValue": "5HYV-042022-6000"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fae76c81-0127-4e07-bc2c-d2cefa57153e",
+      "fields": {
+        "partNumber": {
+          "stringValue": "5ASV-320002-5000"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "id": {
+          "stringValue": "fae76c81-0127-4e07-bc2c-d2cefa57153e"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fba8015b-a384-4ece-a1a4-f2e2f028fe05",
+      "fields": {
+        "partNumber": {
+          "stringValue": "5HYV-041042-6000-0RT00"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "id": {
+          "stringValue": "fba8015b-a384-4ece-a1a4-f2e2f028fe05"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fc09aea5-6024-43d7-ad35-71a694abf096",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "fc09aea5-6024-43d7-ad35-71a694abf096"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "30400-05500"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fc0a4a2a-fee9-4731-b3b4-5e59321eac9d",
+      "fields": {
+        "id": {
+          "stringValue": "fc0a4a2a-fee9-4731-b3b4-5e59321eac9d"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "partNumber": {
+          "stringValue": "5HYV-032260-6001-H1M"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fc1ae145-c251-4cd1-8082-781a857151d6",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "5ASV-360004-6001"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "fc1ae145-c251-4cd1-8082-781a857151d6"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fc2eece4-0716-4219-a084-ead97803c23a",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "fc2eece4-0716-4219-a084-ead97803c23a"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "6BMV-110200-1000-A"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fc3fb847-5bb0-4619-9c18-041e1e355996",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "id": {
+          "stringValue": "fc3fb847-5bb0-4619-9c18-041e1e355996"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "partNumber": {
+          "stringValue": "5ASV-450311-5000"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fc53825b-0e69-4286-813e-1f84124836de",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "partNumber": {
+          "stringValue": "6BMV-380101-1001-12"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "id": {
+          "stringValue": "fc53825b-0e69-4286-813e-1f84124836de"
+        },
+        "user": {
+          "stringValue": "admin"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fc5e39ed-3ed7-4f22-8de0-643af69871d0",
+      "fields": {
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "fc5e39ed-3ed7-4f22-8de0-643af69871d0"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "5KWV-033200-1000-H1M"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fc663897-357a-4dbb-90cf-f9875edc2541",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "partNumber": {
+          "stringValue": "5HYV-080009-6000"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "id": {
+          "stringValue": "fc663897-357a-4dbb-90cf-f9875edc2541"
+        },
+        "user": {
+          "stringValue": "admin"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fc71dd35-4a72-4093-a662-874107883d9e",
+      "fields": {
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "fc71dd35-4a72-4093-a662-874107883d9e"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "5HYV-223023B"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fccf4c1b-183e-4bd6-a8e4-7f7dbb061625",
+      "fields": {
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "fccf4c1b-183e-4bd6-a8e4-7f7dbb061625"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "Q890-310000-10000"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fddcfbd1-96f2-460a-b24c-e778860cae3b",
+      "fields": {
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "fddcfbd1-96f2-460a-b24c-e778860cae3b"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "7030-037605-0MP0M"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fe6c1194-fffa-4c51-9a53-7981a2708b43",
+      "fields": {
+        "id": {
+          "stringValue": "fe6c1194-fffa-4c51-9a53-7981a2708b43"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "partNumber": {
+          "stringValue": "5BWV-230306-5000-H1M"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fedee657-6b68-4496-8cfd-6ffb75467c47",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "fedee657-6b68-4496-8cfd-6ffb75467c47"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "5HYV-221109-6001-H1M"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/fee791ed-d1da-462e-a52f-df2049baf0da",
+      "fields": {
+        "id": {
+          "stringValue": "fee791ed-d1da-462e-a52f-df2049baf0da"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "partNumber": {
+          "stringValue": "5KWV-033600-1000-H1M"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/ff070fb0-2d82-42d7-b448-13947884b25b",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "ff070fb0-2d82-42d7-b448-13947884b25b"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "5KWV-031004-1000-H1M"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/ff2b90ab-c479-4a02-abdd-b7beae347f9b",
+      "fields": {
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "601402-02066"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "ff2b90ab-c479-4a02-abdd-b7beae347f9b"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/ff8d9d3a-ca7c-41e4-bea4-de02cc8199bf",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "ff8d9d3a-ca7c-41e4-bea4-de02cc8199bf"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "601402-00448"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/ffc6161f-476f-4ccf-9395-40ed631bef9d",
+      "fields": {
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "ffc6161f-476f-4ccf-9395-40ed631bef9d"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "0181-313011"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.857Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/ffd35497-b95e-43b6-80be-d04e4c8d4eb2",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.858Z"
+        },
+        "id": {
+          "stringValue": "ffd35497-b95e-43b6-80be-d04e4c8d4eb2"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "partNumber": {
+          "stringValue": "601402-00583"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/ffdd19a7-66c3-4c0d-8cee-9069a19641f9",
+      "fields": {
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "ffdd19a7-66c3-4c0d-8cee-9069a19641f9"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumber": {
+          "stringValue": "5SYV-230660-8000-H1M"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T23:51:27.858Z"
+        }
+      },
+      "createTime": "2026-01-24T23:51:27.634595Z",
+      "updateTime": "2026-01-24T23:51:27.634595Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/jl02PwCtwsmXFmWTEDq9",
+      "fields": {
+        "id": {
+          "stringValue": "jl02PwCtwsmXFmWTEDq9"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "partNumbers": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "6GUV-190113-3000-10"
+              },
+              {
+                "stringValue": "6GUV-190113-3000-11"
+              },
+              {
+                "stringValue": "6GUV-190114-3000-10"
+              },
+              {
+                "stringValue": "6GUV-190114-3000-11"
+              },
+              {
+                "stringValue": "6GUV-190117-3001-10"
+              },
+              {
+                "stringValue": "6GUV-190006-3000"
+              },
+              {
+                "stringValue": "6GUV-190115-3000-10"
+              },
+              {
+                "stringValue": "6GUV-190116-3000-10"
+              },
+              {
+                "stringValue": "6GUV-190121-3001-10"
+              },
+              {
+                "stringValue": "6GUV-190121-3001-11"
+              },
+              {
+                "stringValue": "6AQV-021004-3000"
+              },
+              {
+                "stringValue": "6AQV-122000-2700-10"
+              },
+              {
+                "stringValue": "6AQV-122000-2700-11"
+              },
+              {
+                "stringValue": "6AQV-07Z0AA-2600-0VE00"
+              },
+              {
+                "stringValue": "6AQV-11Z0AA-2600-0VE00"
+              },
+              {
+                "stringValue": "6AQV-190011-2700-13"
+              },
+              {
+                "stringValue": "6AQV-021100-6002"
+              },
+              {
+                "stringValue": "900010-0286"
+              },
+              {
+                "stringValue": "940010-05712"
+              },
+              {
+                "stringValue": "5GYV-131120-1001"
+              },
+              {
+                "stringValue": "6GUV-033000-5605-0BP00"
+              },
+              {
+                "stringValue": "6GUV-040203-5601-0HU00"
+              },
+              {
+                "stringValue": "6GUV-040203-5601-0VE00"
+              },
+              {
+                "stringValue": "6GUV-040204-5601-0HU00"
+              },
+              {
+                "stringValue": "6GUV-040204-5601-0VE00"
+              },
+              {
+                "stringValue": "6GUV-040501-5600-0VE00-US"
+              },
+              {
+                "stringValue": "6GUV-040501-5601-0HU00-US"
+              },
+              {
+                "stringValue": "6GUV-040502-5600-0VE00-US"
+              },
+              {
+                "stringValue": "6GUV-040502-5601-0HU00-US"
+              },
+              {
+                "stringValue": "6GUV-040601-5601-0BM00"
+              },
+              {
+                "stringValue": "6GUV-040602-5601-0BM00"
+              },
+              {
+                "stringValue": "6GUV-040615-5600-0EB00"
+              },
+              {
+                "stringValue": "6GUV-040615-5600-0RM00"
+              },
+              {
+                "stringValue": "6GUV-040616-5600-0EB00"
+              },
+              {
+                "stringValue": "6GUV-040616-5600-0RM00"
+              },
+              {
+                "stringValue": "6GUV-040703-5601-0HU00-US"
+              },
+              {
+                "stringValue": "6GUV-040703-5601-0VE00-US"
+              },
+              {
+                "stringValue": "6GUV-040704-5601-0HU00-US"
+              },
+              {
+                "stringValue": "6GUV-040704-5601-0VE00-US"
+              },
+              {
+                "stringValue": "6GUV-050705-5600-0HU00"
+              },
+              {
+                "stringValue": "6GUV-122000-5800-12-A"
+              },
+              {
+                "stringValue": "6GUV-122000-5801-10-A"
+              },
+              {
+                "stringValue": "6GUV-07Z0AA-5600-0EB00-US"
+              },
+              {
+                "stringValue": "6GUV-11Z0AA-5600-0EB00-US"
+              },
+              {
+                "stringValue": "6GUV-130100-5801"
+              },
+              {
+                "stringValue": "6GUV-040501-5601-0VE00"
+              },
+              {
+                "stringValue": "6GUV-040501-5601-0HU00"
+              },
+              {
+                "stringValue": "6GUV-040502-5601-0VE00"
+              },
+              {
+                "stringValue": "6GUV-040502-5601-0HU00"
+              },
+              {
+                "stringValue": "6GUV-040703-5601-0VE00"
+              },
+              {
+                "stringValue": "6GUV-040703-5601-0HU00"
+              },
+              {
+                "stringValue": "6GUV-040704-5601-0VE00"
+              },
+              {
+                "stringValue": "6GUV-040704-5601-0HU00"
+              },
+              {
+                "stringValue": "6GUV-07Z0AA-5601-0EB00"
+              },
+              {
+                "stringValue": "6GUV-11Z0AA-5601-0EB00"
+              },
+              {
+                "stringValue": "6GUV-122000-5801-10"
+              },
+              {
+                "stringValue": "6GUV-122000-5800-12"
+              },
+              {
+                "stringValue": "6GUV-190113-5800-10"
+              },
+              {
+                "stringValue": "6GUV-190114-5800-10"
+              },
+              {
+                "stringValue": "6GUV-190115-5601-10"
+              },
+              {
+                "stringValue": "6GUV-190115-5600-12"
+              },
+              {
+                "stringValue": "6GUV-190116-5601-10"
+              },
+              {
+                "stringValue": "6GUV-190116-5600-12"
+              },
+              {
+                "stringValue": "6GUV-190117-5602-10"
+              },
+              {
+                "stringValue": "6GUV-190118-5801-10"
+              },
+              {
+                "stringValue": "6GUV-190119-5801-10"
+              },
+              {
+                "stringValue": "6GUV-190108-5600-12"
+              },
+              {
+                "stringValue": "6GUV-190011-5A00-11"
+              },
+              {
+                "stringValue": "6GUV-380101-5A00-13"
+              },
+              {
+                "stringValue": "6GUV-040203-5601-0HU00-A"
+              },
+              {
+                "stringValue": "6GUV-040203-5601-0VE00-A"
+              },
+              {
+                "stringValue": "6GUV-040203-5601-0VP00-A"
+              },
+              {
+                "stringValue": "6GUV-040204-5601-0HU00-A"
+              },
+              {
+                "stringValue": "6GUV-040204-5601-0VE00-A"
+              },
+              {
+                "stringValue": "6GUV-040204-5601-0VP00-A"
+              },
+              {
+                "stringValue": "6GUV-040501-5600-0VE00-A"
+              },
+              {
+                "stringValue": "6GUV-040501-5601-0BM00-A"
+              },
+              {
+                "stringValue": "6GUV-040501-5601-0HU00-A"
+              },
+              {
+                "stringValue": "6GUV-040502-5600-0VE00-A"
+              },
+              {
+                "stringValue": "6GUV-040502-5601-0BM00-A"
+              },
+              {
+                "stringValue": "6GUV-040502-5601-0HU00-A"
+              },
+              {
+                "stringValue": "6GUV-040608-5600-0D500"
+              },
+              {
+                "stringValue": "6GUV-040611-5600-0D500-A"
+              },
+              {
+                "stringValue": "6GUV-040611-5600-0D500-B"
+              },
+              {
+                "stringValue": "6GUV-040612-5600-0D500-A"
+              },
+              {
+                "stringValue": "6GUV-040612-5600-0D500-B"
+              },
+              {
+                "stringValue": "6GUV-040703-5601-0HU00-A"
+              },
+              {
+                "stringValue": "6GUV-040703-5601-0VE00-A"
+              },
+              {
+                "stringValue": "6GUV-040703-5601-0VP00-A"
+              },
+              {
+                "stringValue": "6GUV-040704-5601-0HU00-A"
+              },
+              {
+                "stringValue": "6GUV-040704-5601-0VE00-A"
+              },
+              {
+                "stringValue": "6GUV-040704-5601-0VP00-A"
+              },
+              {
+                "stringValue": "6GUV-122000-5600-12-A"
+              },
+              {
+                "stringValue": "6GUV-122000-5601-10-A"
+              },
+              {
+                "stringValue": "6GUV-122000-5601-11-A"
+              },
+              {
+                "stringValue": "6GUV-150100-5602"
+              },
+              {
+                "stringValue": "6AQV-011000-1002"
+              },
+              {
+                "stringValue": "6GUV-07Z0AA-5600-0EB00-A"
+              },
+              {
+                "stringValue": "6GUV-100100-5601"
+              },
+              {
+                "stringValue": "6GUV-11Z0AA-5600-0EB00-A"
+              },
+              {
+                "stringValue": "6GUV-130100-5602"
+              },
+              {
+                "stringValue": "6GUV-130100-5602-11"
+              },
+              {
+                "stringValue": "6GUV-141000-5600"
+              },
+              {
+                "stringValue": "6GUV-171000-5600-10"
+              },
+              {
+                "stringValue": "6GUV-200100-5600-M1"
+              },
+              {
+                "stringValue": "6GUV-200200-5600-M1"
+              },
+              {
+                "stringValue": "6GUV-07Z0AA-5600-0EB00"
+              },
+              {
+                "stringValue": "6GUV-11Z0AA-5600-0EB00"
+              },
+              {
+                "stringValue": "6GUV-122000-5601-10"
+              },
+              {
+                "stringValue": "6GUV-122000-5601-11"
+              },
+              {
+                "stringValue": "6GUV-122000-5600-12"
+              },
+              {
+                "stringValue": "6GUV-190103-5601-10"
+              },
+              {
+                "stringValue": "6GUV-190103-5600-12"
+              },
+              {
+                "stringValue": "6GUV-190104-5601-10"
+              },
+              {
+                "stringValue": "6GUV-190104-5600-12"
+              },
+              {
+                "stringValue": "6GUV-190109-5600-10"
+              },
+              {
+                "stringValue": "6GUV-190109-5600-11"
+              },
+              {
+                "stringValue": "6GUV-190110-5600-10"
+              },
+              {
+                "stringValue": "6GUV-190110-5600-11"
+              },
+              {
+                "stringValue": "6GUV-190111-5601-10"
+              },
+              {
+                "stringValue": "6GUV-190112-5601-10"
+              },
+              {
+                "stringValue": "6GUV-190113-5600-10"
+              },
+              {
+                "stringValue": "6GUV-190113-5600-11"
+              },
+              {
+                "stringValue": "6GUV-190113-5600-12"
+              },
+              {
+                "stringValue": "6GUV-190114-5600-10"
+              },
+              {
+                "stringValue": "6GUV-190114-5600-11"
+              },
+              {
+                "stringValue": "6GUV-190114-5600-12"
+              },
+              {
+                "stringValue": "6GUV-190118-5601-11"
+              },
+              {
+                "stringValue": "6GUV-190118-5602-10"
+              },
+              {
+                "stringValue": "6GUV-190119-5601-11"
+              },
+              {
+                "stringValue": "6GUV-190119-5602-10"
+              },
+              {
+                "stringValue": "6GUV-190006-5600"
+              },
+              {
+                "stringValue": "6GUV-190102-5600-10"
+              },
+              {
+                "stringValue": "6GUV-190105-5600-10"
+              },
+              {
+                "stringValue": "6GUV-190106-5600-10"
+              },
+              {
+                "stringValue": "6GUV-380101-5901-12"
+              },
+              {
+                "stringValue": "6GUV-040603-3001-0BM00"
+              },
+              {
+                "stringValue": "6GUV-040604-3001-0BM00"
+              },
+              {
+                "stringValue": "6GUV-081000-3004"
+              },
+              {
+                "stringValue": "6GUV-130100-5601-10"
+              },
+              {
+                "stringValue": "6AQV-070010-7101-0GK00"
+              },
+              {
+                "stringValue": "6AQV-110021-3700-0GM00"
+              },
+              {
+                "stringValue": "6AQV-122000-3700-11-A"
+              },
+              {
+                "stringValue": "6AQV-011000-2200"
+              },
+              {
+                "stringValue": "6AQV-040801-7100-11"
+              },
+              {
+                "stringValue": "6AQV-07Z0AA-3700-0BV00"
+              },
+              {
+                "stringValue": "6AQV-081000-3702"
+              },
+              {
+                "stringValue": "6AQV-11Z0AA-3700-0BV00"
+              },
+              {
+                "stringValue": "6AQV-130100-3700-10"
+              },
+              {
+                "stringValue": "6AQV-130200-3700-10"
+              },
+              {
+                "stringValue": "6KMV-160100-M300-10"
+              },
+              {
+                "stringValue": "6AQV-19TA02-3900"
+              },
+              {
+                "stringValue": "6AQV-19TA01-3900-10"
+              },
+              {
+                "stringValue": "6AQV-122000-3700-11"
+              },
+              {
+                "stringValue": "6AQV-166000-7102"
+              },
+              {
+                "stringValue": "0SQD-C1A000-0800"
+              },
+              {
+                "stringValue": "6AQV-001000-3900"
+              },
+              {
+                "stringValue": "6AQV-190011-3900-13"
+              },
+              {
+                "stringValue": "0NYV-06010Z-3009"
+              },
+              {
+                "stringValue": "0JWV-052000-3002"
+              },
+              {
+                "stringValue": "0JWV-051000-3001"
+              },
+              {
+                "stringValue": "6KNV-041700-6600"
+              },
+              {
+                "stringValue": "6KNV-041600-6600"
+              },
+              {
+                "stringValue": "6KMV-081000-B104"
+              },
+              {
+                "stringValue": "6KMV-160100-3005"
+              },
+              {
+                "stringValue": "6KMV-130100-3001"
+              },
+              {
+                "stringValue": "6KMV-081000-3002-M1"
+              },
+              {
+                "stringValue": "6KMV-021000-D102"
+              },
+              {
+                "stringValue": "30605-127060"
+              },
+              {
+                "stringValue": "6KIV-161000-2000"
+              },
+              {
+                "stringValue": "6KMV-130100-8901"
+              },
+              {
+                "stringValue": "6KMV-082000-BD02-M1"
+              },
+              {
+                "stringValue": "6KMV-082000-B103-M1"
+              },
+              {
+                "stringValue": "6KMV-130100-B004"
+              },
+              {
+                "stringValue": "5BWV-001100-5600"
+              },
+              {
+                "stringValue": "5BYV-001100-8800"
+              },
+              {
+                "stringValue": "TFJ006-A"
+              },
+              {
+                "stringValue": "601601-01162"
+              },
+              {
+                "stringValue": "900010-0275"
+              },
+              {
+                "stringValue": "900010-0277"
+              },
+              {
+                "stringValue": "30105-050014410"
+              },
+              {
+                "stringValue": "6KWV-140200-1000-10"
+              },
+              {
+                "stringValue": "6KWV-140300-1000-10"
+              },
+              {
+                "stringValue": "6KWV-040404-1000-0D500"
+              },
+              {
+                "stringValue": "6KWV-040403-1000-0D500"
+              },
+              {
+                "stringValue": "6KWV-190101-1900-10"
+              },
+              {
+                "stringValue": "6KWV-190102-1900-10"
+              },
+              {
+                "stringValue": "6KWV-190103-1900-10"
+              },
+              {
+                "stringValue": "6KWV-190104-1900-10"
+              },
+              {
+                "stringValue": "6KWV-190105-2200-10"
+              },
+              {
+                "stringValue": "6KWV-190106-2200-10"
+              },
+              {
+                "stringValue": "6KWV-190008-1001"
+              },
+              {
+                "stringValue": "6KWV-190103-1000-10"
+              },
+              {
+                "stringValue": "6KWV-190104-1000-10"
+              },
+              {
+                "stringValue": "6KWV-190105-1000-10"
+              },
+              {
+                "stringValue": "6KWV-190113-1900-10"
+              },
+              {
+                "stringValue": "6KWV-19TA01-2200-10"
+              },
+              {
+                "stringValue": "6KWV-19TA02-2200"
+              },
+              {
+                "stringValue": "P2C900CN00FBP"
+              },
+              {
+                "stringValue": "51010086100"
+              },
+              {
+                "stringValue": "51033031000"
+              },
+              {
+                "stringValue": "0PW0-110005"
+              },
+              {
+                "stringValue": "0PW0-173100"
+              },
+              {
+                "stringValue": "0PWV-110007-1000"
+              },
+              {
+                "stringValue": "30006-050012870"
+              },
+              {
+                "stringValue": "30102-080050110"
+              },
+              {
+                "stringValue": "30121-060016700"
+              },
+              {
+                "stringValue": "30603-040000"
+              },
+              {
+                "stringValue": "6GU#-080008-6000"
+              },
+              {
+                "stringValue": "6GU#-080009-6000"
+              },
+              {
+                "stringValue": "6GU#-081000-6000-22"
+              },
+              {
+                "stringValue": "6GU#-081000-6000-23"
+              },
+              {
+                "stringValue": "6KM#-181001-8001"
+              },
+              {
+                "stringValue": "6KWV-010010-1001"
+              },
+              {
+                "stringValue": "6KWV-030002-1000"
+              },
+              {
+                "stringValue": "6KWV-030020-1100"
+              },
+              {
+                "stringValue": "6KWV-030030-1000"
+              },
+              {
+                "stringValue": "6KWV-030040-1000"
+              },
+              {
+                "stringValue": "6KWV-030060-1000"
+              },
+              {
+                "stringValue": "6KWV-040413-1000"
+              },
+              {
+                "stringValue": "6KWV-041102-1000"
+              },
+              {
+                "stringValue": "6KWV-041105-1000"
+              },
+              {
+                "stringValue": "6KWV-041115-1000"
+              },
+              {
+                "stringValue": "6KWV-120001-1000"
+              },
+              {
+                "stringValue": "6KWV-130300-1000"
+              },
+              {
+                "stringValue": "6KWV-150430-1000"
+              },
+              {
+                "stringValue": "6KWV-150440-1001"
+              },
+              {
+                "stringValue": "6KWV-151200-1000"
+              },
+              {
+                "stringValue": "6KWV-180004-1000"
+              },
+              {
+                "stringValue": "6KWV-380101-2200-13"
+              },
+              {
+                "stringValue": "6L30-021001"
+              },
+              {
+                "stringValue": "6L30-050010"
+              },
+              {
+                "stringValue": "6L30-080040"
+              },
+              {
+                "stringValue": "6L32-030050"
+              },
+              {
+                "stringValue": "6NT1-060001"
+              },
+              {
+                "stringValue": "6WWV-020001-5000"
+              },
+              {
+                "stringValue": "6WWV-020004-5000"
+              },
+              {
+                "stringValue": "6WWV-030003-5000"
+              },
+              {
+                "stringValue": "6WWV-030018-5000"
+              },
+              {
+                "stringValue": "6WWV-030070-5000"
+              },
+              {
+                "stringValue": "6WWV-045901-5000"
+              },
+              {
+                "stringValue": "6WWV-100001-5000"
+              },
+              {
+                "stringValue": "6WWV-100800-5000"
+              },
+              {
+                "stringValue": "6WWV-120010-5000-A"
+              },
+              {
+                "stringValue": "6WWV-180007-5000"
+              },
+              {
+                "stringValue": "A000-080102-2000"
+              },
+              {
+                "stringValue": "C0000250802500"
+              },
+              {
+                "stringValue": "C0000351006500S"
+              },
+              {
+                "stringValue": "C0000351008000S"
+              },
+              {
+                "stringValue": "C63605058030"
+              },
+              {
+                "stringValue": "C63605058120"
+              },
+              {
+                "stringValue": "C90033029116"
+              },
+              {
+                "stringValue": "C90033032300"
+              },
+              {
+                "stringValue": "C90703034000"
+              },
+              {
+                "stringValue": "C90703034020"
+              },
+              {
+                "stringValue": "C90703039001C1"
+              },
+              {
+                "stringValue": "C90704038000"
+              },
+              {
+                "stringValue": "C90705062000"
+              },
+              {
+                "stringValue": "C90709062000"
+              },
+              {
+                "stringValue": "CFCV-156001-2000-M1"
+              },
+              {
+                "stringValue": "CFCV-BLM001-2000"
+              },
+              {
+                "stringValue": "CFCV-BLM003-2000"
+              },
+              {
+                "stringValue": "FA8V-080004-1200-M1"
+              },
+              {
+                "stringValue": "FB6V-042042-1000"
+              },
+              {
+                "stringValue": "CF800-7-1"
+              },
+              {
+                "stringValue": "CF800-7-2"
+              },
+              {
+                "stringValue": "CF800-7-3"
+              },
+              {
+                "stringValue": "6GU#-030200-6000"
+              },
+              {
+                "stringValue": "6KWV-031000-1000-0BP00"
+              },
+              {
+                "stringValue": "6KWV-032000-1000-0BP00"
+              },
+              {
+                "stringValue": "6KWV-040203-1000-0D500"
+              },
+              {
+                "stringValue": "6KWV-040204-1000-0D500"
+              },
+              {
+                "stringValue": "6KWV-040402-1000-0HU00"
+              },
+              {
+                "stringValue": "6KWV-040403-1000-0D500-A"
+              },
+              {
+                "stringValue": "6KWV-040404-1000-0D500-A"
+              },
+              {
+                "stringValue": "6KWV-040420-1901-10"
+              },
+              {
+                "stringValue": "6KWV-040421-1901-10"
+              },
+              {
+                "stringValue": "6KWV-040503-1000-0HU00"
+              },
+              {
+                "stringValue": "6KWV-040504-1000-0HU00"
+              },
+              {
+                "stringValue": "6KWV-040605-1000-0VR00"
+              },
+              {
+                "stringValue": "6KWV-040606-1000-0VR00"
+              },
+              {
+                "stringValue": "6KWV-040703-1000-0HU00-A"
+              },
+              {
+                "stringValue": "6KWV-040704-1000-0HU00"
+              },
+              {
+                "stringValue": "6KWV-050020-1000-10-A"
+              },
+              {
+                "stringValue": "6KWV-050305-1000-A"
+              },
+              {
+                "stringValue": "6KWV-050701-1000-0BU00-A"
+              },
+              {
+                "stringValue": "6KWV-050702-1000-0HU00"
+              },
+              {
+                "stringValue": "6KWV-060100-1000-M1"
+              },
+              {
+                "stringValue": "6KWV-060301-1002-A"
+              },
+              {
+                "stringValue": "6KWV-081500-1200-M1-A"
+              },
+              {
+                "stringValue": "6KWV-121000-1002-A"
+              },
+              {
+                "stringValue": "6KWV-140200-1000-10-A"
+              },
+              {
+                "stringValue": "6KWV-140300-1000-10-A"
+              },
+              {
+                "stringValue": "6KWV-140600-1000-10-A"
+              },
+              {
+                "stringValue": "6KWV-140700-1000-10-A"
+              },
+              {
+                "stringValue": "6KWV-150100-1401"
+              },
+              {
+                "stringValue": "6KWV-181000-1001"
+              },
+              {
+                "stringValue": "6WWV-360200-5000-A"
+              },
+              {
+                "stringValue": "30102-080020110"
+              },
+              {
+                "stringValue": "30110-350095010"
+              },
+              {
+                "stringValue": "30220-060810"
+              },
+              {
+                "stringValue": "3120942"
+              },
+              {
+                "stringValue": "0PWV-110000-1000"
+              },
+              {
+                "stringValue": "16181R54E"
+              },
+              {
+                "stringValue": "5HY#-001201-1400-A"
+              },
+              {
+                "stringValue": "6FIV-160510-2000"
+              },
+              {
+                "stringValue": "6FIV-160520-2000"
+              },
+              {
+                "stringValue": "6FIV-160530-9000"
+              },
+              {
+                "stringValue": "6FIV-160540-9000"
+              },
+              {
+                "stringValue": "6GU#-040036-6001"
+              },
+              {
+                "stringValue": "6GU#-040038-6000"
+              },
+              {
+                "stringValue": "6GU#-040041-6000"
+              },
+              {
+                "stringValue": "6GUV-011000-7700"
+              },
+              {
+                "stringValue": "6GUV-040037-6003"
+              },
+              {
+                "stringValue": "6GUV-081100-6002"
+              },
+              {
+                "stringValue": "6GUV-100001-6002"
+              },
+              {
+                "stringValue": "6GUV-100020-6002"
+              },
+              {
+                "stringValue": "6KWV-021001-1000"
+              },
+              {
+                "stringValue": "6KWV-021200-1004"
+              },
+              {
+                "stringValue": "6KWV-021300-1001"
+              },
+              {
+                "stringValue": "6KWV-030001-1000"
+              },
+              {
+                "stringValue": "6KWV-030010-1000"
+              },
+              {
+                "stringValue": "6KWV-030050-1001"
+              },
+              {
+                "stringValue": "6KWV-040201-1001"
+              },
+              {
+                "stringValue": "6KWV-040202-1000"
+              },
+              {
+                "stringValue": "6KWV-040303-1000"
+              },
+              {
+                "stringValue": "6KWV-040304-1000"
+              },
+              {
+                "stringValue": "6KWV-040401-1001"
+              },
+              {
+                "stringValue": "6KWV-040405-1000"
+              },
+              {
+                "stringValue": "6KWV-040406-1000"
+              },
+              {
+                "stringValue": "6KWV-040407-1002"
+              },
+              {
+                "stringValue": "6KWV-040408-1002"
+              },
+              {
+                "stringValue": "6KWV-040411-1001"
+              },
+              {
+                "stringValue": "6KWV-040501-1000"
+              },
+              {
+                "stringValue": "6KWV-040502-1000"
+              },
+              {
+                "stringValue": "6KWV-040505-1000"
+              },
+              {
+                "stringValue": "6KWV-040506-1000"
+              },
+              {
+                "stringValue": "6KWV-040507-1001"
+              },
+              {
+                "stringValue": "6KWV-040601-1001"
+              },
+              {
+                "stringValue": "6KWV-040602-1001"
+              },
+              {
+                "stringValue": "6KWV-040603-1001"
+              },
+              {
+                "stringValue": "6KWV-040604-1001"
+              },
+              {
+                "stringValue": "6KWV-040607-1000"
+              },
+              {
+                "stringValue": "6KWV-040608-1000"
+              },
+              {
+                "stringValue": "6KWV-040609-1000"
+              },
+              {
+                "stringValue": "6KWV-040610-1000"
+              },
+              {
+                "stringValue": "6KWV-040701-1000"
+              },
+              {
+                "stringValue": "6KWV-040702-1000"
+              },
+              {
+                "stringValue": "6KWV-041101-1000"
+              },
+              {
+                "stringValue": "6KWV-041106-1000"
+              },
+              {
+                "stringValue": "6KWV-050500-1001-M1"
+              },
+              {
+                "stringValue": "6KWV-050600-1001-M1"
+              },
+              {
+                "stringValue": "6KWV-060401-1000"
+              },
+              {
+                "stringValue": "6KWV-0700A0-1003-0BM00"
+              },
+              {
+                "stringValue": "6KWV-080110-1001-M1"
+              },
+              {
+                "stringValue": "6KWV-081300-1001-M1"
+              },
+              {
+                "stringValue": "6KWV-081600-1000"
+              },
+              {
+                "stringValue": "6KWV-081700-1000"
+              },
+              {
+                "stringValue": "6KWV-100100-1001"
+              },
+              {
+                "stringValue": "6KWV-100600-1001"
+              },
+              {
+                "stringValue": "6KWV-1100A0-1003-0BM00"
+              },
+              {
+                "stringValue": "6KWV-130100-1000"
+              },
+              {
+                "stringValue": "6KWV-130200-1000"
+              },
+              {
+                "stringValue": "6KWV-140110-1000-10"
+              },
+              {
+                "stringValue": "6KWV-150310-1001"
+              },
+              {
+                "stringValue": "6KWV-150420-1001"
+              },
+              {
+                "stringValue": "6KWV-160110-1002"
+              },
+              {
+                "stringValue": "6KWV-160200-1002"
+              },
+              {
+                "stringValue": "6KWV-166000-1001"
+              },
+              {
+                "stringValue": "6KWV-167000-1000"
+              },
+              {
+                "stringValue": "6KWV-171000-1001"
+              },
+              {
+                "stringValue": "6KWV-171001-1000"
+              },
+              {
+                "stringValue": "6KWV-180002-1001"
+              },
+              {
+                "stringValue": "6KWV-180100-1000"
+              },
+              {
+                "stringValue": "6WWV-000102-5000"
+              },
+              {
+                "stringValue": "6WWV-021100-5001"
+              },
+              {
+                "stringValue": "6WWV-030009-5000"
+              },
+              {
+                "stringValue": "6WWV-060001-5001"
+              },
+              {
+                "stringValue": "6WWV-060005-5003"
+              },
+              {
+                "stringValue": "6WWV-081200-5001"
+              },
+              {
+                "stringValue": "6WWV-100200-5000-10"
+              },
+              {
+                "stringValue": "6WWV-140120-5000"
+              },
+              {
+                "stringValue": "6WWV-150410-5000-10"
+              },
+              {
+                "stringValue": "6WWV-177000-5000-M1"
+              },
+              {
+                "stringValue": "6WWV-180001-5000"
+              },
+              {
+                "stringValue": "6KWV-100061-1000"
+              },
+              {
+                "stringValue": "6KWV-040703-1000-0HU00"
+              },
+              {
+                "stringValue": "6KWV-060301-1001"
+              },
+              {
+                "stringValue": "6KWV-140600-1000-10"
+              },
+              {
+                "stringValue": "6KWV-140700-1000-10"
+              },
+              {
+                "stringValue": "6KWV-081500-1200-M1"
+              },
+              {
+                "stringValue": "6KWV-081070-1001-M1"
+              },
+              {
+                "stringValue": "6KWV-081050-1000"
+              },
+              {
+                "stringValue": "6KWV-081040-1000"
+              },
+              {
+                "stringValue": "6KWV-081020-1000"
+              },
+              {
+                "stringValue": "6KWV-081010-1001"
+              },
+              {
+                "stringValue": "6WWV-080009-5000"
+              },
+              {
+                "stringValue": "6KWV-100040-1000"
+              },
+              {
+                "stringValue": "6KWV-100050-1000"
+              },
+              {
+                "stringValue": "6KWV-050020-1000-10"
+              },
+              {
+                "stringValue": "6KWV-050301-1000-10"
+              },
+              {
+                "stringValue": "5HY#-001201-1400"
+              },
+              {
+                "stringValue": "6KWV-001100-1800"
+              },
+              {
+                "stringValue": "C90710051041"
+              },
+              {
+                "stringValue": "6KWV-360003-1000"
+              },
+              {
+                "stringValue": "6KWV-360002-1000"
+              },
+              {
+                "stringValue": "6KWV-360001-1000"
+              },
+              {
+                "stringValue": "6WWV-360200-5000"
+              },
+              {
+                "stringValue": "6WWV-360006-5000"
+              },
+              {
+                "stringValue": "6KWV-041103-1000"
+              },
+              {
+                "stringValue": "6WWV-360004-5000"
+              },
+              {
+                "stringValue": "6KWV-121000-1000"
+              },
+              {
+                "stringValue": "6KWV-150900-1001"
+              },
+              {
+                "stringValue": "6KWV-170200-2100-M2"
+              },
+              {
+                "stringValue": "6WWV-120010-5000"
+              },
+              {
+                "stringValue": "6KJV-140151-8000-0VR00"
+              },
+              {
+                "stringValue": "6KJV-140161-8000-0VR00"
+              },
+              {
+                "stringValue": "6KJV-050301-6000-11"
+              },
+              {
+                "stringValue": "6WWV-030300-5002"
+              },
+              {
+                "stringValue": "6WWV-031000-5002-0BP00"
+              },
+              {
+                "stringValue": "6WWV-032000-5001-0BP00"
+              },
+              {
+                "stringValue": "6WWV-040101-5001"
+              },
+              {
+                "stringValue": "6WWV-040201-5000"
+              },
+              {
+                "stringValue": "6WWV-040601-5001-0BM00"
+              },
+              {
+                "stringValue": "6WWV-041001-5000-0D500-A"
+              },
+              {
+                "stringValue": "6WWV-041101-5000-0D500-A"
+              },
+              {
+                "stringValue": "6WWV-041301-5000-0BM00-A"
+              },
+              {
+                "stringValue": "6WWV-041401-5000-0BM00-A"
+              },
+              {
+                "stringValue": "6WWV-042101-5000-0BM00"
+              },
+              {
+                "stringValue": "6WWV-042201-5000-0BM00"
+              },
+              {
+                "stringValue": "6WWV-043001-5000-0BM00-A"
+              },
+              {
+                "stringValue": "6WWV-043101-5000-0BM00-A"
+              },
+              {
+                "stringValue": "6WWV-050006-5000-0D500"
+              },
+              {
+                "stringValue": "6WWV-050301-5000-10-A"
+              },
+              {
+                "stringValue": "6WWV-060100-5001-M1"
+              },
+              {
+                "stringValue": "6WWV-060301-5005-A"
+              },
+              {
+                "stringValue": "6WWV-081400-5100-A"
+              },
+              {
+                "stringValue": "6WWV-110300-5000-B"
+              },
+              {
+                "stringValue": "6WWV-121000-5000-A"
+              },
+              {
+                "stringValue": "6WWV-140001-5000-A"
+              },
+              {
+                "stringValue": "6WWV-140002-5000-A"
+              },
+              {
+                "stringValue": "6WWV-140003-5000-0BP00"
+              },
+              {
+                "stringValue": "6WWV-140100-5000-A"
+              },
+              {
+                "stringValue": "6WWV-140200-5000-A"
+              },
+              {
+                "stringValue": "6WWV-220300-5000-0VQ00"
+              },
+              {
+                "stringValue": "6WWV-221000-5001-0VQ00"
+              },
+              {
+                "stringValue": "6WWV-222000-5001-0VQ00"
+              },
+              {
+                "stringValue": "6WWV-250100-5000-0BP00"
+              },
+              {
+                "stringValue": "6WWV-250200-5000-0BP00"
+              },
+              {
+                "stringValue": "6WWV-250400-5000-0BP00"
+              },
+              {
+                "stringValue": "6WWV-360200-5000-B"
+              },
+              {
+                "stringValue": "6100-120005"
+              },
+              {
+                "stringValue": "3120929"
+              },
+              {
+                "stringValue": "0PW0-111000-0001"
+              },
+              {
+                "stringValue": "5HY#-001201-1400-B"
+              },
+              {
+                "stringValue": "6L3V-100010-1000"
+              },
+              {
+                "stringValue": "6L3V-100020-1000"
+              },
+              {
+                "stringValue": "6WWV-000101-5000"
+              },
+              {
+                "stringValue": "6WWV-000200-5000"
+              },
+              {
+                "stringValue": "6WWV-010010-5000"
+              },
+              {
+                "stringValue": "6WWV-011000-4200"
+              },
+              {
+                "stringValue": "6WWV-021001-5000"
+              },
+              {
+                "stringValue": "6WWV-021002-5000"
+              },
+              {
+                "stringValue": "6WWV-021003-5000"
+              },
+              {
+                "stringValue": "6WWV-021200-5003"
+              },
+              {
+                "stringValue": "6WWV-021300-5001"
+              },
+              {
+                "stringValue": "6WWV-030001-4000-10"
+              },
+              {
+                "stringValue": "6WWV-030100-5000"
+              },
+              {
+                "stringValue": "6WWV-030200-5000"
+              },
+              {
+                "stringValue": "6WWV-040301-5A00"
+              },
+              {
+                "stringValue": "6WWV-040401-5A00"
+              },
+              {
+                "stringValue": "6WWV-040501-5A00"
+              },
+              {
+                "stringValue": "6WWV-040701-5000"
+              },
+              {
+                "stringValue": "6WWV-040801-5000"
+              },
+              {
+                "stringValue": "6WWV-040901-5000"
+              },
+              {
+                "stringValue": "6WWV-041201-5000"
+              },
+              {
+                "stringValue": "6WWV-041501-5000"
+              },
+              {
+                "stringValue": "6WWV-041601-5000"
+              },
+              {
+                "stringValue": "6WWV-041701-5000"
+              },
+              {
+                "stringValue": "6WWV-041801-5000"
+              },
+              {
+                "stringValue": "6WWV-041901-5000"
+              },
+              {
+                "stringValue": "6WWV-042001-5000"
+              },
+              {
+                "stringValue": "6WWV-042301-5000"
+              },
+              {
+                "stringValue": "6WWV-042401-5000"
+              },
+              {
+                "stringValue": "6WWV-042501-5001"
+              },
+              {
+                "stringValue": "6WWV-042601-5A00"
+              },
+              {
+                "stringValue": "6WWV-042801-5A00"
+              },
+              {
+                "stringValue": "6WWV-042901-5000"
+              },
+              {
+                "stringValue": "6WWV-043301-5001"
+              },
+              {
+                "stringValue": "6WWV-043401-5000"
+              },
+              {
+                "stringValue": "6WWV-043701-5000"
+              },
+              {
+                "stringValue": "6WWV-043801-5000"
+              },
+              {
+                "stringValue": "6WWV-043901-5000"
+              },
+              {
+                "stringValue": "6WWV-044301-5000"
+              },
+              {
+                "stringValue": "6WWV-044401-5000"
+              },
+              {
+                "stringValue": "6WWV-044601-5000"
+              },
+              {
+                "stringValue": "6WWV-044701-5000"
+              },
+              {
+                "stringValue": "6WWV-044801-5000"
+              },
+              {
+                "stringValue": "6WWV-045601-5000"
+              },
+              {
+                "stringValue": "6WWV-045701-5000"
+              },
+              {
+                "stringValue": "6WWV-046101-5000"
+              },
+              {
+                "stringValue": "6WWV-046201-5000"
+              },
+              {
+                "stringValue": "6WWV-046301-5000"
+              },
+              {
+                "stringValue": "6WWV-046401-5000"
+              },
+              {
+                "stringValue": "6WWV-050001-5000-10"
+              },
+              {
+                "stringValue": "6WWV-050007-5000"
+              },
+              {
+                "stringValue": "6WWV-050500-5001-M1"
+              },
+              {
+                "stringValue": "6WWV-050600-5001-M1"
+              },
+              {
+                "stringValue": "6WWV-060008-5001"
+              },
+              {
+                "stringValue": "6WWV-0700B0-5A02"
+              },
+              {
+                "stringValue": "6WWV-080110-5000"
+              },
+              {
+                "stringValue": "6WWV-081300-5000"
+              },
+              {
+                "stringValue": "6WWV-081600-5002"
+              },
+              {
+                "stringValue": "6WWV-100100-5A01"
+              },
+              {
+                "stringValue": "6WWV-100600-5001"
+              },
+              {
+                "stringValue": "6WWV-1100B0-5A01"
+              },
+              {
+                "stringValue": "6WWV-130100-5100-11"
+              },
+              {
+                "stringValue": "6WWV-130200-5100"
+              },
+              {
+                "stringValue": "6WWV-140008-5000"
+              },
+              {
+                "stringValue": "6WWV-140102-5000"
+              },
+              {
+                "stringValue": "6WWV-140110-5000"
+              },
+              {
+                "stringValue": "6WWV-150100-5B01"
+              },
+              {
+                "stringValue": "6WWV-160110-4002"
+              },
+              {
+                "stringValue": "6WWV-160510-4000"
+              },
+              {
+                "stringValue": "6WWV-160520-4000"
+              },
+              {
+                "stringValue": "6WWV-160530-4000"
+              },
+              {
+                "stringValue": "6WWV-160540-4000"
+              },
+              {
+                "stringValue": "6WWV-160600-5001-10"
+              },
+              {
+                "stringValue": "6WWV-160700-5001-10"
+              },
+              {
+                "stringValue": "6WWV-166000-5A00"
+              },
+              {
+                "stringValue": "6WWV-167000-5A00"
+              },
+              {
+                "stringValue": "6WWV-170500-5A04-12"
+              },
+              {
+                "stringValue": "6WWV-180005-5000"
+              },
+              {
+                "stringValue": "6WWV-180010-5000"
+              },
+              {
+                "stringValue": "6WWV-181000-5001"
+              },
+              {
+                "stringValue": "6WWV-200300-5001"
+              },
+              {
+                "stringValue": "6WWV-200400-5001"
+              },
+              {
+                "stringValue": "KNL0-150600"
+              },
+              {
+                "stringValue": "P2C900BN00FBP"
+              },
+              {
+                "stringValue": "6WWV-190108-5000-10"
+              },
+              {
+                "stringValue": "6WWV-19TA01-5M00-10"
+              },
+              {
+                "stringValue": "6WWV-19TA02-5M00"
+              },
+              {
+                "stringValue": "6GUV-140203-6002-0BP00"
+              },
+              {
+                "stringValue": "6GUV-140230-6003-0BP00"
+              },
+              {
+                "stringValue": "6WWV-041001-5000-0D500"
+              },
+              {
+                "stringValue": "6WWV-041101-5000-0D500"
+              },
+              {
+                "stringValue": "6WWV-043001-5000-0BM00"
+              },
+              {
+                "stringValue": "6WWV-043101-5000-0BM00"
+              },
+              {
+                "stringValue": "6WWV-041301-5000-0BM00"
+              },
+              {
+                "stringValue": "6WWV-041401-5000-0BM00"
+              },
+              {
+                "stringValue": "6WWV-043601-5000"
+              },
+              {
+                "stringValue": "6WWV-140001-5000"
+              },
+              {
+                "stringValue": "6WWV-140002-5000"
+              },
+              {
+                "stringValue": "6WWV-140100-5000"
+              },
+              {
+                "stringValue": "6WWV-140200-5000"
+              },
+              {
+                "stringValue": "6WWV-050301-5000-10"
+              },
+              {
+                "stringValue": "6WWV-060301-5005"
+              },
+              {
+                "stringValue": "6WWV-081010-5000-M1"
+              },
+              {
+                "stringValue": "6WWV-081020-5000-M1"
+              },
+              {
+                "stringValue": "6WWV-081040-5001-M1"
+              },
+              {
+                "stringValue": "6WWV-081050-5000-M1"
+              },
+              {
+                "stringValue": "6WWV-081400-5100"
+              },
+              {
+                "stringValue": "6WWV-121000-5000"
+              },
+              {
+                "stringValue": "6WWV-170200-4200-M1"
+              },
+              {
+                "stringValue": "6WWV-360001-5000"
+              },
+              {
+                "stringValue": "6WWV-190113-5H00-10"
+              },
+              {
+                "stringValue": "6WWV-190105-5H00-11"
+              },
+              {
+                "stringValue": "6WWV-190106-5H00-11"
+              },
+              {
+                "stringValue": "940010-09673"
+              },
+              {
+                "stringValue": "601401-02119"
+              },
+              {
+                "stringValue": "5GYV-360200-1000"
+              },
+              {
+                "stringValue": "5HYV-001000-5000"
+              },
+              {
+                "stringValue": "5HYV-19TB01-3700-12"
+              },
+              {
+                "stringValue": "5HYV-19TC01-3700-12"
+              },
+              {
+                "stringValue": "5HYV-360001-6001"
+              },
+              {
+                "stringValue": "5HYV-360003-6001"
+              },
+              {
+                "stringValue": "5HYV-360004-6000"
+              },
+              {
+                "stringValue": "5HYV-360008-6000"
+              },
+              {
+                "stringValue": "9AWA-030008"
+              },
+              {
+                "stringValue": "5HYV-001000-8000"
+              },
+              {
+                "stringValue": "5SYV-19TC01-1500-12"
+              },
+              {
+                "stringValue": "6AQV-060100-1003-M2"
+              },
+              {
+                "stringValue": "6WWV-190107-5M00-11"
+              },
+              {
+                "stringValue": "6WWV-190108-5M00-11"
+              },
+              {
+                "stringValue": "6WWV-190109-5M00-11"
+              },
+              {
+                "stringValue": "6WWV-190110-5M00-11"
+              },
+              {
+                "stringValue": "6GU#-140202-6000"
+              },
+              {
+                "stringValue": "6GU#-140205-6000"
+              },
+              {
+                "stringValue": "6NT1-140150"
+              },
+              {
+                "stringValue": "6WWV-001100-5F00"
+              },
+              {
+                "stringValue": "6WWV-110005-5000"
+              },
+              {
+                "stringValue": "6WWV-360002-5000"
+              },
+              {
+                "stringValue": "6WWV-360003-5000"
+              },
+              {
+                "stringValue": "6WWV-360005-5000"
+              },
+              {
+                "stringValue": "54310086100"
+              },
+              {
+                "stringValue": "64132070000"
+              },
+              {
+                "stringValue": "0PW0-110001"
+              },
+              {
+                "stringValue": "0PW0-110002"
+              },
+              {
+                "stringValue": "1F30-024014"
+              },
+              {
+                "stringValue": "30006-102035860"
+              },
+              {
+                "stringValue": "30102-080070810"
+              },
+              {
+                "stringValue": "30105-050008410"
+              },
+              {
+                "stringValue": "30204-102160"
+              },
+              {
+                "stringValue": "30303-050000"
+              },
+              {
+                "stringValue": "30601-212530"
+              },
+              {
+                "stringValue": "6090-130012"
+              },
+              {
+                "stringValue": "6L30-020001"
+              },
+              {
+                "stringValue": "6L30-020003"
+              },
+              {
+                "stringValue": "6L30-030060"
+              },
+              {
+                "stringValue": "6L30-030080"
+              },
+              {
+                "stringValue": "6L30-030093"
+              },
+              {
+                "stringValue": "6L30-030094"
+              },
+              {
+                "stringValue": "6L30-030701"
+              },
+              {
+                "stringValue": "6L30-030705"
+              },
+              {
+                "stringValue": "6L30-030706"
+              },
+              {
+                "stringValue": "6L30-030720"
+              },
+              {
+                "stringValue": "6L30-120001"
+              },
+              {
+                "stringValue": "6L3V-040308-4200"
+              },
+              {
+                "stringValue": "6NTA-040202"
+              },
+              {
+                "stringValue": "6WWV-000120-5000"
+              },
+              {
+                "stringValue": "6WWV-000130-5000"
+              },
+              {
+                "stringValue": "6WWV-021004-5000"
+              },
+              {
+                "stringValue": "6WWV-030001-5000"
+              },
+              {
+                "stringValue": "6WWV-030004-5000"
+              },
+              {
+                "stringValue": "6WWV-030005-5000"
+              },
+              {
+                "stringValue": "6WWV-030010-5000"
+              },
+              {
+                "stringValue": "6WWV-030016-5001"
+              },
+              {
+                "stringValue": "6WWV-030020-5000"
+              },
+              {
+                "stringValue": "6WWV-030021-5000"
+              },
+              {
+                "stringValue": "6WWV-030030-5000"
+              },
+              {
+                "stringValue": "6WWV-030040-5000"
+              },
+              {
+                "stringValue": "6WWV-030050-5000"
+              },
+              {
+                "stringValue": "6WWV-030060-5000"
+              },
+              {
+                "stringValue": "6WWV-030080-5000"
+              },
+              {
+                "stringValue": "6WWV-030090-5000"
+              },
+              {
+                "stringValue": "6WWV-030106-5000"
+              },
+              {
+                "stringValue": "6WWV-030110-5000"
+              },
+              {
+                "stringValue": "6WWV-030120-5000"
+              },
+              {
+                "stringValue": "6WWV-030190-5000"
+              },
+              {
+                "stringValue": "6WWV-030400-5000"
+              },
+              {
+                "stringValue": "6WWV-030500-5000"
+              },
+              {
+                "stringValue": "6WWV-030600-5000"
+              },
+              {
+                "stringValue": "6WWV-030700-5000"
+              },
+              {
+                "stringValue": "6WWV-030800-5000"
+              },
+              {
+                "stringValue": "6WWV-030900-5000"
+              },
+              {
+                "stringValue": "6WWV-040502-5A00"
+              },
+              {
+                "stringValue": "6WWV-040503-5A00"
+              },
+              {
+                "stringValue": "6WWV-042701-5000"
+              },
+              {
+                "stringValue": "6WWV-043310-5000"
+              },
+              {
+                "stringValue": "6WWV-044101-5000"
+              },
+              {
+                "stringValue": "6WWV-044201-5000"
+              },
+              {
+                "stringValue": "6WWV-044501-5000"
+              },
+              {
+                "stringValue": "6WWV-044901-5001"
+              },
+              {
+                "stringValue": "6WWV-045001-5001"
+              },
+              {
+                "stringValue": "6WWV-045101-5000"
+              },
+              {
+                "stringValue": "6WWV-045201-5000"
+              },
+              {
+                "stringValue": "6WWV-045301-5001"
+              },
+              {
+                "stringValue": "6WWV-045401-5000"
+              },
+              {
+                "stringValue": "6WWV-045501-5000"
+              },
+              {
+                "stringValue": "6WWV-045901-5000-10"
+              },
+              {
+                "stringValue": "6WWV-046801-5000"
+              },
+              {
+                "stringValue": "6WWV-050004-5000"
+              },
+              {
+                "stringValue": "6WWV-050100-5100"
+              },
+              {
+                "stringValue": "6WWV-050200-5000"
+              },
+              {
+                "stringValue": "6WWV-050401-5000"
+              },
+              {
+                "stringValue": "6WWV-050402-5000"
+              },
+              {
+                "stringValue": "6WWV-080002-5000"
+              },
+              {
+                "stringValue": "6WWV-080003-5000"
+              },
+              {
+                "stringValue": "6WWV-080005-5000"
+              },
+              {
+                "stringValue": "6WWV-080006-5001-M1"
+              },
+              {
+                "stringValue": "6WWV-080007-5000"
+              },
+              {
+                "stringValue": "6WWV-081030-5000-M1"
+              },
+              {
+                "stringValue": "6WWV-081401-5000"
+              },
+              {
+                "stringValue": "6WWV-081402-5000"
+              },
+              {
+                "stringValue": "6WWV-130201-5000"
+              },
+              {
+                "stringValue": "6WWV-130202-5000"
+              },
+              {
+                "stringValue": "6WWV-140004-5000"
+              },
+              {
+                "stringValue": "6WWV-140009-5000"
+              },
+              {
+                "stringValue": "6WWV-140202-5000"
+              },
+              {
+                "stringValue": "6WWV-140401-5000"
+              },
+              {
+                "stringValue": "6WWV-140405-5000"
+              },
+              {
+                "stringValue": "6WWV-150200-5000"
+              },
+              {
+                "stringValue": "6WWV-150300-5000"
+              },
+              {
+                "stringValue": "6WWV-150400-5000"
+              },
+              {
+                "stringValue": "6WWV-151100-4000"
+              },
+              {
+                "stringValue": "6WWV-151200-4000"
+              },
+              {
+                "stringValue": "6WWV-160220-5000"
+              },
+              {
+                "stringValue": "6WWV-160300-5001"
+              },
+              {
+                "stringValue": "6WWV-170571-5A01"
+              },
+              {
+                "stringValue": "6WWV-180002-5001"
+              },
+              {
+                "stringValue": "6WWV-180004-5000"
+              },
+              {
+                "stringValue": "6WWV-200100-5001"
+              },
+              {
+                "stringValue": "6WWV-250001-5000"
+              },
+              {
+                "stringValue": "6WWV-250300-5000"
+              },
+              {
+                "stringValue": "6WWV-380101-5M00-13"
+              },
+              {
+                "stringValue": "6WWV-460100-5A00-M1"
+              },
+              {
+                "stringValue": "8080-140004"
+              },
+              {
+                "stringValue": "9010-160102"
+              },
+              {
+                "stringValue": "9DQV-150300-3000-10"
+              },
+              {
+                "stringValue": "C90705169000"
+              },
+              {
+                "stringValue": "C90711092000"
+              },
+              {
+                "stringValue": "CFCV-BLM002-2000"
+              },
+              {
+                "stringValue": "CF800-5-0001"
+              },
+              {
+                "stringValue": "CF800-5-0002"
+              },
+              {
+                "stringValue": "CF800-5-0003"
+              },
+              {
+                "stringValue": "940010-08725"
+              },
+              {
+                "stringValue": "940010-04632"
+              },
+              {
+                "stringValue": "6KMV-050001-B000"
+              },
+              {
+                "stringValue": "6KMV-121000-3000"
+              },
+              {
+                "stringValue": "?8480719090?"
+              },
+              {
+                "stringValue": "?85371000?"
+              },
+              {
+                "stringValue": "?85367000"
+              },
+              {
+                "stringValue": "6KM#-121000-8001"
+              },
+              {
+                "stringValue": "0UMV-000000-1000-10"
+              },
+              {
+                "stringValue": "0UMV-100000-1000-M1"
+              },
+              {
+                "stringValue": "0UMV-110000-1002"
+              },
+              {
+                "stringValue": "0UMV-114000-1000"
+              },
+              {
+                "stringValue": "0UMV-178000-1000-M1"
+              },
+              {
+                "stringValue": "0UMV-17A000-1000-M1"
+              },
+              {
+                "stringValue": "30006-060025880"
+              },
+              {
+                "stringValue": "30006-080035880"
+              },
+              {
+                "stringValue": "30006-080055870"
+              },
+              {
+                "stringValue": "30006-080070810"
+              },
+              {
+                "stringValue": "30006-102115810"
+              },
+              {
+                "stringValue": "30023-080040880"
+              },
+              {
+                "stringValue": "30102-080060870"
+              },
+              {
+                "stringValue": "30903-0323210"
+              },
+              {
+                "stringValue": "3120959"
+              },
+              {
+                "stringValue": "6AQV-040619-7100"
+              },
+              {
+                "stringValue": "6BLV-010320-1000-M1"
+              },
+              {
+                "stringValue": "6BLV-011000-1001"
+              },
+              {
+                "stringValue": "6BLV-011012-1000"
+              },
+              {
+                "stringValue": "6BLV-020001-1001"
+              },
+              {
+                "stringValue": "6BLV-020003-1000"
+              },
+              {
+                "stringValue": "6BLV-020004-1000"
+              },
+              {
+                "stringValue": "6BLV-020005-1000"
+              },
+              {
+                "stringValue": "6BLV-021100-1000-0D700"
+              },
+              {
+                "stringValue": "6BLV-021300-1000-0D700"
+              },
+              {
+                "stringValue": "6BLV-030004-1000"
+              },
+              {
+                "stringValue": "6BLV-030011-1001"
+              },
+              {
+                "stringValue": "6BLV-030021-1001"
+              },
+              {
+                "stringValue": "6BLV-030051-1000"
+              },
+              {
+                "stringValue": "6BLV-030061-1000"
+              },
+              {
+                "stringValue": "6BLV-030070-1000"
+              },
+              {
+                "stringValue": "6BLV-030393-1000"
+              },
+              {
+                "stringValue": "6BLV-030711-1000"
+              },
+              {
+                "stringValue": "6BLV-030721-1000"
+              },
+              {
+                "stringValue": "6BLV-030731-1000"
+              },
+              {
+                "stringValue": "6BLV-030741-1000"
+              },
+              {
+                "stringValue": "6BLV-030841-1000"
+              },
+              {
+                "stringValue": "6BLV-030850-1000"
+              },
+              {
+                "stringValue": "6BLV-030895-1000"
+              },
+              {
+                "stringValue": "6BLV-031000-1001-0BP00"
+              },
+              {
+                "stringValue": "6BLV-031506-1001"
+              },
+              {
+                "stringValue": "6BLV-031507-1000"
+              },
+              {
+                "stringValue": "6BLV-031680-1000"
+              },
+              {
+                "stringValue": "6BLV-031690-1000"
+              },
+              {
+                "stringValue": "6BLV-033000-1000-0BP00"
+              },
+              {
+                "stringValue": "6BLV-033301-1000"
+              },
+              {
+                "stringValue": "6BLV-034000-1000"
+              },
+              {
+                "stringValue": "6BLV-034090-1000"
+              },
+              {
+                "stringValue": "6BLV-040201-1000"
+              },
+              {
+                "stringValue": "6BLV-040203-1000"
+              },
+              {
+                "stringValue": "6BLV-040212-1000-0EN00"
+              },
+              {
+                "stringValue": "6BLV-040212-1000-0HJ00"
+              },
+              {
+                "stringValue": "6BLV-040301-1000"
+              },
+              {
+                "stringValue": "6BLV-040409-1000"
+              },
+              {
+                "stringValue": "6BLV-040410-1000"
+              },
+              {
+                "stringValue": "6BLV-040420-1000-12"
+              },
+              {
+                "stringValue": "6BLV-040430-1000-12"
+              },
+              {
+                "stringValue": "6BLV-040440-1000-11"
+              },
+              {
+                "stringValue": "6BLV-040450-1000-11"
+              },
+              {
+                "stringValue": "6BLV-040501-1000"
+              },
+              {
+                "stringValue": "6BLV-040801-1000"
+              },
+              {
+                "stringValue": "6BLV-040901-1000"
+              },
+              {
+                "stringValue": "6BLV-041030-1000"
+              },
+              {
+                "stringValue": "6BLV-041210-1000-12"
+              },
+              {
+                "stringValue": "6BLV-041220-1000-12"
+              },
+              {
+                "stringValue": "6BLV-041301-1000"
+              },
+              {
+                "stringValue": "6BLV-041616-1000-0EN00"
+              },
+              {
+                "stringValue": "6BLV-041616-1000-0HJ00"
+              },
+              {
+                "stringValue": "6BLV-042001-1002"
+              },
+              {
+                "stringValue": "6BLV-042010-1000-12"
+              },
+              {
+                "stringValue": "6BLV-042020-1000-12"
+              },
+              {
+                "stringValue": "6BLV-042030-1000-12"
+              },
+              {
+                "stringValue": "6BLV-042040-1000-11"
+              },
+              {
+                "stringValue": "6BLV-042050-1000-11"
+              },
+              {
+                "stringValue": "6BLV-042053-1000"
+              },
+              {
+                "stringValue": "6BLV-042054-1000"
+              },
+              {
+                "stringValue": "6BLV-042060-1000-11"
+              },
+              {
+                "stringValue": "6BLV-042101-1000"
+              },
+              {
+                "stringValue": "6BLV-042501-1001"
+              },
+              {
+                "stringValue": "6BLV-043020-1000-12"
+              },
+              {
+                "stringValue": "6BLV-043030-1000-12"
+              },
+              {
+                "stringValue": "6BLV-043220-1000-12"
+              },
+              {
+                "stringValue": "6BLV-043240-1000-11"
+              },
+              {
+                "stringValue": "6BLV-043330-1000-12"
+              },
+              {
+                "stringValue": "6BLV-043350-1000-11"
+              },
+              {
+                "stringValue": "6BLV-043601-1000"
+              },
+              {
+                "stringValue": "6BLV-043605-1000"
+              },
+              {
+                "stringValue": "6BLV-043801-1001"
+              },
+              {
+                "stringValue": "6BLV-050001-1000-0BP00"
+              },
+              {
+                "stringValue": "6BLV-050002-1000"
+              },
+              {
+                "stringValue": "6BLV-050003-1000"
+              },
+              {
+                "stringValue": "6BLV-050006-1000"
+              },
+              {
+                "stringValue": "6BLV-050007-1000"
+              },
+              {
+                "stringValue": "6BLV-050010-1000"
+              },
+              {
+                "stringValue": "6BLV-050500-1001-M1"
+              },
+              {
+                "stringValue": "6BLV-050600-1001-M1"
+              },
+              {
+                "stringValue": "6BLV-060001-1000"
+              },
+              {
+                "stringValue": "6BLV-060007-1000"
+              },
+              {
+                "stringValue": "6BLV-060011-1000"
+              },
+              {
+                "stringValue": "6BLV-060043-1000"
+              },
+              {
+                "stringValue": "6BLV-060045-1000"
+              },
+              {
+                "stringValue": "6BLV-060100-1001-M1"
+              },
+              {
+                "stringValue": "6BLV-060201-1000"
+              },
+              {
+                "stringValue": "6BLV-062300-1000-0BP00"
+              },
+              {
+                "stringValue": "6BLV-070001-1000"
+              },
+              {
+                "stringValue": "6BLV-070002-1000"
+              },
+              {
+                "stringValue": "6BLV-070010-1001"
+              },
+              {
+                "stringValue": "6BLV-080001-1000"
+              },
+              {
+                "stringValue": "6BLV-080005-1000"
+              },
+              {
+                "stringValue": "6BLV-083000-1001"
+              },
+              {
+                "stringValue": "6BLV-090003-1000"
+              },
+              {
+                "stringValue": "6BLV-090004-1000"
+              },
+              {
+                "stringValue": "6BLV-091000-1001"
+              },
+              {
+                "stringValue": "6BLV-093000-1001"
+              },
+              {
+                "stringValue": "6BLV-100001-1000"
+              },
+              {
+                "stringValue": "6BLV-100003-1000"
+              },
+              {
+                "stringValue": "6BLV-100010-1000"
+              },
+              {
+                "stringValue": "6BLV-100100-1000"
+              },
+              {
+                "stringValue": "6BLV-100301-1000"
+              },
+              {
+                "stringValue": "6BLV-100400-1000"
+              },
+              {
+                "stringValue": "6BLV-100600-1001"
+              },
+              {
+                "stringValue": "6BLV-100700-1000"
+              },
+              {
+                "stringValue": "6BLV-110001-1000"
+              },
+              {
+                "stringValue": "6BLV-110002-1000"
+              },
+              {
+                "stringValue": "6BLV-110006-1000"
+              },
+              {
+                "stringValue": "6BLV-110007-1000"
+              },
+              {
+                "stringValue": "6BLV-120006-1002"
+              },
+              {
+                "stringValue": "6BLV-120071-1000"
+              },
+              {
+                "stringValue": "6BLV-130100-1001"
+              },
+              {
+                "stringValue": "6BLV-141000-1000"
+              },
+              {
+                "stringValue": "6BLV-142000-1000-0BP00"
+              },
+              {
+                "stringValue": "6BLV-142008-1000"
+              },
+              {
+                "stringValue": "6BLV-142009-1000"
+              },
+              {
+                "stringValue": "6BLV-143000-1000-0BP00"
+              },
+              {
+                "stringValue": "6BLV-144000-1000-0BP00"
+              },
+              {
+                "stringValue": "6BLV-145000-1001-0BP00"
+              },
+              {
+                "stringValue": "6BLV-146000-1001-0BP00"
+              },
+              {
+                "stringValue": "6BLV-150100-1001"
+              },
+              {
+                "stringValue": "6BLV-150330-1001"
+              },
+              {
+                "stringValue": "6BLV-150510-1000"
+              },
+              {
+                "stringValue": "6BLV-151000-1000"
+              },
+              {
+                "stringValue": "6BLV-151200-1000"
+              },
+              {
+                "stringValue": "6BLV-160110-1002"
+              },
+              {
+                "stringValue": "6BLV-160200-1000"
+              },
+              {
+                "stringValue": "6BLV-160510-1000"
+              },
+              {
+                "stringValue": "6BLV-160520-1000"
+              },
+              {
+                "stringValue": "6BLV-160530-1000"
+              },
+              {
+                "stringValue": "6BLV-160540-1000"
+              },
+              {
+                "stringValue": "6BLV-161000-1000"
+              },
+              {
+                "stringValue": "6BLV-166000-1001"
+              },
+              {
+                "stringValue": "6BLV-167000-1001"
+              },
+              {
+                "stringValue": "6BLV-171000-1001"
+              },
+              {
+                "stringValue": "6BLV-190001-1000"
+              },
+              {
+                "stringValue": "6BLV-190002-1000"
+              },
+              {
+                "stringValue": "6BLV-190201-1000"
+              },
+              {
+                "stringValue": "6BLV-191017-1000-11"
+              },
+              {
+                "stringValue": "6BLV-191017-1000-12"
+              },
+              {
+                "stringValue": "6BLV-191018-1000-11"
+              },
+              {
+                "stringValue": "6BLV-191018-1000-12"
+              },
+              {
+                "stringValue": "6BLV-200100-1000"
+              },
+              {
+                "stringValue": "6BLV-200300-1000"
+              },
+              {
+                "stringValue": "6BLV-200400-1000"
+              },
+              {
+                "stringValue": "6BLV-380101-1000-12"
+              },
+              {
+                "stringValue": "6FIV-151600-7001-M1"
+              },
+              {
+                "stringValue": "8010-080118"
+              },
+              {
+                "stringValue": "8AJV-140004-1000"
+              },
+              {
+                "stringValue": "6BLV-121000-1001-0D500-A"
+              },
+              {
+                "stringValue": "6BLV-050300-1000-0BP00-A"
+              },
+              {
+                "stringValue": "6BLV-110200-A"
+              },
+              {
+                "stringValue": "6BLV-070200-A"
+              },
+              {
+                "stringValue": "CF200GY-001"
+              },
+              {
+                "stringValue": "CF200GY-002"
+              },
+              {
+                "stringValue": "1610030-00056"
+              },
+              {
+                "stringValue": "601401-00196"
+              },
+              {
+                "stringValue": "601401-00195"
+              },
+              {
+                "stringValue": "601601-01481"
+              },
+              {
+                "stringValue": "601401-01364"
+              },
+              {
+                "stringValue": "5HYV-12"
+              },
+              {
+                "stringValue": "5HYV-13"
+              },
+              {
+                "stringValue": "5HYV-14"
+              },
+              {
+                "stringValue": "5HYV-15"
+              },
+              {
+                "stringValue": "5HYV-16"
+              },
+              {
+                "stringValue": "5HYV-17"
+              },
+              {
+                "stringValue": "5HYV-18"
+              },
+              {
+                "stringValue": "5HY1-20250829-001-Z"
+              },
+              {
+                "stringValue": "MXG-BJ01-00512"
+              },
+              {
+                "stringValue": "6KMV-07Z0AD-B102-0BV00"
+              },
+              {
+                "stringValue": "6KMV-07Z0AA-3500-0BV00"
+              },
+              {
+                "stringValue": "6KMV-11Z0AB-3000-0BV00"
+              },
+              {
+                "stringValue": "6KMV-07Z0AA-8A00-0BV00"
+              },
+              {
+                "stringValue": "6KMV-11Z0AD-B102-0BV00"
+              },
+              {
+                "stringValue": "6GUV-122000-5602-11"
+              },
+              {
+                "stringValue": "6GUV-040201-3000-0HS00"
+              },
+              {
+                "stringValue": "6GUV-040202-3000-0HS00"
+              },
+              {
+                "stringValue": "6GUV-040501-3000-0D500"
+              },
+              {
+                "stringValue": "6GUV-040502-3000-0D500"
+              },
+              {
+                "stringValue": "6GUV-040602-3000-0BM00-A"
+              },
+              {
+                "stringValue": "6GUV-040601-3000-0BM00-A"
+              },
+              {
+                "stringValue": "6GUV-040605-3000-0BM00"
+              },
+              {
+                "stringValue": "6GUV-040606-3000-0BM00"
+              },
+              {
+                "stringValue": "6GUV-040703-5601-0BM00"
+              },
+              {
+                "stringValue": "6GUV-040704-5601-0BM00"
+              },
+              {
+                "stringValue": "6GUV-122000-3001-10-A"
+              },
+              {
+                "stringValue": "6KWV-050702-1000-0HJ00"
+              },
+              {
+                "stringValue": "6GUV-122000-3001-10"
+              },
+              {
+                "stringValue": "6GUV-190101-3001-10"
+              },
+              {
+                "stringValue": "6GUV-190104-3001-10"
+              },
+              {
+                "stringValue": "6GUV-122000-5602-10"
+              },
+              {
+                "stringValue": "6GUV-360003-5600-10"
+              },
+              {
+                "stringValue": "6GUV-360004-5600-10"
+              },
+              {
+                "stringValue": "6GUV-190102-3000-10"
+              },
+              {
+                "stringValue": "6GUV-190103-3000-10"
+              },
+              {
+                "stringValue": "6GUV-190105-3000-10"
+              },
+              {
+                "stringValue": "6KMV-060002-M500"
+              },
+              {
+                "stringValue": "0HT0-B1A000-0800"
+              },
+              {
+                "stringValue": "6GUV-033000-5606-0BP00"
+              },
+              {
+                "stringValue": "6GUV-100100-5603"
+              },
+              {
+                "stringValue": "6GUV-160100-5602"
+              },
+              {
+                "stringValue": "6GUV-080006-5600"
+              },
+              {
+                "stringValue": "6GUV-360001-5600-10"
+              },
+              {
+                "stringValue": "6GUV-360002-5600-10"
+              },
+              {
+                "stringValue": "5ASV-102111-6000"
+              },
+              {
+                "stringValue": "940010-13312"
+              },
+              {
+                "stringValue": "940010-13313"
+              },
+              {
+                "stringValue": "940010-13314"
+              },
+              {
+                "stringValue": "940010-13315"
+              },
+              {
+                "stringValue": "940010-13317"
+              },
+              {
+                "stringValue": "940010-13318"
+              },
+              {
+                "stringValue": "940010-13319"
+              },
+              {
+                "stringValue": "940010-13320"
+              },
+              {
+                "stringValue": "940010-13321"
+              },
+              {
+                "stringValue": "5HY1-032050-030-001-Z"
+              },
+              {
+                "stringValue": "5HY1-032110-030-001-Z"
+              },
+              {
+                "stringValue": "5HY1-032150-030-001-Z"
+              },
+              {
+                "stringValue": "5HY1-032150-030-002-Z"
+              },
+              {
+                "stringValue": "5HY1-032150-030-003-Z"
+              },
+              {
+                "stringValue": "5HY1-032160-030-001-Z"
+              },
+              {
+                "stringValue": "5HY1-032070-030-001-Z"
+              },
+              {
+                "stringValue": "5SYA/5HY1-032010-030-001-Z"
+              },
+              {
+                "stringValue": "5SYA/5HY1-032020-030-001-Z"
+              },
+              {
+                "stringValue": "5HY1-032260-030-001-Z"
+              },
+              {
+                "stringValue": "5HY1-032260-030-002-Z"
+              },
+              {
+                "stringValue": "JCX-DJ-2000-700-Z"
+              },
+              {
+                "stringValue": "5HY1-032130-6000-H1"
+              },
+              {
+                "stringValue": "5HY1-032990-6000-H1"
+              },
+              {
+                "stringValue": "6KM#-121000-8001-B"
+              },
+              {
+                "stringValue": "6KMV-082000-2502-M1"
+              },
+              {
+                "stringValue": "6KMV-100100-2501"
+              },
+              {
+                "stringValue": "6KMV-100200-2501"
+              },
+              {
+                "stringValue": "6KMV-130100-2501"
+              },
+              {
+                "stringValue": "6KMV-161000-9500"
+              },
+              {
+                "stringValue": "6KMV-190001-2501"
+              },
+              {
+                "stringValue": "6KMV-083000-2602-M1"
+              },
+              {
+                "stringValue": "6KMV-084000-2602-M1"
+              },
+              {
+                "stringValue": "6KMV-120040-2400-M1-C"
+              },
+              {
+                "stringValue": "6KMV-151200-9200"
+              },
+              {
+                "stringValue": "A1"
+              },
+              {
+                "stringValue": "A2"
+              },
+              {
+                "stringValue": "A3"
+              },
+              {
+                "stringValue": "A4"
+              },
+              {
+                "stringValue": "A5"
+              },
+              {
+                "stringValue": "A6"
+              },
+              {
+                "stringValue": "A7"
+              },
+              {
+                "stringValue": "A8"
+              },
+              {
+                "stringValue": "A9"
+              },
+              {
+                "stringValue": "A10"
+              },
+              {
+                "stringValue": "A11"
+              },
+              {
+                "stringValue": "A12"
+              },
+              {
+                "stringValue": "A13"
+              },
+              {
+                "stringValue": "A14"
+              },
+              {
+                "stringValue": "A15"
+              },
+              {
+                "stringValue": "A16"
+              },
+              {
+                "stringValue": "A17"
+              },
+              {
+                "stringValue": "A18"
+              },
+              {
+                "stringValue": "A19"
+              },
+              {
+                "stringValue": "6BLV-110007-1001"
+              },
+              {
+                "stringValue": "6BLV-110002-1001"
+              },
+              {
+                "stringValue": "6BLV-070002-1001"
+              },
+              {
+                "stringValue": "6BLV-041030-1001"
+              },
+              {
+                "stringValue": "0UMV-000000-1001-10"
+              },
+              {
+                "stringValue": "0UMV-114000-1001"
+              },
+              {
+                "stringValue": "6BLV-021300-1001-0D700"
+              },
+              {
+                "stringValue": "6BLV-031000-1002-0BP00"
+              },
+              {
+                "stringValue": "6BLV-040212-1001-0EN00"
+              },
+              {
+                "stringValue": "6BLV-040212-1001-0HJ00"
+              },
+              {
+                "stringValue": "6BLV-040301-1001"
+              },
+              {
+                "stringValue": "6BLV-050001-1001-0BP00"
+              }
+            ]
+          }
+        },
+        "action": {
+          "stringValue": "UPSERT_BATCH"
+        },
+        "count": {
+          "integerValue": "1000"
+        },
+        "batchIndex": {
+          "integerValue": "1"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-27T15:30:25.302Z"
+        }
+      },
+      "createTime": "2026-01-27T15:30:25.469348Z",
+      "updateTime": "2026-01-27T15:30:25.469348Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/kZIKa0CeBORKuuqJ4GvL",
+      "fields": {
+        "partNumbers": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "6KM#-030110-8000-0BP00"
+              },
+              {
+                "stringValue": "6KNV-044200-9100"
+              },
+              {
+                "stringValue": "6KNV-110400-7100"
+              },
+              {
+                "stringValue": "TG100"
+              },
+              {
+                "stringValue": "0NYV-052203-2000"
+              },
+              {
+                "stringValue": "6KMV-042401-B000"
+              },
+              {
+                "stringValue": "601401-00171"
+              },
+              {
+                "stringValue": "5HYV-130000-6038"
+              },
+              {
+                "stringValue": "940010-12713"
+              },
+              {
+                "stringValue": "6FI3-100300-10000"
+              },
+              {
+                "stringValue": "6KMV-100200-2200"
+              },
+              {
+                "stringValue": "6KMV-100200-2500"
+              },
+              {
+                "stringValue": "JXMF-MX-0232"
+              },
+              {
+                "stringValue": "6KMV-041111-2200-0EN00"
+              },
+              {
+                "stringValue": "6KM0-030005-1B200"
+              },
+              {
+                "stringValue": "6KMV-040614-3000-0BU00"
+              },
+              {
+                "stringValue": "6KMV-040411-3500"
+              },
+              {
+                "stringValue": "5HYV-130000-6023"
+              },
+              {
+                "stringValue": "601401-00097"
+              },
+              {
+                "stringValue": "6KM#-010010-8000"
+              },
+              {
+                "stringValue": "6KMV-040128-2500-0EN00"
+              },
+              {
+                "stringValue": "6KM0-060410-0B200"
+              },
+              {
+                "stringValue": "6KMV-040021-8006-0BU00"
+              },
+              {
+                "stringValue": "5HY1-131315-6000-H1"
+              },
+              {
+                "stringValue": "5HYV-341107-4500"
+              },
+              {
+                "stringValue": "6GU#-021005-6000"
+              },
+              {
+                "stringValue": "6KMV-040245-2500-0EN00"
+              },
+              {
+                "stringValue": "6KMV-030300-3000-0BP00"
+              },
+              {
+                "stringValue": "6KM#-040003-8001"
+              },
+              {
+                "stringValue": "6KM0-030700"
+              },
+              {
+                "stringValue": "6KMV-040615-7100"
+              },
+              {
+                "stringValue": "6AQV-040803-1001"
+              },
+              {
+                "stringValue": "6KM#-040062-8001"
+              },
+              {
+                "stringValue": "6KMV-160200-BD00"
+              },
+              {
+                "stringValue": "6KMV-050001-B000-A"
+              },
+              {
+                "stringValue": "6KMV-040006-2500-0BM00"
+              },
+              {
+                "stringValue": "9GQ0-360100"
+              },
+              {
+                "stringValue": "6KMV-110100-3000-M1-0BV00-A"
+              },
+              {
+                "stringValue": "5HYV-351300-9000"
+              },
+              {
+                "stringValue": "2231967.9995833333"
+              },
+              {
+                "stringValue": "6KMV-040501-3001"
+              },
+              {
+                "stringValue": "6KM#-040046-BD00"
+              },
+              {
+                "stringValue": "6GU#-000202-6000"
+              },
+              {
+                "stringValue": "5SYV-19SB01-6C00-12"
+              },
+              {
+                "stringValue": "5HYV-130000-6008"
+              },
+              {
+                "stringValue": "6KMV-021000-5000"
+              },
+              {
+                "stringValue": "6KMV-040013-8003-0B600"
+              },
+              {
+                "stringValue": "940010-12715"
+              },
+              {
+                "stringValue": "6KM#-040049-8001"
+              },
+              {
+                "stringValue": "30006-080090810"
+              }
+            ]
+          }
+        },
+        "action": {
+          "stringValue": "UPSERT_BATCH"
+        },
+        "count": {
+          "integerValue": "50"
+        },
+        "id": {
+          "stringValue": "kZIKa0CeBORKuuqJ4GvL"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "reported": {
+          "booleanValue": false
+        },
+        "timestamp": {
+          "stringValue": "2026-01-28T18:08:55.789Z"
+        },
+        "batchIndex": {
+          "integerValue": "0"
+        }
+      },
+      "createTime": "2026-01-28T18:08:56.008432Z",
+      "updateTime": "2026-01-28T18:08:56.008432Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/oeuHVxp3BDNMOrGikNJP",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-27T01:19:40.441Z"
+        },
+        "batchIndex": {
+          "integerValue": "0"
+        },
+        "action": {
+          "stringValue": "UPSERT_BATCH"
+        },
+        "partNumbers": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "960010-030375"
+              },
+              {
+                "stringValue": "5DYV-060701-1000"
+              },
+              {
+                "stringValue": "5DYV-050701-1000"
+              },
+              {
+                "stringValue": "6BMV-035541-1000"
+              },
+              {
+                "stringValue": "5DYV-060704-1001"
+              },
+              {
+                "stringValue": "5DYV-060702-1001"
+              },
+              {
+                "stringValue": "5DYV-131000-3500-25"
+              },
+              {
+                "stringValue": "5DYV-060801-1000"
+              },
+              {
+                "stringValue": "5GYV-045001-1000"
+              },
+              {
+                "stringValue": "Q841-310000"
+              },
+              {
+                "stringValue": "5GYV-321000-1001"
+              },
+              {
+                "stringValue": "5FYV-290100-1001"
+              },
+              {
+                "stringValue": "5GYV-290100-1001"
+              },
+              {
+                "stringValue": "2231754"
+              },
+              {
+                "stringValue": "2257232"
+              },
+              {
+                "stringValue": "2231665"
+              },
+              {
+                "stringValue": "2257201"
+              },
+              {
+                "stringValue": "5DYV-270300-1000"
+              },
+              {
+                "stringValue": "5DYV-050801-1000"
+              },
+              {
+                "stringValue": "5DYV-060801A"
+              },
+              {
+                "stringValue": "202332000000000"
+              },
+              {
+                "stringValue": "202312000000000"
+              },
+              {
+                "stringValue": "900010-0338"
+              },
+              {
+                "stringValue": "601401-00203"
+              },
+              {
+                "stringValue": "5BYV-190404-1700-10"
+              },
+              {
+                "stringValue": "5BYV-190407-1700-11"
+              },
+              {
+                "stringValue": "5BYV-190404-1700-11"
+              },
+              {
+                "stringValue": "5GY0-031000-860-012-W"
+              },
+              {
+                "stringValue": "601402-00601"
+              },
+              {
+                "stringValue": "601402-00602"
+              },
+              {
+                "stringValue": "5BYV-190405-1700-10"
+              },
+              {
+                "stringValue": "5BYV-190403-1700-11"
+              },
+              {
+                "stringValue": "960010-00359"
+              },
+              {
+                "stringValue": "5BYV-190403-1700-10"
+              },
+              {
+                "stringValue": "6KNV-171000-6501"
+              },
+              {
+                "stringValue": "5BYV-190408-1700-10"
+              },
+              {
+                "stringValue": "5BYV-190402-1700-10"
+              },
+              {
+                "stringValue": "5BYV-190405-1700-11"
+              },
+              {
+                "stringValue": "5BYV-190402-1700-11"
+              },
+              {
+                "stringValue": "6GUV-041001-3000"
+              },
+              {
+                "stringValue": "5BYV-190406-1700-10"
+              },
+              {
+                "stringValue": "6KMV-151200-2201"
+              },
+              {
+                "stringValue": "5BYV-190401-1700-10"
+              },
+              {
+                "stringValue": "601401-01532"
+              },
+              {
+                "stringValue": "5BYV-190407-1700-10"
+              },
+              {
+                "stringValue": "5BYV-190401-1700-11"
+              },
+              {
+                "stringValue": "5BYV-190406-1700-11"
+              },
+              {
+                "stringValue": "5190-070030-1000"
+              },
+              {
+                "stringValue": "5BYV-190408-1700-11"
+              },
+              {
+                "stringValue": "6GUV-122000-3002-10"
+              },
+              {
+                "stringValue": "1F30-050004"
+              },
+              {
+                "stringValue": "0NYV-073001-3000"
+              },
+              {
+                "stringValue": "CFM-FLG004-Z"
+              },
+              {
+                "stringValue": "CF-5GYO-372003-1000-MJ-01"
+              },
+              {
+                "stringValue": "601401-00111"
+              },
+              {
+                "stringValue": "0NYV-069201-3001"
+              },
+              {
+                "stringValue": "5CYV-374104-3500-H1"
+              },
+              {
+                "stringValue": "900010-0163"
+              },
+              {
+                "stringValue": "960010-032648"
+              },
+              {
+                "stringValue": "5CYV-378102-3500-H1"
+              },
+              {
+                "stringValue": "5CYV-372104-3500-H1"
+              },
+              {
+                "stringValue": "5HYV-152800-6000-M1"
+              },
+              {
+                "stringValue": "5CYV-372108-3500-H1"
+              },
+              {
+                "stringValue": "CFM-FLG003-Z"
+              },
+              {
+                "stringValue": "0NYV-066202-1000-Q0-00010"
+              },
+              {
+                "stringValue": "CF-5FY0-374008-1000-MJ-01"
+              },
+              {
+                "stringValue": "5CYV-376103-3500-H1"
+              },
+              {
+                "stringValue": "CF-5GYO-374003-1000-MJ-01"
+              },
+              {
+                "stringValue": "0NYV-069401-3001"
+              },
+              {
+                "stringValue": "CF-5FY0-372008-1000-MJ-01"
+              },
+              {
+                "stringValue": "5CYV-378103-3500-H1"
+              },
+              {
+                "stringValue": "CF-5FY0-376008-1000-MJ-01"
+              },
+              {
+                "stringValue": "5DYV-131000-3500-26"
+              },
+              {
+                "stringValue": "0NYV-066102-1000-Q0-00003"
+              },
+              {
+                "stringValue": "0180-065002"
+              },
+              {
+                "stringValue": "0NYV-066102-1000-Q0-00006"
+              },
+              {
+                "stringValue": "0NYV-066102-1000-Q0-00005"
+              },
+              {
+                "stringValue": "KSQV-043003-1000"
+              },
+              {
+                "stringValue": "6GUV-122000-3002-11"
+              },
+              {
+                "stringValue": "5CYV-376102-3500-H1"
+              },
+              {
+                "stringValue": "TFQ080"
+              },
+              {
+                "stringValue": "5CYV-372101-3500-H1"
+              },
+              {
+                "stringValue": "6GUV-032000-5604"
+              },
+              {
+                "stringValue": "0NYV-066202-1000-Q0-00011"
+              },
+              {
+                "stringValue": "5CYV-374103-3500-H1"
+              },
+              {
+                "stringValue": "5DYV-372107-3500-H1"
+              },
+              {
+                "stringValue": "5DYV-374103-3500-H1"
+              },
+              {
+                "stringValue": "6GUV-122000-3002-10-A"
+              },
+              {
+                "stringValue": "5DYV-374107-3500-H1"
+              },
+              {
+                "stringValue": "900010-0251"
+              },
+              {
+                "stringValue": "CFM-FLG002-Z"
+              },
+              {
+                "stringValue": "900010-0253"
+              },
+              {
+                "stringValue": "CFM-FLG001-Z"
+              },
+              {
+                "stringValue": "CF-5FY0-378008-1000-MJ-01"
+              },
+              {
+                "stringValue": "6GUV-122000-3002-11-A"
+              },
+              {
+                "stringValue": "6GUV-040701-5603"
+              },
+              {
+                "stringValue": "0800-062204"
+              },
+              {
+                "stringValue": "6GUV-081000-3005"
+              },
+              {
+                "stringValue": "5CYV-372103-3500-H1"
+              },
+              {
+                "stringValue": "5CYV-372106-3500-H1"
+              },
+              {
+                "stringValue": "5DYV-133000-3500-24"
+              },
+              {
+                "stringValue": "960010-00684"
+              },
+              {
+                "stringValue": "5DYV-372103-3500-H1"
+              },
+              {
+                "stringValue": "5DYV-372102-3500-H1"
+              },
+              {
+                "stringValue": "960010-2520"
+              },
+              {
+                "stringValue": "5HYV-031306-6000-H1-W"
+              },
+              {
+                "stringValue": "5HYV-031305-6000-H1-W"
+              },
+              {
+                "stringValue": "0800-062205"
+              },
+              {
+                "stringValue": "JXJ601401-000079"
+              },
+              {
+                "stringValue": "5DYV-374102-3500-H1"
+              },
+              {
+                "stringValue": "6GUV-040304-3000"
+              },
+              {
+                "stringValue": "0NYV-066202-1000-Q0-00008"
+              },
+              {
+                "stringValue": "5HYV-043082-4100"
+              },
+              {
+                "stringValue": "900010-0242"
+              },
+              {
+                "stringValue": "6GUV-040205-3003"
+              },
+              {
+                "stringValue": "0NYV-066102-1000-Q0-00004"
+              },
+              {
+                "stringValue": "6GUV-081400-3001"
+              },
+              {
+                "stringValue": "6AQV-050003-1002"
+              },
+              {
+                "stringValue": "5CYV-376106-3500-H1"
+              },
+              {
+                "stringValue": "5SYV-150100-2400"
+              },
+              {
+                "stringValue": "0NYV-066202-1000-Q0-00007"
+              },
+              {
+                "stringValue": "960010-032649"
+              },
+              {
+                "stringValue": "5DYV-133210-3500-25"
+              },
+              {
+                "stringValue": "0NYV-066202-1000-Q0-00009"
+              }
+            ]
+          }
+        },
+        "count": {
+          "integerValue": "124"
+        },
+        "id": {
+          "stringValue": "oeuHVxp3BDNMOrGikNJP"
+        },
+        "user": {
+          "stringValue": "admin"
+        }
+      },
+      "createTime": "2026-01-27T01:19:40.600600Z",
+      "updateTime": "2026-01-27T01:19:40.600600Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/qWIwQxCEd73YTCyqGtKZ",
+      "fields": {
+        "partNumbers": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "6KMV-041103-B000"
+              },
+              {
+                "stringValue": "0NYV-027101-3001"
+              },
+              {
+                "stringValue": "6KM#-040007-8001"
+              },
+              {
+                "stringValue": "6KMV-100400-2500"
+              },
+              {
+                "stringValue": "6KM#-200003-8001"
+              },
+              {
+                "stringValue": "5HYV-130000-6004"
+              },
+              {
+                "stringValue": "6AQV-150600-1500"
+              },
+              {
+                "stringValue": "601402-00771"
+              },
+              {
+                "stringValue": "5HYV-130000-6052"
+              },
+              {
+                "stringValue": "0NYV-066202-1000-Q0-00001"
+              },
+              {
+                "stringValue": "5ASV-039001-5100"
+              },
+              {
+                "stringValue": "6KJ0-070001-10000"
+              },
+              {
+                "stringValue": "5SYV-133000-8001-20"
+              },
+              {
+                "stringValue": "0DMV-17A000-6000"
+              },
+              {
+                "stringValue": "6NTG-080005"
+              },
+              {
+                "stringValue": "6100-080005"
+              },
+              {
+                "stringValue": "5HYV-130000-6017"
+              },
+              {
+                "stringValue": "6NQ0-120001"
+              },
+              {
+                "stringValue": "6KMV-130100-B003"
+              },
+              {
+                "stringValue": "6KMV-380101-B200-12"
+              },
+              {
+                "stringValue": "5HYV-130000-6067"
+              },
+              {
+                "stringValue": "6KMV-050500-2200-M1"
+              },
+              {
+                "stringValue": "6KM0-043403"
+              },
+              {
+                "stringValue": "6KNV-041010-9100"
+              },
+              {
+                "stringValue": "A000-100010-20000"
+              },
+              {
+                "stringValue": "6AQV-021400-1000"
+              },
+              {
+                "stringValue": "6NQ#-140801-6000"
+              },
+              {
+                "stringValue": "9060-180029"
+              },
+              {
+                "stringValue": "30208-102010"
+              },
+              {
+                "stringValue": "6NQ#-000204-6001"
+              },
+              {
+                "stringValue": "5SYV-131000-8001-20"
+              },
+              {
+                "stringValue": "TP310"
+              },
+              {
+                "stringValue": "6ARV-140002-1000"
+              },
+              {
+                "stringValue": "5HYV-130000-6006"
+              },
+              {
+                "stringValue": "6KMV-190121-2500-10"
+              },
+              {
+                "stringValue": "5HYV-133300-6001-20-H1"
+              },
+              {
+                "stringValue": "601401-01415"
+              },
+              {
+                "stringValue": "5HYV-131326-6000"
+              },
+              {
+                "stringValue": "3120941"
+              },
+              {
+                "stringValue": "6KM#-121000-8001-A"
+              },
+              {
+                "stringValue": "6WWV-046602-5000"
+              },
+              {
+                "stringValue": "6KM#-040001-8001-0BU00"
+              },
+              {
+                "stringValue": "6KM#-040061-8001"
+              },
+              {
+                "stringValue": "6KM#-050109-K100"
+              },
+              {
+                "stringValue": "30102-060012870"
+              },
+              {
+                "stringValue": "6KMV-040011-2500-0VE00"
+              },
+              {
+                "stringValue": "6NQ#-120004-6000"
+              },
+              {
+                "stringValue": "940010-12906"
+              },
+              {
+                "stringValue": "6NTV-200400-4000"
+              },
+              {
+                "stringValue": "5ASV-150100-5401"
+              }
+            ]
+          }
+        },
+        "action": {
+          "stringValue": "UPSERT_BATCH"
+        },
+        "count": {
+          "integerValue": "50"
+        },
+        "id": {
+          "stringValue": "qWIwQxCEd73YTCyqGtKZ"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "reported": {
+          "booleanValue": false
+        },
+        "timestamp": {
+          "stringValue": "2026-01-28T17:53:57.783Z"
+        },
+        "batchIndex": {
+          "integerValue": "0"
+        }
+      },
+      "createTime": "2026-01-28T17:53:57.969468Z",
+      "updateTime": "2026-01-28T17:53:57.969468Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/system_yesterday_1769367973362",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T19:06:13.362Z"
+        },
+        "id": {
+          "stringValue": "system_yesterday_1769367973362"
+        },
+        "user": {
+          "stringValue": "SYSTEM_BOT"
+        },
+        "partNumbers": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "TEST_PART"
+              }
+            ]
+          }
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "count": {
+          "integerValue": "1"
+        }
+      },
+      "createTime": "2026-01-25T19:06:14.059769Z",
+      "updateTime": "2026-01-25T19:06:14.059769Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/system_yesterday_1769368069177",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-24T19:07:49.177Z"
+        },
+        "user": {
+          "stringValue": "SYSTEM_BOT"
+        },
+        "id": {
+          "stringValue": "system_yesterday_1769368069177"
+        },
+        "count": {
+          "integerValue": "1"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumbers": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "TEST_PART"
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-01-25T19:07:49.828380Z",
+      "updateTime": "2026-01-25T19:07:49.828380Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/system_yesterday_1769368190042",
+      "fields": {
+        "user": {
+          "stringValue": "SYSTEM_BOT"
+        },
+        "id": {
+          "stringValue": "system_yesterday_1769368190042"
+        },
+        "action": {
+          "stringValue": "UPSERT"
+        },
+        "partNumbers": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "TEST_PART"
+              }
+            ]
+          }
+        },
+        "count": {
+          "integerValue": "1"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-24T19:09:50.042Z"
+        }
+      },
+      "createTime": "2026-01-25T19:09:50.686559Z",
+      "updateTime": "2026-01-25T19:09:50.686559Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/tUHpxBPJ5OHfIwAhoQ3w",
+      "fields": {
+        "count": {
+          "integerValue": "40"
+        },
+        "partNumbers": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "5GYV-045003-1000"
+              },
+              {
+                "stringValue": "5FYV-169090-1001"
+              },
+              {
+                "stringValue": "5DYV-060701A"
+              },
+              {
+                "stringValue": "5GYV-102130-1001"
+              },
+              {
+                "stringValue": "0NYV-170700-2000"
+              },
+              {
+                "stringValue": "5FYV-034200-1002-H1"
+              },
+              {
+                "stringValue": "30218-122160"
+              },
+              {
+                "stringValue": "5GYV-041012-1001-0YD00"
+              },
+              {
+                "stringValue": "5GYV-042033-1002"
+              },
+              {
+                "stringValue": "5GYV-042052-1000"
+              },
+              {
+                "stringValue": "5FYV-169550-1002"
+              },
+              {
+                "stringValue": "5GYV-021340-1002"
+              },
+              {
+                "stringValue": "5GYV-120100A"
+              },
+              {
+                "stringValue": "5FYV-036131-1000-H1"
+              },
+              {
+                "stringValue": "5GYV-043015-1001"
+              },
+              {
+                "stringValue": "5GYV-171000-1001"
+              },
+              {
+                "stringValue": "5DYV-050801A"
+              },
+              {
+                "stringValue": "0NYV-112000-2001"
+              },
+              {
+                "stringValue": "5GYV-101102-1000"
+              },
+              {
+                "stringValue": "5FYV-036160-1001-H1"
+              },
+              {
+                "stringValue": "5DYV-050400-1000-0BP00"
+              },
+              {
+                "stringValue": "5GYV-120110-1000"
+              },
+              {
+                "stringValue": "5DYV-050610-1002"
+              },
+              {
+                "stringValue": "5FYV-036290-1000-H1"
+              },
+              {
+                "stringValue": "5GYV-060003-1000"
+              },
+              {
+                "stringValue": "5GYV-120120-1000"
+              },
+              {
+                "stringValue": "5DYV-060300-1000"
+              },
+              {
+                "stringValue": "5FYV-032600-1000-H1"
+              },
+              {
+                "stringValue": "30024-122125110"
+              },
+              {
+                "stringValue": "5GYV-150320-1000"
+              },
+              {
+                "stringValue": "5FYV-230101-1000"
+              },
+              {
+                "stringValue": "30102-060020810"
+              },
+              {
+                "stringValue": "5FYV-032700-1000-H1"
+              },
+              {
+                "stringValue": "5FYV-169030-1001"
+              },
+              {
+                "stringValue": "5GYV-102110-1000"
+              },
+              {
+                "stringValue": "5GYV-120105-1000"
+              },
+              {
+                "stringValue": "30024-122135110"
+              },
+              {
+                "stringValue": "5DYV-060400-1000"
+              },
+              {
+                "stringValue": "30102-050016810"
+              },
+              {
+                "stringValue": "30110-630320010"
+              }
+            ]
+          }
+        },
+        "action": {
+          "stringValue": "UPSERT_BATCH"
+        },
+        "id": {
+          "stringValue": "tUHpxBPJ5OHfIwAhoQ3w"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-26T14:08:07.048Z"
+        },
+        "batchIndex": {
+          "integerValue": "0"
+        }
+      },
+      "createTime": "2026-01-26T14:08:07.261677Z",
+      "updateTime": "2026-01-26T14:08:07.261677Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/xa3u8FO0eitjoNkI9Ahd",
+      "fields": {
+        "reported": {
+          "booleanValue": false
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "xa3u8FO0eitjoNkI9Ahd"
+        },
+        "count": {
+          "integerValue": "50"
+        },
+        "action": {
+          "stringValue": "UPSERT_BATCH"
+        },
+        "partNumbers": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "6KMV-040500-5000"
+              },
+              {
+                "stringValue": "0800-014003"
+              },
+              {
+                "stringValue": "6KM#-040045-BD00"
+              },
+              {
+                "stringValue": "6KMV-150100-2700"
+              },
+              {
+                "stringValue": "5HYV-130000-6037"
+              },
+              {
+                "stringValue": "6KM#-040064-8001"
+              },
+              {
+                "stringValue": "0NYV-069602-1001"
+              },
+              {
+                "stringValue": "6KMV-040026-8004-0BU00"
+              },
+              {
+                "stringValue": "601402-00542"
+              },
+              {
+                "stringValue": "6KMV-380101-2200-12"
+              },
+              {
+                "stringValue": "5BWV-060600-5000-0VX00"
+              },
+              {
+                "stringValue": "6KMV-070100-3000-M1-0BV00-B"
+              },
+              {
+                "stringValue": "6KMV-070002-3000"
+              },
+              {
+                "stringValue": "6KM#-100001-8201-0BP00"
+              },
+              {
+                "stringValue": "30102-080016810"
+              },
+              {
+                "stringValue": "6KM0-040501"
+              },
+              {
+                "stringValue": "TFW009"
+              },
+              {
+                "stringValue": "6KM0-380302-10"
+              },
+              {
+                "stringValue": "6KMV-110100-3000-M1-0BV00-B"
+              },
+              {
+                "stringValue": "960010-02100"
+              },
+              {
+                "stringValue": "6KM#-040044-8001"
+              },
+              {
+                "stringValue": "5HYV-130000-6078"
+              },
+              {
+                "stringValue": "6NT1-041510"
+              },
+              {
+                "stringValue": "5HYV-130000-6051"
+              },
+              {
+                "stringValue": "6KMV-083000-2300-M1"
+              },
+              {
+                "stringValue": "6KMV-040029-8002-0B600"
+              },
+              {
+                "stringValue": "6KMV-040611-3000"
+              },
+              {
+                "stringValue": "5HYV-130000-6059"
+              },
+              {
+                "stringValue": "601402-00351"
+              },
+              {
+                "stringValue": "5HYV-130000-6001"
+              },
+              {
+                "stringValue": "6KMV-040102-3000-0BU00"
+              },
+              {
+                "stringValue": "6KM#-040058-8001"
+              },
+              {
+                "stringValue": "6KM#-160500-8000"
+              },
+              {
+                "stringValue": "6KM#-040032-8001"
+              },
+              {
+                "stringValue": "5HYV-130000-6046"
+              },
+              {
+                "stringValue": "6KMV-200200-2500"
+              },
+              {
+                "stringValue": "5HYV-130000-6060"
+              },
+              {
+                "stringValue": "601401-00932"
+              },
+              {
+                "stringValue": "6KJ0-180310"
+              },
+              {
+                "stringValue": "5HYV-130000-6063"
+              },
+              {
+                "stringValue": "5BYV-19SC01-7B00-12"
+              },
+              {
+                "stringValue": "8080-041131"
+              },
+              {
+                "stringValue": "0NYM-B1A100-0800-MG"
+              },
+              {
+                "stringValue": "940010-12909"
+              },
+              {
+                "stringValue": "6KMV-040026-2500-0EN00"
+              },
+              {
+                "stringValue": "30206-080510"
+              },
+              {
+                "stringValue": "30803-04705"
+              },
+              {
+                "stringValue": "6KMV-030842-2700"
+              },
+              {
+                "stringValue": "0700-024106"
+              },
+              {
+                "stringValue": "6KM0-043701"
+              }
+            ]
+          }
+        },
+        "batchIndex": {
+          "integerValue": "0"
+        },
+        "timestamp": {
+          "stringValue": "2026-01-28T18:19:23.117Z"
+        }
+      },
+      "createTime": "2026-01-28T18:19:23.361449Z",
+      "updateTime": "2026-01-28T18:19:23.361449Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/daily_changes/zaVpyvWnpc0ooVl8EVvG",
+      "fields": {
+        "timestamp": {
+          "stringValue": "2026-01-28T17:58:48.877Z"
+        },
+        "batchIndex": {
+          "integerValue": "0"
+        },
+        "action": {
+          "stringValue": "UPSERT_BATCH"
+        },
+        "partNumbers": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "5BWV-050500-5000-0VX00"
+              },
+              {
+                "stringValue": "6KMV-160200-B000"
+              },
+              {
+                "stringValue": "5HYV-130000-6039"
+              },
+              {
+                "stringValue": "601401-00663"
+              },
+              {
+                "stringValue": "5HYV-130000-6020"
+              },
+              {
+                "stringValue": "6KM0-030020-0B200"
+              },
+              {
+                "stringValue": "940010-11160"
+              },
+              {
+                "stringValue": "6KM0-160230-00001"
+              },
+              {
+                "stringValue": "5HYV-372005-9000"
+              },
+              {
+                "stringValue": "601401-00788"
+              },
+              {
+                "stringValue": "6NTV-200300-4000"
+              },
+              {
+                "stringValue": "940010-12902"
+              },
+              {
+                "stringValue": "6KNV-160420-8301"
+              },
+              {
+                "stringValue": "5HYV-374004-9000"
+              },
+              {
+                "stringValue": "5HYV-130000-6014"
+              },
+              {
+                "stringValue": "MXG-BJ01-00081"
+              },
+              {
+                "stringValue": "6NTA-050003"
+              },
+              {
+                "stringValue": "6KMV-041011-2200-0EN00"
+              },
+              {
+                "stringValue": "601401-00219"
+              },
+              {
+                "stringValue": "6KMV-062300-2200-0BP00"
+              },
+              {
+                "stringValue": "6KMV-040018-8003"
+              },
+              {
+                "stringValue": "6NQ0-200100-10000"
+              },
+              {
+                "stringValue": "6KMV-181000-B001"
+              },
+              {
+                "stringValue": "8AJV-004100-1000"
+              },
+              {
+                "stringValue": "6KM#-200002-8001"
+              },
+              {
+                "stringValue": "5HYV-131326-6000-20-H1"
+              },
+              {
+                "stringValue": "6KMV-152700-B100-10"
+              },
+              {
+                "stringValue": "6KMV-050004-2200"
+              },
+              {
+                "stringValue": "6KM#-050009-6000-0BM00"
+              },
+              {
+                "stringValue": "6KMV-050001-B000-B"
+              },
+              {
+                "stringValue": "6KM0-030010-0B200"
+              },
+              {
+                "stringValue": "5HYV-130000-6055"
+              },
+              {
+                "stringValue": "6KMV-044211-2200-0EN00"
+              },
+              {
+                "stringValue": "960010-01565"
+              },
+              {
+                "stringValue": "6KNV-041310-9100"
+              },
+              {
+                "stringValue": "5HYV-131326-6000-21-H1"
+              },
+              {
+                "stringValue": "6KMV-040246-2500-0EN00"
+              },
+              {
+                "stringValue": "6KMV-100100-2500"
+              },
+              {
+                "stringValue": "6KMA-380202"
+              },
+              {
+                "stringValue": "960010-032945"
+              },
+              {
+                "stringValue": "6KMV-041701-2200-0BM00"
+              },
+              {
+                "stringValue": "A000-050004"
+              },
+              {
+                "stringValue": "8080-041132"
+              },
+              {
+                "stringValue": "601401-00180"
+              },
+              {
+                "stringValue": "6KMV-120040-2400-M1-B"
+              },
+              {
+                "stringValue": "6KNV-070100-4001-0BV00-B"
+              },
+              {
+                "stringValue": "601401-00061"
+              },
+              {
+                "stringValue": "0NYV-120200-3000-M1"
+              },
+              {
+                "stringValue": "8010-150002"
+              },
+              {
+                "stringValue": "6KNV-030010-7000"
+              }
+            ]
+          }
+        },
+        "count": {
+          "integerValue": "50"
+        },
+        "user": {
+          "stringValue": "admin"
+        },
+        "id": {
+          "stringValue": "zaVpyvWnpc0ooVl8EVvG"
+        },
+        "reported": {
+          "booleanValue": false
+        }
+      },
+      "createTime": "2026-01-28T17:58:49.097956Z",
+      "updateTime": "2026-01-28T17:58:49.097956Z"
+    }
+  ]
+}

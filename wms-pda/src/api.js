@@ -23,7 +23,7 @@ api.interceptors.response.use(
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
             // Auto logout if token is missing, invalid, or expired
             sessionStorage.removeItem('wms_jwt');
-            sessionStorage.removeItem('wms_user');
+            localStorage.removeItem('logimaster_user');
             window.location.href = '/login';
         }
         return Promise.reject(error);
@@ -41,13 +41,13 @@ export const getUnit = async (vin) => {
 };
 
 export const registerUnit = async (vin, operator_id, location) => {
-    const user = JSON.parse(sessionStorage.getItem('wms_user') || '{}');
+    const user = JSON.parse(localStorage.getItem('logimaster_user') || '{}');
     const res = await api.post('/units/register', { vin, operator_id, location: location || user.location });
     return res.data;
 };
 
 export const transferUnit = async (vin, operator_id, observations, location) => {
-    const user = JSON.parse(sessionStorage.getItem('wms_user') || '{}');
+    const user = JSON.parse(localStorage.getItem('logimaster_user') || '{}');
     const res = await api.post('/transfer', { vin, operator_id, observations, location: location || user.location });
     return res.data;
 };

@@ -62,6 +62,10 @@ service cloud.firestore {
     match /wms_transfers/{docId} { allow read, write: if true; }
     match /vigilancia/{docId} { allow read, write: if true; }
 
+    match /daily_reports/{docId} { allow read, write: if true; }
+    match /system_metadata/{docId} { allow read, write: if true; }
+    match /daily_changes/{docId} { allow read, write: if true; }
+
     // 4. Default Block (Catch-all)
     match /{document=**} {
       allow read, write: if false;

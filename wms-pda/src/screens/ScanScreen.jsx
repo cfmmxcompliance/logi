@@ -2,11 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getUnit, registerUnit, transferUnit, authorizeQA } from '../api.js';
 import { ArrowRight, ChevronLeft, Check, AlertTriangle } from 'lucide-react';
+import { useLang } from '../i18n.jsx';
 
 export default function ScanScreen() {
     const navigate = useNavigate();
     const routeLocation = useLocation();
-    const user = JSON.parse(sessionStorage.getItem('wms_user') || '{}');
+    const { t } = useLang();
+    const user = JSON.parse(localStorage.getItem('logimaster_user') || '{}');
     const activeLocation = routeLocation.state?.scanLocation || user.location || 'L1';
     const [barcode, setBarcode] = useState('');
     const [vehicle, setVehicle] = useState(null);
@@ -117,8 +119,8 @@ export default function ScanScreen() {
         try {
             await authorizeQA(vehicle.vin, user.user_id, is_approved, finalObservations, action);
             
-            let flashMsg = is_approved ? `APPROVED ✓\nQA CLEARED` : `REJECTED\nREMOVED FROM PROCESS`;
-            if (action === 'RETURN') flashMsg = `RETURNED ✓\nSENT TO PREVIOUS STATION`;
+            let flashMsg = is_approved ? t('flash_approved') : t('flash_rejected');
+            if (action === 'RETURN') flashMsg = t('flash_returned');
             
             showFlash(action === 'REJECT' ? 'error' : 'success', flashMsg, 3000);
         } catch (err) {
@@ -148,11 +150,11 @@ export default function ScanScreen() {
             <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
                 <div className="bg-[#1a1a2e] border-2 border-amber-500 p-8 rounded-3xl max-w-md w-full shadow-2xl flex flex-col items-center text-center">
                     <AlertTriangle size={64} className="text-amber-500 mb-4" />
-                    <h2 className="text-2xl font-black text-white mb-2">VEHÍCULO RECHAZADO</h2>
-                    <p className="text-slate-400 mb-6 text-sm leading-snug">Este vehículo fue previamente retirado por Calidad.</p>
+                    <h2 className="text-2xl font-black text-white mb-2">{t('reentry_title')}</h2>
+                    <p className="text-slate-400 mb-6 text-sm leading-snug">{t('reentry_subtitle')}</p>
                     
                     <div className="bg-slate-800/80 p-5 rounded-2xl w-full mb-8 border border-slate-700 shadow-inner">
-                        <div className="text-xs text-amber-500 font-bold mb-2 tracking-wider">MOTIVO DEL RECHAZO:</div>
+                        <div className="text-xs text-amber-500 font-bold mb-2 tracking-wider">{t('reentry_reason_label')}</div>
                         <div className="text-white text-xl font-bold leading-relaxed">"{reentryAlert.reason}"</div>
                     </div>
 
@@ -174,7 +176,7 @@ export default function ScanScreen() {
                         disabled={loading}
                         className="w-full bg-amber-600 hover:bg-amber-500 active:bg-amber-700 disabled:bg-slate-700 text-white font-black text-xl py-5 rounded-xl shadow-[0_0_15px_rgba(217,119,6,0.5)] transition-all"
                     >
-                        {loading ? 'PROCESANDO...' : 'ENTERADO'}
+                        {loading ? t('processing') : t('acknowledged')}
                     </button>
                 </div>
             </div>
@@ -189,7 +191,7 @@ export default function ScanScreen() {
                     <ChevronLeft size={28} />
                 </button>
                 <div className="flex-1">
-                    <div className="text-sm text-slate-400 font-bold uppercase">SCAN MODE</div>
+                    <div className="text-sm text-slate-400 font-bold uppercase">{t('scan_mode')}</div>
                     <div className="text-lg font-bold text-white">{activeLocation}</div>
                 </div>
             </div>
@@ -202,14 +204,14 @@ export default function ScanScreen() {
                     <form onSubmit={handleScan} className="flex flex-col items-center justify-center flex-1">
                         <div className="text-center mb-6">
                             <AlertTriangle size={48} className="mx-auto text-yellow-500 mb-2" />
-                            <h2 className="text-2xl font-bold text-slate-300">AWAITING SCAN</h2>
+                            <h2 className="text-2xl font-bold text-slate-300">{t('awaiting_scan')}</h2>
                         </div>
                         <input
                             ref={inputRef}
                             type="text"
                             value={barcode}
                             onChange={(e) => setBarcode(e.target.value)}
-                            placeholder="SCAN BARCODE..."
+                            placeholder={t('scan_placeholder')}
                             className="w-full bg-slate-900 border-4 border-blue-500 text-white text-3xl p-6 rounded-2xl text-center outline-none uppercase font-mono shadow-[0_0_20px_rgba(59,130,246,0.3)] placeholder-slate-600 focus:border-blue-400"
                             autoFocus
                             disabled={loading}
@@ -228,31 +230,31 @@ export default function ScanScreen() {
                             
                             <div className="grid grid-cols-2 gap-4 mb-5">
                                 <div>
-                                    <div className="text-xs text-slate-400 font-bold">PRODUCT NO.</div>
+                                    <div className="text-xs text-slate-400 font-bold">{t('label_product')}</div>
                                     <div className="text-lg font-bold text-slate-200">{vehicle.product_no || 'Pending'}</div>
                                 </div>
                                 <div>
-                                    <div className="text-xs text-slate-400 font-bold">ENGINE NO.</div>
+                                    <div className="text-xs text-slate-400 font-bold">{t('label_engine')}</div>
                                     <div className="text-lg font-bold text-slate-200">{vehicle.engine_no || 'Pending'}</div>
                                 </div>
                                 <div>
-                                    <div className="text-xs text-slate-400 font-bold">COLOR</div>
+                                    <div className="text-xs text-slate-400 font-bold">{t('label_color')}</div>
                                     <div className="text-lg font-bold text-slate-200">{vehicle.color || 'Pending'}</div>
                                 </div>
                                 <div>
-                                    <div className="text-xs text-slate-400 font-bold">STATUS</div>
+                                    <div className="text-xs text-slate-400 font-bold">{t('label_status')}</div>
                                     <div className={`text-lg font-black ${vehicle.status === 'REJECTED' ? 'text-red-500' : 'text-blue-400'}`}>{vehicle.status}</div>
                                 </div>
                             </div>
 
                             <div className="bg-slate-900 rounded-lg p-4 flex items-center justify-between">
                                 <div className="flex flex-col items-center">
-                                    <span className="text-xs text-slate-400 font-bold mb-1">CURRENT</span>
+                                    <span className="text-xs text-slate-400 font-bold mb-1">{t('label_current')}</span>
                                     <span className="bg-slate-700 text-white px-3 py-1 rounded font-black text-xl">{vehicle.current_location}</span>
                                 </div>
                                 <ArrowRight size={32} className="text-blue-500 animate-pulse" />
                                 <div className="flex flex-col items-center">
-                                    <span className="text-xs text-blue-400 font-bold mb-1">NEXT</span>
+                                    <span className="text-xs text-blue-400 font-bold mb-1">{t('label_next')}</span>
                                     <span className="bg-blue-600 text-white px-3 py-1 rounded font-black text-xl shadow-[0_0_15px_rgba(37,99,235,0.5)]">
                                         {vehicle.current_location === 'L1' ? 'L2' : vehicle.current_location === 'L2' ? 'L3' : 'SHIPPED'}
                                     </span>
@@ -264,7 +266,7 @@ export default function ScanScreen() {
                             id="obs-input"
                             value={observations}
                             onChange={(e) => setObservations(e.target.value)}
-                            placeholder="Add observations (optional)..."
+                            placeholder={t('obs_placeholder')}
                             className="w-full bg-slate-800 text-white text-lg p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 resize-none h-24 placeholder-slate-500"
                         />
 
@@ -273,7 +275,7 @@ export default function ScanScreen() {
                                 onClick={() => { setVehicle(null); setBarcode(''); }}
                                 className="flex-1 min-w-[100px] bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-bold text-lg py-5 rounded-xl"
                             >
-                                CANCEL
+                                {t('btn_cancel')}
                             </button>
                             {activeLocation === 'QA' ? (
                                 <>
@@ -282,7 +284,7 @@ export default function ScanScreen() {
                                         disabled={loading}
                                         className="flex-1 min-w-[90px] bg-red-600 hover:bg-red-500 active:bg-red-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-black text-sm py-5 rounded-xl shadow-lg"
                                     >
-                                        REJECT
+                                        {t('btn_reject')}
                                     </button>
                                     
                                     {vehicle.current_location !== 'L1' && (
@@ -291,7 +293,7 @@ export default function ScanScreen() {
                                             disabled={loading}
                                             className="flex-[1.2] min-w-[100px] bg-yellow-500 hover:bg-yellow-400 active:bg-yellow-600 disabled:bg-slate-700 disabled:text-slate-500 text-slate-900 font-black text-sm py-5 rounded-xl shadow-lg"
                                         >
-                                            RETURN TO
+                                            {t('btn_return_to')}
                                         </button>
                                     )}
 
@@ -300,7 +302,7 @@ export default function ScanScreen() {
                                         disabled={loading}
                                         className="flex-[1.5] min-w-[110px] bg-green-600 hover:bg-green-500 active:bg-green-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-black text-sm py-5 rounded-xl shadow-lg"
                                     >
-                                        APPROVE
+                                        {t('btn_approve')}
                                     </button>
                                 </>
                             ) : (
@@ -309,9 +311,9 @@ export default function ScanScreen() {
                                     disabled={loading || vehicle.status === 'REJECTED' || vehicle.qa_cleared !== true}
                                     className="flex-[2] min-w-[150px] bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-black text-xl py-5 rounded-xl shadow-lg flex flex-col items-center justify-center gap-1"
                                 >
-                                    <span>TRANSFER</span>
+                                    <span>{t('btn_transfer')}</span>
                                     {vehicle.qa_cleared !== true && vehicle.status !== 'REJECTED' && (
-                                        <span className="text-[10px] font-bold text-amber-300 tracking-wide uppercase">Requires QA Clearance</span>
+                                        <span className="text-[10px] font-bold text-amber-300 tracking-wide uppercase">{t('requires_qa')}</span>
                                     )}
                                 </button>
                             )}

@@ -1,0 +1,1980 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/031G538255-WHSU6100446",
+      "fields": {
+        "blNo": {
+          "stringValue": "031G538255"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-21T15:54:45.754Z"
+        },
+        "id": {
+          "stringValue": "031G538255-WHSU6100446"
+        },
+        "containerNo": {
+          "stringValue": "WHSU6100446"
+        }
+      },
+      "createTime": "2026-05-21T15:54:46.890363Z",
+      "updateTime": "2026-05-21T15:54:46.890363Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/031G538255-WHSU6736130",
+      "fields": {
+        "containerNo": {
+          "stringValue": "WHSU6736130"
+        },
+        "id": {
+          "stringValue": "031G538255-WHSU6736130"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-21T15:54:45.754Z"
+        },
+        "blNo": {
+          "stringValue": "031G538255"
+        }
+      },
+      "createTime": "2026-05-21T15:54:46.890363Z",
+      "updateTime": "2026-05-21T15:54:46.890363Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/031G538255-WHSU8078531",
+      "fields": {
+        "containerNo": {
+          "stringValue": "WHSU8078531"
+        },
+        "id": {
+          "stringValue": "031G538255-WHSU8078531"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-21T15:54:45.754Z"
+        },
+        "blNo": {
+          "stringValue": "031G538255"
+        }
+      },
+      "createTime": "2026-05-21T15:54:46.890363Z",
+      "updateTime": "2026-05-21T15:54:46.890363Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/031G538255-WHSU8709391",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-21T15:54:45.754Z"
+        },
+        "blNo": {
+          "stringValue": "031G538255"
+        },
+        "containerNo": {
+          "stringValue": "WHSU8709391"
+        },
+        "id": {
+          "stringValue": "031G538255-WHSU8709391"
+        }
+      },
+      "createTime": "2026-05-21T15:54:46.890363Z",
+      "updateTime": "2026-05-21T15:54:46.890363Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/031G538255-WHSU8814400",
+      "fields": {
+        "containerNo": {
+          "stringValue": "WHSU8814400"
+        },
+        "id": {
+          "stringValue": "031G538255-WHSU8814400"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-21T15:54:45.754Z"
+        },
+        "blNo": {
+          "stringValue": "031G538255"
+        }
+      },
+      "createTime": "2026-05-21T15:54:46.890363Z",
+      "updateTime": "2026-05-21T15:54:46.890363Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/031G543335-WHSU5657606",
+      "fields": {
+        "containerNo": {
+          "stringValue": "WHSU5657606"
+        },
+        "id": {
+          "stringValue": "031G543335-WHSU5657606"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-28T17:47:25.031Z"
+        },
+        "blNo": {
+          "stringValue": "031G543335"
+        }
+      },
+      "createTime": "2026-05-28T17:47:26.080120Z",
+      "updateTime": "2026-05-28T17:47:26.080120Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/031G543335-WHSU5714959",
+      "fields": {
+        "blNo": {
+          "stringValue": "031G543335"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-28T17:47:25.031Z"
+        },
+        "id": {
+          "stringValue": "031G543335-WHSU5714959"
+        },
+        "containerNo": {
+          "stringValue": "WHSU5714959"
+        }
+      },
+      "createTime": "2026-05-28T17:47:26.080120Z",
+      "updateTime": "2026-05-28T17:47:26.080120Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/031G543335-WHSU6197070",
+      "fields": {
+        "blNo": {
+          "stringValue": "031G543335"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-28T17:47:25.031Z"
+        },
+        "id": {
+          "stringValue": "031G543335-WHSU6197070"
+        },
+        "containerNo": {
+          "stringValue": "WHSU6197070"
+        }
+      },
+      "createTime": "2026-05-28T17:47:26.080120Z",
+      "updateTime": "2026-05-28T17:47:26.080120Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/031G543335-WHSU6399790",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-28T17:47:25.032Z"
+        },
+        "blNo": {
+          "stringValue": "031G543335"
+        },
+        "containerNo": {
+          "stringValue": "WHSU6399790"
+        },
+        "id": {
+          "stringValue": "031G543335-WHSU6399790"
+        }
+      },
+      "createTime": "2026-05-28T17:47:26.080120Z",
+      "updateTime": "2026-05-28T17:47:26.080120Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/031G543335-WHSU6978405",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-28T17:47:25.032Z"
+        },
+        "blNo": {
+          "stringValue": "031G543335"
+        },
+        "containerNo": {
+          "stringValue": "WHSU6978405"
+        },
+        "id": {
+          "stringValue": "031G543335-WHSU6978405"
+        }
+      },
+      "createTime": "2026-05-28T17:47:26.080120Z",
+      "updateTime": "2026-05-28T17:47:26.080120Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/031G543335-WHSU8384486",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-28T17:47:25.032Z"
+        },
+        "blNo": {
+          "stringValue": "031G543335"
+        },
+        "containerNo": {
+          "stringValue": "WHSU8384486"
+        },
+        "id": {
+          "stringValue": "031G543335-WHSU8384486"
+        }
+      },
+      "createTime": "2026-05-28T17:47:26.080120Z",
+      "updateTime": "2026-05-28T17:47:26.080120Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/031G543335-WHSU8432558",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-28T17:47:25.032Z"
+        },
+        "blNo": {
+          "stringValue": "031G543335"
+        },
+        "containerNo": {
+          "stringValue": "WHSU8432558"
+        },
+        "id": {
+          "stringValue": "031G543335-WHSU8432558"
+        }
+      },
+      "createTime": "2026-05-28T17:47:26.080120Z",
+      "updateTime": "2026-05-28T17:47:26.080120Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/031G543335-WHSU8528120",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-28T17:47:25.032Z"
+        },
+        "blNo": {
+          "stringValue": "031G543335"
+        },
+        "containerNo": {
+          "stringValue": "WHSU8528120"
+        },
+        "id": {
+          "stringValue": "031G543335-WHSU8528120"
+        }
+      },
+      "createTime": "2026-05-28T17:47:26.080120Z",
+      "updateTime": "2026-05-28T17:47:26.080120Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515246-EGHU9391300",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EGHU9391300"
+        },
+        "id": {
+          "stringValue": "EGLV143659515246-EGHU9391300"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:13:29.285Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515246"
+        }
+      },
+      "createTime": "2026-05-08T15:13:29.144865Z",
+      "updateTime": "2026-05-08T15:13:29.144865Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515246-EGHU9425354",
+      "fields": {
+        "id": {
+          "stringValue": "EGLV143659515246-EGHU9425354"
+        },
+        "containerNo": {
+          "stringValue": "EGHU9425354"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515246"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:13:29.285Z"
+        }
+      },
+      "createTime": "2026-05-08T15:13:29.144865Z",
+      "updateTime": "2026-05-08T15:13:29.144865Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515246-EGSU9327963",
+      "fields": {
+        "id": {
+          "stringValue": "EGLV143659515246-EGSU9327963"
+        },
+        "containerNo": {
+          "stringValue": "EGSU9327963"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515246"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:13:29.285Z"
+        }
+      },
+      "createTime": "2026-05-08T15:13:29.144865Z",
+      "updateTime": "2026-05-08T15:13:29.144865Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515246-EITU1183527",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:13:29.284Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515246"
+        },
+        "containerNo": {
+          "stringValue": "EITU1183527"
+        },
+        "id": {
+          "stringValue": "EGLV143659515246-EITU1183527"
+        }
+      },
+      "createTime": "2026-05-08T15:13:29.144865Z",
+      "updateTime": "2026-05-08T15:13:29.144865Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515246-GAOU6241367",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:13:29.285Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515246"
+        },
+        "containerNo": {
+          "stringValue": "GAOU6241367"
+        },
+        "id": {
+          "stringValue": "EGLV143659515246-GAOU6241367"
+        }
+      },
+      "createTime": "2026-05-08T15:13:29.144865Z",
+      "updateTime": "2026-05-08T15:13:29.144865Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515246-MAGU5420206",
+      "fields": {
+        "id": {
+          "stringValue": "EGLV143659515246-MAGU5420206"
+        },
+        "containerNo": {
+          "stringValue": "MAGU5420206"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515246"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:13:29.284Z"
+        }
+      },
+      "createTime": "2026-05-08T15:13:29.144865Z",
+      "updateTime": "2026-05-08T15:13:29.144865Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515246-TGBU4036481",
+      "fields": {
+        "containerNo": {
+          "stringValue": "TGBU4036481"
+        },
+        "id": {
+          "stringValue": "EGLV143659515246-TGBU4036481"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:13:29.285Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515246"
+        }
+      },
+      "createTime": "2026-05-08T15:13:29.144865Z",
+      "updateTime": "2026-05-08T15:13:29.144865Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515246-TGBU4687518",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143659515246"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:13:29.285Z"
+        },
+        "id": {
+          "stringValue": "EGLV143659515246-TGBU4687518"
+        },
+        "containerNo": {
+          "stringValue": "TGBU4687518"
+        }
+      },
+      "createTime": "2026-05-08T15:13:29.144865Z",
+      "updateTime": "2026-05-08T15:13:29.144865Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515246-TLLU8639400",
+      "fields": {
+        "id": {
+          "stringValue": "EGLV143659515246-TLLU8639400"
+        },
+        "containerNo": {
+          "stringValue": "TLLU8639400"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515246"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:13:29.285Z"
+        }
+      },
+      "createTime": "2026-05-08T15:13:29.144865Z",
+      "updateTime": "2026-05-08T15:13:29.144865Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515866-EGHU8340123",
+      "fields": {
+        "id": {
+          "stringValue": "EGLV143659515866-EGHU8340123"
+        },
+        "containerNo": {
+          "stringValue": "EGHU8340123"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515866"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:37:25.766Z"
+        }
+      },
+      "createTime": "2026-05-26T16:37:26.009094Z",
+      "updateTime": "2026-05-26T16:37:26.009094Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515866-EGHU9656327",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:37:25.766Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515866"
+        },
+        "containerNo": {
+          "stringValue": "EGHU9656327"
+        },
+        "id": {
+          "stringValue": "EGLV143659515866-EGHU9656327"
+        }
+      },
+      "createTime": "2026-05-26T16:37:26.009094Z",
+      "updateTime": "2026-05-26T16:37:26.009094Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515866-EGSU1405186",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:37:25.766Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515866"
+        },
+        "containerNo": {
+          "stringValue": "EGSU1405186"
+        },
+        "id": {
+          "stringValue": "EGLV143659515866-EGSU1405186"
+        }
+      },
+      "createTime": "2026-05-26T16:37:26.009094Z",
+      "updateTime": "2026-05-26T16:37:26.009094Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515866-EGSU6341823",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143659515866"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:37:25.766Z"
+        },
+        "id": {
+          "stringValue": "EGLV143659515866-EGSU6341823"
+        },
+        "containerNo": {
+          "stringValue": "EGSU6341823"
+        }
+      },
+      "createTime": "2026-05-26T16:37:26.009094Z",
+      "updateTime": "2026-05-26T16:37:26.009094Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515866-EGSU9876325",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143659515866"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:37:25.766Z"
+        },
+        "id": {
+          "stringValue": "EGLV143659515866-EGSU9876325"
+        },
+        "containerNo": {
+          "stringValue": "EGSU9876325"
+        }
+      },
+      "createTime": "2026-05-26T16:37:26.009094Z",
+      "updateTime": "2026-05-26T16:37:26.009094Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515866-EITU1544384",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EITU1544384"
+        },
+        "id": {
+          "stringValue": "EGLV143659515866-EITU1544384"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:37:25.766Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515866"
+        }
+      },
+      "createTime": "2026-05-26T16:37:26.009094Z",
+      "updateTime": "2026-05-26T16:37:26.009094Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515866-TGBU6579554",
+      "fields": {
+        "id": {
+          "stringValue": "EGLV143659515866-TGBU6579554"
+        },
+        "containerNo": {
+          "stringValue": "TGBU6579554"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515866"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:37:25.766Z"
+        }
+      },
+      "createTime": "2026-05-26T16:37:26.009094Z",
+      "updateTime": "2026-05-26T16:37:26.009094Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515866-TGCU5398149",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:37:25.766Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515866"
+        },
+        "containerNo": {
+          "stringValue": "TGCU5398149"
+        },
+        "id": {
+          "stringValue": "EGLV143659515866-TGCU5398149"
+        }
+      },
+      "createTime": "2026-05-26T16:37:26.009094Z",
+      "updateTime": "2026-05-26T16:37:26.009094Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515866-TIIU6902347",
+      "fields": {
+        "id": {
+          "stringValue": "EGLV143659515866-TIIU6902347"
+        },
+        "containerNo": {
+          "stringValue": "TIIU6902347"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515866"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:37:25.766Z"
+        }
+      },
+      "createTime": "2026-05-26T16:37:26.009094Z",
+      "updateTime": "2026-05-26T16:37:26.009094Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515874-EGHU8221910",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:36:41.364Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515874"
+        },
+        "containerNo": {
+          "stringValue": "EGHU8221910"
+        },
+        "id": {
+          "stringValue": "EGLV143659515874-EGHU8221910"
+        }
+      },
+      "createTime": "2026-05-26T16:36:41.820995Z",
+      "updateTime": "2026-05-26T16:36:41.820995Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515874-EGSU1053737",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:36:41.364Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515874"
+        },
+        "containerNo": {
+          "stringValue": "EGSU1053737"
+        },
+        "id": {
+          "stringValue": "EGLV143659515874-EGSU1053737"
+        }
+      },
+      "createTime": "2026-05-26T16:36:41.820995Z",
+      "updateTime": "2026-05-26T16:36:41.820995Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515874-EITU1714454",
+      "fields": {
+        "id": {
+          "stringValue": "EGLV143659515874-EITU1714454"
+        },
+        "containerNo": {
+          "stringValue": "EITU1714454"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515874"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:36:41.364Z"
+        }
+      },
+      "createTime": "2026-05-26T16:36:41.820995Z",
+      "updateTime": "2026-05-26T16:36:41.820995Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515874-EITU9343088",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:36:41.364Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515874"
+        },
+        "containerNo": {
+          "stringValue": "EITU9343088"
+        },
+        "id": {
+          "stringValue": "EGLV143659515874-EITU9343088"
+        }
+      },
+      "createTime": "2026-05-26T16:36:41.820995Z",
+      "updateTime": "2026-05-26T16:36:41.820995Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515874-EITU9608994",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143659515874"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:36:41.365Z"
+        },
+        "id": {
+          "stringValue": "EGLV143659515874-EITU9608994"
+        },
+        "containerNo": {
+          "stringValue": "EITU9608994"
+        }
+      },
+      "createTime": "2026-05-26T16:36:41.820995Z",
+      "updateTime": "2026-05-26T16:36:41.820995Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515874-FFAU5175339",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:36:41.364Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515874"
+        },
+        "containerNo": {
+          "stringValue": "FFAU5175339"
+        },
+        "id": {
+          "stringValue": "EGLV143659515874-FFAU5175339"
+        }
+      },
+      "createTime": "2026-05-26T16:36:41.820995Z",
+      "updateTime": "2026-05-26T16:36:41.820995Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515874-GAOU7296111",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:36:41.364Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515874"
+        },
+        "containerNo": {
+          "stringValue": "GAOU7296111"
+        },
+        "id": {
+          "stringValue": "EGLV143659515874-GAOU7296111"
+        }
+      },
+      "createTime": "2026-05-26T16:36:41.820995Z",
+      "updateTime": "2026-05-26T16:36:41.820995Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143659515874-OCGU8043947",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-26T16:36:41.364Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143659515874"
+        },
+        "containerNo": {
+          "stringValue": "OCGU8043947"
+        },
+        "id": {
+          "stringValue": "EGLV143659515874-OCGU8043947"
+        }
+      },
+      "createTime": "2026-05-26T16:36:41.820995Z",
+      "updateTime": "2026-05-26T16:36:41.820995Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063792-EGHU9225931",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EGHU9225931"
+        },
+        "id": {
+          "stringValue": "EGLV143674063792-EGHU9225931"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-20T18:17:32.082Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143674063792"
+        }
+      },
+      "createTime": "2026-04-20T18:17:32.205362Z",
+      "updateTime": "2026-04-20T18:17:32.205362Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063792-EGSU1917963",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143674063792"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-20T18:17:32.082Z"
+        },
+        "id": {
+          "stringValue": "EGLV143674063792-EGSU1917963"
+        },
+        "containerNo": {
+          "stringValue": "EGSU1917963"
+        }
+      },
+      "createTime": "2026-04-20T18:17:32.205362Z",
+      "updateTime": "2026-04-20T18:17:32.205362Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063792-EGSU6305024",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EGSU6305024"
+        },
+        "id": {
+          "stringValue": "EGLV143674063792-EGSU6305024"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-20T18:17:32.082Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143674063792"
+        }
+      },
+      "createTime": "2026-04-20T18:17:32.205362Z",
+      "updateTime": "2026-04-20T18:17:32.205362Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063792-EISU8510931",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143674063792"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-20T18:17:32.082Z"
+        },
+        "id": {
+          "stringValue": "EGLV143674063792-EISU8510931"
+        },
+        "containerNo": {
+          "stringValue": "EISU8510931"
+        }
+      },
+      "createTime": "2026-04-20T18:17:32.205362Z",
+      "updateTime": "2026-04-20T18:17:32.205362Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063792-EITU1899682",
+      "fields": {
+        "id": {
+          "stringValue": "EGLV143674063792-EITU1899682"
+        },
+        "containerNo": {
+          "stringValue": "EITU1899682"
+        },
+        "blNo": {
+          "stringValue": "EGLV143674063792"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-20T18:17:32.082Z"
+        }
+      },
+      "createTime": "2026-04-20T18:17:32.205362Z",
+      "updateTime": "2026-04-20T18:17:32.205362Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063962-EGSU1026006",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EGSU1026006"
+        },
+        "id": {
+          "stringValue": "EGLV143674063962-EGSU1026006"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-06T15:24:55.658Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143674063962"
+        }
+      },
+      "createTime": "2026-05-06T15:24:57.498319Z",
+      "updateTime": "2026-05-06T15:24:57.498319Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063962-EGSU1284192",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143674063962"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-06T15:24:55.658Z"
+        },
+        "id": {
+          "stringValue": "EGLV143674063962-EGSU1284192"
+        },
+        "containerNo": {
+          "stringValue": "EGSU1284192"
+        }
+      },
+      "createTime": "2026-05-06T15:24:57.498319Z",
+      "updateTime": "2026-05-06T15:24:57.498319Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063962-EGSU1495301",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-06T15:24:55.658Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143674063962"
+        },
+        "containerNo": {
+          "stringValue": "EGSU1495301"
+        },
+        "id": {
+          "stringValue": "EGLV143674063962-EGSU1495301"
+        }
+      },
+      "createTime": "2026-05-06T15:24:57.498319Z",
+      "updateTime": "2026-05-06T15:24:57.498319Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063962-EGSU1698171",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143674063962"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-06T15:24:55.659Z"
+        },
+        "id": {
+          "stringValue": "EGLV143674063962-EGSU1698171"
+        },
+        "containerNo": {
+          "stringValue": "EGSU1698171"
+        }
+      },
+      "createTime": "2026-05-06T15:24:57.498319Z",
+      "updateTime": "2026-05-06T15:24:57.498319Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063962-EGSU6247587",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EGSU6247587"
+        },
+        "id": {
+          "stringValue": "EGLV143674063962-EGSU6247587"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-06T15:24:55.658Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143674063962"
+        }
+      },
+      "createTime": "2026-05-06T15:24:57.498319Z",
+      "updateTime": "2026-05-06T15:24:57.498319Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063962-EGSU9665277",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EGSU9665277"
+        },
+        "id": {
+          "stringValue": "EGLV143674063962-EGSU9665277"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-06T15:24:55.658Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143674063962"
+        }
+      },
+      "createTime": "2026-05-06T15:24:57.498319Z",
+      "updateTime": "2026-05-06T15:24:57.498319Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063962-EITU9234050",
+      "fields": {
+        "id": {
+          "stringValue": "EGLV143674063962-EITU9234050"
+        },
+        "containerNo": {
+          "stringValue": "EITU9234050"
+        },
+        "blNo": {
+          "stringValue": "EGLV143674063962"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-06T15:24:55.658Z"
+        }
+      },
+      "createTime": "2026-05-06T15:24:57.498319Z",
+      "updateTime": "2026-05-06T15:24:57.498319Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063962-TIIU5436413",
+      "fields": {
+        "containerNo": {
+          "stringValue": "TIIU5436413"
+        },
+        "id": {
+          "stringValue": "EGLV143674063962-TIIU5436413"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-06T15:24:55.658Z"
+        },
+        "blNo": {
+          "stringValue": "EGLV143674063962"
+        }
+      },
+      "createTime": "2026-05-06T15:24:57.498319Z",
+      "updateTime": "2026-05-06T15:24:57.498319Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063962-TLLU7984110",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143674063962"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-06T15:24:55.658Z"
+        },
+        "id": {
+          "stringValue": "EGLV143674063962-TLLU7984110"
+        },
+        "containerNo": {
+          "stringValue": "TLLU7984110"
+        }
+      },
+      "createTime": "2026-05-06T15:24:57.498319Z",
+      "updateTime": "2026-05-06T15:24:57.498319Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063962-TXGU5604439",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143674063962"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-06T15:24:55.658Z"
+        },
+        "id": {
+          "stringValue": "EGLV143674063962-TXGU5604439"
+        },
+        "containerNo": {
+          "stringValue": "TXGU5604439"
+        }
+      },
+      "createTime": "2026-05-06T15:24:57.498319Z",
+      "updateTime": "2026-05-06T15:24:57.498319Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/EGLV143674063962-TXGU7461764",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143674063962"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-06T15:24:55.658Z"
+        },
+        "id": {
+          "stringValue": "EGLV143674063962-TXGU7461764"
+        },
+        "containerNo": {
+          "stringValue": "TXGU7461764"
+        }
+      },
+      "createTime": "2026-05-06T15:24:57.498319Z",
+      "updateTime": "2026-05-06T15:24:57.498319Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/GLNL26041001-FANU1937527",
+      "fields": {
+        "blNo": {
+          "stringValue": "GLNL26041001"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-23T22:20:50.372Z"
+        },
+        "id": {
+          "stringValue": "GLNL26041001-FANU1937527"
+        },
+        "containerNo": {
+          "stringValue": "FANU1937527"
+        }
+      },
+      "createTime": "2026-04-23T21:49:34.003755Z",
+      "updateTime": "2026-04-23T22:20:51.912725Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-BEAU4575741",
+      "fields": {
+        "containerNo": {
+          "stringValue": "BEAU4575741"
+        },
+        "id": {
+          "stringValue": "NGB26040886-BEAU4575741"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.458Z"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-SEGU4583775",
+      "fields": {
+        "id": {
+          "stringValue": "NGB26040886-SEGU4583775"
+        },
+        "containerNo": {
+          "stringValue": "SEGU4583775"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.458Z"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-TEMU7010665",
+      "fields": {
+        "blNo": {
+          "stringValue": "NGB26040886"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.458Z"
+        },
+        "id": {
+          "stringValue": "NGB26040886-TEMU7010665"
+        },
+        "containerNo": {
+          "stringValue": "TEMU7010665"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-TEMU7677961",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.458Z"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        },
+        "containerNo": {
+          "stringValue": "TEMU7677961"
+        },
+        "id": {
+          "stringValue": "NGB26040886-TEMU7677961"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-TLLU4716134",
+      "fields": {
+        "containerNo": {
+          "stringValue": "TLLU4716134"
+        },
+        "id": {
+          "stringValue": "NGB26040886-TLLU4716134"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.459Z"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-YMAV991662",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.458Z"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        },
+        "containerNo": {
+          "stringValue": "YMAV991662"
+        },
+        "id": {
+          "stringValue": "NGB26040886-YMAV991662"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-YMAV991663",
+      "fields": {
+        "id": {
+          "stringValue": "NGB26040886-YMAV991663"
+        },
+        "containerNo": {
+          "stringValue": "YMAV991663"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.458Z"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-YMAV994511",
+      "fields": {
+        "id": {
+          "stringValue": "NGB26040886-YMAV994511"
+        },
+        "containerNo": {
+          "stringValue": "YMAV994511"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.458Z"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-YMAV994512",
+      "fields": {
+        "id": {
+          "stringValue": "NGB26040886-YMAV994512"
+        },
+        "containerNo": {
+          "stringValue": "YMAV994512"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.459Z"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-YMAV994517",
+      "fields": {
+        "id": {
+          "stringValue": "NGB26040886-YMAV994517"
+        },
+        "containerNo": {
+          "stringValue": "YMAV994517"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.459Z"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-YMAV994594",
+      "fields": {
+        "blNo": {
+          "stringValue": "NGB26040886"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.458Z"
+        },
+        "id": {
+          "stringValue": "NGB26040886-YMAV994594"
+        },
+        "containerNo": {
+          "stringValue": "YMAV994594"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-YMAV994595",
+      "fields": {
+        "blNo": {
+          "stringValue": "NGB26040886"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.459Z"
+        },
+        "id": {
+          "stringValue": "NGB26040886-YMAV994595"
+        },
+        "containerNo": {
+          "stringValue": "YMAV994595"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-YMAV994654",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.458Z"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        },
+        "containerNo": {
+          "stringValue": "YMAV994654"
+        },
+        "id": {
+          "stringValue": "NGB26040886-YMAV994654"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-YMMU6425740",
+      "fields": {
+        "id": {
+          "stringValue": "NGB26040886-YMMU6425740"
+        },
+        "containerNo": {
+          "stringValue": "YMMU6425740"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.459Z"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-YMMU7155341",
+      "fields": {
+        "id": {
+          "stringValue": "NGB26040886-YMMU7155341"
+        },
+        "containerNo": {
+          "stringValue": "YMMU7155341"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.458Z"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-YMMU7485894",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.458Z"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        },
+        "containerNo": {
+          "stringValue": "YMMU7485894"
+        },
+        "id": {
+          "stringValue": "NGB26040886-YMMU7485894"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-YМAV994600",
+      "fields": {
+        "containerNo": {
+          "stringValue": "YМAV994600"
+        },
+        "id": {
+          "stringValue": "NGB26040886-YМAV994600"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.459Z"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26040886-ТАВИ5168902",
+      "fields": {
+        "containerNo": {
+          "stringValue": "ТАВИ5168902"
+        },
+        "id": {
+          "stringValue": "NGB26040886-ТАВИ5168902"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-08T15:15:06.459Z"
+        },
+        "blNo": {
+          "stringValue": "NGB26040886"
+        }
+      },
+      "createTime": "2026-05-08T15:15:06.702989Z",
+      "updateTime": "2026-05-08T15:15:06.702989Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26041823-GAOU7767680",
+      "fields": {
+        "blNo": {
+          "stringValue": "NGB26041823"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-11T16:30:11.639Z"
+        },
+        "id": {
+          "stringValue": "NGB26041823-GAOU7767680"
+        },
+        "containerNo": {
+          "stringValue": "GAOU7767680"
+        }
+      },
+      "createTime": "2026-05-11T16:30:10.910920Z",
+      "updateTime": "2026-05-11T16:30:10.910920Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26041823-GOSU1049355",
+      "fields": {
+        "id": {
+          "stringValue": "NGB26041823-GOSU1049355"
+        },
+        "containerNo": {
+          "stringValue": "GOSU1049355"
+        },
+        "blNo": {
+          "stringValue": "NGB26041823"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-11T16:30:11.639Z"
+        }
+      },
+      "createTime": "2026-05-11T16:30:10.910920Z",
+      "updateTime": "2026-05-11T16:30:10.910920Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26041823-IXLU4394919",
+      "fields": {
+        "id": {
+          "stringValue": "NGB26041823-IXLU4394919"
+        },
+        "containerNo": {
+          "stringValue": "IXLU4394919"
+        },
+        "blNo": {
+          "stringValue": "NGB26041823"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-11T16:30:11.639Z"
+        }
+      },
+      "createTime": "2026-05-11T16:30:10.910920Z",
+      "updateTime": "2026-05-11T16:30:10.910920Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26041823-JXLU6635375",
+      "fields": {
+        "id": {
+          "stringValue": "NGB26041823-JXLU6635375"
+        },
+        "containerNo": {
+          "stringValue": "JXLU6635375"
+        },
+        "blNo": {
+          "stringValue": "NGB26041823"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-11T16:30:11.639Z"
+        }
+      },
+      "createTime": "2026-05-11T16:30:10.910920Z",
+      "updateTime": "2026-05-11T16:30:10.910920Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26041823-JXLU7811592",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-11T16:30:11.639Z"
+        },
+        "blNo": {
+          "stringValue": "NGB26041823"
+        },
+        "containerNo": {
+          "stringValue": "JXLU7811592"
+        },
+        "id": {
+          "stringValue": "NGB26041823-JXLU7811592"
+        }
+      },
+      "createTime": "2026-05-11T16:30:10.910920Z",
+      "updateTime": "2026-05-11T16:30:10.910920Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26041823-TCNU2504074",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-11T16:30:11.639Z"
+        },
+        "blNo": {
+          "stringValue": "NGB26041823"
+        },
+        "containerNo": {
+          "stringValue": "TCNU2504074"
+        },
+        "id": {
+          "stringValue": "NGB26041823-TCNU2504074"
+        }
+      },
+      "createTime": "2026-05-11T16:30:10.910920Z",
+      "updateTime": "2026-05-11T16:30:10.910920Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26041823-TGBU5774670",
+      "fields": {
+        "containerNo": {
+          "stringValue": "TGBU5774670"
+        },
+        "id": {
+          "stringValue": "NGB26041823-TGBU5774670"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-11T16:30:11.639Z"
+        },
+        "blNo": {
+          "stringValue": "NGB26041823"
+        }
+      },
+      "createTime": "2026-05-11T16:30:10.910920Z",
+      "updateTime": "2026-05-11T16:30:10.910920Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26041823-ZCSU6519293",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-11T16:30:11.639Z"
+        },
+        "blNo": {
+          "stringValue": "NGB26041823"
+        },
+        "containerNo": {
+          "stringValue": "ZCSU6519293"
+        },
+        "id": {
+          "stringValue": "NGB26041823-ZCSU6519293"
+        }
+      },
+      "createTime": "2026-05-11T16:30:10.910920Z",
+      "updateTime": "2026-05-11T16:30:10.910920Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26041823-ZCSU6870081",
+      "fields": {
+        "blNo": {
+          "stringValue": "NGB26041823"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-11T16:30:11.639Z"
+        },
+        "id": {
+          "stringValue": "NGB26041823-ZCSU6870081"
+        },
+        "containerNo": {
+          "stringValue": "ZCSU6870081"
+        }
+      },
+      "createTime": "2026-05-11T16:30:10.910920Z",
+      "updateTime": "2026-05-11T16:30:10.910920Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26041823-ZCSU7510963",
+      "fields": {
+        "blNo": {
+          "stringValue": "NGB26041823"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-11T16:30:11.639Z"
+        },
+        "id": {
+          "stringValue": "NGB26041823-ZCSU7510963"
+        },
+        "containerNo": {
+          "stringValue": "ZCSU7510963"
+        }
+      },
+      "createTime": "2026-05-11T16:30:10.910920Z",
+      "updateTime": "2026-05-11T16:30:10.910920Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/NGB26041823-ZCSU7654596",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-11T16:30:11.639Z"
+        },
+        "blNo": {
+          "stringValue": "NGB26041823"
+        },
+        "containerNo": {
+          "stringValue": "ZCSU7654596"
+        },
+        "id": {
+          "stringValue": "NGB26041823-ZCSU7654596"
+        }
+      },
+      "createTime": "2026-05-11T16:30:10.910920Z",
+      "updateTime": "2026-05-11T16:30:10.910920Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2621202-CAAU5752376",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-14T16:50:15.868Z"
+        },
+        "blNo": {
+          "stringValue": "SEC2621202"
+        },
+        "containerNo": {
+          "stringValue": "CAAU5752376"
+        },
+        "id": {
+          "stringValue": "SEC2621202-CAAU5752376"
+        }
+      },
+      "createTime": "2026-05-14T16:50:16.999345Z",
+      "updateTime": "2026-05-14T16:50:16.999345Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2621202-DRYU9556708",
+      "fields": {
+        "id": {
+          "stringValue": "SEC2621202-DRYU9556708"
+        },
+        "containerNo": {
+          "stringValue": "DRYU9556708"
+        },
+        "blNo": {
+          "stringValue": "SEC2621202"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-14T16:50:15.869Z"
+        }
+      },
+      "createTime": "2026-05-14T16:50:16.999345Z",
+      "updateTime": "2026-05-14T16:50:16.999345Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2621202-EGHU9815542",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EGHU9815542"
+        },
+        "id": {
+          "stringValue": "SEC2621202-EGHU9815542"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-14T16:50:15.869Z"
+        },
+        "blNo": {
+          "stringValue": "SEC2621202"
+        }
+      },
+      "createTime": "2026-05-14T16:50:16.999345Z",
+      "updateTime": "2026-05-14T16:50:16.999345Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2621202-EGSU1940048",
+      "fields": {
+        "blNo": {
+          "stringValue": "SEC2621202"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-14T16:50:15.869Z"
+        },
+        "id": {
+          "stringValue": "SEC2621202-EGSU1940048"
+        },
+        "containerNo": {
+          "stringValue": "EGSU1940048"
+        }
+      },
+      "createTime": "2026-05-14T16:50:16.999345Z",
+      "updateTime": "2026-05-14T16:50:16.999345Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2621202-EGSU6111203",
+      "fields": {
+        "blNo": {
+          "stringValue": "SEC2621202"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-14T16:50:15.869Z"
+        },
+        "id": {
+          "stringValue": "SEC2621202-EGSU6111203"
+        },
+        "containerNo": {
+          "stringValue": "EGSU6111203"
+        }
+      },
+      "createTime": "2026-05-14T16:50:16.999345Z",
+      "updateTime": "2026-05-14T16:50:16.999345Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2621202-EGSU6363078",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EGSU6363078"
+        },
+        "id": {
+          "stringValue": "SEC2621202-EGSU6363078"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-14T16:50:15.869Z"
+        },
+        "blNo": {
+          "stringValue": "SEC2621202"
+        }
+      },
+      "createTime": "2026-05-14T16:50:16.999345Z",
+      "updateTime": "2026-05-14T16:50:16.999345Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2621202-EISU8555366",
+      "fields": {
+        "id": {
+          "stringValue": "SEC2621202-EISU8555366"
+        },
+        "containerNo": {
+          "stringValue": "EISU8555366"
+        },
+        "blNo": {
+          "stringValue": "SEC2621202"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-14T16:50:15.869Z"
+        }
+      },
+      "createTime": "2026-05-14T16:50:16.999345Z",
+      "updateTime": "2026-05-14T16:50:16.999345Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2621202-EMCU1570617",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-14T16:50:15.869Z"
+        },
+        "blNo": {
+          "stringValue": "SEC2621202"
+        },
+        "containerNo": {
+          "stringValue": "EMCU1570617"
+        },
+        "id": {
+          "stringValue": "SEC2621202-EMCU1570617"
+        }
+      },
+      "createTime": "2026-05-14T16:50:16.999345Z",
+      "updateTime": "2026-05-14T16:50:16.999345Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2621202-FFAU4867899",
+      "fields": {
+        "containerNo": {
+          "stringValue": "FFAU4867899"
+        },
+        "id": {
+          "stringValue": "SEC2621202-FFAU4867899"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-14T16:50:15.869Z"
+        },
+        "blNo": {
+          "stringValue": "SEC2621202"
+        }
+      },
+      "createTime": "2026-05-14T16:50:16.999345Z",
+      "updateTime": "2026-05-14T16:50:16.999345Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2621202-TLLU5901271",
+      "fields": {
+        "blNo": {
+          "stringValue": "SEC2621202"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-14T16:50:15.869Z"
+        },
+        "id": {
+          "stringValue": "SEC2621202-TLLU5901271"
+        },
+        "containerNo": {
+          "stringValue": "TLLU5901271"
+        }
+      },
+      "createTime": "2026-05-14T16:50:16.999345Z",
+      "updateTime": "2026-05-14T16:50:16.999345Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2641645-EGSU0080126",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-06-02T16:37:43.173Z"
+        },
+        "blNo": {
+          "stringValue": "SEC2641645"
+        },
+        "containerNo": {
+          "stringValue": "EGSU0080126"
+        },
+        "id": {
+          "stringValue": "SEC2641645-EGSU0080126"
+        }
+      },
+      "createTime": "2026-06-02T16:38:01.385413Z",
+      "updateTime": "2026-06-02T16:38:01.385413Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2641645-EGSU6664831",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EGSU6664831"
+        },
+        "id": {
+          "stringValue": "SEC2641645-EGSU6664831"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-02T16:37:43.172Z"
+        },
+        "blNo": {
+          "stringValue": "SEC2641645"
+        }
+      },
+      "createTime": "2026-06-02T16:38:01.385413Z",
+      "updateTime": "2026-06-02T16:38:01.385413Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2641645-EISU8578248",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-06-02T16:37:43.173Z"
+        },
+        "blNo": {
+          "stringValue": "SEC2641645"
+        },
+        "containerNo": {
+          "stringValue": "EISU8578248"
+        },
+        "id": {
+          "stringValue": "SEC2641645-EISU8578248"
+        }
+      },
+      "createTime": "2026-06-02T16:38:01.385413Z",
+      "updateTime": "2026-06-02T16:38:01.385413Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2641645-EITU8175396",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-06-02T16:37:43.173Z"
+        },
+        "blNo": {
+          "stringValue": "SEC2641645"
+        },
+        "containerNo": {
+          "stringValue": "EITU8175396"
+        },
+        "id": {
+          "stringValue": "SEC2641645-EITU8175396"
+        }
+      },
+      "createTime": "2026-06-02T16:38:01.385413Z",
+      "updateTime": "2026-06-02T16:38:01.385413Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2641645-EITU8184269",
+      "fields": {
+        "id": {
+          "stringValue": "SEC2641645-EITU8184269"
+        },
+        "containerNo": {
+          "stringValue": "EITU8184269"
+        },
+        "blNo": {
+          "stringValue": "SEC2641645"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-02T16:37:43.173Z"
+        }
+      },
+      "createTime": "2026-06-02T16:38:01.385413Z",
+      "updateTime": "2026-06-02T16:38:01.385413Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2641645-EITU8184715",
+      "fields": {
+        "id": {
+          "stringValue": "SEC2641645-EITU8184715"
+        },
+        "containerNo": {
+          "stringValue": "EITU8184715"
+        },
+        "blNo": {
+          "stringValue": "SEC2641645"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-02T16:37:43.173Z"
+        }
+      },
+      "createTime": "2026-06-02T16:38:01.385413Z",
+      "updateTime": "2026-06-02T16:38:01.385413Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2641645-EITU9580958",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EITU9580958"
+        },
+        "id": {
+          "stringValue": "SEC2641645-EITU9580958"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-02T16:37:43.173Z"
+        },
+        "blNo": {
+          "stringValue": "SEC2641645"
+        }
+      },
+      "createTime": "2026-06-02T16:38:01.385413Z",
+      "updateTime": "2026-06-02T16:38:01.385413Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2641645-EITU9850210",
+      "fields": {
+        "id": {
+          "stringValue": "SEC2641645-EITU9850210"
+        },
+        "containerNo": {
+          "stringValue": "EITU9850210"
+        },
+        "blNo": {
+          "stringValue": "SEC2641645"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-02T16:37:43.173Z"
+        }
+      },
+      "createTime": "2026-06-02T16:38:01.385413Z",
+      "updateTime": "2026-06-02T16:38:01.385413Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/spare_parts_tracking/SEC2641645-TLLU7699792",
+      "fields": {
+        "blNo": {
+          "stringValue": "SEC2641645"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-02T16:37:43.173Z"
+        },
+        "id": {
+          "stringValue": "SEC2641645-TLLU7699792"
+        },
+        "containerNo": {
+          "stringValue": "TLLU7699792"
+        }
+      },
+      "createTime": "2026-06-02T16:38:01.385413Z",
+      "updateTime": "2026-06-02T16:38:01.385413Z"
+    }
+  ]
+}

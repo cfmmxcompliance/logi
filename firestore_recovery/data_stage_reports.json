@@ -1,0 +1,6159 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/data_stage_reports/2d594bef-eb74-44a1-8050-6a84fbb63a91",
+      "fields": {
+        "stats": {
+          "mapValue": {
+            "fields": {
+              "filesProcessed": {
+                "integerValue": "26"
+              },
+              "invoicesCount": {
+                "integerValue": "496"
+              },
+              "pedimentosCount": {
+                "integerValue": "353"
+              },
+              "itemsCount": {
+                "integerValue": "14193"
+              }
+            }
+          }
+        },
+        "reviewsByMonth": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jan"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Feb"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Mar"
+                    },
+                    "Export": {
+                      "integerValue": "27"
+                    },
+                    "Import": {
+                      "integerValue": "29"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Apr"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "May"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Jun"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Jul"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Aug"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Sep"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Oct"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Nov"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Dec"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "2d594bef-eb74-44a1-8050-6a84fbb63a91"
+        },
+        "name": {
+          "stringValue": "1880783_solicitudes"
+        },
+        "timestamp": {
+          "stringValue": "2026-04-27T13:35:04.707Z"
+        },
+        "records": {
+          "arrayValue": {}
+        },
+        "rawFiles": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_Inci.asc"
+                    },
+                    "code": {
+                      "stringValue": "1880783_Inci"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "1880783_Resumen"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_Resumen.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1880783_Sel.asc"
+                    },
+                    "code": {
+                      "stringValue": "1880783_Sel"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "501"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_501.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "502"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_502.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "503"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_503.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "504"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_504.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "505"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_505.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "506"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_506.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_507.asc"
+                    },
+                    "code": {
+                      "stringValue": "507"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1880783_508.asc"
+                    },
+                    "code": {
+                      "stringValue": "508"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_509.asc"
+                    },
+                    "code": {
+                      "stringValue": "509"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "510"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_510.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "511"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_511.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "512"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_512.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "520"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_520.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_551.asc"
+                    },
+                    "code": {
+                      "stringValue": "551"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_552.asc"
+                    },
+                    "code": {
+                      "stringValue": "552"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "553"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_553.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "554"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_554.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1880783_555.asc"
+                    },
+                    "code": {
+                      "stringValue": "555"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1880783_556.asc"
+                    },
+                    "code": {
+                      "stringValue": "556"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1880783_557.asc"
+                    },
+                    "code": {
+                      "stringValue": "557"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "558"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_558.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "701"
+                    },
+                    "fileName": {
+                      "stringValue": "1880783_701.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1880783_702.asc"
+                    },
+                    "code": {
+                      "stringValue": "702"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-04-27T13:35:20.565838Z",
+      "updateTime": "2026-04-27T13:35:20.565838Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/data_stage_reports/85250ba4-7349-47b0-8cc8-317e7208e010",
+      "fields": {
+        "stats": {
+          "mapValue": {
+            "fields": {
+              "itemsCount": {
+                "integerValue": "46175"
+              },
+              "filesProcessed": {
+                "integerValue": "26"
+              },
+              "invoicesCount": {
+                "integerValue": "1194"
+              },
+              "pedimentosCount": {
+                "integerValue": "715"
+              }
+            }
+          }
+        },
+        "reviewsByMonth": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jan"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Feb"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Mar"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Apr"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "May"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jun"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jul"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Aug"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Sep"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Oct"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Nov"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Dec"
+                    },
+                    "Export": {
+                      "integerValue": "10"
+                    },
+                    "Import": {
+                      "integerValue": "55"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "85250ba4-7349-47b0-8cc8-317e7208e010"
+        },
+        "rawFiles": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1798546_Inci.asc"
+                    },
+                    "code": {
+                      "stringValue": "1798546_Inci"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "1798546_Resumen"
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_Resumen.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "1798546_Sel"
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_Sel.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_501.asc"
+                    },
+                    "code": {
+                      "stringValue": "501"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "502"
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_502.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "503"
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_503.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1798546_504.asc"
+                    },
+                    "code": {
+                      "stringValue": "504"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "505"
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_505.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1798546_506.asc"
+                    },
+                    "code": {
+                      "stringValue": "506"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "507"
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_507.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "508"
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_508.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_509.asc"
+                    },
+                    "code": {
+                      "stringValue": "509"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1798546_510.asc"
+                    },
+                    "code": {
+                      "stringValue": "510"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "511"
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_511.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "512"
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_512.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1798546_520.asc"
+                    },
+                    "code": {
+                      "stringValue": "520"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_551.asc"
+                    },
+                    "code": {
+                      "stringValue": "551"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_552.asc"
+                    },
+                    "code": {
+                      "stringValue": "552"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "553"
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_553.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_554.asc"
+                    },
+                    "code": {
+                      "stringValue": "554"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "555"
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_555.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "556"
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_556.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_557.asc"
+                    },
+                    "code": {
+                      "stringValue": "557"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "558"
+                    },
+                    "fileName": {
+                      "stringValue": "1798546_558.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1798546_701.asc"
+                    },
+                    "code": {
+                      "stringValue": "701"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1798546_702.asc"
+                    },
+                    "code": {
+                      "stringValue": "702"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "name": {
+          "stringValue": "1798546_solicitudes (2)"
+        },
+        "timestamp": {
+          "stringValue": "2026-04-27T15:49:42.649Z"
+        },
+        "records": {
+          "arrayValue": {}
+        }
+      },
+      "createTime": "2026-04-27T15:49:50.344354Z",
+      "updateTime": "2026-04-27T15:49:50.344354Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/data_stage_reports/88ca997b-3a80-4b94-bfe8-44338eb61d8a",
+      "fields": {
+        "stats": {
+          "mapValue": {
+            "fields": {
+              "itemsCount": {
+                "integerValue": "21230"
+              },
+              "filesProcessed": {
+                "integerValue": "26"
+              },
+              "invoicesCount": {
+                "integerValue": "618"
+              },
+              "pedimentosCount": {
+                "integerValue": "379"
+              }
+            }
+          }
+        },
+        "id": {
+          "stringValue": "88ca997b-3a80-4b94-bfe8-44338eb61d8a"
+        },
+        "reviewsByMonth": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "52"
+                    },
+                    "name": {
+                      "stringValue": "Jan"
+                    },
+                    "Export": {
+                      "integerValue": "9"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Feb"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Mar"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Apr"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "May"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Jun"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jul"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Aug"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Sep"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Oct"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Nov"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Dec"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "timestamp": {
+          "stringValue": "2026-04-27T13:43:21.546Z"
+        },
+        "records": {
+          "arrayValue": {}
+        },
+        "name": {
+          "stringValue": "1839316_solicitudes (2)"
+        },
+        "rawFiles": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_Inci.asc"
+                    },
+                    "code": {
+                      "stringValue": "1839316_Inci"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_Resumen.asc"
+                    },
+                    "code": {
+                      "stringValue": "1839316_Resumen"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "1839316_Sel"
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_Sel.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "501"
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_501.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1839316_502.asc"
+                    },
+                    "code": {
+                      "stringValue": "502"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_503.asc"
+                    },
+                    "code": {
+                      "stringValue": "503"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_504.asc"
+                    },
+                    "code": {
+                      "stringValue": "504"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1839316_505.asc"
+                    },
+                    "code": {
+                      "stringValue": "505"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "506"
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_506.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "507"
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_507.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "508"
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_508.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1839316_509.asc"
+                    },
+                    "code": {
+                      "stringValue": "509"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_510.asc"
+                    },
+                    "code": {
+                      "stringValue": "510"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1839316_511.asc"
+                    },
+                    "code": {
+                      "stringValue": "511"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1839316_512.asc"
+                    },
+                    "code": {
+                      "stringValue": "512"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "520"
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_520.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1839316_551.asc"
+                    },
+                    "code": {
+                      "stringValue": "551"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1839316_552.asc"
+                    },
+                    "code": {
+                      "stringValue": "552"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "553"
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_553.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1839316_554.asc"
+                    },
+                    "code": {
+                      "stringValue": "554"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_555.asc"
+                    },
+                    "code": {
+                      "stringValue": "555"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1839316_556.asc"
+                    },
+                    "code": {
+                      "stringValue": "556"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "557"
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_557.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1839316_558.asc"
+                    },
+                    "code": {
+                      "stringValue": "558"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1839316_701.asc"
+                    },
+                    "code": {
+                      "stringValue": "701"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1839316_702.asc"
+                    },
+                    "code": {
+                      "stringValue": "702"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-04-27T13:43:25.445801Z",
+      "updateTime": "2026-04-27T13:43:25.445801Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/data_stage_reports/8a1979c8-9e6f-4a70-a508-c19c43c9ece3",
+      "fields": {
+        "rawFiles": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "1870089_Inci"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_Inci.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "1870089_Resumen"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_Resumen.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "1870089_Sel"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_Sel.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "501"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_501.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "502"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_502.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_503.asc"
+                    },
+                    "code": {
+                      "stringValue": "503"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "504"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_504.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "505"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_505.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "506"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_506.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_507.asc"
+                    },
+                    "code": {
+                      "stringValue": "507"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "508"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_508.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_509.asc"
+                    },
+                    "code": {
+                      "stringValue": "509"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1870089_510.asc"
+                    },
+                    "code": {
+                      "stringValue": "510"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "511"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_511.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "512"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_512.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "520"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_520.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1870089_551.asc"
+                    },
+                    "code": {
+                      "stringValue": "551"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_552.asc"
+                    },
+                    "code": {
+                      "stringValue": "552"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1870089_553.asc"
+                    },
+                    "code": {
+                      "stringValue": "553"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_554.asc"
+                    },
+                    "code": {
+                      "stringValue": "554"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_555.asc"
+                    },
+                    "code": {
+                      "stringValue": "555"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "556"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_556.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "557"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_557.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "558"
+                    },
+                    "fileName": {
+                      "stringValue": "1870089_558.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1870089_701.asc"
+                    },
+                    "code": {
+                      "stringValue": "701"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1870089_702.asc"
+                    },
+                    "code": {
+                      "stringValue": "702"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "name": {
+          "stringValue": "1870089_solicitudes"
+        },
+        "timestamp": {
+          "stringValue": "2026-04-27T13:31:07.485Z"
+        },
+        "records": {
+          "arrayValue": {}
+        },
+        "stats": {
+          "mapValue": {
+            "fields": {
+              "itemsCount": {
+                "integerValue": "29501"
+              },
+              "filesProcessed": {
+                "integerValue": "26"
+              },
+              "pedimentosCount": {
+                "integerValue": "528"
+              },
+              "invoicesCount": {
+                "integerValue": "852"
+              }
+            }
+          }
+        },
+        "reviewsByMonth": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jan"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "44"
+                    },
+                    "Export": {
+                      "integerValue": "15"
+                    },
+                    "name": {
+                      "stringValue": "Feb"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Mar"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Apr"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "May"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jun"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jul"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Aug"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Sep"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Oct"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Nov"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Dec"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "8a1979c8-9e6f-4a70-a508-c19c43c9ece3"
+        }
+      },
+      "createTime": "2026-04-27T13:31:11.345718Z",
+      "updateTime": "2026-04-27T13:31:11.345718Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/data_stage_reports/cec562f5-f5de-496b-b059-d14bc1dbadcd",
+      "fields": {
+        "name": {
+          "stringValue": "1767325_solicitudes"
+        },
+        "timestamp": {
+          "stringValue": "2026-04-27T16:23:34.418Z"
+        },
+        "records": {
+          "arrayValue": {}
+        },
+        "rawFiles": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "1767325_Inci"
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_Inci.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_Resumen.asc"
+                    },
+                    "code": {
+                      "stringValue": "1767325_Resumen"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "1767325_Sel"
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_Sel.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1767325_501.asc"
+                    },
+                    "code": {
+                      "stringValue": "501"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "502"
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_502.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_503.asc"
+                    },
+                    "code": {
+                      "stringValue": "503"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1767325_504.asc"
+                    },
+                    "code": {
+                      "stringValue": "504"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1767325_505.asc"
+                    },
+                    "code": {
+                      "stringValue": "505"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "506"
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_506.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_507.asc"
+                    },
+                    "code": {
+                      "stringValue": "507"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "508"
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_508.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1767325_509.asc"
+                    },
+                    "code": {
+                      "stringValue": "509"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1767325_510.asc"
+                    },
+                    "code": {
+                      "stringValue": "510"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1767325_511.asc"
+                    },
+                    "code": {
+                      "stringValue": "511"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1767325_512.asc"
+                    },
+                    "code": {
+                      "stringValue": "512"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "520"
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_520.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "551"
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_551.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_552.asc"
+                    },
+                    "code": {
+                      "stringValue": "552"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "553"
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_553.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_554.asc"
+                    },
+                    "code": {
+                      "stringValue": "554"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "555"
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_555.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_556.asc"
+                    },
+                    "code": {
+                      "stringValue": "556"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1767325_557.asc"
+                    },
+                    "code": {
+                      "stringValue": "557"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "558"
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_558.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_701.asc"
+                    },
+                    "code": {
+                      "stringValue": "701"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "702"
+                    },
+                    "fileName": {
+                      "stringValue": "1767325_702.asc"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "stats": {
+          "mapValue": {
+            "fields": {
+              "filesProcessed": {
+                "integerValue": "26"
+              },
+              "invoicesCount": {
+                "integerValue": "411"
+              },
+              "pedimentosCount": {
+                "integerValue": "302"
+              },
+              "itemsCount": {
+                "integerValue": "14294"
+              }
+            }
+          }
+        },
+        "id": {
+          "stringValue": "cec562f5-f5de-496b-b059-d14bc1dbadcd"
+        },
+        "reviewsByMonth": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jan"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Feb"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Mar"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Apr"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "May"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jun"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Jul"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Aug"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Sep"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Oct"
+                    },
+                    "Export": {
+                      "integerValue": "17"
+                    },
+                    "Import": {
+                      "integerValue": "21"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Nov"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Dec"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-04-27T16:23:39.364990Z",
+      "updateTime": "2026-04-27T16:23:39.364990Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/data_stage_reports/deb7ebb8-263a-4438-8ccb-42ef25c79bc1",
+      "fields": {
+        "stats": {
+          "mapValue": {
+            "fields": {
+              "filesProcessed": {
+                "integerValue": "26"
+              },
+              "pedimentosCount": {
+                "integerValue": "327"
+              },
+              "invoicesCount": {
+                "integerValue": "380"
+              },
+              "itemsCount": {
+                "integerValue": "12853"
+              }
+            }
+          }
+        },
+        "id": {
+          "stringValue": "deb7ebb8-263a-4438-8ccb-42ef25c79bc1"
+        },
+        "reviewsByMonth": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jan"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Feb"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Mar"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Apr"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "May"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Jun"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jul"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Aug"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Sep"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Oct"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "8"
+                    },
+                    "name": {
+                      "stringValue": "Nov"
+                    },
+                    "Import": {
+                      "integerValue": "59"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Dec"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "rawFiles": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "1787939_Inci"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_Inci.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1787939_Resumen.asc"
+                    },
+                    "code": {
+                      "stringValue": "1787939_Resumen"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1787939_Sel.asc"
+                    },
+                    "code": {
+                      "stringValue": "1787939_Sel"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "501"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_501.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "502"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_502.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1787939_503.asc"
+                    },
+                    "code": {
+                      "stringValue": "503"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1787939_504.asc"
+                    },
+                    "code": {
+                      "stringValue": "504"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "505"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_505.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_506.asc"
+                    },
+                    "code": {
+                      "stringValue": "506"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "507"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_507.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1787939_508.asc"
+                    },
+                    "code": {
+                      "stringValue": "508"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "509"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_509.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_510.asc"
+                    },
+                    "code": {
+                      "stringValue": "510"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "511"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_511.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "512"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_512.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_520.asc"
+                    },
+                    "code": {
+                      "stringValue": "520"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "551"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_551.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_552.asc"
+                    },
+                    "code": {
+                      "stringValue": "552"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_553.asc"
+                    },
+                    "code": {
+                      "stringValue": "553"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1787939_554.asc"
+                    },
+                    "code": {
+                      "stringValue": "554"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "555"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_555.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "556"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_556.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1787939_557.asc"
+                    },
+                    "code": {
+                      "stringValue": "557"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "558"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_558.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1787939_701.asc"
+                    },
+                    "code": {
+                      "stringValue": "701"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_702.asc"
+                    },
+                    "code": {
+                      "stringValue": "702"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "timestamp": {
+          "stringValue": "2026-04-27T16:01:12.541Z"
+        },
+        "records": {
+          "arrayValue": {}
+        },
+        "name": {
+          "stringValue": "1787939_solicitudes (3)"
+        }
+      },
+      "createTime": "2026-04-27T16:01:16.654176Z",
+      "updateTime": "2026-04-27T16:01:16.654176Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/data_stage_reports/f1345fad-5dfa-45f8-b619-bffc2675177b",
+      "fields": {
+        "storageUrls": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "https://firebasestorage.googleapis.com/v0/b/logimaster-cfmoto.firebasestorage.app/o/reports%2Ff1345fad-5dfa-45f8-b619-bffc2675177b%2F1901508_solicitudes.zip?alt=media&token=cfd3ee8e-e4c1-4edf-ab1f-c237aacaade9"
+              }
+            ]
+          }
+        },
+        "monthlyDuties": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "Otras Exp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Imp.": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jan"
+                    },
+                    "Multa Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Imp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Imp.": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Feb"
+                    },
+                    "Total Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Imp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Imp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Imp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Exp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Exp.": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Otras Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Imp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Imp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Exp.": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Mar"
+                    },
+                    "Multa Imp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Imp.": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Otras Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Exp.": {
+                      "integerValue": "10230"
+                    },
+                    "PRV Imp.": {
+                      "integerValue": "204560"
+                    },
+                    "DTA Exp.": {
+                      "integerValue": "225999"
+                    },
+                    "CNT Exp.": {
+                      "integerValue": "1643"
+                    },
+                    "Otras Imp.": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Apr"
+                    },
+                    "Multa Exp.": {
+                      "integerValue": "4790"
+                    },
+                    "Total Exp.": {
+                      "integerValue": "242662"
+                    },
+                    "DTA Imp.": {
+                      "integerValue": "642879"
+                    },
+                    "CNT Imp.": {
+                      "integerValue": "32853"
+                    },
+                    "Total Imp.": {
+                      "integerValue": "887477"
+                    },
+                    "Multa Imp.": {
+                      "integerValue": "7185"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Total Imp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Imp.": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "May"
+                    },
+                    "Multa Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Imp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Imp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Exp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Exp.": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Otras Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Imp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Imp.": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jun"
+                    },
+                    "Total Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Exp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Imp.": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "CNT Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Imp.": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jul"
+                    },
+                    "DTA Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Imp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Imp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Exp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Exp.": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Otras Imp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Exp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Imp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Exp.": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Aug"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Otras Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Exp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Imp.": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Sep"
+                    },
+                    "Multa Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Imp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Imp.": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Otras Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Imp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Exp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Imp.": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Oct"
+                    },
+                    "Multa Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Imp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Imp.": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Otras Imp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Exp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Imp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Imp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Imp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Exp.": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Nov"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "DTA Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Multa Exp.": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Dec"
+                    },
+                    "Multa Imp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Total Imp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Exp.": {
+                      "integerValue": "0"
+                    },
+                    "Otras Imp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Imp.": {
+                      "integerValue": "0"
+                    },
+                    "PRV Exp.": {
+                      "integerValue": "0"
+                    },
+                    "CNT Exp.": {
+                      "integerValue": "0"
+                    },
+                    "DTA Exp.": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "reviewsByMonth": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jan"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Feb"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Mar"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "7"
+                    },
+                    "name": {
+                      "stringValue": "Apr"
+                    },
+                    "Import": {
+                      "integerValue": "68"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "May"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jun"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jul"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Aug"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Sep"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Oct"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Nov"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Dec"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "stats": {
+          "mapValue": {
+            "fields": {
+              "itemsCount": {
+                "integerValue": "36346"
+              },
+              "filesProcessed": {
+                "integerValue": "26"
+              },
+              "pedimentosCount": {
+                "integerValue": "662"
+              },
+              "invoicesCount": {
+                "integerValue": "1045"
+              }
+            }
+          }
+        },
+        "taxSummary": {
+          "mapValue": {
+            "fields": {
+              "totalOtras": {
+                "integerValue": "0"
+              },
+              "totalDTA": {
+                "integerValue": "868878"
+              },
+              "totalCNT": {
+                "integerValue": "34496"
+              },
+              "totalMulta": {
+                "integerValue": "11975"
+              },
+              "totalPRV": {
+                "integerValue": "214790"
+              }
+            }
+          }
+        },
+        "name": {
+          "stringValue": "1901508_solicitudes"
+        },
+        "storageUrl": {
+          "nullValue": null
+        },
+        "records": {
+          "arrayValue": {}
+        },
+        "timestamp": {
+          "stringValue": "2026-05-20T20:34:16.736Z"
+        },
+        "rawFiles": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "190"
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_Inci.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_Resumen.asc"
+                    },
+                    "code": {
+                      "stringValue": "190"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_Sel.asc"
+                    },
+                    "code": {
+                      "stringValue": "190"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_501.asc"
+                    },
+                    "code": {
+                      "stringValue": "501"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "502"
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_502.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "503"
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_503.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1901508_504.asc"
+                    },
+                    "code": {
+                      "stringValue": "504"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_505.asc"
+                    },
+                    "code": {
+                      "stringValue": "505"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "506"
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_506.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_507.asc"
+                    },
+                    "code": {
+                      "stringValue": "507"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_508.asc"
+                    },
+                    "code": {
+                      "stringValue": "508"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_509.asc"
+                    },
+                    "code": {
+                      "stringValue": "509"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1901508_510.asc"
+                    },
+                    "code": {
+                      "stringValue": "510"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "511"
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_511.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "512"
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_512.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "520"
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_520.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "551"
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_551.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_552.asc"
+                    },
+                    "code": {
+                      "stringValue": "552"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1901508_553.asc"
+                    },
+                    "code": {
+                      "stringValue": "553"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "554"
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_554.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "555"
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_555.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "556"
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_556.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1901508_557.asc"
+                    },
+                    "code": {
+                      "stringValue": "557"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "558"
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_558.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1901508_701.asc"
+                    },
+                    "code": {
+                      "stringValue": "701"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "702"
+                    },
+                    "fileName": {
+                      "stringValue": "1901508_702.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "f1345fad-5dfa-45f8-b619-bffc2675177b"
+        }
+      },
+      "createTime": "2026-05-13T18:23:27.739779Z",
+      "updateTime": "2026-05-20T20:34:24.504655Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/data_stage_reports/fbe0e15b-6a58-46b7-ac6b-94eb930fec50",
+      "fields": {
+        "name": {
+          "stringValue": "1787939_solicitudes (1)"
+        },
+        "timestamp": {
+          "stringValue": "2026-04-27T16:07:35.028Z"
+        },
+        "records": {
+          "arrayValue": {}
+        },
+        "rawFiles": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1787939_Inci.asc"
+                    },
+                    "code": {
+                      "stringValue": "1787939_Inci"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "1787939_Resumen"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_Resumen.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_Sel.asc"
+                    },
+                    "code": {
+                      "stringValue": "1787939_Sel"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_501.asc"
+                    },
+                    "code": {
+                      "stringValue": "501"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_502.asc"
+                    },
+                    "code": {
+                      "stringValue": "502"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "503"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_503.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "fileName": {
+                      "stringValue": "1787939_504.asc"
+                    },
+                    "code": {
+                      "stringValue": "504"
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "505"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_505.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "506"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_506.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "507"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_507.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "508"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_508.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "509"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_509.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "510"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_510.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "511"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_511.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "512"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_512.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_520.asc"
+                    },
+                    "code": {
+                      "stringValue": "520"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "551"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_551.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "552"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_552.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_553.asc"
+                    },
+                    "code": {
+                      "stringValue": "553"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "554"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_554.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "555"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_555.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_556.asc"
+                    },
+                    "code": {
+                      "stringValue": "556"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_557.asc"
+                    },
+                    "code": {
+                      "stringValue": "557"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_558.asc"
+                    },
+                    "code": {
+                      "stringValue": "558"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    },
+                    "code": {
+                      "stringValue": "701"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_701.asc"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "code": {
+                      "stringValue": "702"
+                    },
+                    "fileName": {
+                      "stringValue": "1787939_702.asc"
+                    },
+                    "rows": {
+                      "arrayValue": {}
+                    },
+                    "content": {
+                      "stringValue": ""
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "stats": {
+          "mapValue": {
+            "fields": {
+              "filesProcessed": {
+                "integerValue": "26"
+              },
+              "invoicesCount": {
+                "integerValue": "380"
+              },
+              "pedimentosCount": {
+                "integerValue": "327"
+              },
+              "itemsCount": {
+                "integerValue": "12853"
+              }
+            }
+          }
+        },
+        "id": {
+          "stringValue": "fbe0e15b-6a58-46b7-ac6b-94eb930fec50"
+        },
+        "reviewsByMonth": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jan"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Feb"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Mar"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Apr"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "May"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jun"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Jul"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Aug"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Sep"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Oct"
+                    },
+                    "Export": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Import": {
+                      "integerValue": "59"
+                    },
+                    "Export": {
+                      "integerValue": "8"
+                    },
+                    "name": {
+                      "stringValue": "Nov"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "Export": {
+                      "integerValue": "0"
+                    },
+                    "name": {
+                      "stringValue": "Dec"
+                    },
+                    "Import": {
+                      "integerValue": "0"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-04-27T16:07:39.310429Z",
+      "updateTime": "2026-04-27T16:07:39.310429Z"
+    }
+  ]
+}

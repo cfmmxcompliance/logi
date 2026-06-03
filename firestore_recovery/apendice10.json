@@ -1,0 +1,1315 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/1",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:16.141Z"
+        },
+        "clave": {
+          "stringValue": "1"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:16.141Z"
+        },
+        "descripcion": {
+          "stringValue": "CONTENEDOR ESTÁNDAR 20' (STANDARD CONTAINER 20')"
+        }
+      },
+      "createTime": "2026-03-25T14:59:46.558736Z",
+      "updateTime": "2026-04-22T20:23:16.678221Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/10",
+      "fields": {
+        "descripcion": {
+          "stringValue": "PLATAFORMA 20' (PLATFORM 20')"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:18.090Z"
+        },
+        "clave": {
+          "stringValue": "10"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:18.090Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:48.279095Z",
+      "updateTime": "2026-04-22T20:23:18.226830Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/11",
+      "fields": {
+        "descripcion": {
+          "stringValue": "PLATAFORMA 40' (PLATFORM 40')"
+        },
+        "clave": {
+          "stringValue": "11"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:18.207Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:18.207Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:48.613387Z",
+      "updateTime": "2026-04-22T20:23:18.402257Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/12",
+      "fields": {
+        "descripcion": {
+          "stringValue": "CONTENEDOR VENTILADO 20' (VENTILATED CONTAINER 20')"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:18.373Z"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:18.373Z"
+        },
+        "clave": {
+          "stringValue": "12"
+        }
+      },
+      "createTime": "2026-03-25T14:59:48.700626Z",
+      "updateTime": "2026-04-22T20:23:18.511685Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/13",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:18.486Z"
+        },
+        "clave": {
+          "stringValue": "13"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:18.486Z"
+        },
+        "descripcion": {
+          "stringValue": "CONTENEDOR TÉRMICO 20' (INSULATED CONTAINER 20')"
+        }
+      },
+      "createTime": "2026-03-25T14:59:48.810117Z",
+      "updateTime": "2026-04-22T20:23:18.601385Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/14",
+      "fields": {
+        "clave": {
+          "stringValue": "14"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:18.573Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:18.573Z"
+        },
+        "descripcion": {
+          "stringValue": "CONTENEDOR TÉRMICO 40' (INSULATED CONTAINER 40')"
+        }
+      },
+      "createTime": "2026-03-25T14:59:48.917311Z",
+      "updateTime": "2026-04-22T20:23:18.711751Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/15",
+      "fields": {
+        "descripcion": {
+          "stringValue": "CONTENEDOR REFRIGERANTE 20' (REFRIGERATED CONTAINER 20')"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:18.687Z"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:18.687Z"
+        },
+        "clave": {
+          "stringValue": "15"
+        }
+      },
+      "createTime": "2026-03-25T14:59:49.017513Z",
+      "updateTime": "2026-04-22T20:23:18.798014Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/16",
+      "fields": {
+        "clave": {
+          "stringValue": "16"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:18.777Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:18.777Z"
+        },
+        "descripcion": {
+          "stringValue": "CONTENEDOR REFRIGERANTE 40' (REFRIGERATED CONTAINER 40')"
+        }
+      },
+      "createTime": "2026-03-25T14:59:49.132974Z",
+      "updateTime": "2026-04-22T20:23:18.902182Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/17",
+      "fields": {
+        "descripcion": {
+          "stringValue": "CONTENEDOR REFRIGERANTE CUBO ALTO 40' (HIGH CUBE REFRIGERATED CONTAINER 40')"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:18.874Z"
+        },
+        "clave": {
+          "stringValue": "17"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:18.874Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:49.245438Z",
+      "updateTime": "2026-04-22T20:23:19.031558Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/18",
+      "fields": {
+        "clave": {
+          "stringValue": "18"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:19.003Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:19.003Z"
+        },
+        "descripcion": {
+          "stringValue": "CONTENEDOR CARGA A GRANEL 20' (BULK CONTAINER 20')"
+        }
+      },
+      "createTime": "2026-03-25T14:59:49.346631Z",
+      "updateTime": "2026-04-22T20:23:19.144658Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/19",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:19.116Z"
+        },
+        "clave": {
+          "stringValue": "19"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:19.116Z"
+        },
+        "descripcion": {
+          "stringValue": "CONTENEDOR TIPO TANQUE 20' (TANK CONTAINER 20')"
+        }
+      },
+      "createTime": "2026-03-25T14:59:49.721303Z",
+      "updateTime": "2026-04-22T20:23:19.258059Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/2",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:16.655Z"
+        },
+        "clave": {
+          "stringValue": "2"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:16.655Z"
+        },
+        "descripcion": {
+          "stringValue": "CONTENEDOR ESTÁNDAR 40' (STANDARD CONTAINER 40')"
+        }
+      },
+      "createTime": "2026-03-25T14:59:46.662069Z",
+      "updateTime": "2026-04-22T20:23:16.809774Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/20",
+      "fields": {
+        "descripcion": {
+          "stringValue": "CONTENEDOR ESTÁNDAR 45' (STANDARD CONTAINER 45')"
+        },
+        "clave": {
+          "stringValue": "20"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:19.229Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:19.229Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:49.821031Z",
+      "updateTime": "2026-04-22T20:23:19.424866Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/21",
+      "fields": {
+        "descripcion": {
+          "stringValue": "CONTENEDOR ESTÁNDAR 48' (STANDARD CONTAINER 48')"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:19.397Z"
+        },
+        "clave": {
+          "stringValue": "21"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:19.397Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:50.422890Z",
+      "updateTime": "2026-04-22T20:23:19.534485Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/22",
+      "fields": {
+        "descripcion": {
+          "stringValue": "CONTENEDOR ESTÁNDAR 53' (STANDARD CONTAINER 53')"
+        },
+        "clave": {
+          "stringValue": "22"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:19.509Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:19.509Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:50.524599Z",
+      "updateTime": "2026-04-22T20:23:19.651162Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/23",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:19.628Z"
+        },
+        "clave": {
+          "stringValue": "23"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:19.628Z"
+        },
+        "descripcion": {
+          "stringValue": "CONTENEDOR ESTÁNDAR 8' (STANDARD CONTAINER 8')"
+        }
+      },
+      "createTime": "2026-03-25T14:59:50.634188Z",
+      "updateTime": "2026-04-22T20:23:19.767387Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/24",
+      "fields": {
+        "descripcion": {
+          "stringValue": "CONTENEDOR ESTÁNDAR 10' (STANDARD CONTAINER 10')"
+        },
+        "clave": {
+          "stringValue": "24"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:19.744Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:19.744Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:50.736788Z",
+      "updateTime": "2026-04-22T20:23:19.872753Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/25",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:19.847Z"
+        },
+        "clave": {
+          "stringValue": "25"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:19.847Z"
+        },
+        "descripcion": {
+          "stringValue": "CONTENEDOR ESTÁNDAR DE CUBO ALTO 45' (HIGH CUBE STANDARD CONTAINER 45')"
+        }
+      },
+      "createTime": "2026-03-25T14:59:50.818691Z",
+      "updateTime": "2026-04-22T20:23:19.960010Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/26",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE CON RACKS PARA ENVASES DE BEBIDAS"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:19.934Z"
+        },
+        "clave": {
+          "stringValue": "26"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:19.934Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:51.135523Z",
+      "updateTime": "2026-04-22T20:23:20.071266Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/27",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE CUELLO DE GANSO"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:20.044Z"
+        },
+        "clave": {
+          "stringValue": "27"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:20.044Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:51.229130Z",
+      "updateTime": "2026-04-22T20:23:20.192862Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/28",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TOLVA CUBIERTO"
+        },
+        "clave": {
+          "stringValue": "28"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:20.183Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:20.183Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:51.333098Z",
+      "updateTime": "2026-04-22T20:23:20.319922Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/29",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:20.325Z"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:20.325Z"
+        },
+        "clave": {
+          "stringValue": "29"
+        },
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TOLVA (ABIERTO)"
+        }
+      },
+      "createTime": "2026-03-25T14:59:51.412898Z",
+      "updateTime": "2026-04-22T20:23:20.472920Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/3",
+      "fields": {
+        "descripcion": {
+          "stringValue": "CONTENEDOR ESTÁNDAR DE CUBO ALTO 40' (HIGH CUBE STANDARD CONTAINER 40')"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:16.859Z"
+        },
+        "clave": {
+          "stringValue": "3"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:16.859Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:47.058391Z",
+      "updateTime": "2026-04-22T20:23:16.979272Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/30",
+      "fields": {
+        "descripcion": {
+          "stringValue": "AUTO-TOLVA CUBIERTO/DESCARGA NEUMÁTICA"
+        },
+        "clave": {
+          "stringValue": "30"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:20.451Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:20.451Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:51.514829Z",
+      "updateTime": "2026-04-22T20:23:20.586835Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/31",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:20.560Z"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:20.560Z"
+        },
+        "clave": {
+          "stringValue": "31"
+        },
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE CHASIS"
+        }
+      },
+      "createTime": "2026-03-25T14:59:51.612867Z",
+      "updateTime": "2026-04-22T20:23:20.699016Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/32",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE AUTOCARGABLE (CON SISTEMA DE ELEVACIÓN)"
+        },
+        "clave": {
+          "stringValue": "32"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:20.678Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:20.678Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:51.710244Z",
+      "updateTime": "2026-04-22T20:23:20.833111Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/33",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:20.813Z"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:20.813Z"
+        },
+        "clave": {
+          "stringValue": "33"
+        },
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE CON TEMPERATURA CONTROLADA"
+        }
+      },
+      "createTime": "2026-03-25T14:59:51.790428Z",
+      "updateTime": "2026-04-22T20:23:20.948347Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/34",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE CORTO TRASERO"
+        },
+        "clave": {
+          "stringValue": "34"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:20.927Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:20.927Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:52.312210Z",
+      "updateTime": "2026-04-22T20:23:21.045843Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/35",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:21.026Z"
+        },
+        "clave": {
+          "stringValue": "35"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:21.026Z"
+        },
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE DE CAMA BAJA"
+        }
+      },
+      "createTime": "2026-03-25T14:59:52.407711Z",
+      "updateTime": "2026-04-22T20:23:21.138804Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/36",
+      "fields": {
+        "descripcion": {
+          "stringValue": "PLATAFORMA DE 28'"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:21.176Z"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:21.176Z"
+        },
+        "clave": {
+          "stringValue": "36"
+        }
+      },
+      "createTime": "2026-03-25T14:59:52.603523Z",
+      "updateTime": "2026-04-22T20:23:21.322687Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/37",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:21.346Z"
+        },
+        "clave": {
+          "stringValue": "37"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:21.346Z"
+        },
+        "descripcion": {
+          "stringValue": "PLATAFORMA DE 45'"
+        }
+      },
+      "createTime": "2026-03-25T14:59:52.682829Z",
+      "updateTime": "2026-04-22T20:23:21.481652Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/38",
+      "fields": {
+        "descripcion": {
+          "stringValue": "PLATAFORMA DE 48'"
+        },
+        "clave": {
+          "stringValue": "38"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:21.480Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:21.480Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:52.860234Z",
+      "updateTime": "2026-04-22T20:23:21.615344Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/39",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE PARA TRANSPORTE DE CABALLOS"
+        },
+        "clave": {
+          "stringValue": "39"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:21.616Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:21.616Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:52.963678Z",
+      "updateTime": "2026-04-22T20:23:21.759772Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/4",
+      "fields": {
+        "clave": {
+          "stringValue": "4"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:16.951Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:16.951Z"
+        },
+        "descripcion": {
+          "stringValue": "CONTENEDOR TAPA DURA 20' (HARDTOP CONTAINER 20')"
+        }
+      },
+      "createTime": "2026-03-25T14:59:47.192083Z",
+      "updateTime": "2026-04-22T20:23:17.103453Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/40",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE PARA TRANSPORTE DE GANADO"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:21.762Z"
+        },
+        "clave": {
+          "stringValue": "40"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:21.762Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:53.067613Z",
+      "updateTime": "2026-04-22T20:23:21.904142Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/41",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:21.894Z"
+        },
+        "clave": {
+          "stringValue": "41"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:21.894Z"
+        },
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TANQUE (LÍQUIDOS)/SIN CALEFACCIÓN/SIN AISLAR"
+        }
+      },
+      "createTime": "2026-03-25T14:59:53.166106Z",
+      "updateTime": "2026-04-22T20:23:22.038844Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/42",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TANQUE (LÍQUIDOS)/CON CALEFACCIÓN/SIN AISLAR"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:22.012Z"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:22.012Z"
+        },
+        "clave": {
+          "stringValue": "42"
+        }
+      },
+      "createTime": "2026-03-25T14:59:53.258457Z",
+      "updateTime": "2026-04-22T20:23:22.155862Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/43",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TANQUE (LÍQUIDOS)/SIN CALEFACCIÓN/AISLADO"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:22.200Z"
+        },
+        "clave": {
+          "stringValue": "43"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:22.200Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:53.359281Z",
+      "updateTime": "2026-04-22T20:23:22.318709Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/44",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:22.294Z"
+        },
+        "clave": {
+          "stringValue": "44"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:22.294Z"
+        },
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TANQUE (LÍQUIDOS)/CON CALEFACCIÓN/AISLADO"
+        }
+      },
+      "createTime": "2026-03-25T14:59:53.434361Z",
+      "updateTime": "2026-04-22T20:23:22.428666Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/45",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TANQUE (GAS)/SIN CALEFACCIÓN/SIN AISLAR"
+        },
+        "clave": {
+          "stringValue": "45"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:22.401Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:22.401Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:53.575480Z",
+      "updateTime": "2026-04-22T20:23:22.519579Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/46",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TANQUE (GAS)/CON CALEFACCIÓN/SIN AISLAR"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:22.492Z"
+        },
+        "clave": {
+          "stringValue": "46"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:22.492Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:53.669101Z",
+      "updateTime": "2026-04-22T20:23:22.650076Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/47",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:22.623Z"
+        },
+        "clave": {
+          "stringValue": "47"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:22.623Z"
+        },
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TANQUE (GAS)/SIN CALEFACCIÓN/AISLADO"
+        }
+      },
+      "createTime": "2026-03-25T14:59:53.771671Z",
+      "updateTime": "2026-04-22T20:23:22.753001Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/48",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TANQUE (GAS)/CON CALEFACCIÓN/AISLADO"
+        },
+        "clave": {
+          "stringValue": "48"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:22.726Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:22.726Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:53.864477Z",
+      "updateTime": "2026-04-22T20:23:22.838542Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/49",
+      "fields": {
+        "clave": {
+          "stringValue": "49"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:22.809Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:22.809Z"
+        },
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TANQUE (QUÍMICOS)/SIN CALEFACCIÓN/SIN AISLAR"
+        }
+      },
+      "createTime": "2026-03-25T14:59:53.946951Z",
+      "updateTime": "2026-04-22T20:23:22.951388Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/5",
+      "fields": {
+        "descripcion": {
+          "stringValue": "CONTENEDOR TAPA DURA 40' (HARDTOP CONTAINER 40')"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:17.098Z"
+        },
+        "clave": {
+          "stringValue": "5"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:17.098Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:47.514919Z",
+      "updateTime": "2026-04-22T20:23:17.234784Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/50",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TANQUE (QUÍMICOS)/CON CALEFACCIÓN/SIN AISLAR"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:22.946Z"
+        },
+        "clave": {
+          "stringValue": "50"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:22.946Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:54.044633Z",
+      "updateTime": "2026-04-22T20:23:23.065033Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/51",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TANQUE (QUÍMICOS)/SIN CALEFACCIÓN/AISLADO"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:23.117Z"
+        },
+        "clave": {
+          "stringValue": "51"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:23.117Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:54.128719Z",
+      "updateTime": "2026-04-22T20:23:23.241928Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/52",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TANQUE (QUÍMICOS)/CON CALEFACCIÓN/AISLADO"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:23.215Z"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:23.215Z"
+        },
+        "clave": {
+          "stringValue": "52"
+        }
+      },
+      "createTime": "2026-03-25T14:59:54.519670Z",
+      "updateTime": "2026-04-22T20:23:23.329913Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/53",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE GÓNDOLA-CERRADA"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:23.321Z"
+        },
+        "clave": {
+          "stringValue": "53"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:23.321Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:54.597865Z",
+      "updateTime": "2026-04-22T20:23:23.464940Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/54",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:23.451Z"
+        },
+        "clave": {
+          "stringValue": "54"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:23.451Z"
+        },
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE GÓNDOLA-ABIERTA"
+        }
+      },
+      "createTime": "2026-03-25T14:59:54.692472Z",
+      "updateTime": "2026-04-22T20:23:23.574508Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/55",
+      "fields": {
+        "clave": {
+          "stringValue": "55"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:27.162Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:27.162Z"
+        },
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TIPO CAJA CERRADA 48'"
+        }
+      },
+      "createTime": "2026-03-25T14:59:54.803722Z",
+      "updateTime": "2026-04-22T20:23:27.857913Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/56",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:28.408Z"
+        },
+        "clave": {
+          "stringValue": "56"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:28.408Z"
+        },
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TIPO CAJA CERRADA 53'"
+        }
+      },
+      "createTime": "2026-03-25T14:59:54.879864Z",
+      "updateTime": "2026-04-22T20:23:29.077664Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/57",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:29.692Z"
+        },
+        "clave": {
+          "stringValue": "57"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:29.692Z"
+        },
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TIPO CAJA REFRIGERADA 48'"
+        }
+      },
+      "createTime": "2026-03-25T14:59:54.972353Z",
+      "updateTime": "2026-04-22T20:23:30.325945Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/58",
+      "fields": {
+        "descripcion": {
+          "stringValue": "SEMIRREMOLQUE TIPO CAJA REFRIGERADA 53'"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:30.877Z"
+        },
+        "clave": {
+          "stringValue": "58"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:30.877Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:55.069476Z",
+      "updateTime": "2026-04-22T20:23:31.590447Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/59",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:32.631Z"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:32.631Z"
+        },
+        "clave": {
+          "stringValue": "59"
+        },
+        "descripcion": {
+          "stringValue": "DOBLE SEMIRREMOLQUE"
+        }
+      },
+      "createTime": "2026-03-25T14:59:55.169063Z",
+      "updateTime": "2026-04-22T20:23:33.207196Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/6",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:17.279Z"
+        },
+        "clave": {
+          "stringValue": "6"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:17.279Z"
+        },
+        "descripcion": {
+          "stringValue": "CONTENEDOR TAPA ABIERTA 20' (OPEN TOP CONTAINER 20')"
+        }
+      },
+      "createTime": "2026-03-25T14:59:47.618514Z",
+      "updateTime": "2026-04-22T20:23:17.435717Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/60",
+      "fields": {
+        "descripcion": {
+          "stringValue": "OTROS"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:33.917Z"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:33.917Z"
+        },
+        "clave": {
+          "stringValue": "60"
+        }
+      },
+      "createTime": "2026-03-25T14:59:55.251695Z",
+      "updateTime": "2026-04-22T20:23:34.682173Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/61",
+      "fields": {
+        "descripcion": {
+          "stringValue": "TANQUE 20'"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:35.392Z"
+        },
+        "clave": {
+          "stringValue": "61"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:35.392Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:55.333906Z",
+      "updateTime": "2026-04-22T20:23:36.054241Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/62",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:36.565Z"
+        },
+        "clave": {
+          "stringValue": "62"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:36.565Z"
+        },
+        "descripcion": {
+          "stringValue": "TANQUE 40'"
+        }
+      },
+      "createTime": "2026-03-25T14:59:55.430897Z",
+      "updateTime": "2026-04-22T20:23:37.059650Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/63",
+      "fields": {
+        "descripcion": {
+          "stringValue": "CARRO DE FERROCARRIL"
+        },
+        "clave": {
+          "stringValue": "63"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:37.316Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:37.316Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:55.775278Z",
+      "updateTime": "2026-04-22T20:23:37.987221Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/64",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:38.554Z"
+        },
+        "clave": {
+          "stringValue": "64"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:38.554Z"
+        },
+        "descripcion": {
+          "stringValue": "HIGH CUBE 20'"
+        }
+      },
+      "createTime": "2026-03-25T14:59:55.947629Z",
+      "updateTime": "2026-04-22T20:23:39.264157Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/65",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:39.765Z"
+        },
+        "clave": {
+          "stringValue": "65"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:39.765Z"
+        },
+        "descripcion": {
+          "stringValue": "AUTOMÓVIL"
+        }
+      },
+      "createTime": "2026-03-25T14:59:56.024432Z",
+      "updateTime": "2026-04-22T20:23:40.411659Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/66",
+      "fields": {
+        "descripcion": {
+          "stringValue": "CAMIÓN UNITARIO DE DOS EJES"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:40.837Z"
+        },
+        "clave": {
+          "stringValue": "66"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:40.837Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:56.103144Z",
+      "updateTime": "2026-04-22T20:23:41.465260Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/67",
+      "fields": {
+        "descripcion": {
+          "stringValue": "CAMIÓN UNITARIO DE TRES EJES"
+        },
+        "clave": {
+          "stringValue": "67"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:41.916Z"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:41.916Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:56.185277Z",
+      "updateTime": "2026-04-22T20:23:42.530262Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/68",
+      "fields": {
+        "descripcion": {
+          "stringValue": "VEHÍCULOS CON CAPACIDAD DE CARGA DE HASTA 3.5 TONELADAS"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:43.411Z"
+        },
+        "clave": {
+          "stringValue": "68"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:43.411Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:56.261877Z",
+      "updateTime": "2026-04-22T20:23:44.628982Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/69",
+      "fields": {
+        "descripcion": {
+          "stringValue": "TRACTOCAMIÓN"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:45.140Z"
+        },
+        "clave": {
+          "stringValue": "69"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:45.140Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:56.352509Z",
+      "updateTime": "2026-04-22T20:23:45.742561Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/7",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:17.529Z"
+        },
+        "clave": {
+          "stringValue": "7"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:17.529Z"
+        },
+        "descripcion": {
+          "stringValue": "CONTENEDOR TAPA ABIERTA 40' (OPEN TOP CONTAINER 40')"
+        }
+      },
+      "createTime": "2026-03-25T14:59:47.721096Z",
+      "updateTime": "2026-04-22T20:23:17.719540Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/8",
+      "fields": {
+        "descripcion": {
+          "stringValue": "FLAT 20' (FLAT 20')"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:17.729Z"
+        },
+        "clave": {
+          "stringValue": "8"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:17.729Z"
+        }
+      },
+      "createTime": "2026-03-25T14:59:47.840635Z",
+      "updateTime": "2026-04-22T20:23:17.904426Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/apendice10/9",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T20:23:17.883Z"
+        },
+        "clave": {
+          "stringValue": "9"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-22T20:23:17.883Z"
+        },
+        "descripcion": {
+          "stringValue": "FLAT 40' (FLAT 40')"
+        }
+      },
+      "createTime": "2026-03-25T14:59:48.189068Z",
+      "updateTime": "2026-04-22T20:23:18.027607Z"
+    }
+  ]
+}

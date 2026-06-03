@@ -1,0 +1,34 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/counters/BPM_20260407",
+      "fields": {
+        "seq": {
+          "integerValue": "2"
+        }
+      },
+      "createTime": "2026-04-08T02:22:12.531150Z",
+      "updateTime": "2026-04-08T03:19:37.131391Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/counters/BPM_20260408",
+      "fields": {
+        "seq": {
+          "integerValue": "2"
+        }
+      },
+      "createTime": "2026-04-08T16:06:39.670054Z",
+      "updateTime": "2026-04-08T16:07:09.638113Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/counters/BPM_20260527",
+      "fields": {
+        "seq": {
+          "integerValue": "5"
+        }
+      },
+      "createTime": "2026-05-27T17:23:33.821219Z",
+      "updateTime": "2026-05-27T17:31:52.602087Z"
+    }
+  ]
+}

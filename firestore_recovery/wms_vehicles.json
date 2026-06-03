@@ -1,0 +1,731 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/1",
+      "fields": {
+        "production_date": {
+          "nullValue": null
+        },
+        "shipped_at": {
+          "stringValue": "2026-06-02T02:02:38.033Z"
+        },
+        "entered_L1_at": {
+          "stringValue": "2026-06-01T20:58:56.976Z"
+        },
+        "created_by": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "vin": {
+          "stringValue": "1"
+        },
+        "enriched": {
+          "booleanValue": false
+        },
+        "created_at": {
+          "stringValue": "2026-05-29T17:01:06.980Z"
+        },
+        "color": {
+          "nullValue": null
+        },
+        "qa_cleared": {
+          "booleanValue": false
+        },
+        "status": {
+          "stringValue": "SHIPPED"
+        },
+        "engine_no": {
+          "nullValue": null
+        },
+        "current_location": {
+          "stringValue": "SHIPPED"
+        },
+        "product_no": {
+          "nullValue": null
+        },
+        "entered_L3_at": {
+          "stringValue": "2026-06-02T02:00:32.027Z"
+        },
+        "entered_L2_at": {
+          "stringValue": "2026-06-02T01:48:24.828Z"
+        }
+      },
+      "createTime": "2026-05-29T17:01:07.200567Z",
+      "updateTime": "2026-06-02T02:02:38.159837Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/2",
+      "fields": {
+        "status": {
+          "stringValue": "SHIPPED"
+        },
+        "current_location": {
+          "stringValue": "SHIPPED"
+        },
+        "engine_no": {
+          "nullValue": null
+        },
+        "product_no": {
+          "nullValue": null
+        },
+        "entered_L3_at": {
+          "stringValue": "2026-06-02T01:57:13.771Z"
+        },
+        "entered_L2_at": {
+          "stringValue": "2026-06-02T01:56:45.136Z"
+        },
+        "production_date": {
+          "nullValue": null
+        },
+        "shipped_at": {
+          "stringValue": "2026-06-02T01:58:08.729Z"
+        },
+        "entered_L1_at": {
+          "stringValue": "2026-05-29T17:01:12.586Z"
+        },
+        "vin": {
+          "stringValue": "2"
+        },
+        "created_by": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "created_at": {
+          "stringValue": "2026-05-29T17:01:12.586Z"
+        },
+        "enriched": {
+          "booleanValue": false
+        },
+        "color": {
+          "nullValue": null
+        },
+        "qa_cleared": {
+          "booleanValue": false
+        }
+      },
+      "createTime": "2026-05-29T17:01:12.761005Z",
+      "updateTime": "2026-06-02T01:58:08.850246Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/3",
+      "fields": {
+        "status": {
+          "stringValue": "SHIPPED"
+        },
+        "current_location": {
+          "stringValue": "SHIPPED"
+        },
+        "engine_no": {
+          "nullValue": null
+        },
+        "product_no": {
+          "nullValue": null
+        },
+        "entered_L3_at": {
+          "stringValue": "2026-06-02T02:01:53.895Z"
+        },
+        "entered_L2_at": {
+          "stringValue": "2026-06-02T02:00:47.767Z"
+        },
+        "production_date": {
+          "nullValue": null
+        },
+        "shipped_at": {
+          "stringValue": "2026-06-02T02:02:43.025Z"
+        },
+        "entered_L1_at": {
+          "stringValue": "2026-05-29T18:56:51.531Z"
+        },
+        "vin": {
+          "stringValue": "3"
+        },
+        "created_by": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "created_at": {
+          "stringValue": "2026-05-29T18:56:51.531Z"
+        },
+        "enriched": {
+          "booleanValue": false
+        },
+        "color": {
+          "nullValue": null
+        },
+        "qa_cleared": {
+          "booleanValue": false
+        }
+      },
+      "createTime": "2026-05-29T18:56:51.641313Z",
+      "updateTime": "2026-06-02T02:02:43.143236Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/4",
+      "fields": {
+        "vin": {
+          "stringValue": "4"
+        },
+        "created_by": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "created_at": {
+          "stringValue": "2026-06-02T13:49:33.552Z"
+        },
+        "enriched": {
+          "booleanValue": false
+        },
+        "color": {
+          "nullValue": null
+        },
+        "qa_cleared": {
+          "booleanValue": false
+        },
+        "production_date": {
+          "nullValue": null
+        },
+        "shipped_at": {
+          "stringValue": "2026-06-02T14:54:33.376Z"
+        },
+        "entered_L1_at": {
+          "stringValue": "2026-06-02T13:49:33.552Z"
+        },
+        "entered_L3_at": {
+          "stringValue": "2026-06-02T14:53:27.594Z"
+        },
+        "entered_L2_at": {
+          "stringValue": "2026-06-02T14:53:06.370Z"
+        },
+        "status": {
+          "stringValue": "SHIPPED"
+        },
+        "current_location": {
+          "stringValue": "SHIPPED"
+        },
+        "engine_no": {
+          "nullValue": null
+        },
+        "product_no": {
+          "nullValue": null
+        }
+      },
+      "createTime": "2026-06-02T13:49:33.832770Z",
+      "updateTime": "2026-06-02T14:54:33.528593Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/5",
+      "fields": {
+        "engine_no": {
+          "nullValue": null
+        },
+        "current_location": {
+          "stringValue": "SHIPPED"
+        },
+        "product_no": {
+          "nullValue": null
+        },
+        "status": {
+          "stringValue": "SHIPPED"
+        },
+        "entered_L3_at": {
+          "stringValue": "2026-06-02T18:56:17.953Z"
+        },
+        "entered_L2_at": {
+          "stringValue": "2026-06-02T18:49:41.253Z"
+        },
+        "entered_L1_at": {
+          "stringValue": "2026-06-02T18:47:43.524Z"
+        },
+        "production_date": {
+          "nullValue": null
+        },
+        "shipped_at": {
+          "stringValue": "2026-06-02T18:56:59.550Z"
+        },
+        "color": {
+          "nullValue": null
+        },
+        "qa_cleared": {
+          "booleanValue": false
+        },
+        "created_by": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "vin": {
+          "stringValue": "5"
+        },
+        "enriched": {
+          "booleanValue": false
+        },
+        "created_at": {
+          "stringValue": "2026-06-02T18:47:43.524Z"
+        }
+      },
+      "createTime": "2026-06-02T18:47:43.706899Z",
+      "updateTime": "2026-06-02T18:56:59.681799Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/6",
+      "fields": {
+        "entered_L1_at": {
+          "stringValue": "2026-06-03T14:25:41.120Z"
+        },
+        "production_date": {
+          "nullValue": null
+        },
+        "shipped_at": {
+          "nullValue": null
+        },
+        "color": {
+          "nullValue": null
+        },
+        "qa_cleared": {
+          "booleanValue": false
+        },
+        "vin": {
+          "stringValue": "6"
+        },
+        "created_by": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "created_at": {
+          "stringValue": "2026-06-02T18:47:48.961Z"
+        },
+        "enriched": {
+          "booleanValue": false
+        },
+        "current_location": {
+          "stringValue": "L1"
+        },
+        "engine_no": {
+          "nullValue": null
+        },
+        "product_no": {
+          "nullValue": null
+        },
+        "status": {
+          "stringValue": "IN_PROCESS"
+        },
+        "entered_L3_at": {
+          "nullValue": null
+        },
+        "entered_L2_at": {
+          "stringValue": "2026-06-02T18:55:05.634Z"
+        }
+      },
+      "createTime": "2026-06-02T18:47:49.142765Z",
+      "updateTime": "2026-06-03T14:25:41.661841Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/7",
+      "fields": {
+        "entered_L3_at": {
+          "nullValue": null
+        },
+        "status": {
+          "stringValue": "IN_PROCESS"
+        },
+        "product_no": {
+          "nullValue": null
+        },
+        "current_location": {
+          "stringValue": "L1"
+        },
+        "engine_no": {
+          "nullValue": null
+        },
+        "created_at": {
+          "stringValue": "2026-06-02T18:47:52.505Z"
+        },
+        "enriched": {
+          "booleanValue": false
+        },
+        "vin": {
+          "stringValue": "7"
+        },
+        "created_by": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "qa_cleared": {
+          "booleanValue": false
+        },
+        "color": {
+          "nullValue": null
+        },
+        "shipped_at": {
+          "nullValue": null
+        },
+        "production_date": {
+          "nullValue": null
+        },
+        "entered_L1_at": {
+          "stringValue": "2026-06-02T18:47:52.505Z"
+        }
+      },
+      "createTime": "2026-06-02T18:47:52.682695Z",
+      "updateTime": "2026-06-02T18:47:52.682695Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/8",
+      "fields": {
+        "production_date": {
+          "nullValue": null
+        },
+        "shipped_at": {
+          "nullValue": null
+        },
+        "entered_L1_at": {
+          "stringValue": "2026-06-02T18:47:56.425Z"
+        },
+        "vin": {
+          "stringValue": "8"
+        },
+        "created_by": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "created_at": {
+          "stringValue": "2026-06-02T18:47:56.425Z"
+        },
+        "enriched": {
+          "booleanValue": false
+        },
+        "color": {
+          "nullValue": null
+        },
+        "qa_cleared": {
+          "booleanValue": false
+        },
+        "status": {
+          "stringValue": "IN_PROCESS"
+        },
+        "current_location": {
+          "stringValue": "L1"
+        },
+        "engine_no": {
+          "nullValue": null
+        },
+        "product_no": {
+          "nullValue": null
+        },
+        "entered_L3_at": {
+          "nullValue": null
+        }
+      },
+      "createTime": "2026-06-02T18:47:56.632378Z",
+      "updateTime": "2026-06-02T18:47:56.632378Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/9",
+      "fields": {
+        "production_date": {
+          "nullValue": null
+        },
+        "shipped_at": {
+          "nullValue": null
+        },
+        "entered_L1_at": {
+          "stringValue": "2026-06-02T18:48:00.522Z"
+        },
+        "created_by": {
+          "stringValue": "admin@logimaster.com"
+        },
+        "vin": {
+          "stringValue": "9"
+        },
+        "enriched": {
+          "booleanValue": false
+        },
+        "created_at": {
+          "stringValue": "2026-06-02T18:48:00.522Z"
+        },
+        "color": {
+          "nullValue": null
+        },
+        "qa_cleared": {
+          "booleanValue": false
+        },
+        "status": {
+          "stringValue": "IN_PROCESS"
+        },
+        "engine_no": {
+          "nullValue": null
+        },
+        "current_location": {
+          "stringValue": "L1"
+        },
+        "product_no": {
+          "nullValue": null
+        },
+        "entered_L3_at": {
+          "nullValue": null
+        }
+      },
+      "createTime": "2026-06-02T18:48:00.727160Z",
+      "updateTime": "2026-06-02T18:48:00.727160Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/TESTVIN0000000001",
+      "fields": {
+        "current_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T03:33:27.208Z"
+        },
+        "status": {
+          "stringValue": "RECEIVED"
+        },
+        "operator_id": {
+          "stringValue": "TestAdmin"
+        },
+        "vin": {
+          "stringValue": "TESTVIN0000000001"
+        },
+        "is_qa_approved": {
+          "booleanValue": false
+        }
+      },
+      "createTime": "2026-06-03T03:33:27.579172Z",
+      "updateTime": "2026-06-03T03:33:27.579172Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/TESTVIN0000000002",
+      "fields": {
+        "is_qa_approved": {
+          "booleanValue": true
+        },
+        "vin": {
+          "stringValue": "TESTVIN0000000002"
+        },
+        "operator_id": {
+          "stringValue": "TestAdmin"
+        },
+        "status": {
+          "stringValue": "RECEIVED"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T03:33:27.539Z"
+        },
+        "current_location": {
+          "stringValue": "L1"
+        }
+      },
+      "createTime": "2026-06-03T03:33:27.675566Z",
+      "updateTime": "2026-06-03T03:33:27.675566Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/TESTVIN0000000003",
+      "fields": {
+        "status": {
+          "stringValue": "RECEIVED"
+        },
+        "operator_id": {
+          "stringValue": "TestAdmin"
+        },
+        "vin": {
+          "stringValue": "TESTVIN0000000003"
+        },
+        "is_qa_approved": {
+          "booleanValue": false
+        },
+        "current_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T03:33:27.642Z"
+        }
+      },
+      "createTime": "2026-06-03T03:33:27.781785Z",
+      "updateTime": "2026-06-03T03:33:27.781785Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/TESTVIN0000000004",
+      "fields": {
+        "status": {
+          "stringValue": "RECEIVED"
+        },
+        "operator_id": {
+          "stringValue": "TestAdmin"
+        },
+        "vin": {
+          "stringValue": "TESTVIN0000000004"
+        },
+        "is_qa_approved": {
+          "booleanValue": true
+        },
+        "current_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T03:33:27.738Z"
+        }
+      },
+      "createTime": "2026-06-03T03:33:27.881057Z",
+      "updateTime": "2026-06-03T03:33:27.881057Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/TESTVIN0000000005",
+      "fields": {
+        "entered_L1_at": {
+          "stringValue": "2026-06-03T14:25:59.035Z"
+        },
+        "current_location": {
+          "stringValue": "L1"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T03:33:27.837Z"
+        },
+        "qa_cleared": {
+          "booleanValue": false
+        },
+        "vin": {
+          "stringValue": "TESTVIN0000000005"
+        },
+        "operator_id": {
+          "stringValue": "TestAdmin"
+        },
+        "status": {
+          "stringValue": "IN_PROCESS"
+        },
+        "is_qa_approved": {
+          "booleanValue": false
+        }
+      },
+      "createTime": "2026-06-03T03:33:27.979263Z",
+      "updateTime": "2026-06-03T14:25:59.451911Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/TESTVIN0000000006",
+      "fields": {
+        "is_qa_approved": {
+          "booleanValue": true
+        },
+        "vin": {
+          "stringValue": "TESTVIN0000000006"
+        },
+        "operator_id": {
+          "stringValue": "TestAdmin"
+        },
+        "status": {
+          "stringValue": "IN_PROCESS"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T03:33:27.936Z"
+        },
+        "qa_cleared": {
+          "booleanValue": false
+        },
+        "current_location": {
+          "stringValue": "L1"
+        },
+        "entered_L1_at": {
+          "stringValue": "2026-06-03T14:26:08.101Z"
+        }
+      },
+      "createTime": "2026-06-03T03:33:28.065301Z",
+      "updateTime": "2026-06-03T14:26:08.530780Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/TESTVIN0000000007",
+      "fields": {
+        "is_qa_approved": {
+          "booleanValue": false
+        },
+        "status": {
+          "stringValue": "IN_PROCESS"
+        },
+        "operator_id": {
+          "stringValue": "TestAdmin"
+        },
+        "vin": {
+          "stringValue": "TESTVIN0000000007"
+        },
+        "qa_cleared": {
+          "booleanValue": false
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T03:33:28.021Z"
+        },
+        "entered_L1_at": {
+          "stringValue": "2026-06-03T14:26:17.536Z"
+        },
+        "current_location": {
+          "stringValue": "L1"
+        }
+      },
+      "createTime": "2026-06-03T03:33:28.157695Z",
+      "updateTime": "2026-06-03T14:26:17.952879Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/TESTVIN0000000008",
+      "fields": {
+        "current_location": {
+          "stringValue": "L3"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T03:33:28.166Z"
+        },
+        "vin": {
+          "stringValue": "TESTVIN0000000008"
+        },
+        "operator_id": {
+          "stringValue": "TestAdmin"
+        },
+        "status": {
+          "stringValue": "RECEIVED"
+        },
+        "is_qa_approved": {
+          "booleanValue": true
+        }
+      },
+      "createTime": "2026-06-03T03:33:28.303396Z",
+      "updateTime": "2026-06-03T03:33:28.303396Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/TESTVIN0000000009",
+      "fields": {
+        "current_location": {
+          "stringValue": "L3"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T03:33:28.262Z"
+        },
+        "status": {
+          "stringValue": "RECEIVED"
+        },
+        "vin": {
+          "stringValue": "TESTVIN0000000009"
+        },
+        "operator_id": {
+          "stringValue": "TestAdmin"
+        },
+        "is_qa_approved": {
+          "booleanValue": false
+        }
+      },
+      "createTime": "2026-06-03T03:33:28.393137Z",
+      "updateTime": "2026-06-03T03:33:28.393137Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/wms_vehicles/TESTVIN0000000010",
+      "fields": {
+        "status": {
+          "stringValue": "RECEIVED"
+        },
+        "vin": {
+          "stringValue": "TESTVIN0000000010"
+        },
+        "operator_id": {
+          "stringValue": "TestAdmin"
+        },
+        "is_qa_approved": {
+          "booleanValue": true
+        },
+        "current_location": {
+          "stringValue": "L3"
+        },
+        "timestamp": {
+          "stringValue": "2026-06-03T03:33:28.349Z"
+        }
+      },
+      "createTime": "2026-06-03T03:33:28.480118Z",
+      "updateTime": "2026-06-03T03:33:28.480118Z"
+    }
+  ]
+}

@@ -1,0 +1,749 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/BPM/Gbkwzqm9Is1IfpO6ifEQ",
+      "fields": {
+        "material_cn": {
+          "stringValue": "304 stainless steel"
+        },
+        "subidoPor": {
+          "stringValue": "admin"
+        },
+        "spanish_description": {
+          "stringValue": "0"
+        },
+        "prosec": {
+          "stringValue": "0"
+        },
+        "descripcion_r8": {
+          "stringValue": "0"
+        },
+        "remarks": {
+          "stringValue": "0"
+        },
+        "clavesat": {
+          "integerValue": "0"
+        },
+        "company": {
+          "stringValue": "0"
+        },
+        "description_cn": {
+          "stringValue": "蒸发器"
+        },
+        "hts": {
+          "stringValue": "0"
+        },
+        "rrynas": {
+          "stringValue": "0"
+        },
+        "fechaSubida": {
+          "stringValue": "2026-05-27T17:31:52.099Z"
+        },
+        "function_en": {
+          "stringValue": "Wastewater generated from the water transfer printing production line is pretreated, followed by vacuum pumping to lower the boiling point of the liquid. This enables rapid evaporation at a low temperature of 30–40 °C, so as to achieve wastewater concentration or separation.\n\nCAPACITY: 2 tons"
+        },
+        "folio_seguimiento": {
+          "stringValue": "LMHTS202605270005"
+        },
+        "igi": {
+          "integerValue": "0"
+        },
+        "hts_nico": {
+          "stringValue": "0"
+        },
+        "imported_or_not": {
+          "stringValue": "Y"
+        },
+        "part_no": {
+          "stringValue": "A1-2026-T-5-47441"
+        },
+        "description_en": {
+          "stringValue": "EVAPORATOR"
+        },
+        "certification": {
+          "stringValue": "0"
+        },
+        "function_cn": {
+          "stringValue": "“水转印生产线产生的废水经过预处理后，通过真空泵降低液体的沸点。这使得废水能在30–40°C的低温下快速蒸发，从而实现废水的浓缩或分离。\n\n处理能力：2吨”\n"
+        },
+        "regimen": {
+          "stringValue": "0"
+        },
+        "net_weight": {
+          "integerValue": "2500"
+        },
+        "um": {
+          "stringValue": "0"
+        },
+        "secuencia_lote": {
+          "stringValue": "1/4"
+        },
+        "material_en": {
+          "stringValue": "304 stainless steel"
+        },
+        "r8": {
+          "stringValue": "0"
+        },
+        "ref_no": {
+          "stringValue": "LMHTS202605270005"
+        },
+        "type_material": {
+          "stringValue": "0"
+        },
+        "sensible": {
+          "stringValue": "0"
+        },
+        "hts_base": {
+          "stringValue": "0"
+        }
+      },
+      "createTime": "2026-05-27T17:31:53.729888Z",
+      "updateTime": "2026-05-27T17:31:53.729888Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/BPM/UE0dMwwsZIfjVH1rLK8b",
+      "fields": {
+        "igi": {
+          "integerValue": "0"
+        },
+        "fechaSubida": {
+          "stringValue": "2026-05-27T17:31:52.099Z"
+        },
+        "function_en": {
+          "stringValue": "Stores water produced by the water softener and supplies it to each consumption point of the coating production line via a variable‑frequency water pump.\n\nCAPACITY: PENDIENTE"
+        },
+        "folio_seguimiento": {
+          "stringValue": "LMHTS202605270005"
+        },
+        "description_cn": {
+          "stringValue": "软水箱"
+        },
+        "hts": {
+          "stringValue": "0"
+        },
+        "rrynas": {
+          "stringValue": "0"
+        },
+        "remarks": {
+          "stringValue": "0"
+        },
+        "company": {
+          "stringValue": "0"
+        },
+        "clavesat": {
+          "integerValue": "0"
+        },
+        "prosec": {
+          "stringValue": "0"
+        },
+        "descripcion_r8": {
+          "stringValue": "0"
+        },
+        "material_cn": {
+          "stringValue": "PE"
+        },
+        "subidoPor": {
+          "stringValue": "admin"
+        },
+        "spanish_description": {
+          "stringValue": "0"
+        },
+        "type_material": {
+          "stringValue": "0"
+        },
+        "ref_no": {
+          "stringValue": "LMHTS202605270005"
+        },
+        "sensible": {
+          "stringValue": "0"
+        },
+        "hts_base": {
+          "stringValue": "0"
+        },
+        "r8": {
+          "stringValue": "0"
+        },
+        "material_en": {
+          "stringValue": "PE"
+        },
+        "net_weight": {
+          "integerValue": "250"
+        },
+        "um": {
+          "stringValue": "0"
+        },
+        "secuencia_lote": {
+          "stringValue": "4/4"
+        },
+        "certification": {
+          "stringValue": "0"
+        },
+        "function_cn": {
+          "stringValue": "“储存软水机处理后的水，并通过变频水泵将其输送至涂装生产线的各个用水点。\n\n容量：待定”\n"
+        },
+        "regimen": {
+          "stringValue": "0"
+        },
+        "description_en": {
+          "stringValue": "SOFT WATER TANK"
+        },
+        "part_no": {
+          "stringValue": "A1-2026-T-5-47444"
+        },
+        "imported_or_not": {
+          "stringValue": "Y"
+        },
+        "hts_nico": {
+          "stringValue": "0"
+        }
+      },
+      "createTime": "2026-05-27T17:31:53.729888Z",
+      "updateTime": "2026-05-27T17:31:53.729888Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/BPM/VyHRwSlyccuAeyhhoP6g",
+      "fields": {
+        "descripcion_r8": {
+          "stringValue": "0"
+        },
+        "prosec": {
+          "stringValue": "0"
+        },
+        "spanish_description": {
+          "stringValue": "0"
+        },
+        "subidoPor": {
+          "stringValue": "admin"
+        },
+        "material_cn": {
+          "stringValue": "PE"
+        },
+        "igi": {
+          "integerValue": "0"
+        },
+        "folio_seguimiento": {
+          "stringValue": "LMHTS202605270005"
+        },
+        "fechaSubida": {
+          "stringValue": "2026-05-27T17:31:52.099Z"
+        },
+        "function_en": {
+          "stringValue": "Stores tap water for use as the water source of the water softener.\n\nCAPACITY: 10 cubic meters"
+        },
+        "rrynas": {
+          "stringValue": "0"
+        },
+        "hts": {
+          "stringValue": "0"
+        },
+        "description_cn": {
+          "stringValue": "原水箱"
+        },
+        "remarks": {
+          "stringValue": "0"
+        },
+        "clavesat": {
+          "integerValue": "0"
+        },
+        "company": {
+          "stringValue": "0"
+        },
+        "regimen": {
+          "stringValue": "0"
+        },
+        "function_cn": {
+          "stringValue": "“设备利用自来水作为软水机的水源。\n\n容量：10立方米”\n"
+        },
+        "certification": {
+          "stringValue": "0"
+        },
+        "description_en": {
+          "stringValue": "RAW WATER TANK"
+        },
+        "imported_or_not": {
+          "stringValue": "Y"
+        },
+        "part_no": {
+          "stringValue": "A1-2026-T-5-47443"
+        },
+        "hts_nico": {
+          "stringValue": "0"
+        },
+        "hts_base": {
+          "stringValue": "0"
+        },
+        "sensible": {
+          "stringValue": "0"
+        },
+        "ref_no": {
+          "stringValue": "LMHTS202605270005"
+        },
+        "type_material": {
+          "stringValue": "0"
+        },
+        "r8": {
+          "stringValue": "0"
+        },
+        "material_en": {
+          "stringValue": "PE"
+        },
+        "secuencia_lote": {
+          "stringValue": "3/4"
+        },
+        "um": {
+          "stringValue": "0"
+        },
+        "net_weight": {
+          "integerValue": "250"
+        }
+      },
+      "createTime": "2026-05-27T17:31:53.729888Z",
+      "updateTime": "2026-05-27T17:31:53.729888Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/BPM/bHhfqdV42hDxbqvjEaAk",
+      "fields": {
+        "descripcion_r8": {
+          "stringValue": "0"
+        },
+        "prosec": {
+          "stringValue": "0"
+        },
+        "spanish_description": {
+          "stringValue": "0"
+        },
+        "subidoPor": {
+          "stringValue": "admin"
+        },
+        "material_cn": {
+          "stringValue": "PE"
+        },
+        "folio_seguimiento": {
+          "stringValue": "LMHTS202605270005"
+        },
+        "function_en": {
+          "stringValue": "Stores effluent from evaporators and condensers for reuse in equipment such as cooling towers.\n\nCAPACITY: 3 cubic meters"
+        },
+        "fechaSubida": {
+          "stringValue": "2026-05-27T17:31:52.099Z"
+        },
+        "igi": {
+          "integerValue": "0"
+        },
+        "company": {
+          "stringValue": "0"
+        },
+        "clavesat": {
+          "integerValue": "0"
+        },
+        "remarks": {
+          "stringValue": "0"
+        },
+        "rrynas": {
+          "stringValue": "0"
+        },
+        "hts": {
+          "stringValue": "0"
+        },
+        "description_cn": {
+          "stringValue": "冷凝水箱"
+        },
+        "description_en": {
+          "stringValue": "CONDENSATE WATER TANK"
+        },
+        "regimen": {
+          "stringValue": "0"
+        },
+        "function_cn": {
+          "stringValue": "“用于储存来自蒸发器和冷凝器的废水，以便在冷却塔等设备中循环利用。\n\n容量：3立方米”\n"
+        },
+        "certification": {
+          "stringValue": "0"
+        },
+        "hts_nico": {
+          "stringValue": "0"
+        },
+        "part_no": {
+          "stringValue": "A1-2026-T-5-47442"
+        },
+        "imported_or_not": {
+          "stringValue": "Y"
+        },
+        "hts_base": {
+          "stringValue": "0"
+        },
+        "sensible": {
+          "stringValue": "0"
+        },
+        "ref_no": {
+          "stringValue": "LMHTS202605270005"
+        },
+        "type_material": {
+          "stringValue": "0"
+        },
+        "secuencia_lote": {
+          "stringValue": "2/4"
+        },
+        "um": {
+          "stringValue": "0"
+        },
+        "net_weight": {
+          "integerValue": "150"
+        },
+        "r8": {
+          "stringValue": "0"
+        },
+        "material_en": {
+          "stringValue": "PE"
+        }
+      },
+      "createTime": "2026-05-27T17:31:53.729888Z",
+      "updateTime": "2026-05-27T17:31:53.729888Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/BPM/hlAgIFASx9LFVC3ByWGa",
+      "fields": {
+        "aprobadoPor": {
+          "stringValue": "admin"
+        },
+        "fotoUrls": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "https://drive.google.com/file/d/1e5NGO22mm8BN9S1B4FVmCfx3mifeKgwh/view?usp=drivesdk"
+              }
+            ]
+          }
+        },
+        "descripcion_r8": {
+          "stringValue": "DESCRIPCION_R8"
+        },
+        "prosec": {
+          "stringValue": "Ex."
+        },
+        "spanish_description": {
+          "stringValue": "SPANISH DESCRIPTION"
+        },
+        "subidoPor": {
+          "stringValue": "admin"
+        },
+        "material_cn": {
+          "stringValue": "material（CN）"
+        },
+        "fechaAprobacion": {
+          "stringValue": "2026-04-08T16:09:19.770Z"
+        },
+        "igi": {
+          "doubleValue": 0.35
+        },
+        "folio_seguimiento": {
+          "stringValue": "LMHTS202604080002"
+        },
+        "fechaSubida": {
+          "stringValue": "2026-04-08T16:07:10.455Z"
+        },
+        "function_en": {
+          "stringValue": "function （EN）"
+        },
+        "rrynas": {
+          "stringValue": "RRYNAS"
+        },
+        "hts": {
+          "stringValue": "1234567890"
+        },
+        "description_cn": {
+          "stringValue": "Description(CN)"
+        },
+        "company": {
+          "stringValue": "COMPANY"
+        },
+        "clavesat": {
+          "integerValue": "1234567890"
+        },
+        "remarks": {
+          "stringValue": "Remarks"
+        },
+        "regimen": {
+          "stringValue": "A1"
+        },
+        "function_cn": {
+          "stringValue": "function（CN）"
+        },
+        "certification": {
+          "stringValue": "Certification"
+        },
+        "description_en": {
+          "stringValue": "Description(EN)"
+        },
+        "part_no": {
+          "stringValue": "1"
+        },
+        "imported_or_not": {
+          "stringValue": "Y"
+        },
+        "hts_nico": {
+          "stringValue": "90"
+        },
+        "hts_base": {
+          "stringValue": "12345678"
+        },
+        "sensible": {
+          "stringValue": "Y"
+        },
+        "type_material": {
+          "stringValue": "KD"
+        },
+        "ref_no": {
+          "stringValue": "LMHTS202604080002"
+        },
+        "r8": {
+          "stringValue": "R8"
+        },
+        "material_en": {
+          "stringValue": "material （EN）"
+        },
+        "secuencia_lote": {
+          "stringValue": "1/3"
+        },
+        "um": {
+          "stringValue": "PZA"
+        },
+        "net_weight": {
+          "doubleValue": 0.01
+        }
+      },
+      "createTime": "2026-04-08T16:07:10.150306Z",
+      "updateTime": "2026-04-08T16:09:19.332558Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/BPM/oyFq7FiunxtQgHqQ1Bcc",
+      "fields": {
+        "hts_base": {
+          "stringValue": "12345678"
+        },
+        "sensible": {
+          "stringValue": "Y"
+        },
+        "type_material": {
+          "stringValue": "KD"
+        },
+        "ref_no": {
+          "stringValue": "LMHTS202604080002"
+        },
+        "secuencia_lote": {
+          "stringValue": "2/3"
+        },
+        "um": {
+          "stringValue": "PZA"
+        },
+        "net_weight": {
+          "doubleValue": 0.01
+        },
+        "material_en": {
+          "stringValue": "material （EN）"
+        },
+        "r8": {
+          "stringValue": "R8"
+        },
+        "description_en": {
+          "stringValue": "Description(EN)"
+        },
+        "regimen": {
+          "stringValue": "A1"
+        },
+        "function_cn": {
+          "stringValue": "function（CN）"
+        },
+        "certification": {
+          "stringValue": "Certification"
+        },
+        "hts_nico": {
+          "stringValue": "90"
+        },
+        "part_no": {
+          "stringValue": "2"
+        },
+        "imported_or_not": {
+          "stringValue": "Y"
+        },
+        "folio_seguimiento": {
+          "stringValue": "LMHTS202604080002"
+        },
+        "fechaSubida": {
+          "stringValue": "2026-04-08T16:07:10.455Z"
+        },
+        "function_en": {
+          "stringValue": "function （EN）"
+        },
+        "igi": {
+          "doubleValue": 0.35
+        },
+        "company": {
+          "stringValue": "COMPANY"
+        },
+        "clavesat": {
+          "integerValue": "1234567890"
+        },
+        "remarks": {
+          "stringValue": "Remarks"
+        },
+        "rrynas": {
+          "stringValue": "RRYNAS"
+        },
+        "hts": {
+          "stringValue": "1234567890"
+        },
+        "description_cn": {
+          "stringValue": "Description(CN)"
+        },
+        "descripcion_r8": {
+          "stringValue": "DESCRIPCION_R8"
+        },
+        "prosec": {
+          "stringValue": "Ex."
+        },
+        "aprobadoPor": {
+          "stringValue": "admin"
+        },
+        "fotoUrls": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "https://drive.google.com/file/d/1b1TIyzPh1XKDfc-ZpTSkM-HellxUtY_f/view?usp=drivesdk"
+              }
+            ]
+          }
+        },
+        "spanish_description": {
+          "stringValue": "SPANISH DESCRIPTION"
+        },
+        "subidoPor": {
+          "stringValue": "admin"
+        },
+        "fechaAprobacion": {
+          "stringValue": "2026-04-08T16:09:19.770Z"
+        },
+        "material_cn": {
+          "stringValue": "material（CN）"
+        }
+      },
+      "createTime": "2026-04-08T16:07:10.150306Z",
+      "updateTime": "2026-04-08T16:09:19.332558Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/BPM/p14joVaidajvzymamADW",
+      "fields": {
+        "spanish_description": {
+          "stringValue": "SPANISH DESCRIPTION"
+        },
+        "subidoPor": {
+          "stringValue": "admin"
+        },
+        "material_cn": {
+          "stringValue": "material（CN）"
+        },
+        "fechaAprobacion": {
+          "stringValue": "2026-04-08T16:09:19.770Z"
+        },
+        "descripcion_r8": {
+          "stringValue": "DESCRIPCION_R8"
+        },
+        "prosec": {
+          "stringValue": "Ex."
+        },
+        "aprobadoPor": {
+          "stringValue": "admin"
+        },
+        "fotoUrls": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "https://drive.google.com/file/d/10xb_5zr-F5ojaDMpbHK3FmiGbwwc7K7F/view?usp=drivesdk"
+              }
+            ]
+          }
+        },
+        "company": {
+          "stringValue": "COMPANY"
+        },
+        "clavesat": {
+          "integerValue": "1234567890"
+        },
+        "remarks": {
+          "stringValue": "Remarks"
+        },
+        "rrynas": {
+          "stringValue": "RRYNAS"
+        },
+        "hts": {
+          "stringValue": "1234567890"
+        },
+        "description_cn": {
+          "stringValue": "Description(CN)"
+        },
+        "folio_seguimiento": {
+          "stringValue": "LMHTS202604080002"
+        },
+        "fechaSubida": {
+          "stringValue": "2026-04-08T16:07:10.455Z"
+        },
+        "function_en": {
+          "stringValue": "function （EN）"
+        },
+        "igi": {
+          "doubleValue": 0.35
+        },
+        "hts_nico": {
+          "stringValue": "90"
+        },
+        "imported_or_not": {
+          "stringValue": "Y"
+        },
+        "part_no": {
+          "stringValue": "3"
+        },
+        "description_en": {
+          "stringValue": "Description(EN)"
+        },
+        "regimen": {
+          "stringValue": "A1"
+        },
+        "function_cn": {
+          "stringValue": "function（CN）"
+        },
+        "certification": {
+          "stringValue": "Certification"
+        },
+        "secuencia_lote": {
+          "stringValue": "3/3"
+        },
+        "um": {
+          "stringValue": "PZA"
+        },
+        "net_weight": {
+          "doubleValue": 0.01
+        },
+        "material_en": {
+          "stringValue": "material （EN）"
+        },
+        "r8": {
+          "stringValue": "R8"
+        },
+        "hts_base": {
+          "stringValue": "12345678"
+        },
+        "sensible": {
+          "stringValue": "Y"
+        },
+        "ref_no": {
+          "stringValue": "LMHTS202604080002"
+        },
+        "type_material": {
+          "stringValue": "KD"
+        }
+      },
+      "createTime": "2026-04-08T16:07:10.150306Z",
+      "updateTime": "2026-04-08T16:09:19.332558Z"
+    }
+  ]
+}

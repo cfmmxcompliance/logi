@@ -439,4 +439,84 @@ wmsApi.get('/dashboard', authenticateToken, async (req, res) => {
     }
 });
 
+// ----------------------------------------------------
+// 7. POST /api/admin/reverse  (ADMIN only)
+// ----------------------------------------------------
+wmsApi.post('/admin/reverse', authenticateToken, async (req, res) => {
+    try {
+        // Only admins can reverse
+        if (req.user.role !== 'ADMIN') {
+            return res.status(403).json({ error: 'Solo los administradores pueden ejecutar reversas.' });
+        }
+
+        const { vin, reason } = req.body;
+        if (!vin || !reason || reason.trim() === '') {
+            return res.status(400).json({ error: 'VIN y motivo de reversa son requeridos.' });
+        }
+
+        const cleanVin = vin.toUpperCase().trim();
+        const docRef = db.collection('wms_vehicles').doc(cleanVin);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
+            return res.status(404).json({ error: 'VIN no encontrado.' });
+        }
+
+        const vehicle = doc.data();
+
+        if (vehicle.status === 'SHIPPED') {
+            return res.status(400).json({ error: 'No se puede revertir un vehículo que ya fue embarcado (SHIPPED).' });
+        }
+
+        // Map current location → previous location
+        const prevLocation = {
+            'L2': 'L1',
+            'L3': 'L2',
+            'REJECTED_AREA': 'L1',
+        }[vehicle.current_location];
+
+        if (!prevLocation) {
+            return res.status(400).json({ error: `No hay ubicación anterior para "${vehicle.current_location}". El vehículo ya está en L1.` });
+        }
+
+        const now = new Date().toISOString();
+        const updates = {
+            current_location: prevLocation,
+            status: 'IN_PROCESS',
+            qa_cleared: false,  // QA must re-authorize
+            [`entered_${prevLocation}_at`]: now,
+        };
+
+        const batch = db.batch();
+        batch.update(docRef, updates);
+
+        // Reversal audit record
+        const transferRef = db.collection('wms_transfers').doc();
+        batch.set(transferRef, {
+            vin: cleanVin,
+            from_location: vehicle.current_location,
+            to_location: prevLocation,
+            operator_id: req.user.user_id,
+            observations: `⚠️ REVERSA ADMIN: ${reason.trim()}`,
+            timestamp: now,
+            type: 'REVERSAL',
+            reversed_by: req.user.user_id,
+            reason: reason.trim(),
+        });
+
+        await batch.commit();
+
+        return res.json({
+            success: true,
+            message: `Vehículo ${cleanVin} revertido de ${vehicle.current_location} → ${prevLocation}. QA debe re-autorizar.`,
+            vehicle: { ...vehicle, ...updates }
+        });
+
+    } catch (err) {
+        console.error('Reversal error:', err);
+        return res.status(500).json({ error: 'Error interno del servidor: ' + err.message });
+    }
+});
+
 module.exports = wmsApi;
+

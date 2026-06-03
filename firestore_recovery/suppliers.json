@@ -1,0 +1,459 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/suppliers/07c7e680-5d77-4b87-a178-4bd44d634c3d",
+      "fields": {
+        "phone": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-08T19:18:51.735Z"
+        },
+        "country": {
+          "stringValue": "MX"
+        },
+        "name": {
+          "stringValue": "ZHEJIANG CFMOTO POWER CO. LTD"
+        },
+        "contactName": {
+          "stringValue": "Imported from DataStage"
+        },
+        "type": {
+          "stringValue": "Other"
+        },
+        "status": {
+          "stringValue": "Active"
+        },
+        "id": {
+          "stringValue": "07c7e680-5d77-4b87-a178-4bd44d634c3d"
+        },
+        "email": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-08T19:18:51.977209Z",
+      "updateTime": "2026-01-08T19:18:51.977209Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/suppliers/0836c030-f42a-4942-bc30-559db426372f",
+      "fields": {
+        "status": {
+          "stringValue": "Active"
+        },
+        "contactName": {
+          "stringValue": "Imported from DataStage"
+        },
+        "type": {
+          "stringValue": "Other"
+        },
+        "name": {
+          "stringValue": "ZHEJIANG CFMOTO POWER CO.,LTD"
+        },
+        "email": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "0836c030-f42a-4942-bc30-559db426372f"
+        },
+        "phone": {
+          "stringValue": ""
+        },
+        "country": {
+          "stringValue": "MX"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-06T19:21:39.457Z"
+        }
+      },
+      "createTime": "2026-01-06T19:21:39.735157Z",
+      "updateTime": "2026-01-06T19:21:39.735157Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/suppliers/2cdc1733-b1be-4a9d-b871-b53ee602ef29",
+      "fields": {
+        "phone": {
+          "stringValue": ""
+        },
+        "country": {
+          "stringValue": "MX"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-06T19:21:39.746Z"
+        },
+        "status": {
+          "stringValue": "Active"
+        },
+        "contactName": {
+          "stringValue": "Imported from DataStage"
+        },
+        "type": {
+          "stringValue": "Other"
+        },
+        "name": {
+          "stringValue": "ZHEJIANG CFMOTO POWER CO., LTD"
+        },
+        "email": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "2cdc1733-b1be-4a9d-b871-b53ee602ef29"
+        }
+      },
+      "createTime": "2026-01-06T19:21:39.898471Z",
+      "updateTime": "2026-01-06T19:21:39.898471Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/suppliers/362b7568-4287-4043-813d-0f4f59c2a382",
+      "fields": {
+        "phone": {
+          "stringValue": ""
+        },
+        "country": {
+          "stringValue": "MX"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-06T19:21:39.907Z"
+        },
+        "status": {
+          "stringValue": "Active"
+        },
+        "name": {
+          "stringValue": "QUALITY LOGISTICS SERVICES SAS ACI 1249"
+        },
+        "contactName": {
+          "stringValue": "Imported from DataStage"
+        },
+        "type": {
+          "stringValue": "Other"
+        },
+        "id": {
+          "stringValue": "362b7568-4287-4043-813d-0f4f59c2a382"
+        },
+        "email": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-06T19:21:40.059075Z",
+      "updateTime": "2026-01-06T19:21:40.059075Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/suppliers/4b3ef4ea-413c-45aa-b030-5f3e5b7f173b",
+      "fields": {
+        "status": {
+          "stringValue": "Active"
+        },
+        "rfc": {
+          "stringValue": "IPC0805039X5"
+        },
+        "contactName": {
+          "stringValue": "Fabiola R."
+        },
+        "type": {
+          "stringValue": "Forwarder"
+        },
+        "name": {
+          "stringValue": "IMPORTADORA PACIFIC COAST"
+        },
+        "validationStatus": {
+          "stringValue": "compliant"
+        },
+        "email": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "4b3ef4ea-413c-45aa-b030-5f3e5b7f173b"
+        },
+        "phone": {
+          "stringValue": ""
+        },
+        "quotations": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "price": {
+                      "integerValue": "106140"
+                    },
+                    "lastUpdated": {
+                      "stringValue": "2026-01-06"
+                    },
+                    "currency": {
+                      "stringValue": "MXN"
+                    },
+                    "id": {
+                      "stringValue": "19f5407b-10bb-4568-8cd9-ef54001a9500"
+                    },
+                    "concept": {
+                      "stringValue": "COORDINACION DE TRASLADO NACIONAL MANZANILLO‐APODACA NL, BASE FULL, ROUND TRIP"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "country": {
+          "stringValue": "Mexico"
+        }
+      },
+      "createTime": "2026-01-06T20:08:04.910807Z",
+      "updateTime": "2026-01-06T20:19:30.255903Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/suppliers/52c53ac3-5737-4e2e-ba13-6b7a44118bbf",
+      "fields": {
+        "name": {
+          "stringValue": "EAGLE EXPRESS CARGO"
+        },
+        "type": {
+          "stringValue": "Forwarder"
+        },
+        "contactName": {
+          "stringValue": ""
+        },
+        "rfc": {
+          "stringValue": ""
+        },
+        "status": {
+          "stringValue": "Active"
+        },
+        "id": {
+          "stringValue": "52c53ac3-5737-4e2e-ba13-6b7a44118bbf"
+        },
+        "email": {
+          "stringValue": ""
+        },
+        "validationStatus": {
+          "stringValue": "unchecked"
+        },
+        "phone": {
+          "stringValue": ""
+        },
+        "quotations": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "concept": {
+                      "stringValue": "Revalidación"
+                    },
+                    "currency": {
+                      "stringValue": "USD"
+                    },
+                    "id": {
+                      "stringValue": "17265b4f-97c8-430f-9a1d-918513fb642a"
+                    },
+                    "lastUpdated": {
+                      "stringValue": "2026-01-07"
+                    },
+                    "price": {
+                      "doubleValue": 191.4
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "concept": {
+                      "stringValue": "Coordinación de flete terrestre"
+                    },
+                    "price": {
+                      "integerValue": "102080"
+                    },
+                    "lastUpdated": {
+                      "stringValue": "2026-01-07"
+                    },
+                    "id": {
+                      "stringValue": "792c4a27-5484-45ff-830f-e79f4ddcbe45"
+                    },
+                    "validForContainerCount": {
+                      "integerValue": "2"
+                    },
+                    "currency": {
+                      "stringValue": "MXN"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "concept": {
+                      "stringValue": "AMS"
+                    },
+                    "id": {
+                      "stringValue": "d0c75a3c-4bb8-40d9-8629-8bd2c442854f"
+                    },
+                    "currency": {
+                      "stringValue": "USD"
+                    },
+                    "price": {
+                      "integerValue": "35"
+                    },
+                    "lastUpdated": {
+                      "stringValue": "2026-01-06"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "concept": {
+                      "stringValue": "Manejo"
+                    },
+                    "id": {
+                      "stringValue": "8c6f091f-4e5d-4cc1-9d0c-adf6a339c46c"
+                    },
+                    "currency": {
+                      "stringValue": "USD"
+                    },
+                    "lastUpdated": {
+                      "stringValue": "2026-01-06"
+                    },
+                    "price": {
+                      "integerValue": "20"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "concept": {
+                      "stringValue": "Coordinación de flete terrestre"
+                    },
+                    "validForContainerCount": {
+                      "integerValue": "1"
+                    },
+                    "currency": {
+                      "stringValue": "MXN"
+                    },
+                    "id": {
+                      "stringValue": "bf340e90-8d73-4156-bdb5-d60aeb07056a"
+                    },
+                    "lastUpdated": {
+                      "stringValue": "2026-01-07"
+                    },
+                    "price": {
+                      "integerValue": "75400"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-07T03:43:05.595Z"
+        },
+        "country": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-02T18:06:00.375542Z",
+      "updateTime": "2026-01-07T03:43:05.789767Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/suppliers/858b3919-6ad7-43db-960b-75660a492807",
+      "fields": {
+        "phone": {
+          "stringValue": "8672831326"
+        },
+        "quotations": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "price": {
+                      "doubleValue": 3039.2
+                    },
+                    "lastUpdated": {
+                      "stringValue": "2026-01-06"
+                    },
+                    "currency": {
+                      "stringValue": "MXN"
+                    },
+                    "id": {
+                      "stringValue": "57a1e18e-14a6-4cc5-87ae-6c50e5265444"
+                    },
+                    "concept": {
+                      "stringValue": "HONORARIOS"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "country": {
+          "stringValue": "México"
+        },
+        "contactName": {
+          "stringValue": "Anel Gomez"
+        },
+        "type": {
+          "stringValue": "Broker"
+        },
+        "name": {
+          "stringValue": "WISDOM FORWARDING"
+        },
+        "rfc": {
+          "stringValue": "LCO140722K86"
+        },
+        "status": {
+          "stringValue": "Active"
+        },
+        "email": {
+          "stringValue": "anel.gomez@wisdomfo.com"
+        },
+        "id": {
+          "stringValue": "858b3919-6ad7-43db-960b-75660a492807"
+        },
+        "validationStatus": {
+          "stringValue": "compliant"
+        }
+      },
+      "createTime": "2026-01-06T21:10:08.670185Z",
+      "updateTime": "2026-01-06T21:11:00.824004Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/suppliers/dc2dcb07-688b-42bb-9acd-55978b0235a4",
+      "fields": {
+        "country": {
+          "stringValue": "MX"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-08T19:18:52.011Z"
+        },
+        "phone": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "dc2dcb07-688b-42bb-9acd-55978b0235a4"
+        },
+        "email": {
+          "stringValue": ""
+        },
+        "status": {
+          "stringValue": "Active"
+        },
+        "name": {
+          "stringValue": "CFMOTO MEXICO POWER, S. DE R.L. DE C.V."
+        },
+        "contactName": {
+          "stringValue": "Imported from DataStage"
+        },
+        "type": {
+          "stringValue": "Other"
+        }
+      },
+      "createTime": "2026-01-08T19:18:52.196991Z",
+      "updateTime": "2026-01-08T19:18:52.196991Z"
+    }
+  ]
+}

@@ -1,0 +1,2129 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/A24BU88HJUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "4"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-02T14:59:37.966Z"
+        },
+        "modelo": {
+          "stringValue": "CM800AZ-3"
+        },
+        "estilo": {
+          "stringValue": "A24BU88HJUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-06-02T14:59:40.389312Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/A24BU88YDUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM800AZ-3"
+        },
+        "estilo": {
+          "stringValue": "A24BU88YDUSE0"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "4"
+        },
+        "updatedAt": {
+          "stringValue": "2026-06-02T14:59:43.207Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-06-02T14:59:45.363562Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/A25AD40P8USE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "modelo": {
+          "stringValue": "CM400AZ-6S"
+        },
+        "estilo": {
+          "stringValue": "A25AD40P8USE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/A25AD40PGUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "estilo": {
+          "stringValue": "A25AD40PGUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM400AZ-6S"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/A25BU88HJUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "estilo": {
+          "stringValue": "A25BU88HJUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM800AZ-3"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/A25BU88REUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "modelo": {
+          "stringValue": "CM800AZ-3"
+        },
+        "estilo": {
+          "stringValue": "A25BU88REUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/A25BU88YDUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "estilo": {
+          "stringValue": "A25BU88YDUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM800AZ-3"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/A25BUA6D0USE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "A25BUA6D0USE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000AZ-2"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.023Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/A25BUA6HJUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000AZ-2"
+        },
+        "estilo": {
+          "stringValue": "A25BUA6HJUSE0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/A25BUA6REUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000AZ-2"
+        },
+        "estilo": {
+          "stringValue": "A25BUA6REUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U23AMA1BMUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "U23AMA1BMUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-2"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:21:27.331Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:21:28.088594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U23AMA1ETUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:21:31.277Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "estilo": {
+          "stringValue": "U23AMA1ETUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-2"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:21:32.045593Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U24ALA1ETUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000UZ"
+        },
+        "estilo": {
+          "stringValue": "U24ALA1ETUSE0"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:16:14.555Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:16:15.608010Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U24ALA1ETUSEE",
+      "fields": {
+        "estilo": {
+          "stringValue": "U24ALA1ETUSEE"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-A"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U24ALA1REUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "U24ALA1REUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:16:17.781Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:16:18.599089Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U24ALA1REUSEE",
+      "fields": {
+        "estilo": {
+          "stringValue": "U24ALA1REUSEE"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-A"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U24ALA1YGUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000UZ"
+        },
+        "estilo": {
+          "stringValue": "U24ALA1YGUSE0"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:16:20.213Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:16:20.989666Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U24ALA1YGUSEE",
+      "fields": {
+        "estilo": {
+          "stringValue": "U24ALA1YGUSEE"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-A"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U24AMA1ETUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "U24AMA1ETUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-2"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:21:41.291Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:21:46.558330Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U24AMA1ETUSEE",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000UZ-2A"
+        },
+        "estilo": {
+          "stringValue": "U24AMA1ETUSEE"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U24AMA1REUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:21:47.227Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-2"
+        },
+        "estilo": {
+          "stringValue": "U24AMA1REUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:21:48.003658Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U24AMA1REUSEE",
+      "fields": {
+        "estilo": {
+          "stringValue": "U24AMA1REUSEE"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-2A"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U24AMA1YGUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "U24AMA1YGUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-2"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:21:53.644Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:21:54.447536Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U24AMA1YGUSEE",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000UZ-2A"
+        },
+        "estilo": {
+          "stringValue": "U24AMA1YGUSEE"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25AJ64BMUSC0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "modelo": {
+          "stringValue": "CM600UU"
+        },
+        "estilo": {
+          "stringValue": "U25AJ64BMUSC0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25AJ64REUSC0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM600UU"
+        },
+        "estilo": {
+          "stringValue": "U25AJ64REUSC0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25ALA1BMUSC0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000UU"
+        },
+        "estilo": {
+          "stringValue": "U25ALA1BMUSC0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25ALA1BMUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:16:23.806Z"
+        },
+        "estilo": {
+          "stringValue": "U25ALA1BMUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:16:24.592923Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25ALA1ETUSC0",
+      "fields": {
+        "estilo": {
+          "stringValue": "U25ALA1ETUSC0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UU"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25ALA1ETUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:16:26.849Z"
+        },
+        "estilo": {
+          "stringValue": "U25ALA1ETUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:16:27.619920Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25ALA1REUSC0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000UU"
+        },
+        "estilo": {
+          "stringValue": "U25ALA1REUSC0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25ALA1REUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:16:43.411Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ"
+        },
+        "estilo": {
+          "stringValue": "U25ALA1REUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:16:44.176704Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25AMA1BMUSC0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000UU-2"
+        },
+        "estilo": {
+          "stringValue": "U25AMA1BMUSC0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25AMA1BMUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:22:01.927Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-2"
+        },
+        "estilo": {
+          "stringValue": "U25AMA1BMUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:22:02.716647Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25AMA1ETUSC0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000UU-2"
+        },
+        "estilo": {
+          "stringValue": "U25AMA1ETUSC0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25AMA1ETUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000UZ-2"
+        },
+        "estilo": {
+          "stringValue": "U25AMA1ETUSE0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:22:05.896Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:22:06.682431Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25AMA1REUSC0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000UU-2"
+        },
+        "estilo": {
+          "stringValue": "U25AMA1REUSC0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25AMA1REUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "U25AMA1REUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-2"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:22:10.149Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:22:10.919222Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BV88BMUSC0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "estilo": {
+          "stringValue": "U25BV88BMUSC0"
+        },
+        "modelo": {
+          "stringValue": "CM800UU-4"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BV88BMUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM800UZ-4"
+        },
+        "estilo": {
+          "stringValue": "U25BV88BMUSE0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:24:27.001Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:24:27.820596Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BV88ETUSC0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM800UU-4"
+        },
+        "estilo": {
+          "stringValue": "U25BV88ETUSC0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BV88ETUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:24:31.650Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "modelo": {
+          "stringValue": "CM800UZ-4"
+        },
+        "estilo": {
+          "stringValue": "U25BV88ETUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:24:32.455413Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BV88REUSC0",
+      "fields": {
+        "estilo": {
+          "stringValue": "U25BV88REUSC0"
+        },
+        "modelo": {
+          "stringValue": "CM800UU-4"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BV88REUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:24:35.814Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "modelo": {
+          "stringValue": "CM800UZ-4"
+        },
+        "estilo": {
+          "stringValue": "U25BV88REUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:24:36.603274Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BWABBMUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:16:49.299Z"
+        },
+        "estilo": {
+          "stringValue": "U25BWABBMUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:16:50.074237Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BWABBMUSEH",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:16:50.694Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "5"
+        },
+        "estilo": {
+          "stringValue": "U25BWABBMUSEH"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8K"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:16:51.468728Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BWABREUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000UZ-8"
+        },
+        "estilo": {
+          "stringValue": "U25BWABREUSE0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:16:52.652Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:16:53.426289Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BWABRTUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "U25BWABRTUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:16:57.963Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:16:58.729669Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BWABRTUSEH",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "5"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:01.012Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8K"
+        },
+        "estilo": {
+          "stringValue": "U25BWABRTUSEH"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:01.787785Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BZABBMUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "U25BZABBMUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8L"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:26:43.393Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:26:44.202678Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BZABBMUSEH",
+      "fields": {
+        "estilo": {
+          "stringValue": "U25BZABBMUSEH"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8LK"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "4"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:18:50.559Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:18:51.310096Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BZABREUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:26:47.178Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "estilo": {
+          "stringValue": "U25BZABREUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8L"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:26:52.268254Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BZABRTUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:26:51.486Z"
+        },
+        "estilo": {
+          "stringValue": "U25BZABRTUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8L"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:26:52.893570Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U25BZABRTUSEH",
+      "fields": {
+        "estilo": {
+          "stringValue": "U25BZABRTUSEH"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8LK"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "4"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:19:01.070Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:19:01.824125Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26ALA1BMUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "U26ALA1BMUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:27:53.284Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:27:54.078692Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26ALA1ETUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:04.478Z"
+        },
+        "estilo": {
+          "stringValue": "U26ALA1ETUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:05.244324Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26ALA1K1USE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:05.858Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ"
+        },
+        "estilo": {
+          "stringValue": "U26ALA1K1USE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:06.614962Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26AMA1BMUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000UZ-2"
+        },
+        "estilo": {
+          "stringValue": "U26AMA1BMUSE0"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:22:17.278Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:22:18.085338Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26AMA1ETUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "U26AMA1ETUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-2"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:22:21.291Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:22:22.085893Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26AMA1K1USE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000UZ-2"
+        },
+        "estilo": {
+          "stringValue": "U26AMA1K1USE0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:22:25.349Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:22:26.154520Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BV88ETUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:24:53.278Z"
+        },
+        "estilo": {
+          "stringValue": "U26BV88ETUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM800UZ-4"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:24:54.082331Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BV88K1USE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:24:52.019Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "modelo": {
+          "stringValue": "CM800UZ-4"
+        },
+        "estilo": {
+          "stringValue": "U26BV88K1USE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:24:52.800944Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BV88YGUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:24:51.347Z"
+        },
+        "modelo": {
+          "stringValue": "CM800UZ-4"
+        },
+        "estilo": {
+          "stringValue": "U26BV88YGUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:24:52.151959Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BWABBMUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:08.866Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "estilo": {
+          "stringValue": "U26BWABBMUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:09.639180Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BWABBMUSEH",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "5"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:10.535Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8K"
+        },
+        "estilo": {
+          "stringValue": "U26BWABBMUSEH"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:11.295577Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BWABK1USE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000UZ-8"
+        },
+        "estilo": {
+          "stringValue": "U26BWABK1USE0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:13.134Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:13.904071Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BWABK1USEH",
+      "fields": {
+        "estilo": {
+          "stringValue": "U26BWABK1USEH"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8K"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "5"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:14.844Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:15.608551Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BWABRTUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:16.317Z"
+        },
+        "estilo": {
+          "stringValue": "U26BWABRTUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:17.036590Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BWABRTUSEH",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000UZ-8K"
+        },
+        "estilo": {
+          "stringValue": "U26BWABRTUSEH"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:21.459Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "5"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:22.211302Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BZABBMUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "U26BZABBMUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8L"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:27:09.074Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:27:09.876793Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BZABBMUSEH",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000UZ-8LK"
+        },
+        "estilo": {
+          "stringValue": "U26BZABBMUSEH"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:19:09.438Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "4"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:19:10.203937Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BZABK1USE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "U26BZABK1USE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8L"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:27:13.171Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:27:13.971523Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BZABK1USEH",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "4"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:19:14.090Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8LK"
+        },
+        "estilo": {
+          "stringValue": "U26BZABK1USEH"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:19:14.857221Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BZABRTUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000UZ-8L"
+        },
+        "estilo": {
+          "stringValue": "U26BZABRTUSE0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:27:17.306Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:27:18.112778Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/U26BZABRTUSEH",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:19:18.851Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "4"
+        },
+        "estilo": {
+          "stringValue": "U26BZABRTUSEH"
+        },
+        "modelo": {
+          "stringValue": "CM1000UZ-8LK"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:19:19.604369Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z24AT86HJUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "Z24AT86HJUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM800SZ-2"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z24AT86RMUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "modelo": {
+          "stringValue": "CM800SZ-2"
+        },
+        "estilo": {
+          "stringValue": "Z24AT86RMUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z24ATA5BMUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:27.790Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3"
+        },
+        "estilo": {
+          "stringValue": "Z24ATA5BMUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:28.540472Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z24ATA5RMUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:29.070Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3"
+        },
+        "estilo": {
+          "stringValue": "Z24ATA5RMUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:29.817607Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z24ATA5YDUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:30.355Z"
+        },
+        "estilo": {
+          "stringValue": "Z24ATA5YDUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:31.125041Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z24AUA5BMUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:31.002Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3A"
+        },
+        "estilo": {
+          "stringValue": "Z24AUA5BMUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:32.388057Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z24AUA5HJUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000SZ-3A"
+        },
+        "estilo": {
+          "stringValue": "Z24AUA5HJUSE0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:32.274Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:33.682618Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z24AUA5RMUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "Z24AUA5RMUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3A"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:33.570Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:34.948611Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z24AVA5BMUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "Z24AVA5BMUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3L"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:22:57.248Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:22:58.059738Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z24AVA5YDUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000SZ-3L"
+        },
+        "estilo": {
+          "stringValue": "Z24AVA5YDUSE0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:23:01.200Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:23:01.998425Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z24AVA5YGUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "Z24AVA5YGUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3L"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:23:05.119Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:23:05.920675Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25AT86BMUSC0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "estilo": {
+          "stringValue": "Z25AT86BMUSC0"
+        },
+        "modelo": {
+          "stringValue": "CM800SU-2"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25AT86BMUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "Z25AT86BMUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM800SZ-2"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25ATA5BMUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000SZ-3"
+        },
+        "estilo": {
+          "stringValue": "Z25ATA5BMUSE0"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:38.827Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:39.605609Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25ATA5RMUSE0",
+      "fields": {
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:40.231Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3"
+        },
+        "estilo": {
+          "stringValue": "Z25ATA5RMUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:40.971648Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25AUA5BMUSC0",
+      "fields": {
+        "estilo": {
+          "stringValue": "Z25AUA5BMUSC0"
+        },
+        "modelo": {
+          "stringValue": "CM1000SU-3A"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25AUA5BMUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:41.993Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3A"
+        },
+        "estilo": {
+          "stringValue": "Z25AUA5BMUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:42.749424Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25AUA5ETUSC0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000SU-3A"
+        },
+        "estilo": {
+          "stringValue": "Z25AUA5ETUSC0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25AUA5ETUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:43.368Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "estilo": {
+          "stringValue": "Z25AUA5ETUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3A"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:44.112711Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25AUA5RMUSC0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000SU-3A"
+        },
+        "estilo": {
+          "stringValue": "Z25AUA5RMUSC0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25AUA5RMUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:17:50.438Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3A"
+        },
+        "estilo": {
+          "stringValue": "Z25AUA5RMUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:17:51.198877Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25AVA5BMUSC0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000SU-3L"
+        },
+        "estilo": {
+          "stringValue": "Z25AVA5BMUSC0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25AVA5BMUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:23:13.690Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "estilo": {
+          "stringValue": "Z25AVA5BMUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3L"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:23:14.495947Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25AVA5ETUSC0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000SU-3L"
+        },
+        "estilo": {
+          "stringValue": "Z25AVA5ETUSC0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25AVA5ETUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "Z25AVA5ETUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3L"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:23:21.048Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:23:21.846221Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25AVA5RMUSC0",
+      "fields": {
+        "estilo": {
+          "stringValue": "Z25AVA5RMUSC0"
+        },
+        "modelo": {
+          "stringValue": "CM1000SU-3L"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-03T19:10:35.024Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-04-03T19:10:35.463594Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z25AVA5RMUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:23:27.835Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "estilo": {
+          "stringValue": "Z25AVA5RMUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3L"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:23:28.616081Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26ATA5BMUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000SZ-3"
+        },
+        "estilo": {
+          "stringValue": "Z26ATA5BMUSE0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:18:07.607Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:18:08.376189Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26ATA5RMUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000SZ-3"
+        },
+        "estilo": {
+          "stringValue": "Z26ATA5RMUSE0"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:18:08.996Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:18:09.748273Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26AUA5BMUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000SZ-3A"
+        },
+        "estilo": {
+          "stringValue": "Z26AUA5BMUSE0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:18:11.305Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:18:12.082049Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26AUA5BQUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:18:12.699Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "estilo": {
+          "stringValue": "Z26AUA5BQUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3A"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:18:13.462418Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26AUA5RMUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:18:16.403Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "10"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3A"
+        },
+        "estilo": {
+          "stringValue": "Z26AUA5RMUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:18:17.159844Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26AVA5BMUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000SZ-3L"
+        },
+        "estilo": {
+          "stringValue": "Z26AVA5BMUSE0"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:23:43.936Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:23:44.812933Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26AVA5BQUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:23:45.389Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-3L"
+        },
+        "estilo": {
+          "stringValue": "Z26AVA5BQUSE0"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:23:46.178011Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26AVA5RMUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000SZ-3L"
+        },
+        "estilo": {
+          "stringValue": "Z26AVA5RMUSE0"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "8"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:23:52.081Z"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:23:52.894350Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26CAAMBMUSC0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-07T14:34:06.189Z"
+        },
+        "modelo": {
+          "stringValue": "CM1000SU"
+        },
+        "estilo": {
+          "stringValue": "Z26CAAMBMUSC0"
+        }
+      },
+      "createTime": "2026-04-07T14:34:06.597822Z",
+      "updateTime": "2026-04-07T14:34:06.597822Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26CAAMBMUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "Z26CAAMBMUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:20:17.404Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "1"
+        }
+      },
+      "createTime": "2026-04-03T19:10:35.463594Z",
+      "updateTime": "2026-05-09T20:20:18.172178Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26CAAMYDUSC0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-07T14:34:06.189Z"
+        },
+        "estilo": {
+          "stringValue": "Z26CAAMYDUSC0"
+        },
+        "modelo": {
+          "stringValue": "CM1000SU"
+        }
+      },
+      "createTime": "2026-04-07T14:34:06.597822Z",
+      "updateTime": "2026-04-07T14:34:06.597822Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26CAAMYDUSE0",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:20:26.528Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "1"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ"
+        },
+        "estilo": {
+          "stringValue": "Z26CAAMYDUSE0"
+        }
+      },
+      "createTime": "2026-04-07T14:34:06.597822Z",
+      "updateTime": "2026-05-09T20:20:27.300413Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26CBAMBMUSC0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000SU-L"
+        },
+        "estilo": {
+          "stringValue": "Z26CBAMBMUSC0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-07T14:34:06.189Z"
+        }
+      },
+      "createTime": "2026-04-07T14:34:06.597822Z",
+      "updateTime": "2026-04-07T14:34:06.597822Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26CBAMBMUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000SZ-L"
+        },
+        "estilo": {
+          "stringValue": "Z26CBAMBMUSE0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:20:50.784Z"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "3"
+        }
+      },
+      "createTime": "2026-04-07T14:34:06.597822Z",
+      "updateTime": "2026-05-09T20:20:51.545335Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26CBAMYDUSC0",
+      "fields": {
+        "modelo": {
+          "stringValue": "CM1000SU-L"
+        },
+        "estilo": {
+          "stringValue": "Z26CBAMYDUSC0"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-07T14:34:06.189Z"
+        }
+      },
+      "createTime": "2026-04-07T14:34:06.597822Z",
+      "updateTime": "2026-04-07T14:34:06.597822Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/productos/Z26CBAMYDUSE0",
+      "fields": {
+        "estilo": {
+          "stringValue": "Z26CBAMYDUSE0"
+        },
+        "modelo": {
+          "stringValue": "CM1000SZ-L"
+        },
+        "unidadesPorCaja53": {
+          "integerValue": "3"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T20:20:54.797Z"
+        }
+      },
+      "createTime": "2026-04-07T14:34:06.597822Z",
+      "updateTime": "2026-05-09T20:20:55.560718Z"
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/carriers/1111",
+      "fields": {
+        "razonSocial": {
+          "stringValue": "Razón Social Legal"
+        },
+        "codigo": {
+          "stringValue": "1111"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-30T17:17:51.555Z"
+        },
+        "nombre": {
+          "stringValue": "Nombre Comercial"
+        },
+        "updatedAt": {
+          "stringValue": "2026-04-30T17:17:51.555Z"
+        }
+      },
+      "createTime": "2026-04-30T17:17:51.992462Z",
+      "updateTime": "2026-04-30T17:17:51.992462Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/carriers/ARCB",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-03-25T02:48:09.845Z"
+        },
+        "codigo": {
+          "stringValue": "ARCB"
+        },
+        "razonSocial": {
+          "stringValue": "Arcbest"
+        },
+        "nombre": {
+          "stringValue": "Arcbest"
+        },
+        "updatedAt": {
+          "stringValue": "2026-03-25T02:48:27.476Z"
+        }
+      },
+      "createTime": "2026-03-25T02:48:10.533388Z",
+      "updateTime": "2026-03-25T02:48:28.068275Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/carriers/EGLV",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-03-23T22:50:44.017Z"
+        },
+        "razonSocial": {
+          "stringValue": "Evergreen Marine Corp. Ltd."
+        },
+        "codigo": {
+          "stringValue": "EGLV"
+        },
+        "nombre": {
+          "stringValue": "Evergreen"
+        },
+        "updatedAt": {
+          "stringValue": "2026-03-23T22:50:44.017Z"
+        }
+      },
+      "createTime": "2026-03-23T22:50:44.393001Z",
+      "updateTime": "2026-03-23T22:50:44.393001Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/carriers/JBHT",
+      "fields": {
+        "nombre": {
+          "stringValue": "J.B. Hunt"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-14T22:09:44.186Z"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-14T22:09:44.186Z"
+        },
+        "razonSocial": {
+          "stringValue": "Hunt Mexicana, S.A. de C.V."
+        },
+        "codigo": {
+          "stringValue": "JBHT"
+        }
+      },
+      "createTime": "2026-05-14T22:09:45.392423Z",
+      "updateTime": "2026-05-14T22:09:45.392423Z"
+    }
+  ]
+}

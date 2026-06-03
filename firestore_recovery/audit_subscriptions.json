@@ -1,0 +1,104 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/audit_subscriptions/daily_audit",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-04-22T18:55:28.776Z"
+        },
+        "emails": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "jorge_melendez@outlook.com"
+              },
+              {
+                "stringValue": "jorge.melendez@cfmoto.com"
+              },
+              {
+                "stringValue": "luis.rocha@cfmoto.com"
+              },
+              {
+                "stringValue": "jesus.hernandez@cfmoto.com"
+              },
+              {
+                "stringValue": "cfmops@chasenshipping.com"
+              },
+              {
+                "stringValue": "ejecutivo02@impopacific.com"
+              },
+              {
+                "stringValue": "coordinacion.mzo02@grupogts.mx"
+              },
+              {
+                "stringValue": "logistica@impopacific.com"
+              },
+              {
+                "stringValue": "ejecutivo08@impopacific.com"
+              },
+              {
+                "stringValue": "ejecutivo03@impopacific.com"
+              },
+              {
+                "stringValue": "ejecutivo01@impopacific.com"
+              },
+              {
+                "stringValue": "traficomzo04@grupogts.mx"
+              },
+              {
+                "stringValue": "auxiliar07@grupogts.mx"
+              },
+              {
+                "stringValue": "auxiliar06@grupogts.mx"
+              },
+              {
+                "stringValue": "rrodriguez@daiweb.mx"
+              },
+              {
+                "stringValue": "damian.acevedo@expresslinecorp.com"
+              },
+              {
+                "stringValue": "manuel.juarez@expresslinecorp.com"
+              },
+              {
+                "stringValue": "rbarreto@jamcointl.com"
+              },
+              {
+                "stringValue": "earanda@jamcointl.com"
+              },
+              {
+                "stringValue": "hector.elizondo@cfmoto.com"
+              },
+              {
+                "stringValue": "srodriguez@grupoborder.com.mx"
+              },
+              {
+                "stringValue": "egonzalez@grupoborder.com.mx"
+              },
+              {
+                "stringValue": "jortiz@grupoborder.com.mx"
+              },
+              {
+                "stringValue": "rsalas@grupoborder.com.mx"
+              },
+              {
+                "stringValue": "kacuautla@grupoborder.com.mx"
+              },
+              {
+                "stringValue": "pedro.portillo@wisdomfo.com"
+              },
+              {
+                "stringValue": "brenda.garza@wisdomfo.com"
+              },
+              {
+                "stringValue": "felipe.badillo@wisdomfo.com"
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-01-23T21:10:53.710880Z",
+      "updateTime": "2026-04-22T18:55:28.845969Z"
+    }
+  ]
+}

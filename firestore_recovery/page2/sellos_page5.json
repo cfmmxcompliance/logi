@@ -1,0 +1,2314 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_xCgF4GlHQ698RUOyb3pu_1779380661710",
+      "fields": {
+        "id": {
+          "stringValue": "sello_xCgF4GlHQ698RUOyb3pu_1779380661710"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-21"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-21T16:24:21.710Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "xCgF4GlHQ698RUOyb3pu"
+        },
+        "selloAsignado": {
+          "stringValue": "741847"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "21/5/2026, 10:24:21 a.m."
+        },
+        "numeroCaja": {
+          "stringValue": "UTV700019"
+        }
+      },
+      "createTime": "2026-05-21T16:24:20.339645Z",
+      "updateTime": "2026-05-21T16:24:20.339645Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_xJYg7h7YFvnWVhZ7xYlq_1779110855025",
+      "fields": {
+        "asignacionCajaId": {
+          "stringValue": "xJYg7h7YFvnWVhZ7xYlq"
+        },
+        "selloAsignado": {
+          "stringValue": "742894"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "18/5/2026, 7:27:35 a.m."
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-18T13:27:35.025Z"
+        },
+        "numeroCaja": {
+          "stringValue": "W89482"
+        },
+        "id": {
+          "stringValue": "sello_xJYg7h7YFvnWVhZ7xYlq_1779110855025"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-18"
+        }
+      },
+      "createTime": "2026-05-18T13:27:33.543651Z",
+      "updateTime": "2026-05-18T13:27:33.543651Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_xQCBD1i8hQGUvmJgkX16_1776963467530",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-04-23"
+        },
+        "id": {
+          "stringValue": "sello_xQCBD1i8hQGUvmJgkX16_1776963467530"
+        },
+        "numeroCaja": {
+          "stringValue": "RJ152"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-23T16:57:47.530Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "xQCBD1i8hQGUvmJgkX16"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "23/4/2026, 10:57:47 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "744350"
+        }
+      },
+      "createTime": "2026-04-23T16:57:48.793686Z",
+      "updateTime": "2026-04-23T16:57:48.793686Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_xQZMaVelIcSVurttB6Nt_1776262763383",
+      "fields": {
+        "id": {
+          "stringValue": "sello_xQZMaVelIcSVurttB6Nt_1776262763383"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-15"
+        },
+        "asignacionCajaId": {
+          "stringValue": "xQZMaVelIcSVurttB6Nt"
+        },
+        "selloAsignado": {
+          "stringValue": "744358"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "15/4/2026, 8:19:23 a.m."
+        },
+        "createdAt": {
+          "stringValue": "2026-04-15T14:19:23.383Z"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "numeroCaja": {
+          "stringValue": "H09320"
+        }
+      },
+      "createTime": "2026-04-15T14:19:24.146023Z",
+      "updateTime": "2026-04-15T14:19:24.146023Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_xT7fFoOXcMlNY8O7RgwW_1780060265710",
+      "fields": {
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "selloAsignado": {
+          "stringValue": "741837"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "29/5/2026, 07:11:05"
+        },
+        "numeroCaja": {
+          "stringValue": "G059"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-29T13:11:05.710Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "xT7fFoOXcMlNY8O7RgwW"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1vWDrz2hZJZYfgiq3L8rvTXDwoAHIQVc0/view?usp=drivesdk"
+        },
+        "id": {
+          "stringValue": "sello_xT7fFoOXcMlNY8O7RgwW_1780060265710"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-29"
+        }
+      },
+      "createTime": "2026-05-29T13:11:05.892489Z",
+      "updateTime": "2026-05-29T13:11:09.237551Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_xcwpqhP6hpBFqw6WIZGl_1778682232725",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-05-13"
+        },
+        "id": {
+          "stringValue": "sello_xcwpqhP6hpBFqw6WIZGl_1778682232725"
+        },
+        "numeroCaja": {
+          "stringValue": "RJ053"
+        },
+        "asignacionCajaId": {
+          "stringValue": "xcwpqhP6hpBFqw6WIZGl"
+        },
+        "selloAsignado": {
+          "stringValue": "742828"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "13/5/2026, 8:23:52 a.m."
+        },
+        "createdAt": {
+          "stringValue": "2026-05-13T14:23:52.725Z"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        }
+      },
+      "createTime": "2026-05-13T14:23:52.070950Z",
+      "updateTime": "2026-05-13T14:23:52.070950Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_xfkNLUGRmkYAWTY8ukLv_1777584556512",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-04-30"
+        },
+        "id": {
+          "stringValue": "sello_xfkNLUGRmkYAWTY8ukLv_1777584556512"
+        },
+        "numeroCaja": {
+          "stringValue": "HM42"
+        },
+        "asignacionCajaId": {
+          "stringValue": "xfkNLUGRmkYAWTY8ukLv"
+        },
+        "selloAsignado": {
+          "stringValue": "745294"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "30/4/2026, 3:29:16 p.m."
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-30T21:29:16.512Z"
+        }
+      },
+      "createTime": "2026-04-30T21:29:16.760365Z",
+      "updateTime": "2026-04-30T21:29:16.760365Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_xgdGEpwt4bYRMXzg3tas_1776344872003",
+      "fields": {
+        "id": {
+          "stringValue": "sello_xgdGEpwt4bYRMXzg3tas_1776344872003"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-16"
+        },
+        "asignacionCajaId": {
+          "stringValue": "xgdGEpwt4bYRMXzg3tas"
+        },
+        "selloAsignado": {
+          "stringValue": "743140"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "16/4/2026, 7:07:52 a.m."
+        },
+        "createdAt": {
+          "stringValue": "2026-04-16T13:07:52.003Z"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "numeroCaja": {
+          "stringValue": "W91903"
+        }
+      },
+      "createTime": "2026-04-16T13:07:52.020822Z",
+      "updateTime": "2026-04-16T13:07:52.020822Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_xkiVRQChoZs5NRiCH9CE_1779475723673",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-05-22"
+        },
+        "id": {
+          "stringValue": "sello_xkiVRQChoZs5NRiCH9CE_1779475723673"
+        },
+        "numeroCaja": {
+          "stringValue": "HX13"
+        },
+        "asignacionCajaId": {
+          "stringValue": "xkiVRQChoZs5NRiCH9CE"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "22/5/2026, 12:48:43 p.m."
+        },
+        "selloAsignado": {
+          "stringValue": "742418"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-22T18:48:43.673Z"
+        }
+      },
+      "createTime": "2026-05-22T18:48:43.716508Z",
+      "updateTime": "2026-05-22T18:48:43.716508Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_xmkSRylK6vaMvWVpOnf2_1778518037898",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-05-11"
+        },
+        "id": {
+          "stringValue": "sello_xmkSRylK6vaMvWVpOnf2_1778518037898"
+        },
+        "numeroCaja": {
+          "stringValue": "PTLZ202661"
+        },
+        "asignacionCajaId": {
+          "stringValue": "xmkSRylK6vaMvWVpOnf2"
+        },
+        "selloAsignado": {
+          "stringValue": "742904"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "11/5/2026, 10:47:17 a.m."
+        },
+        "createdAt": {
+          "stringValue": "2026-05-11T16:47:17.898Z"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        }
+      },
+      "createTime": "2026-05-11T16:47:17.261080Z",
+      "updateTime": "2026-05-11T16:47:17.261080Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_xpXYst7xV8HgykaY5xBh_1779380805428",
+      "fields": {
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-21T16:26:45.428Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "xpXYst7xV8HgykaY5xBh"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "21/5/2026, 10:26:45 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "742312"
+        },
+        "numeroCaja": {
+          "stringValue": "UTV700013"
+        },
+        "id": {
+          "stringValue": "sello_xpXYst7xV8HgykaY5xBh_1779380805428"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-21"
+        }
+      },
+      "createTime": "2026-05-21T16:26:44.091736Z",
+      "updateTime": "2026-05-21T16:26:44.091736Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_xpcWpNavTppUqAa74fcs_1776355348514",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-04-16"
+        },
+        "id": {
+          "stringValue": "sello_xpcWpNavTppUqAa74fcs_1776355348514"
+        },
+        "numeroCaja": {
+          "stringValue": "9046-2"
+        },
+        "asignacionCajaId": {
+          "stringValue": "xpcWpNavTppUqAa74fcs"
+        },
+        "selloAsignado": {
+          "stringValue": "744474"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "16/4/2026, 10:02:28 a.m."
+        },
+        "createdAt": {
+          "stringValue": "2026-04-16T16:02:28.514Z"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        }
+      },
+      "createTime": "2026-04-16T16:02:28.442943Z",
+      "updateTime": "2026-04-16T16:02:28.442943Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_xuAUip86OZ3m8ObH4dH4_1777567912129",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "553379"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-30T16:51:52.129Z"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "asignacionCajaId": {
+          "stringValue": "xuAUip86OZ3m8ObH4dH4"
+        },
+        "selloAsignado": {
+          "stringValue": "745425"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "30/4/2026, 10:51:52 a.m."
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-30"
+        },
+        "id": {
+          "stringValue": "sello_xuAUip86OZ3m8ObH4dH4_1777567912129"
+        }
+      },
+      "createTime": "2026-04-30T16:51:52.434821Z",
+      "updateTime": "2026-04-30T16:51:52.434821Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_xvLQTZFNg5ZXauuWPegQ_1777568065511",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "PTLZ260101"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-30T16:54:25.511Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "xvLQTZFNg5ZXauuWPegQ"
+        },
+        "selloAsignado": {
+          "stringValue": "745426"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "30/4/2026, 10:54:25 a.m."
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-30"
+        },
+        "id": {
+          "stringValue": "sello_xvLQTZFNg5ZXauuWPegQ_1777568065511"
+        }
+      },
+      "createTime": "2026-04-30T16:54:25.620060Z",
+      "updateTime": "2026-04-30T16:54:25.620060Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_y4QOONacapYyPTVxAUn3_1779195235761",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "H07237"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "selloAsignado": {
+          "stringValue": "742423"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "19/5/2026, 6:53:55 a.m."
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-19"
+        },
+        "id": {
+          "stringValue": "sello_y4QOONacapYyPTVxAUn3_1779195235761"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1j9hcqxbaIbXe-Ay_h6GZNKK6anEnZLS6/view?usp=drivesdk"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-19T12:53:55.761Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "y4QOONacapYyPTVxAUn3"
+        }
+      },
+      "createTime": "2026-05-19T12:53:55.975981Z",
+      "updateTime": "2026-05-19T12:54:01.282546Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_y6uGxTO0gMgHfDHn4E4D_1778507349689",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-05-11"
+        },
+        "id": {
+          "stringValue": "sello_y6uGxTO0gMgHfDHn4E4D_1778507349689"
+        },
+        "numeroCaja": {
+          "stringValue": "528253"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-11T13:49:09.689Z"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "asignacionCajaId": {
+          "stringValue": "y6uGxTO0gMgHfDHn4E4D"
+        },
+        "selloAsignado": {
+          "stringValue": "742853"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "11/5/2026, 7:49:09 a.m."
+        }
+      },
+      "createTime": "2026-05-11T13:49:09.262581Z",
+      "updateTime": "2026-05-11T13:49:09.262581Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_yEItrIZJU786ZSdNzbEh_1780408982695",
+      "fields": {
+        "id": {
+          "stringValue": "sello_yEItrIZJU786ZSdNzbEh_1780408982695"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-06-02"
+        },
+        "createdAt": {
+          "stringValue": "2026-06-02T14:03:02.695Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "yEItrIZJU786ZSdNzbEh"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1dxcZnHPme2NLA2QiC53BxW1t0tsEUZLd/view?usp=drivesdk"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "2/6/2026, 08:03:02"
+        },
+        "selloAsignado": {
+          "stringValue": "742296"
+        },
+        "numeroCaja": {
+          "stringValue": "CS-323"
+        }
+      },
+      "createTime": "2026-06-02T14:03:01.191544Z",
+      "updateTime": "2026-06-02T14:03:07.088881Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_yInWvAZ0Mus1gHsrT2vy_1778506470060",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "RTI9017"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-11T13:34:30.060Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "yInWvAZ0Mus1gHsrT2vy"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "11/5/2026, 7:34:30 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "742935"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-11"
+        },
+        "id": {
+          "stringValue": "sello_yInWvAZ0Mus1gHsrT2vy_1778506470060"
+        }
+      },
+      "createTime": "2026-05-11T13:34:29.601578Z",
+      "updateTime": "2026-05-11T13:34:29.601578Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_yLJki9w71J442lCfPnHg_1776778777695",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "G066"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-21T13:39:37.695Z"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "asignacionCajaId": {
+          "stringValue": "yLJki9w71J442lCfPnHg"
+        },
+        "selloAsignado": {
+          "stringValue": "744335"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "21/4/2026, 12:24:40 p.m."
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-21"
+        },
+        "id": {
+          "stringValue": "sello_yLJki9w71J442lCfPnHg_1776778777695"
+        }
+      },
+      "createTime": "2026-04-21T13:39:37.288726Z",
+      "updateTime": "2026-04-21T18:24:42.210263Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_yM065VBh4INtYwcD3w3P_1778765691984",
+      "fields": {
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-14T13:34:51.984Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "yM065VBh4INtYwcD3w3P"
+        },
+        "selloAsignado": {
+          "stringValue": "742819"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "14/5/2026, 7:34:51 a.m."
+        },
+        "numeroCaja": {
+          "stringValue": "G069"
+        },
+        "id": {
+          "stringValue": "sello_yM065VBh4INtYwcD3w3P_1778765691984"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-14"
+        }
+      },
+      "createTime": "2026-05-14T13:34:50.485112Z",
+      "updateTime": "2026-05-14T13:34:50.485112Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_yNmytN2lwHaZ1wXZfmj3_1779455332215",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "RTI9121"
+        },
+        "asignacionCajaId": {
+          "stringValue": "yNmytN2lwHaZ1wXZfmj3"
+        },
+        "selloAsignado": {
+          "stringValue": "742264"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "22/5/2026, 7:08:52 a.m."
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-22T13:08:52.215Z"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-22"
+        },
+        "id": {
+          "stringValue": "sello_yNmytN2lwHaZ1wXZfmj3_1779455332215"
+        }
+      },
+      "createTime": "2026-05-22T13:08:52.038130Z",
+      "updateTime": "2026-05-22T13:08:52.038130Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_yNzKXNeUqLoqW1urkO5s_1777386912303",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-04-28"
+        },
+        "id": {
+          "stringValue": "sello_yNzKXNeUqLoqW1urkO5s_1777386912303"
+        },
+        "numeroCaja": {
+          "stringValue": "H10161"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-28T14:35:12.303Z"
+        },
+        "selloAsignado": {
+          "stringValue": "745443"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "28/4/2026, 8:35:12 a.m."
+        },
+        "asignacionCajaId": {
+          "stringValue": "yNzKXNeUqLoqW1urkO5s"
+        }
+      },
+      "createTime": "2026-04-28T14:35:12.619535Z",
+      "updateTime": "2026-04-28T14:35:12.619535Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_yUMrxniBh7EIRJD82SLG_1778606478484",
+      "fields": {
+        "id": {
+          "stringValue": "sello_yUMrxniBh7EIRJD82SLG_1778606478484"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-12"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-12T17:21:18.484Z"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "12/5/2026, 11:21:18 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "742878"
+        },
+        "asignacionCajaId": {
+          "stringValue": "yUMrxniBh7EIRJD82SLG"
+        },
+        "numeroCaja": {
+          "stringValue": "SNLU139317"
+        }
+      },
+      "createTime": "2026-05-12T17:21:17.008630Z",
+      "updateTime": "2026-05-12T17:21:17.008630Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_yVwP4vruu6BMobkjv9al_1778765572102",
+      "fields": {
+        "id": {
+          "stringValue": "sello_yVwP4vruu6BMobkjv9al_1778765572102"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-14"
+        },
+        "asignacionCajaId": {
+          "stringValue": "yVwP4vruu6BMobkjv9al"
+        },
+        "selloAsignado": {
+          "stringValue": "742816"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "14/5/2026, 7:32:52 a.m."
+        },
+        "createdAt": {
+          "stringValue": "2026-05-14T13:32:52.102Z"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "numeroCaja": {
+          "stringValue": "W91903"
+        }
+      },
+      "createTime": "2026-05-14T13:32:50.752650Z",
+      "updateTime": "2026-05-14T13:32:50.752650Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_yaTVZFgBF4PGzmuq5wLA_1779977985572",
+      "fields": {
+        "fechaHoraRegistro": {
+          "stringValue": "28/5/2026, 08:19:45"
+        },
+        "selloAsignado": {
+          "stringValue": "741963"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "numeroCaja": {
+          "stringValue": "PTLZ261945"
+        },
+        "id": {
+          "stringValue": "sello_yaTVZFgBF4PGzmuq5wLA_1779977985572"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-28"
+        },
+        "asignacionCajaId": {
+          "stringValue": "yaTVZFgBF4PGzmuq5wLA"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-28T14:19:45.572Z"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1agQS4Jgj2Gy8W4AUmFnDqhBhP2iQ3-_7/view?usp=drivesdk"
+        }
+      },
+      "createTime": "2026-05-28T14:19:45.233092Z",
+      "updateTime": "2026-05-28T14:19:51.011916Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_ycgUkxngdbG60JjmcHs7_1778680784851",
+      "fields": {
+        "id": {
+          "stringValue": "sello_ycgUkxngdbG60JjmcHs7_1778680784851"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-13"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-13T13:59:44.851Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "ycgUkxngdbG60JjmcHs7"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "13/5/2026, 7:59:44 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "742822"
+        },
+        "numeroCaja": {
+          "stringValue": "RJ048"
+        }
+      },
+      "createTime": "2026-05-13T13:59:44.199911Z",
+      "updateTime": "2026-05-13T13:59:44.199911Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_yfJvhrEMEpQdrt8Q5fDj_1778005501260",
+      "fields": {
+        "asignacionCajaId": {
+          "stringValue": "yfJvhrEMEpQdrt8Q5fDj"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "5/5/2026, 12:25:01 p.m."
+        },
+        "selloAsignado": {
+          "stringValue": "742808"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-05T18:25:01.260Z"
+        },
+        "numeroCaja": {
+          "stringValue": "HX12"
+        },
+        "id": {
+          "stringValue": "sello_yfJvhrEMEpQdrt8Q5fDj_1778005501260"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-05"
+        }
+      },
+      "createTime": "2026-05-05T18:25:01.492872Z",
+      "updateTime": "2026-05-05T18:25:01.492872Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_yfl25XdgKF44eK7cP7Ip_1780337130766",
+      "fields": {
+        "fechaHoraRegistro": {
+          "stringValue": "1/6/2026, 13:12:07"
+        },
+        "selloAsignado": {
+          "stringValue": "741814"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "numeroCaja": {
+          "stringValue": "BW830"
+        },
+        "asignacionCajaId": {
+          "stringValue": "yfl25XdgKF44eK7cP7Ip"
+        },
+        "createdAt": {
+          "stringValue": "2026-06-01T18:05:30.766Z"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1JTRV5TWYjKRiwTPnHDrwORq-SCHYPfh8/view?usp=drivesdk"
+        },
+        "id": {
+          "stringValue": "sello_yfl25XdgKF44eK7cP7Ip_1780337130766"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-06-01"
+        }
+      },
+      "createTime": "2026-06-01T18:05:29.622731Z",
+      "updateTime": "2026-06-01T19:12:10.743575Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_ygihL8vv63FbRjrRtGRz_1777986024603",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-05-05"
+        },
+        "id": {
+          "stringValue": "sello_ygihL8vv63FbRjrRtGRz_1777986024603"
+        },
+        "numeroCaja": {
+          "stringValue": "35469"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-05T13:00:24.603Z"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "asignacionCajaId": {
+          "stringValue": "ygihL8vv63FbRjrRtGRz"
+        },
+        "selloAsignado": {
+          "stringValue": "745462"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "5/5/2026, 7:00:24 a.m."
+        }
+      },
+      "createTime": "2026-05-05T13:00:24.225412Z",
+      "updateTime": "2026-05-05T13:00:24.225412Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_ykPXAXN9oUp8JBqIACHY_1776437727929",
+      "fields": {
+        "asignacionCajaId": {
+          "stringValue": "ykPXAXN9oUp8JBqIACHY"
+        },
+        "selloAsignado": {
+          "stringValue": "744468"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "17/4/2026, 8:55:27 a.m."
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-17T14:55:27.929Z"
+        },
+        "numeroCaja": {
+          "stringValue": "PTLZ250552"
+        },
+        "id": {
+          "stringValue": "sello_ykPXAXN9oUp8JBqIACHY_1776437727929"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-17"
+        }
+      },
+      "createTime": "2026-04-17T14:55:26.458311Z",
+      "updateTime": "2026-04-17T14:55:26.458311Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_ymUpZKY40jpYgQoL3P4R_1779996032779",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "PGS22"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "28/5/2026, 13:20:32"
+        },
+        "selloAsignado": {
+          "stringValue": "741839"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-28"
+        },
+        "id": {
+          "stringValue": "sello_ymUpZKY40jpYgQoL3P4R_1779996032779"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1SuAU3mDNK3UOz2xiI4bt9Oa5TDbETkFq/view?usp=drivesdk"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-28T19:20:32.779Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "ymUpZKY40jpYgQoL3P4R"
+        }
+      },
+      "createTime": "2026-05-28T19:20:32.291863Z",
+      "updateTime": "2026-05-28T19:20:36.100776Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_ytPM82oYqkIgaQJyfZbW_1776461855555",
+      "fields": {
+        "asignacionCajaId": {
+          "stringValue": "ytPM82oYqkIgaQJyfZbW"
+        },
+        "selloAsignado": {
+          "stringValue": "744421"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "17/4/2026, 3:37:35 p.m."
+        },
+        "createdAt": {
+          "stringValue": "2026-04-17T21:37:35.555Z"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "numeroCaja": {
+          "stringValue": "SNLU152059"
+        },
+        "id": {
+          "stringValue": "sello_ytPM82oYqkIgaQJyfZbW_1776461855555"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-17"
+        }
+      },
+      "createTime": "2026-04-17T21:37:35.722527Z",
+      "updateTime": "2026-04-17T21:37:35.722527Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_ywhNrpkf4YRVxX4rl8FK_1778158807343",
+      "fields": {
+        "selloAsignado": {
+          "stringValue": "745355"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "7/5/2026, 7:00:07 a.m."
+        },
+        "asignacionCajaId": {
+          "stringValue": "ywhNrpkf4YRVxX4rl8FK"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-07T13:00:07.343Z"
+        },
+        "numeroCaja": {
+          "stringValue": "W82137"
+        },
+        "id": {
+          "stringValue": "sello_ywhNrpkf4YRVxX4rl8FK_1778158807343"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-07"
+        }
+      },
+      "createTime": "2026-05-07T13:00:07.429870Z",
+      "updateTime": "2026-05-07T13:00:07.429870Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_z7AcKBDcOz9KouDVK9BZ_1780064133941",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "SNLU158049 "
+        },
+        "selloAsignado": {
+          "stringValue": "741783"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "29/5/2026, 08:15:33"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-29"
+        },
+        "id": {
+          "stringValue": "sello_z7AcKBDcOz9KouDVK9BZ_1780064133941"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1UiQ7Br-P-V_T3zTaltn-Cqyi0Cn6RP0L/view?usp=drivesdk"
+        },
+        "asignacionCajaId": {
+          "stringValue": "z7AcKBDcOz9KouDVK9BZ"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-29T14:15:33.941Z"
+        }
+      },
+      "createTime": "2026-05-29T14:15:33.370117Z",
+      "updateTime": "2026-05-29T14:15:37.364339Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_z7aNI8WkAQ29tdmXLISU_1780072113388",
+      "fields": {
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1MaM77gePhwMMptH7Vu2ilQ-AcPryN3Nd/view?usp=drivesdk"
+        },
+        "asignacionCajaId": {
+          "stringValue": "z7aNI8WkAQ29tdmXLISU"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-29T16:28:33.388Z"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-29"
+        },
+        "id": {
+          "stringValue": "sello_z7aNI8WkAQ29tdmXLISU_1780072113388"
+        },
+        "numeroCaja": {
+          "stringValue": "SNLU144315"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "29/5/2026, 10:28:33"
+        },
+        "selloAsignado": {
+          "stringValue": "741952"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        }
+      },
+      "createTime": "2026-05-29T16:28:32.648169Z",
+      "updateTime": "2026-05-29T16:28:35.969861Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_z9OzyOJLbgVkhFsli9Bx_1777994108809",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-05-05"
+        },
+        "id": {
+          "stringValue": "sello_z9OzyOJLbgVkhFsli9Bx_1777994108809"
+        },
+        "numeroCaja": {
+          "stringValue": "G003"
+        },
+        "selloAsignado": {
+          "stringValue": "745456"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "5/5/2026, 6:13:30 p.m."
+        },
+        "asignacionCajaId": {
+          "stringValue": "z9OzyOJLbgVkhFsli9Bx"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-05T15:15:08.809Z"
+        }
+      },
+      "createTime": "2026-05-05T15:15:08.878277Z",
+      "updateTime": "2026-05-06T00:13:30.277975Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_zBVufBKaOdrxryckMIG3_1776695867505",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-04-20"
+        },
+        "id": {
+          "stringValue": "sello_zBVufBKaOdrxryckMIG3_1776695867505"
+        },
+        "numeroCaja": {
+          "stringValue": "9078-2"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-20T14:37:47.505Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "zBVufBKaOdrxryckMIG3"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "20/4/2026, 8:37:47 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "744495"
+        }
+      },
+      "createTime": "2026-04-20T14:37:47.756558Z",
+      "updateTime": "2026-04-20T14:37:47.756558Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_zELieSdK0kRMPZpfoFtc_1776430900814",
+      "fields": {
+        "id": {
+          "stringValue": "sello_zELieSdK0kRMPZpfoFtc_1776430900814"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-17"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "17/4/2026, 7:01:40 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "744479"
+        },
+        "asignacionCajaId": {
+          "stringValue": "zELieSdK0kRMPZpfoFtc"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-17T13:01:40.814Z"
+        },
+        "numeroCaja": {
+          "stringValue": "TXU7937"
+        }
+      },
+      "createTime": "2026-04-17T13:01:39.638501Z",
+      "updateTime": "2026-04-17T13:01:39.638501Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_zEyHFcBymtBeuoYbTCRH_1778073226991",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "W82156"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-06T13:13:46.990Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "zEyHFcBymtBeuoYbTCRH"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "6/5/2026, 7:13:46 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "745460"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-06"
+        },
+        "id": {
+          "stringValue": "sello_zEyHFcBymtBeuoYbTCRH_1778073226991"
+        }
+      },
+      "createTime": "2026-05-06T13:13:47.093295Z",
+      "updateTime": "2026-05-06T13:13:47.093295Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_zLyssnK3dJlwIkoaAtg5_1780145839430",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "XT85"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "30/5/2026, 06:57:19"
+        },
+        "selloAsignado": {
+          "stringValue": "741971"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-30"
+        },
+        "id": {
+          "stringValue": "sello_zLyssnK3dJlwIkoaAtg5_1780145839430"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1WkV4wkkVcpW0pAGGdvLR-asJ0cCp7O67/view?usp=drivesdk"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-30T12:57:19.430Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "zLyssnK3dJlwIkoaAtg5"
+        }
+      },
+      "createTime": "2026-05-30T12:57:19.538123Z",
+      "updateTime": "2026-05-30T12:57:24.788400Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_zOPfliAhMbtrE8zIS5wj_1778162066438",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-05-07T13:54:26.438Z"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "asignacionCajaId": {
+          "stringValue": "zOPfliAhMbtrE8zIS5wj"
+        },
+        "selloAsignado": {
+          "stringValue": "742964"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "7/5/2026, 7:54:26 a.m."
+        },
+        "numeroCaja": {
+          "stringValue": "RJ119"
+        },
+        "id": {
+          "stringValue": "sello_zOPfliAhMbtrE8zIS5wj_1778162066438"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-07"
+        }
+      },
+      "createTime": "2026-05-07T13:54:26.540687Z",
+      "updateTime": "2026-05-07T13:54:26.540687Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_zQCJOL7zLL2hgr4gECv8_1779380829930",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "BW843"
+        },
+        "asignacionCajaId": {
+          "stringValue": "zQCJOL7zLL2hgr4gECv8"
+        },
+        "selloAsignado": {
+          "stringValue": "742315"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "21/5/2026, 10:27:09 a.m."
+        },
+        "createdAt": {
+          "stringValue": "2026-05-21T16:27:09.930Z"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-21"
+        },
+        "id": {
+          "stringValue": "sello_zQCJOL7zLL2hgr4gECv8_1779380829930"
+        }
+      },
+      "createTime": "2026-05-21T16:27:08.580225Z",
+      "updateTime": "2026-05-21T16:27:08.580225Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_zX9AEjiy2zy1ScenAHU8_1779301399939",
+      "fields": {
+        "createdAt": {
+          "stringValue": "2026-05-20T18:23:19.939Z"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "asignacionCajaId": {
+          "stringValue": "zX9AEjiy2zy1ScenAHU8"
+        },
+        "selloAsignado": {
+          "stringValue": "742434"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "20/5/2026, 12:23:19 p.m."
+        },
+        "numeroCaja": {
+          "stringValue": "20146W"
+        },
+        "id": {
+          "stringValue": "sello_zX9AEjiy2zy1ScenAHU8_1779301399939"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-20"
+        }
+      },
+      "createTime": "2026-05-20T18:23:19.683787Z",
+      "updateTime": "2026-05-20T18:23:19.683787Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_zXunbKCrxFjhpNSiaJr3_1778159012168",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-05-07"
+        },
+        "id": {
+          "stringValue": "sello_zXunbKCrxFjhpNSiaJr3_1778159012168"
+        },
+        "numeroCaja": {
+          "stringValue": "2345"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-07T13:03:32.168Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "zXunbKCrxFjhpNSiaJr3"
+        },
+        "selloAsignado": {
+          "stringValue": "742751"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "7/5/2026, 7:03:32 a.m."
+        }
+      },
+      "createTime": "2026-05-07T13:03:32.258999Z",
+      "updateTime": "2026-05-07T13:03:32.258999Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_zY5KV1CTrt9Pggc4VzEO_1779294281283",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "PCG10"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-20T16:24:41.283Z"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "asignacionCajaId": {
+          "stringValue": "zY5KV1CTrt9Pggc4VzEO"
+        },
+        "selloAsignado": {
+          "stringValue": "742469"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "20/5/2026, 10:24:41 a.m."
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-20"
+        },
+        "id": {
+          "stringValue": "sello_zY5KV1CTrt9Pggc4VzEO_1779294281283"
+        }
+      },
+      "createTime": "2026-05-20T16:24:41.366931Z",
+      "updateTime": "2026-05-20T16:24:41.366931Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_zjuDiOGT1zjseLsEtyre_1779219617853",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "SNLU220470"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-19T19:40:17.853Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "zjuDiOGT1zjseLsEtyre"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "19/5/2026, 1:40:17 p.m."
+        },
+        "selloAsignado": {
+          "stringValue": "741894"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-19"
+        },
+        "id": {
+          "stringValue": "sello_zjuDiOGT1zjseLsEtyre_1779219617853"
+        }
+      },
+      "createTime": "2026-05-19T19:40:17.395388Z",
+      "updateTime": "2026-05-19T19:40:17.395388Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_zkVujMiC1eADhfqUv5BQ_1779115461965",
+      "fields": {
+        "id": {
+          "stringValue": "sello_zkVujMiC1eADhfqUv5BQ_1779115461965"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-18"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-18T14:44:21.965Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "zkVujMiC1eADhfqUv5BQ"
+        },
+        "selloAsignado": {
+          "stringValue": "742323"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "18/5/2026, 8:44:21 a.m."
+        },
+        "numeroCaja": {
+          "stringValue": "RJ054"
+        }
+      },
+      "createTime": "2026-05-18T14:44:20.443018Z",
+      "updateTime": "2026-05-18T14:44:20.443018Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_zlnDuAiTyufPokwTclSA_1777985214080",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-05-05"
+        },
+        "id": {
+          "stringValue": "sello_zlnDuAiTyufPokwTclSA_1777985214080"
+        },
+        "numeroCaja": {
+          "stringValue": "W95930"
+        },
+        "asignacionCajaId": {
+          "stringValue": "zlnDuAiTyufPokwTclSA"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "5/5/2026, 6:46:54 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "745317"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-05T12:46:54.080Z"
+        }
+      },
+      "createTime": "2026-05-05T12:46:53.392279Z",
+      "updateTime": "2026-05-05T12:46:53.392279Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_znXzht4x9UR2BNYnvnST_1780064169230",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "2343"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "29/5/2026, 08:16:09"
+        },
+        "selloAsignado": {
+          "stringValue": "741786"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/14uxLYdwKpo2kapDiB1Wkb6w90HvDMHGE/view?usp=drivesdk"
+        },
+        "asignacionCajaId": {
+          "stringValue": "znXzht4x9UR2BNYnvnST"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-29T14:16:09.230Z"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-29"
+        },
+        "id": {
+          "stringValue": "sello_znXzht4x9UR2BNYnvnST_1780064169230"
+        }
+      },
+      "createTime": "2026-05-29T14:16:08.522140Z",
+      "updateTime": "2026-05-29T14:16:13.138724Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_zqZN5Twr8ANdD4h45nRi_1776262645681",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-04-15"
+        },
+        "id": {
+          "stringValue": "sello_zqZN5Twr8ANdD4h45nRi_1776262645681"
+        },
+        "numeroCaja": {
+          "stringValue": "RJ186"
+        },
+        "selloAsignado": {
+          "stringValue": "744356"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "15/4/2026, 8:17:25 a.m."
+        },
+        "asignacionCajaId": {
+          "stringValue": "zqZN5Twr8ANdD4h45nRi"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-15T14:17:25.681Z"
+        }
+      },
+      "createTime": "2026-04-15T14:17:26.280252Z",
+      "updateTime": "2026-04-15T14:17:26.280252Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_zqgAbp37Pqw2F0JW9ynY_1779886793217",
+      "fields": {
+        "selloAsignado": {
+          "stringValue": "741800"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "27/5/2026, 06:59:53"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "numeroCaja": {
+          "stringValue": "W84697"
+        },
+        "id": {
+          "stringValue": "sello_zqgAbp37Pqw2F0JW9ynY_1779886793217"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-05-27"
+        },
+        "asignacionCajaId": {
+          "stringValue": "zqgAbp37Pqw2F0JW9ynY"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-27T12:59:53.217Z"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1Nd8owtShAuXyUnpjHr3D-I-z3x4J4Z2B/view?usp=drivesdk"
+        }
+      },
+      "createTime": "2026-05-27T12:59:53.398742Z",
+      "updateTime": "2026-05-27T12:59:57.739395Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/sello_ztSwjp9wny6BuetfEsCH_1778601420727",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-05-12"
+        },
+        "id": {
+          "stringValue": "sello_ztSwjp9wny6BuetfEsCH_1778601420727"
+        },
+        "numeroCaja": {
+          "stringValue": "PGS41"
+        },
+        "createdAt": {
+          "stringValue": "2026-05-12T15:57:00.727Z"
+        },
+        "usuario": {
+          "stringValue": "1devany.ramos@cfmoto.com"
+        },
+        "asignacionCajaId": {
+          "stringValue": "ztSwjp9wny6BuetfEsCH"
+        },
+        "selloAsignado": {
+          "stringValue": "742938"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "12/5/2026, 9:57:00 a.m."
+        }
+      },
+      "createTime": "2026-05-12T15:56:59.271513Z",
+      "updateTime": "2026-05-12T15:56:59.271513Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/spJLVWI5J9xGSXg3zfHr",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-04-08"
+        },
+        "id": {
+          "stringValue": "spJLVWI5J9xGSXg3zfHr"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1vTgV5c9r8IM5_4uZcwsPbI4W8Rww4KuB/view?usp=drivesdk"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-08T14:56:33.013Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "a95OPcym3yqFJ1cOOHw9"
+        },
+        "numeroCaja": {
+          "stringValue": "200701"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago"
+        },
+        "selloAsignado": {
+          "stringValue": "743193"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "8/4/2026, 8:56:33 a.m."
+        }
+      },
+      "createTime": "2026-04-08T14:56:35.075679Z",
+      "updateTime": "2026-04-08T14:56:35.075679Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/spbhu5vrdePFyImv7s7B",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "H14165"
+        },
+        "selloAsignado": {
+          "stringValue": "743178"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "7/4/2026, 12:27:13"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1odPb3Xyikhz8gd8Yaow_FEC0Cd4-3UBJ/view?usp=drivesdk"
+        },
+        "asignacionCajaId": {
+          "stringValue": "Z7fMvAbgmTnU8g9BAGi1"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T18:27:13.470Z"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-07"
+        },
+        "id": {
+          "stringValue": "spbhu5vrdePFyImv7s7B"
+        }
+      },
+      "createTime": "2026-04-07T18:27:02.215596Z",
+      "updateTime": "2026-04-07T18:27:02.215596Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/tCTiyaMO6xAGlENziejX",
+      "fields": {
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1ijyjYBxyNukylU9EjCL97uxOkNh4ibuE/view?usp=drivesdk"
+        },
+        "asignacionCajaId": {
+          "stringValue": "Y73I2rFS7bxOUqnOO94o"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-10T13:09:56.016Z"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-10"
+        },
+        "id": {
+          "stringValue": "tCTiyaMO6xAGlENziejX"
+        },
+        "numeroCaja": {
+          "stringValue": "G024"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "10/4/2026, 7:09:56 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "745051"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        }
+      },
+      "createTime": "2026-04-10T13:09:57.516839Z",
+      "updateTime": "2026-04-10T13:09:57.516839Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/tN7mK6mRc1KWP6Mo91mE",
+      "fields": {
+        "asignacionCajaId": {
+          "stringValue": "ZW8R4iX01k4n3gmvCSwY"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "14/4/2026, 7:12:54 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "743150"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-14T13:12:54.120Z"
+        },
+        "numeroCaja": {
+          "stringValue": "G030"
+        },
+        "id": {
+          "stringValue": "tN7mK6mRc1KWP6Mo91mE"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-14"
+        }
+      },
+      "createTime": "2026-04-14T13:12:54.671986Z",
+      "updateTime": "2026-04-14T13:12:54.671986Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/tzB8mHmH0makldWYzhdc",
+      "fields": {
+        "selloAsignado": {
+          "stringValue": "743067"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "9/4/2026, 9:50:34 a.m."
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "numeroCaja": {
+          "stringValue": "RJ060"
+        },
+        "id": {
+          "stringValue": "tzB8mHmH0makldWYzhdc"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-09"
+        },
+        "asignacionCajaId": {
+          "stringValue": "fQhnXENKPGpiY3h2vEgA"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-09T15:50:34.059Z"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/18_xHy00KJI8sLdjTUbuPJliOuuejkTbz/view?usp=drivesdk"
+        }
+      },
+      "createTime": "2026-04-09T15:50:35.607753Z",
+      "updateTime": "2026-04-09T15:50:35.607753Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/u9jU8ptXgs26QyNDXsmF",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "HM36"
+        },
+        "selloAsignado": {
+          "stringValue": "743011"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "9/4/2026, 12:40:05 p.m."
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-09"
+        },
+        "id": {
+          "stringValue": "u9jU8ptXgs26QyNDXsmF"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1YhcZ4IHwGSq-3BVkwVObKNtO8ms6-phS/view?usp=drivesdk"
+        },
+        "asignacionCajaId": {
+          "stringValue": "h8ArlDem7G9YKj6HSmFc"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-09T18:40:05.895Z"
+        }
+      },
+      "createTime": "2026-04-09T18:40:07.043602Z",
+      "updateTime": "2026-04-09T18:40:07.043602Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/uODSLwDxc71Pu0vKNjG5",
+      "fields": {
+        "asignacionCajaId": {
+          "stringValue": "sjf8a83KQQXN1DFCfmYW"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-10T13:10:58.912Z"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1t6ZhugmFpdORP-4jtwppqCyDWAjilxdN/view?usp=drivesdk"
+        },
+        "id": {
+          "stringValue": "uODSLwDxc71Pu0vKNjG5"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-10"
+        },
+        "selloAsignado": {
+          "stringValue": "743102"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "10/4/2026, 7:10:58 a.m."
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "numeroCaja": {
+          "stringValue": "9039-2"
+        }
+      },
+      "createTime": "2026-04-10T13:11:01.110159Z",
+      "updateTime": "2026-04-10T13:11:01.110159Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/uUrOfCS3teuDJSrpWCkZ",
+      "fields": {
+        "selloAsignado": {
+          "stringValue": "743143"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "14/4/2026, 7:11:25 a.m."
+        },
+        "asignacionCajaId": {
+          "stringValue": "fjeNIq6AveDN5ikSUIYZ"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-14T13:11:25.594Z"
+        },
+        "numeroCaja": {
+          "stringValue": "TXU7925"
+        },
+        "id": {
+          "stringValue": "uUrOfCS3teuDJSrpWCkZ"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-14"
+        }
+      },
+      "createTime": "2026-04-14T13:11:26.231336Z",
+      "updateTime": "2026-04-14T13:11:26.231336Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/uqrTOQ8YBsThhxiGRIdw",
+      "fields": {
+        "selloAsignado": {
+          "stringValue": "743137"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "13/4/2026, 3:17:32 p.m."
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "numeroCaja": {
+          "stringValue": "PCG20"
+        },
+        "id": {
+          "stringValue": "uqrTOQ8YBsThhxiGRIdw"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-13"
+        },
+        "asignacionCajaId": {
+          "stringValue": "oxnUGPjCnxBglnO7l9ex"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-13T21:17:32.974Z"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1VLxOgTRQVPJWmFN7z4D_95rTTG_T-zhZ/view?usp=drivesdk"
+        }
+      },
+      "createTime": "2026-04-13T21:17:35.339612Z",
+      "updateTime": "2026-04-13T21:17:35.339612Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/vXoJhDs3eZIvj1isgF1K",
+      "fields": {
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-14T13:12:03.633Z"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "14/4/2026, 7:12:03 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "743146"
+        },
+        "asignacionCajaId": {
+          "stringValue": "PxrhuqK8gxaB2AJlok9R"
+        },
+        "numeroCaja": {
+          "stringValue": "G037"
+        },
+        "id": {
+          "stringValue": "vXoJhDs3eZIvj1isgF1K"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-14"
+        }
+      },
+      "createTime": "2026-04-14T13:12:04.219847Z",
+      "updateTime": "2026-04-14T13:12:04.219847Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/veikClc4cVITmCvAFkXV",
+      "fields": {
+        "asignacionCajaId": {
+          "stringValue": "t8gqEHCX8cKjKDqfEWrI"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-10T13:10:41.580Z"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1QfUSiiEOs3CmoKLxdVnGNWt_p3ZFP5C3/view?usp=drivesdk"
+        },
+        "id": {
+          "stringValue": "veikClc4cVITmCvAFkXV"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-10"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "10/4/2026, 7:10:41 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "745016"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "numeroCaja": {
+          "stringValue": "2206"
+        }
+      },
+      "createTime": "2026-04-10T13:10:43.130948Z",
+      "updateTime": "2026-04-10T13:10:43.130948Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/wBIp66u3LTby8kGG34s1",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "W95934"
+        },
+        "selloAsignado": {
+          "stringValue": "743226"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "7/4/2026, 12:19:49"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-07"
+        },
+        "id": {
+          "stringValue": "wBIp66u3LTby8kGG34s1"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1Czvae2irogmtsSjoY7IUvAIuYabrYx7P/view?usp=drivesdk"
+        },
+        "asignacionCajaId": {
+          "stringValue": "NNVkOSxnmBUL5OJ4XAqk"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-07T18:19:49.215Z"
+        }
+      },
+      "createTime": "2026-04-07T18:19:35.052791Z",
+      "updateTime": "2026-04-07T18:19:35.052791Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/wOXRtDHg9SUjJpNvj4EF",
+      "fields": {
+        "selloAsignado": {
+          "stringValue": "743132"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "13/4/2026, 3:40:01 p.m."
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "numeroCaja": {
+          "stringValue": "HM42"
+        },
+        "id": {
+          "stringValue": "wOXRtDHg9SUjJpNvj4EF"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-13"
+        },
+        "asignacionCajaId": {
+          "stringValue": "RKpmWNOwcXiIx7x8CYgt"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-13T21:40:01.816Z"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1R7a3_ghyaQUrkJ4tpqeJxxEKK5Y7aCGB/view?usp=drivesdk"
+        }
+      },
+      "createTime": "2026-04-13T21:40:03.004699Z",
+      "updateTime": "2026-04-13T21:40:03.004699Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/wVYTUnHYF6LRrLyJ6XsU",
+      "fields": {
+        "fechaHoraRegistro": {
+          "stringValue": "13/4/2026, 2:12:55 p.m."
+        },
+        "selloAsignado": {
+          "stringValue": "743133"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "numeroCaja": {
+          "stringValue": "H08233"
+        },
+        "id": {
+          "stringValue": "wVYTUnHYF6LRrLyJ6XsU"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-13"
+        },
+        "asignacionCajaId": {
+          "stringValue": "coR7eHmHLP3GDdR2bj5H"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-13T20:12:55.861Z"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1n3mmgBMeX9Xvt10h1scgPuFLISR_d39i/view?usp=drivesdk"
+        }
+      },
+      "createTime": "2026-04-13T20:12:57.051688Z",
+      "updateTime": "2026-04-13T20:12:57.051688Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/xwIo3IMPzyu3wdYrmxE0",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "H07943"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "8/4/2026, 11:11:25 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "743078"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-08"
+        },
+        "id": {
+          "stringValue": "xwIo3IMPzyu3wdYrmxE0"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1O92dqEWz1inhDxldDiq47u1m5owQTOQL/view?usp=drivesdk"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-08T17:11:25.522Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "H6D5d81bhiqq5ZNnpDEz"
+        }
+      },
+      "createTime": "2026-04-08T17:11:27.072812Z",
+      "updateTime": "2026-04-08T17:11:27.072812Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/yFaLsjQ82tW2Uhy5moah",
+      "fields": {
+        "fechaAsignacion": {
+          "stringValue": "2026-04-14"
+        },
+        "id": {
+          "stringValue": "yFaLsjQ82tW2Uhy5moah"
+        },
+        "numeroCaja": {
+          "stringValue": "G034"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-14T13:12:14.549Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "ET5hG9H7vJXgEGQBYecz"
+        },
+        "selloAsignado": {
+          "stringValue": "743147"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "14/4/2026, 7:12:14 a.m."
+        }
+      },
+      "createTime": "2026-04-14T13:12:15.078345Z",
+      "updateTime": "2026-04-14T13:12:15.078345Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/yG502KlEucv2uFyOezcU",
+      "fields": {
+        "selloAsignado": {
+          "stringValue": "743134"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "13/4/2026, 2:50:56 p.m."
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "numeroCaja": {
+          "stringValue": "RJ188"
+        },
+        "asignacionCajaId": {
+          "stringValue": "YrC0aBkpfyzQNxxuxdf3"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-13T20:50:56.962Z"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1hC-7mXPiRN_y3XXzSjhzfayVI4Lhdl1y/view?usp=drivesdk"
+        },
+        "id": {
+          "stringValue": "yG502KlEucv2uFyOezcU"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-13"
+        }
+      },
+      "createTime": "2026-04-13T20:51:03.737917Z",
+      "updateTime": "2026-04-13T20:51:03.737917Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/yWDAaCGLqbDdFAEoLDFl",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "KT028126"
+        },
+        "asignacionCajaId": {
+          "stringValue": "rcAJPjQrOqOPHCZIRxi6"
+        },
+        "selloAsignado": {
+          "stringValue": "743081"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "13/4/2026, 10:09:16 a.m."
+        },
+        "createdAt": {
+          "stringValue": "2026-04-13T16:09:16.180Z"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-13"
+        },
+        "id": {
+          "stringValue": "yWDAaCGLqbDdFAEoLDFl"
+        }
+      },
+      "createTime": "2026-04-13T16:09:15.612409Z",
+      "updateTime": "2026-04-13T16:09:15.612409Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/z67SYkxQsKiMi687o0IE",
+      "fields": {
+        "numeroCaja": {
+          "stringValue": "W82156"
+        },
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "8/4/2026, 1:15:48 p.m."
+        },
+        "selloAsignado": {
+          "stringValue": "743123"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1BdoydBI-Vggx9qnb6epg3EmWPQXzgqZf/view?usp=drivesdk"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-08T14:34:10.167Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "2kiQiUJsi3WzjMH97R5U"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-08"
+        },
+        "id": {
+          "stringValue": "z67SYkxQsKiMi687o0IE"
+        }
+      },
+      "createTime": "2026-04-08T14:34:11.686511Z",
+      "updateTime": "2026-04-08T19:15:48.398395Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/sellos/zSRgoRd428T2ASuEqyWd",
+      "fields": {
+        "usuario": {
+          "stringValue": "1edgarivan.desantiago@cfmoto.com"
+        },
+        "fechaHoraRegistro": {
+          "stringValue": "11/4/2026, 11:21:00 a.m."
+        },
+        "selloAsignado": {
+          "stringValue": "743018"
+        },
+        "numeroCaja": {
+          "stringValue": "G062"
+        },
+        "id": {
+          "stringValue": "zSRgoRd428T2ASuEqyWd"
+        },
+        "fechaAsignacion": {
+          "stringValue": "2026-04-11"
+        },
+        "createdAt": {
+          "stringValue": "2026-04-11T17:21:00.302Z"
+        },
+        "asignacionCajaId": {
+          "stringValue": "0KMQeaSwl4ZnfYVdEFSe"
+        },
+        "fotoUrl": {
+          "stringValue": "https://drive.google.com/file/d/1tbrhP9fKUDdKMcObtN1TZwWzx6J9nMi4/view?usp=drivesdk"
+        }
+      },
+      "createTime": "2026-04-11T17:21:00.559994Z",
+      "updateTime": "2026-04-11T17:21:00.559994Z"
+    }
+  ]
+}

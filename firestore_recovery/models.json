@@ -1,0 +1,2546 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26ALA1BMUSE0",
+      "fields": {
+        "valorUsdUnitario": {
+          "doubleValue": 7081.8
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ"
+        },
+        "expo": {
+          "stringValue": "U26ALA1BMUSE0"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "volumenUnitario": {
+          "doubleValue": 8.67
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1565.2802
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 710
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 869
+        },
+        "pesoAcero": {
+          "doubleValue": 563
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.96U2Y"
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1915.81478
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "ValAcero": {
+          "doubleValue": 372
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        }
+      },
+      "createTime": "2026-04-11T21:24:42.285270Z",
+      "updateTime": "2026-04-11T21:24:42.285270Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26ALA1ETUSE0",
+      "fields": {
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "volumenUnitario": {
+          "doubleValue": 8.67
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7081.8
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ"
+        },
+        "expo": {
+          "stringValue": "U26ALA1ETUSE0"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1565.2802
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 710
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoAcero": {
+          "doubleValue": 563
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 869
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 372
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.96U2Y"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1915.81478
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        }
+      },
+      "createTime": "2026-04-11T21:24:42.646616Z",
+      "updateTime": "2026-04-11T21:24:42.646616Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26ALA1K1USE0",
+      "fields": {
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1565.2802
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ"
+        },
+        "expo": {
+          "stringValue": "U26ALA1K1USE0"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7081.8
+        },
+        "volumenUnitario": {
+          "doubleValue": 8.67
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1915.81478
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.96U2Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 372
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 869
+        },
+        "pesoAcero": {
+          "doubleValue": 563
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 710
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        }
+      },
+      "createTime": "2026-04-11T21:24:42.805214Z",
+      "updateTime": "2026-04-11T21:24:42.805214Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26AMA1BMUSE0",
+      "fields": {
+        "volumenUnitario": {
+          "doubleValue": 7.54
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-2"
+        },
+        "expo": {
+          "stringValue": "U26AMA1BMUSE0"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7326
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1840.8577
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "pesoAcero": {
+          "doubleValue": 471
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 835
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 835
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 345
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1840.8577
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.96U3Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        }
+      },
+      "createTime": "2026-04-11T21:24:42.914055Z",
+      "updateTime": "2026-04-11T21:24:42.914055Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26AMA1ETUSE0",
+      "fields": {
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "pesoAcero": {
+          "doubleValue": 471
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 835
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 835
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 345
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1840.8577
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.96U3Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "volumenUnitario": {
+          "doubleValue": 7.54
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-2"
+        },
+        "expo": {
+          "stringValue": "U26AMA1ETUSE0"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7326
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1840.8577
+        }
+      },
+      "createTime": "2026-04-11T21:24:43.057884Z",
+      "updateTime": "2026-04-11T21:24:43.057884Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26AMA1K1USE0",
+      "fields": {
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 835
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoAcero": {
+          "doubleValue": 471
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 835
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 345
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.96U3Y"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1840.8577
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "volumenUnitario": {
+          "doubleValue": 7.54
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7326
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-2"
+        },
+        "expo": {
+          "stringValue": "U26AMA1K1USE0"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1840.8577
+        }
+      },
+      "createTime": "2026-04-11T21:24:43.167331Z",
+      "updateTime": "2026-04-11T21:24:43.167331Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BV88ETUSE0",
+      "fields": {
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.80U3W"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1657.87424
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 329
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 752
+        },
+        "pesoAcero": {
+          "doubleValue": 436
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 752
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1657.87424
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "expo": {
+          "stringValue": "U26BV88ETUSE0"
+        },
+        "modelo": {
+          "stringValue": "800CC UTV CM800UZ-4"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 6500
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "volumenUnitario": {
+          "doubleValue": 7.09
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        }
+      },
+      "createTime": "2026-04-11T21:24:44.652370Z",
+      "updateTime": "2026-04-11T21:24:44.652370Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BV88K1USE0",
+      "fields": {
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 752
+        },
+        "pesoAcero": {
+          "doubleValue": 436
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 752
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1657.87424
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.80U3W"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "ValAcero": {
+          "doubleValue": 329
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "modelo": {
+          "stringValue": "800CC UTV CM800UZ-4"
+        },
+        "expo": {
+          "stringValue": "U26BV88K1USE0"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 6500
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "volumenUnitario": {
+          "doubleValue": 7.09
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1657.87424
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        }
+      },
+      "createTime": "2026-04-11T21:24:44.757193Z",
+      "updateTime": "2026-04-11T21:24:44.757193Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BV88YGUSE0",
+      "fields": {
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.80U3W"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1657.87424
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 329
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 752
+        },
+        "pesoAcero": {
+          "doubleValue": 436
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 752
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1657.87424
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "modelo": {
+          "stringValue": "800CC UTV CM800UZ-4"
+        },
+        "expo": {
+          "stringValue": "U26BV88YGUSE0"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 6500
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "volumenUnitario": {
+          "doubleValue": 7.09
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        }
+      },
+      "createTime": "2026-04-11T21:24:44.481163Z",
+      "updateTime": "2026-04-11T21:24:44.481163Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BWABBMUSE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-8"
+        },
+        "expo": {
+          "stringValue": "U26BWABBMUSE0"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7630
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "volumenUnitario": {
+          "doubleValue": 8.67
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1814.40226
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 823
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 986
+        },
+        "pesoAcero": {
+          "doubleValue": 623
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX.998U1Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 2173.75532
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 443
+        }
+      },
+      "createTime": "2026-04-11T21:24:44.910607Z",
+      "updateTime": "2026-04-11T21:24:44.910607Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BWABBMUSEH",
+      "fields": {
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "pesoAcero": {
+          "doubleValue": 493
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 953.9
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 953.9
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "ValAcero": {
+          "doubleValue": 381
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 2102.987018
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX.998U1Y"
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "volumenUnitario": {
+          "doubleValue": 9.49
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 9300
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-8K"
+        },
+        "expo": {
+          "stringValue": "U26BWABBMUSEH"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 2102.987018
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        }
+      },
+      "createTime": "2026-04-11T21:24:44.119077Z",
+      "updateTime": "2026-04-11T21:24:44.119077Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BWABK1USE0",
+      "fields": {
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-8"
+        },
+        "expo": {
+          "stringValue": "U26BWABK1USE0"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7630
+        },
+        "volumenUnitario": {
+          "doubleValue": 8.67
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1814.40226
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "pesoAcero": {
+          "doubleValue": 623
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 986
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 823
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 2173.75532
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX.998U1Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 443
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        }
+      },
+      "createTime": "2026-04-11T21:24:45.180677Z",
+      "updateTime": "2026-04-11T21:24:45.180677Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BWABK1USEH",
+      "fields": {
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 381
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 2102.987018
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX.998U1Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 953.9
+        },
+        "pesoAcero": {
+          "doubleValue": 493
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 953.9
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 2102.987018
+        },
+        "volumenUnitario": {
+          "doubleValue": 9.49
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-8K"
+        },
+        "expo": {
+          "stringValue": "U26BWABK1USEH"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 9300
+        }
+      },
+      "createTime": "2026-04-11T21:24:44.385206Z",
+      "updateTime": "2026-04-11T21:24:44.385206Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BWABRTUSE0",
+      "fields": {
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1814.40226
+        },
+        "volumenUnitario": {
+          "doubleValue": 8.67
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-8"
+        },
+        "expo": {
+          "stringValue": "U26BWABRTUSE0"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7630
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 443
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 2173.75532
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX.998U1Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "pesoAcero": {
+          "doubleValue": 623
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 986
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 823
+        }
+      },
+      "createTime": "2026-04-11T21:24:45.024282Z",
+      "updateTime": "2026-04-11T21:24:45.024282Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BWABRTUSEH",
+      "fields": {
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 381
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX.998U1Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 2102.987018
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 953.9
+        },
+        "pesoAcero": {
+          "doubleValue": 493
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 953.9
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 2102.987018
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "volumenUnitario": {
+          "doubleValue": 9.49
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-8K"
+        },
+        "expo": {
+          "stringValue": "U26BWABRTUSEH"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 9300
+        }
+      },
+      "createTime": "2026-04-11T21:24:44.217845Z",
+      "updateTime": "2026-04-11T21:24:44.217845Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BZABBMUSE0",
+      "fields": {
+        "pesoAcero": {
+          "doubleValue": 544
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 949.5
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 949.5
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 2093.28669
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX.998U1Y"
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 418
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 8060
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-8L"
+        },
+        "expo": {
+          "stringValue": "U26BZABBMUSE0"
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "volumenUnitario": {
+          "doubleValue": 7.71
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 2093.28669
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        }
+      },
+      "createTime": "2026-04-11T21:24:45.287089Z",
+      "updateTime": "2026-04-11T21:24:45.287089Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BZABBMUSEH",
+      "fields": {
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "volumenUnitario": {
+          "doubleValue": 12
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-8LK"
+        },
+        "expo": {
+          "stringValue": "U26BZABBMUSEH"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 10110
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 2482.40212
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "pesoAcero": {
+          "doubleValue": 585
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 1126
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 1126
+        },
+        "ValAcero": {
+          "doubleValue": 440
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 2482.40212
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX.998U1Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        }
+      },
+      "createTime": "2026-04-11T21:24:42.018172Z",
+      "updateTime": "2026-04-11T21:24:42.018172Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BZABK1USE0",
+      "fields": {
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 2093.28669
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "volumenUnitario": {
+          "doubleValue": 7.71
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-8L"
+        },
+        "expo": {
+          "stringValue": "U26BZABK1USE0"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 8060
+        },
+        "ValAcero": {
+          "doubleValue": 418
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 2093.28669
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX.998U1Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "pesoAcero": {
+          "doubleValue": 544
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 949.5
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 949.5
+        }
+      },
+      "createTime": "2026-04-11T21:24:45.546585Z",
+      "updateTime": "2026-04-11T21:24:45.546585Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BZABK1USEH",
+      "fields": {
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 1126
+        },
+        "pesoAcero": {
+          "doubleValue": 585
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 1126
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 440
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 2482.40212
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX.998U1Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "volumenUnitario": {
+          "doubleValue": 12
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-8LK"
+        },
+        "expo": {
+          "stringValue": "U26BZABK1USEH"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 10110
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 2482.40212
+        }
+      },
+      "createTime": "2026-04-11T21:24:42.175699Z",
+      "updateTime": "2026-04-11T21:24:42.175699Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BZABRTUSE0",
+      "fields": {
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 2093.28669
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 8060
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-8L"
+        },
+        "expo": {
+          "stringValue": "U26BZABRTUSE0"
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "volumenUnitario": {
+          "doubleValue": 7.71
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 2093.28669
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX.998U1Y"
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 418
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "pesoAcero": {
+          "doubleValue": 544
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 949.5
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 949.5
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        }
+      },
+      "createTime": "2026-04-11T21:24:45.441840Z",
+      "updateTime": "2026-04-11T21:24:45.441840Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/U26BZABRTUSEH",
+      "fields": {
+        "ValAcero": {
+          "doubleValue": 440
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 2482.40212
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX.998U1Y"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "pesoAcero": {
+          "doubleValue": 585
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 1126
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 1126
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 2482.40212
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "volumenUnitario": {
+          "doubleValue": 12
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 10110
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000UZ-8LK"
+        },
+        "expo": {
+          "stringValue": "U26BZABRTUSEH"
+        }
+      },
+      "createTime": "2026-03-24T19:34:22.151575Z",
+      "updateTime": "2026-04-11T21:24:41.906088Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/Z26ATA5BMUSE0",
+      "fields": {
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1364.65978
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7061.27
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000SZ-3"
+        },
+        "expo": {
+          "stringValue": "Z26ATA5BMUSE0"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "volumenUnitario": {
+          "doubleValue": 8.63
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.96S3Y"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1743.413496
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 351
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 619
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoAcero": {
+          "doubleValue": 518
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 790.8
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        }
+      },
+      "createTime": "2026-04-11T21:24:45.703233Z",
+      "updateTime": "2026-04-11T21:24:45.703233Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/Z26ATA5RMUSE0",
+      "fields": {
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 619
+        },
+        "pesoAcero": {
+          "doubleValue": 518
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 790.8
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 351
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.96S3Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1743.413496
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "volumenUnitario": {
+          "doubleValue": 8.63
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000SZ-3"
+        },
+        "expo": {
+          "stringValue": "Z26ATA5RMUSE0"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7061.27
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1364.65978
+        }
+      },
+      "createTime": "2026-04-11T21:24:45.855551Z",
+      "updateTime": "2026-04-11T21:24:45.855551Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/Z26AUA5BMUSE0",
+      "fields": {
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 660
+        },
+        "pesoAcero": {
+          "doubleValue": 535
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 831.8
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.96S3Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1833.802916
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 368
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000SZ-3A"
+        },
+        "expo": {
+          "stringValue": "Z26AUA5BMUSE0"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7171.27
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "volumenUnitario": {
+          "doubleValue": 8.63
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1455.0492
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        }
+      },
+      "createTime": "2026-04-11T21:24:43.320020Z",
+      "updateTime": "2026-04-11T21:24:43.320020Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/Z26AUA5BQUSE0",
+      "fields": {
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "volumenUnitario": {
+          "doubleValue": 8.63
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "expo": {
+          "stringValue": "Z26AUA5BQUSE0"
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000SZ-3A"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7171.27
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1455.0492
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 660
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "pesoAcero": {
+          "doubleValue": 535
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 831.8
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "ValAcero": {
+          "doubleValue": 368
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.96S3Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1833.802916
+        }
+      },
+      "createTime": "2026-04-11T21:24:43.588485Z",
+      "updateTime": "2026-04-11T21:24:43.588485Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/Z26AUA5RMUSE0",
+      "fields": {
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1455.0492
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7171.27
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000SZ-3A"
+        },
+        "expo": {
+          "stringValue": "Z26AUA5RMUSE0"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "volumenUnitario": {
+          "doubleValue": 8.63
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.96S3Y"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1833.802916
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 368
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 660
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoAcero": {
+          "doubleValue": 535
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 831.8
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        }
+      },
+      "createTime": "2026-04-11T21:24:43.428820Z",
+      "updateTime": "2026-04-11T21:24:43.428820Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/Z26AVA5BMUSE0",
+      "fields": {
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1729.083466
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7391.27
+        },
+        "expo": {
+          "stringValue": "Z26AVA5BMUSE0"
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000SZ-3L"
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "volumenUnitario": {
+          "doubleValue": 7.11
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1729.083466
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.96S4Y"
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 341
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "pesoAcero": {
+          "doubleValue": 443
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 784.3
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 784.3
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        }
+      },
+      "createTime": "2026-04-11T21:24:43.690508Z",
+      "updateTime": "2026-04-11T21:24:43.690508Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/Z26AVA5BQUSE0",
+      "fields": {
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1729.083466
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "volumenUnitario": {
+          "doubleValue": 7.11
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000SZ-3L"
+        },
+        "expo": {
+          "stringValue": "Z26AVA5BQUSE0"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7391.27
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "ValAcero": {
+          "doubleValue": 341
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.96S4Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1729.083466
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 784.3
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 784.3
+        },
+        "pesoAcero": {
+          "doubleValue": 443
+        }
+      },
+      "createTime": "2026-04-11T21:24:43.961458Z",
+      "updateTime": "2026-04-11T21:24:43.961458Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/Z26AVA5RMUSE0",
+      "fields": {
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1729.083466
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 7391.27
+        },
+        "modelo": {
+          "stringValue": "1000CC UTV CM1000SZ-3L"
+        },
+        "expo": {
+          "stringValue": "Z26AVA5RMUSE0"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "volumenUnitario": {
+          "doubleValue": 7.11
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX0.96S4Y"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1729.083466
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 341
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 784.3
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoAcero": {
+          "doubleValue": 443
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 784.3
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        }
+      },
+      "createTime": "2026-04-11T21:24:43.856333Z",
+      "updateTime": "2026-04-11T21:24:43.856333Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/Z26CAAMBMUSE0",
+      "fields": {
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1862.9039
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "modelo": {
+          "stringValue": "CF1000SZ ZFORCE Z10"
+        },
+        "expo": {
+          "stringValue": "Z26CAAMBMUSE0"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 11500
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        },
+        "volumenUnitario": {
+          "doubleValue": 9.26
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX.998S3Y"
+        },
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1862.9039
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "ValAcero": {
+          "doubleValue": 429
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 845
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "pesoAcero": {
+          "doubleValue": 533
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 845
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        }
+      },
+      "createTime": "2026-04-11T21:24:46.018276Z",
+      "updateTime": "2026-04-11T21:24:46.018276Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/models/Z26CAAMYDUSE0",
+      "fields": {
+        "incoterm": {
+          "stringValue": "FCA"
+        },
+        "testGroupNameNo": {
+          "stringValue": "TCMAX.998S3Y"
+        },
+        "pesoBrutoUnitarioLb": {
+          "doubleValue": 1862.9039
+        },
+        "claveProductoSat": {
+          "stringValue": "25101503"
+        },
+        "materialPeligroso": {
+          "booleanValue": false
+        },
+        "usoCfdiSat": {
+          "stringValue": "S01 Sin Efectos fiscales"
+        },
+        "ValAcero": {
+          "doubleValue": 429
+        },
+        "pesoNetoUnitarioKg": {
+          "doubleValue": 845
+        },
+        "clavePedimento": {
+          "stringValue": "RT"
+        },
+        "pesoAcero": {
+          "doubleValue": 533
+        },
+        "pesoBrutoUnitarioKg": {
+          "doubleValue": 845
+        },
+        "fraccionArancelaria": {
+          "stringValue": "8703219900"
+        },
+        "claveMaterialPeligroso": {
+          "stringValue": "no aplica"
+        },
+        "unidadMedidaSat": {
+          "stringValue": "H87 Pieza"
+        },
+        "objetoImpuestoSat": {
+          "stringValue": "01- No objeto de impuesto"
+        },
+        "pesoNetoUnitarioLb": {
+          "doubleValue": 1862.9039
+        },
+        "tipoDeMateria": {
+          "stringValue": "3"
+        },
+        "mid": {
+          "stringValue": "MXCFMMEX107APO"
+        },
+        "valorUsdUnitario": {
+          "doubleValue": 11500
+        },
+        "modelo": {
+          "stringValue": "CF1000SZ ZFORCE Z10"
+        },
+        "expo": {
+          "stringValue": "Z26CAAMYDUSE0"
+        },
+        "HTSUS": {
+          "stringValue": "8703210150"
+        },
+        "unidadAduana": {
+          "stringValue": "06 PIEZA"
+        },
+        "volumenUnitario": {
+          "doubleValue": 9.26
+        },
+        "cantidadAduana": {
+          "doubleValue": 1
+        }
+      },
+      "createTime": "2026-04-11T21:24:46.120045Z",
+      "updateTime": "2026-04-11T21:24:46.120045Z"
+    }
+  ]
+}

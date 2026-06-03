@@ -1,0 +1,5190 @@
+{
+  "documents": [
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/dd9f27d4-d484-4e94-a56a-7621f181d740",
+      "fields": {
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402936C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "dd9f27d4-d484-4e94-a56a-7621f181d740"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8(CKD)"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574069365"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM402936C"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T21:37:22.844Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "TLLU5040954"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574069365"
+        },
+        "etaPort": {
+          "nullValue": null
+        }
+      },
+      "createTime": "2026-01-15T21:37:21.620472Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/dda7f1a2-138e-4174-a064-cb5bd6b0baf4",
+      "fields": {
+        "refNo": {
+          "stringValue": "274"
+        },
+        "etaPort": {
+          "stringValue": "17/11/2025"
+        },
+        "terminal": {
+          "stringValue": "CONTECON"
+        },
+        "containerNo": {
+          "stringValue": "WHSU5043470"
+        },
+        "ataPort": {
+          "stringValue": "17/11/2025"
+        },
+        "etd": {
+          "stringValue": "19/10/2025"
+        },
+        "blNo": {
+          "stringValue": "025F795072"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFMABTTP077"
+        },
+        "atd": {
+          "stringValue": "19/10/2025"
+        },
+        "modelCode": {
+          "stringValue": "Steel structure platform Estructura metalica desarmada and TOOLS"
+        },
+        "qty": {
+          "integerValue": "17"
+        },
+        "id": {
+          "stringValue": "dda7f1a2-138e-4174-a064-cb5bd6b0baf4"
+        },
+        "projectType": {
+          "stringValue": "PRODUCTION LINE"
+        },
+        "containerSize": {
+          "stringValue": "40 HQ"
+        },
+        "contractNo": {
+          "stringValue": "25CFMABTTP077"
+        },
+        "shippingCompany": {
+          "stringValue": "WAN HAI"
+        },
+        "preAlertDate": {
+          "stringValue": "20/10/2025"
+        }
+      },
+      "createTime": "2025-12-15T02:51:54.069683Z",
+      "updateTime": "2025-12-15T02:51:54.069683Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/dde07188-560a-4ca2-a2b5-7d9d30ea6d70",
+      "fields": {
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": "SEC25114338"
+        },
+        "etaPort": {
+          "stringValue": "2025-12-24"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-10T01:22:09.017Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "TEXU1580216"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HC"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-10"
+        },
+        "invoiceNo": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "SEC25114338"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "STOVE"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "dde07188-560a-4ca2-a2b5-7d9d30ea6d70"
+        }
+      },
+      "createTime": "2026-01-10T01:22:09.651950Z",
+      "updateTime": "2026-01-10T01:22:09.651950Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/dde5c779-f42c-41b7-b62d-3dd3cc1341a0",
+      "fields": {
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-14"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174958C"
+        },
+        "blNo": {
+          "stringValue": "SEC25117735"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8K(CKD)"
+        },
+        "id": {
+          "stringValue": "dde5c779-f42c-41b7-b62d-3dd3cc1341a0"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "etaPort": {
+          "stringValue": "2026-01-05"
+        },
+        "refNo": {
+          "stringValue": "SEC25117735"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "TRHU5988593"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-14T19:46:04.713Z"
+        }
+      },
+      "createTime": "2026-01-14T19:46:03.541340Z",
+      "updateTime": "2026-01-14T19:46:05.655010Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/de619a31-a4c2-45a3-ac03-b9570e67ded7",
+      "fields": {
+        "etaPort": {
+          "stringValue": "2026-01-05"
+        },
+        "refNo": {
+          "stringValue": "SEC25117735"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EGSU1893537"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-14T19:46:04.713Z"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "SEC25117735"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174958C"
+        },
+        "id": {
+          "stringValue": "de619a31-a4c2-45a3-ac03-b9570e67ded7"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8K(CKD)"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-14"
+        }
+      },
+      "createTime": "2026-01-14T19:46:01.526441Z",
+      "updateTime": "2026-01-14T19:46:05.655010Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/debba332-8804-41ad-9fc0-bf060d922b10",
+      "fields": {
+        "preAlertDate": {
+          "stringValue": "2026-01-17"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK(CKD)"
+        },
+        "packages": {
+          "stringValue": "10 PACKAGES"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "debba332-8804-41ad-9fc0-bf060d922b10"
+        },
+        "blNo": {
+          "stringValue": "EGLV143674060033"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174965C"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "etd": {
+          "stringValue": "2026-01-21"
+        },
+        "ataPort": {
+          "stringValue": "2026-05-09"
+        },
+        "grossWeight": {
+          "integerValue": "9797"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T17:02:16.473Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EGSU9630959"
+        },
+        "refNo": {
+          "stringValue": "EGLV143674060033"
+        },
+        "etaPort": {
+          "stringValue": "2026-02-09"
+        }
+      },
+      "createTime": "2026-01-17T17:47:43.249481Z",
+      "updateTime": "2026-05-09T17:02:19.718658Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/df303568-2f1a-4639-9d42-235f46dcd275",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EMCU8276517"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T17:02:28.367Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-02-02"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574071408"
+        },
+        "etd": {
+          "stringValue": "2026-01-15"
+        },
+        "grossWeight": {
+          "integerValue": "11644"
+        },
+        "ataPort": {
+          "stringValue": "2026-05-09"
+        },
+        "packages": {
+          "stringValue": "26 PACKAGES"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8"
+        },
+        "id": {
+          "stringValue": "df303568-2f1a-4639-9d42-235f46dcd275"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574071408"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174941C"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        }
+      },
+      "createTime": "2026-01-15T21:02:09.692780Z",
+      "updateTime": "2026-05-09T17:02:30.319283Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/df934391-e9b0-4114-9ea8-1d6b8ffc509f",
+      "fields": {
+        "atd": {
+          "stringValue": ""
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM402936C"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574069365"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8(CKD)"
+        },
+        "id": {
+          "stringValue": "df934391-e9b0-4114-9ea8-1d6b8ffc509f"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402936C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": "EGLV143574069365"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EGHU8336864"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T21:37:22.844Z"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        }
+      },
+      "createTime": "2026-01-15T21:37:23.713428Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/df9c6125-69ce-4b30-ace7-29c20134e6ab",
+      "fields": {
+        "blNo": {
+          "stringValue": "143559688220"
+        },
+        "invoiceNo": {
+          "stringValue": ""
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "df9c6125-69ce-4b30-ace7-29c20134e6ab"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8K"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "nullValue": null
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-08"
+        },
+        "refNo": {
+          "stringValue": "143559688220"
+        },
+        "etaPort": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-08T16:13:53.985Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "TGBU7893981"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-08T16:13:52.651407Z",
+      "updateTime": "2026-01-08T16:13:54.312001Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/dfe28e6e-750a-4181-8399-166f90cb1227",
+      "fields": {
+        "preAlertDate": {
+          "stringValue": "2025-12-15"
+        },
+        "shippingCompany": {
+          "stringValue": ""
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "containerSize": {
+          "stringValue": ""
+        },
+        "projectType": {
+          "stringValue": "Air Freight"
+        },
+        "id": {
+          "stringValue": "dfe28e6e-750a-4181-8399-166f90cb1227"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "Stun gun"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "1564051510"
+        },
+        "invoiceNo": {
+          "stringValue": "[YSM-PP][HV]"
+        },
+        "etd": {
+          "stringValue": "2025-11-25"
+        },
+        "ataPort": {
+          "stringValue": "2026-01-09"
+        },
+        "containerNo": {
+          "stringValue": ""
+        },
+        "terminal": {
+          "stringValue": "MTY"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-09T13:01:48.503Z"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2025-12-15T05:43:24.811098Z",
+      "updateTime": "2026-01-09T13:01:48.710096Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/dfe69301-89b5-4f9e-8990-6b8a633e1d26",
+      "fields": {
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574071408"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174941C"
+        },
+        "id": {
+          "stringValue": "dfe69301-89b5-4f9e-8990-6b8a633e1d26"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8"
+        },
+        "packages": {
+          "stringValue": "26 PACKAGES"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "etaPort": {
+          "stringValue": "2026-02-02"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574071408"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EGSU1943047"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T17:02:28.367Z"
+        },
+        "grossWeight": {
+          "integerValue": "11644"
+        },
+        "ataPort": {
+          "stringValue": "2026-05-09"
+        },
+        "etd": {
+          "stringValue": "2026-01-15"
+        }
+      },
+      "createTime": "2026-01-15T21:02:15.282956Z",
+      "updateTime": "2026-05-09T17:02:30.319283Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e0a7d21d-654d-4cba-bbea-d0b9d181bc3f",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EMCU8960221"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T21:37:22.844Z"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": "EGLV143574069365"
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "e0a7d21d-654d-4cba-bbea-d0b9d181bc3f"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8(CKD)"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574069365"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM402936C"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402936C"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        }
+      },
+      "createTime": "2026-01-15T21:37:20.669386Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e1189190-b7fa-47c8-83f2-b12da4ce8363",
+      "fields": {
+        "refNo": {
+          "stringValue": "EGLV143574071173"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T20:56:00.530Z"
+        },
+        "containerNo": {
+          "stringValue": "EISU8546111"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174956C"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574071173"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8K(CKD)"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "e1189190-b7fa-47c8-83f2-b12da4ce8363"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM174956C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        }
+      },
+      "createTime": "2026-01-15T20:55:50.838188Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e1959ed7-68d2-4d5a-8b87-d0de0d54c9f9",
+      "fields": {
+        "refNo": {
+          "stringValue": "SEC25114338"
+        },
+        "etaPort": {
+          "stringValue": "2025-12-24"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-10T01:22:09.017Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "JXLU4019880"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "blNo": {
+          "stringValue": "SEC25114338"
+        },
+        "invoiceNo": {
+          "stringValue": ""
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "STOVE"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "e1959ed7-68d2-4d5a-8b87-d0de0d54c9f9"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HC"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-10"
+        }
+      },
+      "createTime": "2026-01-10T01:22:09.034690Z",
+      "updateTime": "2026-01-10T01:22:09.651950Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e1bec84f-e889-4489-a776-abb8614c52cc",
+      "fields": {
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402950C"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-31"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574070088"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT406482"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "e1bec84f-e889-4489-a776-abb8614c52cc"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8K(CKD)"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "stringValue": ""
+        },
+        "refNo": {
+          "stringValue": "EGLV143574070088"
+        },
+        "etaPort": {
+          "stringValue": "2025-12-20"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EMCU8805950"
+        }
+      },
+      "createTime": "2025-12-31T13:45:15.249073Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e1e4f2d8-3cdd-42dd-ac54-2d83f8835f8d",
+      "fields": {
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": "EGLV143559689022"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T16:29:46.417Z"
+        },
+        "containerNo": {
+          "stringValue": "EGSU1132482"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM174963C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "nullValue": null
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174963C"
+        },
+        "blNo": {
+          "stringValue": "EGLV143559689022"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "e1e4f2d8-3cdd-42dd-ac54-2d83f8835f8d"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK (CKD)"
+        }
+      },
+      "createTime": "2026-01-15T16:29:18.378112Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e1f104a8-c3ab-435d-a908-82486e70c762",
+      "fields": {
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "stringValue": ""
+        },
+        "refNo": {
+          "stringValue": "EGLV143574070088"
+        },
+        "etaPort": {
+          "stringValue": "2025-12-20"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "TGBU4548256"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402950C"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-31"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT406482"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574070088"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "e1f104a8-c3ab-435d-a908-82486e70c762"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8K(CKD)"
+        }
+      },
+      "createTime": "2025-12-31T13:45:14.552253Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e20c95c2-24ef-463c-843c-79919527e5da",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-03-09T15:41:40.007Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EMCU8768965"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574070495"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-16"
+        },
+        "etd": {
+          "stringValue": "2025-12-31"
+        },
+        "ataPort": {
+          "stringValue": "2026-03-09"
+        },
+        "grossWeight": {
+          "integerValue": "10496"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "e20c95c2-24ef-463c-843c-79919527e5da"
+        },
+        "packages": {
+          "stringValue": "24 PACKAGES"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8L"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574070495"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT177751"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-02"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM174946C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        }
+      },
+      "createTime": "2026-01-02T23:55:31.582088Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e2a72092-0caf-4f52-a660-651233f65d7c",
+      "fields": {
+        "shippingCompany": {
+          "stringValue": ""
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "Import"
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-15"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "invoiceNo": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "SHACB25074765"
+        },
+        "id": {
+          "stringValue": "e2a72092-0caf-4f52-a660-651233f65d7c"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "CENTRALIZED FEEDING SYSTEM EQUIPMENT ACCESSORIES"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": ""
+        },
+        "terminal": {
+          "stringValue": "MANZANILLO"
+        },
+        "containerNo": {
+          "stringValue": "REGU5091125"
+        }
+      },
+      "createTime": "2025-12-15T06:49:18.205990Z",
+      "updateTime": "2025-12-15T06:49:18.205990Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e34091db-bf28-448b-89cc-7d282f76ccef",
+      "fields": {
+        "etd": {
+          "nullValue": null
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "TXGU7758808"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-12T12:59:24.837Z"
+        },
+        "etaPort": {
+          "stringValue": "2025-12-20"
+        },
+        "refNo": {
+          "stringValue": "143559688017"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-12"
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "modelCode": {
+          "stringValue": "Unknown Model (Update manually)"
+        },
+        "id": {
+          "stringValue": "e34091db-bf28-448b-89cc-7d282f76ccef"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "143559688017"
+        },
+        "invoiceNo": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-12T12:59:22.119027Z",
+      "updateTime": "2026-01-12T12:59:22.880437Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e359c5c3-4696-48b3-8b9b-2e3db1af09a3",
+      "fields": {
+        "etd": {
+          "stringValue": "2026-01-26"
+        },
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:54.519Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EITU0594518"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559589108"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-26"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-07"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "20GP"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "26PIM-170125"
+        },
+        "modelCode": {
+          "stringValue": "Unknown Model (Update manually)"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "e359c5c3-4696-48b3-8b9b-2e3db1af09a3"
+        },
+        "blNo": {
+          "stringValue": "EGLV143559589108"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT176699"
+        },
+        "atd": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-07T13:09:19.028598Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e37b3427-9d9f-4980-af5a-3d0fceeb4214",
+      "fields": {
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        },
+        "etd": {
+          "stringValue": "2026-01-26"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559589108"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-26"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:54.519Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EGSU9763329"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "contractNo": {
+          "stringValue": "26PIM-170125"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-07"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT176699"
+        },
+        "blNo": {
+          "stringValue": "EGLV143559589108"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "Unknown Model (Update manually)"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "e37b3427-9d9f-4980-af5a-3d0fceeb4214"
+        }
+      },
+      "createTime": "2026-01-07T13:09:23.342232Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e3c2ebbd-114f-406c-9200-d3e5649762da",
+      "fields": {
+        "invoiceNo": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "SHACB25075754"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "INJECTION MOLDING MACHINE"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "e3c2ebbd-114f-406c-9200-d3e5649762da"
+        },
+        "projectType": {
+          "stringValue": "Import"
+        },
+        "containerSize": {
+          "stringValue": "40FR"
+        },
+        "shippingCompany": {
+          "stringValue": ""
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-15"
+        },
+        "refNo": {
+          "stringValue": ""
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "terminal": {
+          "stringValue": "MANZANILLO"
+        },
+        "containerNo": {
+          "stringValue": "DFOU5006335"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        }
+      },
+      "createTime": "2025-12-15T06:34:08.075369Z",
+      "updateTime": "2025-12-15T06:34:08.075369Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e4beef0d-408a-4440-b401-cc578e9b72cd",
+      "fields": {
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "e4beef0d-408a-4440-b401-cc578e9b72cd"
+        },
+        "modelCode": {
+          "stringValue": "INJECTION MOLDING MACHINE"
+        },
+        "invoiceNo": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "SHACB25075754"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-15"
+        },
+        "shippingCompany": {
+          "stringValue": ""
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "projectType": {
+          "stringValue": "Import"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "containerNo": {
+          "stringValue": "AMPU8000850"
+        },
+        "terminal": {
+          "stringValue": "MANZANILLO"
+        },
+        "refNo": {
+          "stringValue": ""
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "ataPort": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2025-12-15T06:34:08.075369Z",
+      "updateTime": "2025-12-15T06:34:08.075369Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e4d3afbe-f219-4a93-a86b-9e1bd3077bde",
+      "fields": {
+        "grossWeight": {
+          "integerValue": "12195"
+        },
+        "ataPort": {
+          "stringValue": "2026-02-11"
+        },
+        "etd": {
+          "stringValue": "2025-12-06"
+        },
+        "etaPort": {
+          "stringValue": "2025-12-23"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574069349"
+        },
+        "containerNo": {
+          "stringValue": "TGBU5993488"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-11T14:03:44.768Z"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402946C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-31"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574069349"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT406477"
+        },
+        "packages": {
+          "stringValue": "16 PACKAGES"
+        },
+        "modelCode": {
+          "stringValue": "UTV CM1000UZ-8L(CKD)"
+        },
+        "id": {
+          "stringValue": "e4d3afbe-f219-4a93-a86b-9e1bd3077bde"
+        },
+        "qty": {
+          "integerValue": "0"
+        }
+      },
+      "createTime": "2025-12-31T13:24:38.768226Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e58ba7cc-707f-4eb7-aab9-cef0ba2694fd",
+      "fields": {
+        "packages": {
+          "stringValue": "14 PACKAGES"
+        },
+        "modelCode": {
+          "stringValue": "1000CC UTV CM1000UZ-8K(CKD)"
+        },
+        "id": {
+          "stringValue": "e58ba7cc-707f-4eb7-aab9-cef0ba2694fd"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174958C"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574071254"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-14"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM174958C"
+        },
+        "containerNo": {
+          "stringValue": "TLLU5191924"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-11T14:03:47.102Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-18"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574071254"
+        },
+        "etd": {
+          "stringValue": "2025-12-27"
+        },
+        "grossWeight": {
+          "integerValue": "10806"
+        },
+        "ataPort": {
+          "stringValue": "2026-02-11"
+        }
+      },
+      "createTime": "2026-01-14T22:02:43.057993Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e5b857f7-e2f9-4811-82c2-3db82da52987",
+      "fields": {
+        "atd": {
+          "stringValue": ""
+        },
+        "invoiceNo": {
+          "stringValue": "26PIM-170131"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574068415"
+        },
+        "id": {
+          "stringValue": "e5b857f7-e2f9-4811-82c2-3db82da52987"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "CM1000SZ-3(CKD)"
+        },
+        "contractNo": {
+          "stringValue": "26PIM-170131"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "containerSize": {
+          "stringValue": "40"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": "EGLV143574068415"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EMCU9910077"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T21:30:23.711Z"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        }
+      },
+      "createTime": "2026-01-15T21:30:23.598155Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e6fbe972-b559-44ff-8cc1-84648da2eaef",
+      "fields": {
+        "preAlertDate": {
+          "stringValue": "2026-01-14"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM174958C"
+        },
+        "packages": {
+          "stringValue": "14 PACKAGES"
+        },
+        "modelCode": {
+          "stringValue": "1000CC UTV CM1000UZ-8K(CKD)"
+        },
+        "id": {
+          "stringValue": "e6fbe972-b559-44ff-8cc1-84648da2eaef"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574071254"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174958C"
+        },
+        "etd": {
+          "stringValue": "2025-12-27"
+        },
+        "grossWeight": {
+          "integerValue": "10806"
+        },
+        "ataPort": {
+          "stringValue": "2026-02-11"
+        },
+        "containerNo": {
+          "stringValue": "TIIU4999984"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-11T14:03:47.102Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-18"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574071254"
+        }
+      },
+      "createTime": "2026-01-14T22:02:39.177562Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e73f38dc-190b-4184-8f21-5ea2c713ae78",
+      "fields": {
+        "id": {
+          "stringValue": "e73f38dc-190b-4184-8f21-5ea2c713ae78"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143559711353"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT406511"
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-25"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402973C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerNo": {
+          "stringValue": "TXGU5599902"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-16T19:16:56.231Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-09"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559711353"
+        },
+        "etd": {
+          "stringValue": "2025-12-20"
+        },
+        "ataPort": {
+          "stringValue": "2026-02-16"
+        }
+      },
+      "createTime": "2025-12-31T00:17:03.519366Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e762b9ea-bd4d-4418-b732-c54a31888375",
+      "fields": {
+        "etd": {
+          "stringValue": "2025-12-03"
+        },
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        },
+        "containerNo": {
+          "stringValue": "ZCSU6014526"
+        },
+        "terminal": {
+          "stringValue": "MANZANILLO"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-26T12:55:17.960Z"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-15"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "shippingCompany": {
+          "stringValue": ""
+        },
+        "containerSize": {
+          "stringValue": "45PF"
+        },
+        "projectType": {
+          "stringValue": "Import"
+        },
+        "id": {
+          "stringValue": "e762b9ea-bd4d-4418-b732-c54a31888375"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "AIR CONDITIONING BOX"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "ZIMUSHH31978973"
+        },
+        "invoiceNo": {
+          "stringValue": "CFMET-2511-07057-1"
+        }
+      },
+      "createTime": "2025-12-15T06:38:11.598148Z",
+      "updateTime": "2026-01-26T12:55:19.958165Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e7aaa332-19ad-45c5-bd05-e6b1568d8626",
+      "fields": {
+        "packages": {
+          "stringValue": "28 PACKAGES"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8K"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "e7aaa332-19ad-45c5-bd05-e6b1568d8626"
+        },
+        "blNo": {
+          "stringValue": "EGLV143559688220"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT177758"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-31"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "nullValue": null
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM174953C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-03-09T15:41:41.933Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "SKIU9098343"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559688220"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-16"
+        },
+        "etd": {
+          "stringValue": "2025-12-31"
+        },
+        "ataPort": {
+          "stringValue": "2026-03-09"
+        },
+        "grossWeight": {
+          "integerValue": "14283"
+        }
+      },
+      "createTime": "2025-12-31T17:31:58.774200Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e81de7a5-307c-47eb-9170-e9644e6f4cbd",
+      "fields": {
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-17"
+        },
+        "blNo": {
+          "stringValue": "EGLV143674060033"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174965C"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK(CKD)"
+        },
+        "packages": {
+          "stringValue": "10 PACKAGES"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "e81de7a5-307c-47eb-9170-e9644e6f4cbd"
+        },
+        "ataPort": {
+          "stringValue": "2026-05-09"
+        },
+        "grossWeight": {
+          "integerValue": "9797"
+        },
+        "etd": {
+          "stringValue": "2026-01-21"
+        },
+        "refNo": {
+          "stringValue": "EGLV143674060033"
+        },
+        "etaPort": {
+          "stringValue": "2026-02-09"
+        },
+        "updatedAt": {
+          "stringValue": "2026-05-09T17:02:16.473Z"
+        },
+        "containerNo": {
+          "stringValue": "EMCU8917251"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        }
+      },
+      "createTime": "2026-01-17T17:47:39.761494Z",
+      "updateTime": "2026-05-09T17:02:19.718658Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e9b4baa1-172d-44cf-8261-32612eebf7c8",
+      "fields": {
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "TXGU8341146"
+        },
+        "refNo": {
+          "stringValue": "143481090429"
+        },
+        "etaPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "UTV CM1000UZ"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "e9b4baa1-172d-44cf-8261-32612eebf7c8"
+        },
+        "invoiceNo": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "143481090429"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-06"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "nullValue": null
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-06T20:36:11.298342Z",
+      "updateTime": "2026-01-06T20:36:11.298342Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/e9d28d31-316d-4aac-b6ff-72a02bb05a89",
+      "fields": {
+        "contractNo": {
+          "stringValue": "25MX-CFM403579C"
+        },
+        "shippingCompany": {
+          "stringValue": ""
+        },
+        "projectType": {
+          "stringValue": "Import"
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-15"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM403579C"
+        },
+        "blNo": {
+          "stringValue": "EGLV143559588420"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "e9d28d31-316d-4aac-b6ff-72a02bb05a89"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK"
+        },
+        "ataPort": {
+          "stringValue": "2026-01-09"
+        },
+        "etd": {
+          "stringValue": "2025-11-23"
+        },
+        "refNo": {
+          "stringValue": ""
+        },
+        "etaPort": {
+          "stringValue": "2026-01-09"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:46.353Z"
+        },
+        "containerNo": {
+          "stringValue": "EGSU9692858"
+        },
+        "terminal": {
+          "stringValue": "MANZANILLO"
+        }
+      },
+      "createTime": "2025-12-15T05:27:09.493745Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/ea64e179-82aa-4b6b-9284-757b34c0d52b",
+      "fields": {
+        "preAlertDate": {
+          "stringValue": "2026-01-07"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402978C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "id": {
+          "stringValue": "ea64e179-82aa-4b6b-9284-757b34c0d52b"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ"
+        },
+        "packages": {
+          "stringValue": "12 PACKAGES"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574070363"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT406516"
+        },
+        "etd": {
+          "stringValue": "2025-12-31"
+        },
+        "grossWeight": {
+          "integerValue": "10821"
+        },
+        "ataPort": {
+          "stringValue": "2026-03-09"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EGHU8208288"
+        },
+        "updatedAt": {
+          "stringValue": "2026-03-09T15:41:25.261Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-17"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574070363"
+        }
+      },
+      "createTime": "2026-01-07T13:15:20.292892Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/ea741858-5585-4299-89c2-bb82a51572c4",
+      "fields": {
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402982C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40SD96"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "ea741858-5585-4299-89c2-bb82a51572c4"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK (CKD)"
+        },
+        "blNo": {
+          "stringValue": "WHL089F609949"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM402982C"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T22:09:04.348Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "WHSU5801694"
+        },
+        "refNo": {
+          "stringValue": "WHL089F609949"
+        },
+        "etaPort": {
+          "nullValue": null
+        }
+      },
+      "createTime": "2026-01-15T22:09:03.108073Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/ea84f80c-6e81-49d4-9536-eb628e40f1a3",
+      "fields": {
+        "refNo": {
+          "stringValue": "EGLV143574069012"
+        },
+        "etaPort": {
+          "stringValue": "2025-12-24"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-11T14:03:48.805Z"
+        },
+        "containerNo": {
+          "stringValue": "TRHU7503217"
+        },
+        "terminal": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": "2026-02-11"
+        },
+        "grossWeight": {
+          "integerValue": "4757"
+        },
+        "etd": {
+          "stringValue": "2025-12-06"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT176707"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574069012"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "ea84f80c-6e81-49d4-9536-eb628e40f1a3"
+        },
+        "modelCode": {
+          "stringValue": ""
+        },
+        "packages": {
+          "stringValue": "8 PACKAGES"
+        },
+        "shippingCompany": {
+          "stringValue": ""
+        },
+        "contractNo": {
+          "stringValue": "26PIM-170133"
+        },
+        "projectType": {
+          "stringValue": ""
+        },
+        "containerSize": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2025-12-31T02:34:38.406486Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/ea99fb30-ea44-42a2-b2cb-aacd44f55dd7",
+      "fields": {
+        "containerSize": {
+          "stringValue": ""
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-25"
+        },
+        "atd": {
+          "stringValue": "2025-06-02"
+        },
+        "blNo": {
+          "stringValue": "FULL-TEST-MANUAL-X1"
+        },
+        "invoiceNo": {
+          "stringValue": "INV-UPDATED-002"
+        },
+        "modelCode": {
+          "stringValue": "ZFORCE 950"
+        },
+        "id": {
+          "stringValue": "ea99fb30-ea44-42a2-b2cb-aacd44f55dd7"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "ataPort": {
+          "stringValue": "2025-07-02"
+        },
+        "etd": {
+          "stringValue": "2025-06-01"
+        },
+        "etaPort": {
+          "stringValue": "2025-07-01"
+        },
+        "refNo": {
+          "stringValue": "FULL-TEST-MANUAL-X1"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "Bulk/LCL"
+        }
+      },
+      "createTime": "2025-12-25T22:06:29.418071Z",
+      "updateTime": "2025-12-25T22:12:16.915575Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/eab60848-055b-4eb8-8045-ad56bb620f76",
+      "fields": {
+        "blNo": {
+          "stringValue": "COSU6440088600"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM175315C"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "eab60848-055b-4eb8-8045-ad56bb620f76"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8(CKD)"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM175315C"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "refNo": {
+          "stringValue": "COSU6440088600"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T20:48:06.028Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "TCKU7786680"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        }
+      },
+      "createTime": "2026-01-15T20:48:04.202245Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/eac6ffc0-49ec-481d-9a9d-bd17b7196ac0",
+      "fields": {
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        },
+        "etd": {
+          "stringValue": "2026-01-26"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-26"
+        },
+        "refNo": {
+          "stringValue": ""
+        },
+        "terminal": {
+          "stringValue": "MANZANILLO"
+        },
+        "containerNo": {
+          "stringValue": "EITU1875551"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:49.153Z"
+        },
+        "shippingCompany": {
+          "stringValue": ""
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "projectType": {
+          "stringValue": "Import"
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-15"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143500556352"
+        },
+        "invoiceNo": {
+          "stringValue": "CFMET-2511-12062"
+        },
+        "id": {
+          "stringValue": "eac6ffc0-49ec-481d-9a9d-bd17b7196ac0"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "FIXTURE, INSPECTION TOOL, TOOLING PARTS, WELDING COMPONENTS"
+        }
+      },
+      "createTime": "2025-12-15T06:56:29.580047Z",
+      "updateTime": "2026-02-08T22:10:49.557248Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/eb359bb4-7337-45da-a79a-95883050a7b2",
+      "fields": {
+        "grossWeight": {
+          "integerValue": "8007"
+        },
+        "ataPort": {
+          "stringValue": "2026-03-09"
+        },
+        "etd": {
+          "stringValue": "2025-12-31"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-17"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559711337"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EMCU8752995"
+        },
+        "updatedAt": {
+          "stringValue": "2026-03-09T15:41:37.005Z"
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402979C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-03"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143559711337"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT406517"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK"
+        },
+        "packages": {
+          "stringValue": "11 PACKAGES"
+        },
+        "id": {
+          "stringValue": "eb359bb4-7337-45da-a79a-95883050a7b2"
+        },
+        "qty": {
+          "integerValue": "0"
+        }
+      },
+      "createTime": "2026-01-03T00:14:19.327405Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/eb65b486-81f6-4e60-bad0-cea6330a9939",
+      "fields": {
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EGSU1128306"
+        },
+        "etaPort": {
+          "stringValue": "2025-12-06"
+        },
+        "refNo": {
+          "stringValue": "SEC25100570"
+        },
+        "etd": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "eb65b486-81f6-4e60-bad0-cea6330a9939"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "CM1000SZ-3A(CKD)"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "SEC25100570"
+        },
+        "invoiceNo": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-31"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        }
+      },
+      "createTime": "2025-12-31T02:27:08.182691Z",
+      "updateTime": "2025-12-31T02:27:08.182691Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/eba5714b-3fb3-482a-bd25-d01361d2a1c8",
+      "fields": {
+        "etd": {
+          "stringValue": "2025-12-20"
+        },
+        "ataPort": {
+          "stringValue": "2026-02-16"
+        },
+        "containerNo": {
+          "stringValue": "TGBU6292327"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-16T19:16:58.607Z"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": "EGLV143559711345"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-23"
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402971C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK(CKD)"
+        },
+        "id": {
+          "stringValue": "eba5714b-3fb3-482a-bd25-d01361d2a1c8"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143559711345"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM402971C"
+        }
+      },
+      "createTime": "2026-01-23T01:55:40.284256Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/ec53a04c-132d-431d-a2f7-bdbb00ad9d5b",
+      "fields": {
+        "invoiceNo": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "SEC25100570"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "CM1000SZ-3A(CKD)"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "ec53a04c-132d-431d-a2f7-bdbb00ad9d5b"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-31"
+        },
+        "refNo": {
+          "stringValue": "SEC25100570"
+        },
+        "etaPort": {
+          "stringValue": "2025-12-06"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "FFAU4868473"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2025-12-31T02:27:05.587759Z",
+      "updateTime": "2025-12-31T02:27:05.587759Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/ee10392b-758a-4eb9-8dd7-0c8912f38f32",
+      "fields": {
+        "containerNo": {
+          "stringValue": "MAGU5405990"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "etaPort": {
+          "stringValue": "2025-12-06"
+        },
+        "refNo": {
+          "stringValue": "SEC25100570"
+        },
+        "etd": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "CM1000SZ-3A(CKD)"
+        },
+        "id": {
+          "stringValue": "ee10392b-758a-4eb9-8dd7-0c8912f38f32"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "invoiceNo": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "SEC25100570"
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-31"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        }
+      },
+      "createTime": "2025-12-31T02:27:05.853695Z",
+      "updateTime": "2025-12-31T02:27:05.853695Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/eea817ce-0d04-435e-879b-9bd7835d58c2",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EGSU6406842"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-03-09T15:41:41.933Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-16"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559688220"
+        },
+        "etd": {
+          "stringValue": "2025-12-31"
+        },
+        "grossWeight": {
+          "integerValue": "14283"
+        },
+        "ataPort": {
+          "stringValue": "2026-03-09"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8K"
+        },
+        "packages": {
+          "stringValue": "28 PACKAGES"
+        },
+        "id": {
+          "stringValue": "eea817ce-0d04-435e-879b-9bd7835d58c2"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143559688220"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT177758"
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-31"
+        },
+        "containerSize": {
+          "nullValue": null
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM174953C"
+        }
+      },
+      "createTime": "2025-12-31T17:31:57.416477Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f08adec2-f6e7-4ee5-bc89-6596f777de58",
+      "fields": {
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": "EGLV143574069365"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T21:37:22.844Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "BSIU8385668"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402936C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM402936C"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574069365"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8(CKD)"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "f08adec2-f6e7-4ee5-bc89-6596f777de58"
+        }
+      },
+      "createTime": "2026-01-15T21:37:18.776700Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f1530f38-9708-4ec3-b45b-ae3369955a13",
+      "fields": {
+        "etd": {
+          "stringValue": "2025-12-31"
+        },
+        "grossWeight": {
+          "integerValue": "10496"
+        },
+        "ataPort": {
+          "stringValue": "2026-03-09"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "GCXU6546096"
+        },
+        "updatedAt": {
+          "stringValue": "2026-03-09T15:41:40.007Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-16"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574070495"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-02"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM174946C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "id": {
+          "stringValue": "f1530f38-9708-4ec3-b45b-ae3369955a13"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8L"
+        },
+        "packages": {
+          "stringValue": "24 PACKAGES"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT177751"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574070495"
+        }
+      },
+      "createTime": "2026-01-02T23:55:26.766517Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f1b23d21-9074-40c7-b9a7-1fd343632d71",
+      "fields": {
+        "refNo": {
+          "stringValue": ""
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "terminal": {
+          "stringValue": "MANZANILLO"
+        },
+        "containerNo": {
+          "stringValue": "TTNU0603358"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "invoiceNo": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "SHACB25075754"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "INJECTION MOLDING MACHINE"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "f1b23d21-9074-40c7-b9a7-1fd343632d71"
+        },
+        "projectType": {
+          "stringValue": "Import"
+        },
+        "containerSize": {
+          "stringValue": "20FR"
+        },
+        "shippingCompany": {
+          "stringValue": ""
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-15"
+        }
+      },
+      "createTime": "2025-12-15T06:34:08.075369Z",
+      "updateTime": "2025-12-15T06:34:08.075369Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f23e1ef9-e21d-4932-9b93-06acbbb67aca",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143574070100"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT406510"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK(CKD)"
+        },
+        "packages": {
+          "stringValue": "9 PACKAGES"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "f23e1ef9-e21d-4932-9b93-06acbbb67aca"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402972C"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-03"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574070100"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-07"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-11T14:03:49.418Z"
+        },
+        "containerNo": {
+          "stringValue": "TGBU6111481"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "ataPort": {
+          "stringValue": "2026-02-11"
+        },
+        "grossWeight": {
+          "integerValue": "2773"
+        },
+        "etd": {
+          "stringValue": "2025-12-20"
+        }
+      },
+      "createTime": "2026-01-03T00:22:56.129110Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f240552d-19f6-44c0-b529-40f0eb91d10c",
+      "fields": {
+        "refNo": {
+          "stringValue": "EGLV143574071254"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-18"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-11T14:03:47.102Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EGHU9250615"
+        },
+        "ataPort": {
+          "stringValue": "2026-02-11"
+        },
+        "grossWeight": {
+          "integerValue": "10806"
+        },
+        "etd": {
+          "stringValue": "2025-12-27"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574071254"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174958C"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "packages": {
+          "stringValue": "14 PACKAGES"
+        },
+        "modelCode": {
+          "stringValue": "1000CC UTV CM1000UZ-8K(CKD)"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "f240552d-19f6-44c0-b529-40f0eb91d10c"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM174958C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-14"
+        }
+      },
+      "createTime": "2026-01-14T22:02:32.769176Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f26b1dcb-437e-462e-93d9-facb2a127dea",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EMCU8521928"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:02.906Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-02-01"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559711205"
+        },
+        "etd": {
+          "stringValue": "2025-12-14"
+        },
+        "grossWeight": {
+          "integerValue": "14325"
+        },
+        "ataPort": {
+          "stringValue": "2026-02-01"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8L"
+        },
+        "packages": {
+          "stringValue": "25 PACKAGES"
+        },
+        "id": {
+          "stringValue": "f26b1dcb-437e-462e-93d9-facb2a127dea"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143559711205"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT406468"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-05"
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402938C"
+        }
+      },
+      "createTime": "2026-01-05T23:00:47.593207Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f359ad0b-6db1-4f95-9387-690a8df16f0d",
+      "fields": {
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EGSU9245546"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T21:37:22.844Z"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": "EGLV143574069365"
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "f359ad0b-6db1-4f95-9387-690a8df16f0d"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8(CKD)"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574069365"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM402936C"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402936C"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        }
+      },
+      "createTime": "2026-01-15T21:37:13.449464Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f36a176a-b53c-4065-a040-0f0461329e39",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143574069373"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT406474"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8L(CKD)"
+        },
+        "packages": {
+          "stringValue": "29 PACKAGES"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "f36a176a-b53c-4065-a040-0f0461329e39"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402943C"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-03"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574069373"
+        },
+        "etaPort": {
+          "stringValue": "2025-12-31"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-11T14:03:48.201Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "GAOU7241211"
+        },
+        "ataPort": {
+          "stringValue": "2026-02-11"
+        },
+        "grossWeight": {
+          "integerValue": "13685"
+        },
+        "etd": {
+          "stringValue": "2025-12-14"
+        }
+      },
+      "createTime": "2026-01-03T00:48:08.212227Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f3ce8f55-ec54-4202-955b-d09d5663ff4b",
+      "fields": {
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": "EGLV143574071173"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T20:56:00.530Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "TGBU6018701"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM174956C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574071173"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174956C"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8K(CKD)"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "f3ce8f55-ec54-4202-955b-d09d5663ff4b"
+        }
+      },
+      "createTime": "2026-01-15T20:55:54.889921Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f46e314f-b9b8-4e69-8eab-f4e4a7c6d134",
+      "fields": {
+        "ataPort": {
+          "stringValue": "2026-02-11"
+        },
+        "grossWeight": {
+          "integerValue": "13685"
+        },
+        "etd": {
+          "stringValue": "2025-12-14"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574069373"
+        },
+        "etaPort": {
+          "stringValue": "2025-12-31"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-11T14:03:48.201Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "CAAU5065507"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402943C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-03"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574069373"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT406474"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "packages": {
+          "stringValue": "29 PACKAGES"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8L(CKD)"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "f46e314f-b9b8-4e69-8eab-f4e4a7c6d134"
+        }
+      },
+      "createTime": "2026-01-03T00:48:10.132011Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f47b3157-4cad-488f-9b05-24c4b1b1c8b2",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143559689022"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174963C"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK (CKD)"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "f47b3157-4cad-488f-9b05-24c4b1b1c8b2"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "nullValue": null
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM174963C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559689022"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T16:29:46.417Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "TXGU5740230"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        }
+      },
+      "createTime": "2026-01-15T16:29:29.123922Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f5557e89-0b4e-497b-a6e3-d63e662d0908",
+      "fields": {
+        "containerNo": {
+          "stringValue": "MAGU5405583"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T21:30:23.711Z"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": "EGLV143574068415"
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "CM1000SZ-3(CKD)"
+        },
+        "id": {
+          "stringValue": "f5557e89-0b4e-497b-a6e3-d63e662d0908"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574068415"
+        },
+        "invoiceNo": {
+          "stringValue": "26PIM-170131"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "containerSize": {
+          "stringValue": "40"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "26PIM-170131"
+        }
+      },
+      "createTime": "2026-01-15T21:30:24.641434Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f558f6bc-692b-446e-8ec5-46f564f3b22c",
+      "fields": {
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574069365"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM402936C"
+        },
+        "id": {
+          "stringValue": "f558f6bc-692b-446e-8ec5-46f564f3b22c"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8(CKD)"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402936C"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": "EGLV143574069365"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EGSU9598100"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T21:37:22.844Z"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        }
+      },
+      "createTime": "2026-01-15T21:37:14.745278Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f5d24651-fc95-4b48-8330-8d46e43d36a2",
+      "fields": {
+        "contractNo": {
+          "stringValue": "26PIM-170133"
+        },
+        "shippingCompany": {
+          "stringValue": ""
+        },
+        "projectType": {
+          "stringValue": ""
+        },
+        "containerSize": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574069012"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT176707"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "f5d24651-fc95-4b48-8330-8d46e43d36a2"
+        },
+        "packages": {
+          "stringValue": "8 PACKAGES"
+        },
+        "modelCode": {
+          "stringValue": ""
+        },
+        "ataPort": {
+          "stringValue": "2026-02-11"
+        },
+        "grossWeight": {
+          "integerValue": "4757"
+        },
+        "etd": {
+          "stringValue": "2025-12-06"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574069012"
+        },
+        "etaPort": {
+          "stringValue": "2025-12-24"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-11T14:03:48.805Z"
+        },
+        "containerNo": {
+          "stringValue": "EGSU1128306"
+        },
+        "terminal": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2025-12-31T02:37:19.831536Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f5e60045-e560-498c-ba94-1f95e4762055",
+      "fields": {
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "GAOU6325452"
+        },
+        "updatedAt": {
+          "stringValue": "2026-03-09T15:41:37.005Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-17"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559711337"
+        },
+        "etd": {
+          "stringValue": "2025-12-31"
+        },
+        "grossWeight": {
+          "integerValue": "8007"
+        },
+        "ataPort": {
+          "stringValue": "2026-03-09"
+        },
+        "id": {
+          "stringValue": "f5e60045-e560-498c-ba94-1f95e4762055"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "packages": {
+          "stringValue": "11 PACKAGES"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143559711337"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT406517"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-03"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402979C"
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "projectType": {
+          "stringValue": "General"
+        }
+      },
+      "createTime": "2026-01-03T00:14:17.797924Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f71b5dd5-8112-420c-868c-dd11e9861ad8",
+      "fields": {
+        "blNo": {
+          "stringValue": "EGLV143559711345"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM402971C"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK(CKD)"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "f71b5dd5-8112-420c-868c-dd11e9861ad8"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402971C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-23"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559711345"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-16T19:16:58.607Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EGSU9644470"
+        },
+        "ataPort": {
+          "stringValue": "2026-02-16"
+        },
+        "etd": {
+          "stringValue": "2025-12-20"
+        }
+      },
+      "createTime": "2026-01-23T01:55:44.561128Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f8208da9-c58c-4a8f-9374-710c6a7d3c4a",
+      "fields": {
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "TIIU6829098"
+        },
+        "updatedAt": {
+          "stringValue": "2026-03-09T15:41:37.005Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-17"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559711337"
+        },
+        "etd": {
+          "stringValue": "2025-12-31"
+        },
+        "grossWeight": {
+          "integerValue": "8007"
+        },
+        "ataPort": {
+          "stringValue": "2026-03-09"
+        },
+        "packages": {
+          "stringValue": "11 PACKAGES"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK"
+        },
+        "id": {
+          "stringValue": "f8208da9-c58c-4a8f-9374-710c6a7d3c4a"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT406517"
+        },
+        "blNo": {
+          "stringValue": "EGLV143559711337"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-03"
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402979C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        }
+      },
+      "createTime": "2026-01-03T00:14:18.920777Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f8bb7ce0-ed27-44e6-b392-a3116ec158a8",
+      "fields": {
+        "containerNo": {
+          "stringValue": "EITU9173850"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:02.906Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-02-01"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559711205"
+        },
+        "etd": {
+          "stringValue": "2025-12-14"
+        },
+        "grossWeight": {
+          "integerValue": "14325"
+        },
+        "ataPort": {
+          "stringValue": "2026-02-01"
+        },
+        "id": {
+          "stringValue": "f8bb7ce0-ed27-44e6-b392-a3116ec158a8"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8L"
+        },
+        "packages": {
+          "stringValue": "25 PACKAGES"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143559711205"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT406468"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-05"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402938C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "projectType": {
+          "stringValue": "General"
+        }
+      },
+      "createTime": "2026-01-05T23:00:48.575604Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f8e5baa2-147d-41d1-9629-e5c06a836ae4",
+      "fields": {
+        "atd": {
+          "stringValue": ""
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM175315C"
+        },
+        "blNo": {
+          "stringValue": "COSU6440088600"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8(CKD)"
+        },
+        "id": {
+          "stringValue": "f8e5baa2-147d-41d1-9629-e5c06a836ae4"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM175315C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": "COSU6440088600"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "OOCU8203094"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T20:48:06.028Z"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        }
+      },
+      "createTime": "2026-01-15T20:48:00.731825Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f938d02b-e218-496f-ad65-144b75b249d0",
+      "fields": {
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": "WHL089F609949"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "WHSU8081598"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T22:09:04.348Z"
+        },
+        "containerSize": {
+          "stringValue": "40SD96"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402982C"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "WHL089F609949"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM402982C"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK (CKD)"
+        },
+        "id": {
+          "stringValue": "f938d02b-e218-496f-ad65-144b75b249d0"
+        },
+        "qty": {
+          "integerValue": "0"
+        }
+      },
+      "createTime": "2026-01-15T22:09:04.237203Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/f9a8167f-7c5a-441c-97a2-ffbb950a7d1e",
+      "fields": {
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "containerSize": {
+          "stringValue": "40"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "26PIM-170131"
+        },
+        "modelCode": {
+          "stringValue": "CM1000SZ-3(CKD)"
+        },
+        "id": {
+          "stringValue": "f9a8167f-7c5a-441c-97a2-ffbb950a7d1e"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574068415"
+        },
+        "invoiceNo": {
+          "stringValue": "26PIM-170131"
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "EMCU8488687"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T21:30:23.711Z"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "refNo": {
+          "stringValue": "EGLV143574068415"
+        }
+      },
+      "createTime": "2026-01-15T21:30:16.637227Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/fa510426-8b53-4501-81e0-50a3b333c370",
+      "fields": {
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174963C"
+        },
+        "blNo": {
+          "stringValue": "EGLV143559689022"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK (CKD)"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "fa510426-8b53-4501-81e0-50a3b333c370"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "nullValue": null
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM174963C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-15"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559689022"
+        },
+        "etaPort": {
+          "nullValue": null
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-15T16:29:46.417Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "TXGU6803219"
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        }
+      },
+      "createTime": "2026-01-15T16:29:44.751593Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/fa83b473-a7bb-4a3f-8f0c-f5bda1c3798c",
+      "fields": {
+        "refNo": {
+          "stringValue": "EGLV143574070495"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-16"
+        },
+        "updatedAt": {
+          "stringValue": "2026-03-09T15:41:40.007Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "TGBU8657086"
+        },
+        "ataPort": {
+          "stringValue": "2026-03-09"
+        },
+        "grossWeight": {
+          "integerValue": "10496"
+        },
+        "etd": {
+          "stringValue": "2025-12-31"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574070495"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT177751"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "fa83b473-a7bb-4a3f-8f0c-f5bda1c3798c"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8L"
+        },
+        "packages": {
+          "stringValue": "24 PACKAGES"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM174946C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-02"
+        }
+      },
+      "createTime": "2026-01-02T23:55:30.016160Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/faaae649-06f9-40c4-b01c-61066cd3400e",
+      "fields": {
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "TXGU8322486"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-11T14:03:49.418Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-07"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574070100"
+        },
+        "etd": {
+          "stringValue": "2025-12-20"
+        },
+        "grossWeight": {
+          "integerValue": "2773"
+        },
+        "ataPort": {
+          "stringValue": "2026-02-11"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK(CKD)"
+        },
+        "packages": {
+          "stringValue": "9 PACKAGES"
+        },
+        "id": {
+          "stringValue": "faaae649-06f9-40c4-b01c-61066cd3400e"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574070100"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT406510"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-03"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM402972C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        }
+      },
+      "createTime": "2026-01-03T00:22:52.900773Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/fb2ceda4-5222-4185-a674-552f6dd902ec",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-03-09T15:41:41.933Z"
+        },
+        "containerNo": {
+          "stringValue": "EMCU8498582"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559688220"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-16"
+        },
+        "etd": {
+          "stringValue": "2025-12-31"
+        },
+        "ataPort": {
+          "stringValue": "2026-03-09"
+        },
+        "grossWeight": {
+          "integerValue": "14283"
+        },
+        "packages": {
+          "stringValue": "28 PACKAGES"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8K"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "fb2ceda4-5222-4185-a674-552f6dd902ec"
+        },
+        "blNo": {
+          "stringValue": "EGLV143559688220"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT177758"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-31"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "nullValue": null
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM174953C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        }
+      },
+      "createTime": "2025-12-31T17:31:59.219277Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/fb427b29-a41a-4c92-a1de-1fde9f6b97f6",
+      "fields": {
+        "etd": {
+          "stringValue": "2026-01-26"
+        },
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:08.170Z"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "GAOU7259822"
+        },
+        "refNo": {
+          "stringValue": "EGLV143581025106"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-26"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-03"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM403582C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "fb427b29-a41a-4c92-a1de-1fde9f6b97f6"
+        },
+        "blNo": {
+          "stringValue": "EGLV143581025106"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT405982"
+        },
+        "atd": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-03T00:50:39.926895Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/fbf13930-ac14-4373-81dd-616fa343345a",
+      "fields": {
+        "etd": {
+          "stringValue": "2025-11-23"
+        },
+        "ataPort": {
+          "stringValue": "2026-01-09"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "EGHU3654409"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:13.899Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-09"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559589426"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-01"
+        },
+        "containerSize": {
+          "stringValue": "20'"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "ATV"
+        },
+        "id": {
+          "stringValue": "fbf13930-ac14-4373-81dd-616fa343345a"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "invoiceNo": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143559589426"
+        }
+      },
+      "createTime": "2026-01-01T18:48:00.104737Z",
+      "updateTime": "2026-02-08T22:10:14.311414Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/fc61f6eb-4a13-4f77-8c5d-97b7963a75b0",
+      "fields": {
+        "etd": {
+          "stringValue": "2026-01-26"
+        },
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "containerNo": {
+          "stringValue": "BSIU8116231"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:08.170Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-26"
+        },
+        "refNo": {
+          "stringValue": "EGLV143581025106"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-03"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM403582C"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "id": {
+          "stringValue": "fc61f6eb-4a13-4f77-8c5d-97b7963a75b0"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8LK"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143581025106"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT405982"
+        }
+      },
+      "createTime": "2026-01-03T00:50:43.081032Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/fca65573-09e0-4e9d-8cbe-e641f1152434",
+      "fields": {
+        "terminal": {
+          "stringValue": "CONTECON"
+        },
+        "containerNo": {
+          "stringValue": "WHSU6345860"
+        },
+        "refNo": {
+          "stringValue": "274"
+        },
+        "etaPort": {
+          "stringValue": "17/11/2025"
+        },
+        "etd": {
+          "stringValue": "19/10/2025"
+        },
+        "ataPort": {
+          "stringValue": "17/11/2025"
+        },
+        "qty": {
+          "integerValue": "17"
+        },
+        "id": {
+          "stringValue": "fca65573-09e0-4e9d-8cbe-e641f1152434"
+        },
+        "modelCode": {
+          "stringValue": "Steel structure platform Estructura metalica desarmada and TOOLS"
+        },
+        "blNo": {
+          "stringValue": "025F795072"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFMABTTP077"
+        },
+        "atd": {
+          "stringValue": "19/10/2025"
+        },
+        "preAlertDate": {
+          "stringValue": "20/10/2025"
+        },
+        "contractNo": {
+          "stringValue": "25CFMABTTP077"
+        },
+        "shippingCompany": {
+          "stringValue": "WAN HAI"
+        },
+        "projectType": {
+          "stringValue": "PRODUCTION LINE"
+        },
+        "containerSize": {
+          "stringValue": "40 HQ"
+        }
+      },
+      "createTime": "2025-12-15T02:51:54.069683Z",
+      "updateTime": "2025-12-15T02:51:54.069683Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/fe1e15a3-b65b-44c2-9559-d918a64c1e0e",
+      "fields": {
+        "preAlertDate": {
+          "stringValue": "2026-01-03"
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "25MX-CFM403580C"
+        },
+        "modelCode": {
+          "stringValue": "UTV CM1000UZ-8LK"
+        },
+        "id": {
+          "stringValue": "fe1e15a3-b65b-44c2-9559-d918a64c1e0e"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT405980"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574067401"
+        },
+        "etd": {
+          "stringValue": "2026-01-26"
+        },
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        },
+        "containerNo": {
+          "stringValue": "EITU1155401"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:35.958Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-26"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574067401"
+        }
+      },
+      "createTime": "2026-01-03T00:53:53.137903Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/fe42601d-c465-43fd-bc16-79b3f06b86c8",
+      "fields": {
+        "etd": {
+          "nullValue": null
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-14T19:46:04.713Z"
+        },
+        "containerNo": {
+          "stringValue": "EITU1599411"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "refNo": {
+          "stringValue": "SEC25117735"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-05"
+        },
+        "preAlertDate": {
+          "stringValue": "2026-01-14"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8K(CKD)"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "fe42601d-c465-43fd-bc16-79b3f06b86c8"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174958C"
+        },
+        "blNo": {
+          "stringValue": "SEC25117735"
+        },
+        "atd": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-01-14T19:45:56.220504Z",
+      "updateTime": "2026-01-14T19:46:05.655010Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/ff263dac-3c5c-4d85-ba04-5796748a14b5",
+      "fields": {
+        "packages": {
+          "stringValue": "6 PACKAGES"
+        },
+        "modelCode": {
+          "stringValue": "UTV CM1000SZ-3L"
+        },
+        "id": {
+          "stringValue": "ff263dac-3c5c-4d85-ba04-5796748a14b5"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143559589141"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT176696"
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-31"
+        },
+        "containerSize": {
+          "stringValue": "40H"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "contractNo": {
+          "stringValue": "26PIM-170122"
+        },
+        "containerNo": {
+          "stringValue": "TGBU7288701"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:41.471Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-26"
+        },
+        "refNo": {
+          "stringValue": "EGLV143559589141"
+        },
+        "etd": {
+          "stringValue": "2026-01-26"
+        },
+        "grossWeight": {
+          "integerValue": "4233"
+        },
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        }
+      },
+      "createTime": "2025-12-31T02:19:27.954595Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/ff6cce6c-166e-4c55-8ce0-4816cd3716ba",
+      "fields": {
+        "preAlertDate": {
+          "stringValue": "2026-01-14"
+        },
+        "projectType": {
+          "stringValue": "General"
+        },
+        "containerSize": {
+          "stringValue": "40HQ"
+        },
+        "contractNo": {
+          "stringValue": ""
+        },
+        "shippingCompany": {
+          "stringValue": "Unknown"
+        },
+        "modelCode": {
+          "stringValue": "CM1000UZ-8K(CKD)"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "ff6cce6c-166e-4c55-8ce0-4816cd3716ba"
+        },
+        "blNo": {
+          "stringValue": "SEC25117735"
+        },
+        "invoiceNo": {
+          "stringValue": "25MX-CFM174958C"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "etd": {
+          "nullValue": null
+        },
+        "ataPort": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-01-14T19:46:04.713Z"
+        },
+        "containerNo": {
+          "stringValue": "EGSU9479035"
+        },
+        "terminal": {
+          "stringValue": "Unknown"
+        },
+        "refNo": {
+          "stringValue": "SEC25117735"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-05"
+        }
+      },
+      "createTime": "2026-01-14T19:46:04.726371Z",
+      "updateTime": "2026-01-14T19:46:05.655010Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/mMqqwa8T5atBGGQRAW6E",
+      "fields": {
+        "preAlertDate": {
+          "stringValue": "2025-12-31"
+        },
+        "contractNo": {
+          "stringValue": "26PIM-170134"
+        },
+        "shippingCompany": {
+          "stringValue": ""
+        },
+        "projectType": {
+          "stringValue": ""
+        },
+        "containerSize": {
+          "stringValue": "40HC"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "mMqqwa8T5atBGGQRAW6E"
+        },
+        "modelCode": {
+          "stringValue": "CM1000SZ-3L"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574068164"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT176708"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "etd": {
+          "stringValue": "2026-01-26"
+        },
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:28.454Z"
+        },
+        "terminal": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "GAOU6676945"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574068164"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-26"
+        }
+      },
+      "createTime": "2025-12-31T02:07:43.934303Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/oPnbxPQjzyYeC18v3hA4",
+      "fields": {
+        "modelCode": {
+          "stringValue": "CM1000SZ-3L"
+        },
+        "id": {
+          "stringValue": "oPnbxPQjzyYeC18v3hA4"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "blNo": {
+          "stringValue": "EGLV143574068164"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT176708"
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-31"
+        },
+        "containerSize": {
+          "stringValue": "40HC"
+        },
+        "projectType": {
+          "stringValue": ""
+        },
+        "shippingCompany": {
+          "stringValue": ""
+        },
+        "contractNo": {
+          "stringValue": "26PIM-170134"
+        },
+        "containerNo": {
+          "stringValue": "EITU1067208"
+        },
+        "terminal": {
+          "stringValue": ""
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:28.454Z"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-26"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574068164"
+        },
+        "etd": {
+          "stringValue": "2026-01-26"
+        },
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        }
+      },
+      "createTime": "2025-12-31T02:07:43.934303Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/psdSAb8elxEYgvWxr0hS",
+      "fields": {
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:28.454Z"
+        },
+        "terminal": {
+          "stringValue": ""
+        },
+        "containerNo": {
+          "stringValue": "EISU8309146"
+        },
+        "refNo": {
+          "stringValue": "EGLV143574068164"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-26"
+        },
+        "etd": {
+          "stringValue": "2026-01-26"
+        },
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        },
+        "modelCode": {
+          "stringValue": "CM1000SZ-3L"
+        },
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "psdSAb8elxEYgvWxr0hS"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT176708"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574068164"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-31"
+        },
+        "projectType": {
+          "stringValue": ""
+        },
+        "containerSize": {
+          "stringValue": "40HC"
+        },
+        "shippingCompany": {
+          "stringValue": ""
+        },
+        "contractNo": {
+          "stringValue": "26PIM-170134"
+        }
+      },
+      "createTime": "2025-12-31T02:07:43.934303Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    },
+    {
+      "name": "projects/logimaster-cfmoto/databases/(default)/documents/vessel_tracking/yLrPoGLWrw1brKxJ60t7",
+      "fields": {
+        "qty": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "yLrPoGLWrw1brKxJ60t7"
+        },
+        "modelCode": {
+          "stringValue": "CM1000SZ-3L"
+        },
+        "blNo": {
+          "stringValue": "EGLV143574068164"
+        },
+        "invoiceNo": {
+          "stringValue": "25CFTT176708"
+        },
+        "atd": {
+          "stringValue": ""
+        },
+        "preAlertDate": {
+          "stringValue": "2025-12-31"
+        },
+        "contractNo": {
+          "stringValue": "26PIM-170134"
+        },
+        "shippingCompany": {
+          "stringValue": ""
+        },
+        "projectType": {
+          "stringValue": ""
+        },
+        "containerSize": {
+          "stringValue": "40HC"
+        },
+        "updatedAt": {
+          "stringValue": "2026-02-08T22:10:28.454Z"
+        },
+        "containerNo": {
+          "stringValue": "TIIU6823649"
+        },
+        "terminal": {
+          "stringValue": ""
+        },
+        "refNo": {
+          "stringValue": "EGLV143574068164"
+        },
+        "etaPort": {
+          "stringValue": "2026-01-26"
+        },
+        "etd": {
+          "stringValue": "2026-01-26"
+        },
+        "ataPort": {
+          "stringValue": "2026-01-26"
+        }
+      },
+      "createTime": "2025-12-31T02:07:43.934303Z",
+      "updateTime": "2026-04-01T22:52:25.217623Z"
+    }
+  ]
+}

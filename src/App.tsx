@@ -1,60 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from '../components/Layout.tsx';
-import { Dashboard } from '../pages/Dashboard.tsx';
-import { Operations } from '../pages/Operations.tsx';
-import { VesselTracking } from '../pages/VesselTracking.tsx';
-import { EquipmentTracking } from '../pages/EquipmentTracking.tsx';
-import { SparePartsTracking } from '../pages/SparePartsTracking.tsx';
-import { CustomsClearance } from '../pages/CustomsClearance.tsx';
-import { PreAlerts } from '../pages/PreAlerts.tsx';
-import { ProformaValidator } from '../pages/ProformaValidator';
-import { SmartDocs } from '../pages/SmartDocs.tsx';
-import { DatabaseView } from '../pages/DatabaseView.tsx';
-import { Suppliers } from '../pages/Suppliers.tsx';
-import { Reports } from '../pages/Reports.tsx';
-import { Settings } from '../pages/Settings.tsx';
 import { Login } from '../pages/Login.tsx';
-import { ActionLogs } from '../pages/AuditLogs.tsx';
-import { DailyAudit } from '../pages/DailyAudit.tsx';
-import { DataStage } from '../pages/DataStage.tsx';
-import { Carriers } from '../pages/Carriers.tsx';
 import { NetworkIndicator } from '../components/NetworkIndicator.tsx';
-import { TransportLines } from '../pages/TransportLines.tsx';
-import { Drivers } from '../pages/Drivers.tsx';
-import { CIExtractor } from '../pages/CIExtractor.tsx';
-import { XMLInvoiceExtractor } from '../pages/XMLInvoiceExtractor.tsx';
-import { XMLCI } from '../pages/XMLCI.tsx';
-import { Models } from '../pages/Models';
-import { Cajas } from '../pages/Cajas.tsx';
-import { AsignacionesDiarias } from '../pages/AsignacionesDiarias.tsx';
-import { IncidenciasVigilancia } from '../pages/IncidenciasVigilancia.tsx';
-import { Apendice10 } from '../pages/Apendice10.tsx';
-import { CaptureModule } from '../pages/CaptureModule.tsx';
-import { HistorialCapturas } from '../pages/HistorialCapturas.tsx';
-import { ShippingSchedules } from '../pages/ShippingSchedules.tsx';
-import { PricingMatrix } from '../pages/PricingMatrix.tsx';
-import CCPBuilder from '../pages/CCPBuilder.tsx';
-import { Controller } from '../pages/Controller.tsx';
-import { Vucem } from '../pages/Vucem.tsx';
-import { ExpedienteElectronico } from '../pages/ExpedienteElectronico';
-import { BOMAnalyzer } from '../pages/BOMAnalyzer.tsx';
-import { SaldoFianza } from '../pages/SaldoFianza.tsx';
-import { AIAssistant } from '../pages/AIAssistant.tsx';
-import { CatalogoSAT } from '../pages/CatalogoSAT.tsx';
-import { HandheldHome } from '../pages/HandheldHome.tsx';
-import { HandheldSellos } from '../pages/HandheldSellos.tsx';
-import { HandheldLiberacion } from '../pages/HandheldLiberacion.tsx';
-import { HandheldLiberacionDock } from '../pages/HandheldLiberacionDock.tsx';
-import { HandheldArribo } from '../pages/HandheldArribo.tsx';
-import { HandheldVigilancia } from '../pages/HandheldVigilancia.tsx';
-import { BPMClasificacion } from '../pages/BPMClasificacion.tsx';
-import { DailyVanAssignment } from '../pages/DailyVanAssignment.tsx';
-import { AdminProductos53 } from '../pages/AdminProductos53.tsx';
-import { AdminVentanas53 } from '../pages/AdminVentanas53.tsx';
-import { DemandaCajas53 } from '../pages/DemandaCajas53.tsx';
-import { ReservaVentanas53 } from '../pages/ReservaVentanas53.tsx';
-import { WMSControl } from '../pages/wms/WMSControl.tsx';
 import { storageService } from '../services/storageService.ts';
 import { trackingService } from '../services/trackingService.ts';
 import { AuthProvider, useAuth } from '../context/AuthContext.tsx';
@@ -62,13 +10,76 @@ import { NotificationProvider } from '../context/NotificationContext.tsx';
 import { VucemProvider } from '../context/VucemContext.tsx';
 import { LanguageProvider } from '../context/LanguageContext.tsx';
 import { NotificationPopup } from '../components/NotificationPopup.tsx';
-import { Database } from 'lucide-react';
+import { Database, Loader2 } from 'lucide-react';
 import { UserRole } from '../types.ts';
-
 import AppLoader from '../components/AppLoader.tsx';
 
+// ─── Lazy-loaded pages (each loads only when navigated to) ───────────────────
+const Dashboard            = React.lazy(() => import('../pages/Dashboard.tsx').then(m => ({ default: m.Dashboard })));
+const Operations           = React.lazy(() => import('../pages/Operations.tsx').then(m => ({ default: m.Operations })));
+const VesselTracking       = React.lazy(() => import('../pages/VesselTracking.tsx').then(m => ({ default: m.VesselTracking })));
+const EquipmentTracking    = React.lazy(() => import('../pages/EquipmentTracking.tsx').then(m => ({ default: m.EquipmentTracking })));
+const SparePartsTracking   = React.lazy(() => import('../pages/SparePartsTracking.tsx').then(m => ({ default: m.SparePartsTracking })));
+const CustomsClearance     = React.lazy(() => import('../pages/CustomsClearance.tsx').then(m => ({ default: m.CustomsClearance })));
+const PreAlerts            = React.lazy(() => import('../pages/PreAlerts.tsx').then(m => ({ default: m.PreAlerts })));
+const ProformaValidator    = React.lazy(() => import('../pages/ProformaValidator').then(m => ({ default: m.ProformaValidator })));
+const SmartDocs            = React.lazy(() => import('../pages/SmartDocs.tsx').then(m => ({ default: m.SmartDocs })));
+const DatabaseView         = React.lazy(() => import('../pages/DatabaseView.tsx').then(m => ({ default: m.DatabaseView })));
+const Suppliers            = React.lazy(() => import('../pages/Suppliers.tsx').then(m => ({ default: m.Suppliers })));
+const Reports              = React.lazy(() => import('../pages/Reports.tsx').then(m => ({ default: m.Reports })));
+const Settings             = React.lazy(() => import('../pages/Settings.tsx').then(m => ({ default: m.Settings })));
+const ActionLogs           = React.lazy(() => import('../pages/AuditLogs.tsx').then(m => ({ default: m.ActionLogs })));
+const DailyAudit           = React.lazy(() => import('../pages/DailyAudit.tsx').then(m => ({ default: m.DailyAudit })));
+const DataStage            = React.lazy(() => import('../pages/DataStage.tsx').then(m => ({ default: m.DataStage })));
+const Carriers             = React.lazy(() => import('../pages/Carriers.tsx').then(m => ({ default: m.Carriers })));
+const TransportLines       = React.lazy(() => import('../pages/TransportLines.tsx').then(m => ({ default: m.TransportLines })));
+const Drivers              = React.lazy(() => import('../pages/Drivers.tsx').then(m => ({ default: m.Drivers })));
+const CIExtractor          = React.lazy(() => import('../pages/CIExtractor.tsx').then(m => ({ default: m.CIExtractor })));
+const XMLInvoiceExtractor  = React.lazy(() => import('../pages/XMLInvoiceExtractor.tsx').then(m => ({ default: m.XMLInvoiceExtractor })));
+const XMLCI                = React.lazy(() => import('../pages/XMLCI.tsx').then(m => ({ default: m.XMLCI })));
+const Models               = React.lazy(() => import('../pages/Models').then(m => ({ default: m.Models })));
+const Cajas                = React.lazy(() => import('../pages/Cajas.tsx').then(m => ({ default: m.Cajas })));
+const AsignacionesDiarias  = React.lazy(() => import('../pages/AsignacionesDiarias.tsx').then(m => ({ default: m.AsignacionesDiarias })));
+const IncidenciasVigilancia= React.lazy(() => import('../pages/IncidenciasVigilancia.tsx').then(m => ({ default: m.IncidenciasVigilancia })));
+const Apendice10           = React.lazy(() => import('../pages/Apendice10.tsx').then(m => ({ default: m.Apendice10 })));
+const CaptureModule        = React.lazy(() => import('../pages/CaptureModule.tsx').then(m => ({ default: m.CaptureModule })));
+const HistorialCapturas    = React.lazy(() => import('../pages/HistorialCapturas.tsx').then(m => ({ default: m.HistorialCapturas })));
+const ShippingSchedules    = React.lazy(() => import('../pages/ShippingSchedules.tsx').then(m => ({ default: m.ShippingSchedules })));
+const PricingMatrix        = React.lazy(() => import('../pages/PricingMatrix.tsx').then(m => ({ default: m.PricingMatrix })));
+const CCPBuilder           = React.lazy(() => import('../pages/CCPBuilder.tsx'));
+const Controller           = React.lazy(() => import('../pages/Controller.tsx').then(m => ({ default: m.Controller })));
+const Vucem                = React.lazy(() => import('../pages/Vucem.tsx').then(m => ({ default: m.Vucem })));
+const ExpedienteElectronico= React.lazy(() => import('../pages/ExpedienteElectronico').then(m => ({ default: m.ExpedienteElectronico })));
+const BOMAnalyzer          = React.lazy(() => import('../pages/BOMAnalyzer.tsx').then(m => ({ default: m.BOMAnalyzer })));
+const SaldoFianza          = React.lazy(() => import('../pages/SaldoFianza.tsx').then(m => ({ default: m.SaldoFianza })));
+const AIAssistant          = React.lazy(() => import('../pages/AIAssistant.tsx').then(m => ({ default: m.AIAssistant })));
+const CatalogoSAT          = React.lazy(() => import('../pages/CatalogoSAT.tsx').then(m => ({ default: m.CatalogoSAT })));
+const HandheldHome         = React.lazy(() => import('../pages/HandheldHome.tsx').then(m => ({ default: m.HandheldHome })));
+const HandheldSellos       = React.lazy(() => import('../pages/HandheldSellos.tsx').then(m => ({ default: m.HandheldSellos })));
+const HandheldLiberacion   = React.lazy(() => import('../pages/HandheldLiberacion.tsx').then(m => ({ default: m.HandheldLiberacion })));
+const HandheldLiberacionDock = React.lazy(() => import('../pages/HandheldLiberacionDock.tsx').then(m => ({ default: m.HandheldLiberacionDock })));
+const HandheldArribo       = React.lazy(() => import('../pages/HandheldArribo.tsx').then(m => ({ default: m.HandheldArribo })));
+const HandheldVigilancia   = React.lazy(() => import('../pages/HandheldVigilancia.tsx').then(m => ({ default: m.HandheldVigilancia })));
+const BPMClasificacion     = React.lazy(() => import('../pages/BPMClasificacion.tsx').then(m => ({ default: m.BPMClasificacion })));
+const DailyVanAssignment   = React.lazy(() => import('../pages/DailyVanAssignment.tsx').then(m => ({ default: m.DailyVanAssignment })));
+const AdminProductos53     = React.lazy(() => import('../pages/AdminProductos53.tsx').then(m => ({ default: m.AdminProductos53 })));
+const AdminVentanas53      = React.lazy(() => import('../pages/AdminVentanas53.tsx').then(m => ({ default: m.AdminVentanas53 })));
+const DemandaCajas53       = React.lazy(() => import('../pages/DemandaCajas53.tsx').then(m => ({ default: m.DemandaCajas53 })));
+const ReservaVentanas53    = React.lazy(() => import('../pages/ReservaVentanas53.tsx').then(m => ({ default: m.ReservaVentanas53 })));
+const WMSControl           = React.lazy(() => import('../pages/wms/WMSControl.tsx').then(m => ({ default: m.WMSControl })));
+
+// ─── Fallback spinner while lazy chunk loads ─────────────────────────────────
+const PageSkeleton = () => (
+    <div className="flex-1 flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3 text-slate-400">
+            <Loader2 size={36} className="animate-spin text-indigo-500" />
+            <span className="text-sm font-medium">Cargando módulo...</span>
+        </div>
+    </div>
+);
+
 // App version — bump this string when you want to force a fresh load for all users
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.2.0'; // bump → force cache refresh (lazy loading enabled)
 
 // Detect if this is a first load / cache miss / new app version
 const checkIsFirstLoad = () => {
@@ -223,9 +234,21 @@ const AppContent = () => {
                     // ── Start ALL real work immediately — zero artificial delay ──────
                     setLoaderStep('auth');  setLoaderProgress(8);
 
-                    // Launch both services in parallel right away
-                    const initPromise     = storageService.init(user?.role);
-                    const trackingPromise = trackingService.init();
+                    // Helper to prevent infinite hangs
+                    const withTimeout = (promise: Promise<any>, ms: number, name: string) => {
+                        let timeoutId: NodeJS.Timeout;
+                        const timeoutPromise = new Promise((_, reject) => {
+                            timeoutId = setTimeout(() => reject(new Error(`Timeout in ${name}`)), ms);
+                        });
+                        return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+                    };
+
+                    // Launch both services in parallel right away with a timeout
+                    console.log('[AppLoader] Starting initPromises');
+                    const initPromise = withTimeout(storageService.init(user?.role), 8000, 'storageService.init')
+                        .catch(e => console.error(e));
+                    const trackingPromise = withTimeout(trackingService.init(), 8000, 'trackingService.init')
+                        .catch(e => console.error(e));
 
                     // ── Smooth progress animation while real work runs ───────────────
                     // Moves from 8 → 88% over time using a live interval.
@@ -318,6 +341,7 @@ const AppContent = () => {
                 <span>Sincronizando datos...</span>
             </div>
         )}
+        <Suspense fallback={<PageSkeleton />}>
         <Routes>
             <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
 
@@ -388,6 +412,7 @@ const AppContent = () => {
 
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
         </>
     );
 };

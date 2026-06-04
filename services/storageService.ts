@@ -456,7 +456,7 @@ export const storageService = {
         // (C.2) Global Performance Optimization: Skip heavy admin, finance, and analytics collections FOR EVERYONE
         // Downloading the entire historical database of Invoices or Snapshots freezes the browser.
         // Admins and operators will fetch specific invoices on-demand via search queries instead.
-        if (['INVOICES', 'CFDI_INVOICES', 'XML_CI', 'SNAPSHOTS', 'DATA_STAGE_REPORTS', 'COSTS', 'FIANZAS', 'TRAINING'].includes(key)) return;
+        if (['INVOICES', 'CFDI_INVOICES', 'XML_CI', 'SNAPSHOTS', 'DATA_STAGE_REPORTS', 'COSTS', 'TRAINING'].includes(key)) return;
 
         // (D) Editor / Operator Optimization: Shared critical operational data
         if (role === UserRole.EDITOR || role === UserRole.OPERATOR) {

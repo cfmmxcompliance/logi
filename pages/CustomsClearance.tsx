@@ -107,6 +107,8 @@ export const CustomsClearance = () => {
     const [records, setRecords] = useState<CustomsClearanceRecord[]>([]);
     const [filter, setFilter] = useState('');
     const [activeTab, setActiveTab] = useState<'ALL' | 'SEA' | 'AIR'>('ALL');
+    const [isLoading, setIsLoading] = useState(false);
+    const [hasSearched, setHasSearched] = useState(() => storageService.getCustomsClearance().length > 0);
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -120,12 +122,29 @@ export const CustomsClearance = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        setRecords(storageService.getCustomsClearance());
+        const existing = storageService.getCustomsClearance();
+        if (existing.length > 0) {
+            setRecords(existing);
+            setHasSearched(true);
+        }
         const unsub = storageService.subscribe(() => {
             setRecords([...storageService.getCustomsClearance()]);
         });
         return unsub;
     }, []);
+
+    const handleSearch = async () => {
+        if (isLoading) return;
+        if (records.length > 0) { setHasSearched(true); return; }
+        setIsLoading(true);
+        try {
+            await storageService.loadCustomsClearance();
+            setRecords([...storageService.getCustomsClearance()]);
+            setHasSearched(true);
+        } catch { } finally {
+            setIsLoading(false);
+        }
+    };
 
     const [currentPage, setCurrentPage] = useState(1);
     const [ITEMS_PER_PAGE, setItemsPerPage] = useState(50); // Default 50 items for speed
@@ -488,6 +507,54 @@ export const CustomsClearance = () => {
                 </div>
             </div>
 
+            {/* Search-First Card */}
+            {!hasSearched && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10">
+                    <div className="max-w-xl mx-auto text-center">
+                        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <ClipboardCheck size={32} className="text-blue-600" />
+                        </div>
+                        <h2 className="text-xl font-bold text-slate-800 mb-1">Busca para comenzar</h2>
+                        <p className="text-slate-500 text-sm mb-6">5,419 registros de Customs Clearance disponibles</p>
+                        <div className="relative">
+                            <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
+                            <input
+                                type="text"
+                                placeholder="Ej: BL No., Container, Pedimento..."
+                                className={`w-full pl-12 pr-32 py-3.5 border-2 rounded-xl outline-none text-sm transition-all ${isLoading ? 'border-blue-400 bg-blue-50/30' : 'border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-50'}`}
+                                value={filter}
+                                onChange={(e) => setFilter(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+                                autoFocus
+                                disabled={isLoading}
+                            />
+                            <button
+                                onClick={handleSearch}
+                                disabled={isLoading}
+                                className={`absolute right-2 top-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${isLoading ? 'bg-blue-400 text-white cursor-wait' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                        Cargando...
+                                    </>
+                                ) : 'Buscar'}
+                            </button>
+                        </div>
+                        {isLoading && (
+                            <div className="mt-3 flex items-center justify-center gap-2 text-xs text-blue-500 font-medium animate-pulse">
+                                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}} />
+                                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{animationDelay:'150ms'}} />
+                                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{animationDelay:'300ms'}} />
+                                <span>Descargando 5,419 registros desde la nube...</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Tabs + Filter + Table — visible after search */}
+            {hasSearched && (<>
             {/* Tabs and Filters */}
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm inline-flex">
@@ -604,7 +671,14 @@ export const CustomsClearance = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 whitespace-nowrap">
-                            {paginatedRecords.map((r) => (
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan={18} className="py-20 text-center text-slate-400">
+                                        <div className="inline-block w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3" />
+                                        <p className="text-sm font-medium">Cargando registros de Customs Clearance...</p>
+                                    </td>
+                                </tr>
+                            ) : paginatedRecords.map((r) => (
                                 <CustomsRow
                                     key={r.id}
                                     record={r}
@@ -616,7 +690,7 @@ export const CustomsClearance = () => {
                                     onDelete={initiateDelete}
                                 />
                             ))}
-                            {filteredRecords.length === 0 && (
+                            {!isLoading && filteredRecords.length === 0 && (
                                 <tr>
                                     <td colSpan={16} className="p-12 text-center text-slate-400">
                                         <ClipboardCheck className="mx-auto mb-2 opacity-50" size={32} />
@@ -667,6 +741,7 @@ export const CustomsClearance = () => {
                     </div>
                 </div>
             </div>
+            </>)}
 
             {deleteModal.isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

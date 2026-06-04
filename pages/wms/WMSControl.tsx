@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     LayoutDashboard, Car, History, Map, FileBarChart, Database,
-    RotateCcw, AlertTriangle, Search, Filter, Download, X, Plus, RefreshCw
+    RotateCcw, AlertTriangle, Search, Filter, Download, X, Plus, RefreshCw, Trash2
 } from 'lucide-react';
 import { db } from '../../services/firebaseConfig';
-import { collection, onSnapshot, query, orderBy, doc, updateDoc, addDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, orderBy, limit, doc, updateDoc, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
+
 
 function getStoredUser() {
     try { return JSON.parse(localStorage.getItem('logimaster_user') || 'null'); } catch { return null; }
@@ -221,19 +222,27 @@ export function WMSControl() {
     const isAdmin = user?.role === 'Admin' || user?.role === 'ADMIN' || user?.role === 'admin';
 
     useEffect(() => {
+        // Vehicles: real-time (few docs, need live updates)
+        // Optimization: Only fetch active vehicles (not SHIPPED) to avoid downloading entire historical DB
         const unsubV = onSnapshot(
-            collection(db, 'wms_vehicles'),
-            snap => { setVehicles(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); },
-            err  => { console.error('Vehicles error:', err); setLoading(false); }
+            query(collection(db, 'wms_vehicles'), where('status', '!=', 'SHIPPED')),
+            snap => {
+                setVehicles(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                setLoading(false); // show UI as soon as vehicles arrive
+            },
+            err => { console.error('Vehicles error:', err); setLoading(false); }
         );
+        // Transfers: limit to last 500 — avoid downloading unlimited history
         const unsubT = onSnapshot(
-            query(collection(db, 'wms_transfers'), orderBy('timestamp', 'desc')),
+            query(collection(db, 'wms_transfers'), orderBy('timestamp', 'desc'), limit(500)),
             snap => setTransfers(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
-            err  => console.error('Transfers error:', err)
+            err => console.error('Transfers error:', err)
         );
-        const t = setTimeout(() => setLoading(false), 5000);
+        // Safety fallback: max 1.5s wait instead of 5s
+        const t = setTimeout(() => setLoading(false), 1500);
         return () => { unsubV(); unsubT(); clearTimeout(t); };
     }, []);
+
 
     const handleReversal = async () => {
         if (!reversalTarget || !reversalReason.trim()) return;
@@ -273,7 +282,32 @@ export function WMSControl() {
         { id: 'enrichment',   label: 'Enrichment',   icon: <Database size={20} /> },
     ];
 
-    if (loading) return <div className="p-8 text-white">Loading WMS Data...</div>;
+    if (loading) return (
+        <div className="flex flex-col h-[calc(100vh-4rem)] bg-slate-900 text-white overflow-hidden">
+            <div className="bg-slate-800 border-b border-slate-700 px-6 py-3">
+                <div className="h-7 w-36 bg-slate-700 rounded-lg animate-pulse" />
+            </div>
+            <div className="flex-1 p-6 space-y-6">
+                <div className="grid grid-cols-4 gap-4">
+                    {[...Array(4)].map((_, i) => (
+                        <div key={i} className="p-6 rounded-2xl border border-slate-700 bg-slate-800 animate-pulse">
+                            <div className="h-4 w-24 bg-slate-700 rounded mb-4" />
+                            <div className="h-12 w-16 bg-slate-700 rounded" />
+                        </div>
+                    ))}
+                </div>
+                <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden animate-pulse">
+                    {[...Array(6)].map((_, i) => (
+                        <div key={i} className="flex gap-4 px-4 py-3 border-b border-slate-700">
+                            <div className="h-4 w-32 bg-slate-700 rounded" />
+                            <div className="h-4 w-24 bg-slate-700 rounded" />
+                            <div className="h-4 w-20 bg-slate-700 rounded" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <div className="flex flex-col h-[calc(100vh-4rem)] bg-slate-900 text-white overflow-hidden">
@@ -337,7 +371,7 @@ export function WMSControl() {
             {/* Content */}
             <div className="flex-1 p-6 overflow-y-auto">
                 {activeTab === 'dashboard'    && <WMSDashboard vehicles={vehicles} transfers={transfers} />}
-                {activeTab === 'vehicles'     && <WMSVehicles vehicles={vehicles} isAdmin={isAdmin} onReverse={setReversalTarget} />}
+                {activeTab === 'vehicles'     && <WMSVehicles vehicles={vehicles} transfers={transfers} isAdmin={isAdmin} onReverse={setReversalTarget} />}
                 {activeTab === 'transactions' && <WMSTransactions transfers={transfers} />}
                 {activeTab === 'locations'    && <WMSLocations vehicles={vehicles} />}
                 {activeTab === 'enrichment'   && <WMSEnrichment vehicles={vehicles} />}
@@ -365,29 +399,6 @@ function WMSDashboard({ vehicles, transfers }: any) {
                 <StatCard title="L2 FG"           value={l2}      color="indigo" />
                 <StatCard title="L3 EMBARQUE"     value={l3}      color="purple" />
                 <StatCard title="BLOCKED"          value={blocked} color="red" />
-            </div>
-            <h3 className="text-xl font-bold mt-8 mb-4">Recent Transactions</h3>
-            <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-900 text-slate-400">
-                        <tr><th className="p-4">Time</th><th className="p-4">VIN</th><th className="p-4">Move</th><th className="p-4">Operator</th></tr>
-                    </thead>
-                    <tbody>
-                        {transfers.slice(0, 10).map((t:any) => (
-                            <tr key={t.id} className={`border-t border-slate-700 ${t.type === 'REVERSAL' ? 'bg-amber-500/10' : ''}`}>
-                                <td className="p-4">{new Date(t.timestamp).toLocaleTimeString()}</td>
-                                <td className="p-4 font-mono text-blue-400">{t.vin}</td>
-                                <td className="p-4">
-                                    <span className="bg-slate-700 px-2 py-1 rounded">{t.from_location || 'NEW'}</span>
-                                    {' → '}
-                                    <span className={`px-2 py-1 rounded text-white ${t.type === 'REVERSAL' ? 'bg-amber-600' : 'bg-blue-600'}`}>{t.to_location}</span>
-                                    {t.type === 'REVERSAL' && <span className="ml-2 text-amber-400 text-xs font-bold">↩ REVERSA</span>}
-                                </td>
-                                <td className="p-4">{t.operator_id}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
             </div>
         </div>
     );
@@ -418,10 +429,12 @@ const VEHICLE_COLUMNS: ColumnDef[] = [
     { label: 'Product No', key: 'product_no' },
 ];
 
-function WMSVehicles({ vehicles, isAdmin, onReverse }: any) {
+function WMSVehicles({ vehicles, transfers, isAdmin, onReverse }: any) {
     const [search, setSearch]               = useState('');
     const [selected, setSelected]           = useState<Set<string>>(new Set());
     const [showQuery, setShowQuery]         = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
     const [conditions, setConditions]       = useState<QueryCondition[]>([defaultCondition()]);
     const [activeFilters, setActiveFilters] = useState<QueryCondition[]>([]);
 
@@ -478,6 +491,32 @@ function WMSVehicles({ vehicles, isAdmin, onReverse }: any) {
 
     const hasFilters = search.trim() || (activeFilters.some(c => c.column && c.value));
 
+    const handleDeleteSelected = async () => {
+        if (!selected.size || deleteLoading) return;
+        setDeleteLoading(true);
+        try {
+            for (const vehicleId of Array.from(selected)) {
+                const vehicle = vehicles.find((v: any) => v.id === vehicleId);
+                const vin = vehicle?.vin || vehicleId;
+
+                // 1. Delete vehicle record
+                await deleteDoc(doc(db, 'wms_vehicles', vehicleId));
+
+                // 2. Cascade: delete related transfers using in-memory list (no extra query needed)
+                const relatedTransfers = (transfers || []).filter((t: any) => t.vin === vin);
+                for (const t of relatedTransfers) {
+                    await deleteDoc(doc(db, 'wms_transfers', t.id));
+                }
+            }
+            setSelected(new Set());
+            setShowDeleteModal(false);
+        } catch (e: any) {
+            console.error('Error eliminando VINs:', e);
+        } finally {
+            setDeleteLoading(false);
+        }
+    };
+
     return (
         <div className="space-y-4">
             {/* Toolbar */}
@@ -526,7 +565,63 @@ function WMSVehicles({ vehicles, isAdmin, onReverse }: any) {
                     <Download size={15} /> CSV
                     {selected.size > 0 && <span className="bg-white text-emerald-700 text-xs font-bold px-1.5 py-0.5 rounded-full">{selected.size}</span>}
                 </button>
+
+                {/* Delete — Admin only, visible cuando hay selección */}
+                {isAdmin && selected.size > 0 && (
+                    <button onClick={() => setShowDeleteModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition">
+                        <Trash2 size={15} /> Eliminar ({selected.size})
+                    </button>
+                )}
             </div>
+
+            {/* Modal de confirmación de eliminación */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
+                    <div className="bg-slate-800 border border-slate-600 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+                        <div className="flex items-center gap-3 mb-4">
+                            <Trash2 className="text-red-400" size={26} />
+                            <h3 className="text-xl font-bold text-white">Confirmar Eliminación</h3>
+                        </div>
+                        <p className="text-slate-300 text-sm mb-3">Se eliminarán los siguientes registros de vehículos:</p>
+                        <div className="bg-slate-900 rounded-lg px-4 py-3 mb-4 max-h-40 overflow-y-auto">
+                            {Array.from(selected).map(id => {
+                                const v = vehicles.find((v: any) => v.id === id);
+                                const vin = v?.vin || id;
+                                const txCount = (transfers || []).filter((t: any) => t.vin === vin).length;
+                                return (
+                                    <div key={id} className="font-mono text-blue-400 text-sm py-0.5 flex justify-between">
+                                        <span>• {vin}</span>
+                                        <span className="text-slate-500 text-xs">{txCount} transacción(es)</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 mb-6">
+                            <p className="text-red-400 text-xs font-semibold">
+                                ⚠️ Eliminación en cascada:<br />
+                                Se borrará el registro del vehículo <strong>Y todas sus transacciones</strong> en wms_transfers.<br />
+                                Esta acción no se puede deshacer.
+                            </p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowDeleteModal(false)}
+                                disabled={deleteLoading}
+                                className="flex-1 px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-semibold transition">
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleDeleteSelected}
+                                disabled={deleteLoading}
+                                className="flex-1 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold transition flex items-center justify-center gap-2">
+                                <Trash2 size={15} />
+                                {deleteLoading ? 'Eliminando...' : 'Confirmar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Selection info */}
             {selected.size > 0 && (

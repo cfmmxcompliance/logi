@@ -13,6 +13,16 @@ export const demandaCarga53Service = {
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as DemandaCarga53));
   },
 
+  async getDemandasByDate(start: string, end: string): Promise<DemandaCarga53[]> {
+    const q = query(
+      collection(db, COL),
+      where('fechaDemanda', '>=', start),
+      where('fechaDemanda', '<=', end)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as DemandaCarga53));
+  },
+
   async getDemandaById(id: string): Promise<DemandaCarga53 | null> {
     const snap = await getDoc(doc(db, COL, id));
     if (!snap.exists()) return null;

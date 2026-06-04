@@ -41,6 +41,7 @@ export const EquipmentTracking = () => {
     const [records, setRecords] = useState<EquipmentTrackingRecord[]>([]);
     const [filter, setFilter] = useState('');
     const [activeTab, setActiveTab] = useState<'ALL' | 'SEA' | 'AIR'>('ALL');
+    const [isLoading, setIsLoading] = useState(false);
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -54,7 +55,16 @@ export const EquipmentTracking = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        setRecords(storageService.getEquipmentTracking());
+        const existing = storageService.getEquipmentTracking();
+        if (existing.length > 0) {
+            setRecords(existing);
+        } else {
+            setIsLoading(true);
+            storageService.loadEquipmentTracking().then(() => {
+                setRecords([...storageService.getEquipmentTracking()]);
+                setIsLoading(false);
+            }).catch(() => setIsLoading(false));
+        }
         const unsub = storageService.subscribe(() => {
             setRecords([...storageService.getEquipmentTracking()]);
         });
@@ -457,7 +467,14 @@ export const EquipmentTracking = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 whitespace-nowrap">
-                            {filteredRecords.map((r) => (
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan={16} className="py-20 text-center text-slate-400">
+                                        <div className="inline-block w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3" />
+                                        <p className="text-sm font-medium">Cargando registros de Equipment...</p>
+                                    </td>
+                                </tr>
+                            ) : filteredRecords.map((r) => (
                                 <tr key={r.id} className="hover:bg-slate-50 transition-colors">
                                     <td className="px-3 py-2 border-r border-slate-100 sticky left-0 bg-white hover:bg-slate-50 text-center z-10">
                                         <input
@@ -501,7 +518,7 @@ export const EquipmentTracking = () => {
                                     <Td>{r.assignedSpecialist}</Td>
                                 </tr>
                             ))}
-                            {filteredRecords.length === 0 && (
+                            {!isLoading && filteredRecords.length === 0 && (
                                 <tr>
                                     <td colSpan={15} className="p-12 text-center text-slate-400">
                                         <Container className="mx-auto mb-2 opacity-50" size={32} />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useDeferredValue } from 'react';
 // import ExcelJS from 'exceljs'; // REMOVED: Dynamic Import
 // import * as XLSX_Basic from 'xlsx/dist/xlsx.mini.min.js'; // REMOVED: Dynamic Import
-import { Upload, FileDown, Search, Plus, Trash2, Edit2, X, Check, FileSpreadsheet, AlertCircle, FileText, CheckCircle, Save, Repeat, History, RotateCcw, AlertTriangle, Calendar, Database } from 'lucide-react';
+import { Upload, FileDown, Search, Plus, Trash2, Edit2, X, Check, FileSpreadsheet, AlertCircle, FileText, CheckCircle, Save, Repeat, History, RotateCcw, AlertTriangle, Calendar, Database, ArrowLeft, Clock } from 'lucide-react';
 import { storageService } from '../services/storageService.ts';
 import { CommercialInvoiceItem, RawMaterialPart, VesselTrackingRecord } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -345,8 +345,16 @@ export const CIExtractor: React.FC = () => {
         }, 300);
     };
 
+    // Search-first state
+    const [activeInvoice, setActiveInvoice] = useState<string | null>(null);
+    const activeInvoiceRef = React.useRef<string | null>(null);
+    const [invoiceLoading, setInvoiceLoading] = useState(false);
+    const [invoiceSearch, setInvoiceSearch] = useState('');
+    const [searchType, setSearchType] = useState<'invoice' | 'container' | 'bl'>('invoice');
+    const [recentInvoices, setRecentInvoices] = useState<{invoiceNo: string, lineCount: number, date: string, type: string}[]>([]);
+
     const [items, setItems] = useState<CommercialInvoiceItem[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const deferredSearchTerm = useDeferredValue(searchTerm); // NON-BLOCKING UI
 
@@ -445,27 +453,114 @@ export const CIExtractor: React.FC = () => {
         };
 
         const initLoad = async () => {
-            setLoading(true);
-            // Trigger Lazy Load of Master Data + Invoices
-            await Promise.all([
-                storageService.loadMasterData(),
-                storageService.refreshInvoices()
-            ]);
+            // Search-first: only load master data on mount — NO invoice fetch
+            await storageService.loadMasterData();
             syncMasterData();
-            loadData();
+            // Load recent invoices from localStorage
+            try {
+                const stored = JSON.parse(localStorage.getItem('ci_recent_invoices') || '[]');
+                setRecentInvoices(stored);
+            } catch {}
         };
 
         initLoad();
 
-        // Subscribe to updates (Fixes slow load / race condition)
+        // Subscribe to updates: only sync master data + reload invoice if one is active
         const unsubscribe = storageService.subscribe(() => {
             syncMasterData();
-            loadData(); // CRITICAL: Reload Invoices when Storage Updates
+            // Only reload invoice lines if user has an invoice open
+            if (activeInvoiceRef.current) {
+                const refreshed = storageService.getInvoiceItems().filter((i: any) =>
+                    String(i.invoiceNo || '').trim().toUpperCase() === String(activeInvoiceRef.current).trim().toUpperCase()
+                );
+                if (refreshed.length > 0) {
+                    setItems(refreshed);
+                    updateStats(refreshed);
+                }
+            }
         });
         return () => {
             if (unsubscribe) unsubscribe();
         };
     }, []);
+
+    // --- SEARCH-FIRST: Open invoice handler ---
+    const saveRecentInvoice = (invoiceNo: string, lineCount: number, date: string, type = 'invoice') => {
+        try {
+            const stored: {invoiceNo: string, lineCount: number, date: string, type: string}[] =
+                JSON.parse(localStorage.getItem('ci_recent_invoices') || '[]');
+            const updated = [{ invoiceNo, lineCount, date, type },
+                             ...stored.filter(r => r.invoiceNo !== invoiceNo)].slice(0, 10);
+            localStorage.setItem('ci_recent_invoices', JSON.stringify(updated));
+            setRecentInvoices(updated);
+        } catch {}
+    };
+
+    const handleOpenInvoice = async (invoiceNo: string, type: 'invoice' | 'container' | 'bl' = searchType) => {
+        if (!invoiceNo.trim()) return;
+        setInvoiceLoading(true);
+        try {
+            let data: CommercialInvoiceItem[] = [];
+
+            if (type === 'container') {
+                data = await storageService.getInvoicesByContainer(invoiceNo.trim());
+            } else if (type === 'bl') {
+                // BL maps to one or more invoiceNos via tracking data
+                const matchingInvoiceNos = Object.entries(invoiceToBLMap)
+                    .filter(([, bl]) => String(bl).trim().toUpperCase() === invoiceNo.trim().toUpperCase())
+                    .map(([inv]) => inv);
+                if (matchingInvoiceNos.length === 0) {
+                    showNotification('No encontrado', `No se encontraron facturas para el BL "${invoiceNo}".`, 'warning');
+                    return;
+                }
+                // Load all invoices associated with this BL
+                const results = await Promise.all(
+                    matchingInvoiceNos.map(inv => storageService.getInvoicesByNumber(inv))
+                );
+                data = results.flat();
+            } else {
+                data = await storageService.getInvoicesByNumber(invoiceNo.trim());
+            }
+
+            if (data.length === 0) {
+                const label = type === 'container' ? 'contenedor' : type === 'bl' ? 'BL' : 'factura';
+                showNotification('No encontrado', `No se encontraron líneas para el ${label} "${invoiceNo}".`, 'warning');
+                return;
+            }
+            data.sort((a, b) => {
+                const hasR8A = !!(a.rb && a.rb.toString().trim());
+                const hasR8B = !!(b.rb && b.rb.toString().trim());
+                if (hasR8A !== hasR8B) return hasR8A ? 1 : -1;
+                return (parseFloat(a.item) || 0) - (parseFloat(b.item) || 0);
+            });
+            setItems(data);
+            setActiveInvoice(invoiceNo.trim());
+            activeInvoiceRef.current = invoiceNo.trim();
+            updateStats(data);
+            setCurrentPage(1);
+            setSelectedIds(new Set());
+            setSearchTerm('');
+            if (searchInputRef.current) searchInputRef.current.value = '';
+            saveRecentInvoice(invoiceNo.trim(), data.length, data[0]?.date || '', type);
+        } catch (e) {
+            console.error('handleOpenInvoice error:', e);
+            showNotification('Error', 'No se pudo cargar la factura.', 'error');
+        } finally {
+            setInvoiceLoading(false);
+        }
+    };
+
+    const handleBackToSearch = () => {
+        setActiveInvoice(null);
+        activeInvoiceRef.current = null;
+        setItems([]);
+        setSelectedIds(new Set());
+        setSearchTerm('');
+        setStartDate('');
+        setEndDate('');
+        setQueryConditions([]);
+        if (searchInputRef.current) searchInputRef.current.value = '';
+    };
 
     // --- TRACKING DATA FOR BL MAPPING ---
     const [tracking, setTracking] = useState<VesselTrackingRecord[]>([]);
@@ -1105,8 +1200,19 @@ export const CIExtractor: React.FC = () => {
 
         // Post-process
         if (importCount > 0) {
-            loadData();
+            // Auto-navigate to the imported invoice
+            const firstImportedInvoice = (() => {
+                // Try to derive from first file processed
+                try {
+                    const allItems = storageService.getInvoiceItems();
+                    return null; // will open via notification click
+                } catch { return null; }
+            })();
             showNotification('Safe Upload', `Successfully persisted ${importCount} items to Cloud.`, 'success');
+            // Reload current invoice if one is open, otherwise let user search
+            if (activeInvoiceRef.current) {
+                await handleOpenInvoice(activeInvoiceRef.current, searchType);
+            }
         } else if (files.length > 0 && pendingAggregate.length === 0) {
             showNotification('Ignored', 'All items were duplicates and have been skipped.', 'warning');
         }
@@ -1847,16 +1953,192 @@ export const CIExtractor: React.FC = () => {
 
     return (
         <div className="flex flex-col h-[calc(100vh-85px)] gap-2">
-            {/* Rigid Layout Container */}
-            {/* Header Area (Gray Background) */}
-            {/* Actions Toolbar */}
-            < div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4" >
-                {/* Compact Toolbar: Title | Search | Filters */}
-                <div className="flex flex-col md:flex-row gap-4 items-center">
 
-                    {/* Title (Integrated) */}
-                    <h1 className="text-xl font-bold text-slate-800 whitespace-nowrap shrink-0 mr-2">
-                        Commercial Invoices
+            {/* Hidden file input — always in DOM so fileInputRef works from any panel */}
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept=".xlsx,.xls"
+                multiple
+                className="hidden"
+            />
+            {/* ── SEARCH-FIRST PANEL (shown when no invoice is active) ────────────── */}
+            {!activeInvoice && (
+                <div className="flex flex-col gap-5 p-6 max-w-2xl mx-auto w-full">
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-800">Commercial Invoices</h1>
+                            <p className="text-slate-500 text-sm mt-1">Busca para comenzar a trabajar.</p>
+                        </div>
+                        {/* Import button visible in search panel — same style as toolbar */}
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="bg-slate-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium"
+                        >
+                            <Upload size={18} /> Import
+                        </button>
+                    </div>
+
+                    {/* Search type tabs */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                        <div className="flex gap-1 mb-4 bg-slate-100 rounded-lg p-1">
+                            {(['invoice', 'container', 'bl'] as const).map(t => (
+                                <button
+                                    key={t}
+                                    onClick={() => setSearchType(t)}
+                                    className={`flex-1 py-1.5 rounded-md text-xs font-bold transition ${
+                                        searchType === t
+                                            ? 'bg-white text-blue-700 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-700'
+                                    }`}
+                                >
+                                    {t === 'invoice' ? '📄 Factura' : t === 'container' ? '📦 Contenedor' : '🚢 BL'}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Search input + Buscar */}
+                        <div className="flex gap-3 mb-3">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <input
+                                    type="text"
+                                    value={invoiceSearch}
+                                    onChange={e => setInvoiceSearch(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && handleOpenInvoice(invoiceSearch)}
+                                    placeholder={
+                                        searchType === 'invoice' ? 'Ej: 25CFTT179042...' :
+                                        searchType === 'container' ? 'Ej: ABCD1234567...' :
+                                        'Ej: HLCULIV250100...'
+                                    }
+                                    className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 text-sm bg-slate-50"
+                                    autoFocus
+                                />
+                            </div>
+                            <button
+                                onClick={() => handleOpenInvoice(invoiceSearch)}
+                                disabled={invoiceLoading || (!invoiceSearch.trim() && !startDate && !endDate)}
+                                className="flex items-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition"
+                            >
+                                {invoiceLoading
+                                    ? <><span className="animate-spin">⟳</span> Cargando...</>
+                                    : 'Buscar'}
+                            </button>
+                        </div>
+
+                        {/* Date range + Advanced Query row */}
+                        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
+                            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
+                                <Calendar size={14} className="text-slate-400" />
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={e => setStartDate(e.target.value)}
+                                    className="bg-transparent border-none text-xs text-slate-600 focus:outline-none focus:ring-0 p-0 cursor-pointer"
+                                />
+                                <span className="text-slate-300 text-[10px] font-bold uppercase">to</span>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={e => setEndDate(e.target.value)}
+                                    className="bg-transparent border-none text-xs text-slate-600 focus:outline-none focus:ring-0 p-0 cursor-pointer"
+                                />
+                                {(startDate || endDate) && (
+                                    <button
+                                        onClick={() => { setStartDate(''); setEndDate(''); }}
+                                        className="text-red-400 hover:text-red-600 ml-1"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                )}
+                            </div>
+
+                            <button
+                                onClick={() => setShowQueryBuilder(true)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${
+                                    queryConditions.length > 0
+                                        ? 'bg-indigo-600 border-indigo-500 text-white'
+                                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                }`}
+                            >
+                                <Plus size={13} /> Advanced Query
+                                {queryConditions.length > 0 && (
+                                    <span className="bg-white text-indigo-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
+                                        {queryConditions.length}
+                                    </span>
+                                )}
+                            </button>
+
+                            {(startDate || endDate || queryConditions.length > 0) && (
+                                <span className="text-xs text-indigo-600 font-semibold">
+                                    ✓ Filtros activos — se aplicarán al abrir la factura
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Recent invoices */}
+                    {recentInvoices.length > 0 && (
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-100 bg-slate-50">
+                                <Clock size={15} className="text-slate-400" />
+                                <span className="text-sm font-semibold text-slate-600">Acceso Reciente</span>
+                            </div>
+                            <div className="divide-y divide-slate-100">
+                                {recentInvoices.map(r => (
+                                    <button
+                                        key={r.invoiceNo}
+                                        onClick={() => handleOpenInvoice(r.invoiceNo, (r as any).type || 'invoice')}
+                                        className="w-full flex items-center justify-between px-5 py-3 hover:bg-blue-50 transition group text-left"
+                                    >
+                                        <div>
+                                            <div className="font-mono font-semibold text-slate-800 text-sm group-hover:text-blue-700">
+                                                {(r as any).type === 'container' ? '📦' : (r as any).type === 'bl' ? '🚢' : '📄'} {r.invoiceNo}
+                                            </div>
+                                            <div className="text-xs text-slate-400 mt-0.5">{r.date}</div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="bg-slate-100 text-slate-600 text-xs font-semibold px-2 py-0.5 rounded-full">
+                                                {r.lineCount} líneas
+                                            </span>
+                                            <span className="text-blue-500 text-xs font-bold group-hover:translate-x-1 transition-transform">Abrir →</span>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {recentInvoices.length === 0 && (
+                        <div className="text-center py-10 text-slate-400">
+                            <FileText size={44} className="mx-auto mb-3 opacity-30" />
+                            <p className="font-medium">Sin accesos recientes</p>
+                            <p className="text-sm mt-1">Busca por factura, contenedor o BL, o importa un Excel.</p>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ── INVOICE ACTIVE: existing toolbar + table ────────────────────────── */}
+            {activeInvoice && <>
+            {/* Actions Toolbar */}
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4">
+                {/* Compact Toolbar: Title | Back | Search | Filters */}
+                <div className="flex flex-col md:flex-row gap-4 items-center">
+                    {/* Back button */}
+                    <button
+                        onClick={handleBackToSearch}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold transition shrink-0"
+                    >
+                        <ArrowLeft size={15} /> Facturas
+                    </button>
+
+                    {/* Title showing active invoice */}
+                    <h1 className="text-base font-bold text-slate-800 whitespace-nowrap shrink-0 font-mono">
+                        {activeInvoice}
+                        <span className="text-xs font-normal text-slate-400 ml-2">{items.length} líneas</span>
                     </h1>
 
                     {/* Left: Search (Flexible) */}
@@ -2056,14 +2338,7 @@ export const CIExtractor: React.FC = () => {
                         >
                             <RotateCcw size={16} /> Sync Cloud
                         </button>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileUpload}
-                            accept=".xlsx,.xls"
-                            multiple
-                            className="hidden"
-                        />
+                        <input type="hidden" />{/* file input moved to root level */}
                         <button
                             onClick={handleExportCSV}
                             className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 shadow-sm transition-colors text-sm font-medium"
@@ -3104,6 +3379,7 @@ export const CIExtractor: React.FC = () => {
                     </div>
                 )
             }
-        </div >
+            </>}
+        </div>
     );
 };

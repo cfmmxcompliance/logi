@@ -1,7 +1,7 @@
 // @ts-ignore
 import { initializeApp } from 'firebase/app';
 // @ts-ignore
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore } from 'firebase/firestore';
 // @ts-ignore
 import { getAuth } from 'firebase/auth';
 // @ts-ignore
@@ -19,15 +19,19 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Use multiple tab manager to prevent infinite hangs when opening the app in multiple tabs
-const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
-});
+// Restore persistentLocalCache to protect operational modules (Offline-First / Multi-tab)
+// The 500-batch paginated load in storageService.ts prevents this from freezing the main thread.
+let db: ReturnType<typeof getFirestore>;
+try {
+  db = initializeFirestore(app, { 
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) 
+  });
+} catch {
+  // HMR: Firestore already initialized — return existing instance
+  db = getFirestore(app);
+}
 
 const auth = getAuth(app);
 const storage = getStorage(app);
 
 export { app, db, auth, storage };
-console.log("✅ Firebase: Services Initialized");

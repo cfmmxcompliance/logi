@@ -1,7 +1,7 @@
 import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, SparePartsTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole, XMLCIRecord } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
-  collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc, arrayUnion, increment, limit, startAfter
+  collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc, arrayUnion, increment, limit, startAfter, documentId
 } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { indexedDbService } from './indexedDbService.ts';
@@ -45,6 +45,7 @@ let dbState: StorageState = {
 let listeners: (() => void)[] = [];
 let unsubscribers: (() => void)[] = [];
 let isMDLoading = false;
+let mdLoadPromise: Promise<void> | null = null; // shared promise — concurrent callers await the same download
 let isBackgroundSyncing = false;
 let isRefreshingInvoices = false;
 let lastInvoicesRefresh = 0;
@@ -432,30 +433,9 @@ export const storageService = {
         notifyListeners();
       }));
 
-      // Real-time Parts Listener — tracks ALL documents for live edits/additions
-      // No limit: Firestore caches locally after first download, subsequent sessions are instant.
-      const qParts = collection(db, COLS.PARTS);
-      unsubscribers.push(onSnapshot(qParts, (snap) => {
-        let changed = false;
-        let newParts = [...dbState.parts];
-        snap.docChanges().forEach(change => {
-          const data = { ...change.doc.data(), id: change.doc.id } as RawMaterialPart;
-          const standardPN = (data.PART_NUMBER || '').toString().toUpperCase().trim();
-
-          if (change.type === 'added' || change.type === 'modified') {
-            newParts = newParts.filter(p => p.id !== data.id && (p.PART_NUMBER || '').toString().toUpperCase().trim() !== standardPN);
-            newParts.push(data);
-            changed = true;
-          } else if (change.type === 'removed') {
-            newParts = newParts.filter(p => p.id !== data.id);
-            changed = true;
-          }
-        });
-        if (changed) {
-          dbState.parts = newParts;
-          notifyListeners();
-        }
-      }));
+      // NOTE: Parts are NOT synced here via onSnapshot.
+      // loadMasterData() handles the initial download with progress bar,
+      // IndexedDB caching, and delta sync — no competing listener needed.
 
       // 4. REAL-TIME LISTENERS (Optimized based on Role and Weight)
       Object.entries(COLS).forEach(([key, colName]) => {
@@ -465,10 +445,18 @@ export const storageService = {
         // (B) Skip Heavy Collections from Initial Sync (Lazy Load required on-page)
         if (key === 'LOGS') return;
 
+        // (C-LAZY) Defer operational tracking collections — loaded on demand by each page
+        if (key === 'VESSEL_TRACKING' || key === 'EQUIPMENT' || key === 'SPARE_PARTS' || key === 'CUSTOMS' || key === 'PRE_ALERTS') return;
+
         // (C) Agent Role Optimization: Only sync Suppliers + Logistics + Daily Tools + Fianzas
         if (role === UserRole.AGENT) {
           if (key !== 'SUPPLIERS' && key !== 'LOGISTICS' && key !== 'DAILY_CHANGES' && key !== 'DAILY_REPORTS' && key !== 'FIANZAS') return;
         }
+
+        // (C.2) Global Performance Optimization: Skip heavy admin, finance, and analytics collections FOR EVERYONE
+        // Downloading the entire historical database of Invoices or Snapshots freezes the browser.
+        // Admins and operators will fetch specific invoices on-demand via search queries instead.
+        if (['INVOICES', 'CFDI_INVOICES', 'XML_CI', 'SNAPSHOTS', 'DATA_STAGE_REPORTS', 'COSTS', 'FIANZAS', 'TRAINING'].includes(key)) return;
 
         // (D) Editor / Operator Optimization: Shared critical operational data
         if (role === UserRole.EDITOR || role === UserRole.OPERATOR) {
@@ -538,113 +526,86 @@ export const storageService = {
 
   getParts: () => dbState.parts || [],
 
-  isMasterDataLoading: () => isMDLoading,
+  isMasterDataLoading: () => !!mdLoadPromise,
   isBackgroundSyncing: () => isBackgroundSyncing,
 
-  loadMasterData: async (force: boolean = false) => {
-    if (!db || isMDLoading) return;
+  loadMasterData: async () => {
+    if (!db) { console.error('[MD] db is null — Firebase not initialized'); return; }
 
-    try {
-      isMDLoading = true;
-      notifyListeners();
+    // If a download is already in flight, wait for it instead of starting a duplicate
+    if (mdLoadPromise) {
+      console.log('[MD] Download already in progress — awaiting existing promise');
+      return mdLoadPromise;
+    }
 
-      // 1. HYDRATE FROM INDEXEDDB (instant load on repeat visits)
-      const localParts = await indexedDbService.getAllParts();
-
-      if (localParts.length > 1000) {
-        // IndexedDB has the full dataset — merge with any real-time listener changes
-        const listenerIds = new Set(dbState.parts.map(p => p.id));
-        const fromIdb = localParts.filter(p => !listenerIds.has(p.id));
-        dbState.parts = [...dbState.parts, ...fromIdb];
-        console.log(`[MD] Hydrated ${dbState.parts.length} parts from IndexedDB.`);
-        notifyListeners();
-        isMDLoading = false;
-        notifyListeners();
-      } else {
-        // IndexedDB is empty or stale — do ONE full batched download from Firebase
-        console.log('[MD] IndexedDB cold start. Downloading full Master Data from Firebase...');
-        isMDLoading = false; // Show progress as we go
+    mdLoadPromise = (async () => {
+      try {
+        isMDLoading = true;
         notifyListeners();
 
-        const BATCH = 2000;
-        let allCloud: RawMaterialPart[] = [];
+        // 1. Try IndexedDB first (instant on repeat visits)
+        let localParts: RawMaterialPart[] = [];
+        try {
+          localParts = await indexedDbService.getAllParts();
+        } catch (idbErr) {
+          console.warn('[MD] IndexedDB read failed, going to Firestore:', idbErr);
+        }
+
+        if (localParts.length > 1000) {
+          dbState.parts = localParts;
+          localStorage.setItem('md_ever_downloaded', 'true');
+          console.log(`[MD] Loaded ${dbState.parts.length} parts from IndexedDB.`);
+          notifyListeners();
+          return;
+        }
+
+        // Paginated download: 500 per page, push (not spread), yield between pages
+        isMDLoading = true;
+        notifyListeners();
+
+        const PAGE = 500;
+        const allParts: RawMaterialPart[] = [];
         let lastDoc: any = null;
         let hasMore = true;
 
         while (hasMore) {
           const q = lastDoc
-            ? query(collection(db, COLS.PARTS), orderBy('PART_NUMBER'), startAfter(lastDoc), limit(BATCH))
-            : query(collection(db, COLS.PARTS), orderBy('PART_NUMBER'), limit(BATCH));
+            ? query(collection(db!, COLS.PARTS), orderBy(documentId()), startAfter(lastDoc), limit(PAGE))
+            : query(collection(db!, COLS.PARTS), orderBy(documentId()), limit(PAGE));
 
           const snap = await getDocs(q);
-          const batch = snap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
-          allCloud = [...allCloud, ...batch];
-
-          // Update UI progressively
-          const listenerIds = new Set(dbState.parts.map(p => p.id));
-          const fresh = batch.filter(p => !listenerIds.has(p.id));
-          dbState.parts = [...dbState.parts, ...fresh];
+          snap.docs.forEach(d => allParts.push({ ...d.data(), id: d.id } as RawMaterialPart));
+          dbState.parts = allParts.slice(); // O(n) copy — NOT O(n²) spread
           notifyListeners();
+          await new Promise(r => setTimeout(r, 16)); // yield one frame → browser renders progress
 
-          if (snap.docs.length < BATCH) {
-            hasMore = false;
-          } else {
-            lastDoc = snap.docs[snap.docs.length - 1];
-          }
+          if (snap.docs.length < PAGE) { hasMore = false; }
+          else { lastDoc = snap.docs[snap.docs.length - 1]; }
         }
 
-        // Save everything to IndexedDB so next load is instant
-        await indexedDbService.clearParts();
-        await indexedDbService.saveParts(allCloud);
-        console.log(`[MD] Full download complete. ${allCloud.length} parts saved to IndexedDB.`);
+        // 3. Cache in IndexedDB for instant loads next time
+        try {
+          await indexedDbService.clearParts();
+          await indexedDbService.saveParts(allParts);
+          localStorage.setItem('md_ever_downloaded', 'true');
+          console.log(`[MD] Downloaded ${allParts.length} parts, saved to IndexedDB.`);
+        } catch (idbErr) {
+          console.warn('[MD] IndexedDB save failed (non-critical):', idbErr);
+        }
+        notifyListeners();
+
+      } catch (e: any) {
+        console.error('[MD] loadMasterData failed:', e);
+      } finally {
+        isMDLoading = false;
+        mdLoadPromise = null;
         notifyListeners();
       }
+    })();
 
-
-      // 2. BACKGROUND DELTA SYNC — only pulls records changed since last sync
-      (async () => {
-        try {
-          isBackgroundSyncing = true;
-          notifyListeners();
-
-          const lastSyncTime = localStorage.getItem('last_parts_sync_time') || '1970-01-01T00:00:00.000Z';
-          const qRecent = query(collection(db, COLS.PARTS), where('UPDATE_TIME', '>', lastSyncTime));
-          const recentSnap = await getDocs(qRecent);
-          const recentData = recentSnap.docs.map(d => ({ ...d.data(), id: d.id } as RawMaterialPart));
-
-          if (recentData.length > 0) {
-            console.log(`[Sync] ${recentData.length} recent changes found. Merging...`);
-            let updatedParts = [...dbState.parts];
-            recentData.forEach(cloudP => {
-              const standardPN = (cloudP.PART_NUMBER || '').toString().toUpperCase().trim();
-              updatedParts = updatedParts.filter(p =>
-                p.id !== cloudP.id &&
-                (p.PART_NUMBER || '').toString().toUpperCase().trim() !== standardPN
-              );
-              updatedParts.push(cloudP);
-            });
-            dbState.parts = updatedParts;
-            // Persist deltas to IndexedDB so next load picks them up
-            await indexedDbService.saveParts(recentData);
-            localStorage.setItem('last_parts_sync_time', new Date().toISOString());
-            notifyListeners();
-          } else {
-            console.log('[Sync] No recent changes. Master Data is up to date.');
-          }
-        } catch (err: any) {
-          console.error('⚠️ Background Sync Failed:', err);
-        } finally {
-          isBackgroundSyncing = false;
-          notifyListeners();
-        }
-      })();
-    } catch (e: any) {
-      console.error("Master Data Init failed", e);
-    } finally {
-      isMDLoading = false;
-      notifyListeners();
-    }
+    return mdLoadPromise;
   },
+
 
   /**
    * DIRECT CLOUD CHECK: Bypasses local state to find actual records in Firestore.
@@ -696,6 +657,38 @@ export const storageService = {
   getCustomsClearance: () => dbState.customsClearance || [],
   getPreAlerts: () => dbState.preAlerts || [],
   getCosts: () => dbState.costs || [],
+
+  // --- LAZY MODULE LOADERS (called on first page open, not at app init) ---
+  loadPreAlerts: async () => {
+    if (!db || dbState.preAlerts.length > 0) { notifyListeners(); return; }
+    const snap = await getDocs(collection(db, COLS.PRE_ALERTS));
+    dbState.preAlerts = snap.docs.map(d => ({ ...d.data(), id: d.id })) as PreAlertRecord[];
+    notifyListeners();
+  },
+  loadVesselTracking: async () => {
+    if (!db || dbState.vesselTracking.length > 0) { notifyListeners(); return; }
+    const snap = await getDocs(collection(db, COLS.VESSEL_TRACKING));
+    dbState.vesselTracking = snap.docs.map(d => ({ ...d.data(), id: d.id })) as VesselTrackingRecord[];
+    notifyListeners();
+  },
+  loadEquipmentTracking: async () => {
+    if (!db || dbState.equipmentTracking.length > 0) { notifyListeners(); return; }
+    const snap = await getDocs(collection(db, COLS.EQUIPMENT));
+    dbState.equipmentTracking = snap.docs.map(d => ({ ...d.data(), id: d.id })) as EquipmentTrackingRecord[];
+    notifyListeners();
+  },
+  loadSparePartsTracking: async () => {
+    if (!db || dbState.sparePartsTracking.length > 0) { notifyListeners(); return; }
+    const snap = await getDocs(collection(db, COLS.SPARE_PARTS));
+    dbState.sparePartsTracking = snap.docs.map(d => ({ ...d.data(), id: d.id })) as SparePartsTrackingRecord[];
+    notifyListeners();
+  },
+  loadCustomsClearance: async () => {
+    if (!db || dbState.customsClearance.length > 0) { notifyListeners(); return; }
+    const snap = await getDocs(collection(db, COLS.CUSTOMS));
+    dbState.customsClearance = snap.docs.map(d => ({ ...d.data(), id: d.id })) as CustomsClearanceRecord[];
+    notifyListeners();
+  },
 
   getLogistics: () => dbState.logistics || [],
   getSuppliers: () => dbState.suppliers || [],
@@ -1029,6 +1022,62 @@ export const storageService = {
       return dbState.commercialInvoices;
     } finally {
       isRefreshingInvoices = false;
+    }
+  },
+
+  // Search-first: load only lines for a specific invoice number
+  getInvoicesByNumber: async (invoiceNo: string): Promise<CommercialInvoiceItem[]> => {
+    const normalizedNo = String(invoiceNo || '').trim().toUpperCase();
+
+    // Fast path: already in memory (from onSnapshot or previous refresh)
+    const cached = (dbState.commercialInvoices || []).filter((i: any) =>
+      String(i.invoiceNo || '').trim().toUpperCase() === normalizedNo
+    );
+    if (cached.length > 0) return cached;
+
+    // Slow path: direct Firestore query
+    if (!db) return [];
+    try {
+      const q = query(collection(db, COLS.INVOICES), where('invoiceNo', '==', invoiceNo));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ ...d.data(), id: d.id } as CommercialInvoiceItem));
+    } catch (e) {
+      console.error('getInvoicesByNumber failed:', e);
+      return [];
+    }
+  },
+
+  // Search invoices by number prefix for autocomplete
+  searchInvoiceNumbers: async (term: string): Promise<string[]> => {
+    if (!term.trim()) return [];
+    // Search from already-loaded memory first
+    if ((dbState.commercialInvoices || []).length > 0) {
+      const t = term.toLowerCase();
+      const unique = new Set<string>();
+      dbState.commercialInvoices.forEach((i: any) => {
+        const inv = String(i.invoiceNo || '').trim();
+        if (inv.toLowerCase().includes(t)) unique.add(inv);
+      });
+      return Array.from(unique).sort().slice(0, 20);
+    }
+    return [];
+  },
+
+  // Search-first: load by container number
+  getInvoicesByContainer: async (containerNo: string): Promise<CommercialInvoiceItem[]> => {
+    const norm = String(containerNo || '').trim().toUpperCase();
+    const cached = (dbState.commercialInvoices || []).filter((i: any) =>
+      String(i.containerNo || '').trim().toUpperCase() === norm
+    );
+    if (cached.length > 0) return cached;
+    if (!db) return [];
+    try {
+      const q = query(collection(db, COLS.INVOICES), where('containerNo', '==', containerNo.trim()));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ ...d.data(), id: d.id } as CommercialInvoiceItem));
+    } catch (e) {
+      console.error('getInvoicesByContainer failed:', e);
+      return [];
     }
   },
 

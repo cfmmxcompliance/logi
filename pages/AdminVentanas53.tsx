@@ -55,17 +55,32 @@ export const AdminVentanas53: React.FC = () => {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filterFecha, setFilterFecha] = useState('');
 
-  useEffect(() => { load(); }, []);
+  // Date Range Filter
+  const [dateRange, setDateRange] = useState(() => {
+    const today = new Date();
+    const start = new Date(today); start.setDate(start.getDate() - 15);
+    const end = new Date(today); end.setDate(end.getDate() + 15);
+    try {
+      const saved = JSON.parse(localStorage.getItem('adminVentanas53_dateRange') || 'null');
+      return saved || { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+    } catch {
+      return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('adminVentanas53_dateRange', JSON.stringify(dateRange));
+    load();
+  }, [dateRange]);
 
   const load = async () => {
     setLoading(true);
     try {
       const [data, allDemandas, allReservas] = await Promise.all([
-        ventanaCarga53Service.getAllVentanas(),
-        demandaCarga53Service.getAllDemandas(),
-        reservaVentana53Service.getAllReservas(),
+        ventanaCarga53Service.getVentanasByDateRange(dateRange.start, dateRange.end),
+        demandaCarga53Service.getDemandasByDate(dateRange.start, dateRange.end),
+        reservaVentana53Service.getReservasByDate(dateRange.start, dateRange.end),
       ]);
       data.sort((a, b) => (a.fecha + a.horaInicio).localeCompare(b.fecha + b.horaInicio));
       setVentanas(data);
@@ -209,9 +224,7 @@ export const AdminVentanas53: React.FC = () => {
     }).filter(x => x.pendientes > 0);
   }, [demandas, ventanas]);
 
-  const filtered = filterFecha
-    ? ventanas.filter(v => v.fecha === filterFecha)
-    : ventanas;
+  const filtered = ventanas; // Already filtered by server
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -269,19 +282,11 @@ export const AdminVentanas53: React.FC = () => {
       )}
 
       {/* Filter */}
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-medium text-slate-600">Filtrar por fecha:</label>
-        <input
-          type="date"
-          value={filterFecha}
-          onChange={e => setFilterFecha(e.target.value)}
-          className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-violet-400 outline-none"
-        />
-        {filterFecha && (
-          <button onClick={() => setFilterFecha('')} className="text-xs text-slate-400 hover:text-slate-700 underline">
-            Limpiar
-          </button>
-        )}
+      <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm w-fit">
+        <label className="text-sm font-bold text-slate-600">Rango de Fechas:</label>
+        <input type="date" value={dateRange.start} onChange={e => setDateRange(r => ({ ...r, start: e.target.value }))} className="px-2 py-1 border border-slate-200 rounded-lg text-sm outline-none focus:border-violet-400" />
+        <span className="text-slate-400">a</span>
+        <input type="date" value={dateRange.end} onChange={e => setDateRange(r => ({ ...r, end: e.target.value }))} className="px-2 py-1 border border-slate-200 rounded-lg text-sm outline-none focus:border-violet-400" />
       </div>
 
       {/* Summary cards */}

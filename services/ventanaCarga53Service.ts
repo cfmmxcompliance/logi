@@ -16,6 +16,16 @@ export const ventanaCarga53Service = {
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as VentanaCarga53));
   },
 
+  async getVentanasByDateRange(start: string, end: string): Promise<VentanaCarga53[]> {
+    const q = query(
+      collection(db, COL),
+      where('fecha', '>=', start),
+      where('fecha', '<=', end)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as VentanaCarga53));
+  },
+
   async createVentana(ventana: Omit<VentanaCarga53, 'id'>): Promise<string> {
     const ref = doc(collection(db, COL));
     await setDoc(ref, {

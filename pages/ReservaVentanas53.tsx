@@ -71,15 +71,31 @@ export const ReservaVentanas53: React.FC = () => {
   const [expandedReserva, setExpandedReserva] = useState<string | null>(null);
   const [linkedAsignaciones, setLinkedAsignaciones] = useState<Record<string, { id: string; numeroOperacion: string; numeroCaja: string }[]>>({});
 
-  useEffect(() => { load(); }, []);
+  // Date Range Filter
+  const [dateRange, setDateRange] = useState(() => {
+    const today = new Date();
+    const start = new Date(today); start.setDate(start.getDate() - 15);
+    const end = new Date(today); end.setDate(end.getDate() + 15);
+    try {
+      const saved = JSON.parse(localStorage.getItem('reservaVentanas53_dateRange') || 'null');
+      return saved || { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+    } catch {
+      return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('reservaVentanas53_dateRange', JSON.stringify(dateRange));
+    load();
+  }, [dateRange]);
 
   const load = async () => {
     setLoading(true);
     try {
       const [allDemandas, allVentanas, allReservas, allCarriers] = await Promise.all([
-        demandaCarga53Service.getAllDemandas(),
-        ventanaCarga53Service.getAllVentanas(),
-        reservaVentana53Service.getAllReservas(),
+        demandaCarga53Service.getDemandasByDate(dateRange.start, dateRange.end),
+        ventanaCarga53Service.getVentanasByDateRange(dateRange.start, dateRange.end),
+        reservaVentana53Service.getReservasByDate(dateRange.start, dateRange.end),
         carrierService.getAllCarriers(),
       ]);
       // Carriers only see Confirmada / Enviada a carriers / En proceso de reserva
@@ -444,6 +460,14 @@ export const ReservaVentanas53: React.FC = () => {
             </span>
           )}
         </button>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm w-fit">
+        <label className="text-sm font-bold text-slate-600">Rango de Fechas:</label>
+        <input type="date" value={dateRange.start} onChange={e => setDateRange(r => ({ ...r, start: e.target.value }))} className="px-2 py-1 border border-slate-200 rounded-lg text-sm outline-none focus:border-teal-400" />
+        <span className="text-slate-400">a</span>
+        <input type="date" value={dateRange.end} onChange={e => setDateRange(r => ({ ...r, end: e.target.value }))} className="px-2 py-1 border border-slate-200 rounded-lg text-sm outline-none focus:border-teal-400" />
       </div>
 
       {loading ? (

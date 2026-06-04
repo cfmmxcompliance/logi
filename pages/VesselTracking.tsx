@@ -41,6 +41,8 @@ export const VesselTracking = () => {
     const [records, setRecords] = useState<VesselTrackingRecord[]>([]);
     const [filter, setFilter] = useState('');
     const [activeTab, setActiveTab] = useState<'ALL' | 'SEA' | 'AIR'>('ALL');
+    const [isLoading, setIsLoading] = useState(false);
+    const [hasSearched, setHasSearched] = useState(() => storageService.getVesselTracking().length > 0);
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -54,12 +56,29 @@ export const VesselTracking = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        setRecords(storageService.getVesselTracking());
+        const existing = storageService.getVesselTracking();
+        if (existing.length > 0) {
+            setRecords(existing);
+            setHasSearched(true);
+        }
         const unsub = storageService.subscribe(() => {
             setRecords([...storageService.getVesselTracking()]);
         });
         return unsub;
     }, []);
+
+    const handleSearch = async () => {
+        if (isLoading) return;
+        if (records.length > 0) { setHasSearched(true); return; }
+        setIsLoading(true);
+        try {
+            await storageService.loadVesselTracking();
+            setRecords([...storageService.getVesselTracking()]);
+            setHasSearched(true);
+        } catch { } finally {
+            setIsLoading(false);
+        }
+    };
 
     const isAir = (r: VesselTrackingRecord) => {
         // Heuristic to determine if it is Air Freight
@@ -354,7 +373,54 @@ export const VesselTracking = () => {
                 </div>
             </div>
 
-            {/* Tabs and Filters */}
+            {/* Search-First Card */}
+            {!hasSearched && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10">
+                    <div className="max-w-xl mx-auto text-center">
+                        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <Anchor size={32} className="text-blue-600" />
+                        </div>
+                        <h2 className="text-xl font-bold text-slate-800 mb-1">Busca para comenzar</h2>
+                        <p className="text-slate-500 text-sm mb-6">1,883 registros de vessel tracking disponibles</p>
+                        <div className="relative">
+                            <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
+                            <input
+                                type="text"
+                                placeholder="Ej: BL No., Container, Invoice, Naviera..."
+                                className={`w-full pl-12 pr-32 py-3.5 border-2 rounded-xl outline-none text-sm transition-all ${isLoading ? 'border-blue-400 bg-blue-50/30' : 'border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-50'}`}
+                                value={filter}
+                                onChange={(e) => setFilter(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+                                autoFocus
+                                disabled={isLoading}
+                            />
+                            <button
+                                onClick={handleSearch}
+                                disabled={isLoading}
+                                className={`absolute right-2 top-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${isLoading ? 'bg-blue-400 text-white cursor-wait' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                        Cargando...
+                                    </>
+                                ) : 'Buscar'}
+                            </button>
+                        </div>
+                        {isLoading && (
+                            <div className="mt-3 flex items-center justify-center gap-2 text-xs text-blue-500 font-medium animate-pulse">
+                                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}} />
+                                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{animationDelay:'150ms'}} />
+                                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{animationDelay:'300ms'}} />
+                                <span>Descargando 1,883 registros desde la nube...</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Tabs and Filters + Table — visible after search */}
+            {hasSearched && (<>
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm inline-flex">
                     <button
@@ -474,7 +540,14 @@ export const VesselTracking = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 whitespace-nowrap">
-                            {filteredRecords.map((r) => (
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan={18} className="py-20 text-center text-slate-400">
+                                        <div className="inline-block w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3" />
+                                        <p className="text-sm font-medium">Cargando registros de Tracking...</p>
+                                    </td>
+                                </tr>
+                            ) : filteredRecords.map((r) => (
                                 <tr key={r.id} className="hover:bg-slate-50 transition-colors">
                                     <td className="px-3 py-2 border-r border-slate-100 sticky left-0 bg-white hover:bg-slate-50 text-center z-10">
                                         <input
@@ -516,7 +589,7 @@ export const VesselTracking = () => {
                                     <Td>{r.assignedSpecialist}</Td>
                                 </tr>
                             ))}
-                            {filteredRecords.length === 0 && (
+                            {!isLoading && filteredRecords.length === 0 && (
                                 <tr>
                                     <td colSpan={17} className="p-12 text-center text-slate-400">
                                         <Anchor className="mx-auto mb-2 opacity-50" size={32} />
@@ -528,6 +601,7 @@ export const VesselTracking = () => {
                     </table>
                 </div>
             </div>
+            </>)}
 
             {deleteModal.isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

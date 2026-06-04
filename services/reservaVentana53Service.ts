@@ -15,6 +15,16 @@ export const reservaVentana53Service = {
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as ReservaVentana53));
   },
 
+  async getReservasByDate(start: string, end: string): Promise<ReservaVentana53[]> {
+    const q = query(
+      collection(db, COL_RESERVAS),
+      where('fechaCarga', '>=', start),
+      where('fechaCarga', '<=', end)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as ReservaVentana53));
+  },
+
   async getReservasByDemanda(demandaId: string): Promise<ReservaVentana53[]> {
     const q = query(collection(db, COL_RESERVAS), where('demandaId', '==', demandaId));
     const snap = await getDocs(q);

@@ -77,7 +77,6 @@ const CSV_ORDER_KEYS: (keyof RawMaterialPart)[] = [
     'MATERIAL_EN',
     'FUNCTION_CN',
     'FUNCTION_EN',
-    'FUNCTION_EN',
     'COMPANY',
     'ESTIMATED'
 ];
@@ -87,22 +86,68 @@ export const DatabaseView = () => {
     const canEdit = hasRole([UserRole.ADMIN, UserRole.OPERATOR]);
     const canDelete = hasRole([UserRole.ADMIN]);
 
+    const hasEverDownloaded = localStorage.getItem('md_ever_downloaded') === 'true';
+
     const [parts, setParts] = useState<RawMaterialPart[]>(storageService.getParts());
     const [searchTerm, setSearchTerm] = useState('');
+    // Skip progress screen if data was ever downloaded (loads from IndexedDB on refresh)
+    const [hasLoaded, setHasLoaded] = useState(
+        () => storageService.getParts().length > 0 || hasEverDownloaded
+    );
+    const [isLoadingData, setIsLoadingData] = useState(false);
 
     const [procState, setProcState] = useState<ProcessingState>(INITIAL_PROCESSING_STATE);
 
+    const handleLoad = async () => {
+        setIsLoadingData(true);
+        try {
+            await storageService.loadMasterData();
+            const loaded = storageService.getParts();
+            if (loaded.length > 0) {
+                setParts(loaded);
+                setHasLoaded(true);
+            }
+        } catch (e) {
+            console.error('[DatabaseView] loadMasterData error:', e);
+        } finally {
+            setIsLoadingData(false);
+        }
+    };
+
+
     useEffect(() => {
-        storageService.loadMasterData();
-        setParts([...storageService.getParts()]);
+        const existing = storageService.getParts();
+        if (existing.length > 0) {
+            setParts([...existing]);
+            setHasLoaded(true);
+        } else {
+            handleLoad();
+        }
         const unsub = storageService.subscribe(() => {
-            setParts([...storageService.getParts()]);
+            const latest = storageService.getParts();
+            if (latest.length > 0) {
+                setParts(latest);
+                setHasLoaded(true);
+            }
         });
         return unsub;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Poll every 200ms during download — bypasses React 18 batching to show REAL progress
+    useEffect(() => {
+        if (!isLoadingData) return;
+        const iv = setInterval(() => {
+            const count = storageService.getParts().length;
+            if (count > 0) setParts(storageService.getParts());
+        }, 200);
+        return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLoadingData]);
 
     const isMDLoading = storageService.isMasterDataLoading();
     const isBackgroundSyncing = storageService.isBackgroundSyncing();
+
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 50;
@@ -1375,6 +1420,66 @@ export const DatabaseView = () => {
                 </div>
             </div>
 
+            {/* Subtle reload indicator — shows briefly on page refresh while IndexedDB hydrates */}
+            {hasLoaded && isLoadingData && parts.length === 0 && (
+                <div className="flex items-center gap-3 px-4 py-2.5 bg-indigo-50 border border-indigo-100 rounded-xl text-sm text-indigo-600">
+                    <div className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin shrink-0" />
+                    Cargando datos desde caché local...
+                </div>
+            )}
+
+            {/* Progress screen — ONLY on first-ever download OR while Firebase is fetching new data */}
+            {(!hasLoaded || isMDLoading) && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10">
+                    <div className="max-w-lg mx-auto text-center">
+                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${
+                            isLoadingData ? 'bg-indigo-50' : 'bg-green-50'
+                        }`}>
+                            <Database size={32} className={isLoadingData ? 'text-indigo-600' : 'text-green-600'} />
+                        </div>
+
+                        {isLoadingData ? (
+                            <>
+                                <h2 className="text-xl font-bold text-slate-800 mb-1">Descargando Master Data</h2>
+                                <p className="text-slate-500 text-sm mb-4">
+                                    {parts.length > 0
+                                        ? <><span className="font-bold text-indigo-600">{parts.length.toLocaleString()}</span> / 13,685 partes recibidas</>  
+                                        : 'Conectando con Firebase...'}
+                                </p>
+
+                                <div className="w-full bg-slate-100 rounded-full h-3 mb-2 overflow-hidden">
+                                    {parts.length > 0 ? (
+                                        <div
+                                            className="h-3 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400 transition-all duration-300"
+                                            style={{ width: `${Math.min(Math.round((parts.length / 13685) * 100), 99)}%` }}
+                                        />
+                                    ) : (
+                                        <div className="h-3 w-full rounded-full bg-gradient-to-r from-indigo-300 via-indigo-500 to-indigo-300 animate-pulse" />
+                                    )}
+                                </div>
+                                {parts.length > 0 && (
+                                    <div className="flex justify-between text-xs text-slate-400 mb-2">
+                                        <span>0</span>
+                                        <span className="font-semibold text-indigo-600">{Math.min(Math.round((parts.length / 13685) * 100), 99)}%</span>
+                                        <span>13,685</span>
+                                    </div>
+                                )}
+                                <p className="text-xs text-slate-400 mt-3">
+                                    Primera descarga — visitas posteriores cargan al instante desde caché local.
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <h2 className="text-xl font-bold text-slate-800 mb-1">Preparando búsqueda...</h2>
+                                <p className="text-slate-500 text-sm">Cargando desde caché local</p>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Table — only when loaded and NOT currently fetching massive data from Firebase */}
+            {(hasLoaded && !isMDLoading) && (
             <div className="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden flex flex-col h-[700px]">
                 <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-4">
                     <div className="relative flex-1 max-w-md">
@@ -1384,8 +1489,12 @@ export const DatabaseView = () => {
                             placeholder="Search (use comma for multiple, space for AND)..."
                             value={searchTerm}
                             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                            onKeyDown={(e) => { if (e.key === 'Enter' && !hasLoaded) handleLoad(); }}
                             className="pl-9 pr-4 py-2 w-full border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
+                        {!hasLoaded && (
+                            <span className="absolute right-3 top-2 text-[10px] text-slate-400 font-medium">↵ para cargar</span>
+                        )}
                     </div>
 
                     {(searchTerm || activeFilters.size > 0 || (activeMassQuery && activeMassQuery.length > 0)) && (
@@ -1403,23 +1512,31 @@ export const DatabaseView = () => {
                         <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full border border-slate-200">
                             <Database size={14} className="text-slate-400" />
                             <span className="font-medium text-slate-500">Total:</span>
-                            <span className="font-bold text-slate-700">{parts.length.toLocaleString()}</span>
+                            <span className="font-bold text-slate-700">
+                                {hasLoaded ? parts.length.toLocaleString() : '13,685'}
+                            </span>
+                            {!hasLoaded && <span className="text-[10px] text-slate-400">(sin cargar)</span>}
                         </div>
                         <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full border border-blue-100">
                             <Filter size={14} className="text-blue-400" />
                             <span className="font-medium text-blue-600">Filtered:</span>
                             <span className="font-bold text-blue-800">{filteredParts.length.toLocaleString()}</span>
                         </div>
-                        {isBackgroundSyncing ? (
+                        {isLoadingData ? (
+                            <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full border border-blue-100 animate-pulse">
+                                <RotateCcw size={14} className="text-blue-500 animate-spin" />
+                                <span className="text-xs font-bold text-blue-700">Cargando...</span>
+                            </div>
+                        ) : isBackgroundSyncing ? (
                             <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 rounded-full border border-amber-100 animate-pulse">
                                 <RotateCcw size={14} className="text-amber-500 animate-spin" />
                                 <span className="text-xs font-bold text-amber-700">Syncing...</span>
                             </div>
                         ) : (
                             <button
-                                onClick={() => storageService.loadMasterData(true)}
+                                onClick={() => hasLoaded ? storageService.loadMasterData(true) : handleLoad()}
                                 className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all"
-                                title="Repair / Force Full Sync from Cloud"
+                                title={hasLoaded ? "Force Full Sync from Cloud" : "Cargar datos"}
                             >
                                 <RotateCcw size={14} />
                             </button>
@@ -1467,7 +1584,24 @@ export const DatabaseView = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {currentItems.map(part => (
+                            {!hasLoaded ? (
+                                <tr>
+                                    <td colSpan={CSV_ORDER_KEYS.length + 2} className="py-20 text-center">
+                                        <div className="flex flex-col items-center gap-3 text-slate-400">
+                                            <Database size={40} className="opacity-30" />
+                                            <p className="font-semibold text-slate-600">13,685 partes disponibles</p>
+                                            <p className="text-sm">Escribe en el buscador y presiona <kbd className="bg-slate-100 border border-slate-300 px-1.5 py-0.5 rounded text-xs font-mono">Enter</kbd>, o haz clic en <RotateCcw size={12} className="inline" /> para cargar los datos.</p>
+                                            <button
+                                                onClick={handleLoad}
+                                                disabled={isLoadingData}
+                                                className="mt-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition"
+                                            >
+                                                {isLoadingData ? 'Cargando...' : 'Cargar Master Data'}
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : currentItems.map(part => (
                                 <tr key={part.id || Math.random()} className="hover:bg-slate-50">
                                     {canDelete && (
                                         <td className="px-3 py-2 border-r border-slate-100 sticky left-0 bg-white hover:bg-slate-50 text-center z-10">
@@ -1787,6 +1921,7 @@ export const DatabaseView = () => {
                     </div>
                 )}
             </div>
+            )}
         </div>
     );
 };

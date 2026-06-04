@@ -33,6 +33,24 @@ export const DemandaCajas53: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Date Range Filter
+  const [dateRange, setDateRange] = useState(() => {
+    const today = new Date();
+    const start = new Date(today); start.setDate(start.getDate() - 15);
+    const end = new Date(today); end.setDate(end.getDate() + 15);
+    try {
+      const saved = JSON.parse(localStorage.getItem('demanda53_dateRange') || 'null');
+      return saved || { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+    } catch {
+      return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('demanda53_dateRange', JSON.stringify(dateRange));
+    load();
+  }, [dateRange]);
+
   // Form state
   const [formFecha, setFormFecha] = useState(new Date().toISOString().split('T')[0]);
   const [formObs, setFormObs] = useState('');
@@ -46,7 +64,7 @@ export const DemandaCajas53: React.FC = () => {
     setLoading(true);
     try {
       const [d, p] = await Promise.all([
-        demandaCarga53Service.getAllDemandas(),
+        demandaCarga53Service.getDemandasByDate(dateRange.start, dateRange.end),
         productosService.getAllProductos(),
       ]);
       d.sort((a, b) => b.fechaDemanda.localeCompare(a.fechaDemanda));
@@ -196,6 +214,14 @@ export const DemandaCajas53: React.FC = () => {
             <Plus size={18} /> Nueva Demanda
           </button>
         )}
+      </div>
+
+      {/* Filter Bar */}
+      <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm w-fit">
+        <label className="text-sm font-bold text-slate-600">Rango de Fechas:</label>
+        <input type="date" value={dateRange.start} onChange={e => setDateRange(r => ({ ...r, start: e.target.value }))} className="px-2 py-1 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-400" />
+        <span className="text-slate-400">a</span>
+        <input type="date" value={dateRange.end} onChange={e => setDateRange(r => ({ ...r, end: e.target.value }))} className="px-2 py-1 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-400" />
       </div>
 
       {/* Summary cards */}

@@ -149,7 +149,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [dateRange.start, dateRange.end]);
 
   // TRANSPORTISTA: si transportLines carga DESPUES de abrir el modal, auto-rellena el carrier
   useEffect(() => {
@@ -166,14 +166,14 @@ export const AsignacionesDiarias: React.FC = () => {
   const loadData = async () => {
     try {
         const [asigData, cajasData, driversData, carriersData, liberacionesData, liberacionesDockData, linesData, vigilanciasData, sellosData] = await Promise.all([
-            asignacionCajaService.getAllAsignaciones().catch(() => []),
+            asignacionCajaService.getAsignacionesByDateRange(dateRange.start, dateRange.end).catch(() => []),
             cajaService.getAllCajas().catch(() => []),
             driverService.getAllDrivers().catch(() => []),
             carrierService.getAllCarriers().catch(() => []),
-            liberacionService.getAllLiberaciones().catch(() => []),
-            liberacionDockService.getAllLiberacionesDock().catch(() => []),
+            liberacionService.getLiberacionesByDateRange(dateRange.start, dateRange.end).catch(() => []),
+            liberacionDockService.getLiberacionesDockByDateRange(dateRange.start, dateRange.end).catch(() => []),
             transportLineService.getAllTransportLines().catch(() => []),
-            vigilanciaService.getByDate(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' })).catch(() => []),
+            vigilanciaService.getByDateRange(dateRange.start, dateRange.end).catch(() => []),
             selloService.getAllSellos().catch(() => [])
         ]);
         setAsignaciones(asigData.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()));

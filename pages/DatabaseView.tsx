@@ -1442,14 +1442,14 @@ export const DatabaseView = () => {
                             <>
                                 <h2 className="text-xl font-bold text-slate-800 mb-1">Descargando Master Data</h2>
                                 <p className="text-slate-500 text-sm mb-4">
-                                    {parts.length > 0
+                                    {parts.length > 0 
                                         ? <><span className="font-bold text-indigo-600">{parts.length.toLocaleString()}</span> / 13,685 partes recibidas</>  
                                         : 'Conectando con Firebase...'}
                                 </p>
-
+                                
                                 <div className="w-full bg-slate-100 rounded-full h-3 mb-2 overflow-hidden">
                                     {parts.length > 0 ? (
-                                        <div
+                                        <div 
                                             className="h-3 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400 transition-all duration-300"
                                             style={{ width: `${Math.min(Math.round((parts.length / 13685) * 100), 99)}%` }}
                                         />
@@ -1465,7 +1465,7 @@ export const DatabaseView = () => {
                                     </div>
                                 )}
                                 <p className="text-xs text-slate-400 mt-3">
-                                    Primera descarga — visitas posteriores cargan al instante desde caché local.
+                                    Sincronizando dependencias para validación de facturas...
                                 </p>
                             </>
                         ) : (

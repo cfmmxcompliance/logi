@@ -1,7 +1,7 @@
 import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, SparePartsTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole, XMLCIRecord } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
-  collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc, arrayUnion, increment, limit, startAfter, documentId
+  collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc, arrayUnion, increment, limit, startAfter, documentId, getCountFromServer
 } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { indexedDbService } from './indexedDbService.ts';
@@ -48,7 +48,9 @@ let isMDLoading = false;
 let mdLoadPromise: Promise<void> | null = null; // shared promise — concurrent callers await the same download
 let isBackgroundSyncing = false;
 let isRefreshingInvoices = false;
+let invoiceLoadPromise: Promise<CommercialInvoiceItem[]> | null = null;
 let lastInvoicesRefresh = 0;
+let invoiceProgress = { loaded: 0, total: 0 };
 
 const notifyListeners = () => listeners.forEach(l => l());
 
@@ -1000,29 +1002,83 @@ export const storageService = {
     notifyListeners();
   },
 
+  getInvoiceProgress: () => ({ ...invoiceProgress }),
+  isInvoiceLoading: () => isRefreshingInvoices,
+
   refreshInvoices: async (force = false) => {
     if (!db) return [];
     
     const now = Date.now();
-    if (!force && dbState.commercialInvoices.length > 0 && (now - lastInvoicesRefresh < 30000)) {
+    if (!force && dbState.commercialInvoices.length > 0) {
       return dbState.commercialInvoices;
     }
 
-    if (isRefreshingInvoices) return dbState.commercialInvoices;
+    if (invoiceLoadPromise) return invoiceLoadPromise;
 
-    try {
-      isRefreshingInvoices = true;
-      const snap = await getDocs(collection(db, COLS.INVOICES));
-      dbState.commercialInvoices = snap.docs.map(d => ({ ...d.data(), id: d.id } as CommercialInvoiceItem));
-      lastInvoicesRefresh = Date.now();
-      notifyListeners();
-      return dbState.commercialInvoices;
-    } catch (e) {
-      console.error("Failed to refresh invoices", e);
-      return dbState.commercialInvoices;
-    } finally {
-      isRefreshingInvoices = false;
-    }
+    invoiceLoadPromise = (async () => {
+      try {
+        isRefreshingInvoices = true;
+        invoiceProgress = { loaded: 0, total: 0 };
+        notifyListeners();
+
+        // 1. Get exact total count from Firestore
+        const collRef = collection(db, COLS.INVOICES);
+        const countSnap = await getCountFromServer(collRef);
+        invoiceProgress.total = countSnap.data().count;
+        notifyListeners();
+
+        // 2. Fast Path: If IndexedDB has exactly the same count, load from IndexedDB
+        // We skip this optimization for now to ensure consistency, but we could add it later
+
+        // 3. Paginated Download
+        const PAGE = 1000;
+        const allInvoices: CommercialInvoiceItem[] = [];
+        let lastDocId: string | null = null;
+        let hasMore = true;
+
+        while (hasMore) {
+          const q = lastDocId
+            ? query(collRef, orderBy(documentId()), startAfter(lastDocId), limit(PAGE))
+            : query(collRef, orderBy(documentId()), limit(PAGE));
+
+          const snapPromise = getDocs(q);
+          const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout_Firebase_Hang")), 15000));
+          
+          let snap;
+          try {
+              snap = await Promise.race([snapPromise, timeoutPromise]) as any;
+          } catch (err: any) {
+              console.warn("Se cortó la descarga (Posible Límite de Cuota de Firebase o Falla de Red):", err.message);
+              break; // Salir del loop con lo que ya logramos descargar
+          }
+
+          snap.docs.forEach((d: any) => allInvoices.push({ ...d.data(), id: d.id } as CommercialInvoiceItem));
+          
+          invoiceProgress.loaded = allInvoices.length;
+          // PERF: We do NOT clone to dbState.commercialInvoices here to prevent UI freezing and heavy memory alloc
+          notifyListeners();
+          
+          await new Promise(r => setTimeout(r, 16)); // yield to browser
+
+          if (snap.docs.length < PAGE) { hasMore = false; }
+          else { lastDocId = snap.docs[snap.docs.length - 1].id; }
+        }
+
+        dbState.commercialInvoices = allInvoices;
+        saveLocal(); // Ensure 100k records are cached locally
+        lastInvoicesRefresh = Date.now();
+        return dbState.commercialInvoices;
+      } catch (e) {
+        console.error("Failed to refresh invoices", e);
+        return dbState.commercialInvoices;
+      } finally {
+        isRefreshingInvoices = false;
+        invoiceLoadPromise = null;
+        notifyListeners();
+      }
+    })();
+
+    return invoiceLoadPromise;
   },
 
   // Search-first: load only lines for a specific invoice number
@@ -2853,6 +2909,73 @@ export const storageService = {
     } catch (e) {
       console.error("Restore failed", e);
       return false;
+    }
+  },
+
+  searchInvoicesByPrefix: async (prefix: string): Promise<CommercialInvoiceItem[]> => {
+    const normalizedNo = String(prefix || '').trim().toUpperCase();
+    if (!db || !normalizedNo) return [];
+    try {
+      // Local resolution: Find invoices associated with this BL or Container in VesselTracking
+      const resolvedInvoiceNos = new Set<string>();
+      dbState.vesselTracking.forEach(vt => {
+        const bl = vt.blNo?.toUpperCase() || '';
+        const cont = vt.containerNo?.toUpperCase() || '';
+        if (bl.includes(normalizedNo) || cont.includes(normalizedNo)) {
+          if (vt.invoiceNo) {
+             vt.invoiceNo.split(',').forEach(inv => {
+               if (inv.trim()) resolvedInvoiceNos.add(inv.trim().toUpperCase());
+             });
+          }
+        }
+      });
+
+      const qInv = query(
+        collection(db, COLS.INVOICES), 
+        where('invoiceNo', '>=', normalizedNo),
+        where('invoiceNo', '<=', normalizedNo + '\uf8ff'),
+        limit(500)
+      );
+      const qCont = query(
+        collection(db, COLS.INVOICES), 
+        where('containerNo', '==', normalizedNo),
+        limit(500)
+      );
+      const qPart = query(
+        collection(db, COLS.INVOICES), 
+        where('partNo', '==', normalizedNo),
+        limit(500)
+      );
+      const qBl = query(
+        collection(db, COLS.INVOICES), 
+        where('bl', '==', normalizedNo),
+        limit(500)
+      );
+      const qBlNo = query(
+        collection(db, COLS.INVOICES), 
+        where('blNo', '==', normalizedNo),
+        limit(500)
+      );
+
+      const additionalQueries = Array.from(resolvedInvoiceNos).map(inv => 
+        query(collection(db, COLS.INVOICES), where('invoiceNo', '==', inv), limit(500))
+      );
+
+      const allQueries = [qInv, qCont, qPart, qBl, qBlNo, ...additionalQueries];
+      const snapShots = await Promise.all(allQueries.map(q => getDocs(q)));
+
+      const resultsMap = new Map<string, CommercialInvoiceItem>();
+      
+      snapShots.forEach(snap => {
+        snap.docs.forEach(d => {
+          resultsMap.set(d.id, { ...d.data(), id: d.id } as CommercialInvoiceItem);
+        });
+      });
+
+      return Array.from(resultsMap.values());
+    } catch (e) {
+      console.error(e);
+      return [];
     }
   },
 

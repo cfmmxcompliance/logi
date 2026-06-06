@@ -11,6 +11,26 @@ interface AuthContextType {
   loading: boolean;
 }
 
+const sanitizeRole = (roleStr: string): UserRole => {
+  if (!roleStr) return UserRole.PENDING;
+  const normalized = roleStr.trim().toUpperCase();
+  const map: Record<string, UserRole> = {
+    'ADMIN': UserRole.ADMIN,
+    'EDITOR': UserRole.EDITOR,
+    'AGENT': UserRole.AGENT,
+    'CONTROLLER': UserRole.CONTROLLER,
+    'PENDING': UserRole.PENDING,
+    'EXPO': UserRole.EXPO,
+    'CARRIER': UserRole.CARRIER,
+    'TRANSPORTISTA': UserRole.TRANSPORTISTA,
+    'EMBARQUES': UserRole.EMBARQUES,
+    'CLIENT': UserRole.CLIENT,
+    'CLIENTE': UserRole.CLIENT,
+    'FINANZAS': UserRole.FINANZAS
+  };
+  return map[normalized] || (roleStr as UserRole);
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children?: ReactNode }) => {
@@ -18,7 +38,11 @@ export const AuthProvider = ({ children }: { children?: ReactNode }) => {
     // 1. OPTIMISTIC HYDRATION: Read from localStorage immediately during initialization
     const stored = localStorage.getItem('logimaster_user');
     if (stored) {
-      try { return JSON.parse(stored); } catch (e) { return null; }
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed) parsed.role = sanitizeRole(parsed.role as unknown as string);
+        return parsed;
+      } catch (e) { return null; }
     }
     return null;
   });
@@ -41,6 +65,7 @@ export const AuthProvider = ({ children }: { children?: ReactNode }) => {
         if (parsedUser.email) {
           const dbUser = await authService.getUser(parsedUser.email);
           if (dbUser) {
+            dbUser.role = sanitizeRole(dbUser.role as unknown as string);
             setUser(dbUser);
             localStorage.setItem('logimaster_user', JSON.stringify(dbUser));
           } else {
@@ -60,6 +85,7 @@ export const AuthProvider = ({ children }: { children?: ReactNode }) => {
 
 
   const login = (userData: User) => {
+    userData.role = sanitizeRole(userData.role as unknown as string);
     setUser(userData);
     localStorage.setItem('logimaster_user', JSON.stringify(userData));
   };

@@ -198,6 +198,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <SidebarItem to="/spare-parts-tracking" icon={Box} label={sidebarOpen ? "SpareParts" : ""} />
               <SidebarItem to="/customs-clearance" icon={ClipboardCheck} label={sidebarOpen ? "Customs Clearance" : ""} />
               <SidebarItem to="/commercial-invoices" icon={FileText} label={sidebarOpen ? "CI Extractor" : ""} />
+              <SidebarItem to="/factura" icon={FileText} label={sidebarOpen ? "Factura" : ""} />
               <SidebarItem to="/xml-invoices" icon={Database} label={sidebarOpen ? "Facturas XML" : ""} />
               <SidebarItem to="/xml-ci" icon={FileText} label={sidebarOpen ? "XMLCI" : ""} />
               <SidebarItem to="/ccp-builder" icon={Truck} label={sidebarOpen ? "CCP Builder" : ""} />

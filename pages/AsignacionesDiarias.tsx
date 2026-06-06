@@ -32,10 +32,11 @@ export const AsignacionesDiarias: React.FC = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
   // Roles con acceso de solo lectura — sin botones de escritura
-  const isReadOnly = user?.role === UserRole.EMBARQUES || user?.role === UserRole.CLIENT;
-  const isEmbarques = isReadOnly; // alias para compatibilidad con código existente
-  const scacFilter = user?.role === UserRole.CARRIER ? (user?.scac || '').trim().toUpperCase() : null;
-  const subLineaFilter = user?.role === UserRole.TRANSPORTISTA ? (user?.scac || '').trim().toUpperCase() : null;
+  const currentRole = (user?.role || '').toUpperCase();
+  const isReadOnly = currentRole === 'EMBARQUES' || currentRole === 'CLIENTE';
+  const isEmbarques = isReadOnly;
+  const scacFilter = currentRole === 'CARRIER' ? (user?.scac || '').trim().toUpperCase() : null;
+  const subLineaFilter = currentRole === 'TRANSPORTISTA' ? (user?.scac || '').trim().toUpperCase() : null;
   const [asignaciones, setAsignaciones] = useState<AsignacionCajaModel[]>([]);
   const [cajas, setCajas] = useState<CajaModel[]>([]);
   const [drivers, setDrivers] = useState<DriverModel[]>([]);
@@ -203,18 +204,23 @@ export const AsignacionesDiarias: React.FC = () => {
 
     // TRANSPORTISTA role: filter by carrierCodigo linked to their Nombre Comercial (TransportLine)
     // Same approach as Cajas and Drivers: use carrierCodigo as the reliable link field.
-    if (user?.role === UserRole.TRANSPORTISTA) {
+    if (currentRole === 'TRANSPORTISTA') {
         if (!subLineaFilter) {
             result = [];
         } else {
-            // Find all carrier codes that belong to transport lines with matching Nombre Comercial
-            const matchingCarriers = new Set(
+            // Find all transportLineIds that belong to this TransportLine (Nombre Comercial)
+            const matchingTLs = new Set(
                 transportLines
                     .filter(tl => (tl.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase())
-                    .map(tl => (tl.carrierCodigo || '').toUpperCase())
+                    .map(tl => tl.transportLineId)
                     .filter(Boolean)
             );
-            result = result.filter(a => matchingCarriers.has((a.carrierCodigo || '').toUpperCase()));
+            
+            result = result.filter(a => {
+                const matchesId = a.transportLineId && matchingTLs.has(a.transportLineId);
+                const matchesName = (a.subLinea || '').toLowerCase() === subLineaFilter.toLowerCase();
+                return matchesId || matchesName;
+            });
         }
     }
 
@@ -236,7 +242,8 @@ export const AsignacionesDiarias: React.FC = () => {
                 (a.placasCaja || '').toLowerCase().includes(term) ||
                 (a.driverId || '').toLowerCase().includes(term) ||
                 (a.nombreDriver || '').toLowerCase().includes(term) ||
-                (a.placasTracto || '').toLowerCase().includes(term)
+                (a.placasTracto || '').toLowerCase().includes(term) ||
+                (a.carrierCodigo || '').toLowerCase().includes(term)
             )
         );
     }
@@ -1223,6 +1230,9 @@ export const AsignacionesDiarias: React.FC = () => {
                               .filter(c => {
                                 if (!formData.carrierCodigo) return false;
                                 if (c.carrierCodigo !== formData.carrierCodigo) return false;
+                                if (subLineaFilter) {
+                                  if ((c.TransportLine || '').toUpperCase() !== subLineaFilter) return false;
+                                }
                                 if (formData.transportLineId) {
                                   const selectedTL = transportLines.find(tl => tl.transportLineId === formData.transportLineId);
                                   const targetSubLinea = selectedTL?.nombreSubLinea?.trim().toUpperCase();
@@ -1260,6 +1270,15 @@ export const AsignacionesDiarias: React.FC = () => {
                               .filter(d => {
                                 if (!formData.carrierCodigo) return false;
                                 if (formData.transportLineId) return d.transportLineId === formData.transportLineId;
+                                if (subLineaFilter) {
+                                  const allowedTLIds = new Set(
+                                    transportLines
+                                      .filter(tl => (tl.TransportLine || '').toUpperCase() === subLineaFilter)
+                                      .map(tl => tl.transportLineId)
+                                      .filter(Boolean)
+                                  );
+                                  if (!d.transportLineId || !allowedTLIds.has(d.transportLineId)) return false;
+                                }
                                 return d.carrierCodigo === formData.carrierCodigo;
                               })
                               .map(d => ({ value: d.driverId, label: d.nombre, sublabel: d.driverId }))}

@@ -1,7 +1,7 @@
 // @ts-ignore
 import { initializeApp } from 'firebase/app';
 // @ts-ignore
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore, CACHE_SIZE_UNLIMITED } from 'firebase/firestore';
 // @ts-ignore
 import { getAuth } from 'firebase/auth';
 // @ts-ignore
@@ -24,7 +24,10 @@ const app = initializeApp(firebaseConfig);
 let db: ReturnType<typeof getFirestore>;
 try {
   db = initializeFirestore(app, { 
-    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) 
+    localCache: persistentLocalCache({ 
+      tabManager: persistentMultipleTabManager(),
+      cacheSizeBytes: CACHE_SIZE_UNLIMITED
+    }) 
   });
 } catch {
   // HMR: Firestore already initialized — return existing instance

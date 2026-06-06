@@ -3,9 +3,12 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const admin = require('firebase-admin');
 
-const wmsApi = express();
-wmsApi.use(cors({ origin: true }));
-wmsApi.use(express.json());
+const app = express();
+app.use(cors({ origin: true }));
+app.use(express.json());
+
+const wmsApi = express.Router();
+app.use('/api', wmsApi);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'wms_secret_key_12345';
 const db = admin.firestore();
@@ -518,5 +521,5 @@ wmsApi.post('/admin/reverse', authenticateToken, async (req, res) => {
     }
 });
 
-module.exports = wmsApi;
+module.exports = app;
 

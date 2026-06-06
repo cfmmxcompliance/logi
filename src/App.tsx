@@ -35,6 +35,7 @@ const Carriers             = React.lazy(() => import('../pages/Carriers.tsx').th
 const TransportLines       = React.lazy(() => import('../pages/TransportLines.tsx').then(m => ({ default: m.TransportLines })));
 const Drivers              = React.lazy(() => import('../pages/Drivers.tsx').then(m => ({ default: m.Drivers })));
 const CIExtractor          = React.lazy(() => import('../pages/CIExtractor.tsx').then(m => ({ default: m.CIExtractor })));
+const Factura              = React.lazy(() => import('../pages/Factura.tsx').then(m => ({ default: m.Factura })));
 const XMLInvoiceExtractor  = React.lazy(() => import('../pages/XMLInvoiceExtractor.tsx').then(m => ({ default: m.XMLInvoiceExtractor })));
 const XMLCI                = React.lazy(() => import('../pages/XMLCI.tsx').then(m => ({ default: m.XMLCI })));
 const Models               = React.lazy(() => import('../pages/Models').then(m => ({ default: m.Models })));
@@ -120,8 +121,8 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
              return <Navigate to="/m/home" replace />;
         }
     } else if (user?.role) {
-        // Non-Handheld (Desktop) users cannot access /m/...
-        if (isHandheldPath) {
+        // Non-Handheld (Desktop) users cannot access /m/... (except ADMIN for testing)
+        if (isHandheldPath && user.role !== UserRole.ADMIN) {
             return <Navigate to="/" replace />;
         }
     }
@@ -176,7 +177,8 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
         return <Navigate to="/" replace />;
     }
 
-    if (user?.role === UserRole.HANDHELD_USER || user?.role === UserRole.HANDHELD_USER2) {
+    // Si la ruta es de Handheld, renderizamos sin el Layout lateral para que funcione en móviles
+    if (isHandheldPath) {
         return <>{children}</>;
     }
 
@@ -353,6 +355,7 @@ const AppContent = () => {
             <Route path="/spare-parts-tracking" element={<ProtectedRoute><SparePartsTracking /></ProtectedRoute>} />
             <Route path="/customs-clearance" element={<ProtectedRoute><CustomsClearance /></ProtectedRoute>} />
             <Route path="/commercial-invoices" element={<ProtectedRoute><CIExtractor /></ProtectedRoute>} />
+            <Route path="/factura" element={<ProtectedRoute><Factura /></ProtectedRoute>} />
             <Route path="/xml-invoices" element={<ProtectedRoute><XMLInvoiceExtractor /></ProtectedRoute>} />
             <Route path="/xml-ci" element={<ProtectedRoute><XMLCI /></ProtectedRoute>} />
             <Route path="/saldo-fianza" element={<ProtectedRoute><SaldoFianza /></ProtectedRoute>} />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { vigilanciaService } from '../services/vigilanciaService.ts';
@@ -142,18 +142,121 @@ export const HandheldVigilancia = () => {
 
   useEffect(() => { fetchDataForRange(); }, [dateStart, dateEnd]);
 
-  const filteredCajas = searchQuery.trim()
-    ? cajasDelDia.filter(c => {
-        const q = searchQuery.toLowerCase();
-        return (
-          (c.numeroCaja || '').toLowerCase().includes(q) ||
-          (c.numeroOperacion || '').toLowerCase().includes(q) ||
-          (c.nombreDriver || '').toLowerCase().includes(q) ||
-          (c.placasCaja || '').toLowerCase().includes(q) ||
-          (c.placasTracto || '').toLowerCase().includes(q)
-        );
-      })
-    : cajasDelDia;
+  const filteredCajas = useMemo(() => {
+    if (!searchQuery.trim()) return cajasDelDia;
+    const q = searchQuery.toLowerCase();
+    return cajasDelDia.filter(c => (
+      (c.numeroCaja || '').toLowerCase().includes(q) ||
+      (c.numeroOperacion || '').toLowerCase().includes(q) ||
+      (c.nombreDriver || '').toLowerCase().includes(q) ||
+      (c.placasCaja || '').toLowerCase().includes(q) ||
+      (c.placasTracto || '').toLowerCase().includes(q)
+    ));
+  }, [cajasDelDia, searchQuery]);
+
+  // ── Helpers ──
+  const getVigilanciaForCaja = useCallback((cajaId: string) =>
+    vigilancias.find(v => v.asignacionCajaId === cajaId), [vigilancias]);
+
+  const countPhotos = useCallback((v?: VigilanciaRecord) => {
+    if (!v) return 0;
+    return SECTIONS.filter(s => {
+      const val = v[s.key];
+      return !!val && val !== 'PENDING';
+    }).length;
+  }, []);
+
+  const cajaListRender = useMemo(() => {
+    if (filteredCajas.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 text-slate-600">
+          <Truck size={40} className="mb-3 opacity-40" />
+          <p className="text-sm font-medium">
+            {searchQuery ? `Sin resultados para "${searchQuery}"` : 'Sin asignaciones para esta fecha'}
+          </p>
+        </div>
+      );
+    }
+    return filteredCajas.map(caja => {
+      const vig = getVigilanciaForCaja(caja.id || '');
+      const done = countPhotos(vig);
+      const total = SECTIONS.length;
+      const pct = Math.round((done / total) * 100);
+      const complete = done === total;
+
+      return (
+        <button
+          key={caja.id}
+          onClick={() => openModal(caja)}
+          className={`w-full text-left bg-slate-800 border rounded-2xl p-4 flex items-center gap-4 transition-all active:scale-95 ${
+            vig?.discrepancia
+              ? 'border-red-500/60 shadow-[0_0_16px_rgba(239,68,68,0.2)]'
+              : complete
+                ? 'border-emerald-500/40 shadow-[0_0_16px_rgba(16,185,129,0.15)]'
+                : 'border-slate-700 hover:border-slate-600'
+          }`}
+        >
+          {/* Icon */}
+          <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-white flex-shrink-0 ${
+            vig?.discrepancia
+              ? 'bg-red-600 shadow-[0_0_16px_rgba(239,68,68,0.5)]'
+              : complete
+                ? 'bg-emerald-500 shadow-[0_0_16px_rgba(16,185,129,0.4)]'
+                : 'bg-red-500/20 border border-red-500/30'
+          }`}>
+            {vig?.discrepancia
+              ? <AlertTriangle size={26} />
+              : complete
+                ? <CheckCircle size={28} />
+                : <Shield size={26} className="text-red-400" />
+            }
+          </div>
+
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-bold text-white font-mono tracking-wider text-lg">{caja.numeroCaja}</span>
+              {caja.numeroOperacion && (
+                <span className="text-xs font-bold text-pink-400 bg-pink-900/30 border border-pink-700/40 px-2 py-0.5 rounded-full">
+                  {caja.numeroOperacion}
+                </span>
+              )}
+              {vig?.discrepancia && (
+                <span className="text-xs font-bold text-red-300 bg-red-900/50 border border-red-500/50 px-2 py-0.5 rounded-full animate-pulse">
+                  ⚠ DISCREPANCIA
+                </span>
+              )}
+            </div>
+            <div className="flex items-center justify-between mt-1 gap-2">
+              <p className="text-slate-200 text-sm font-medium truncate">{caja.nombreDriver || '—'}</p>
+              {caja.subLinea && (
+                <span className="text-xs text-blue-400 font-bold bg-blue-900/30 border border-blue-700/40 px-2 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
+                  {caja.subLinea}
+                </span>
+              )}
+            </div>
+            {/* Progress */}
+            <div className="mt-2 flex items-center gap-2">
+              <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${complete ? 'bg-emerald-500' : 'bg-red-500'}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <span className={`text-xs font-bold ${complete ? 'text-emerald-400' : 'text-slate-500'}`}>
+                {done}/{total}
+              </span>
+            </div>
+          </div>
+
+          {/* Time */}
+          <div className="flex-shrink-0 text-right">
+            <span className="text-blue-400 font-mono font-bold text-sm">{caja.horaAsignacion || '—'}</span>
+          </div>
+        </button>
+      );
+    });
+  }, [filteredCajas, vigilancias]);
 
   // ── Image compression ──
   const compress = (file: File): Promise<string> =>
@@ -355,17 +458,7 @@ export const HandheldVigilancia = () => {
     }
   };
 
-  // ── Helpers ──
-  const getVigilanciaForCaja = (cajaId: string) =>
-    vigilancias.find(v => v.asignacionCajaId === cajaId);
 
-  const countPhotos = (v?: VigilanciaRecord) => {
-    if (!v) return 0;
-    return SECTIONS.filter(s => {
-      const val = v[s.key];
-      return !!val && val !== 'PENDING';
-    }).length;
-  };
 
   const openModal = (caja: AsignacionCajaModel) => {
     setSelectedCaja(caja);
@@ -477,99 +570,14 @@ export const HandheldVigilancia = () => {
             <Loader2 className="animate-spin mb-3" size={32} />
             <p className="text-sm">Cargando asignaciones...</p>
           </div>
-        ) : filteredCajas.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-600">
-            <Truck size={40} className="mb-3 opacity-40" />
-            <p className="text-sm font-medium">
-              {searchQuery ? `Sin resultados para "${searchQuery}"` : 'Sin asignaciones para esta fecha'}
-            </p>
-          </div>
         ) : (
-          filteredCajas.map(caja => {
-            const vig = getVigilanciaForCaja(caja.id || '');
-            const done = countPhotos(vig);
-            const total = SECTIONS.length;
-            const pct = Math.round((done / total) * 100);
-            const complete = done === total;
-
-            return (
-              <button
-                key={caja.id}
-                onClick={() => openModal(caja)}
-                className={`w-full text-left bg-slate-800 border rounded-2xl p-4 flex items-center gap-4 transition-all active:scale-95 ${
-                  vig?.discrepancia
-                    ? 'border-red-500/60 shadow-[0_0_16px_rgba(239,68,68,0.2)]'
-                    : complete
-                      ? 'border-emerald-500/40 shadow-[0_0_16px_rgba(16,185,129,0.15)]'
-                      : 'border-slate-700 hover:border-slate-600'
-                }`}
-              >
-                {/* Icon */}
-                <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-white flex-shrink-0 ${
-                  vig?.discrepancia
-                    ? 'bg-red-600 shadow-[0_0_16px_rgba(239,68,68,0.5)]'
-                    : complete
-                      ? 'bg-emerald-500 shadow-[0_0_16px_rgba(16,185,129,0.4)]'
-                      : 'bg-red-500/20 border border-red-500/30'
-                }`}>
-                  {vig?.discrepancia
-                    ? <AlertTriangle size={26} />
-                    : complete
-                      ? <CheckCircle size={28} />
-                      : <Shield size={26} className="text-red-400" />
-                  }
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-white font-mono tracking-wider text-lg">{caja.numeroCaja}</span>
-                    {caja.numeroOperacion && (
-                      <span className="text-xs font-bold text-pink-400 bg-pink-900/30 border border-pink-700/40 px-2 py-0.5 rounded-full">
-                        {caja.numeroOperacion}
-                      </span>
-                    )}
-                    {vig?.discrepancia && (
-                      <span className="text-xs font-bold text-red-300 bg-red-900/50 border border-red-500/50 px-2 py-0.5 rounded-full animate-pulse">
-                        ⚠ DISCREPANCIA
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between mt-1 gap-2">
-                    <p className="text-slate-200 text-sm font-medium truncate">{caja.nombreDriver || '—'}</p>
-                    {caja.subLinea && (
-                      <span className="text-xs text-blue-400 font-bold bg-blue-900/30 border border-blue-700/40 px-2 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
-                        {caja.subLinea}
-                      </span>
-                    )}
-                  </div>
-                  {/* Progress */}
-                  <div className="mt-2 flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${complete ? 'bg-emerald-500' : 'bg-red-500'}`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className={`text-xs font-bold ${complete ? 'text-emerald-400' : 'text-slate-500'}`}>
-                      {done}/{total}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Time */}
-                <div className="flex-shrink-0 text-right">
-                  <span className="text-blue-400 font-mono font-bold text-sm">{caja.horaAsignacion || '—'}</span>
-                </div>
-              </button>
-            );
-          })
+          cajaListRender
         )}
       </div>
 
       {/* ── STEP 1: VALIDATION MODAL ── */}
       {selectedCaja && modalStep === 'validation' && (
-        <div className="fixed inset-0 bg-slate-950/98 z-50 flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex-shrink-0 bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center gap-3">
             <button onClick={() => setSelectedCaja(null)} className="p-2 text-slate-400 hover:text-white rounded-xl active:scale-95">
@@ -697,7 +705,7 @@ export const HandheldVigilancia = () => {
 
       {/* ── DISCREPANCIA POPUP ── */}
       {showDiscrepancia && selectedCaja && (
-        <div className="fixed inset-0 bg-slate-950/95 z-[60] flex items-center justify-center p-5">
+        <div className="fixed inset-0 bg-slate-950/90 z-[60] flex items-center justify-center p-5">
           <div className="bg-slate-900 border border-red-500/50 rounded-3xl shadow-2xl shadow-red-900/30 w-full max-w-sm overflow-hidden">
             {/* Top danger bar */}
             <div className="bg-red-600 px-5 py-4 flex items-center gap-3">
@@ -768,7 +776,7 @@ export const HandheldVigilancia = () => {
 
       {/* ── STEP 2: INSPECTION MODAL ── */}
       {selectedCaja && modalStep === 'inspection' && (
-        <div className="fixed inset-0 bg-slate-950/95 z-50 flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col overflow-hidden">
           {/* Modal header */}
           <div className="flex-shrink-0 bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center gap-3">
             <button

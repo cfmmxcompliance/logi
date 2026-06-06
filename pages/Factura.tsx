@@ -328,7 +328,7 @@ const InvoiceRow = React.memo(({
     );
 });
 
-export const CIExtractor: React.FC = () => {
+export const Factura: React.FC = () => {
     const { user } = useAuth();
     const isAdmin = user?.role === 'Admin';
     const isEditor = user?.role === 'Editor';
@@ -346,9 +346,10 @@ export const CIExtractor: React.FC = () => {
     };
 
     const [items, setItems] = useState<CommercialInvoiceItem[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false); // Default false for Factura (no initial load)
     const [searchTerm, setSearchTerm] = useState('');
-    const deferredSearchTerm = useDeferredValue(searchTerm); // NON-BLOCKING UI
+    const [activeSearch, setActiveSearch] = useState(''); // Stores the actually submitted search
+    const deferredSearchTerm = useDeferredValue(searchTerm); // NON-BLOCKING UI PARA FILTRO LOCAL
 
     // NEW LOGIC FOR LOADING UI
     const [isMDLoading, setIsMDLoading] = useState(storageService.isMasterDataLoading());
@@ -429,24 +430,73 @@ export const CIExtractor: React.FC = () => {
         });
     };
 
-    const loadData = () => {
-        const data = storageService.getInvoiceItems();
-        // Sort: Non-R8 first, then R8. Within groups, sort by Item Number.
+    const fetchFactura = async () => {
+        const terms = activeSearch.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0);
+        if (terms.length === 0) {
+            setItems([]);
+            updateStats([]);
+            return;
+        }
+        
+        const mainInvoice = terms[0];
+
+        if (mainInvoice.length < 3) {
+            showNotification('Búsqueda', 'Por favor ingresa al menos 3 caracteres', 'warning');
+            return;
+        }
+
+        setLoading(true);
+        const data = await storageService.searchInvoicesByPrefix(mainInvoice);
+        
+        if (data.length === 0) {
+            showNotification('Sin Resultados', `No se encontró: ${mainInvoice}`, 'info');
+        }
+
         data.sort((a, b) => {
             const hasR8A = !!(a.rb && a.rb.toString().trim());
             const hasR8B = !!(b.rb && b.rb.toString().trim());
-
-            if (hasR8A !== hasR8B) {
-                return hasR8A ? 1 : -1; // R8 items go to the bottom
-            }
-
-            const numA = parseFloat(a.item) || 0;
-            const numB = parseFloat(b.item) || 0;
-            return numA - numB;
+            if (hasR8A !== hasR8B) return hasR8A ? 1 : -1;
+            return (parseFloat(a.item) || 0) - (parseFloat(b.item) || 0);
         });
+        
         setItems(data);
         updateStats(data);
+        setLoading(false);
     };
+
+    const loadData = () => {
+        fetchFactura();
+    };
+
+    // MODO FACTURA: Descargar solo lo que se busca cuando presionan Buscar
+    useEffect(() => {
+        fetchFactura();
+    }, [activeSearch]);
+
+    const [invoiceCount, setInvoiceCount] = useState<number>(0);
+
+    // Fetch total invoice count for the empty state
+    useEffect(() => {
+        const fetchCount = async () => {
+            try {
+                // If the count is already in storageService, use it. Otherwise, fetch it.
+                const prog = storageService.getInvoiceProgress();
+                if (prog && prog.total > 0) {
+                    setInvoiceCount(prog.total);
+                } else {
+                    // Fallback to fetching it directly
+                    const { db, COLS } = await import('../services/firebaseConfig.ts');
+                    const { collection, getCountFromServer } = await import('firebase/firestore');
+                    const collRef = collection(db, COLS.INVOICES);
+                    const snap = await getCountFromServer(collRef);
+                    setInvoiceCount(snap.data().count);
+                }
+            } catch (e) {
+                console.error("Failed to fetch invoice count", e);
+            }
+        };
+        fetchCount();
+    }, []);
 
     useEffect(() => {
         const syncMasterData = () => {
@@ -479,8 +529,8 @@ export const CIExtractor: React.FC = () => {
             
             // Start promises
             const loadPromise = Promise.all([
-                storageService.loadMasterData(),
-                storageService.refreshInvoices()
+                storageService.loadMasterData()
+                // REMOVED: storageService.refreshInvoices() to keep it lightweight
             ]);
             
             // Check state immediately after starting
@@ -496,15 +546,13 @@ export const CIExtractor: React.FC = () => {
 
         initLoad();
 
-        // Subscribe to updates (Fixes slow load / race condition)
         const unsubscribe = storageService.subscribe(() => {
-            if (storageService.isMasterDataLoading() || storageService.isInvoiceLoading()) {
-                // If it's actively loading, just let the interval update the progress bar.
-                // DO NOT sort/render the entire 45k invoices on every chunk!
+            if (storageService.isMasterDataLoading()) {
                 return;
             }
             syncMasterData();
-            loadData(); // CRITICAL: Reload Invoices when Storage Updates
+            // Factura mode: Do NOT reload all invoices automatically.
+            // loadData(); 
             setIsMDLoading(storageService.isMasterDataLoading());
         });
         return () => {
@@ -1130,7 +1178,7 @@ export const CIExtractor: React.FC = () => {
                         }
                         resolve();
                     } catch (err: any) {
-                        console.error('CIExtractor Process Error:', err);
+                        console.error('Factura Process Error:', err);
 
                         let msg = err.message || 'Unknown Parse Error';
                         if (msg.includes('Failed to fetch dynamically imported module')) {
@@ -1708,28 +1756,11 @@ export const CIExtractor: React.FC = () => {
     }, [items, deferredSearchTerm, showMissingOnly, showErrorsOnly, showSensibleOnly, showNoDBOnly, showPricesOnly, masterDataMap, invoiceToBLMap, startDate, endDate, queryConditions]);
 
     const handleSplitAndExport = async () => {
-        // FORCE FRESH FETCH FROM CLOUD to avoid stale closure / ghost data issues
-        showNotification('Syncing...', "Verifying data with Cloud DB...", 'info');
-        const freshData = await storageService.refreshInvoices();
-
-        let sourceItems = freshData;
-
-        // Re-apply critical filters if active (e.g. search)
-        if (searchTerm) {
-            const lowerTerm = searchTerm.toLowerCase();
-            sourceItems = sourceItems.filter(i =>
-                JSON.stringify(i).toLowerCase().includes(lowerTerm) // Simplified robust search
-            );
-        }
-
-        // Apply same filters as UI if needed, but usually export wants EVERYTHING visible
-        // We will respect the 'filteredItems' logic by re-filtering if needed, 
-        // OR just default to "All Loaded Items" if the user wants to export what is "in the DB"
-        // User complaint: "Csvs salian con datos duplicados... recien cargado y recien borrado"
-        // This implies the EXPORT had lines that were DELETED. Fresh fetch fixes this.
+        // En Factura, usamos directamente los items filtrados locales.
+        let sourceItems = filteredItems;
 
         if (sourceItems.length === 0) {
-            showNotification('Export Info', "No data found in database.", 'warning');
+            showNotification('Export Info', "No data found in current view.", 'warning');
             return;
         }
 
@@ -1908,16 +1939,28 @@ export const CIExtractor: React.FC = () => {
                     </h1>
 
                     {/* Left: Search (Flexible) */}
-                    <div className="relative w-full md:flex-1 min-w-[200px]">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+                    <div className="flex-1 max-w-2xl relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                         <input
                             ref={searchInputRef}
                             type="text"
-                            placeholder="Search..."
-                            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700 text-sm"
+                            placeholder="Ej: 24XG012..."
+                            className="w-full pl-10 pr-24 py-2 bg-slate-100 border-transparent focus:bg-white focus:border-blue-500 rounded-lg text-sm transition-all shadow-sm outline-none"
+                            value={searchTerm}
                             onChange={(e) => handleSearch(e.target.value)}
-                            defaultValue=""
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    setActiveSearch(searchTerm);
+                                }
+                            }}
                         />
+                        <button
+                            onClick={() => setActiveSearch(searchTerm)}
+                            className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-xs font-bold transition-colors"
+                        >
+                            Buscar
+                        </button>
+                    </div>
                         {/* Clear Filters Button */}
                         {(showMissingOnly || showErrorsOnly || showSensibleOnly || showNoDBOnly || showPricesOnly || searchTerm || startDate || endDate || queryConditions.length > 0) && (
                             <button
@@ -1938,7 +1981,6 @@ export const CIExtractor: React.FC = () => {
                                 Clear
                             </button>
                         )}
-                    </div>
 
                     <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20">
                         <Calendar size={14} className="text-slate-400" />
@@ -2273,6 +2315,44 @@ export const CIExtractor: React.FC = () => {
                                 </div>
                             </>
                         )}
+                    </div>
+                </div>
+            ) : (!activeSearch && items.length === 0) ? (
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 m-4 flex-1 flex flex-col items-center justify-center animate-in fade-in">
+                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
+                        <FileText size={32} />
+                    </div>
+                    <h2 className="text-2xl font-bold text-slate-800 mb-2">Busca para comenzar</h2>
+                    <p className="text-slate-500 text-sm mb-8">
+                        {invoiceCount > 0 
+                            ? <>{invoiceCount.toLocaleString()} partidas de Invoices disponibles</>
+                            : 'Ingresa un número de factura para cargar sus datos.'}
+                    </p>
+
+                    <div className="relative w-full max-w-2xl">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <Search className="h-5 w-5 text-slate-400" />
+                        </div>
+                        <input
+                            type="text"
+                            className="block w-full pl-11 pr-24 py-4 bg-white border-2 border-blue-100 rounded-xl text-slate-900 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-lg shadow-sm placeholder:text-slate-300 outline-none"
+                            placeholder="Ej: 24XG012, 24XG013..."
+                            value={searchTerm}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    setActiveSearch(searchTerm);
+                                }
+                            }}
+                        />
+                        <div className="absolute inset-y-2 right-2">
+                            <button 
+                                className="h-full px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors shadow-sm text-sm"
+                                onClick={() => setActiveSearch(searchTerm)}
+                            >
+                                Buscar
+                            </button>
+                        </div>
                     </div>
                 </div>
             ) : (

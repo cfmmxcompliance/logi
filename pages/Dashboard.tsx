@@ -310,12 +310,19 @@ export const Dashboard = () => {
     let cancelled = false;
     const hydrate = async () => {
       setLoadingRecords(true);
-      const allRecords: PedimentoRecord[] = [];
-      for (const report of reports) {
-        if (cancelled) break;
+      const fetchPromises = reports.map(async (report) => {
         const recs = report.records && report.records.length > 0
           ? report.records
           : await (storageService as any).getDataStageReportWithRecords(report.id);
+        return { report, recs };
+      });
+
+      const results = await Promise.all(fetchPromises);
+      
+      if (cancelled) return;
+
+      const allRecords: PedimentoRecord[] = [];
+      for (const { recs } of results) {
         allRecords.push(...recs);
       }
       if (!cancelled) {

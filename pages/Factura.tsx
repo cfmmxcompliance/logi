@@ -525,22 +525,12 @@ export const Factura: React.FC = () => {
         };
 
         const initLoad = async () => {
-            setLoading(true);
-            
-            // Start promises
-            const loadPromise = Promise.all([
-                storageService.loadMasterData()
-                // REMOVED: storageService.refreshInvoices() to keep it lightweight
-            ]);
-            
-            // Check state immediately after starting
-            setIsMDLoading(storageService.isMasterDataLoading());
-            
-            await loadPromise;
-            
-            syncMasterData();
-            loadData();
-            setLoading(false);
+            // No bloqueamos la UI con loading=true al iniciar.
+            // La master data se carga en segundo plano.
+            storageService.loadMasterData().then(() => {
+                syncMasterData();
+                setIsMDLoading(false);
+            });
             setIsMDLoading(storageService.isMasterDataLoading());
         };
 
@@ -2219,67 +2209,24 @@ export const Factura: React.FC = () => {
             </div >
 
             {/* Table Area - Flex Grow to take remaining space, forcing scroll ONLY here */}
-            {(loading || isMDLoading || isImporting) ? (
+            {(loading || isImporting) ? (
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-10 m-4 flex-1 flex flex-col items-center justify-center animate-in fade-in">
                     <div className="max-w-lg mx-auto text-center w-full">
                         <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${
-                            isMDLoading ? 'bg-indigo-50' : (isImporting ? 'bg-blue-50' : 'bg-green-50')
+                            isImporting ? 'bg-blue-50' : 'bg-green-50'
                         }`}>
-                            <Database size={32} className={isMDLoading ? 'text-indigo-600' : (isImporting ? 'text-blue-600' : 'text-green-600')} />
+                            <Database size={32} className={isImporting ? 'text-blue-600' : 'text-green-600'} />
                         </div>
 
                         {loading ? (
                             <>
-                                <h2 className="text-xl font-bold text-slate-800 mb-1">Descargando Invoices</h2>
+                                <h2 className="text-xl font-bold text-slate-800 mb-1">Buscando Facturas...</h2>
                                 <p className="text-slate-500 text-sm mb-4">
-                                    {invoiceProgress.total > 0
-                                        ? <><span className="font-bold text-indigo-600">{invoiceProgress.loaded.toLocaleString()}</span> / {invoiceProgress.total.toLocaleString()} facturas recibidas</>  
-                                        : 'Conectando con Firebase...'}
+                                    Conectando con la base de datos...
                                 </p>
-
                                 <div className="w-full bg-slate-100 rounded-full h-3 mb-2 overflow-hidden">
-                                    {invoiceProgress.total > 0 ? (
-                                        <div
-                                            className="h-3 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400 transition-all duration-300"
-                                            style={{ width: `${Math.min(Math.round((invoiceProgress.loaded / invoiceProgress.total) * 100), 99)}%` }}
-                                        />
-                                    ) : (
-                                        <div className="h-3 w-full rounded-full bg-gradient-to-r from-indigo-300 via-indigo-500 to-indigo-300 animate-pulse" />
-                                    )}
+                                    <div className="h-3 w-full rounded-full bg-gradient-to-r from-indigo-300 via-indigo-500 to-indigo-300 animate-pulse" />
                                 </div>
-                                {invoiceProgress.total > 0 && (
-                                    <div className="flex justify-between text-xs text-slate-400 mb-2">
-                                        <span>0</span>
-                                        <span className="font-semibold text-indigo-600">{Math.min(Math.round((invoiceProgress.loaded / invoiceProgress.total) * 100), 99)}%</span>
-                                        <span>{invoiceProgress.total.toLocaleString()}</span>
-                                    </div>
-                                )}
-                                <p className="text-xs text-slate-400 mt-3">
-                                    Sincronizando la base de datos de facturas...
-                                </p>
-                            </>
-                        ) : isMDLoading ? (
-                            <>
-                                <h2 className="text-xl font-bold text-slate-800 mb-1">Descargando Master Data</h2>
-                                <p className="text-slate-500 text-sm mb-4">
-                                    Sincronizando la base para validar facturas...
-                                </p>
-
-                                <div className="w-full bg-slate-100 rounded-full h-3 mb-2 overflow-hidden">
-                                    <div 
-                                        className="h-3 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400 transition-all duration-300" 
-                                        style={{ width: `${fakeProgress}%` }}
-                                    />
-                                </div>
-                                <div className="flex justify-between text-xs text-slate-400 mb-2">
-                                    <span>0%</span>
-                                    <span className="font-semibold text-indigo-600">{fakeProgress}%</span>
-                                    <span>100%</span>
-                                </div>
-                                
-                                <p className="text-xs text-slate-400 mt-3">
-                                    Esta carga asegurará que todas las facturas se validen correctamente.
-                                </p>
                             </>
                         ) : isImporting ? (
                             <>

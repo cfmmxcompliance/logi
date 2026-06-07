@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
-import { LogOut, ShieldCheck, Box, DoorOpen, Truck, Anchor, Shield } from 'lucide-react';
+import { LogOut, ShieldCheck, Box, DoorOpen, Truck, Anchor, Shield, Monitor } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../types.ts';
 
@@ -30,7 +30,7 @@ export const HandheldHome = () => {
                 <div className="grid grid-cols-1 gap-4 mt-4">
                     
                     {/* Cajas y Sellos */}
-                    {user?.role !== UserRole.HANDHELD_USER2 && (
+                    {user?.role !== UserRole.HANDHELD_USER2 && user?.role !== UserRole.HANDHELD_AF && (
                         <button 
                            onClick={() => navigate('/m/sellos')}
                            className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group"
@@ -46,8 +46,9 @@ export const HandheldHome = () => {
                     )}
 
                     {/* Vigilancia — Inspección 7 puntos + Placas */}
-                    <button
-                       onClick={() => navigate('/m/vigilancia')}
+                    {user?.role !== UserRole.HANDHELD_AF && (
+                        <button
+                           onClick={() => navigate('/m/vigilancia')}
                        className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group mt-4"
                     >
                        <div className="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(239,68,68,0.3)] group-hover:scale-105 transition-transform">
@@ -58,10 +59,12 @@ export const HandheldHome = () => {
                            <p className="text-slate-400 text-sm mt-1 font-medium">Inspección 7 puntos + Placas</p>
                        </div>
                     </button>
+                    )}
 
                     {/* Liberación de Dock — Fotos 1 y 2 */}
-                    <button
-                       onClick={() => navigate('/m/liberacion-dock')}
+                    {user?.role !== UserRole.HANDHELD_AF && (
+                        <button
+                           onClick={() => navigate('/m/liberacion-dock')}
                        className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group mt-4"
                     >
                        <div className="w-16 h-16 bg-sky-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(14,165,233,0.3)] group-hover:scale-105 transition-transform">
@@ -72,10 +75,12 @@ export const HandheldHome = () => {
                            <p className="text-slate-400 text-sm mt-1 font-medium">Foto Caja Cargada y Puertas</p>
                        </div>
                     </button>
+                    )}
 
                     {/* Liberación de Caja — Solo Sello */}
-                    <button
-                       onClick={() => navigate('/m/liberacion')}
+                    {user?.role !== UserRole.HANDHELD_AF && (
+                        <button
+                           onClick={() => navigate('/m/liberacion')}
                        className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group mt-4"
                     >
                        <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] group-hover:scale-105 transition-transform">
@@ -86,10 +91,12 @@ export const HandheldHome = () => {
                            <p className="text-slate-400 text-sm mt-1 font-medium">Cierre Definitivo — Sello</p>
                        </div>
                     </button>
+                    )}
 
                     {/* Registro de Arribo */}
-                    <button
-                       onClick={() => navigate('/m/arribo')}
+                    {user?.role !== UserRole.HANDHELD_AF && (
+                        <button
+                           onClick={() => navigate('/m/arribo')}
                        className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group mt-4"
                     >
                        <div className="w-16 h-16 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(245,158,11,0.3)] group-hover:scale-105 transition-transform">
@@ -100,6 +107,7 @@ export const HandheldHome = () => {
                            <p className="text-slate-400 text-sm mt-1 font-medium">Hora y comentarios de llegada</p>
                        </div>
                     </button>
+                    )}
 
                 </div>
 

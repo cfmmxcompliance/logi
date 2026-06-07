@@ -282,6 +282,7 @@ export const Settings = () => {
                                                                 [UserRole.VIEWER]: 'Viewer',
                                                                 [UserRole.HANDHELD_USER]: 'Handheld (Sellos)',
                                                                 [UserRole.HANDHELD_USER2]: 'Handheld 2 (Liberación)',
+                                                                [UserRole.HANDHELD_AF]: 'Handheld (Activo Fijo)',
                                                                 [UserRole.EMBARQUES]: 'Embarques',
                                                                 [UserRole.CLIENT]: 'Cliente',
                                                                 [UserRole.FINANZAS]: 'Finanzas',
@@ -321,6 +322,7 @@ export const Settings = () => {
                                                         <option value={UserRole.VIEWER}>Viewer</option>
                                                         <option value={UserRole.HANDHELD_USER}>Handheld (Sellos)</option>
                                                         <option value={UserRole.HANDHELD_USER2}>Handheld 2 (Liberación)</option>
+                                                        <option value={UserRole.HANDHELD_AF}>Handheld (Activo Fijo)</option>
                                                         <option value={UserRole.EMBARQUES}>Embarques</option>
                                                         <option value={UserRole.CLIENT}>Cliente</option>
                                                         <option value={UserRole.FINANZAS}>Finanzas</option>

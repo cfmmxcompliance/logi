@@ -1,3 +1,5 @@
+import { FianzaRecord } from './types/fianza';
+
 export enum ShipmentStatus {
   PLANNED = 'Planned',
   BOOKED = 'Booked',
@@ -28,6 +30,7 @@ export enum UserRole {
   PENDING = 'Pending',    // Default for new signups
   HANDHELD_USER = 'Handheld User', // Operario de piso con scanner (Sello)
   HANDHELD_USER2 = 'Handheld User 2', // Operario de piso con scanner (Liberacion)
+  HANDHELD_AF = 'Handheld AF', // Operario para auditoría de Activo Fijo
   EMBARQUES = 'Embarques', // Equipo encargado de control de embarques
   CLIENT = 'Cliente',    // Read-only access: Asignación Diaria de Cajas Secas 53' only
   FINANZAS = 'Finanzas', // Read-only access: Saldo Fianza module only
@@ -218,6 +221,65 @@ export interface DigitalArchiveRecord extends PedimentoRecord {
   uploadDate: string;
   pdfUrl?: string;  // If uploaded to storage
   status: 'DRAFT' | 'PROCESSED';
+}
+
+export interface FixedAsset {
+  id: string;
+  mbl: string;
+  containerNumber: string;
+  pedimento: string;
+  date: string;
+  clavePedimento: string;
+  secuenciaPedimento: string;
+  descriptionPartNumber: string;
+  htsCode: string;
+  qty: number | string;
+  partNumber: string;
+  cfmotoPartNumber: string;
+  spanishDescription: string;
+  englishDescription: string;
+  chineseDescription: string;
+  materialName: string;
+  physicalBrand: string;
+  physicalModel: string;
+  physicalSerialNumber: string;
+  photoUrl?: string; // Legacy
+  photoUploadedBy?: string; // Legacy
+  photoUploadedAt?: string; // Legacy
+  photos?: {
+    id: string;
+    url: string;
+    uploadedBy: string;
+    uploadedAt: string;
+  }[];
+  pedimentoPdfUrl?: string;
+  pedimentoPdfUploadedBy?: string;
+  pedimentoPdfUploadedAt?: string;
+  invoicePdfUrl?: string;
+  invoicePdfUploadedBy?: string;
+  invoicePdfUploadedAt?: string;
+  exists: string;
+  countryOrigin: string;
+  invoice: string;
+  unitPriceUsd: number | string;
+  amountUsd: number | string;
+  validadoDataStage: string;
+  brandPedimento: string;
+  modelPedimento: string;
+  serialNumberPedimento: string;
+  localizationPlant: string;
+  trazable: string;
+  physicalDigitalPedimento: string;
+  physicalIdCustomsInfo: string;
+  responsible: string;
+  partOfProcess: string;
+  warehouse: string;
+  area: string;
+  document: string;
+  etiqueta: string;
+  comments: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface PreAlertRecord {
@@ -595,6 +657,7 @@ export interface StorageState {
   users: User[];
   xmlCI?: XMLCIRecord[];
   fianzas?: FianzaRecord[];
+  fixedAssets: FixedAsset[];
 }
 
 export interface SelloRecord {

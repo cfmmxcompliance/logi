@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck, Globe, Activity, FolderOpen,
-  Navigation,
+  Navigation, Monitor,
   Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles, CalendarCheck, History, Package, CalendarDays, ClipboardList, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ConnectionStatus } from './ConnectionStatus.tsx';
@@ -221,6 +221,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {/* RBAC: Restricted Areas (Admins only) */}
           {user?.role === UserRole.ADMIN && (
             <>
+              <SidebarItem to="/activos-fijos" icon={Monitor} label={sidebarOpen ? "Activo Fijo" : ""} />
               <SidebarItem to="/data-stage" icon={Scale} label={sidebarOpen ? "Data Stage (SAT)" : ""} />
               <SidebarItem to="/catalogo-sat" icon={BookOpen} label={sidebarOpen ? "Catálogo SAT" : ""} />
               <SidebarItem to="/vucem" icon={Globe} label={sidebarOpen ? "VUCEM" : ""} />

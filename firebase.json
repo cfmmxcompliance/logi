@@ -23,6 +23,10 @@
                 "destination": "/pda/index.html"
             },
             {
+                "source": "/af-pda/**",
+                "destination": "/af-pda/index.html"
+            },
+            {
                 "source": "**",
                 "destination": "/index.html"
             }

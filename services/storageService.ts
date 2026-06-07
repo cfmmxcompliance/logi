@@ -1,4 +1,4 @@
-import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, SparePartsTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole, XMLCIRecord } from '../types.ts';
+import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, SparePartsTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole, XMLCIRecord, FixedAsset, FianzaRecord } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
   collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc, arrayUnion, increment, limit, startAfter, documentId, getCountFromServer
@@ -16,7 +16,8 @@ const COLS = {
   SUBSCRIPTIONS: 'audit_subscriptions',
   XML_CI: 'xml_ci',
   SPARE_PARTS: 'spare_parts_tracking',
-  FIANZAS: 'fianzas'
+  FIANZAS: 'fianzas',
+  FIXED_ASSETS: 'fixed_assets'
 };
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
@@ -39,7 +40,7 @@ let dbState: StorageState = {
   customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
   logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
   dailyChanges: [], dailyReports: [], users: [],
-  cfdiInvoices: [], xmlCI: [], fianzas: []
+  cfdiInvoices: [], xmlCI: [], fianzas: [], fixedAssets: []
 };
 
 let listeners: (() => void)[] = [];
@@ -415,8 +416,22 @@ export const storageService = {
     }
 
     try {
-      // 3. LISTENERS for dynamic data (Strict Daily Audit Sync)
-      // LIMIT entries to 150 (Reduced from 3500 for boot performance)
+      // 3. LISTENERS for dynamic data
+      const qLogs = query(collection(db, COLS.LOGS), orderBy('timestamp', 'desc'), limit(150));
+      const unsubLogs = onSnapshot(qLogs, snap => {
+        dbState.logs = snap.docs.map(d => ({ id: d.id, ...d.data() } as AuditLog));
+        notifyListeners();
+        saveLocal();
+      }, e => console.error(e));
+      unsubscribers.push(unsubLogs);
+
+      const unsubFixedAssets = onSnapshot(collection(db, COLS.FIXED_ASSETS), snap => {
+        dbState.fixedAssets = snap.docs.map(d => ({ id: d.id, ...d.data() } as FixedAsset));
+        notifyListeners();
+        saveLocal();
+      }, e => console.error(e));
+      unsubscribers.push(unsubFixedAssets);
+
       const qChanges = query(collection(db, COLS.DAILY_CHANGES), orderBy('timestamp', 'desc'), limit(150));
       unsubscribers.push(onSnapshot(qChanges, (snap) => {
         dbState.dailyChanges = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChange));
@@ -426,12 +441,6 @@ export const storageService = {
       const qReports = query(collection(db, COLS.DAILY_REPORTS), orderBy('id', 'desc'), limit(100));
       unsubscribers.push(onSnapshot(qReports, (snap) => {
         dbState.dailyReports = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as MasterDataReport));
-        notifyListeners();
-      }));
-
-      const qLogs = query(collection(db, COLS.LOGS), orderBy('timestamp', 'desc'), limit(150));
-      unsubscribers.push(onSnapshot(qLogs, (snap) => {
-        dbState.logs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
         notifyListeners();
       }));
 
@@ -852,6 +861,52 @@ export const storageService = {
     saveLocal();
   },
 
+  getFixedAssets: () => dbState.fixedAssets || [],
+  
+  // Lightweight init for Handheld AF role
+  initFixedAssetsOnly: () => {
+    return new Promise<void>((resolve) => {
+      onSnapshot(collection(db, COLS.FIXED_ASSETS), snap => {
+        dbState.fixedAssets = snap.docs.map(d => ({ id: d.id, ...d.data() } as FixedAsset));
+        storageService.notify();
+        resolve();
+      });
+    });
+  },
+
+  addFixedAsset: async (asset: FixedAsset) => {
+    const id = asset.id || generateId();
+    const payload = { ...asset, id, createdAt: new Date().toISOString() };
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await setDoc(doc(db, COLS.FIXED_ASSETS, id), sanitizeForFirestore(payload));
+    
+    dbState.fixedAssets.push(payload);
+    notifyListeners();
+    saveLocal();
+  },
+
+  updateFixedAsset: async (asset: FixedAsset) => {
+    const id = asset.id;
+    const payload = { ...asset, updatedAt: new Date().toISOString() };
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await setDoc(doc(db, COLS.FIXED_ASSETS, id), sanitizeForFirestore(payload));
+    
+    const idx = dbState.fixedAssets.findIndex((a: any) => a.id === id);
+    if (idx !== -1) dbState.fixedAssets[idx] = payload;
+    else dbState.fixedAssets.push(payload);
+    notifyListeners();
+    saveLocal();
+  },
+
+  deleteFixedAsset: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.FIXED_ASSETS, id));
+    
+    dbState.fixedAssets = dbState.fixedAssets.filter((a: any) => a.id !== id);
+    notifyListeners();
+    saveLocal();
+  },
+
   deleteCosts: async (ids: string[]) => {
     if (!db) throw new Error("Sin conexión a Internet.");
     const batch = writeBatch(db);
@@ -1224,10 +1279,11 @@ export const storageService = {
         await batch.commit();
       }
       // Update in-memory state too
+      const norm = (s: string) => String(s || '').trim().toUpperCase();
       dbState.cfdiInvoices = (dbState.cfdiInvoices || []).map((existing: any) => {
         const match = itemsToUpdateArchivo.find(ni =>
-          normalize(ni.invoiceNo) === normalize(existing.invoiceNo) &&
-          normalize(ni.partNo) === normalize(existing.partNo)
+          norm(ni.invoiceNo) === norm(existing.invoiceNo) &&
+          norm(ni.partNo) === norm(existing.partNo)
         );
         return match ? { ...existing, archivo: (match as any).archivo } : existing;
       });
@@ -2847,7 +2903,8 @@ export const storageService = {
       parts: [], shipments: [], vesselTracking: [], equipmentTracking: [],
       customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
       logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
-      dailyChanges: [], dailyReports: [], users: []
+      dailyChanges: [], dailyReports: [], users: [],
+      cfdiInvoices: [], xmlCI: [], fianzas: [], fixedAssets: []
     };
     saveLocal();
   },

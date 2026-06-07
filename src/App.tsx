@@ -68,7 +68,7 @@ const AdminVentanas53      = React.lazy(() => import('../pages/AdminVentanas53.t
 const DemandaCajas53       = React.lazy(() => import('../pages/DemandaCajas53.tsx').then(m => ({ default: m.DemandaCajas53 })));
 const ReservaVentanas53    = React.lazy(() => import('../pages/ReservaVentanas53.tsx').then(m => ({ default: m.ReservaVentanas53 })));
 const WMSControl           = React.lazy(() => import('../pages/wms/WMSControl.tsx').then(m => ({ default: m.WMSControl })));
-
+const ActivosFijos         = React.lazy(() => import('../pages/ActivosFijos.tsx').then(m => ({ default: m.ActivosFijos })));
 // ─── Fallback spinner while lazy chunk loads ─────────────────────────────────
 const PageSkeleton = () => (
     <div className="flex-1 flex items-center justify-center min-h-[60vh]">
@@ -110,7 +110,8 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Handheld constraints (Bidirectional)
     const isHandheldPath = location.pathname.startsWith('/m/');
-    if (user?.role === UserRole.HANDHELD_USER || user?.role === UserRole.HANDHELD_USER2) {
+    const isHandheldRole = user?.role === UserRole.HANDHELD_USER || user?.role === UserRole.HANDHELD_USER2 || user?.role === UserRole.HANDHELD_AF;
+    if (isHandheldRole) {
         // Handheld users must be on /m/...
         if (!isHandheldPath) {
             return <Navigate to="/m/home" replace />;
@@ -209,7 +210,7 @@ const AppContent = () => {
         if (initCalledRef.current) return;  // already initialised this session
         initCalledRef.current = true;
 
-        const isHandheld = user?.role === UserRole.HANDHELD_USER || user?.role === UserRole.HANDHELD_USER2;
+        const isHandheld = user?.role === UserRole.HANDHELD_USER || user?.role === UserRole.HANDHELD_USER2 || user?.role === UserRole.HANDHELD_AF;
 
         // ── Handheld users: skip heavy DB init entirely ─────────────────────
         if (isHandheld) {
@@ -396,8 +397,8 @@ const AppContent = () => {
             <Route path="/daily-audit" element={<ProtectedRoute><DailyAudit /></ProtectedRoute>} />
             <Route path="/bpm" element={<ProtectedRoute><BPMClasificacion /></ProtectedRoute>} />
             <Route path="/daily-van-assignment" element={<ProtectedRoute><DailyVanAssignment /></ProtectedRoute>} />
-            
             <Route path="/wms-control" element={<ProtectedRoute><WMSControl /></ProtectedRoute>} />
+            <Route path="/activos-fijos" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]}><ActivosFijos /></ProtectedRoute>} />
 
             {/* Módulos Demanda y Reserva de Cajas 53' */}
             <Route path="/admin-productos-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER]}><AdminProductos53 /></ProtectedRoute>} />

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && cd wms-pda && npm install && vite build",
+    "build": "vite build && cd wms-pda && npm install && npm run build && cd ../af-pda && npm install && npm run build",
     "preview": "vite preview"
   },
   "dependencies": {

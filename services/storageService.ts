@@ -475,7 +475,7 @@ export const storageService = {
         }
 
         // (D) Skip items handled by specialized listeners above
-        const queryRef = (key === 'DAILY_CHANGES' || key === 'DAILY_REPORTS' || key === 'LOGS')
+        const queryRef = (key === 'DAILY_CHANGES' || key === 'DAILY_REPORTS' || key === 'LOGS' || key === 'FIXED_ASSETS' || key === 'FIANZAS')
           ? null // Handled above queries
           : collection(db, colName);
 
@@ -2735,7 +2735,8 @@ export const storageService = {
         // monthlyDuties: only save when we have real tax values
         monthlyDuties: hasRealDuties ? report.monthlyDuties : [],
         ...(taxSummary ? { taxSummary } : {}),
-        rawFiles: report.rawFiles.map(f => ({ ...f, rows: [], content: "" }))
+        rawFiles: report.rawFiles.map(f => ({ ...f, rows: [], content: "" })),
+        storageUrl: preUploadedUrl || report.storageUrl
       };
       await setDoc(doc(db, COLS.DATA_STAGE_REPORTS, report.id), leanReport);
 
@@ -2764,8 +2765,7 @@ export const storageService = {
     }
 
 
-    const BATCH_SIZE = 200;
-    const PARALLEL_BATCHES = 4;
+    const BATCH_SIZE = 250; // Firestore limit is 500
     const chunks: PedimentoRecord[][] = [];
 
     for (let i = 0; i < report.records.length; i += BATCH_SIZE) {
@@ -2775,22 +2775,25 @@ export const storageService = {
     let totalProcessed = 0;
     const totalRecords = report.records.length;
 
-    for (let i = 0; i < chunks.length; i += PARALLEL_BATCHES) {
-      const pool = chunks.slice(i, i + PARALLEL_BATCHES).map(async (chunk) => {
-        const batch = writeBatch(db);
-        chunk.forEach(record => {
-          const recordDocRef = doc(recordsRef, record.id);
-          batch.set(recordDocRef, sanitizeForFirestore(record));
-        });
+    // Process sequentially to avoid exceeding Firestore's 500 writes/second limit
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach(record => {
+        // Prevent Firestore crash if ID contains slashes
+        const safeId = record.id.replace(/\//g, '-').replace(/\\/g, '-');
+        const recordDocRef = doc(recordsRef, safeId);
+        batch.set(recordDocRef, sanitizeForFirestore(record));
+      });
+      
+      try {
         await batch.commit();
         totalProcessed += chunk.length;
         if (onProgress) onProgress(Math.min((totalProcessed / totalRecords) * 100, 99));
-      });
-      try {
-        await Promise.all(pool);
+        // Crucial sleep to prevent rate limiting errors that cause silent failures
+        await new Promise(r => setTimeout(r, 500)); 
       } catch (e: any) {
-        console.error('Parallel batch failed:', e?.code, e?.message);
-        throw new Error(`Error guardando registros (${e?.code || e?.message || 'unknown'}).`);
+        console.error('Batch commit failed:', e?.code, e?.message);
+        throw new Error(`Error guardando registros del pedimento (${e?.code || e?.message || 'unknown'}).`);
       }
     }
 

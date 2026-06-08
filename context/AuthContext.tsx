@@ -21,6 +21,7 @@ const sanitizeRole = (roleStr: string): UserRole => {
     'CONTROLLER': UserRole.CONTROLLER,
     'PENDING': UserRole.PENDING,
     'EXPO': UserRole.EXPO,
+    'EXPO_ANALIST': UserRole.EXPO_ANALIST,
     'CARRIER': UserRole.CARRIER,
     'TRANSPORTISTA': UserRole.TRANSPORTISTA,
     'EMBARQUES': UserRole.EMBARQUES,

@@ -9,18 +9,15 @@ import LoginScreen from './screens/LoginScreen.jsx';
 const ProtectedRoute = ({ children }) => {
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('logimaster_user') || 'null');
+    const isAllowed = user && (user.role === 'ADMIN' || user.role === 'HANDHELD_AF');
     
     useEffect(() => {
-        if (!user) {
-            navigate('/login');
-        } else if (user.role !== 'ADMIN' && user.role !== 'HANDHELD_AF') {
-            alert('Acceso denegado: Se requiere rol de Activos Fijos');
-            localStorage.removeItem('logimaster_user');
+        if (!isAllowed) {
             navigate('/login');
         }
-    }, [navigate, user]);
+    }, [navigate, isAllowed]);
 
-    if (!user) return null;
+    if (!isAllowed) return null;
     return children;
 };
 

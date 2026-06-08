@@ -142,8 +142,14 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Expo constraints
     if (user?.role === UserRole.EXPO) {
-        const allowed = ['/models', '/pricing-matrix', '/shipping-schedules', '/asignaciones-diarias', '/daily-van-assignment', '/xml-ci', '/xml-invoices', '/macro', '/historial-capturas'];
-        if (!allowed.includes(location.pathname)) return <Navigate to="/daily-van-assignment" replace />;
+        const allowed = ['/asignaciones-diarias', '/xml-ci', '/xml-invoices'];
+        if (!allowed.includes(location.pathname)) return <Navigate to="/asignaciones-diarias" replace />;
+    }
+
+    // Expo Analist constraints
+    if (user?.role === UserRole.EXPO_ANALIST) {
+        const allowed = ['/wms-control', '/daily-van-assignment', '/asignaciones-diarias', '/admin-productos-53', '/demanda-cajas-53', '/admin-ventanas-53'];
+        if (!allowed.includes(location.pathname)) return <Navigate to="/wms-control" replace />;
     }
 
     // Embarques constraints
@@ -152,11 +158,15 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
         if (!allowed.includes(location.pathname)) return <Navigate to="/asignaciones-diarias" replace />;
     }
 
+    // Dashboard constraints (Solo ADMIN)
+    if (location.pathname === '/' && user?.role !== UserRole.ADMIN) {
+        if (user?.role === UserRole.CONTROLLER) return <Navigate to="/controller" replace />;
+        return <Navigate to="/database" replace />;
+    }
+
     // Editor constraints
     if (user?.role === UserRole.EDITOR) {
-        const editorAllowed = ['/controller', '/database', '/bpm', '/saldo-fianza', '/suppliers'];
-        // Let them see root or basically if they try to access restricted logistics ops
-        const restricted = ['/apendice10', '/carriers', '/transport-lines', '/drivers', '/cajas', '/asignaciones-diarias', '/models', '/pricing-matrix', '/shipping-schedules', '/daily-van-assignment'];
+        const restricted = ['/apendice10', '/carriers', '/transport-lines', '/drivers', '/cajas', '/asignaciones-diarias', '/models', '/pricing-matrix', '/shipping-schedules', '/daily-van-assignment', '/bpm', '/suppliers', '/controller', '/daily-audit', '/xml-invoices', '/xml-ci', '/ccp-builder'];
         if (restricted.includes(location.pathname)) {
             return <Navigate to="/database" replace />;
         }
@@ -401,9 +411,9 @@ const AppContent = () => {
             <Route path="/activos-fijos" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]}><ActivosFijos /></ProtectedRoute>} />
 
             {/* Módulos Demanda y Reserva de Cajas 53' */}
-            <Route path="/admin-productos-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER]}><AdminProductos53 /></ProtectedRoute>} />
-            <Route path="/admin-ventanas-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER]}><AdminVentanas53 /></ProtectedRoute>} />
-            <Route path="/demanda-cajas-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER]}><DemandaCajas53 /></ProtectedRoute>} />
+            <Route path="/admin-productos-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.EXPO_ANALIST]}><AdminProductos53 /></ProtectedRoute>} />
+            <Route path="/admin-ventanas-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.EXPO_ANALIST]}><AdminVentanas53 /></ProtectedRoute>} />
+            <Route path="/demanda-cajas-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.EXPO_ANALIST]}><DemandaCajas53 /></ProtectedRoute>} />
             <Route path="/reserva-ventanas-53" element={<ProtectedRoute><ReservaVentanas53 /></ProtectedRoute>} />
 
             {/* Handheld Routes */}

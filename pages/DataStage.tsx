@@ -326,12 +326,27 @@ export const DataStage = () => {
             setLoading(true);
             setSaveStatus("Preparando datos...");
 
+            let driveUrl = '';
+            if (pendingFile) {
+                setSaveStatus("Subiendo archivo ZIP a Google Drive (Respaldo)...");
+                try {
+                    const { uploadFileToDrive } = await import('../services/googleDriveService.ts');
+                    const result = await uploadFileToDrive(pendingFile, `Respaldo ZIP de ${reportName}`, '17WNDxBHGjc4m11EXfmwIiQkmfvQ0jy2B');
+                    driveUrl = result.webViewLink;
+                } catch (driveErr) {
+                    console.warn("Could not upload to Drive:", driveErr);
+                    // Continue anyway, we don't want to block the Firebase save if Drive fails
+                }
+            }
+
             // Fixed 10 minute timeout — enough for any ZIP size on slow connections
             const dynamicTimeout = 600000;
 
             const savePromise = storageService.saveDataStageReport(
                 report,
-                (percent) => setSaveStatus(`Subiendo registros... ${Math.round(percent)}%`)
+                (percent) => setSaveStatus(`Subiendo registros a Firebase... ${Math.round(percent)}%`),
+                undefined,
+                driveUrl // Pass the Drive URL here
             );
             const timeoutPromise = new Promise<boolean>((_, reject) =>
                 setTimeout(() => reject(new Error(

@@ -134,6 +134,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           const rangeEnd = savedRange?.end || today;
 
           badge = asignaciones.filter(a => {
+            // Role-based visibility filtering
+            if (user?.role === UserRole.CARRIER && user?.scac) {
+              if (String((a as any).linea || '').trim().toUpperCase() !== String(user.scac).trim().toUpperCase()) return false;
+            }
+            if (user?.role === UserRole.TRANSPORTISTA && user?.subLinea) {
+              if (String((a as any).subLinea || '').trim().toUpperCase() !== String(user.subLinea).trim().toUpperCase()) return false;
+            }
+
             const fecha = (a as any).fecha || '';
             const inRange = fecha >= rangeStart && fecha <= rangeEnd;
             const hasLayout = !!(a as any).layoutUrl || !!(a as any).layoutUploadedAt;
@@ -189,7 +197,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {user?.role !== UserRole.AGENT && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
+          {user?.role !== UserRole.AGENT && user?.role !== UserRole.EXPO && user?.role !== UserRole.EXPO_ANALIST && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
             <>
               <SidebarItem to="/operations" icon={Ship} label={sidebarOpen ? "Shipment Plan" : ""} />
               <SidebarItem to="/pre-alerts" icon={Bell} label={sidebarOpen ? "Pre-Alerts" : ""} />
@@ -199,20 +207,24 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <SidebarItem to="/customs-clearance" icon={ClipboardCheck} label={sidebarOpen ? "Customs Clearance" : ""} />
               <SidebarItem to="/commercial-invoices" icon={FileText} label={sidebarOpen ? "CI Extractor" : ""} />
               <SidebarItem to="/factura" icon={FileText} label={sidebarOpen ? "Factura" : ""} />
-              <SidebarItem to="/xml-invoices" icon={Database} label={sidebarOpen ? "Facturas XML" : ""} />
-              <SidebarItem to="/xml-ci" icon={FileText} label={sidebarOpen ? "XMLCI" : ""} />
-              <SidebarItem to="/ccp-builder" icon={Truck} label={sidebarOpen ? "CCP Builder" : ""} />
+              {user?.role !== UserRole.EDITOR && (
+                <>
+                  <SidebarItem to="/xml-invoices" icon={Database} label={sidebarOpen ? "Facturas XML" : ""} />
+                  <SidebarItem to="/xml-ci" icon={FileText} label={sidebarOpen ? "XMLCI" : ""} />
+                  <SidebarItem to="/ccp-builder" icon={Truck} label={sidebarOpen ? "CCP Builder" : ""} />
+                </>
+              )}
             </>
           )}
 
           {/* Saldo Fianza: Desktop Only */ }
-          {![UserRole.CLIENT, UserRole.CARRIER, UserRole.TRANSPORTISTA, UserRole.EMBARQUES, UserRole.EXPO].includes(user?.role as UserRole) && (
+          {![UserRole.CLIENT, UserRole.CARRIER, UserRole.TRANSPORTISTA, UserRole.EMBARQUES, UserRole.EXPO, UserRole.EXPO_ANALIST].includes(user?.role as UserRole) && (
              <div className="hidden lg:block">
                  <SidebarItem to="/saldo-fianza" icon={DollarSign} label={sidebarOpen ? "Saldo Fianza" : ""} />
              </div>
           )}
 
-          {(user?.role === UserRole.ADMIN || user?.role === UserRole.CONTROLLER || user?.role === UserRole.EDITOR) && (
+          {(user?.role === UserRole.ADMIN || user?.role === UserRole.CONTROLLER) && (
             <>
               <SidebarItem to="/controller" icon={Settings} label={sidebarOpen ? "Payments" : ""} />
             </>
@@ -241,10 +253,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
           {/* Master Data: Accessible to Admin, Editor, Controller (NOT Agent anymore) */}
           {[UserRole.ADMIN, UserRole.EDITOR, UserRole.CONTROLLER].includes(user?.role as UserRole) && (
-            <>
-              <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
-              <SidebarItem to="/bpm" icon={Box} label={sidebarOpen ? "BPM Clasificación" : ""} />
-            </>
+            <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
+          )}
+          {[UserRole.ADMIN, UserRole.CONTROLLER].includes(user?.role as UserRole) && (
+            <SidebarItem to="/bpm" icon={Box} label={sidebarOpen ? "BPM Clasificación" : ""} />
           )}
 
           {/* Agent specific block: BPM, Master Data, and Audit */}
@@ -255,8 +267,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {/* Logistics Planning -> Admin, Controller, Expo (NOT Agent/Editor) */}
-          {[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.EXPO].includes(user?.role as UserRole) && (
+          {/* Logistics Planning -> Admin, Controller (NOT Agent/Editor/Expo) */}
+          {[UserRole.ADMIN, UserRole.CONTROLLER].includes(user?.role as UserRole) && (
             <>
               <SidebarItem to="/models" icon={Box} label={sidebarOpen ? "Models (Expo)" : ""} />
               <SidebarItem to="/pricing-matrix" icon={DollarSign} label={sidebarOpen ? "Pricing Matrix" : ""} />
@@ -265,8 +277,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {/* Macro Module -> Admin y Expo solamente */}
-          {[UserRole.ADMIN, UserRole.EXPO].includes(user?.role as UserRole) && (
+          {/* Macro Module -> Admin solamente */}
+          {[UserRole.ADMIN].includes(user?.role as UserRole) && (
             <>
               <SidebarItem to="/macro" icon={PackageOpen} label={sidebarOpen ? "Motor de Captura (Macro)" : ""} />
               <SidebarItem to="/historial-capturas" icon={History} label={sidebarOpen ? "Historial de Capturas" : ""} />
@@ -312,7 +324,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {/* Expo: only Daily Van Assignment and Asignaciones (read-only) */}
+          {/* Expo: only Asignaciones (read-only) and XML */}
           {user?.role === UserRole.EXPO && (
             <>
               <SidebarItem 
@@ -325,18 +337,37 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <SidebarItem to="/xml-ci" icon={FileText} label={sidebarOpen ? "XMLCI Consolidated" : ""} />
             </>
           )}
+
+          {/* Expo_Analist Specific Block */}
+          {user?.role === UserRole.EXPO_ANALIST && (
+            <>
+              <SidebarItem to="/wms-control" icon={PackageOpen} label={sidebarOpen ? "WMS Control" : ""} />
+              <SidebarItem to="/daily-van-assignment" icon={CalendarCheck} label={sidebarOpen ? "Daily Van Assignment" : ""} />
+              <SidebarItem 
+                to="/asignaciones-diarias" 
+                icon={Navigation} 
+                label={sidebarOpen ? t("menu.asignaciones") : ""} 
+                badge={asignacionesBadgeAdmin > 0 ? asignacionesBadgeAdmin : undefined} 
+              />
+              <SidebarItem to="/admin-productos-53" icon={Package} label={sidebarOpen ? 'Productos 53\'' : ''} />
+              <SidebarItem to="/admin-ventanas-53" icon={CalendarDays} label={sidebarOpen ? 'Ventanas 53\'' : ''}
+                badge={ventanasBadge > 0 ? ventanasBadge : undefined} />
+              <SidebarItem to="/demanda-cajas-53" icon={ClipboardList} label={sidebarOpen ? 'Demanda 53\'' : ''} />
+            </>
+          )}
+
           {/* Cliente: solo lectura de Asignaciones Diarias */}
           {user?.role === UserRole.CLIENT && (
             <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? 'Asignaciones Diarias' : ''} />
           )}
 
-          {/* Daily Audit: Accessible to Everyone (except Pending, Carrier, Expo, Embarques, Client) */}
-          {user?.role !== UserRole.PENDING && user?.role !== UserRole.EXPO && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
+          {/* Daily Audit: Accessible to Everyone (except Pending, Carrier, Expo, Embarques, Client, Editor) */}
+          {user?.role !== UserRole.EDITOR && user?.role !== UserRole.PENDING && user?.role !== UserRole.EXPO && user?.role !== UserRole.EXPO_ANALIST && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
             <SidebarItem to="/daily-audit" icon={Activity} label={sidebarOpen ? "Control de Auditoría" : ""} />
           )}
 
-          {/* Partners & Setup: Admins and Editors */}
-          {(user?.role === UserRole.ADMIN || user?.role === UserRole.EDITOR) && (
+          {/* Partners & Setup: Admins only */}
+          {user?.role === UserRole.ADMIN && (
             <SidebarItem to="/suppliers" icon={Users} label={sidebarOpen ? "Partners" : ""} />
           )}
 

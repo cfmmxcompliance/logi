@@ -6,9 +6,20 @@ import { useAuth } from '../context/AuthContext.tsx';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder.tsx';
 import { 
   Search, Plus, Edit2, Trash2, Download, AlertCircle, 
-  UploadCloud, FileText, Loader2, Monitor, MapPin, CheckCircle, Database, Upload, Image as ImageIcon, Maximize
+  UploadCloud, FileText, Loader2, Monitor, MapPin, CheckCircle, Database, Upload, Image as ImageIcon, Maximize, Filter, X
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+
+const AF_ORDER_KEYS = [
+  'mbl', 'containerNumber', 'pedimento', 'pedimentoPdfUrl', 'date',
+  'clavePedimento', 'secuenciaPedimento', 'descriptionPartNumber', 'htsCode', 'qty',
+  'partNumber', 'cfmotoPartNumber', 'spanishDescription', 'englishDescription', 'chineseDescription',
+  'materialName', 'physicalBrand', 'physicalModel', 'physicalSerialNumber', 'photos',
+  'exists', 'countryOrigin', 'invoice', 'unitPriceUsd', 'amountUsd',
+  'validadoDataStage', 'brandPedimento', 'modelPedimento', 'serialNumberPedimento', 'localizationPlant',
+  'trazable', 'physicalDigitalPedimento', 'physicalIdCustomsInfo', 'responsible', 'partOfProcess',
+  'warehouse', 'area', 'document', 'facturaPdfUrl', 'etiqueta', 'comments'
+];
 
 const AF_DRIVE_FOLDER_ID = '1SDMN4BEa6TeyAcgpAABB9bis1OUXmLAa';
 
@@ -34,6 +45,44 @@ export const ActivosFijos: React.FC = () => {
 
   // Form State
   const [formData, setFormData] = useState<Partial<FixedAsset>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [summaryModal, setSummaryModal] = useState<{isOpen: boolean, column: string, data: {val: string, count: number}[], totalCount: number}>({isOpen: false, column: '', data: [], totalCount: 0});
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+
+  const handleOpenSummary = (key: string) => {
+      if (key === 'pedimentoPdfUrl' || key === 'facturaPdfUrl' || key === 'photos') return;
+      const frequencyMap: Record<string, number> = {};
+      filteredAssets.forEach(p => {
+          let val = (p as any)[key];
+          val = (val === null || val === undefined || String(val).trim() === '') ? '(Vacío)' : String(val).trim();
+          frequencyMap[val] = (frequencyMap[val] || 0) + 1;
+      });
+      const data = Object.entries(frequencyMap)
+          .map(([val, count]) => ({ val, count }))
+          .sort((a, b) => b.count - a.count);
+      
+      setSummaryModal({
+          isOpen: true,
+          column: key,
+          data,
+          totalCount: filteredAssets.length
+      });
+  };
+
+  const handleFilterByDesglose = (val: string) => {
+    const actualVal = val === '(Vacío)' ? '' : val;
+    setConditions([
+      ...conditions, 
+      { 
+        id: Date.now().toString(), 
+        column: summaryModal.column as any, 
+        operator: actualVal === '' ? 'empty' : '==', 
+        type: 'string', 
+        input: actualVal 
+      }
+    ]);
+    setSummaryModal({ ...summaryModal, isOpen: false });
+  };
 
   React.useEffect(() => {
     const refresh = () => setAssets([...storageService.getFixedAssets()]);
@@ -48,14 +97,8 @@ export const ActivosFijos: React.FC = () => {
     if (searchTerm) {
       const terms = searchTerm.toLowerCase().split(/[\s,]+/).filter(Boolean);
       result = result.filter(a => {
-        return terms.every(term => 
-          (a.mbl || '').toLowerCase().includes(term) ||
-          (a.pedimento || '').toLowerCase().includes(term) ||
-          (a.cfmotoPartNumber || '').toLowerCase().includes(term) ||
-          (a.descriptionPartNumber || '').toLowerCase().includes(term) ||
-          (a.physicalSerialNumber || '').toLowerCase().includes(term) ||
-          (a.containerNumber || '').toLowerCase().includes(term)
-        );
+        const fullString = Object.values(a).map(v => String(v || '')).join(' ').toLowerCase();
+        return terms.every(term => fullString.includes(term));
       });
     }
 
@@ -91,16 +134,32 @@ export const ActivosFijos: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+    setIsSaving(true);
     try {
       const payload = formData as FixedAsset;
       if (editingAsset) {
         await storageService.updateFixedAsset(payload);
       } else {
+        // Prevent exact logical duplicates
+        const isLogicalDuplicate = assets.some(a => 
+          a.pedimento === payload.pedimento &&
+          a.partNumber === payload.partNumber &&
+          a.physicalSerialNumber === payload.physicalSerialNumber &&
+          (payload.pedimento || payload.partNumber || payload.physicalSerialNumber)
+        );
+        if (isLogicalDuplicate) {
+          alert('Este registro (Pedimento, Número de Parte y Serie Física) ya existe.');
+          setIsSaving(false);
+          return;
+        }
         await storageService.addFixedAsset(payload);
       }
       setIsModalOpen(false);
     } catch (err: any) {
       alert('Error guardando activo: ' + err.message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -113,10 +172,7 @@ export const ActivosFijos: React.FC = () => {
     }
   };
 
-  const handleFileUpload = async (asset: FixedAsset, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFileUpload = async (asset: FixedAsset, file: File) => {
     setIsUploadingPhoto(true);
     try {
       const ext = file.name.split('.').pop();
@@ -135,7 +191,6 @@ export const ActivosFijos: React.FC = () => {
 
       const updatedPhotos = [...(asset.photos || [])];
       
-      // Migrate legacy photo if it exists and photos array is empty
       if (updatedPhotos.length === 0 && asset.photoUrl && typeof asset.photoUrl === 'string' && asset.photoUrl !== '[object Object]') {
         updatedPhotos.push({
           id: 'legacy',
@@ -147,20 +202,33 @@ export const ActivosFijos: React.FC = () => {
 
       updatedPhotos.push(newPhoto);
 
-      const updatedAsset = {
-        ...asset,
-        photos: updatedPhotos
-      };
-
+      const updatedAsset = { ...asset, photos: updatedPhotos };
       await storageService.updateFixedAsset(updatedAsset);
-      setManagingPhotos(updatedAsset); // Update modal state
-
+      setManagingPhotos(updatedAsset);
     } catch (err: any) {
       alert('Error al subir archivo: ' + err.message);
     } finally {
       setIsUploadingPhoto(false);
-      e.target.value = '';
     }
+  };
+
+  React.useEffect(() => {
+    if (!managingPhotos) return;
+    const handlePaste = async (e: ClipboardEvent) => {
+      const file = e.clipboardData?.files?.[0];
+      if (file && !isUploadingPhoto) {
+        await processFileUpload(managingPhotos, file);
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [managingPhotos, isUploadingPhoto, user]);
+
+  const handleFileUpload = async (asset: FixedAsset, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processFileUpload(asset, file);
+    e.target.value = '';
   };
 
   const handleDeletePhoto = async (asset: FixedAsset, photoId: string) => {
@@ -704,6 +772,34 @@ export const ActivosFijos: React.FC = () => {
                 ))
               )}
             </tbody>
+            <tfoot className="bg-slate-800 text-white font-bold text-xs sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+              <tr>
+                {AF_ORDER_KEYS.map(key => {
+                    let content: string | number = '';
+                    if (['qty', 'unitPriceUsd', 'amountUsd'].includes(key)) {
+                        const sum = filteredAssets.reduce((acc, p) => acc + (Number((p as any)[key]) || 0), 0);
+                        content = sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        if (key === 'unitPriceUsd' || key === 'amountUsd') content = `$${content} USD`;
+                    } else if (['pedimentoPdfUrl', 'facturaPdfUrl', 'photos'].includes(key)) {
+                        content = '-';
+                    } else {
+                        const unique = new Set(filteredAssets.map(p => (p as any)[key]).filter(v => v !== null && v !== undefined && v !== ''));
+                        content = `${unique.size} Dist.`;
+                    }
+                    return (
+                        <td 
+                            key={key} 
+                            className={`px-3 py-3 border-r border-slate-700 whitespace-nowrap text-center tracking-wide text-[11px] text-blue-100 ${!['pedimentoPdfUrl', 'facturaPdfUrl', 'photos'].includes(key) ? 'cursor-pointer hover:bg-slate-700 transition-colors' : ''}`}
+                            onClick={() => !['pedimentoPdfUrl', 'facturaPdfUrl', 'photos'].includes(key) && handleOpenSummary(key)}
+                            title={!['pedimentoPdfUrl', 'facturaPdfUrl', 'photos'].includes(key) ? "Click para ver desglose de frecuencias" : undefined}
+                        >
+                            {content}
+                        </td>
+                    );
+                })}
+                <td className="px-3 py-3 border-r border-slate-700 bg-slate-800 z-20 whitespace-nowrap text-blue-300 text-center sticky right-0">Total Filtered: {filteredAssets.length}</td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
@@ -843,16 +939,77 @@ export const ActivosFijos: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="bg-slate-50 p-4 border-t border-slate-100 flex justify-end gap-3 sticky bottom-0 z-10 rounded-b-2xl mt-4">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-lg transition-colors">
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={isSaving} className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50">
+                    {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
+                    {editingAsset ? 'Actualizar AF' : 'Guardar AF'}
+                  </button>
+                </div>
+
               </form>
             </div>
-            
-            <div className="px-6 py-4 bg-white border-t border-slate-200 flex justify-end gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
-              <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors text-sm">
-                Cancelar
+          </div>
+        </div>
+      )}
+
+      {/* Summary / Desglose Modal */}
+      {summaryModal.isOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <Filter className="text-indigo-600" size={20} />
+                  Desglose: {summaryModal.column.toUpperCase()}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">Análisis de frecuencias en vista filtrada</p>
+              </div>
+              <button onClick={() => setSummaryModal({...summaryModal, isOpen: false})} className="text-slate-400 hover:text-slate-600 transition-colors">
+                ✕
               </button>
-              <button form="af-form" type="submit" className="px-8 py-2.5 bg-indigo-600 text-white font-bold hover:bg-indigo-700 rounded-xl transition-colors shadow-md text-sm flex items-center gap-2">
-                <CheckCircle size={18} />
-                {editingAsset ? 'Guardar Cambios' : 'Crear Registro AF'}
+            </div>
+            
+            <div className="flex-1 overflow-y-auto max-h-[60vh] p-0">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-white sticky top-0 z-10 shadow-sm">
+                  <tr>
+                    <th className="px-6 py-3 font-semibold text-slate-600">Valor Encontrado</th>
+                    <th className="px-6 py-3 font-semibold text-slate-600 text-right">Frecuencia</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  <tr className="bg-slate-50/50 hover:bg-slate-50">
+                    <td className="px-6 py-3 font-bold text-slate-700">Σ Total Registros Evaluados</td>
+                    <td className="px-6 py-3 text-right font-bold text-blue-600">{summaryModal.totalCount}</td>
+                  </tr>
+                  {summaryModal.data.map((item, idx) => (
+                    <tr 
+                      key={idx} 
+                      className="hover:bg-indigo-50/50 transition-colors cursor-pointer group"
+                      onClick={() => handleFilterByDesglose(item.val)}
+                      title={`Haz clic para filtrar la tabla por: ${item.val}`}
+                    >
+                      <td className="px-6 py-3 text-slate-700 group-hover:text-indigo-700 font-medium">{item.val}</td>
+                      <td className="px-6 py-3 text-right">
+                        <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-semibold group-hover:bg-indigo-100 group-hover:text-indigo-700">
+                          {item.count}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50">
+              <button 
+                onClick={() => setSummaryModal({...summaryModal, isOpen: false})} 
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors shadow-sm"
+              >
+                Cerrar Desglose
               </button>
             </div>
           </div>
@@ -887,7 +1044,17 @@ export const ActivosFijos: React.FC = () => {
             <div className="p-6 overflow-y-auto flex-1 bg-slate-50/50">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Upload Card */}
-                <label className="border-2 border-dashed border-slate-300 rounded-xl bg-white hover:bg-slate-50 transition-colors flex flex-col items-center justify-center p-6 text-slate-500 cursor-pointer min-h-[200px]">
+                <label 
+                  onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }}
+                  onDragLeave={(e) => { e.preventDefault(); setIsDraggingOver(false); }}
+                  onDrop={async (e) => {
+                    e.preventDefault(); 
+                    setIsDraggingOver(false);
+                    const file = e.dataTransfer?.files?.[0];
+                    if (file && !isUploadingPhoto) await processFileUpload(managingPhotos, file);
+                  }}
+                  className={`border-2 border-dashed rounded-xl transition-colors flex flex-col items-center justify-center p-6 cursor-pointer min-h-[200px] ${isDraggingOver ? 'border-indigo-500 bg-indigo-50 text-indigo-600' : 'border-slate-300 bg-white hover:bg-slate-50 text-slate-500'}`}
+                >
                   {isUploadingPhoto ? (
                     <>
                       <Loader2 size={32} className="animate-spin text-indigo-500 mb-2" />
@@ -897,7 +1064,7 @@ export const ActivosFijos: React.FC = () => {
                     <>
                       <UploadCloud size={32} className="text-slate-400 mb-2" />
                       <span className="text-sm font-semibold">Agregar Foto o Documento</span>
-                      <span className="text-xs text-slate-400 mt-1 text-center">Arrastra o haz clic aquí</span>
+                      <span className="text-xs text-slate-400 mt-1 text-center">Arrastra, pega (Ctrl+V) o haz clic aquí</span>
                       <input 
                         type="file" 
                         accept="image/*,.pdf" 

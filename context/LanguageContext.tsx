@@ -202,7 +202,7 @@ export const translations: Translations = {
     // Dashboard
     "dash.title": { es: "Dashboard Operacional", en: "Operational Dashboard" },
     "dash.subtitle_live": { es: "DataStage — pedimentos cargados", en: "DataStage — loaded pedimentos" },
-    "dash.subtitle_static": { es: "Customs Report PPT — YTD Ene–Sep 2024 (referencia)", en: "Customs Report PPT — YTD Jan–Sep 2024 (reference)" },
+    "dash.subtitle_static": { es: "Customs Report — Sin datos cargados", en: "Customs Report — No data loaded" },
     "dash.live_badge": { es: "Datos en Vivo", en: "Live Data" },
     "dash.loading": { es: "Cargando pedimentos...", en: "Loading pedimentos..." },
 
@@ -225,7 +225,7 @@ export const translations: Translations = {
     "dash.exp_val": { es: "Valor Exportado", en: "Export Value" },
     "dash.ytd_sub": { es: "Total YTD", en: "Total YTD" },
     "dash.usd_acc": { es: "USD acumulado", en: "USD accumulated" },
-    "dash.no_data_warn": { es: "Mostrando datos estáticos del PPT de referencia. Sube archivos M3 en DataStage para ver datos en vivo.", en: "Showing static reference PPT data. Upload M3 files in DataStage to see live data." },
+    "dash.no_data_warn": { es: "Mostrando datos en ceros. Descarga datos o sube archivos M3 en DataStage para ver información.", en: "Showing zeroed data. Download data or upload M3 files in DataStage to see information." },
 
     // Alert badges
     "dash.alert1": { es: "⚠ Exportaciones Julio −80%", en: "⚠ July Exports −80%" },
@@ -250,17 +250,17 @@ export const translations: Translations = {
     // Special ops + VAT
     "dash.sec_special": { es: "Operaciones Especiales y Contribuciones", en: "Special Operations & Taxes" },
     "dash.chart_special": { es: "Operaciones Especiales — Temporal a Definitivo", en: "Special Operations — Temp to Permanent" },
-    "dash.chart_special_sub": { es: "Cantidad de pedimentos convertidos (referencia PPT)", en: "Converted pedimentos count (PPT reference)" },
+    "dash.chart_special_sub": { es: "Cantidad de pedimentos convertidos", en: "Converted pedimentos count" },
     "dash.chart_contrib": { es: "Contribuciones Pagadas", en: "Taxes Paid" },
     "dash.chart_contrib_sub_live": { es: "IGI + IVA por mes (DataStage)", en: "IGI + VAT per month (DataStage)" },
-    "dash.chart_contrib_sub_static": { es: "Referencia PPT (miles MXN)", en: "PPT reference (thousands MXN)" },
+    "dash.chart_contrib_sub_static": { es: "(miles MXN)", en: "(thousands MXN)" },
 
     // Savings + Revisions
     "dash.sec_savings": { es: "Ahorros GID y Revisiones", en: "GID Savings & Revisions" },
     "dash.chart_gid": { es: "Ahorros GID Acumulados YTD", en: "GID Accumulated Savings YTD" },
-    "dash.chart_gid_sub": { es: "Miles USD — referencia PPT (clasificación arancelaria)", en: "USD Thousands — PPT reference (tariff classification)" },
+    "dash.chart_gid_sub": { es: "Miles USD (clasificación arancelaria)", en: "USD Thousands (tariff classification)" },
     "dash.chart_rev": { es: "Revisiones Aduanales Import / Export", en: "Import / Export Customs Reviews" },
-    "dash.chart_rev_sub": { es: "Referencia PPT", en: "PPT Reference" },
+    "dash.chart_rev_sub": { es: "Carga archivos para ver datos", en: "Load files to see data" },
     "dash.rev_import": { es: "Revisiones Import", en: "Import Reviews" },
     "dash.rev_export": { es: "Revisiones Export", en: "Export Reviews" },
 

@@ -24,6 +24,7 @@ export enum UserRole {
   OPERATOR = 'Operator', // Same as Editor (User requested alias)
   CONTROLLER = 'Controller', // Finance & Expense Control
   EXPO = 'Expo',         // Exporter partner
+  EXPO_ANALIST = 'Expo Analist', // Exporter Analyst
   CARRIER = 'Carrier',   // Transport/Shipping partner (filtered by SCAC)
   TRANSPORTISTA = 'Transportista', // Sub-línea partner (filtered by nombreSubLinea)
   VIEWER = 'Viewer',      // Read only

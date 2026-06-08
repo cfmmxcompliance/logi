@@ -1,0 +1,25 @@
+{
+  "reviewsByMonth": [
+    {
+      "name": "Apr",
+      "Import": 68,
+      "Export": 7
+    }
+  ],
+  "monthlyDuties": [
+    {
+      "name": "Apr",
+      "IGI Import": 0,
+      "IVA Import": 237413,
+      "DTA Import": 642879,
+      "IGI Export": 0,
+      "IVA Export": 11873,
+      "DTA Export": 225999
+    }
+  ],
+  "taxSummary": {
+    "totalIGI": 0,
+    "totalIVA": 249286,
+    "totalDTA": 868878
+  }
+}

@@ -277,6 +277,7 @@ export const Settings = () => {
                                                                 [UserRole.AGENT]: 'Agent',
                                                                 [UserRole.OPERATOR]: 'Operator',
                                                                 [UserRole.EXPO]: 'Expo',
+                                                                [UserRole.EXPO_ANALIST]: 'Expo Analist',
                                                                 [UserRole.CARRIER]: 'Carrier',
                                                                 [UserRole.TRANSPORTISTA]: 'Transportista',
                                                                 [UserRole.VIEWER]: 'Viewer',
@@ -317,6 +318,7 @@ export const Settings = () => {
                                                         <option value={UserRole.AGENT}>Agent</option>
                                                         <option value={UserRole.OPERATOR}>Operator</option>
                                                         <option value={UserRole.EXPO}>Expo</option>
+                                                        <option value={UserRole.EXPO_ANALIST}>Expo Analist</option>
                                                         <option value={UserRole.CARRIER}>Carrier</option>
                                                         <option value={UserRole.TRANSPORTISTA}>Transportista</option>
                                                         <option value={UserRole.VIEWER}>Viewer</option>

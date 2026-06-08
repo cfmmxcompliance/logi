@@ -99,8 +99,12 @@ export default function LoginScreen() {
         setError('');
         setLoading(true);
         try {
-            await doLogin(email, password);
-            navigate('/activos-fijos');
+            const loggedInUser = await doLogin(email, password);
+            if (loggedInUser && (loggedInUser.role === 'ADMIN' || loggedInUser.role === 'HANDHELD_AF')) {
+                navigate('/activos-fijos');
+            } else {
+                setError('Acceso denegado: Se requiere rol de Activos Fijos.');
+            }
         } catch (err) {
             if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
                 setError('Contraseña incorrecta.');

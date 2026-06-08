@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
 import { SpecialistsPerformanceTable } from '../components/SpecialistsPerformanceTable.tsx';
+import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const CS = { grid: { strokeDasharray:'3 3', vertical:false, stroke:'#f1f5f9' }, axis: { axisLine:false, tickLine:false, tick:{fill:'#64748b',fontSize:11} }, tt: { contentStyle:{borderRadius:'8px',border:'none',boxShadow:'0 4px 6px -1px rgb(0 0 0/.1)',fontSize:12} } };
@@ -17,35 +18,38 @@ const isImport = (r: PedimentoRecord) => (r.tipoOperacion || '').toUpperCase() =
 const isExport = (r: PedimentoRecord) => (r.tipoOperacion || '').toUpperCase() === 'EXP';
 
 // Robust SAT date parser — maneja ISO (YYYY-MM-DD), DD/MM/YYYY y YYYYMMDD sin separadores
-const parseSATMonth = (s: string): number => {
-  if (!s || !s.trim()) return -1;
-  const raw = s.trim();
-  // ISO: YYYY-MM-DD o YYYY-MM-DDTHH:mm:ss
+const parseSATDateObj = (s: string): Date | null => {
+  if (!s || !s.trim()) return null;
+  let raw = s.trim();
+  raw = raw.replace(' ', 'T');
+  
   let d = new Date(raw.length > 10 ? raw : raw + 'T12:00:00');
-  if (!isNaN(d.getTime())) return d.getMonth();
-  // DD/MM/YYYY
-  const sl = raw.split('/');
+  if (!isNaN(d.getTime())) return d;
+  
+  let datePart = raw.split('T')[0];
+  const sl = datePart.split('/');
   if (sl.length === 3) {
     d = new Date(`${sl[2]}-${sl[1].padStart(2,'0')}-${sl[0].padStart(2,'0')}T12:00:00`);
-    if (!isNaN(d.getTime())) return d.getMonth();
+    if (!isNaN(d.getTime())) return d;
   }
-  // YYYYMMDD (8 dígitos)
-  if (/^\d{8}$/.test(raw)) {
-    d = new Date(`${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}T12:00:00`);
-    if (!isNaN(d.getTime())) return d.getMonth();
+  
+  if (/^\d{8}$/.test(datePart)) {
+    d = new Date(`${datePart.slice(0,4)}-${datePart.slice(4,6)}-${datePart.slice(6,8)}T12:00:00`);
+    if (!isNaN(d.getTime())) return d;
   }
-  return -1;
+  return null;
 };
+
+const parseSATMonth = (s: string): number => {
+  const d = parseSATDateObj(s);
+  return d ? d.getMonth() : -1;
+};
+
 const parseSATYear = (s: string): number => {
-  if (!s || !s.trim()) return -1;
-  const raw = s.trim();
-  let d = new Date(raw.length > 10 ? raw : raw + 'T12:00:00');
-  if (!isNaN(d.getTime())) return d.getFullYear();
-  const sl = raw.split('/');
-  if (sl.length === 3) { d = new Date(`${sl[2]}-${sl[1].padStart(2,'0')}-${sl[0].padStart(2,'0')}T12:00:00`); if (!isNaN(d.getTime())) return d.getFullYear(); }
-  if (/^\d{8}$/.test(raw)) { d = new Date(`${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}T12:00:00`); if (!isNaN(d.getTime())) return d.getFullYear(); }
-  return -1;
+  const d = parseSATDateObj(s);
+  return d ? d.getFullYear() : -1;
 };
+
 const recordMonth = (r: PedimentoRecord) => {
   const m = parseSATMonth(r.fechaPago);
   return m !== -1 ? m : parseSATMonth(r.fechaEntrada);
@@ -196,100 +200,15 @@ export const Dashboard = () => {
   const [equipment, setEquipment] = useState(storageService.getEquipmentTracking());
   const [customs, setCustoms] = useState(storageService.getCustomsClearance());
   const [costs, setCosts] = useState(storageService.getCosts());
-  const [reports, setReports] = useState(storageService.getDataStageReports());
+  const [reports, setReports] = useState<any[]>([]);
   const [allRecordsHydrated, setAllRecordsHydrated] = useState<PedimentoRecord[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
-  const [seeding, setSeeding] = useState(false);
+  const [procState, setProcState] = useState<ProcessingState>(INITIAL_PROCESSING_STATE);
   const curYear = new Date().getFullYear();
   const [startDate, setStartDate] = useState(`${curYear}-01-01`);
   const [endDate,   setEndDate]   = useState(`${curYear}-12-31`);
 
-  // Revisiones locales (de _Sel.asc + _Inci.asc subidos directamente en Dashboard)
-  const revInputRef = useRef<HTMLInputElement>(null);
-  const [loadingRevisions, setLoadingRevisions] = useState(false);
-  const LS_KEY = 'lm_revisions_by_month';
-  const [localReviewsByMonth, setLocalReviewsByMonth] = useState<{name:string;Import:number;Export:number}[]>(() => {
-    try { const s = localStorage.getItem(LS_KEY); return s ? JSON.parse(s) : []; } catch { return []; }
-  });
 
-  const normTipo = (raw: string) => {
-    const v = (raw||'').trim().toUpperCase();
-    if (v==='1'||v==='IMP'||v.startsWith('I')) return 'IMP';
-    if (v==='2'||v==='EXP'||v.startsWith('E')) return 'EXP';
-    return v;
-  };
-
-  const parseRevisionASC = useCallback((content: string, monthCounts: {imp:number;exp:number}[], isSel: boolean) => {
-    const lines = content.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('Patente|'));
-    lines.forEach(line => {
-      const cols = line.split('|');
-      if (isSel) {
-        // _Sel: cols[7]=semaforo, cols[5]=fecha, cols[9]=tipoOper
-        if (cols.length < 10) return;
-        const sem = (cols[7]||'').trim();
-        if (sem !== '2' && sem !== '3') return; // solo rojo/naranja
-        const d = new Date((cols[5]||'').trim() + 'T12:00:00');
-        const m = isNaN(d.getTime()) ? -1 : d.getMonth();
-        if (m < 0) return;
-        const tipo = normTipo(cols[9]||'');
-        if (tipo==='IMP') monthCounts[m].imp++;
-        else if (tipo==='EXP') monthCounts[m].exp++;
-      } else {
-        // _Inci: cols[13]=grado, cols[14]=fechaSel, cols[12]=tipoOper
-        if (cols.length < 14) return;
-        const g = (cols[13]||'').trim().toUpperCase();
-        if (g!=='C' && g!=='A') return; // solo con incidencia
-        const dateStr = (cols[14]||cols[5]||'').trim();
-        const d = new Date(dateStr + 'T12:00:00');
-        const m = isNaN(d.getTime()) ? -1 : d.getMonth();
-        if (m < 0) return;
-        const tipo = normTipo(cols[12]||'');
-        if (tipo==='IMP') monthCounts[m].imp++;
-        else if (tipo==='EXP') monthCounts[m].exp++;
-      }
-    });
-  }, []);
-
-  const handleRevisionFiles = useCallback(async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    setLoadingRevisions(true);
-    try {
-      const monthCounts: {imp:number;exp:number}[] = Array.from({length:12}, () => ({imp:0,exp:0}));
-      const decoder = new TextDecoder('iso-8859-1');
-
-      for (const file of Array.from(files)) {
-        const name = file.name.toLowerCase();
-        if (name.endsWith('.zip')) {
-          // ZIP: buscar _Sel.asc y _Inci.asc dentro
-          const zip = new JSZip();
-          const loaded = await zip.loadAsync(file);
-          for (const [fname, entry] of Object.entries(loaded.files)) {
-            if (entry.dir) continue;
-            const fn = fname.toLowerCase();
-            if (fn.endsWith('_sel.asc') || fn.endsWith('_inci.asc')) {
-              const buf = await entry.async('uint8array');
-              const text = decoder.decode(buf);
-              parseRevisionASC(text, monthCounts, fn.endsWith('_sel.asc'));
-            }
-          }
-        } else if (name.endsWith('_sel.asc')) {
-          const text = decoder.decode(await file.arrayBuffer());
-          parseRevisionASC(text, monthCounts, true);
-        } else if (name.endsWith('_inci.asc')) {
-          const text = decoder.decode(await file.arrayBuffer());
-          parseRevisionASC(text, monthCounts, false);
-        }
-      }
-
-      const result = MONTHS.map((name, i) => ({ name, Import: monthCounts[i].imp, Export: monthCounts[i].exp }));
-      setLocalReviewsByMonth(result);
-      localStorage.setItem(LS_KEY, JSON.stringify(result));
-    } catch (err: any) {
-      alert('Error procesando archivos de revisiones: ' + err.message);
-    } finally {
-      setLoadingRevisions(false);
-    }
-  }, [parseRevisionASC]);
 
   useEffect(() => {
     if (user?.role === UserRole.AGENT) { navigate('/database'); return; }
@@ -298,73 +217,12 @@ export const Dashboard = () => {
       setEquipment([...storageService.getEquipmentTracking()]);
       setCustoms([...storageService.getCustomsClearance()]);
       setCosts([...storageService.getCosts()]);
-      setReports([...storageService.getDataStageReports()]);
     };
     refresh();
     return storageService.subscribe(refresh);
-  }, [user, navigate]);
+  }, []);
 
-  // Hydrate records from Firestore subcollections (Gap 3 fix)
-  useEffect(() => {
-    if (!reports.length) { setAllRecordsHydrated([]); return; }
-    let cancelled = false;
-    const hydrate = async () => {
-      setLoadingRecords(true);
-      const fetchPromises = reports.map(async (report) => {
-        const recs = report.records && report.records.length > 0
-          ? report.records
-          : await (storageService as any).getDataStageReportWithRecords(report.id);
-        return { report, recs };
-      });
 
-      const results = await Promise.all(fetchPromises);
-      
-      if (cancelled) return;
-
-      const allRecords: PedimentoRecord[] = [];
-      for (const { recs } of results) {
-        allRecords.push(...recs);
-      }
-      if (!cancelled) {
-        // === CRUCE 507→501 EN VIVO ===
-        // Los registros de Firestore guardados antes del fix no tienen edDocuments.
-        // Lo recalculamos desde rawFiles (código '507') usando el tipoOperacion del registro.
-        const recordMap = new Map<string, PedimentoRecord>();
-        allRecords.forEach(r => recordMap.set(r.id, r));
-
-        for (const report of reports) {
-          const rawFiles = (report as any).rawFiles as Array<{code:string; rows:string[][]}> | undefined;
-          if (!rawFiles) continue;
-          const file507 = rawFiles.find(f => f.code === '507');
-          if (!file507) continue;
-
-          // Contar ED por pedimento (cols: 0=Patente, 1=Pedimento, 2=Seccion, 3=ClaveCaso)
-          const edCounts = new Map<string, number>();
-          file507.rows.forEach(row => {
-            if (!row || row.length < 4) return;
-            if ((row[0]||'').startsWith('Patente')) return; // header
-            const clave = (row[3]||'').trim().toUpperCase();
-            if (clave !== 'ED') return;
-            const id = `${row[0]}-${row[1]}-${row[2]}`;
-            edCounts.set(id, (edCounts.get(id)||0) + 1);
-          });
-
-          // Asignar solo a pedimentos EXP (cruce con 501 via tipoOperacion del record)
-          edCounts.forEach((count, id) => {
-            const record = recordMap.get(id);
-            if (record && record.tipoOperacion === 'EXP') {
-              record.edDocuments = (record.edDocuments||0) + count;
-            }
-          });
-        }
-
-        setAllRecordsHydrated([...allRecords]);
-        setLoadingRecords(false);
-      }
-    };
-    hydrate();
-    return () => { cancelled = true; };
-  }, [reports]);
 
   // Live KPIs
   const now = new Date();
@@ -439,7 +297,7 @@ export const Dashboard = () => {
   // 2) Reconstruir desde rawFiles[510] ya almacenados en Firestore (sin re-subir)
   // 3) Último recurso: leer igiTotal/ivaPrvTotal/dtaTotal de allRecordsHydrated
   const dutiesData = useMemo(() => {
-    const ZERO = { 'IGI Import':0,'IVA Import':0,'DTA Import':0,'IGI Export':0,'IVA Export':0,'DTA Export':0 };
+    const ZERO = { 'IGI Import':0,'IVA Import':0,'IVA Import Efectivo':0,'IVA Import Fianza':0,'DTA Import':0,'IGI Export':0,'IVA Export':0,'DTA Export':0 };
     const acc = MONTHS.map((name) => ({ name, ...ZERO }));
 
     // ── RUTA 1: monthlyDuties precomputado (óptimo) ───────────────────────
@@ -451,6 +309,8 @@ export const Dashboard = () => {
           if (!acc[i]) return;
           acc[i]['IGI Import'] += row['IGI Import'] || 0;
           acc[i]['IVA Import'] += row['IVA Import'] || 0;
+          acc[i]['IVA Import Efectivo'] += row['IVA Import Efectivo'] || 0;
+          acc[i]['IVA Import Fianza'] += row['IVA Import Fianza'] || 0;
           acc[i]['DTA Import'] += row['DTA Import'] || 0;
           acc[i]['IGI Export'] += row['IGI Export'] || 0;
           acc[i]['IVA Export'] += row['IVA Export'] || 0;
@@ -488,18 +348,32 @@ export const Dashboard = () => {
           const ped = pedMap.get(key);
           if (!ped) return;
           const clave = (row[3]||'').trim().toUpperCase();
-          const importe = parseFloat(row[7]||'0') || 0; // col[7] = Importe (Patente|Ped|Sec|Clave|Tasa|TipoTasa|FormaPago|Importe)
+          const fp = (row[6]||'').trim(); // Forma de pago
+          const importe = parseFloat(row[7]||'0') || 0;
           if (!importe) return;
+          if (fp !== '0' && fp !== '22') return; // Solo efectivo y fianza
+
           const month = parseSATMonth(ped.fecha);
           if (month < 0 || month > 11) return;
           recomputedFromRaw = true;
           const isExp = ped.tipo === 'EXP';
+
           if (clave === 'IGI' || clave === 'DBA') {
-            isExp ? (acc[month]['IGI Export'] += importe) : (acc[month]['IGI Import'] += importe);
+            if (fp === '0') isExp ? (acc[month]['IGI Export'] += importe) : (acc[month]['IGI Import'] += importe);
           } else if (clave === 'IVA' || clave === 'PRV') {
-            isExp ? (acc[month]['IVA Export'] += importe) : (acc[month]['IVA Import'] += importe);
+            if (isExp) {
+              if (fp === '0') acc[month]['IVA Export'] += importe;
+            } else {
+              if (fp === '0') {
+                acc[month]['IVA Import'] += importe;
+                acc[month]['IVA Import Efectivo'] += importe;
+              } else if (fp === '22') {
+                acc[month]['IVA Import'] += importe;
+                acc[month]['IVA Import Fianza'] += importe;
+              }
+            }
           } else if (clave === 'DTA') {
-            isExp ? (acc[month]['DTA Export'] += importe) : (acc[month]['DTA Import'] += importe);
+            if (fp === '0') isExp ? (acc[month]['DTA Export'] += importe) : (acc[month]['DTA Import'] += importe);
           }
         });
       });
@@ -528,6 +402,8 @@ export const Dashboard = () => {
       ...row,
       'IGI Import': parseFloat(row['IGI Import'].toFixed(1)),
       'IVA Import': parseFloat(row['IVA Import'].toFixed(1)),
+      'IVA Import Efectivo': parseFloat(row['IVA Import Efectivo'].toFixed(1)),
+      'IVA Import Fianza': parseFloat(row['IVA Import Fianza'].toFixed(1)),
       'DTA Import': parseFloat(row['DTA Import'].toFixed(1)),
       'IGI Export': parseFloat(row['IGI Export'].toFixed(1)),
       'IVA Export': parseFloat(row['IVA Export'].toFixed(1)),
@@ -543,35 +419,8 @@ export const Dashboard = () => {
     'Exp.': allRecords.filter(r => recordMonth(r)===i && isExport(r)).reduce((s,r) => s+(r.containerCount||0), 0),
   })), [allRecords]);
 
-  // Static fallback data from PPT (shown when no DataStage records for selected year)
-  const staticImportVol = [
-    {name:'Jan',IN:67,AF:0,A1:57},{name:'Feb',IN:74,AF:0,A1:60},{name:'Mar',IN:106,AF:1,A1:102},
-    {name:'Apr',IN:119,AF:0,A1:109},{name:'May',IN:67,AF:0,A1:61},{name:'Jun',IN:52,AF:0,A1:58},
-    {name:'Jul',IN:107,AF:3,A1:74},{name:'Aug',IN:104,AF:5,A1:85},{name:'Sep',IN:92,AF:8,A1:92},
-  ];
-  const staticExportVol = [{name:'Jan',RT:58},{name:'Feb',RT:144},{name:'Mar',RT:163},{name:'Apr',RT:119},{name:'May',RT:153},{name:'Jun',RT:154},{name:'Jul',RT:31},{name:'Aug',RT:114},{name:'Sep',RT:100}];
-  const staticImportVal = [
-    {name:'Jan','Mat. Prima + Indir.':4.13,'Activo Fijo':0},{name:'Feb','Mat. Prima + Indir.':7.37,'Activo Fijo':0.55},
-    {name:'Mar','Mat. Prima + Indir.':11.20,'Activo Fijo':0},{name:'Apr','Mat. Prima + Indir.':9.38,'Activo Fijo':0.47},
-    {name:'May','Mat. Prima + Indir.':5.83,'Activo Fijo':1.28},{name:'Jun','Mat. Prima + Indir.':8.90,'Activo Fijo':0.94},
-    {name:'Jul','Mat. Prima + Indir.':7.50,'Activo Fijo':0},{name:'Aug','Mat. Prima + Indir.':8.51,'Activo Fijo':0},
-    {name:'Sep','Mat. Prima + Indir.':6.95,'Activo Fijo':0},
-  ];
-  const staticExportVal = [{name:'Jan','Valor (M USD)':3},{name:'Feb','Valor (M USD)':7.45},{name:'Mar','Valor (M USD)':11.71},{name:'Apr','Valor (M USD)':7},{name:'May','Valor (M USD)':11},{name:'Jun','Valor (M USD)':16},{name:'Jul','Valor (M USD)':5},{name:'Aug','Valor (M USD)':4},{name:'Sep','Valor (M USD)':12}];
-  const staticDuties = [
-    {name:'Jan','IGI Import':40,'IVA Import':670,'IGI Export':0,'IVA Export':0},
-    {name:'Feb','IGI Import':156,'IVA Import':2470,'IGI Export':0,'IVA Export':0},
-    {name:'Mar','IGI Import':108,'IVA Import':1840,'IGI Export':0,'IVA Export':0},
-    {name:'Apr','IGI Import':78,'IVA Import':1490,'IGI Export':0,'IVA Export':0},
-    {name:'May','IGI Import':84,'IVA Import':953,'IGI Export':0,'IVA Export':0},
-    {name:'Jun','IGI Import':109,'IVA Import':1500,'IGI Export':0,'IVA Export':0},
-    {name:'Jul','IGI Import':245,'IVA Import':1300,'IGI Export':0,'IVA Export':0},
-    {name:'Aug','IGI Import':170,'IVA Import':1800,'IGI Export':0,'IVA Export':0},
-    {name:'Sep','IGI Import':119,'IVA Import':1660,'IGI Export':0,'IVA Export':0},
-  ];
-
   // Always-static charts (no field in DataStage for these)
-  const gidSavingsData = [{name:'Jan','Ahorro Acum.(K USD)':105.8},{name:'Feb','Ahorro Acum.(K USD)':152.6},{name:'Mar','Ahorro Acum.(K USD)':170.1},{name:'Apr','Ahorro Acum.(K USD)':241.7},{name:'May','Ahorro Acum.(K USD)':245},{name:'Jun','Ahorro Acum.(K USD)':247.7},{name:'Jul','Ahorro Acum.(K USD)':258.1},{name:'Aug','Ahorro Acum.(K USD)':291.6}];
+  const gidSavingsData: any[] = [];
 
   // Operaciones Especiales — live desde DataStage por claves A3, A4, F4, F5, V3
   const liveSpecialOpsData = useMemo(() => {
@@ -590,23 +439,17 @@ export const Dashboard = () => {
     });
   }, [allRecords, hasLiveData]);
 
-  const staticSpecialOpsData = [{name:'Jan',Pedimentos:24},{name:'Feb',Pedimentos:26},{name:'Mar',Pedimentos:28},{name:'Apr',Pedimentos:2},{name:'May',Pedimentos:0},{name:'Jun',Pedimentos:0},{name:'Jul',Pedimentos:20},{name:'Aug',Pedimentos:0},{name:'Sep',Pedimentos:0}];
-  const specialOpsData = liveSpecialOpsData ?? staticSpecialOpsData;
+  const specialOpsData = liveSpecialOpsData ?? [];
   const hasLiveSpecial = liveSpecialOpsData !== null;
 
-  // Revisiones aduanales — prioridad: 1) localReviewsByMonth (cargado en Dashboard)
-  // 2) reports con reviewsByMonth (guardados en DataStage), 3) static PPT
+  // Revisiones aduanales — prioridad: reports con reviewsByMonth (guardados en DataStage)
   const liveRevisionsData = useMemo(() => {
-    // Prioridad 1: cargado localmente en Dashboard
-    if (localReviewsByMonth.length === 12 && localReviewsByMonth.some(m => m.Import > 0 || m.Export > 0))
-      return localReviewsByMonth;
-    // Prioridad 2: guardado en algún reporte de DataStage
     const combined: { imp: number; exp: number }[] = Array.from({ length: 12 }, () => ({ imp: 0, exp: 0 }));
     let hasAnyRevisionData = false;
     reports.forEach(report => {
       if (!report.reviewsByMonth) return;
       hasAnyRevisionData = true;
-      report.reviewsByMonth.forEach((m, i) => {
+      report.reviewsByMonth.forEach((m: any, i: number) => {
         combined[i].imp += m.Import || 0;
         combined[i].exp += m.Export || 0;
       });
@@ -617,23 +460,121 @@ export const Dashboard = () => {
       Import: m.imp,
       Export: m.exp,
     }));
-  }, [reports, localReviewsByMonth]);
+  }, [reports]);
 
-  const staticRevisionsData = [{name:'Jan',Import:8,Export:2},{name:'Feb',Import:17,Export:1},{name:'Mar',Import:29,Export:0},{name:'Apr',Import:25,Export:1},{name:'May',Import:9,Export:1},{name:'Jun',Import:8,Export:3},{name:'Jul',Import:8,Export:1},{name:'Aug',Import:11,Export:2},{name:'Sep',Import:15,Export:2}];
-  const revisionsData = liveRevisionsData ?? staticRevisionsData;
+  const revisionsData = liveRevisionsData ?? [];
   const hasLiveRevisions = liveRevisionsData !== null;
 
-  const ivData     = hasLiveData ? importVolumeData : staticImportVol;
-  const evData     = hasLiveData ? exportVolumeData : staticExportVol;
-  const ivalData   = hasLiveData ? importValueData  : staticImportVal;
-  const evalData   = hasLiveData ? exportValueData  : staticExportVal;
-  const dutData    = hasLiveData ? dutiesData        : staticDuties;
+  const ivData     = hasLiveData ? importVolumeData : [];
+  const evData     = hasLiveData ? exportVolumeData : [];
+  const ivalData   = hasLiveData ? importValueData  : [];
+  const evalData   = hasLiveData ? exportValueData  : [];
+  const dutData    = hasLiveData ? dutiesData        : [];
 
-  const handleSeed = async () => {
-    if(!window.confirm('¿Inicializar base de datos con datos de prueba?')) return;
-    setSeeding(true);
-    try { await (storageService as any).seedDatabase(); alert('✅ Datos inicializados.'); window.location.reload(); }
-    catch(e:any){ alert('Error: '+e.message); } finally { setSeeding(false); }
+  const handleHydrateAll = async () => {
+    setProcState({
+        isOpen: true,
+        status: 'loading',
+        title: 'Sincronizando Pedimentos',
+        message: 'Buscando reportes en Firebase...',
+        progress: 0
+    });
+    setLoadingRecords(true);
+
+    try {
+      let reportsToProcess = [...reports]; // Fallback to local if offline
+
+      // ALWAYS force download from Firebase to guarantee we get all historical data
+      if (storageService.isCloudMode ? storageService.isCloudMode() : true) {
+        try {
+          const { collection, getDocs } = await import('firebase/firestore');
+          const { db } = await import('../services/firebaseConfig.ts');
+          if (db) {
+            const snap = await getDocs(collection(db, 'data_stage_reports'));
+            if (!snap.empty) {
+               // Reemplazamos lo local con la verdad absoluta de Firebase
+               reportsToProcess = snap.docs.map(d => ({ ...d.data(), id: d.id })) as any[];
+            }
+          }
+        } catch (e) {
+          console.error("Error fetching reports from Firebase:", e);
+        }
+      }
+
+      if (!reportsToProcess || reportsToProcess.length === 0) {
+        alert("No hay reportes de DataStage disponibles en Firebase para descargar.");
+        setProcState(INITIAL_PROCESSING_STATE);
+        setLoadingRecords(false);
+        return;
+      }
+
+      const total = reportsToProcess.length;
+      let loadedCount = 0;
+      const allRecs: PedimentoRecord[] = [];
+
+      for (const report of reportsToProcess) {
+        setProcState(prev => ({ ...prev, message: `Descargando reporte ${loadedCount + 1} de ${total}...` }));
+        const recs = report.records && report.records.length > 0
+          ? report.records
+          : await (storageService as any).getDataStageReportWithRecords(report.id);
+        
+        allRecs.push(...recs);
+        loadedCount++;
+        setProcState(prev => ({ ...prev, progress: Math.round((loadedCount / total) * 100) }));
+      }
+
+      setProcState(prev => ({ ...prev, message: 'Cruzando ED con expedientes...' }));
+
+      // === CRUCE 507→501 EN VIVO ===
+      const recordMap = new Map<string, PedimentoRecord>();
+      allRecs.forEach(r => recordMap.set(r.id, r));
+
+      for (const report of reports) {
+        const rawFiles = (report as any).rawFiles as Array<{code:string; rows:string[][]}> | undefined;
+        if (!rawFiles) continue;
+        const file507 = rawFiles.find(f => f.code === '507');
+        if (!file507) continue;
+
+        const edCounts = new Map<string, number>();
+        file507.rows.forEach(row => {
+          if (!row || row.length < 4) return;
+          if ((row[0]||'').startsWith('Patente')) return; 
+          const clave = (row[3]||'').trim().toUpperCase();
+          if (clave !== 'ED') return;
+          const id = `${row[0]}-${row[1]}-${row[2]}`;
+          edCounts.set(id, (edCounts.get(id)||0) + 1);
+        });
+
+        edCounts.forEach((count, id) => {
+          const record = recordMap.get(id);
+          if (record && record.tipoOperacion === 'EXP') {
+            record.edDocuments = (record.edDocuments||0) + count;
+          }
+        });
+      }
+
+      setReports(reportsToProcess);
+      setAllRecordsHydrated([...allRecs]);
+      setProcState({
+        isOpen: true,
+        status: 'success',
+        title: '¡Sincronización Completa!',
+        message: `Se cargaron ${allRecs.length} pedimentos exitosamente.`,
+        progress: 100
+      });
+      setTimeout(() => setProcState(INITIAL_PROCESSING_STATE), 2000);
+    } catch(err: any) {
+      console.error(err);
+      setProcState({
+        isOpen: true,
+        status: 'error',
+        title: 'Error de Descarga',
+        message: err.message || 'Error al descargar datos de Firebase',
+        progress: 0
+      });
+    } finally {
+      setLoadingRecords(false);
+    }
   };
 
   // Summary KPIs from live data
@@ -728,7 +669,7 @@ export const Dashboard = () => {
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Dashboard Operacional</h1>
           <p className="text-sm text-slate-500 mt-1">
-            {hasLiveData ? `DataStage — ${allRecords.length} pedimentos cargados` : 'Customs Report PPT — YTD Ene–Sep 2024 (referencia)'}
+            {hasLiveData ? `DataStage — ${allRecords.length} pedimentos cargados` : 'Customs Report — Sin datos cargados'}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -771,12 +712,12 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Empty state */}
-      {vessels.length===0 && equipment.length===0 && isAdmin && (
+      {/* Empty state / Manual Sync Banner */}
+      {!hasLiveData && isAdmin && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 flex items-center justify-between gap-4">
-          <p className="text-blue-700 text-sm font-medium">Base de datos vacía. Inicializa con datos de prueba.</p>
-          <button onClick={handleSeed} disabled={seeding} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 disabled:opacity-50">
-            {seeding?<Loader2 size={16} className="animate-spin"/>:<Play size={16} fill="currentColor"/>}{seeding?'Creando...':'Inicializar'}
+          <p className="text-blue-700 text-sm font-medium">Los datos no se han cargado. Sincroniza desde la nube.</p>
+          <button onClick={handleHydrateAll} disabled={loadingRecords} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 disabled:opacity-50">
+            {loadingRecords?<Loader2 size={16} className="animate-spin"/>:<Database size={16} fill="currentColor"/>}{loadingRecords?'Sincronizando...':'Descargar Datos'}
           </button>
         </div>
       )}
@@ -786,7 +727,7 @@ export const Dashboard = () => {
       {/* Customs YTD Summary */}
       <section>
         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-          {t('dash.sec_ytd')} {hasLiveData ? rangeLabel : 'YTD 2024 (PPT)'}
+          {t('dash.sec_ytd')} {hasLiveData ? rangeLabel : ''}
           {isHydrating && <span className="flex items-center gap-1 text-blue-500 normal-case font-normal"><Loader2 size={12} className="animate-spin"/> {t('dash.loading')}</span>}
         </h2>
         {/* — Pedimentos & Contenedores — */}
@@ -794,25 +735,21 @@ export const Dashboard = () => {
           <CountByClaveCard
             title={t('dash.imp_ped')}
             color="text-blue-600"
-            total={hasLiveData ? totalImport.toLocaleString() : '1,503'}
+            total={hasLiveData ? totalImport.toLocaleString() : '0'}
             sub={t('dash.ytd_sub')}
-            breakdown={hasLiveData ? importByKey : [
-              {clave:'IN', count:1050},{clave:'A1', count:380},{clave:'AF', count:73}
-            ]}
+            breakdown={hasLiveData ? importByKey : []}
           />
           <CountByClaveCard
             title={t('dash.exp_ped')}
             color="text-indigo-600"
-            total={hasLiveData ? totalExport.toLocaleString() : '1,036'}
+            total={hasLiveData ? totalExport.toLocaleString() : '0'}
             sub="RT, F1, F2, H1, G1 y más"
-            breakdown={hasLiveData ? exportByKey : [
-              {clave:'RT', count:1036}
-            ]}
+            breakdown={hasLiveData ? exportByKey : []}
           />
           <CountByClaveCard
             title="CONTENEDORES IMPORTACIÓN"
             color="text-sky-600"
-            total={hasLiveData ? totalImportContainers.toLocaleString() : '—'}
+            total={hasLiveData ? totalImportContainers.toLocaleString() : '0'}
             sub="504 — contenedores IMP"
             unit="cont."
             breakdown={hasLiveData ? importContainersByKey : []}
@@ -820,7 +757,7 @@ export const Dashboard = () => {
           <CountByClaveCard
             title="CONTENEDORES EXPORTACIÓN"
             color="text-teal-600"
-            total={hasLiveData ? totalExportContainers.toLocaleString() : '—'}
+            total={hasLiveData ? totalExportContainers.toLocaleString() : '0'}
             sub="504 — contenedores EXP"
             unit="cont."
             breakdown={hasLiveData ? exportContainersByKey : []}
@@ -842,40 +779,30 @@ export const Dashboard = () => {
           <ValueByClaveCard
             title={t('dash.imp_val')}
             color="text-emerald-600"
-            total={hasLiveData ? totalImportUSD : '72'}
-            breakdown={hasLiveData ? importValueByKey : [
-              {clave:'IN', usd:52e6, count:0},
-              {clave:'A1', usd:14e6, count:0},
-              {clave:'AF', usd:6e6,  count:0},
-            ]}
+            total={hasLiveData ? totalImportUSD : '0'}
+            breakdown={hasLiveData ? importValueByKey : []}
           />
           <ValueByClaveCard
             title={t('dash.exp_val')}
             color="text-purple-600"
-            total={hasLiveData ? totalExportUSD : '77'}
-            breakdown={hasLiveData ? exportValueByKey : [
-              {clave:'RT', usd:77e6, count:0},
-            ]}
+            total={hasLiveData ? totalExportUSD : '0'}
+            breakdown={hasLiveData ? exportValueByKey : []}
           />
           <CountByClaveCard
             title="FACTURAS IMPORTACIÓN"
             color="text-cyan-600"
-            total={hasLiveData ? totalImportInvoices.toLocaleString() : '2,840'}
+            total={hasLiveData ? totalImportInvoices.toLocaleString() : '0'}
             sub="505 — facturas comerciales"
             unit="fact."
-            breakdown={hasLiveData ? importInvoicesByKey : [
-              {clave:'IN', count:2100},{clave:'A1', count:620},{clave:'AF', count:120}
-            ]}
+            breakdown={hasLiveData ? importInvoicesByKey : []}
           />
           <CountByClaveCard
             title="FACTURAS EXPORTACIÓN"
             color="text-violet-600"
-            total={hasLiveData ? totalExportInvoices.toLocaleString() : '1,036'}
+            total={hasLiveData ? totalExportInvoices.toLocaleString() : '0'}
             sub="505 (comerciales) + 507-ED (CFDIs)"
             unit="fact."
-            breakdown={hasLiveData ? exportInvoicesByKey : [
-              {clave:'RT', count:1036}
-            ]}
+            breakdown={hasLiveData ? exportInvoicesByKey : []}
           />
         </div>
         {!hasLiveData && (
@@ -964,14 +891,15 @@ export const Dashboard = () => {
           </ChartCard>
           <ChartCard title={t('dash.chart_contrib')} subtitle={hasLiveData ? 'DataStage — 510 contribuciones (IGI/IVA/DTA) cruce 501×510' : t('dash.chart_contrib_sub_static')}>
             <BarChart data={dutData}>
-              <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...CS.axis}/><YAxis {...CS.axis}/>
-              <Tooltip {...CS.tt}/><Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
-              <Bar dataKey="IGI Import"  fill="#ef4444" radius={[4,4,0,0]}/>
-              <Bar dataKey="IVA Import"  fill="#f97316" radius={[4,4,0,0]}/>
-              <Bar dataKey="DTA Import"  fill="#f59e0b" radius={[4,4,0,0]}/>
-              <Bar dataKey="IGI Export"  fill="#3b82f6" radius={[4,4,0,0]}/>
-              <Bar dataKey="IVA Export"  fill="#06b6d4" radius={[4,4,0,0]}/>
-              <Bar dataKey="DTA Export"  fill="#0ea5e9" radius={[4,4,0,0]}/>
+              <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...CS.axis}/><YAxis {...CS.axis} tickFormatter={(val: number) => val.toLocaleString('en-US')}/>
+              <Tooltip {...CS.tt} formatter={(val: number) => val.toLocaleString('en-US')}/><Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
+              <Bar dataKey="IGI Import" name="IGI Imp (Efectivo)" fill="#ef4444" radius={[4,4,0,0]}/>
+              <Bar dataKey="IVA Import Efectivo" name="IVA Imp (Efectivo)" fill="#ea580c" radius={[4,4,0,0]}/>
+              <Bar dataKey="IVA Import Fianza" name="IVA Imp (Fianza)" fill="#fb923c" radius={[4,4,0,0]}/>
+              <Bar dataKey="DTA Import" name="DTA Imp (Efectivo)" fill="#f59e0b" radius={[4,4,0,0]}/>
+              <Bar dataKey="IGI Export" name="IGI Exp" fill="#3b82f6" radius={[4,4,0,0]}/>
+              <Bar dataKey="IVA Export" name="IVA Exp" fill="#06b6d4" radius={[4,4,0,0]}/>
+              <Bar dataKey="DTA Export" name="DTA Exp" fill="#0ea5e9" radius={[4,4,0,0]}/>
             </BarChart>
           </ChartCard>
         </div>
@@ -993,35 +921,6 @@ export const Dashboard = () => {
             title={t('dash.chart_rev')}
             subtitle={hasLiveRevisions ? 'DataStage — _Sel.asc (semáforo) + _Inci.asc (incidencias)' : t('dash.chart_rev_sub')}
           >
-            {/* Uploader de archivos _Sel.asc / _Inci.asc */}
-            <input
-              ref={revInputRef}
-              type="file"
-              className="hidden"
-              multiple
-              accept=".asc,.zip"
-              onChange={e => handleRevisionFiles(e.target.files)}
-            />
-            <div className="flex items-center justify-between mb-3 -mt-2">
-              <div className="flex items-center gap-2">
-                {hasLiveRevisions ? (
-                  <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">
-                    <CheckCircle2 size={11}/> Datos cargados
-                  </span>
-                ) : (
-                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">PPT estático</span>
-                )}
-              </div>
-              <button
-                onClick={() => revInputRef.current?.click()}
-                disabled={loadingRevisions}
-                className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-slate-100 hover:bg-indigo-100 hover:text-indigo-700 text-slate-600 rounded-lg transition-colors font-medium"
-                title="Cargar _Sel.asc, _Inci.asc o ZIP de solicitudes"
-              >
-                {loadingRevisions ? <Loader2 size={12} className="animate-spin"/> : <Upload size={12}/>}
-                {loadingRevisions ? 'Procesando...' : 'Cargar revisiones'}
-              </button>
-            </div>
             <ComposedChart data={revisionsData}>
               <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...CS.axis}/><YAxis {...CS.axis}/>
               <Tooltip {...CS.tt}/><Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
@@ -1037,6 +936,8 @@ export const Dashboard = () => {
         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{t('dash.sec_specialists')}</h2>
         <SpecialistsPerformanceTable customs={customs}/>
       </section>
+
+      <ProcessingModal state={procState} onClose={() => setProcState(INITIAL_PROCESSING_STATE)} />
     </div>
   );
 };

@@ -47,8 +47,10 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
   const tempItems: DSItemData[] = [];
   const tempCoves: DSCoveData[] = [];
   const tempDigitalized: DSDigitalizedData[] = [];
-  // Taxes (510): { key: pedimentoId, clave, importe }
-  const tempTaxes: { key: string; clave: string; importe: number }[] = [];
+  // Taxes (510): { key: pedimentoId, clave, importe, formaPago }
+  const tempTaxes: { key: string; clave: string; importe: number; formaPago: string }[] = [];
+  // Taxes Item Level (557): { key: pedimentoId, clave, importe, formaPago }
+  const tempTaxesPartida: { key: string; clave: string; importe: number; formaPago: string }[] = [];
   // ED documents from 507 (ClaveCaso='ED' = CFDI declarados)
   const tempEdCounts = new Map<string, number>(); // pedimentoId -> count
   // Containers from 504 (NumContenedor por pedimento)
@@ -202,12 +204,26 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
           lines.forEach(line => {
             if (line.startsWith('Patente|') || line.startsWith('NUM_PED|')) return;
             const cols = line.split('|');
-            if (cols.length < 7) return;
+            if (cols.length < 6) return;
             const key = `${(cols[0]||'').trim()}-${(cols[1]||'').trim()}-${(cols[2]||'').trim()}`;
             const rawClave = (cols[3] || '').trim().toUpperCase();
-            // Importe: col 7 in most versions, col 6 in some older M3 exports
-            const importe = parseFloatSafe(cols[7]) || parseFloatSafe(cols[6]);
-            tempTaxes.push({ key, clave: rawClave, importe });
+            const formaPago = (cols[4] || '').trim();
+            // Importe: col 5 is standard SAT, but fallback to 7 or 6 for older custom M3 exports
+            const importe = parseFloatSafe(cols[5]) || parseFloatSafe(cols[7]) || parseFloatSafe(cols[6]);
+            tempTaxes.push({ key, clave: rawClave, importe, formaPago });
+          });
+        } else if (fileCode === '557') {
+          // 557: Contribuciones a Nivel Partida
+          // Cols: Patente|Pedimento|Seccion|Fraccion|Secuencia|Clave|FormaPago|Importe|FechaPago
+          lines.forEach(line => {
+            if (line.startsWith('Patente|') || line.startsWith('NUM_PED|')) return;
+            const cols = line.split('|');
+            if (cols.length < 8) return;
+            const key = `${(cols[0]||'').trim()}-${(cols[1]||'').trim()}-${(cols[2]||'').trim()}`;
+            const rawClave = (cols[5] || '').trim().toUpperCase();
+            const formaPago = (cols[6] || '').trim();
+            const importe = parseFloatSafe(cols[7]);
+            tempTaxesPartida.push({ key, clave: rawClave, importe, formaPago });
           });
         } else if (fileCode === '506') {
           // 506: Fechas del pedimento (ANTES mappeado erróneamente como COVE — BUG CORREGIDO)
@@ -420,22 +436,44 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
   // Link taxes: accumulate IVA, IGI, DTA, CNT per pedimento
   // Extended clave matching: SAT M3 uses variants across versions
   tempTaxes.forEach(tax => {
+    // Only accumulate taxes that were actually paid in Cash (FormaPago 0) or Fianza (FormaPago 22)
+    if (tax.formaPago !== '0' && tax.formaPago !== '22') return;
+
     const record = pedimentoMap.get(tax.key);
     if (!record) return;
     const amt = tax.importe;
     const c = tax.clave;
-    // IGI variants: IGI, DBA (derecho de barco/aeronave), IGI1, IGI2
-    if (c === 'IGI' || c === 'DBA' || c.startsWith('IGI')) {
+    // Extended clave matching: SAT M3 uses variants across versions including numeric
+    // 6=IGI, 15=PRV, 1=DTA, 23=IVA/PRV, 3=IVA, 2=CNT
+    // IGI variants: IGI, DBA (derecho de barco/aeronave), IGI1, IGI2, 6
+    if (c === 'IGI' || c === 'DBA' || c.startsWith('IGI') || c === '6') {
       record.igiTotal = (record.igiTotal || 0) + amt;
-    // IVA variants: IVA, IVA16, PRV (provisional), RIVA (IVA retención), PIVA
-    } else if (c === 'IVA' || c === 'PRV' || c === 'IVA16' || c === 'RIVA' || c === 'PIVA' || c.startsWith('IVA')) {
+    // IVA & PRV variants: IVA, PRV, IVA16, RIVA, PIVA, 3 (IVA), 15 (PRV), 23 (IVA/PRV)
+    } else if (c === 'IVA' || c === 'PRV' || c === 'IVA16' || c === 'RIVA' || c === 'PIVA' || c.startsWith('IVA') || c === '3' || c === '15' || c === '23') {
       record.ivaPrvTotal = (record.ivaPrvTotal || 0) + amt;
-    // DTA variants: DTA, DAN (derecho de almacenaje/no-almacenaje)
-    } else if (c === 'DTA' || c === 'DAN') {
+    // DTA variants: DTA, DAN (derecho de almacenaje/no-almacenaje), 1
+    } else if (c === 'DTA' || c === 'DAN' || c === '1') {
       record.dtaTotal = (record.dtaTotal || 0) + amt;
-    // CNT = Cuota Compensatoria
-    } else if (c === 'CNT') {
+    // CNT = Cuota Compensatoria, 2 (NOT 3!)
+    } else if (c === 'CNT' || c === '2') {
       record.cntTotal = (record.cntTotal || 0) + amt;
+    }
+  });
+
+  // Fallback for missing IGI: Many custom broker systems omit IGI from 510.asc if it is not paid in cash,
+  // but they DO declare it at the item level in 557.asc. To prevent zero IGI, sum from 557 if 510 has none.
+  const uniqueKeys = Array.from(new Set(tempTaxesPartida.map(t => t.key)));
+  uniqueKeys.forEach(key => {
+    const record = pedimentoMap.get(key);
+    if (!record) return;
+    if (!record.igiTotal) {
+      const myTaxesPartida = tempTaxesPartida.filter(t => t.key === key && (t.formaPago === '0' || t.formaPago === '22'));
+      myTaxesPartida.forEach(tax => {
+        const c = tax.clave;
+        if (c === 'IGI' || c === 'DBA' || c.startsWith('IGI') || c === '6') {
+          record.igiTotal = (record.igiTotal || 0) + tax.importe;
+        }
+      });
     }
   });
 
@@ -443,26 +481,31 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
   // Función robusta de fecha — maneja ISO (YYYY-MM-DD), DD/MM/YYYY, YYYYMMDD
   const parseSATDate = (s: string): number => {
     if (!s || !s.trim()) return -1;
-    const raw = s.trim();
-    // ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+    let raw = s.trim();
+    // Replace space with T for valid ISO parsing (YYYY-MM-DD HH:mm:ss -> YYYY-MM-DDTHH:mm:ss)
+    raw = raw.replace(' ', 'T');
+    
     let d = new Date(raw.length > 10 ? raw : raw + 'T12:00:00');
     if (!isNaN(d.getTime())) return d.getMonth();
-    // DD/MM/YYYY
-    const slash = raw.split('/');
+    
+    // DD/MM/YYYY or DD/MM/YYYYTHH:mm:ss
+    let datePart = raw.split('T')[0];
+    const slash = datePart.split('/');
     if (slash.length === 3) {
       d = new Date(`${slash[2]}-${slash[1].padStart(2,'0')}-${slash[0].padStart(2,'0')}T12:00:00`);
       if (!isNaN(d.getTime())) return d.getMonth();
     }
+    
     // YYYYMMDD (8 digits)
-    if (/^\d{8}$/.test(raw)) {
-      d = new Date(`${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}T12:00:00`);
+    if (/^\d{8}$/.test(datePart)) {
+      d = new Date(`${datePart.slice(0,4)}-${datePart.slice(4,6)}-${datePart.slice(6,8)}T12:00:00`);
       if (!isNaN(d.getTime())) return d.getMonth();
     }
     return -1;
   };
 
   const monthlyDutiesAccum = Array.from({length: 12}, () => ({
-    igi_imp: 0, iva_imp: 0, dta_imp: 0,
+    igi_imp: 0, iva_imp_efectivo: 0, iva_imp_fianza: 0, dta_imp: 0,
     igi_exp: 0, iva_exp: 0, dta_exp: 0,
   }));
 
@@ -479,13 +522,19 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
     const acc = monthlyDutiesAccum[month];
     const isExp = record.tipoOperacion === 'EXP';
     if (isExp) {
-      if (tax.clave === 'IGI' || tax.clave === 'DBA') acc.igi_exp += tax.importe;
-      else if (tax.clave === 'IVA' || tax.clave === 'PRV') acc.iva_exp += tax.importe;
-      else if (tax.clave === 'DTA') acc.dta_exp += tax.importe;
+      if (tax.formaPago === '0') {
+        if (tax.clave === 'IGI' || tax.clave === 'DBA' || tax.clave === '6') acc.igi_exp += tax.importe;
+        else if (tax.clave === 'IVA' || tax.clave === 'PRV' || tax.clave === '15' || tax.clave === '23') acc.iva_exp += tax.importe;
+        else if (tax.clave === 'DTA' || tax.clave === 'DAN' || tax.clave === '1') acc.dta_exp += tax.importe;
+      }
     } else {
-      if (tax.clave === 'IGI' || tax.clave === 'DBA') acc.igi_imp += tax.importe;
-      else if (tax.clave === 'IVA' || tax.clave === 'PRV') acc.iva_imp += tax.importe;
-      else if (tax.clave === 'DTA') acc.dta_imp += tax.importe;
+      if (tax.formaPago === '0') {
+        if (tax.clave === 'IGI' || tax.clave === 'DBA' || tax.clave === '6') acc.igi_imp += tax.importe;
+        else if (tax.clave === 'IVA' || tax.clave === 'PRV' || tax.clave === '15' || tax.clave === '23') acc.iva_imp_efectivo += tax.importe;
+        else if (tax.clave === 'DTA' || tax.clave === 'DAN' || tax.clave === '1') acc.dta_imp += tax.importe;
+      } else if (tax.formaPago === '22') {
+        if (tax.clave === 'IVA' || tax.clave === 'PRV' || tax.clave === '15' || tax.clave === '23') acc.iva_imp_fianza += tax.importe;
+      }
     }
   });
 
@@ -503,7 +552,9 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
   const monthlyDuties = MONTHS_SHORT.map((name, i) => ({
     name,
     'IGI Import': parseFloat(monthlyDutiesAccum[i].igi_imp.toFixed(1)),
-    'IVA Import': parseFloat(monthlyDutiesAccum[i].iva_imp.toFixed(1)),
+    'IVA Import': parseFloat((monthlyDutiesAccum[i].iva_imp_efectivo + monthlyDutiesAccum[i].iva_imp_fianza).toFixed(1)),
+    'IVA Import Efectivo': parseFloat(monthlyDutiesAccum[i].iva_imp_efectivo.toFixed(1)),
+    'IVA Import Fianza': parseFloat(monthlyDutiesAccum[i].iva_imp_fianza.toFixed(1)),
     'DTA Import': parseFloat(monthlyDutiesAccum[i].dta_imp.toFixed(1)),
     'IGI Export': parseFloat(monthlyDutiesAccum[i].igi_exp.toFixed(1)),
     'IVA Export': parseFloat(monthlyDutiesAccum[i].iva_exp.toFixed(1)),

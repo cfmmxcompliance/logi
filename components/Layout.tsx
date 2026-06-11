@@ -144,6 +144,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
             const fecha = (a as any).fecha || '';
             const inRange = fecha >= rangeStart && fecha <= rangeEnd;
+            const isRechazado = String((a as any).dockArribo || '').trim().toUpperCase() === 'RECHAZADO';
+            const isNoShow = String((a as any).dockArribo || '').trim().toUpperCase() === 'NO SHOW';
+            const hasUSDB1 = String((a as any).observaciones || '').toUpperCase().includes('USDB1');
+            if (isRechazado || isNoShow || hasUSDB1) return false;
+
             const hasLayout = !!(a as any).layoutUrl || !!(a as any).layoutUploadedAt;
             const hasCCP = !!(a as any).ccpUrl || !!(a as any).ccpUploadedAt;
             const isClosed = liberaciones.some(l => (l as any).asignacionCajaId === a.id && !!(l as any).selloValidado);
@@ -154,6 +159,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           const badgeAdmin = asignaciones.filter(a => {
             const fecha = (a as any).fecha || '';
             const inRange = fecha >= rangeStart && fecha <= rangeEnd;
+            const isRechazado = String((a as any).dockArribo || '').trim().toUpperCase() === 'RECHAZADO';
+            const isNoShow = String((a as any).dockArribo || '').trim().toUpperCase() === 'NO SHOW';
+            const hasUSDB1 = String((a as any).observaciones || '').toUpperCase().includes('USDB1');
+            if (isRechazado || isNoShow || hasUSDB1) return false;
+
             const hasCCP = !!(a as any).ccpUrl || !!(a as any).ccpUploadedAt;
             const isClosed = liberaciones.some(l => (l as any).asignacionCajaId === a.id && !!(l as any).selloValidado);
             return inRange && hasCCP && !isClosed;
@@ -234,6 +244,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {user?.role === UserRole.ADMIN && (
             <>
               <SidebarItem to="/activos-fijos" icon={Monitor} label={sidebarOpen ? "Activo Fijo" : ""} />
+              <SidebarItem to="/r8va" icon={FileCheck} label={sidebarOpen ? "Control R8va" : ""} />
               <SidebarItem to="/data-stage" icon={Scale} label={sidebarOpen ? "Data Stage (SAT)" : ""} />
               <SidebarItem to="/catalogo-sat" icon={BookOpen} label={sidebarOpen ? "Catálogo SAT" : ""} />
               <SidebarItem to="/vucem" icon={Globe} label={sidebarOpen ? "VUCEM" : ""} />

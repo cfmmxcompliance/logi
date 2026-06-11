@@ -196,6 +196,8 @@ export const HandheldArribo = () => {
                   {DOCK_OPTIONS.map(d => (
                     <option key={d} value={d}>{d}</option>
                   ))}
+                  <option value="RECHAZADO" className="text-red-400 font-bold">RECHAZADO</option>
+                  <option value="NO SHOW" className="text-orange-400 font-bold">NO SHOW</option>
                 </select>
 
                 {/* Comment Textbox */}

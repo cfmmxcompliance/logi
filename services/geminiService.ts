@@ -1607,5 +1607,62 @@ export const geminiService = {
       console.error("Licencia Extraction Error:", e);
       return {};
     }
+  },
+
+  async extractR8Document(base64Data: string, mimeType: string = 'application/pdf'): Promise<any[]> {
+    try {
+      const ai = getClient();
+      const prompt = `
+        Eres un experto en aduanas y comercio exterior analizando un Oficio de Regla 8va emitido por la Secretaría de Economía de México.
+        Analiza este documento y extrae la siguiente información estructurada como un ARRAY de objetos JSON (un objeto por cada fracción arancelaria encontrada).
+
+        Por cada fracción, el objeto debe tener la siguiente estructura exacta:
+        {
+          "folio": "El folio del oficio, ej. 20251931...",
+          "validFrom": "Fecha de 'Permiso válido desde' en formato YYYY-MM-DD. Si no hay, usa la fecha de emisión.",
+          "validTo": "Fecha de 'Permiso válido hasta' (vigencia) en formato YYYY-MM-DD",
+          "partNumber": "Número de parte del artículo/producto. A veces viene junto o dentro de la descripción.",
+          "description": "Descripción de las mercancías autorizadas (corta y precisa)",
+          "originalTariffFraction": "La Fracción Arancelaria de la mercancía (ej. 3902.10.99)",
+          "fraccionReglaOctava": "Fracción de Regla 8va que viene en la primera página (ej. 9802.00.19). Es OBLIGATORIO que busques esta fracción al inicio del documento y la pongas aquí.",
+          "totalAuthorized": "Cantidad o saldo autorizado (numero entero o flotante). Si no hay cantidad, pon 1000 por defecto.",
+          "unidadMedida": "Unidad de medida autorizada (ej. Kilogramo, Pieza, etc.)",
+          "valorDolares": "Monto en dólares autorizado (generalmente etiquetado como 'Valor en dólares de EUA' o 'Total'). Extrae el número (ej. 452042000).",
+          "permisoPrevio": "Número de permiso previo, generalmente antecedido por el texto 'permiso previo número' en la descripción general. Extrae la cadena alfanumérica exacta (ej. 1931R826022347)."
+        }
+
+        REGLAS IMPORTANTES:
+        1. Tu tarea principal es extraer CADA PARTIDA de la tabla "ANEXO DE MERCANCÍAS AUTORIZADAS". NO extraigas la tabla de resumen como un artículo independiente.
+        2. EXTRACCIÓN GLOBAL: Revisa la primera página o tabla de resumen. Ahí encontrarás una 'Fracción Arancelaria' (ej. 9802.00.19) y un 'Valor en dólares de EUA' (ej. $ 452,042,000.000). 
+        3. COPIA GLOBAL: DEBES copiar esa misma 'Fracción Arancelaria' (9802...) en el campo "fraccionReglaOctava" de TODOS los objetos que devuelvas.
+        4. COPIA GLOBAL: DEBES copiar ese mismo 'Valor en dólares de EUA' en el campo "valorDolares" de TODOS los objetos que devuelvas. Límpialo quitando el símbolo $ y comas.
+        5. Devuelve ÚNICAMENTE un array de objetos JSON válido. No devuelvas markdown.
+        6. NO devuelvas un objeto vacío o con "Sin R8". Busca meticulosamente el 9802.00.19 y el monto en dólares y ponlos en cada objeto.
+        7. IMPORTANTE: Si en una celda de descripción de la tabla vienen múltiples artículos o descripciones separados por comas (ej. "TAPON PARA TANQUE, TAPON DE GASOLINA, TAPON DE METAL"), DEBES dividir esa cadena y crear un OBJETO JSON INDEPENDIENTE por CADA elemento separado por comas. Para cada uno de esos objetos independientes, copia exactamente los mismos valores de cantidad (totalAuthorized), fracción original, unidadMedida, folio, etc. pero pon la descripción individual correspondiente.
+        8. EXCEPCIÓN AL SEPARAR: Si al separar por comas, algún elemento es puramente numérico de 10 dígitos (ej. 8708292300 o 8309909901), IGNÓRALO por completo. NO crees una línea nueva para él, NO lo pongas como descripción y NO lo pongas como número de parte (partNumber). Es la fracción NICO, no es un número de parte. Si el documento no especifica explícitamente un número de parte para las mercancías, deja el campo partNumber como "PENDIENTE".
+      `;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: {
+          parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
+        },
+        config: {
+          responseMimeType: 'application/json',
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+          ] as any
+        }
+      });
+      
+      const text = response.text?.trim() || '[]';
+      return JSON.parse(text);
+    } catch (e) {
+      console.error("R8 Extraction Error:", e);
+      return [];
+    }
   }
 };

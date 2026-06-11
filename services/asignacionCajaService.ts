@@ -83,7 +83,33 @@ export const asignacionCajaService = {
   },
 
   async deleteAsignacion(id: string): Promise<void> {
-    const docRef = doc(db, COLLECTION_NAME, id);
-    await deleteDoc(docRef);
+    try {
+      const { writeBatch } = await import('firebase/firestore');
+      const batch = writeBatch(db);
+
+      // 1. Mark associated seals for deletion
+      const sellosQ = query(collection(db, 'sellos'), where('asignacionCajaId', '==', id));
+      const sellosSnap = await getDocs(sellosQ);
+      sellosSnap.forEach(d => batch.delete(doc(db, 'sellos', d.id)));
+
+      // 2. Mark associated liberacion for deletion
+      const libQ = query(collection(db, 'liberaciones'), where('asignacionCajaId', '==', id));
+      const libSnap = await getDocs(libQ);
+      libSnap.forEach(d => batch.delete(doc(db, 'liberaciones', d.id)));
+
+      // 3. Mark associated liberacion_dock for deletion
+      const dockQ = query(collection(db, 'liberaciones_dock'), where('asignacionCajaId', '==', id));
+      const dockSnap = await getDocs(dockQ);
+      dockSnap.forEach(d => batch.delete(doc(db, 'liberaciones_dock', d.id)));
+
+      // 4. Mark the main asignacion for deletion
+      batch.delete(doc(db, COLLECTION_NAME, id));
+
+      // 5. Commit atomic batch
+      await batch.commit();
+    } catch (err) {
+      console.error('Error in batch delete for asignacion:', err);
+      throw err;
+    }
   }
 };

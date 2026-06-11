@@ -17,7 +17,8 @@ const COLS = {
   XML_CI: 'xml_ci',
   SPARE_PARTS: 'spare_parts_tracking',
   FIANZAS: 'fianzas',
-  FIXED_ASSETS: 'fixed_assets'
+  FIXED_ASSETS: 'fixed_assets',
+  RULE_8THS: 'rule_8ths'
 };
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
@@ -40,7 +41,7 @@ let dbState: StorageState = {
   customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
   logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
   dailyChanges: [], dailyReports: [], users: [],
-  cfdiInvoices: [], xmlCI: [], fianzas: [], fixedAssets: []
+  cfdiInvoices: [], xmlCI: [], fianzas: [], fixedAssets: [], rule8ths: []
 };
 
 let listeners: (() => void)[] = [];
@@ -432,6 +433,13 @@ export const storageService = {
       }, e => console.error(e));
       unsubscribers.push(unsubFixedAssets);
 
+      const unsubRule8ths = onSnapshot(collection(db, COLS.RULE_8THS), snap => {
+        dbState.rule8ths = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+        notifyListeners();
+        saveLocal();
+      }, e => console.error(e));
+      unsubscribers.push(unsubRule8ths);
+
       const qChanges = query(collection(db, COLS.DAILY_CHANGES), orderBy('timestamp', 'desc'), limit(150));
       unsubscribers.push(onSnapshot(qChanges, (snap) => {
         dbState.dailyChanges = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChange));
@@ -475,7 +483,7 @@ export const storageService = {
         }
 
         // (D) Skip items handled by specialized listeners above
-        const queryRef = (key === 'DAILY_CHANGES' || key === 'DAILY_REPORTS' || key === 'LOGS' || key === 'FIXED_ASSETS' || key === 'FIANZAS')
+        const queryRef = (key === 'DAILY_CHANGES' || key === 'DAILY_REPORTS' || key === 'LOGS' || key === 'FIXED_ASSETS' || key === 'FIANZAS' || key === 'RULE_8THS')
           ? null // Handled above queries
           : collection(db, colName);
 
@@ -862,6 +870,57 @@ export const storageService = {
   },
 
   getFixedAssets: () => dbState.fixedAssets || [],
+  
+  getRule8ths: () => dbState.rule8ths || [],
+  addRule8th: async (r8: any) => {
+    const id = r8.id || generateId();
+    const payload = { ...r8, id, createdAt: new Date().toISOString() };
+    if (db) {
+        await setDoc(doc(db, COLS.RULE_8THS, id), sanitizeForFirestore(payload));
+    } else {
+        console.warn("Offline mode: Saving rule 8th locally only.");
+    }
+    if (!dbState.rule8ths) dbState.rule8ths = [];
+    dbState.rule8ths.push(payload);
+    notifyListeners();
+    saveLocal();
+  },
+  updateRule8th: async (id: string, r8: any) => {
+    const payload = { ...r8, updatedAt: new Date().toISOString() };
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await setDoc(doc(db, COLS.RULE_8THS, id), sanitizeForFirestore(payload), { merge: true });
+    if (!dbState.rule8ths) dbState.rule8ths = [];
+    const idx = dbState.rule8ths.findIndex((r: any) => r.id === id);
+    if (idx !== -1) dbState.rule8ths[idx] = { ...dbState.rule8ths[idx], ...payload };
+    notifyListeners();
+    saveLocal();
+  },
+  deleteRule8th: async (id: string) => {
+    if (db) {
+        await deleteDoc(doc(db, COLS.RULE_8THS, id));
+    } else {
+        console.warn("Offline mode: Deleting rule 8th locally only.");
+    }
+    if (!dbState.rule8ths) dbState.rule8ths = [];
+    dbState.rule8ths = dbState.rule8ths.filter((r: any) => r.id !== id);
+    notifyListeners();
+    saveLocal();
+  },
+  clearAllRule8ths: async () => {
+    if (db) {
+        try {
+            const snap = await getDocs(collection(db, COLS.RULE_8THS));
+            const b = writeBatch(db);
+            snap.docs.forEach(d => b.delete(d.ref));
+            await b.commit();
+        } catch(e) {
+            console.error("Error clearing rule8ths from cloud", e);
+        }
+    }
+    dbState.rule8ths = [];
+    notifyListeners();
+    saveLocal();
+  },
   
   // Lightweight init for Handheld AF role
   initFixedAssetsOnly: () => {

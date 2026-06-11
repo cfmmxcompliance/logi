@@ -59,6 +59,7 @@ service cloud.firestore {
     match /ventanasCarga53/{docId} { allow read, write: if true; }
     match /reservasVentanasCarga53/{docId} { allow read, write: if true; }
     match /fixed_assets/{docId} { allow read, write: if true; }
+    match /rule_8ths/{docId} { allow read, write: if true; }
     match /vigilancia/{docId} { allow read, write: if true; }
     match /wms_vehicles/{docId} { allow read, write: if true; }
     match /wms_transfers/{docId} { allow read, write: if true; }

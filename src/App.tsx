@@ -69,6 +69,7 @@ const DemandaCajas53       = React.lazy(() => import('../pages/DemandaCajas53.ts
 const ReservaVentanas53    = React.lazy(() => import('../pages/ReservaVentanas53.tsx').then(m => ({ default: m.ReservaVentanas53 })));
 const WMSControl           = React.lazy(() => import('../pages/wms/WMSControl.tsx').then(m => ({ default: m.WMSControl })));
 const ActivosFijos         = React.lazy(() => import('../pages/ActivosFijos.tsx').then(m => ({ default: m.ActivosFijos })));
+const ReglaOctava          = React.lazy(() => import('../pages/ReglaOctava.tsx').then(m => ({ default: m.ReglaOctava })));
 // ─── Fallback spinner while lazy chunk loads ─────────────────────────────────
 const PageSkeleton = () => (
     <div className="flex-1 flex items-center justify-center min-h-[60vh]">
@@ -409,6 +410,7 @@ const AppContent = () => {
             <Route path="/daily-van-assignment" element={<ProtectedRoute><DailyVanAssignment /></ProtectedRoute>} />
             <Route path="/wms-control" element={<ProtectedRoute><WMSControl /></ProtectedRoute>} />
             <Route path="/activos-fijos" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]}><ActivosFijos /></ProtectedRoute>} />
+            <Route path="/r8va" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER]}><ReglaOctava /></ProtectedRoute>} />
 
             {/* Módulos Demanda y Reserva de Cajas 53' */}
             <Route path="/admin-productos-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.EXPO_ANALIST]}><AdminProductos53 /></ProtectedRoute>} />

@@ -236,14 +236,22 @@ export const AsignacionesDiarias: React.FC = () => {
     if (searchTerm) {
         const terms = searchTerm.toLowerCase().split(/[\s,]+/).filter(t => t);
         result = result.filter(a => 
-            terms.some(term => 
+            terms.every(term => 
+                (a.numeroOperacion || '').toLowerCase().includes(term) ||
                 (a.numeroCaja || '').toLowerCase().includes(term) ||
                 (a.subLinea || '').toLowerCase().includes(term) ||
                 (a.placasCaja || '').toLowerCase().includes(term) ||
                 (a.driverId || '').toLowerCase().includes(term) ||
                 (a.nombreDriver || '').toLowerCase().includes(term) ||
                 (a.placasTracto || '').toLowerCase().includes(term) ||
-                (a.carrierCodigo || '').toLowerCase().includes(term)
+                (a.carrierCodigo || '').toLowerCase().includes(term) ||
+                (a.modeloAsignado || '').toLowerCase().includes(term) ||
+                (a.observaciones || '').toLowerCase().includes(term) ||
+                (a.fecha || '').toLowerCase().includes(term) ||
+                ((a as any).arribo || '').toLowerCase().includes(term) ||
+                ((a as any).dockArribo || '').toLowerCase().includes(term) ||
+                ((transportLines.find(t => t.carrierCodigo === a.carrierCodigo))?.TransportLine || '').toLowerCase().includes(term) ||
+                ((liberaciones.find(l => l.asignacionCajaId === a.id))?.selloValidado || '').toLowerCase().includes(term)
             )
         );
     }
@@ -803,7 +811,7 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 font-medium min-w-[80px] text-violet-700 bg-violet-50/40 whitespace-nowrap">TIPO</th>
               <th className="p-4 font-medium">{renderColumnHeader(t('col.placascaja'), 'placasCaja')}</th>
               <th className="p-4 font-medium min-w-[160px] text-blue-600 uppercase text-xs">{renderColumnHeader(t('col.lineatransporte'), 'transportLineId')}</th>
-              <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.driverid'), 'driverId')}</th>
+              <th className="p-4 font-medium min-w-[140px] text-orange-600 uppercase text-xs">{renderColumnHeader('SCAC', 'carrierCodigo')}</th>
               <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.driver'), 'nombreDriver')}</th>
               <th className="p-4 font-medium">{renderColumnHeader(t('col.placastracto'), 'placasTracto')}</th>
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.modelo'), 'modeloAsignado')}</th>
@@ -828,20 +836,31 @@ export const AsignacionesDiarias: React.FC = () => {
               const isEven = index % 2 === 0;
               let rowColorClass = isEven ? 'bg-white hover:bg-slate-50' : 'bg-slate-50 hover:bg-slate-100';
 
-              // Urgency overlay (no-liberacion + overtime)
-              if (!hasLiberacion && a.fecha && a.horaAsignacion) {
-                  let timeStr = (a.horaAsignacion || '').toLowerCase().trim();
-                  let isPM = timeStr.includes('pm') || timeStr.includes('p.m.');
-                  let isAM = timeStr.includes('am') || timeStr.includes('a.m.');
-                  let [hours, minutes] = timeStr.replace(/[a-z\s.]/g, '').split(':');
-                  let h = parseInt(hours || '0', 10);
-                  if (isPM && h < 12) h += 12;
-                  if (isAM && h === 12) h = 0;
-                  const asigDate = new Date(`${a.fecha}T${String(h).padStart(2, '0')}:${minutes || '00'}:00`);
-                  if (!isNaN(asigDate.getTime())) {
-                      const diffHours = (new Date().getTime() - asigDate.getTime()) / (1000 * 60 * 60);
-                      if (diffHours > 4)  rowColorClass = 'bg-red-50 hover:bg-red-100 transition-colors';
-                      else if (diffHours > 2) rowColorClass = 'bg-amber-50 hover:bg-amber-100 transition-colors';
+              const isRechazado = String((a as any).dockArribo || '').trim().toUpperCase() === 'RECHAZADO';
+              const isNoShow = String((a as any).dockArribo || '').trim().toUpperCase() === 'NO SHOW';
+              const hasUSDB1 = String((a as any).observaciones || '').toUpperCase().includes('USDB1');
+              const hideDocs = isRechazado || isNoShow || hasUSDB1;
+
+              if (isRechazado) {
+                  rowColorClass = 'bg-yellow-100 hover:bg-yellow-200';
+              } else if (isNoShow) {
+                  rowColorClass = 'bg-orange-100 hover:bg-orange-200';
+              } else {
+                  // Urgency overlay (no-liberacion + overtime)
+                  if (!hasLiberacion && a.fecha && a.horaAsignacion) {
+                      let timeStr = (a.horaAsignacion || '').toLowerCase().trim();
+                      let isPM = timeStr.includes('pm') || timeStr.includes('p.m.');
+                      let isAM = timeStr.includes('am') || timeStr.includes('a.m.');
+                      let [hours, minutes] = timeStr.replace(/[a-z\s.]/g, '').split(':');
+                      let h = parseInt(hours || '0', 10);
+                      if (isPM && h < 12) h += 12;
+                      if (isAM && h === 12) h = 0;
+                      const asigDate = new Date(`${a.fecha}T${String(h).padStart(2, '0')}:${minutes || '00'}:00`);
+                      if (!isNaN(asigDate.getTime())) {
+                          const diffHours = (new Date().getTime() - asigDate.getTime()) / (1000 * 60 * 60);
+                          if (diffHours > 4)  rowColorClass = 'bg-red-50 hover:bg-red-100 transition-colors';
+                          else if (diffHours > 2) rowColorClass = 'bg-amber-50 hover:bg-amber-100 transition-colors';
+                      }
                   }
               }
 
@@ -855,10 +874,8 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 w-[130px] min-w-[130px] max-w-[130px] bg-inherit border-r border-slate-200 font-mono font-bold tracking-wide whitespace-nowrap sticky left-[50px] z-20">
                   {(() => {
                     // Logic to display barcode link if a stamp exists
-                    const selloRow = sellos.find(s =>
-                      s.asignacionCajaId === a.id ||
-                      (s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha)
-                    );
+                    const exactSello = sellos.find(s => s.asignacionCajaId === a.id);
+                    const selloRow = exactSello || sellos.find(s => s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha);
                     const selloValor = liberacion?.selloValidado || selloRow?.selloAsignado || '';
                     if (selloValor) {
                       return (
@@ -901,7 +918,7 @@ export const AsignacionesDiarias: React.FC = () => {
                     {transportLines.find(tl => tl.transportLineId === a.transportLineId)?.nombreSubLinea || a.transportLineId || '-'}
                 </td>
 
-                <td className="p-4 font-mono text-orange-600 font-medium whitespace-nowrap">{a.driverId}</td>
+                <td className="p-4 font-mono text-orange-600 font-medium whitespace-nowrap">{transportLines.find(tl => tl.transportLineId === a.transportLineId)?.TransportLine || '-'}</td>
                 <td className="p-4 font-medium text-slate-800 whitespace-nowrap">{a.nombreDriver}</td>
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium whitespace-nowrap">{a.placasTracto || '-'}</td>
                 <td className="p-4 font-medium text-slate-700 whitespace-nowrap">{a.modeloAsignado || '-'}</td>
@@ -934,7 +951,9 @@ export const AsignacionesDiarias: React.FC = () => {
 
                  {/* ── LAYOUT Excel ── (descarga forzada) */}
                  <td className="p-4 text-center bg-indigo-50/20 border-l border-indigo-100/50">
-                   {uploadingFor?.id === a.id && uploadingFor.field === 'layoutUrl' ? (
+                   {hideDocs ? (
+                     <span className="text-slate-400 font-bold">—</span>
+                   ) : uploadingFor?.id === a.id && uploadingFor.field === 'layoutUrl' ? (
                      <Loader2 size={18} className="animate-spin text-indigo-400 mx-auto" />
                    ) : a.layoutUrl ? (
                      <div className="flex flex-col items-center gap-0.5">
@@ -969,7 +988,9 @@ export const AsignacionesDiarias: React.FC = () => {
 
                  {/* ── CCP PDF ── */}
                  <td className="p-4 text-center bg-sky-50/20 border-l border-sky-100/50">
-                   {uploadingFor?.id === a.id && uploadingFor.field === 'ccpUrl' ? (
+                   {hideDocs ? (
+                     <span className="text-slate-400 font-bold">—</span>
+                   ) : uploadingFor?.id === a.id && uploadingFor.field === 'ccpUrl' ? (
                      <Loader2 size={18} className="animate-spin text-sky-400 mx-auto" />
                    ) : a.ccpUrl ? (
                      <div className="flex flex-col items-center gap-0.5">

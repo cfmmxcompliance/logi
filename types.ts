@@ -635,6 +635,33 @@ export interface AuditReport {
   discrepancies: AuditDiscrepancy[];
 }
 
+export interface Rule8th {
+  id?: string;
+  folio: string;
+  issueDate: string; // ISO string
+  expirationDate: string; // ISO string
+  partNumber: string;
+  description: string;
+  originalTariffFraction: string;
+  fraccionReglaOctava?: string;
+  unidadMedida?: string;
+  totalAuthorized: number;
+  valorDolares?: number;
+  valorDolaresEjercido?: number;
+  permisoPrevio?: string;
+  consumed: number;
+  balance: number;
+  masterdataMatch?: 'matched' | 'mismatched' | 'not_found';
+  masterdataErrors?: string[];
+  masterdataPartNumber?: string;
+  masterdataDescription?: string;
+  masterdataR8?: string;
+  status: 'Vigente' | 'Vencida' | 'Agotada';
+  createdAt?: string;
+  updatedAt?: string;
+  files?: { name: string; url: string; type: string }[];
+}
+
 export interface StorageState {
   parts: RawMaterialPart[];
   shipments: Shipment[];

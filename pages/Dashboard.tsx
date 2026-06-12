@@ -3,7 +3,8 @@ import JSZip from 'jszip';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, ComposedChart, Line } from 'recharts';
 import { storageService } from '../services/storageService.ts';
 import { PedimentoRecord, UserRole } from '../types.ts';
-import { Database, Play, Anchor, Ship, Container, ClipboardCheck, TrendingUp, AlertTriangle, Loader2, RefreshCw, Calendar, X, Upload, CheckCircle2 } from 'lucide-react';
+import { Database, Play, Anchor, Ship, Container, ClipboardCheck, TrendingUp, AlertTriangle, Loader2, RefreshCw, Calendar, X, Upload, CheckCircle2, Presentation } from 'lucide-react';
+import { exportDashboardPpt } from '../utils/exportDashboardPpt.ts';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
@@ -214,6 +215,39 @@ export const Dashboard = () => {
   const { user, hasRole } = useAuth();
   const { t, language } = useLanguage();
   const isAdmin = hasRole([UserRole.ADMIN]);
+  const [exportingPpt, setExportingPpt] = useState(false);
+
+  const handleExportPpt = async () => {
+    setExportingPpt(true);
+    try {
+      await exportDashboardPpt({
+        t, rangeLabel,
+        hasLiveData,
+        totalImport,
+        totalExport,
+        totalImportUSD,
+        totalExportUSD,
+        totalImportContainers,
+        totalExportContainers,
+        totalImportInvoices,
+        totalExportInvoices,
+        containerVolumeData,
+        importVolumeData:   hasLiveData ? importVolumeData  : [],
+        exportVolumeData:   hasLiveData ? exportVolumeData  : [],
+        importValueData:    hasLiveData ? importValueData   : [],
+        exportValueData:    hasLiveData ? exportValueData   : [],
+        dutiesData:         hasLiveData ? dutiesData        : [],
+        specialOpsData,
+        revisionsData,
+        hasLiveSpecial,
+      });
+    } catch (e) {
+      console.error('PPT export error:', e);
+      alert('Error al generar el PPT. Revisa la consola.');
+    } finally {
+      setExportingPpt(false);
+    }
+  };
 
   const [vessels, setVessels] = useState(storageService.getVesselTracking());
   const [equipment, setEquipment] = useState(storageService.getEquipmentTracking());
@@ -791,6 +825,18 @@ export const Dashboard = () => {
           <span className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${storageService.isCloudMode()?'bg-orange-50 text-orange-700 border-orange-200':'bg-slate-100 text-slate-600 border-slate-200'}`}>
             <Database size={12}/>{storageService.isCloudMode()?t('dash.cloud_mode'):t('dash.local_mode')}
           </span>
+          {/* PPT Export Button */}
+          <button
+            onClick={handleExportPpt}
+            disabled={exportingPpt}
+            title="Exportar Dashboard a PowerPoint (.pptx)"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white rounded-full text-xs font-bold transition-colors shadow-sm"
+          >
+            {exportingPpt
+              ? <Loader2 size={13} className="animate-spin"/>
+              : <Presentation size={13}/>}
+            {exportingPpt ? 'Generando...' : 'Export PPT'}
+          </button>
         </div>
       </div>
 

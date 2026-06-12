@@ -431,11 +431,22 @@ export const Dashboard = () => {
 
 
   // Contenedores por mes (504 → 501)
-  const containerVolumeData = useMemo(() => MONTHS.map((name, i) => ({
-    name,
-    'Imp.': allRecords.filter(r => recordMonth(r)===i && isImport(r)).reduce((s,r) => s+(r.containerCount||0), 0),
-    'Exp.': allRecords.filter(r => recordMonth(r)===i && isExport(r)).reduce((s,r) => s+(r.containerCount||0), 0),
-  })), [allRecords]);
+  const containerVolumeData = useMemo(() => {
+    // Calcular el año de cada mes desde los registros reales
+    const yearByMonth: Record<number, number> = {};
+    allRecords.forEach(r => {
+      const m = recordMonth(r);
+      const y = recordYear(r);
+      if (m >= 0 && m <= 11 && y > 2000) yearByMonth[m] = y;
+    });
+    const filterYear = startDate ? new Date(startDate + 'T12:00:00').getFullYear() : curYear;
+    return MONTHS.map((name, i) => ({
+      name,
+      year: yearByMonth[i] || filterYear,
+      'Imp.': allRecords.filter(r => recordMonth(r)===i && isImport(r)).reduce((s,r) => s+(r.containerCount||0), 0),
+      'Exp.': allRecords.filter(r => recordMonth(r)===i && isExport(r)).reduce((s,r) => s+(r.containerCount||0), 0),
+    }));
+  }, [allRecords, startDate, curYear]);
 
   // Always-static charts (no field in DataStage for these)
   const gidSavingsData: any[] = [];
@@ -808,7 +819,14 @@ export const Dashboard = () => {
         <ChartCard title="CONTENEDORES POR MES" subtitle={hasLiveData ? 'DataStage — 504 cruzado con 501 (IMP/EXP)' : 'Sin datos — sube ZIPs en DataStage'}>
           <BarChart data={containerVolumeData}>
             <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...CS.axis}/><YAxis {...CS.axis} allowDecimals={false}/>
-            <Tooltip {...CS.tt}/><Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
+            <Tooltip
+              contentStyle={CS.tt.contentStyle}
+              labelFormatter={(label, payload) => {
+                const yr = payload?.[0]?.payload?.year;
+                return yr ? `${label} ${yr}` : label;
+              }}
+            />
+            <Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
             <Bar dataKey="Imp." fill="#0ea5e9" radius={[4,4,0,0]}/>
             <Bar dataKey="Exp." fill="#14b8a6" radius={[4,4,0,0]}/>
           </BarChart>

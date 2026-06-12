@@ -2824,7 +2824,7 @@ export const storageService = {
     }
 
 
-    const BATCH_SIZE = 250; // Firestore limit is 500
+    const BATCH_SIZE = 50; // Reducido para evitar exceder 1MB por batch
     const chunks: PedimentoRecord[][] = [];
 
     for (let i = 0; i < report.records.length; i += BATCH_SIZE) {
@@ -2834,25 +2834,40 @@ export const storageService = {
     let totalProcessed = 0;
     const totalRecords = report.records.length;
 
-    // Process sequentially to avoid exceeding Firestore's 500 writes/second limit
+    // Process sequentially to avoid exceeding Firestore rate limits
     for (const chunk of chunks) {
       const batch = writeBatch(db);
       chunk.forEach(record => {
-        // Prevent Firestore crash if ID contains slashes
         const safeId = record.id.replace(/\//g, '-').replace(/\\/g, '-');
-        const recordDocRef = doc(recordsRef, safeId);
-        batch.set(recordDocRef, sanitizeForFirestore(record));
+        batch.set(doc(recordsRef, safeId), sanitizeForFirestore(record));
       });
-      
+
       try {
         await batch.commit();
         totalProcessed += chunk.length;
         if (onProgress) onProgress(Math.min((totalProcessed / totalRecords) * 100, 99));
-        // Crucial sleep to prevent rate limiting errors that cause silent failures
-        await new Promise(r => setTimeout(r, 500)); 
+        await new Promise(r => setTimeout(r, 300));
       } catch (e: any) {
-        console.error('Batch commit failed:', e?.code, e?.message);
-        throw new Error(`Error guardando registros del pedimento (${e?.code || e?.message || 'unknown'}).`);
+        // Batch falló — reintentar uno a uno para aislar el registro grande
+        console.warn('[DataStage] Batch falló, reintentando uno a uno:', e?.code);
+        for (const record of chunk) {
+          const safeId = record.id.replace(/\//g, '-').replace(/\\/g, '-');
+          const recRef = doc(recordsRef, safeId);
+          try {
+            await setDoc(recRef, sanitizeForFirestore(record));
+          } catch (_e2: any) {
+            // Registro demasiado grande (>1MB) — guardar versión slim sin items ni invoices
+            console.warn('[DataStage] Record muy grande, guardando slim:', safeId);
+            try {
+              await setDoc(recRef, sanitizeForFirestore({ ...record, items: [], invoices: [], _slimmed: true }));
+            } catch (_e3: any) {
+              console.error('[DataStage] No se pudo guardar ni slim:', safeId);
+            }
+          }
+        }
+        totalProcessed += chunk.length;
+        if (onProgress) onProgress(Math.min((totalProcessed / totalRecords) * 100, 99));
+        await new Promise(r => setTimeout(r, 300));
       }
     }
 

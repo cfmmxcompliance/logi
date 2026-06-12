@@ -36,3 +36,10 @@ tmp_auth.cjs
 verify_products_prod.mjs
 *.xls
 .env
+inspect_510_columns.mjs
+inspect_702_1652868.mjs
+scan_all_fp22.mjs
+scan_drive_zips.mjs
+reprocess_drive_contributions.mjs
+reprocess_local_zips.mjs
+scripts/

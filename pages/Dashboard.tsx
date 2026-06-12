@@ -303,10 +303,28 @@ export const Dashboard = () => {
     // ── RUTA 1: monthlyDuties precomputado (óptimo) ───────────────────────
     const hasPrecomputed = reports.some(rep => rep.monthlyDuties && rep.monthlyDuties.length > 0);
     if (hasPrecomputed) {
+      const startMonth = startDate ? new Date(startDate + 'T12:00:00').getMonth() : 0;
+      const endMonth   = endDate   ? new Date(endDate   + 'T12:00:00').getMonth() : 11;
+      const filterStartYear = startDate ? new Date(startDate + 'T12:00:00').getFullYear() : curYear;
+      const filterEndYear   = endDate   ? new Date(endDate   + 'T12:00:00').getFullYear() : curYear;
+
       reports.forEach(rep => {
         if (!rep.monthlyDuties) return;
         rep.monthlyDuties.forEach((row, i) => {
           if (!acc[i]) return;
+          // Usar el año real del registro (campo year emitido por parser desde fechaPago)
+          // Fallback: leer del nombre del archivo o del timestamp del reporte
+          const rowYear: number = (row as any).year
+            || (() => {
+                const m = (rep.name || '').match(/\b(20\d{2})\b/);
+                return m ? parseInt(m[1], 10) : (rep.timestamp ? new Date(rep.timestamp).getFullYear() : curYear);
+              })();
+
+          // Filtrar por año y mes del rango seleccionado
+          if (rowYear < filterStartYear || rowYear > filterEndYear) return;
+          if (rowYear === filterStartYear && i < startMonth) return;
+          if (rowYear === filterEndYear && i > endMonth) return;
+
           acc[i]['IGI Import'] += row['IGI Import'] || 0;
           acc[i]['IVA Import'] += row['IVA Import'] || 0;
           acc[i]['IVA Import Efectivo'] += row['IVA Import Efectivo'] || 0;
@@ -409,7 +427,7 @@ export const Dashboard = () => {
       'IVA Export': parseFloat(row['IVA Export'].toFixed(1)),
       'DTA Export': parseFloat(row['DTA Export'].toFixed(1)),
     }));
-  }, [reports, allRecordsHydrated]);
+  }, [reports, allRecordsHydrated, startDate, endDate]);
 
 
   // Contenedores por mes (504 → 501)
@@ -446,21 +464,43 @@ export const Dashboard = () => {
   const liveRevisionsData = useMemo(() => {
     const combined: { imp: number; exp: number }[] = Array.from({ length: 12 }, () => ({ imp: 0, exp: 0 }));
     let hasAnyRevisionData = false;
+    
     reports.forEach(report => {
       if (!report.reviewsByMonth) return;
       hasAnyRevisionData = true;
+
+      // Extraer año del reporte
+      let repYear = curYear;
+      const yearMatch = (report.name || '').match(/\b(20\d{2})\b/);
+      if (yearMatch) {
+        repYear = parseInt(yearMatch[1], 10);
+      } else if (report.timestamp) {
+        repYear = new Date(report.timestamp).getFullYear();
+      }
+
+      const startMonth = startDate ? new Date(startDate + 'T12:00:00').getMonth() : 0;
+      const endMonth   = endDate   ? new Date(endDate   + 'T12:00:00').getMonth() : 11;
+      const filterStartYear = startDate ? new Date(startDate + 'T12:00:00').getFullYear() : curYear;
+      const filterEndYear   = endDate   ? new Date(endDate   + 'T12:00:00').getFullYear() : curYear;
+
+      if (repYear < filterStartYear || repYear > filterEndYear) return;
+
       report.reviewsByMonth.forEach((m: any, i: number) => {
+        if (repYear === filterStartYear && i < startMonth) return;
+        if (repYear === filterEndYear && i > endMonth) return;
+
         combined[i].imp += m.Import || 0;
         combined[i].exp += m.Export || 0;
       });
     });
+    
     if (!hasAnyRevisionData) return null;
     return combined.map((m, i) => ({
       name: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i],
       Import: m.imp,
       Export: m.exp,
     }));
-  }, [reports]);
+  }, [reports, startDate, endDate]);
 
   const revisionsData = liveRevisionsData ?? [];
   const hasLiveRevisions = liveRevisionsData !== null;

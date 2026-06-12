@@ -2868,6 +2868,81 @@ export const storageService = {
     dbState.dataStageReports = dbState.dataStageReports.filter((r: any) => r.id !== id);
     saveLocal();
   },
+
+  // Migración: parcha el campo year en monthlyDuties de todos los reportes existentes.
+  // Lee fechaPago de los items en subcollección para determinar el año real.
+  // No requiere re-subir ningún ZIP.
+  patchMonthlyDutiesYear: async (): Promise<{ patched: number; skipped: number }> => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const { collection, getDocs, setDoc, doc: firestoreDoc } = await import('firebase/firestore');
+
+    const parseSATDateMigration = (s: string): { month: number; year: number } | null => {
+      if (!s || !s.trim()) return null;
+      let raw = s.trim().replace(' ', 'T');
+      let datePart = raw.split('T')[0];
+      const slash = datePart.split('/');
+      if (slash.length === 3) {
+        const d = new Date(`${slash[2]}-${slash[1].padStart(2,'0')}-${slash[0].padStart(2,'0')}T12:00:00`);
+        if (!isNaN(d.getTime())) return { month: d.getMonth(), year: d.getFullYear() };
+      }
+      if (/^\d{8}$/.test(datePart)) {
+        const d = new Date(`${datePart.slice(0,4)}-${datePart.slice(4,6)}-${datePart.slice(6,8)}T12:00:00`);
+        if (!isNaN(d.getTime())) return { month: d.getMonth(), year: d.getFullYear() };
+      }
+      const d = new Date(raw.length > 10 ? raw : raw + 'T12:00:00');
+      if (!isNaN(d.getTime())) return { month: d.getMonth(), year: d.getFullYear() };
+      return null;
+    };
+
+    const reports: any[] = dbState.dataStageReports || [];
+    let patched = 0; let skipped = 0;
+
+    for (const report of reports) {
+      const duties: any[] = report.monthlyDuties || [];
+      if (duties.length === 0) { skipped++; continue; }
+      if (duties.every((r: any) => r.year && r.year > 2000)) { skipped++; continue; }
+
+      // Leer items desde subcollección para obtener fechaPago real
+      const monthYearMap = new Map<number, number>();
+      try {
+        const itemsSnap = await getDocs(collection(db, COLS.DATA_STAGE_REPORTS, report.id, 'items'));
+        if (!itemsSnap.empty) {
+          itemsSnap.docs.forEach(d => {
+            const r = d.data() as any;
+            const parsed = parseSATDateMigration(r.fechaPago || r.fechaEntrada || '');
+            if (parsed && !monthYearMap.has(parsed.month)) monthYearMap.set(parsed.month, parsed.year);
+          });
+        }
+      } catch (e) {
+        console.warn(`[patchYear] No se pudo leer items de ${report.id}:`, e);
+      }
+
+      // Año dominante — fallback al timestamp del reporte
+      const yearCounts = new Map<number, number>();
+      monthYearMap.forEach(yr => yearCounts.set(yr, (yearCounts.get(yr) || 0) + 1));
+      const dominantYear = yearCounts.size > 0
+        ? [...yearCounts.entries()].sort((a, b) => b[1] - a[1])[0][0]
+        : (report.timestamp ? new Date(report.timestamp).getFullYear() : new Date().getFullYear());
+
+      const patchedDuties = duties.map((row: any, i: number) => ({
+        ...row,
+        year: monthYearMap.get(i) || dominantYear,
+      }));
+
+      // Guardar solo el campo monthlyDuties (merge) usando el mismo db que ya funciona
+      await setDoc(firestoreDoc(db, COLS.DATA_STAGE_REPORTS, report.id), { monthlyDuties: patchedDuties }, { merge: true });
+
+      // Actualizar estado local también
+      report.monthlyDuties = patchedDuties;
+      console.log(`[patchYear] ${report.name} → año ${dominantYear}`);
+      patched++;
+    }
+
+    saveLocal();
+    notifyListeners();
+    return { patched, skipped };
+  },
+
   clearDraftDataStage: async () => {
     try {
       await indexedDbService.clearStore('datastage_drafts');

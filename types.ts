@@ -526,8 +526,9 @@ export interface DataStageReport {
   storageUrl?: string;
   reviewsByMonth?: { name: string; Import: number; Export: number }[]; // Revisiones _Sel/_Inci
   monthlyDuties?: {                                                    // Cruce 501×510 precomputado
+    year: number;                                                      // Año del reporte (ej. 2026)
     name: string;
-    'IGI Import': number; 'IVA Import': number; 'DTA Import': number;
+    'IGI Import': number; 'IVA Import': number; 'IVA Import Efectivo': number; 'IVA Import Fianza': number; 'DTA Import': number;
     'IGI Export': number; 'IVA Export': number; 'DTA Export': number;
   }[];
 }

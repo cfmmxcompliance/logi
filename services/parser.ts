@@ -47,10 +47,12 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
   const tempItems: DSItemData[] = [];
   const tempCoves: DSCoveData[] = [];
   const tempDigitalized: DSDigitalizedData[] = [];
-  // Taxes (510): { key: pedimentoId, clave, importe, formaPago }
-  const tempTaxes: { key: string; clave: string; importe: number; formaPago: string }[] = [];
-  // Taxes Item Level (557): { key: pedimentoId, clave, importe, formaPago }
-  const tempTaxesPartida: { key: string; clave: string; importe: number; formaPago: string }[] = [];
+  // Taxes (510): Contribuciones del pedimento — col[7]=FechaPagoReal
+  const tempTaxes: { key: string; clave: string; importe: number; formaPago: string; fechaPagoReal: string }[] = [];
+  // Taxes 702: Diferencias de contribuciones del pedimento — col[7]=FechaPagoReal
+  const tempTaxesFianza: { key: string; clave: string; importe: number; formaPago: string; fechaPagoReal: string }[] = [];
+  // Taxes 557: Contribuciones de la partida — col[8]=FechaPagoReal
+  const tempTaxesPartida: { key: string; clave: string; importe: number; formaPago: string; fechaPagoReal: string }[] = [];
   // ED documents from 507 (ClaveCaso='ED' = CFDI declarados)
   const tempEdCounts = new Map<string, number>(); // pedimentoId -> count
   // Containers from 504 (NumContenedor por pedimento)
@@ -197,10 +199,9 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
             });
           });
         } else if (fileCode === DataStageRecordType.TAXES) {
-          // 510: Contribuciones
-          // Cols SAT M3: Patente|Pedimento|Seccion|Clave|Tasa|TipoTasa|FormaPago|Importe
-          // CRITICAL: use .trim() on ALL key parts — whitespace differences between files
-          // cause 100% key mismatch and all taxes appear as 0.
+          // 510: Contribuciones del pedimento (documento oficial SAT abril 2022)
+          // Cols: Patente|Pedimento|Seccion|ClaveContribucion|FormaPago|Importe|TipoPedimento|FechaPagoReal
+          // col[7] = FechaPagoReal → fecha real del pago de esta contribución específica
           lines.forEach(line => {
             if (line.startsWith('Patente|') || line.startsWith('NUM_PED|')) return;
             const cols = line.split('|');
@@ -208,13 +209,29 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
             const key = `${(cols[0]||'').trim()}-${(cols[1]||'').trim()}-${(cols[2]||'').trim()}`;
             const rawClave = (cols[3] || '').trim().toUpperCase();
             const formaPago = (cols[4] || '').trim();
-            // Importe: col 5 is standard SAT, but fallback to 7 or 6 for older custom M3 exports
-            const importe = parseFloatSafe(cols[5]) || parseFloatSafe(cols[7]) || parseFloatSafe(cols[6]);
-            tempTaxes.push({ key, clave: rawClave, importe, formaPago });
+            const importe = parseFloatSafe(cols[5]);
+            const fechaPagoReal = (cols[7] || '').trim();
+            tempTaxes.push({ key, clave: rawClave, importe, formaPago, fechaPagoReal });
+          });
+        } else if (fileCode === '702') {
+          // 702: Diferencias de contribuciones del pedimento (documento oficial SAT abril 2022)
+          // Layout idéntico al 510: Patente|Pedimento|Seccion|ClaveContribucion|FormaPago|Importe|TipoPedimento|FechaPagoReal
+          // col[7] = FechaPagoReal → fecha real en que se pagó esta diferencia
+          lines.forEach(line => {
+            if (line.startsWith('Patente|') || line.startsWith('NUM_PED|')) return;
+            const cols = line.split('|');
+            if (cols.length < 6) return;
+            const key = `${(cols[0]||'').trim()}-${(cols[1]||'').trim()}-${(cols[2]||'').trim()}`;
+            const rawClave = (cols[3] || '').trim().toUpperCase();
+            const formaPago = (cols[4] || '').trim();
+            const importe = parseFloatSafe(cols[5]);
+            const fechaPagoReal = (cols[7] || '').trim();
+            if (importe > 0) tempTaxesFianza.push({ key, clave: rawClave, importe, formaPago, fechaPagoReal });
           });
         } else if (fileCode === '557') {
-          // 557: Contribuciones a Nivel Partida
-          // Cols: Patente|Pedimento|Seccion|Fraccion|Secuencia|Clave|FormaPago|Importe|FechaPago
+          // 557: Contribuciones de la partida (documento oficial SAT abril 2022)
+          // Cols: Patente|Pedimento|Seccion|Fraccion|Secuencia|ClaveContribucion|FormaPago|Importe|FechaPagoReal
+          // col[8] = FechaPagoReal → fecha real del pago de esta contribución a nivel partida
           lines.forEach(line => {
             if (line.startsWith('Patente|') || line.startsWith('NUM_PED|')) return;
             const cols = line.split('|');
@@ -223,7 +240,8 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
             const rawClave = (cols[5] || '').trim().toUpperCase();
             const formaPago = (cols[6] || '').trim();
             const importe = parseFloatSafe(cols[7]);
-            tempTaxesPartida.push({ key, clave: rawClave, importe, formaPago });
+            const fechaPagoReal = (cols[8] || '').trim();
+            tempTaxesPartida.push({ key, clave: rawClave, importe, formaPago, fechaPagoReal });
           });
         } else if (fileCode === '506') {
           // 506: Fechas del pedimento (ANTES mappeado erróneamente como COVE — BUG CORREGIDO)
@@ -403,16 +421,17 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
     }
   });
 
-  // === CRUCE: 506 → 501 (Fechas del pedimento — BUG CORREGIDO) ===
-  // Enriquece fechaEntrada y fechaPago con datos más precisos que los cols[29]/[30] del 501.
-  // Solo sobreescribe si el campo del 501 estaba vacío o si el 506 tiene dato.
+  // === CRUCE: 506 → 501 (Fechas del pedimento) ===
+  // TipoFecha: '1' = FechaEntrada, '2' = FechaPago  (valores numéricos confirmados en ZIPs reales)
+  // FechaOperacion (col[4]) = fecha sin hora; FechaValidacionPagoR (col[5]) = timestamp con hora (más preciso)
   tempFechas.forEach(f => {
     const record = pedimentoMap.get(f.key);
     if (!record) return;
-    if (f.claveTipo === 'ENTRADA' && f.fechaOp && !record.fechaEntrada) {
+    if ((f.claveTipo === '1' || f.claveTipo === 'ENTRADA') && f.fechaOp && !record.fechaEntrada) {
       record.fechaEntrada = f.fechaOp;
-    } else if (f.claveTipo === 'PAGO' && f.fechaPagoReal && !record.fechaPago) {
-      record.fechaPago = f.fechaPagoReal;
+    } else if ((f.claveTipo === '2' || f.claveTipo === 'PAGO') && !record.fechaPago) {
+      // Preferir FechaValidacionPagoR (más preciso) sobre FechaOperacion
+      record.fechaPago = f.fechaPagoReal || f.fechaOp;
     }
   });
 
@@ -477,49 +496,52 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
     }
   });
 
-  // === PRECOMPUTE monthlyDuties — cruce 501 (key+tipoOp+fecha) × 510 (key+clave+importe) ===
-  // Función robusta de fecha — maneja ISO (YYYY-MM-DD), DD/MM/YYYY, YYYYMMDD
+  // === PRECOMPUTE monthlyDuties ===
+  // Fuente: documento oficial SAT "Consulta Data Stage" abril 2022
+  // Regla: cada registro de 510, 702 y 557 tiene su propia FechaPagoReal
+  // que define a qué mes pertenece esa contribución.
+  // El 501 se usa SOLO para tipoOperacion (IMP/EXP).
+  // Fallback: si el registro no tiene FechaPagoReal, se usa FechaPagoReal del 501.
+
   const parseSATDate = (s: string): number => {
     if (!s || !s.trim()) return -1;
-    let raw = s.trim();
-    // Replace space with T for valid ISO parsing (YYYY-MM-DD HH:mm:ss -> YYYY-MM-DDTHH:mm:ss)
-    raw = raw.replace(' ', 'T');
-    
-    let d = new Date(raw.length > 10 ? raw : raw + 'T12:00:00');
-    if (!isNaN(d.getTime())) return d.getMonth();
-    
-    // DD/MM/YYYY or DD/MM/YYYYTHH:mm:ss
-    let datePart = raw.split('T')[0];
-    const slash = datePart.split('/');
-    if (slash.length === 3) {
-      d = new Date(`${slash[2]}-${slash[1].padStart(2,'0')}-${slash[0].padStart(2,'0')}T12:00:00`);
-      if (!isNaN(d.getTime())) return d.getMonth();
-    }
-    
-    // YYYYMMDD (8 digits)
-    if (/^\d{8}$/.test(datePart)) {
-      d = new Date(`${datePart.slice(0,4)}-${datePart.slice(4,6)}-${datePart.slice(6,8)}T12:00:00`);
-      if (!isNaN(d.getTime())) return d.getMonth();
-    }
-    return -1;
+    const raw = s.trim().replace(' ', 'T');
+    const d = new Date(raw.length > 10 ? raw : raw + 'T12:00:00');
+    return isNaN(d.getTime()) ? -1 : d.getMonth();
+  };
+
+  const parseSATYear = (s: string): number => {
+    if (!s || !s.trim()) return -1;
+    const raw = s.trim().replace(' ', 'T');
+    const d = new Date(raw.length > 10 ? raw : raw + 'T12:00:00');
+    return isNaN(d.getTime()) ? -1 : d.getFullYear();
   };
 
   const monthlyDutiesAccum = Array.from({length: 12}, () => ({
     igi_imp: 0, iva_imp_efectivo: 0, iva_imp_fianza: 0, dta_imp: 0,
     igi_exp: 0, iva_exp: 0, dta_exp: 0,
+    year: new Date().getFullYear(),
   }));
 
-  // Cross-reference: para cada tax en 510, buscar el pedimento en pedimentoMap (del 501)
-  // y obtener tipoOperacion + fecha directamente de la fuente correcta (el 501 row ya parseado)
+  // Helper: obtener acumulador del mes según FechaPagoReal del registro (con fallback al 501)
+  const getAccAndYear = (taxFecha: string, pedKey: string): { acc: typeof monthlyDutiesAccum[0]; month: number } | null => {
+    const record = pedimentoMap.get(pedKey);
+    // Prioridad: FechaPagoReal del propio registro → FechaPagoReal del 501
+    const fechaStr = taxFecha || (record ? (record.fechaPago || record.fechaEntrada) : '');
+    const month = parseSATDate(fechaStr);
+    if (month < 0 || month > 11) return null;
+    const yr = parseSATYear(fechaStr);
+    if (yr > 2000) monthlyDutiesAccum[month].year = yr;
+    return { acc: monthlyDutiesAccum[month], month };
+  };
+
+  // 510 → Contribuciones del pedimento: usar col[7] FechaPagoReal de cada registro
   tempTaxes.forEach(tax => {
     const record = pedimentoMap.get(tax.key);
     if (!record) return;
-    // Intentar fecha de pago primero, luego entrada
-    const month = parseSATDate(record.fechaPago) !== -1
-      ? parseSATDate(record.fechaPago)
-      : parseSATDate(record.fechaEntrada);
-    if (month < 0 || month > 11) return;
-    const acc = monthlyDutiesAccum[month];
+    const result = getAccAndYear(tax.fechaPagoReal, tax.key);
+    if (!result) return;
+    const { acc } = result;
     const isExp = record.tipoOperacion === 'EXP';
     if (isExp) {
       if (tax.formaPago === '0') {
@@ -532,9 +554,56 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
         if (tax.clave === 'IGI' || tax.clave === 'DBA' || tax.clave === '6') acc.igi_imp += tax.importe;
         else if (tax.clave === 'IVA' || tax.clave === 'PRV' || tax.clave === '15' || tax.clave === '23') acc.iva_imp_efectivo += tax.importe;
         else if (tax.clave === 'DTA' || tax.clave === 'DAN' || tax.clave === '1') acc.dta_imp += tax.importe;
-      } else if (tax.formaPago === '22') {
-        if (tax.clave === 'IVA' || tax.clave === 'PRV' || tax.clave === '15' || tax.clave === '23') acc.iva_imp_fianza += tax.importe;
       }
+    }
+  });
+
+  // 702 → Diferencias de contribuciones del pedimento: usar col[7] FechaPagoReal de cada registro
+  tempTaxesFianza.forEach(tax => {
+    const record = pedimentoMap.get(tax.key);
+    if (!record) return;
+    // FormaPago=6 = "Pendiente de pago" (Apéndice 13, Anexo 22 RGCE) → excluir, no es pago real
+    if (tax.formaPago === '6') return;
+    const result = getAccAndYear(tax.fechaPagoReal, tax.key);
+    if (!result) return;
+    const { acc } = result;
+    const isExp = record.tipoOperacion === 'EXP';
+    if (isExp) {
+      if (tax.clave === 'IGI' || tax.clave === 'DBA' || tax.clave === '6') acc.igi_exp += tax.importe;
+      else if (tax.clave === 'IVA' || tax.clave === 'PRV' || tax.clave === '15' || tax.clave === '23') acc.iva_exp += tax.importe;
+      else if (tax.clave === 'DTA' || tax.clave === 'DAN' || tax.clave === '1') acc.dta_exp += tax.importe;
+    } else {
+      if (tax.clave === 'IGI' || tax.clave === 'DBA' || tax.clave === '6') acc.igi_imp += tax.importe;
+      else if (tax.clave === 'IVA' || tax.clave === 'PRV' || tax.clave === '15' || tax.clave === '23') acc.iva_imp_fianza += tax.importe;
+      else if (tax.clave === 'DTA' || tax.clave === 'DAN' || tax.clave === '1') acc.dta_imp += tax.importe;
+    }
+  });
+
+  // 557 → Contribuciones de la partida: usar col[8] FechaPagoReal de cada registro
+  // Acumula TODOS los tipos (IGI=6, IVA=3, DTA=1) excluyendo fp=6 (Pendiente de pago)
+  // fp=22 (Garantía IVA/IEPS) → iva_imp_fianza; fp=0 (Efectivo) → efectivo
+  tempTaxesPartida.forEach(tax => {
+    const record = pedimentoMap.get(tax.key);
+    if (!record) return;
+    // FormaPago=6 = "Pendiente de pago" → excluir
+    if (tax.formaPago === '6') return;
+    const result = getAccAndYear(tax.fechaPagoReal, tax.key);
+    if (!result) return;
+    const { acc } = result;
+    const isExp = record.tipoOperacion === 'EXP';
+    const fp = tax.formaPago;
+    if (isExp) {
+      if (tax.clave === '6' || tax.clave === 'IGI' || tax.clave === 'DBA') acc.igi_exp += tax.importe;
+      else if (tax.clave === '3' || tax.clave === 'IVA' || tax.clave === 'PRV') acc.iva_exp += tax.importe;
+      else if (tax.clave === '1' || tax.clave === 'DTA' || tax.clave === 'DAN') acc.dta_exp += tax.importe;
+    } else {
+      if (tax.clave === '6' || tax.clave === 'IGI' || tax.clave === 'DBA') acc.igi_imp += tax.importe;
+      else if (tax.clave === '3' || tax.clave === 'IVA' || tax.clave === 'PRV') {
+        if (fp === '22') acc.iva_imp_fianza += tax.importe; // Garantía IVA/IEPS
+        else acc.iva_imp_efectivo += tax.importe;           // Efectivo u otras formas
+        acc.iva_imp_efectivo = acc.iva_imp_efectivo; // explícito, sin doble suma
+      }
+      else if (tax.clave === '1' || tax.clave === 'DTA' || tax.clave === 'DAN') acc.dta_imp += tax.importe;
     }
   });
 
@@ -550,6 +619,7 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
   }));
 
   const monthlyDuties = MONTHS_SHORT.map((name, i) => ({
+    year: monthlyDutiesAccum[i].year,
     name,
     'IGI Import': parseFloat(monthlyDutiesAccum[i].igi_imp.toFixed(1)),
     'IVA Import': parseFloat((monthlyDutiesAccum[i].iva_imp_efectivo + monthlyDutiesAccum[i].iva_imp_fianza).toFixed(1)),

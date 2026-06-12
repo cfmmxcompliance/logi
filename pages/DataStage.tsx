@@ -20,6 +20,7 @@ export const DataStage = () => {
     const [savedReports, setSavedReports] = useState<DataStageReport[]>([]);
     const hiddenInputRef = useRef<HTMLInputElement>(null);
     const [saveStatus, setSaveStatus] = useState<string>(""); // Granular status message
+    const [migrating, setMigrating] = useState(false);
 
     useEffect(() => {
         // 1. Load Saved Reports (History)
@@ -97,6 +98,8 @@ export const DataStage = () => {
                                 ...row,
                                 'IGI Import': (row['IGI Import'] || 0) + (incoming[i]?.['IGI Import'] || 0),
                                 'IVA Import': (row['IVA Import'] || 0) + (incoming[i]?.['IVA Import'] || 0),
+                                'IVA Import Efectivo': (row['IVA Import Efectivo'] || 0) + (incoming[i]?.['IVA Import Efectivo'] || 0),
+                                'IVA Import Fianza': (row['IVA Import Fianza'] || 0) + (incoming[i]?.['IVA Import Fianza'] || 0),
                                 'DTA Import': (row['DTA Import'] || 0) + (incoming[i]?.['DTA Import'] || 0),
                                 'IGI Export': (row['IGI Export'] || 0) + (incoming[i]?.['IGI Export'] || 0),
                                 'IVA Export': (row['IVA Export'] || 0) + (incoming[i]?.['IVA Export'] || 0),
@@ -438,6 +441,21 @@ export const DataStage = () => {
         }
     };
 
+    // ── MIGRACIÓN: parcha el campo year en monthlyDuties via storageService ──
+    const handlePatchYear = async () => {
+        if (!window.confirm('¿Parchear el campo año en todos los reportes de DataStage?\nEsto no borra ni modifica ningún pedimento.')) return;
+        setMigrating(true);
+        try {
+            const { patched, skipped } = await (storageService as any).patchMonthlyDutiesYear();
+            alert(`✅ Migración completada:\n- ${patched} reportes parchados con año real.\n- ${skipped} ya estaban correctos o sin datos.\n\nRecarga el Dashboard para ver los cambios.`);
+        } catch (e: any) {
+            console.error('[Migration] Error:', e);
+            alert('❌ Error en migración: ' + e.message);
+        } finally {
+            setMigrating(false);
+        }
+    };
+
     return (
         <div className="space-y-6 relative">
             <div>
@@ -488,6 +506,16 @@ export const DataStage = () => {
                         <Trash2 className="w-4 h-4" />
                     </button>
                 )}
+                {/* Botón de migración — parcha campo year en Firestore sin re-subir ZIPs */}
+                <button
+                    onClick={handlePatchYear}
+                    disabled={migrating}
+                    className="text-sm text-purple-600 hover:text-purple-800 bg-purple-50 border border-purple-200 hover:bg-purple-100 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50"
+                    title="Parchear año en reportes históricos (Admin)"
+                >
+                    {migrating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
+                    {migrating ? 'Parchando...' : 'Parchear Años'}
+                </button>
             </div>
 
             <div className="relative">

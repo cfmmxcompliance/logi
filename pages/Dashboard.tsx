@@ -430,23 +430,29 @@ export const Dashboard = () => {
   }, [reports, allRecordsHydrated, startDate, endDate]);
 
 
-  // Contenedores por mes (504 → 501)
+  // Contenedores por mes — una entrada por (año, mes) en orden cronológico
   const containerVolumeData = useMemo(() => {
-    // Calcular el año de cada mes desde los registros reales
-    const yearByMonth: Record<number, number> = {};
+    const buckets = new Map<string, { year: number; month: number; imp: number; exp: number }>();
     allRecords.forEach(r => {
       const m = recordMonth(r);
       const y = recordYear(r);
-      if (m >= 0 && m <= 11 && y > 2000) yearByMonth[m] = y;
+      if (m < 0 || m > 11 || y < 2000) return;
+      const key = `${y}-${String(m).padStart(2, '0')}`;
+      if (!buckets.has(key)) buckets.set(key, { year: y, month: m, imp: 0, exp: 0 });
+      const b = buckets.get(key)!;
+      const cnt = r.containerCount || 0;
+      if (isImport(r)) b.imp += cnt;
+      else if (isExport(r)) b.exp += cnt;
     });
-    const filterYear = startDate ? new Date(startDate + 'T12:00:00').getFullYear() : curYear;
-    return MONTHS.map((name, i) => ({
-      name,
-      year: yearByMonth[i] || filterYear,
-      'Imp.': allRecords.filter(r => recordMonth(r)===i && isImport(r)).reduce((s,r) => s+(r.containerCount||0), 0),
-      'Exp.': allRecords.filter(r => recordMonth(r)===i && isExport(r)).reduce((s,r) => s+(r.containerCount||0), 0),
-    }));
-  }, [allRecords, startDate, curYear]);
+    // Ordenar cronológicamente: el más antiguo primero
+    return Array.from(buckets.values())
+      .sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month)
+      .map(({ year, month, imp, exp }) => ({
+        name: `${MONTHS[month]} ${year}`,
+        'Imp.': imp,
+        'Exp.': exp,
+      }));
+  }, [allRecords]);
 
   // Always-static charts (no field in DataStage for these)
   const gidSavingsData: any[] = [];
@@ -815,22 +821,46 @@ export const Dashboard = () => {
           />
         </div>
 
-        {/* — Gráfica mensual de contenedores — */}
-        <ChartCard title="CONTENEDORES POR MES" subtitle={hasLiveData ? 'DataStage — 504 cruzado con 501 (IMP/EXP)' : 'Sin datos — sube ZIPs en DataStage'}>
-          <BarChart data={containerVolumeData}>
-            <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...CS.axis}/><YAxis {...CS.axis} allowDecimals={false}/>
-            <Tooltip
-              contentStyle={CS.tt.contentStyle}
-              labelFormatter={(label, payload) => {
-                const yr = payload?.[0]?.payload?.year;
-                return yr ? `${label} ${yr}` : label;
-              }}
-            />
-            <Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
-            <Bar dataKey="Imp." fill="#0ea5e9" radius={[4,4,0,0]}/>
-            <Bar dataKey="Exp." fill="#14b8a6" radius={[4,4,0,0]}/>
-          </BarChart>
-        </ChartCard>
+        {/* — Gráfica mensual de contenedores — scroll horizontal, orden cronológico — */}
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+          <div className="mb-3">
+            <h3 className="font-semibold text-slate-800">CONTENEDORES POR MES</h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {hasLiveData
+                ? `DataStage — 504 × 501 (IMP/EXP) · ${containerVolumeData.length} meses · más antiguo a la izquierda`
+                : 'Sin datos — sube ZIPs en DataStage'}
+            </p>
+          </div>
+          <div className="overflow-x-auto" style={{ height: 280 }}>
+            <div style={{ minWidth: Math.max(640, containerVolumeData.length * 58) }}>
+              <BarChart
+                width={Math.max(640, containerVolumeData.length * 58)}
+                height={256}
+                data={containerVolumeData}
+                margin={{ top: 4, right: 16, left: 0, bottom: 48 }}
+              >
+                <CartesianGrid {...CS.grid}/>
+                <XAxis
+                  dataKey="name"
+                  {...CS.axis}
+                  angle={-40}
+                  textAnchor="end"
+                  height={60}
+                  interval={0}
+                  tick={{ fill: '#64748b', fontSize: 10 }}
+                />
+                <YAxis {...CS.axis} allowDecimals={false}/>
+                <Tooltip
+                  contentStyle={CS.tt.contentStyle}
+                  labelFormatter={(label) => String(label)}
+                />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }}/>
+                <Bar dataKey="Imp." fill="#0ea5e9" radius={[4,4,0,0]} maxBarSize={28}/>
+                <Bar dataKey="Exp." fill="#14b8a6" radius={[4,4,0,0]} maxBarSize={28}/>
+              </BarChart>
+            </div>
+          </div>
+        </div>
 
         {/* — Valores & Facturas — */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">

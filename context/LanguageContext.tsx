@@ -377,11 +377,11 @@ export const translations: Translations = {
     "dash.antiguo_izq":          { es: "más antiguo a la izquierda", en: "oldest to the left" },
 
     // Tarjetas contenedores / facturas
-    "dash.cont_imp":      { es: "CONTENEDORES IMPORTACIÓN", en: "IMPORT CONTAINERS" },
-    "dash.cont_imp_sub":  { es: "504 — contenedores IMP",   en: "504 — IMP containers" },
-    "dash.cont_exp":      { es: "CONTENEDORES EXPORTACIÓN", en: "EXPORT CONTAINERS" },
-    "dash.cont_exp_sub":  { es: "504 — contenedores EXP",   en: "504 — EXP containers" },
-    "dash.unit_cont":     { es: "cont.", en: "cont." },
+    "dash.cont_imp":      { es: "TRANSACCIONES IMPORTACIÓN", en: "IMPORT TRANSACTIONS" },
+    "dash.cont_imp_sub":  { es: "504 — transacciones IMP",   en: "504 — IMP transactions" },
+    "dash.cont_exp":      { es: "TRANSACCIONES EXPORTACIÓN", en: "EXPORT TRANSACTIONS" },
+    "dash.cont_exp_sub":  { es: "504 — transacciones EXP",   en: "504 — EXP transactions" },
+    "dash.unit_cont":     { es: "trans.", en: "trans." },
     "dash.fact_imp":      { es: "FACTURAS IMPORTACIÓN",     en: "IMPORT INVOICES" },
     "dash.fact_imp_sub":  { es: "505 — facturas comerciales", en: "505 — commercial invoices" },
     "dash.fact_exp":      { es: "FACTURAS EXPORTACIÓN",     en: "EXPORT INVOICES" },
@@ -407,7 +407,8 @@ export const translations: Translations = {
     "dash.valor_label":    { es: "Valor",                 en: "Value" },
 
     // Subtítulos de gráficas con datos live
-    "dash.chart_contrib_sub_live": { es: "DataStage — 510 contribuciones (IGI/IVA/DTA) cruce 501×510", en: "DataStage — 510 contributions (IGI/VAT/DTA) 501×510 crossref" },
+    "dash.chart_contrib_sub_live": { es: "DataStage — 510 contribuciones (IGI/IVA/DTA) · Millones MXN por mes", en: "DataStage — 510 contributions (IGI/VAT/DTA) · MXN Millions per month" },
+    "dash.m_mxn": { es: "M MXN", en: "M MXN" },
 
     // Etiquetas Imp/Exp en gráficas
     "dash.imp": { es: "Imp.", en: "Imp." },

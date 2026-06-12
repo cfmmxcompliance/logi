@@ -1009,14 +1009,17 @@ export const Dashboard = () => {
           </ScrollableChartCard>
           <ScrollableChartCard
             title={t('dash.chart_contrib')}
-            subtitle={hasLiveData ? 'DataStage — 510 contribuciones (IGI/IVA/DTA) cruce 501×510' : t('dash.chart_contrib_sub_static')}
+            subtitle={hasLiveData ? t('dash.chart_contrib_sub_live') : t('dash.chart_contrib_sub_static')}
             n={dutData.length}
           >
             {w => (
               <BarChart width={w} height={256} data={dutData} margin={CM}>
                 <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...XSA}/>
-                <YAxis {...CS.axis} tickFormatter={(val:number)=>val.toLocaleString('en-US')}/>
-                <Tooltip {...CS.tt} formatter={(val:number)=>val.toLocaleString('en-US')}/>
+                <YAxis {...CS.axis} tickFormatter={(val:number)=>`${(val/1e6).toFixed(1)}M`}/>
+                <Tooltip
+                  {...CS.tt}
+                  formatter={(val:number, name:string)=>[`${(val/1e6).toFixed(2)} ${t('dash.m_mxn')}`, name]}
+                />
                 <Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
                 <Bar dataKey="IGI Import" name={t('dash.bar_igi_imp')} fill="#ef4444" radius={[4,4,0,0]} maxBarSize={20}/>
                 <Bar dataKey="IVA Import Efectivo" name={t('dash.bar_iva_imp_ef')} fill="#ea580c" radius={[4,4,0,0]} maxBarSize={20}/>

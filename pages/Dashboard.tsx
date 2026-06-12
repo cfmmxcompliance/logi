@@ -212,7 +212,7 @@ const CountByClaveCard = ({ title, color, total, sub, breakdown, unit = 'ped.' }
 export const Dashboard = () => {
   const navigate = useNavigate();
   const { user, hasRole } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const isAdmin = hasRole([UserRole.ADMIN]);
 
   const [vessels, setVessels] = useState(storageService.getVesselTracking());
@@ -278,10 +278,11 @@ export const Dashboard = () => {
 
   // Rango legible para el subtítulo
   const rangeLabel = useMemo(() => {
-    if (!startDate && !endDate) return 'Todo el historial';
-    const fmt = (s: string) => s ? new Date(s + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '...';
+    if (!startDate && !endDate) return t('dash.all_history');
+    const locale = language === 'en' ? 'en-US' : 'es-MX';
+    const fmt = (s: string) => s ? new Date(s + 'T12:00:00').toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' }) : '...';
     return `${fmt(startDate)} — ${fmt(endDate)}`;
-  }, [startDate, endDate]);
+  }, [startDate, endDate, language, t]);
 
   // ── COMPUTED CHART DATA ──────────────────────────────────────────
   const mkKey = (y:number,m:number) => `${y}-${String(m).padStart(2,'0')}`;
@@ -748,9 +749,9 @@ export const Dashboard = () => {
       {/* Header */}
       <div className="flex flex-wrap justify-between items-start gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Dashboard Operacional</h1>
+          <h1 className="text-2xl font-bold text-slate-800">{t('dash.title')}</h1>
           <p className="text-sm text-slate-500 mt-1">
-            {hasLiveData ? `DataStage — ${allRecords.length} pedimentos cargados` : 'Customs Report — Sin datos cargados'}
+            {hasLiveData ? `DataStage — ${allRecords.length} ${t('dash.pedimentos_loaded')}` : t('dash.subtitle_static')}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -762,7 +763,7 @@ export const Dashboard = () => {
               value={startDate}
               onChange={e => setStartDate(e.target.value)}
               className="text-sm text-slate-700 font-medium bg-transparent border-none focus:ring-0 outline-none w-[120px]"
-              title="Fecha inicial"
+              title={t('common.fecha_inicial')}
             />
             <span className="text-slate-300 font-medium">—</span>
             <input
@@ -770,7 +771,7 @@ export const Dashboard = () => {
               value={endDate}
               onChange={e => setEndDate(e.target.value)}
               className="text-sm text-slate-700 font-medium bg-transparent border-none focus:ring-0 outline-none w-[120px]"
-              title="Fecha final"
+              title={t('common.fecha_final')}
             />
             {(startDate !== `${curYear}-01-01` || endDate !== `${curYear}-12-31`) && (
               <button
@@ -784,11 +785,11 @@ export const Dashboard = () => {
           </div>
           {hasLiveData && (
             <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold">
-              <RefreshCw size={12}/> Datos en Vivo
+              <RefreshCw size={12}/> {t('dash.live_badge')}
             </span>
           )}
           <span className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${storageService.isCloudMode()?'bg-orange-50 text-orange-700 border-orange-200':'bg-slate-100 text-slate-600 border-slate-200'}`}>
-            <Database size={12}/>{storageService.isCloudMode()?'Firebase Cloud':'Local'}
+            <Database size={12}/>{storageService.isCloudMode()?t('dash.cloud_mode'):t('dash.local_mode')}
           </span>
         </div>
       </div>
@@ -796,9 +797,9 @@ export const Dashboard = () => {
       {/* Empty state / Manual Sync Banner */}
       {!hasLiveData && isAdmin && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 flex items-center justify-between gap-4">
-          <p className="text-blue-700 text-sm font-medium">Los datos no se han cargado. Sincroniza desde la nube.</p>
+          <p className="text-blue-700 text-sm font-medium">{t('dash.sync_msg')}</p>
           <button onClick={handleHydrateAll} disabled={loadingRecords} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 disabled:opacity-50">
-            {loadingRecords?<Loader2 size={16} className="animate-spin"/>:<Database size={16} fill="currentColor"/>}{loadingRecords?'Sincronizando...':'Descargar Datos'}
+            {loadingRecords?<Loader2 size={16} className="animate-spin"/>:<Database size={16} fill="currentColor"/>}{loadingRecords?t('dash.syncing'):t('dash.sync_btn')}
           </button>
         </div>
       )}
@@ -824,23 +825,23 @@ export const Dashboard = () => {
             title={t('dash.exp_ped')}
             color="text-indigo-600"
             total={hasLiveData ? totalExport.toLocaleString() : '0'}
-            sub="RT, F1, F2, H1, G1 y más"
+            sub="RT, F1, F2, H1, G1"
             breakdown={hasLiveData ? exportByKey : []}
           />
           <CountByClaveCard
-            title="CONTENEDORES IMPORTACIÓN"
+            title={t('dash.cont_imp')}
             color="text-sky-600"
             total={hasLiveData ? totalImportContainers.toLocaleString() : '0'}
-            sub="504 — contenedores IMP"
-            unit="cont."
+            sub={t('dash.cont_imp_sub')}
+            unit={t('dash.unit_cont')}
             breakdown={hasLiveData ? importContainersByKey : []}
           />
           <CountByClaveCard
-            title="CONTENEDORES EXPORTACIÓN"
+            title={t('dash.cont_exp')}
             color="text-teal-600"
             total={hasLiveData ? totalExportContainers.toLocaleString() : '0'}
-            sub="504 — contenedores EXP"
-            unit="cont."
+            sub={t('dash.cont_exp_sub')}
+            unit={t('dash.unit_cont')}
             breakdown={hasLiveData ? exportContainersByKey : []}
           />
         </div>
@@ -848,11 +849,11 @@ export const Dashboard = () => {
         {/* — Gráfica mensual de contenedores — scroll horizontal, orden cronológico — */}
         <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
           <div className="mb-3">
-            <h3 className="font-semibold text-slate-800">CONTENEDORES POR MES</h3>
+            <h3 className="font-semibold text-slate-800">{t('dash.chart_cont_mes')}</h3>
             <p className="text-xs text-slate-400 mt-0.5">
               {hasLiveData
-                ? `DataStage — 504 × 501 (IMP/EXP) · ${containerVolumeData.length} meses · más antiguo a la izquierda`
-                : 'Sin datos — sube ZIPs en DataStage'}
+                ? `DataStage — 504 × 501 (IMP/EXP) · ${containerVolumeData.length} ${t('dash.meses')} · ${t('dash.antiguo_izq')}`
+                : t('dash.chart_cont_mes_empty')}
             </p>
           </div>
           <div className="overflow-x-auto" style={{ height: 280 }}>
@@ -879,8 +880,8 @@ export const Dashboard = () => {
                   labelFormatter={(label) => String(label)}
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }}/>
-                <Bar dataKey="Imp." fill="#0ea5e9" radius={[4,4,0,0]} maxBarSize={28}/>
-                <Bar dataKey="Exp." fill="#14b8a6" radius={[4,4,0,0]} maxBarSize={28}/>
+                <Bar dataKey="Imp." name={t('dash.imp')} fill="#0ea5e9" radius={[4,4,0,0]} maxBarSize={28}/>
+                <Bar dataKey="Exp." name={t('dash.exp')} fill="#14b8a6" radius={[4,4,0,0]} maxBarSize={28}/>
               </BarChart>
             </div>
           </div>
@@ -901,19 +902,19 @@ export const Dashboard = () => {
             breakdown={hasLiveData ? exportValueByKey : []}
           />
           <CountByClaveCard
-            title="FACTURAS IMPORTACIÓN"
+            title={t('dash.fact_imp')}
             color="text-cyan-600"
             total={hasLiveData ? totalImportInvoices.toLocaleString() : '0'}
-            sub="505 — facturas comerciales"
-            unit="fact."
+            sub={t('dash.fact_imp_sub')}
+            unit={t('dash.unit_fact')}
             breakdown={hasLiveData ? importInvoicesByKey : []}
           />
           <CountByClaveCard
-            title="FACTURAS EXPORTACIÓN"
+            title={t('dash.fact_exp')}
             color="text-violet-600"
             total={hasLiveData ? totalExportInvoices.toLocaleString() : '0'}
-            sub="505 (comerciales) + 507-ED (CFDIs)"
-            unit="fact."
+            sub={t('dash.fact_exp_sub')}
+            unit={t('dash.unit_fact')}
             breakdown={hasLiveData ? exportInvoicesByKey : []}
           />
         </div>
@@ -934,9 +935,9 @@ export const Dashboard = () => {
               <BarChart width={w} height={256} data={ivData} margin={CM}>
                 <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...XSA}/><YAxis {...CS.axis}/>
                 <Tooltip {...CS.tt}/><Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
-                <Bar dataKey="IN" name="Import Normal (IN)" fill="#3b82f6" stackId="a" maxBarSize={24}/>
-                <Bar dataKey="A1" name="Temporal (A1)" fill="#93c5fd" stackId="a" maxBarSize={24}/>
-                <Bar dataKey="AF" name="Activo Fijo (AF)" fill="#f59e0b" stackId="a" radius={[4,4,0,0]} maxBarSize={24}/>
+                <Bar dataKey="IN" name={t('dash.bar_in')} fill="#3b82f6" stackId="a" maxBarSize={24}/>
+                <Bar dataKey="A1" name={t('dash.bar_a1')} fill="#93c5fd" stackId="a" maxBarSize={24}/>
+                <Bar dataKey="AF" name={t('dash.bar_af')} fill="#f59e0b" stackId="a" radius={[4,4,0,0]} maxBarSize={24}/>
               </BarChart>
             )}
           </ScrollableChartCard>
@@ -946,8 +947,8 @@ export const Dashboard = () => {
                 <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...XSA}/><YAxis {...CS.axis} tickFormatter={v=>`$${v}M`}/>
                 <Tooltip {...CS.tt} formatter={(v:any)=>[`$${Number(v).toFixed(2)}M`]}/>
                 <Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
-                <Bar dataKey="Mat. Prima + Indir." fill="#1d4ed8" stackId="a" maxBarSize={24}/>
-                <Bar dataKey="Activo Fijo" fill="#f59e0b" stackId="a" radius={[4,4,0,0]} maxBarSize={24}/>
+                <Bar dataKey="Mat. Prima + Indir." name={t('dash.bar_mat_prima')} fill="#1d4ed8" stackId="a" maxBarSize={24}/>
+                <Bar dataKey="Activo Fijo" name={t('dash.bar_activo_fijo')} fill="#f59e0b" stackId="a" radius={[4,4,0,0]} maxBarSize={24}/>
               </BarChart>
             )}
           </ScrollableChartCard>
@@ -962,7 +963,7 @@ export const Dashboard = () => {
             {w => (
               <BarChart width={w} height={256} data={evData} margin={CM}>
                 <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...XSA}/><YAxis {...CS.axis}/>
-                <Tooltip {...CS.tt}/><Bar dataKey="RT" name="Exportación RT" fill="#10b981" radius={[4,4,0,0]} maxBarSize={24}/>
+                <Tooltip {...CS.tt}/><Bar dataKey="RT" name={t('dash.bar_rt')} fill="#10b981" radius={[4,4,0,0]} maxBarSize={24}/>
               </BarChart>
             )}
           </ScrollableChartCard>
@@ -971,8 +972,8 @@ export const Dashboard = () => {
               <AreaChart width={w} height={256} data={evalData} margin={CM}>
                 <defs><linearGradient id="eg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.15}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient></defs>
                 <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...XSA}/><YAxis {...CS.axis} tickFormatter={v=>`$${v}M`}/>
-                <Tooltip {...CS.tt} formatter={(v:any)=>[`$${v}M`,'Valor']}/>
-                <Area type="monotone" dataKey="Valor (M USD)" stroke="#10b981" strokeWidth={2} fill="url(#eg)"/>
+                <Tooltip {...CS.tt} formatter={(v:any)=>[`$${v}M`,t('dash.valor_label')]}/>
+                <Area type="monotone" dataKey="Valor (M USD)" name={t('dash.bar_valor_exp')} stroke="#10b981" strokeWidth={2} fill="url(#eg)"/>
               </AreaChart>
             )}
           </ScrollableChartCard>
@@ -1017,13 +1018,13 @@ export const Dashboard = () => {
                 <YAxis {...CS.axis} tickFormatter={(val:number)=>val.toLocaleString('en-US')}/>
                 <Tooltip {...CS.tt} formatter={(val:number)=>val.toLocaleString('en-US')}/>
                 <Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
-                <Bar dataKey="IGI Import" name="IGI Imp (Efectivo)" fill="#ef4444" radius={[4,4,0,0]} maxBarSize={20}/>
-                <Bar dataKey="IVA Import Efectivo" name="IVA Imp (Efectivo)" fill="#ea580c" radius={[4,4,0,0]} maxBarSize={20}/>
-                <Bar dataKey="IVA Import Fianza" name="IVA Imp (Fianza)" fill="#fb923c" radius={[4,4,0,0]} maxBarSize={20}/>
-                <Bar dataKey="DTA Import" name="DTA Imp (Efectivo)" fill="#f59e0b" radius={[4,4,0,0]} maxBarSize={20}/>
-                <Bar dataKey="IGI Export" name="IGI Exp" fill="#3b82f6" radius={[4,4,0,0]} maxBarSize={20}/>
-                <Bar dataKey="IVA Export" name="IVA Exp" fill="#06b6d4" radius={[4,4,0,0]} maxBarSize={20}/>
-                <Bar dataKey="DTA Export" name="DTA Exp" fill="#0ea5e9" radius={[4,4,0,0]} maxBarSize={20}/>
+                <Bar dataKey="IGI Import" name={t('dash.bar_igi_imp')} fill="#ef4444" radius={[4,4,0,0]} maxBarSize={20}/>
+                <Bar dataKey="IVA Import Efectivo" name={t('dash.bar_iva_imp_ef')} fill="#ea580c" radius={[4,4,0,0]} maxBarSize={20}/>
+                <Bar dataKey="IVA Import Fianza" name={t('dash.bar_iva_imp_fz')} fill="#fb923c" radius={[4,4,0,0]} maxBarSize={20}/>
+                <Bar dataKey="DTA Import" name={t('dash.bar_dta_imp')} fill="#f59e0b" radius={[4,4,0,0]} maxBarSize={20}/>
+                <Bar dataKey="IGI Export" name={t('dash.bar_igi_exp')} fill="#3b82f6" radius={[4,4,0,0]} maxBarSize={20}/>
+                <Bar dataKey="IVA Export" name={t('dash.bar_iva_exp')} fill="#06b6d4" radius={[4,4,0,0]} maxBarSize={20}/>
+                <Bar dataKey="DTA Export" name={t('dash.bar_dta_exp')} fill="#0ea5e9" radius={[4,4,0,0]} maxBarSize={20}/>
               </BarChart>
             )}
           </ScrollableChartCard>
@@ -1038,8 +1039,8 @@ export const Dashboard = () => {
             <AreaChart data={gidSavingsData}>
               <defs><linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#7c3aed" stopOpacity={0.15}/><stop offset="95%" stopColor="#7c3aed" stopOpacity={0}/></linearGradient></defs>
               <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...CS.axis}/><YAxis {...CS.axis} tickFormatter={v=>`$${v}K`}/>
-              <Tooltip {...CS.tt} formatter={(v:any)=>[`$${Number(v).toFixed(1)}K USD`,'Ahorro']}/>
-              <Area type="monotone" dataKey="Ahorro Acum.(K USD)" stroke="#7c3aed" strokeWidth={2.5} fill="url(#gg)" dot={{r:4,fill:'#7c3aed'}}/>
+              <Tooltip {...CS.tt} formatter={(v:any)=>[`$${Number(v).toFixed(1)}K USD`,t('dash.ahorro_label')]}/>
+              <Area type="monotone" dataKey="Ahorro Acum.(K USD)" name={t('dash.ahorro_label')} stroke="#7c3aed" strokeWidth={2.5} fill="url(#gg)" dot={{r:4,fill:'#7c3aed'}}/>
             </AreaChart>
           </ChartCard>
           <ScrollableChartCard

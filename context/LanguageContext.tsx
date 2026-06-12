@@ -359,6 +359,59 @@ export const translations: Translations = {
     "sf.provisionado":      { es: "Provisionado", en: "Provisioned" },
     "sf.pagado":            { es: "Pagado",       en: "Paid" },
     "sf.fecha_registro":    { es: "Fecha de Registro", en: "Registration Date" },
+
+    // ── Dashboard — tarjetas KPI ─────────────────────────────────────────────
+    "dash.cloud_mode":      { es: "Firebase Cloud", en: "Firebase Cloud" },
+    "dash.local_mode":      { es: "Local",           en: "Local" },
+    "dash.all_history":     { es: "Todo el historial", en: "Full history" },
+    "dash.sync_indicator":  { es: "Sincronizando datos...", en: "Syncing data..." },
+    "dash.sync_msg":        { es: "Los datos no se han cargado. Sincroniza desde la nube.", en: "Data not loaded. Sync from the cloud." },
+    "dash.sync_btn":        { es: "Descargar Datos", en: "Download Data" },
+    "dash.syncing":         { es: "Sincronizando...", en: "Syncing..." },
+    "dash.pedimentos_loaded":{ es: "pedimentos cargados", en: "pedimentos loaded" },
+
+    // Contenedores por mes
+    "dash.chart_cont_mes":       { es: "CONTENEDORES POR MES", en: "CONTAINERS BY MONTH" },
+    "dash.chart_cont_mes_empty": { es: "Sin datos — sube ZIPs en DataStage", en: "No data — upload ZIPs in DataStage" },
+    "dash.meses":                { es: "meses", en: "months" },
+    "dash.antiguo_izq":          { es: "más antiguo a la izquierda", en: "oldest to the left" },
+
+    // Tarjetas contenedores / facturas
+    "dash.cont_imp":      { es: "CONTENEDORES IMPORTACIÓN", en: "IMPORT CONTAINERS" },
+    "dash.cont_imp_sub":  { es: "504 — contenedores IMP",   en: "504 — IMP containers" },
+    "dash.cont_exp":      { es: "CONTENEDORES EXPORTACIÓN", en: "EXPORT CONTAINERS" },
+    "dash.cont_exp_sub":  { es: "504 — contenedores EXP",   en: "504 — EXP containers" },
+    "dash.unit_cont":     { es: "cont.", en: "cont." },
+    "dash.fact_imp":      { es: "FACTURAS IMPORTACIÓN",     en: "IMPORT INVOICES" },
+    "dash.fact_imp_sub":  { es: "505 — facturas comerciales", en: "505 — commercial invoices" },
+    "dash.fact_exp":      { es: "FACTURAS EXPORTACIÓN",     en: "EXPORT INVOICES" },
+    "dash.fact_exp_sub":  { es: "505 + 507-ED (CFDIs)",     en: "505 + 507-ED (CFDIs)" },
+    "dash.unit_fact":     { es: "fact.", en: "inv." },
+
+    // Nombres de series en las gráficas
+    "dash.bar_in":         { es: "Import Normal (IN)",    en: "Normal Import (IN)" },
+    "dash.bar_a1":         { es: "Temporal (A1)",         en: "Temporary (A1)" },
+    "dash.bar_af":         { es: "Activo Fijo (AF)",      en: "Fixed Asset (AF)" },
+    "dash.bar_rt":         { es: "Exportación RT",        en: "RT Export" },
+    "dash.bar_mat_prima":  { es: "Mat. Prima + Indir.",   en: "Raw Mat. + Indirect" },
+    "dash.bar_activo_fijo":{ es: "Activo Fijo",           en: "Fixed Asset" },
+    "dash.bar_valor_exp":  { es: "Valor (M USD)",         en: "Value (M USD)" },
+    "dash.bar_igi_imp":    { es: "IGI Imp (Efectivo)",    en: "IGI Import (Cash)" },
+    "dash.bar_iva_imp_ef": { es: "IVA Imp (Efectivo)",   en: "VAT Import (Cash)" },
+    "dash.bar_iva_imp_fz": { es: "IVA Imp (Fianza)",     en: "VAT Import (Bond)" },
+    "dash.bar_dta_imp":    { es: "DTA Imp (Efectivo)",   en: "DTA Import (Cash)" },
+    "dash.bar_igi_exp":    { es: "IGI Exp",               en: "IGI Export" },
+    "dash.bar_iva_exp":    { es: "IVA Exp",               en: "VAT Export" },
+    "dash.bar_dta_exp":    { es: "DTA Exp",               en: "DTA Export" },
+    "dash.ahorro_label":   { es: "Ahorro",                en: "Savings" },
+    "dash.valor_label":    { es: "Valor",                 en: "Value" },
+
+    // Subtítulos de gráficas con datos live
+    "dash.chart_contrib_sub_live": { es: "DataStage — 510 contribuciones (IGI/IVA/DTA) cruce 501×510", en: "DataStage — 510 contributions (IGI/VAT/DTA) 501×510 crossref" },
+
+    // Etiquetas Imp/Exp en gráficas
+    "dash.imp": { es: "Imp.", en: "Imp." },
+    "dash.exp": { es: "Exp.", en: "Exp." },
 };
 
 interface LanguageContextProps {

@@ -82,6 +82,25 @@ const ChartCard = ({title,subtitle,children}:{title:string;subtitle?:string;chil
   </div>
 );
 
+// Gráfica con scroll horizontal — un punto por mes-año en orden cronológico
+const ScrollableChartCard = ({title,subtitle,n,children}:{title:string;subtitle?:string;n:number;children:(w:number)=>React.ReactNode}) => {
+  const w = Math.max(640, n * 62);
+  return (
+    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+      <div className="mb-3">
+        <h3 className="font-semibold text-slate-800">{title}</h3>
+        {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+      </div>
+      <div className="overflow-x-auto" style={{height:288}}>
+        <div style={{minWidth:w,height:256}}>{children(w)}</div>
+      </div>
+    </div>
+  );
+};
+// Eje X inclinado para etiquetas mes-año
+const XSA = {angle:-40,textAnchor:'end' as const,height:60,interval:0,tick:{fill:'#64748b',fontSize:10},axisLine:false,tickLine:false} as const;
+const CM  = {top:4,right:16,left:0,bottom:48} as const; // chart margin
+
 const VALUE_COLORS: Record<string,string> = {
   // — IMPORTACIÓN —
   IN: '#3b82f6',  // Importación definitiva normal
@@ -265,32 +284,68 @@ export const Dashboard = () => {
   }, [startDate, endDate]);
 
   // ── COMPUTED CHART DATA ──────────────────────────────────────────
-  const importVolumeData = useMemo(() => MONTHS.map((name,i) => {
-    const recs = allRecords.filter(r => recordMonth(r)===i && isImport(r));
-    return {
-      name,
-      IN:  recs.filter(r => (r.claveDocumento||'').toUpperCase()==='IN' && !r.isFixedAsset).length,
-      A1:  recs.filter(r => (r.claveDocumento||'').toUpperCase()==='A1').length,
-      AF:  recs.filter(r => r.isFixedAsset).length,
-    };
-  }), [allRecords]);
+  const mkKey = (y:number,m:number) => `${y}-${String(m).padStart(2,'0')}`;
+  const sortBuckets = <T extends {year:number;month:number}>(b:Map<string,T>) =>
+    Array.from(b.values()).sort((a,b)=>a.year!==b.year?a.year-b.year:a.month-b.month);
 
-  const exportVolumeData = useMemo(() => MONTHS.map((name,i) => ({
-    name,
-    RT: allRecords.filter(r => recordMonth(r)===i && isExport(r)).length,
-  })), [allRecords]);
+  const importVolumeData = useMemo(() => {
+    const b = new Map<string,{year:number;month:number;IN:number;A1:number;AF:number}>();
+    allRecords.filter(isImport).forEach(r => {
+      const m=recordMonth(r),y=recordYear(r);
+      if(m<0||m>11||y<2000) return;
+      const k=mkKey(y,m);
+      if(!b.has(k)) b.set(k,{year:y,month:m,IN:0,A1:0,AF:0});
+      const s=b.get(k)!;
+      if(r.isFixedAsset) s.AF++;
+      else if((r.claveDocumento||'').toUpperCase()==='IN') s.IN++;
+      else if((r.claveDocumento||'').toUpperCase()==='A1') s.A1++;
+    });
+    return sortBuckets(b).map(({year,month,IN,A1,AF})=>({name:`${MONTHS[month]} ${year}`,IN,A1,AF}));
+  }, [allRecords]);
 
-  const importValueData = useMemo(() => MONTHS.map((name,i) => {
-    const recs = allRecords.filter(r => recordMonth(r)===i && isImport(r));
-    const af  = recs.filter(r=>r.isFixedAsset).reduce((s,r)=>s+r.totalValueUsd,0);
-    const rest = recs.filter(r=>!r.isFixedAsset).reduce((s,r)=>s+r.totalValueUsd,0);
-    return { name, 'Mat. Prima + Indir.': parseFloat((rest/1e6).toFixed(3)), 'Activo Fijo': parseFloat((af/1e6).toFixed(3)) };
-  }), [allRecords]);
+  const exportVolumeData = useMemo(() => {
+    const b = new Map<string,{year:number;month:number;RT:number}>();
+    allRecords.filter(isExport).forEach(r => {
+      const m=recordMonth(r),y=recordYear(r);
+      if(m<0||m>11||y<2000) return;
+      const k=mkKey(y,m);
+      if(!b.has(k)) b.set(k,{year:y,month:m,RT:0});
+      b.get(k)!.RT++;
+    });
+    return sortBuckets(b).map(({year,month,RT})=>({name:`${MONTHS[month]} ${year}`,RT}));
+  }, [allRecords]);
 
-  const exportValueData = useMemo(() => MONTHS.map((name,i) => ({
-    name,
-    'Valor (M USD)': parseFloat((allRecords.filter(r=>recordMonth(r)===i&&isExport(r)).reduce((s,r)=>s+r.totalValueUsd,0)/1e6).toFixed(3)),
-  })), [allRecords]);
+  const importValueData = useMemo(() => {
+    const b = new Map<string,{year:number;month:number;mat:number;af:number}>();
+    allRecords.filter(isImport).forEach(r => {
+      const m=recordMonth(r),y=recordYear(r);
+      if(m<0||m>11||y<2000) return;
+      const k=mkKey(y,m);
+      if(!b.has(k)) b.set(k,{year:y,month:m,mat:0,af:0});
+      const s=b.get(k)!;
+      if(r.isFixedAsset) s.af+=r.totalValueUsd; else s.mat+=r.totalValueUsd;
+    });
+    return sortBuckets(b).map(({year,month,mat,af})=>({
+      name:`${MONTHS[month]} ${year}`,
+      'Mat. Prima + Indir.':parseFloat((mat/1e6).toFixed(3)),
+      'Activo Fijo':parseFloat((af/1e6).toFixed(3))
+    }));
+  }, [allRecords]);
+
+  const exportValueData = useMemo(() => {
+    const b = new Map<string,{year:number;month:number;val:number}>();
+    allRecords.filter(isExport).forEach(r => {
+      const m=recordMonth(r),y=recordYear(r);
+      if(m<0||m>11||y<2000) return;
+      const k=mkKey(y,m);
+      if(!b.has(k)) b.set(k,{year:y,month:m,val:0});
+      b.get(k)!.val+=r.totalValueUsd;
+    });
+    return sortBuckets(b).map(({year,month,val})=>({
+      name:`${MONTHS[month]} ${year}`,
+      'Valor (M USD)':parseFloat((val/1e6).toFixed(3))
+    }));
+  }, [allRecords]);
 
   // Duties — 3 rutas en orden de prioridad:
   // 1) monthlyDuties precomputado (reportes guardados después del fix de mayo 2025)
@@ -298,136 +353,115 @@ export const Dashboard = () => {
   // 3) Último recurso: leer igiTotal/ivaPrvTotal/dtaTotal de allRecordsHydrated
   const dutiesData = useMemo(() => {
     const ZERO = { 'IGI Import':0,'IVA Import':0,'IVA Import Efectivo':0,'IVA Import Fianza':0,'DTA Import':0,'IGI Export':0,'IVA Export':0,'DTA Export':0 };
-    const acc = MONTHS.map((name) => ({ name, ...ZERO }));
+    type DB = typeof ZERO & {year:number;month:number};
+    const acc = new Map<string,DB>();
+    const getB = (y:number,m:number):DB => {
+      const k=mkKey(y,m);
+      if(!acc.has(k)) acc.set(k,{year:y,month:m,...ZERO});
+      return acc.get(k)!;
+    };
 
     // ── RUTA 1: monthlyDuties precomputado (óptimo) ───────────────────────
+    const sm = startDate ? new Date(startDate+'T12:00:00').getMonth() : 0;
+    const em = endDate   ? new Date(endDate  +'T12:00:00').getMonth() : 11;
+    const sy = startDate ? new Date(startDate+'T12:00:00').getFullYear() : curYear;
+    const ey = endDate   ? new Date(endDate  +'T12:00:00').getFullYear() : curYear;
+    const inRange = (y:number,m:number) => {
+      if(y<sy||y>ey) return false;
+      if(y===sy&&m<sm) return false;
+      if(y===ey&&m>em) return false;
+      return true;
+    };
     const hasPrecomputed = reports.some(rep => rep.monthlyDuties && rep.monthlyDuties.length > 0);
     if (hasPrecomputed) {
-      const startMonth = startDate ? new Date(startDate + 'T12:00:00').getMonth() : 0;
-      const endMonth   = endDate   ? new Date(endDate   + 'T12:00:00').getMonth() : 11;
-      const filterStartYear = startDate ? new Date(startDate + 'T12:00:00').getFullYear() : curYear;
-      const filterEndYear   = endDate   ? new Date(endDate   + 'T12:00:00').getFullYear() : curYear;
-
       reports.forEach(rep => {
         if (!rep.monthlyDuties) return;
-        rep.monthlyDuties.forEach((row, i) => {
-          if (!acc[i]) return;
-          // Usar el año real del registro (campo year emitido por parser desde fechaPago)
-          // Fallback: leer del nombre del archivo o del timestamp del reporte
-          const rowYear: number = (row as any).year
+        rep.monthlyDuties.forEach((row:any, i:number) => {
+          const rowYear: number = row.year
             || (() => {
-                const m = (rep.name || '').match(/\b(20\d{2})\b/);
-                return m ? parseInt(m[1], 10) : (rep.timestamp ? new Date(rep.timestamp).getFullYear() : curYear);
+                const m=(rep.name||'').match(/\b(20\d{2})\b/);
+                return m?parseInt(m[1],10):(rep.timestamp?new Date(rep.timestamp).getFullYear():curYear);
               })();
-
-          // Filtrar por año y mes del rango seleccionado
-          if (rowYear < filterStartYear || rowYear > filterEndYear) return;
-          if (rowYear === filterStartYear && i < startMonth) return;
-          if (rowYear === filterEndYear && i > endMonth) return;
-
-          acc[i]['IGI Import'] += row['IGI Import'] || 0;
-          acc[i]['IVA Import'] += row['IVA Import'] || 0;
-          acc[i]['IVA Import Efectivo'] += row['IVA Import Efectivo'] || 0;
-          acc[i]['IVA Import Fianza'] += row['IVA Import Fianza'] || 0;
-          acc[i]['DTA Import'] += row['DTA Import'] || 0;
-          acc[i]['IGI Export'] += row['IGI Export'] || 0;
-          acc[i]['IVA Export'] += row['IVA Export'] || 0;
-          acc[i]['DTA Export'] += row['DTA Export'] || 0;
+          if(!inRange(rowYear,i)) return;
+          const b=getB(rowYear,i);
+          b['IGI Import']          += row['IGI Import']          || 0;
+          b['IVA Import']          += row['IVA Import']          || 0;
+          b['IVA Import Efectivo'] += row['IVA Import Efectivo'] || 0;
+          b['IVA Import Fianza']   += row['IVA Import Fianza']   || 0;
+          b['DTA Import']          += row['DTA Import']          || 0;
+          b['IGI Export']          += row['IGI Export']          || 0;
+          b['IVA Export']          += row['IVA Export']          || 0;
+          b['DTA Export']          += row['DTA Export']          || 0;
         });
       });
     } else {
-      // ── RUTA 2: Recalcular desde rawFiles[510] ya guardados ────────────
-      // Esto evita tener que re-subir archivos. Se cruza 510 (impuestos) con 501 (fechaPago + tipoOperacion).
+      // ── RUTA 2: rawFiles[510] ya guardados ────────────────────────────
       let recomputedFromRaw = false;
       reports.forEach(rep => {
-        const rawFiles = (rep as any).rawFiles as Array<{code:string; rows:string[][]}> | undefined;
+        const rawFiles = (rep as any).rawFiles as Array<{code:string;rows:string[][]}> | undefined;
         if (!rawFiles) return;
         const file510 = rawFiles.find(f => f.code === '510');
         const file501 = rawFiles.find(f => f.code === '501');
         if (!file510 || !file501) return;
-
-        // Construir mapa de claves de pedimento → { tipoOperacion, fechaPago }
-        const pedMap = new Map<string, { tipo: string; fecha: string }>();
+        const pedMap = new Map<string,{tipo:string;fecha:string}>();
         file501.rows.forEach(row => {
-          if (!row || row.length < 4) return;
-          if ((row[0]||'').startsWith('Patente')) return;
-          const key = `${row[0]}-${row[1]}-${row[2]}`;
-          const tipo = (row[3]||'').trim().toUpperCase();
-          const tipoNorm = (tipo==='1'||tipo==='IMP'||tipo.startsWith('I')) ? 'IMP' : 'EXP';
-          const fecha = (row[30]||row[29]||'').trim(); // fechaPago col[30], fechaEntrada col[29]
-          pedMap.set(key, { tipo: tipoNorm, fecha });
+          if (!row || row.length < 4 || (row[0]||'').startsWith('Patente')) return;
+          const key=`${row[0]}-${row[1]}-${row[2]}`;
+          const tipo=(row[3]||'').trim().toUpperCase();
+          const tipoNorm=(tipo==='1'||tipo==='IMP'||tipo.startsWith('I'))?'IMP':'EXP';
+          pedMap.set(key,{tipo:tipoNorm,fecha:(row[30]||row[29]||'').trim()});
         });
-
-        // Acumular contribuciones del 510 cruzadas con el 501
         file510.rows.forEach(row => {
-          if (!row || row.length < 8) return;
-          if ((row[0]||'').startsWith('Patente')) return;
-          const key = `${row[0]}-${row[1]}-${row[2]}`;
-          const ped = pedMap.get(key);
+          if (!row||row.length<8||(row[0]||'').startsWith('Patente')) return;
+          const ped=pedMap.get(`${row[0]}-${row[1]}-${row[2]}`);
           if (!ped) return;
-          const clave = (row[3]||'').trim().toUpperCase();
-          const fp = (row[6]||'').trim(); // Forma de pago
-          const importe = parseFloat(row[7]||'0') || 0;
-          if (!importe) return;
-          if (fp !== '0' && fp !== '22') return; // Solo efectivo y fianza
-
-          const month = parseSATMonth(ped.fecha);
-          if (month < 0 || month > 11) return;
-          recomputedFromRaw = true;
-          const isExp = ped.tipo === 'EXP';
-
-          if (clave === 'IGI' || clave === 'DBA') {
-            if (fp === '0') isExp ? (acc[month]['IGI Export'] += importe) : (acc[month]['IGI Import'] += importe);
-          } else if (clave === 'IVA' || clave === 'PRV') {
-            if (isExp) {
-              if (fp === '0') acc[month]['IVA Export'] += importe;
-            } else {
-              if (fp === '0') {
-                acc[month]['IVA Import'] += importe;
-                acc[month]['IVA Import Efectivo'] += importe;
-              } else if (fp === '22') {
-                acc[month]['IVA Import'] += importe;
-                acc[month]['IVA Import Fianza'] += importe;
-              }
+          const clave=(row[3]||'').trim().toUpperCase();
+          const fp=(row[6]||'').trim();
+          const importe=parseFloat(row[7]||'0')||0;
+          if (!importe||!(fp==='0'||fp==='22')) return;
+          const month=parseSATMonth(ped.fecha);
+          const year=parseSATYear(ped.fecha);
+          if (month<0||month>11||year<2000||!inRange(year,month)) return;
+          recomputedFromRaw=true;
+          const isExp=ped.tipo==='EXP';
+          const b=getB(year,month);
+          if (clave==='IGI'||clave==='DBA') {
+            if (fp==='0') isExp?(b['IGI Export']+=importe):(b['IGI Import']+=importe);
+          } else if (clave==='IVA'||clave==='PRV') {
+            if (isExp) { if(fp==='0') b['IVA Export']+=importe; }
+            else {
+              if(fp==='0'){b['IVA Import']+=importe;b['IVA Import Efectivo']+=importe;}
+              else if(fp==='22'){b['IVA Import']+=importe;b['IVA Import Fianza']+=importe;}
             }
-          } else if (clave === 'DTA') {
-            if (fp === '0') isExp ? (acc[month]['DTA Export'] += importe) : (acc[month]['DTA Import'] += importe);
+          } else if (clave==='DTA') {
+            if(fp==='0') isExp?(b['DTA Export']+=importe):(b['DTA Import']+=importe);
           }
         });
       });
-
-      // ── RUTA 3: Último recurso desde igiTotal/ivaPrvTotal/dtaTotal ─────
-      // Usa allRecordsHydrated (SIN filtro de fecha) para no excluir datos de años anteriores
+      // ── RUTA 3: igiTotal/ivaPrvTotal/dtaTotal ─────────────────────────
       if (!recomputedFromRaw) {
         allRecordsHydrated.forEach(r => {
-          const i = recordMonth(r);
-          if (i < 0 || i > 11) return;
-          const isExp = isExport(r);
-          if (isExp) {
-            acc[i]['IGI Export'] += r.igiTotal   || 0;
-            acc[i]['IVA Export'] += r.ivaPrvTotal || 0;
-            acc[i]['DTA Export'] += r.dtaTotal    || 0;
-          } else {
-            acc[i]['IGI Import'] += r.igiTotal   || 0;
-            acc[i]['IVA Import'] += r.ivaPrvTotal || 0;
-            acc[i]['DTA Import'] += r.dtaTotal    || 0;
-          }
+          const m=recordMonth(r),y=recordYear(r);
+          if(m<0||m>11||y<2000) return;
+          const isExp=isExport(r);
+          const b=getB(y,m);
+          if(isExp){b['IGI Export']+=r.igiTotal||0;b['IVA Export']+=r.ivaPrvTotal||0;b['DTA Export']+=r.dtaTotal||0;}
+          else     {b['IGI Import']+=r.igiTotal||0;b['IVA Import']+=r.ivaPrvTotal||0;b['DTA Import']+=r.dtaTotal||0;}
         });
       }
     }
-
-    return acc.map(row => ({
-      ...row,
-      'IGI Import': parseFloat(row['IGI Import'].toFixed(1)),
-      'IVA Import': parseFloat(row['IVA Import'].toFixed(1)),
-      'IVA Import Efectivo': parseFloat(row['IVA Import Efectivo'].toFixed(1)),
-      'IVA Import Fianza': parseFloat(row['IVA Import Fianza'].toFixed(1)),
-      'DTA Import': parseFloat(row['DTA Import'].toFixed(1)),
-      'IGI Export': parseFloat(row['IGI Export'].toFixed(1)),
-      'IVA Export': parseFloat(row['IVA Export'].toFixed(1)),
-      'DTA Export': parseFloat(row['DTA Export'].toFixed(1)),
+    return sortBuckets(acc).map(({year,month,...d})=>({
+      name:`${MONTHS[month]} ${year}`,
+      'IGI Import':parseFloat(d['IGI Import'].toFixed(1)),
+      'IVA Import':parseFloat(d['IVA Import'].toFixed(1)),
+      'IVA Import Efectivo':parseFloat(d['IVA Import Efectivo'].toFixed(1)),
+      'IVA Import Fianza':parseFloat(d['IVA Import Fianza'].toFixed(1)),
+      'DTA Import':parseFloat(d['DTA Import'].toFixed(1)),
+      'IGI Export':parseFloat(d['IGI Export'].toFixed(1)),
+      'IVA Export':parseFloat(d['IVA Export'].toFixed(1)),
+      'DTA Export':parseFloat(d['DTA Export'].toFixed(1)),
     }));
-  }, [reports, allRecordsHydrated, startDate, endDate]);
+  }, [reports, allRecordsHydrated, startDate, endDate, curYear]);
 
 
   // Contenedores por mes — una entrada por (año, mes) en orden cronológico
@@ -460,64 +494,54 @@ export const Dashboard = () => {
   // Operaciones Especiales — live desde DataStage por claves A3, A4, F4, F5, V3
   const liveSpecialOpsData = useMemo(() => {
     if (!hasLiveData) return null;
-    return MONTHS.map((name, i) => {
-      const base: Record<string, number> = { name: 0 };
-      SPECIAL_CLAVES.forEach(k => { base[k] = 0; });
-      allRecords
-        .filter(r => recordMonth(r) === i && SPECIAL_CLAVES.includes((r.claveDocumento||'').toUpperCase()))
-        .forEach(r => {
-          const k = (r.claveDocumento||'').toUpperCase();
-          base[k] = (base[k] || 0) + 1;
-        });
-      const total = SPECIAL_CLAVES.reduce((s, k) => s + (base[k] || 0), 0);
-      return { name, ...base, Pedimentos: total };
-    });
+    const b = new Map<string,{year:number;month:number}&Record<string,number>>();
+    allRecords
+      .filter(r => SPECIAL_CLAVES.includes((r.claveDocumento||'').toUpperCase()))
+      .forEach(r => {
+        const m=recordMonth(r),y=recordYear(r);
+        if(m<0||m>11||y<2000) return;
+        const k=mkKey(y,m);
+        if(!b.has(k)){const e:any={year:y,month:m,Pedimentos:0};SPECIAL_CLAVES.forEach(c=>{e[c]=0;});b.set(k,e);}
+        const s=b.get(k)!;
+        const c=(r.claveDocumento||'').toUpperCase();
+        (s as any)[c]=((s as any)[c]||0)+1;
+        s.Pedimentos=(s.Pedimentos||0)+1;
+      });
+    return sortBuckets(b).map(({year,month,...rest})=>({name:`${MONTHS[month]} ${year}`,...rest}));
   }, [allRecords, hasLiveData]);
 
   const specialOpsData = liveSpecialOpsData ?? [];
   const hasLiveSpecial = liveSpecialOpsData !== null;
 
-  // Revisiones aduanales — prioridad: reports con reviewsByMonth (guardados en DataStage)
+  // Revisiones aduanales — prioridad: reports con reviewsByMonth
   const liveRevisionsData = useMemo(() => {
-    const combined: { imp: number; exp: number }[] = Array.from({ length: 12 }, () => ({ imp: 0, exp: 0 }));
-    let hasAnyRevisionData = false;
-    
+    const b = new Map<string,{year:number;month:number;Import:number;Export:number}>();
+    let hasAny = false;
+    const sy2=startDate?new Date(startDate+'T12:00:00').getFullYear():curYear;
+    const ey2=endDate  ?new Date(endDate  +'T12:00:00').getFullYear():curYear;
+    const sm2=startDate?new Date(startDate+'T12:00:00').getMonth():0;
+    const em2=endDate  ?new Date(endDate  +'T12:00:00').getMonth():11;
     reports.forEach(report => {
       if (!report.reviewsByMonth) return;
-      hasAnyRevisionData = true;
-
-      // Extraer año del reporte
-      let repYear = curYear;
-      const yearMatch = (report.name || '').match(/\b(20\d{2})\b/);
-      if (yearMatch) {
-        repYear = parseInt(yearMatch[1], 10);
-      } else if (report.timestamp) {
-        repYear = new Date(report.timestamp).getFullYear();
-      }
-
-      const startMonth = startDate ? new Date(startDate + 'T12:00:00').getMonth() : 0;
-      const endMonth   = endDate   ? new Date(endDate   + 'T12:00:00').getMonth() : 11;
-      const filterStartYear = startDate ? new Date(startDate + 'T12:00:00').getFullYear() : curYear;
-      const filterEndYear   = endDate   ? new Date(endDate   + 'T12:00:00').getFullYear() : curYear;
-
-      if (repYear < filterStartYear || repYear > filterEndYear) return;
-
-      report.reviewsByMonth.forEach((m: any, i: number) => {
-        if (repYear === filterStartYear && i < startMonth) return;
-        if (repYear === filterEndYear && i > endMonth) return;
-
-        combined[i].imp += m.Import || 0;
-        combined[i].exp += m.Export || 0;
+      hasAny=true;
+      let repYear=curYear;
+      const ym=(report.name||'').match(/\b(20\d{2})\b/);
+      if(ym) repYear=parseInt(ym[1],10);
+      else if(report.timestamp) repYear=new Date(report.timestamp).getFullYear();
+      if(repYear<sy2||repYear>ey2) return;
+      report.reviewsByMonth.forEach((m:any,i:number)=>{
+        if(repYear===sy2&&i<sm2) return;
+        if(repYear===ey2&&i>em2) return;
+        const k=mkKey(repYear,i);
+        if(!b.has(k)) b.set(k,{year:repYear,month:i,Import:0,Export:0});
+        const s=b.get(k)!;
+        s.Import+=m.Import||0;
+        s.Export+=m.Export||0;
       });
     });
-    
-    if (!hasAnyRevisionData) return null;
-    return combined.map((m, i) => ({
-      name: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i],
-      Import: m.imp,
-      Export: m.exp,
-    }));
-  }, [reports, startDate, endDate]);
+    if(!hasAny) return null;
+    return sortBuckets(b).map(({year,month,Import,Export})=>({name:`${MONTHS[month]} ${year}`,Import,Export}));
+  }, [reports, startDate, endDate, curYear]);
 
   const revisionsData = liveRevisionsData ?? [];
   const hasLiveRevisions = liveRevisionsData !== null;
@@ -905,24 +929,28 @@ export const Dashboard = () => {
       <section>
         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{t('dash.sec_import')}</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <ChartCard title={t('dash.chart_imp_vol')} subtitle={t('dash.chart_imp_vol_sub')}>
-            <BarChart data={ivData}>
-              <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...CS.axis}/><YAxis {...CS.axis}/>
-              <Tooltip {...CS.tt}/><Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
-              <Bar dataKey="IN" name="Import Normal (IN)" fill="#3b82f6" stackId="a"/>
-              <Bar dataKey="A1" name="Temporal (A1)" fill="#93c5fd" stackId="a"/>
-              <Bar dataKey="AF" name="Activo Fijo (AF)" fill="#f59e0b" stackId="a" radius={[4,4,0,0]}/>
-            </BarChart>
-          </ChartCard>
-          <ChartCard title={t('dash.chart_imp_val')} subtitle={t('dash.chart_imp_val_sub')}>
-            <BarChart data={ivalData}>
-              <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...CS.axis}/><YAxis {...CS.axis} tickFormatter={v=>`$${v}M`}/>
-              <Tooltip {...CS.tt} formatter={(v:any)=>[`$${Number(v).toFixed(2)}M`]}/>
-              <Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
-              <Bar dataKey="Mat. Prima + Indir." fill="#1d4ed8" stackId="a"/>
-              <Bar dataKey="Activo Fijo" fill="#f59e0b" stackId="a" radius={[4,4,0,0]}/>
-            </BarChart>
-          </ChartCard>
+          <ScrollableChartCard title={t('dash.chart_imp_vol')} subtitle={t('dash.chart_imp_vol_sub')} n={ivData.length}>
+            {w => (
+              <BarChart width={w} height={256} data={ivData} margin={CM}>
+                <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...XSA}/><YAxis {...CS.axis}/>
+                <Tooltip {...CS.tt}/><Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
+                <Bar dataKey="IN" name="Import Normal (IN)" fill="#3b82f6" stackId="a" maxBarSize={24}/>
+                <Bar dataKey="A1" name="Temporal (A1)" fill="#93c5fd" stackId="a" maxBarSize={24}/>
+                <Bar dataKey="AF" name="Activo Fijo (AF)" fill="#f59e0b" stackId="a" radius={[4,4,0,0]} maxBarSize={24}/>
+              </BarChart>
+            )}
+          </ScrollableChartCard>
+          <ScrollableChartCard title={t('dash.chart_imp_val')} subtitle={t('dash.chart_imp_val_sub')} n={ivalData.length}>
+            {w => (
+              <BarChart width={w} height={256} data={ivalData} margin={CM}>
+                <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...XSA}/><YAxis {...CS.axis} tickFormatter={v=>`$${v}M`}/>
+                <Tooltip {...CS.tt} formatter={(v:any)=>[`$${Number(v).toFixed(2)}M`]}/>
+                <Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
+                <Bar dataKey="Mat. Prima + Indir." fill="#1d4ed8" stackId="a" maxBarSize={24}/>
+                <Bar dataKey="Activo Fijo" fill="#f59e0b" stackId="a" radius={[4,4,0,0]} maxBarSize={24}/>
+              </BarChart>
+            )}
+          </ScrollableChartCard>
         </div>
       </section>
 
@@ -930,20 +958,24 @@ export const Dashboard = () => {
       <section>
         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{t('dash.sec_export')}</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <ChartCard title={t('dash.chart_exp_vol')} subtitle={t('dash.chart_exp_vol_sub')}>
-            <BarChart data={evData}>
-              <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...CS.axis}/><YAxis {...CS.axis}/>
-              <Tooltip {...CS.tt}/><Bar dataKey="RT" name="Exportación RT" fill="#10b981" radius={[4,4,0,0]}/>
-            </BarChart>
-          </ChartCard>
-          <ChartCard title={t('dash.chart_exp_val')} subtitle={t('dash.chart_exp_val_sub')}>
-            <AreaChart data={evalData}>
-              <defs><linearGradient id="eg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.15}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient></defs>
-              <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...CS.axis}/><YAxis {...CS.axis} tickFormatter={v=>`$${v}M`}/>
-              <Tooltip {...CS.tt} formatter={(v:any)=>[`$${v}M`,'Valor']}/>
-              <Area type="monotone" dataKey="Valor (M USD)" stroke="#10b981" strokeWidth={2} fill="url(#eg)"/>
-            </AreaChart>
-          </ChartCard>
+          <ScrollableChartCard title={t('dash.chart_exp_vol')} subtitle={t('dash.chart_exp_vol_sub')} n={evData.length}>
+            {w => (
+              <BarChart width={w} height={256} data={evData} margin={CM}>
+                <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...XSA}/><YAxis {...CS.axis}/>
+                <Tooltip {...CS.tt}/><Bar dataKey="RT" name="Exportación RT" fill="#10b981" radius={[4,4,0,0]} maxBarSize={24}/>
+              </BarChart>
+            )}
+          </ScrollableChartCard>
+          <ScrollableChartCard title={t('dash.chart_exp_val')} subtitle={t('dash.chart_exp_val_sub')} n={evalData.length}>
+            {w => (
+              <AreaChart width={w} height={256} data={evalData} margin={CM}>
+                <defs><linearGradient id="eg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.15}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient></defs>
+                <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...XSA}/><YAxis {...CS.axis} tickFormatter={v=>`$${v}M`}/>
+                <Tooltip {...CS.tt} formatter={(v:any)=>[`$${v}M`,'Valor']}/>
+                <Area type="monotone" dataKey="Valor (M USD)" stroke="#10b981" strokeWidth={2} fill="url(#eg)"/>
+              </AreaChart>
+            )}
+          </ScrollableChartCard>
         </div>
       </section>
 
@@ -951,45 +983,50 @@ export const Dashboard = () => {
       <section>
         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{t('dash.sec_special')}</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <ChartCard
+          <ScrollableChartCard
             title={t('dash.chart_special')}
             subtitle={hasLiveSpecial ? `DataStage — claves: ${SPECIAL_CLAVES.join(', ')}` : t('dash.chart_special_sub')}
+            n={specialOpsData.length}
           >
-            <BarChart data={specialOpsData}>
-              <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...CS.axis}/><YAxis {...CS.axis}/>
-              <Tooltip {...CS.tt}/>
-              {hasLiveSpecial ? (
-                <>
-                  <Legend iconType="circle" wrapperStyle={{fontSize:11}}/>
-                  {SPECIAL_CLAVES.map((k, idx) => (
-                    <Bar
-                      key={k}
-                      dataKey={k}
-                      name={k}
-                      fill={VALUE_COLORS[k]}
-                      stackId="a"
-                      radius={idx === SPECIAL_CLAVES.length - 1 ? [4,4,0,0] : [0,0,0,0]}
-                    />
-                  ))}
-                </>
-              ) : (
-                <Bar dataKey="Pedimentos" fill="#8b5cf6" radius={[4,4,0,0]}/>
-              )}
-            </BarChart>
-          </ChartCard>
-          <ChartCard title={t('dash.chart_contrib')} subtitle={hasLiveData ? 'DataStage — 510 contribuciones (IGI/IVA/DTA) cruce 501×510' : t('dash.chart_contrib_sub_static')}>
-            <BarChart data={dutData}>
-              <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...CS.axis}/><YAxis {...CS.axis} tickFormatter={(val: number) => val.toLocaleString('en-US')}/>
-              <Tooltip {...CS.tt} formatter={(val: number) => val.toLocaleString('en-US')}/><Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
-              <Bar dataKey="IGI Import" name="IGI Imp (Efectivo)" fill="#ef4444" radius={[4,4,0,0]}/>
-              <Bar dataKey="IVA Import Efectivo" name="IVA Imp (Efectivo)" fill="#ea580c" radius={[4,4,0,0]}/>
-              <Bar dataKey="IVA Import Fianza" name="IVA Imp (Fianza)" fill="#fb923c" radius={[4,4,0,0]}/>
-              <Bar dataKey="DTA Import" name="DTA Imp (Efectivo)" fill="#f59e0b" radius={[4,4,0,0]}/>
-              <Bar dataKey="IGI Export" name="IGI Exp" fill="#3b82f6" radius={[4,4,0,0]}/>
-              <Bar dataKey="IVA Export" name="IVA Exp" fill="#06b6d4" radius={[4,4,0,0]}/>
-              <Bar dataKey="DTA Export" name="DTA Exp" fill="#0ea5e9" radius={[4,4,0,0]}/>
-            </BarChart>
-          </ChartCard>
+            {w => (
+              <BarChart width={w} height={256} data={specialOpsData} margin={CM}>
+                <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...XSA}/><YAxis {...CS.axis}/>
+                <Tooltip {...CS.tt}/>
+                {hasLiveSpecial ? (
+                  <>
+                    <Legend iconType="circle" wrapperStyle={{fontSize:11}}/>
+                    {SPECIAL_CLAVES.map((k, idx) => (
+                      <Bar key={k} dataKey={k} name={k} fill={VALUE_COLORS[k]} stackId="a"
+                        radius={idx===SPECIAL_CLAVES.length-1?[4,4,0,0]:[0,0,0,0]} maxBarSize={24}/>
+                    ))}
+                  </>
+                ) : (
+                  <Bar dataKey="Pedimentos" fill="#8b5cf6" radius={[4,4,0,0]} maxBarSize={24}/>
+                )}
+              </BarChart>
+            )}
+          </ScrollableChartCard>
+          <ScrollableChartCard
+            title={t('dash.chart_contrib')}
+            subtitle={hasLiveData ? 'DataStage — 510 contribuciones (IGI/IVA/DTA) cruce 501×510' : t('dash.chart_contrib_sub_static')}
+            n={dutData.length}
+          >
+            {w => (
+              <BarChart width={w} height={256} data={dutData} margin={CM}>
+                <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...XSA}/>
+                <YAxis {...CS.axis} tickFormatter={(val:number)=>val.toLocaleString('en-US')}/>
+                <Tooltip {...CS.tt} formatter={(val:number)=>val.toLocaleString('en-US')}/>
+                <Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
+                <Bar dataKey="IGI Import" name="IGI Imp (Efectivo)" fill="#ef4444" radius={[4,4,0,0]} maxBarSize={20}/>
+                <Bar dataKey="IVA Import Efectivo" name="IVA Imp (Efectivo)" fill="#ea580c" radius={[4,4,0,0]} maxBarSize={20}/>
+                <Bar dataKey="IVA Import Fianza" name="IVA Imp (Fianza)" fill="#fb923c" radius={[4,4,0,0]} maxBarSize={20}/>
+                <Bar dataKey="DTA Import" name="DTA Imp (Efectivo)" fill="#f59e0b" radius={[4,4,0,0]} maxBarSize={20}/>
+                <Bar dataKey="IGI Export" name="IGI Exp" fill="#3b82f6" radius={[4,4,0,0]} maxBarSize={20}/>
+                <Bar dataKey="IVA Export" name="IVA Exp" fill="#06b6d4" radius={[4,4,0,0]} maxBarSize={20}/>
+                <Bar dataKey="DTA Export" name="DTA Exp" fill="#0ea5e9" radius={[4,4,0,0]} maxBarSize={20}/>
+              </BarChart>
+            )}
+          </ScrollableChartCard>
         </div>
       </section>
 
@@ -1005,17 +1042,20 @@ export const Dashboard = () => {
               <Area type="monotone" dataKey="Ahorro Acum.(K USD)" stroke="#7c3aed" strokeWidth={2.5} fill="url(#gg)" dot={{r:4,fill:'#7c3aed'}}/>
             </AreaChart>
           </ChartCard>
-          <ChartCard
+          <ScrollableChartCard
             title={t('dash.chart_rev')}
             subtitle={hasLiveRevisions ? 'DataStage — _Sel.asc (semáforo) + _Inci.asc (incidencias)' : t('dash.chart_rev_sub')}
+            n={revisionsData.length}
           >
-            <ComposedChart data={revisionsData}>
-              <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...CS.axis}/><YAxis {...CS.axis}/>
-              <Tooltip {...CS.tt}/><Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
-              <Bar dataKey="Import" name={t('dash.rev_import')} fill="#3b82f6" radius={[4,4,0,0]}/>
-              <Line type="monotone" dataKey="Export" name={t('dash.rev_export')} stroke="#f43f5e" strokeWidth={2} dot={{r:3}}/>
-            </ComposedChart>
-          </ChartCard>
+            {w => (
+              <ComposedChart width={w} height={256} data={revisionsData} margin={CM}>
+                <CartesianGrid {...CS.grid}/><XAxis dataKey="name" {...XSA}/><YAxis {...CS.axis}/>
+                <Tooltip {...CS.tt}/><Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
+                <Bar dataKey="Import" name={t('dash.rev_import')} fill="#3b82f6" radius={[4,4,0,0]} maxBarSize={24}/>
+                <Line type="monotone" dataKey="Export" name={t('dash.rev_export')} stroke="#f43f5e" strokeWidth={2} dot={{r:3}}/>
+              </ComposedChart>
+            )}
+          </ScrollableChartCard>
         </div>
       </section>
 

@@ -535,12 +535,17 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
     return { acc: monthlyDutiesAccum[month], month };
   };
 
+  // Helper: yield al hilo UI cada N iteraciones para no congelar el browser
+  const yieldEvery = async (i: number, n = 5000) => { if (i > 0 && i % n === 0) await new Promise(r => setTimeout(r, 0)); };
+
   // 510 → Contribuciones del pedimento: usar col[7] FechaPagoReal de cada registro
-  tempTaxes.forEach(tax => {
+  for (let i = 0; i < tempTaxes.length; i++) {
+    await yieldEvery(i);
+    const tax = tempTaxes[i];
     const record = pedimentoMap.get(tax.key);
-    if (!record) return;
+    if (!record) continue;
     const result = getAccAndYear(tax.fechaPagoReal, tax.key);
-    if (!result) return;
+    if (!result) continue;
     const { acc } = result;
     const isExp = record.tipoOperacion === 'EXP';
     if (isExp) {
@@ -556,16 +561,18 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
         else if (tax.clave === 'DTA' || tax.clave === 'DAN' || tax.clave === '1') acc.dta_imp += tax.importe;
       }
     }
-  });
+  }
 
-  // 702 → Diferencias de contribuciones del pedimento: usar col[7] FechaPagoReal de cada registro
-  tempTaxesFianza.forEach(tax => {
+  // 702 → Diferencias del pedimento: usar col[7] FechaPagoReal
+  // FormaPago=6 = "Pendiente de pago" (Apéndice 13 Anexo 22 RGCE) → excluir
+  for (let i = 0; i < tempTaxesFianza.length; i++) {
+    await yieldEvery(i);
+    const tax = tempTaxesFianza[i];
     const record = pedimentoMap.get(tax.key);
-    if (!record) return;
-    // FormaPago=6 = "Pendiente de pago" (Apéndice 13, Anexo 22 RGCE) → excluir, no es pago real
-    if (tax.formaPago === '6') return;
+    if (!record) continue;
+    if (tax.formaPago === '6') continue; // Pendiente de pago → excluir
     const result = getAccAndYear(tax.fechaPagoReal, tax.key);
-    if (!result) return;
+    if (!result) continue;
     const { acc } = result;
     const isExp = record.tipoOperacion === 'EXP';
     if (isExp) {
@@ -577,18 +584,19 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
       else if (tax.clave === 'IVA' || tax.clave === 'PRV' || tax.clave === '15' || tax.clave === '23') acc.iva_imp_fianza += tax.importe;
       else if (tax.clave === 'DTA' || tax.clave === 'DAN' || tax.clave === '1') acc.dta_imp += tax.importe;
     }
-  });
+  }
 
-  // 557 → Contribuciones de la partida: usar col[8] FechaPagoReal de cada registro
-  // Acumula TODOS los tipos (IGI=6, IVA=3, DTA=1) excluyendo fp=6 (Pendiente de pago)
-  // fp=22 (Garantía IVA/IEPS) → iva_imp_fianza; fp=0 (Efectivo) → efectivo
-  tempTaxesPartida.forEach(tax => {
+  // 557 → Contribuciones de la partida: usar col[8] FechaPagoReal
+  // Acumula TODOS los tipos (IGI=6, IVA=3, DTA=1) — excluye fp=6 (Pendiente de pago)
+  // fp=22 (Garantía IVA/IEPS) → iva_imp_fianza
+  for (let i = 0; i < tempTaxesPartida.length; i++) {
+    await yieldEvery(i); // yield cada 5000 — evita congelar el browser
+    const tax = tempTaxesPartida[i];
     const record = pedimentoMap.get(tax.key);
-    if (!record) return;
-    // FormaPago=6 = "Pendiente de pago" → excluir
-    if (tax.formaPago === '6') return;
+    if (!record) continue;
+    if (tax.formaPago === '6') continue; // Pendiente de pago → excluir
     const result = getAccAndYear(tax.fechaPagoReal, tax.key);
-    if (!result) return;
+    if (!result) continue;
     const { acc } = result;
     const isExp = record.tipoOperacion === 'EXP';
     const fp = tax.formaPago;
@@ -599,13 +607,12 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
     } else {
       if (tax.clave === '6' || tax.clave === 'IGI' || tax.clave === 'DBA') acc.igi_imp += tax.importe;
       else if (tax.clave === '3' || tax.clave === 'IVA' || tax.clave === 'PRV') {
-        if (fp === '22') acc.iva_imp_fianza += tax.importe; // Garantía IVA/IEPS
-        else acc.iva_imp_efectivo += tax.importe;           // Efectivo u otras formas
-        acc.iva_imp_efectivo = acc.iva_imp_efectivo; // explícito, sin doble suma
+        if (fp === '22') acc.iva_imp_fianza += tax.importe;
+        else             acc.iva_imp_efectivo += tax.importe;
       }
       else if (tax.clave === '1' || tax.clave === 'DTA' || tax.clave === 'DAN') acc.dta_imp += tax.importe;
     }
-  });
+  }
 
   // Sort raw files by code for better UI
   rawFiles.sort((a, b) => a.code.localeCompare(b.code));

@@ -231,6 +231,16 @@ export const Dashboard = () => {
         totalExportContainers,
         totalImportInvoices,
         totalExportInvoices,
+        // Breakdowns by clave
+        importByKey,
+        exportByKey,
+        importValueByKey,
+        exportValueByKey,
+        importContainersByKey,
+        exportContainersByKey,
+        importInvoicesByKey,
+        exportInvoicesByKey,
+        // Chart series
         containerVolumeData,
         importVolumeData:   hasLiveData ? importVolumeData  : [],
         exportVolumeData:   hasLiveData ? exportVolumeData  : [],

@@ -424,13 +424,22 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         <header className="bg-white shadow-sm h-16 flex items-center justify-between px-8 sticky top-0 z-[100]">
           <h2 className="text-lg font-semibold text-slate-700">CFMoto Import/Export Control</h2>
           <div className="flex items-center space-x-4">
-            <button
-               onClick={toggleLanguage} 
-               className="flex items-center justify-center font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg px-3 py-1.5 transition-colors border border-slate-200"
-               title="Cambiar Idioma / Toggle Language"
-            >
-               {language === 'es' ? 'ES | EN' : 'EN | ES'}
-            </button>
+            <div className="flex items-center rounded-lg border border-slate-200 overflow-hidden text-xs font-bold shadow-sm">
+              {(['es','en','zh'] as const).map((lang, i) => (
+                <button
+                  key={lang}
+                  onClick={() => language !== lang && toggleLanguage()}
+                  className={`px-2.5 py-1.5 transition-colors ${
+                    language === lang
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                  } ${i > 0 ? 'border-l border-slate-200' : ''}`}
+                  title={lang === 'es' ? 'Español' : lang === 'en' ? 'English' : '中文'}
+                >
+                  {lang === 'zh' ? '中' : lang.toUpperCase()}
+                </button>
+              ))}
+            </div>
             <ConnectionStatus />
             <SyncIndicator />
             <div className={`px-3 py-1 rounded-full text-xs font-bold border ${user?.role === 'Admin' ? 'bg-red-50 text-red-600 border-red-200' :

@@ -71,8 +71,13 @@ export const AsignacionesDiarias: React.FC = () => {
     sello: string;
   } | null>(null);
 
+  // Batch manual close
+  const [isBatchClosing, setIsBatchClosing] = useState(false);
+  const [batchResult, setBatchResult] = useState<{ ok: number; err: number } | null>(null);
+
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
+  const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'CERRADO' | 'POR_CERRAR'>('ALL');
   const today = new Date().toISOString().split('T')[0];
   const savedRange = (() => { try { return JSON.parse(localStorage.getItem('asig_dateRange') || 'null'); } catch { return null; } })();
   const [dateRange, setDateRange] = useState({ 
@@ -194,7 +199,7 @@ export const AsignacionesDiarias: React.FC = () => {
     }
   };
 
-  const filteredData = useMemo(() => {
+  const { filteredData, filterCounts } = useMemo(() => {
     let result = asignaciones;
 
     // CARRIER role: only show assignments for their SCAC
@@ -266,6 +271,31 @@ export const AsignacionesDiarias: React.FC = () => {
         });
     }
 
+    // Compute counts BEFORE cargadoFilter is applied
+    let cerradoCount = 0;
+    let porCerrarCount = 0;
+
+    result.forEach(a => {
+        const hasLiberacion = liberaciones.some(lib => lib.asignacionCajaId === a.id);
+        if (hasLiberacion) cerradoCount++;
+        else porCerrarCount++;
+    });
+
+    const filterCounts = {
+        ALL: result.length,
+        CERRADO: cerradoCount,
+        POR_CERRAR: porCerrarCount
+    };
+
+    // Cargado Filter (CERRADO = hasLiberacion, POR_CERRAR = !hasLiberacion)
+    if (cargadoFilter !== 'ALL') {
+        result = result.filter(a => {
+            const hasLiberacion = liberaciones.some(lib => lib.asignacionCajaId === a.id);
+            return cargadoFilter === 'CERRADO' ? hasLiberacion : !hasLiberacion;
+        });
+    }
+
+
     // Apply sorting
     if (sortConfig) {
         result.sort((a, b) => {
@@ -303,8 +333,8 @@ export const AsignacionesDiarias: React.FC = () => {
         });
     }
 
-    return result;
-  }, [asignaciones, searchTerm, dateRange, activeMassQuery, sortConfig, liberaciones, liberacionesDock, scacFilter, subLineaFilter, transportLines, user]);
+    return { filteredData: result, filterCounts };
+  }, [asignaciones, searchTerm, cargadoFilter, dateRange, activeMassQuery, sortConfig, liberaciones, liberacionesDock, scacFilter, subLineaFilter, transportLines, user]);
 
 
   const handleApplyMassQuery = () => {
@@ -373,7 +403,28 @@ export const AsignacionesDiarias: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fecha || !formData.numeroCaja || !formData.driverId) return;
+    if (!formData.carrierCodigo || !formData.transportLineId || !formData.numeroCaja || !formData.driverId) {
+      alert('Los campos CARRIER PADRE (SCAC), LÍNEA DE TRANSPORTE, EQUIPMENT y TRUCK TRACTOR son obligatorios.');
+      return;
+    }
+
+    // VALIDACIÓN DE CAPACIDAD: Máximo 6 operaciones por hora
+    if (formData.horaAsignacion && formData.horaAsignacion !== '11:00') {
+      const currentHour = formData.horaAsignacion.substring(0, 2);
+      let sameHourCount = 0;
+      asignaciones.forEach(a => {
+        if (a.fecha === formData.fecha && a.horaAsignacion?.startsWith(currentHour) && (!isEditing || a.id !== formData.id)) {
+          sameHourCount++;
+        }
+      });
+      if (sameHourCount >= 6) {
+        alert('Horario no asignado seleccionar otro hora de ventana');
+        return;
+      }
+    } else if (formData.horaAsignacion === '11:00') {
+        alert('Horario no asignado seleccionar otro hora de ventana');
+        return;
+    }
 
     // VALIDACIÓN DE DUPLICADOS: No permitir misma caja el mismo día
     const isDuplicate = asignaciones.some(a => 
@@ -505,9 +556,95 @@ export const AsignacionesDiarias: React.FC = () => {
       setShowModal(true);
   };
 
+  // Descarga via blob — nunca expone la URL del proveedor de almacenamiento
+  const downloadFileAsBlob = async (url: string, filename: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch (e) {
+      console.error('Error al descargar archivo:', e);
+    }
+  };
+
+
+  // CIERRE MANUAL BATCH (Admin only) — criterios idénticos al badge Admin del sidebar
+  const handleBatchManualClose = async () => {
+    const eligible = filteredData.filter(a => {
+      const isRechazado = String((a as any).dockArribo || '').trim().toUpperCase() === 'RECHAZADO';
+      const isNoShow = String((a as any).dockArribo || '').trim().toUpperCase() === 'NO SHOW';
+      const hasUSDB1 = String((a as any).observaciones || '').toUpperCase().includes('USDB1');
+      if (isRechazado || isNoShow || hasUSDB1) return false;
+      const hasCCP = !!(a as any).ccpUrl || !!(a as any).ccpUploadedAt;
+      const isClosed = liberaciones.some(l => l.asignacionCajaId === a.id && !!l.selloValidado);
+      return hasCCP && !isClosed;
+    });
+
+    if (eligible.length === 0) {
+      alert('No hay operaciones elegibles para cierre manual en el rango actual.');
+      return;
+    }
+    if (!window.confirm(`¿Cerrar manualmente ${eligible.length} operación(es) pendiente(s)?\n\n• Fecha de cierre: hoy\n• Hora: 1 hora después del CCP (o tiempo actual si no hay CCP)\n• Observaciones: "Cierre manual por caída de API"\n\nEsta acción no se puede deshacer.`)) return;
+
+    setIsBatchClosing(true);
+    setBatchResult(null);
+    const todayDate = new Date().toISOString().split('T')[0];
+    let ok = 0; let err = 0;
+
+    for (const a of eligible) {
+      try {
+        const exactSello = sellos.find(s => s.asignacionCajaId === a.id);
+        const selloRow = exactSello || sellos.find(s => s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha);
+
+        let fechaHoraRegistro: string;
+        if ((a as any).ccpUploadedAt) {
+          const ccpPlus1h = new Date(new Date((a as any).ccpUploadedAt).getTime() + 60 * 60 * 1000);
+          fechaHoraRegistro = ccpPlus1h.toLocaleString('es-MX', { timeZone: 'America/Monterrey', hour12: false });
+        } else {
+          fechaHoraRegistro = new Date().toLocaleString('es-MX', { timeZone: 'America/Monterrey', hour12: false });
+        }
+
+        const lib: LiberacionRecord = {
+          fechaLiberacion: todayDate,
+          asignacionCajaId: a.id!,
+          numeroCaja: a.numeroCaja,
+          selloValidado: selloRow?.selloAsignado || '',
+          coincideConOriginal: true,
+          usuario: user?.email || user?.name || 'admin',
+          fechaHoraRegistro,
+          fotos: { cajaUrl: '', puertasUrl: '', selloUrl: '' },
+          createdAt: new Date().toISOString()
+        };
+        await liberacionService.addLiberacion(lib);
+
+        const currentObs = (a.observaciones || '').trim();
+        const newObs = currentObs
+          ? `${currentObs} | Cierre manual por caída de API`
+          : 'Cierre manual por caída de API';
+        await asignacionCajaService.updateAsignacion(a.id!, { observaciones: newObs } as any);
+        ok++;
+      } catch (e) {
+        console.error('Error en cierre manual de', a.numeroCaja, e);
+        err++;
+      }
+    }
+
+    setIsBatchClosing(false);
+    setBatchResult({ ok, err });
+    await loadData();
+    window.dispatchEvent(new Event('reserva:changed'));
+  };
+
   // CSV EXPORT
   const exportCSV = () => {
-      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "CARRIER (SCAC)", "NOMBRE COMERCIAL", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO", "ARRIBO", "DOCK", "COMENTARIOS ARRIBO", "TIPO", "LIBERACION DOCK", "LAYOUT", "CCP", "ANEXO29", "SELLO LIBERACIÓN", "FECHA SELLADO", "OBSERVACIONES"];
+      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "CARRIER (SCAC)", "NOMBRE COMERCIAL", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO", "ARRIBO", "DOCK", "COMENTARIOS ARRIBO", "TIPO", "LIBERACION DOCK", "LAYOUT", "CCP", "ANEXO29", "SELLO ASIGNADO", "FECHA SELLADO", "OBSERVACIONES"];
       const rows = filteredData.map(a => {
           const lib = liberaciones.find(l => l.asignacionCajaId === a.id);
           const tl = transportLines.find(t => t.carrierCodigo === a.carrierCodigo);
@@ -553,7 +690,8 @@ export const AsignacionesDiarias: React.FC = () => {
       const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "DRIVER ID", "MODELO", "OBSERVACIONES"];
       const example = ["2026-03-25", "09:30", "OP-001", "EMCU-123456", "ARC-001", "MODEL A, MODEL B", "Carga prioritaria"];
       // Nota: CARRIER (SCAC) y NOMBRE COMERCIAL se derivan automaticamente del NUMERO CAJA al importar
-      const csvContent = [headers, example].map(e => e.join(",")).join("\n");
+      const note  = ["YYYY-MM-DD (obligatorio)", "HH:MM (opcional)", "Auto si vacío", "⚠ DEBE EXISTIR EN CATÁLOGO EQUIPMENT", "⚠ DEBE EXISTIR EN CATÁLOGO DRIVERS", "Ej: BOLT 6, PRO 6 (opcional)", "Máx 50 caracteres"];
+      const csvContent = [headers, note, example].map(e => e.join(",")).join("\n");
       const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -592,6 +730,14 @@ export const AsignacionesDiarias: React.FC = () => {
           let imported = 0;
           let errors: string[] = [];
           const seenInBatch = new Set<string>();
+          
+          const hourCounts: Record<string, number> = {};
+          asignaciones.forEach(a => {
+            if (a.fecha && a.horaAsignacion) {
+               const key = `${a.fecha}|${a.horaAsignacion.substring(0, 2)}`;
+               hourCounts[key] = (hourCounts[key] || 0) + 1;
+            }
+          });
 
           for (let i = 1; i < rows.length; i++) {
               const r = rows[i];
@@ -615,6 +761,9 @@ export const AsignacionesDiarias: React.FC = () => {
               const rawModelo = mIdx !== -1 ? r[mIdx]?.trim().toUpperCase() : '';
               const rawObs = obsIdx !== -1 ? r[obsIdx]?.trim().substring(0, 50) : '';
 
+              // Ignorar fila de instrucciones de la plantilla
+              if (rawFecha?.startsWith('YYYY') || rawCaja?.startsWith('⚠')) continue;
+
               if (!rawFecha && !rawCaja && !rawDriver) continue;
               if (!rawFecha || !rawCaja || !rawDriver) {
                   errors.push(`Fila ${i + 1}: Faltan datos (Fecha, Caja o Driver)`);
@@ -632,15 +781,39 @@ export const AsignacionesDiarias: React.FC = () => {
               }
               seenInBatch.add(batchKey);
 
+              const finalHora = rawHora || new Date().toTimeString().substring(0, 5);
+              const hrPrefix = finalHora.substring(0, 2);
+              const hourKey = `${rawFecha}|${hrPrefix}`;
+
+              if (finalHora === '11:00' || hrPrefix === '11') {
+                 errors.push(`Fila ${i + 1}: El horario de las 11:00 está BLOQUEADO — fila omitida.`);
+                 continue;
+              }
+
+              if ((hourCounts[hourKey] || 0) >= 6) {
+                  errors.push(`Fila ${i + 1}: El horario ${hrPrefix}:00 ya tiene el máximo de 6 operaciones para la fecha ${rawFecha} — fila omitida.`);
+                  continue;
+              }
+              hourCounts[hourKey] = (hourCounts[hourKey] || 0) + 1;
+
               const matchCaja = cajas.find(c => c.NumeroCaja.toUpperCase() === rawCaja);
               const matchDriver = drivers.find(d => d.driverId.toUpperCase() === rawDriver);
 
               const carrierPadre = matchCaja ? matchCaja.carrierCodigo : (matchDriver ? matchDriver.carrierCodigo : '');
               const transportId = matchDriver?.transportLineId || '';
 
+              if (!matchCaja) {
+                  errors.push(`Fila ${i + 1}: EQUIPMENT "${rawCaja}" no existe en el catálogo de cajas — fila omitida.`);
+                  continue;
+              }
+              if (!matchDriver) {
+                  errors.push(`Fila ${i + 1}: TRUCK TRACTOR "${rawDriver}" no existe en el catálogo de drivers — fila omitida.`);
+                  continue;
+              }
+
               const asig: AsignacionCajaModel = {
                   fecha: rawFecha,
-                  horaAsignacion: rawHora || new Date().toTimeString().substring(0, 5),
+                  horaAsignacion: finalHora,
                   numeroOperacion: rawOperacion || '',
                   carrierCodigo: carrierPadre,
                   transportLineId: transportId,
@@ -678,27 +851,38 @@ export const AsignacionesDiarias: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col -mt-8 -mx-8 bg-slate-100 overflow-hidden" style={{ height: 'calc(100vh - 4rem)' }}>
       <div className="flex-shrink-0 px-14 pt-8 pb-4 z-20 bg-slate-100 border-b border-slate-200 shadow-sm">
-        <div className="flex justify-between items-center">
-        <div>
-           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center flex-wrap gap-4">
+            <div>
+               <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
               <Navigation className="text-blue-600" />
               {t('asig.title')}
            </h1>
            <p className="text-slate-500 text-sm mt-1">{t('asig.subtitle')}</p>
         </div>
         
-        <div className="flex items-center gap-3">
-             <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input 
-                    type="text" 
-                    placeholder="Búsqueda multi-termino..." 
-                    value={searchTerm} 
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-56 shadow-sm"
-                />
+        <div className="flex items-center gap-3 flex-wrap">
+             <div className="flex items-center bg-white border border-slate-300 rounded-lg p-1 shadow-sm">
+                <button
+                  onClick={() => setCargadoFilter('ALL')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${cargadoFilter === 'ALL' ? 'bg-teal-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
+                >
+                  Todos {filterCounts.ALL > 0 ? `(${filterCounts.ALL})` : ''}
+                </button>
+                <button
+                  onClick={() => setCargadoFilter('POR_CERRAR')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${cargadoFilter === 'POR_CERRAR' ? 'bg-teal-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
+                >
+                  POR CERRAR {filterCounts.POR_CERRAR > 0 ? `(${filterCounts.POR_CERRAR})` : ''}
+                </button>
+                <button
+                  onClick={() => setCargadoFilter('CERRADO')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${cargadoFilter === 'CERRADO' ? 'bg-teal-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
+                >
+                  CERRADO {filterCounts.CERRADO > 0 ? `(${filterCounts.CERRADO})` : ''}
+                </button>
              </div>
-             
+
              <div className="flex items-center bg-white border border-slate-300 rounded-lg pr-2 overflow-hidden shadow-sm">
                 <button 
                   onClick={() => {
@@ -790,7 +974,47 @@ export const AsignacionesDiarias: React.FC = () => {
                     <Plus size={18} className="mr-2" /> {t('btn.new')}
                  </button>
              )}
-        </div>
+
+             {/* Cierre manual batch — Admin only */}
+             {user?.role === UserRole.ADMIN && (
+               <button
+                 onClick={handleBatchManualClose}
+                 disabled={isBatchClosing}
+                 className="bg-red-600 text-white px-4 py-2 flex items-center rounded-lg hover:bg-red-700 shadow-md shadow-red-500/30 transition-all font-medium text-sm disabled:opacity-60 disabled:cursor-wait whitespace-nowrap"
+                 title="Cierre manual de operaciones pendientes con CCP"
+               >
+                 {isBatchClosing
+                   ? (<><Loader2 size={18} className="mr-2 animate-spin" />Cerrando...</>)
+                   : (<><Shield size={18} className="mr-2" />Cierre</>)
+                 }
+               </button>
+             )}
+             {batchResult && user?.role === UserRole.ADMIN && (
+               <span
+                 className={`text-xs font-bold px-2 py-1 rounded-full border cursor-pointer ${
+                   batchResult.err > 0
+                     ? 'bg-amber-50 text-amber-700 border-amber-300'
+                     : 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                 }`}
+                 onClick={() => setBatchResult(null)}
+                 title="Clic para cerrar"
+               >
+                 ✓ {batchResult.ok} cerradas{batchResult.err > 0 ? ` · ${batchResult.err} errores` : ''}
+               </span>
+             )}
+            </div>
+          </div>
+          
+          <div className="relative w-full">
+             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+             <input 
+                 type="text" 
+                 placeholder="Búsqueda multi-termino (Operación, Caja, Driver, Placas, Transportista, Sellos, etc)..." 
+                 value={searchTerm} 
+                 onChange={e => setSearchTerm(e.target.value)}
+                 className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition-shadow"
+             />
+          </div>
         </div>
       </div>{/* end controls panel */}
 
@@ -806,21 +1030,21 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 font-medium w-[140px] min-w-[140px] max-w-[140px] bg-slate-50 sticky top-0 left-[180px] z-40 border-r border-slate-200">{renderColumnHeader(t('col.caja'), 'numeroCaja')}</th>
               <th className="p-4 font-medium w-[150px] min-w-[150px] max-w-[150px] bg-slate-50 sticky top-0 left-[320px] z-40 shadow-[4px_0_10px_-3px_rgba(0,0,0,0.1)]">{renderColumnHeader(t('col.fecha'), 'fecha')}</th>
               <th className="p-4 font-medium min-w-[100px]">{renderColumnHeader(t('col.arribo'), 'arribo')}</th>
-              <th className="p-4 font-medium min-w-[100px]">DOCK</th>
+              <th className="p-4 font-medium min-w-[100px]">{t('col.dock')}</th>
               <th className="p-4 font-medium min-w-[180px]">{renderColumnHeader(t('col.comentariosArribo'), 'comentariosArribo')}</th>
-              <th className="p-4 font-medium min-w-[80px] text-violet-700 bg-violet-50/40 whitespace-nowrap">TIPO</th>
+              <th className="p-4 font-medium min-w-[80px] text-violet-700 bg-violet-50/40 whitespace-nowrap">{t('col.tipo')}</th>
               <th className="p-4 font-medium">{renderColumnHeader(t('col.placascaja'), 'placasCaja')}</th>
               <th className="p-4 font-medium min-w-[160px] text-blue-600 uppercase text-xs">{renderColumnHeader(t('col.lineatransporte'), 'transportLineId')}</th>
               <th className="p-4 font-medium min-w-[140px] text-orange-600 uppercase text-xs">{renderColumnHeader('SCAC', 'carrierCodigo')}</th>
               <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.driver'), 'nombreDriver')}</th>
               <th className="p-4 font-medium">{renderColumnHeader(t('col.placastracto'), 'placasTracto')}</th>
               <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.modelo'), 'modeloAsignado')}</th>
-              <th className="p-4 font-medium min-w-[170px] text-violet-700 bg-violet-50/40 whitespace-nowrap">CREADO</th>
-              <th className="p-4 font-medium min-w-[110px] text-sky-700 bg-sky-50/30 whitespace-nowrap">LIBERACION DOCK</th>
-              <th className="p-4 font-medium text-center text-indigo-700 bg-indigo-50/30 whitespace-nowrap">LAYOUT</th>
-              <th className="p-4 font-medium text-center text-sky-700 bg-sky-50/30 whitespace-nowrap">CCP</th>
-              <th className="p-4 font-medium text-center text-emerald-700 bg-emerald-50/30 whitespace-nowrap">Anexo29</th>
-              <th className="p-4 font-medium min-w-[100px]">{renderColumnHeader(t('col.sello'), 'selloLiberacion')}</th>
+              <th className="p-4 font-medium min-w-[170px] text-violet-700 bg-violet-50/40 whitespace-nowrap">{t('col.creado')}</th>
+              <th className="p-4 font-medium min-w-[110px] text-sky-700 bg-sky-50/30 whitespace-nowrap">{t('col.liberacion')}</th>
+              <th className="p-4 font-medium text-center text-indigo-700 bg-indigo-50/30 whitespace-nowrap">{t('col.layout')}</th>
+              <th className="p-4 font-medium text-center text-sky-700 bg-sky-50/30 whitespace-nowrap">{t('col.ccp')}</th>
+              <th className="p-4 font-medium text-center text-emerald-700 bg-emerald-50/30 whitespace-nowrap">{t('col.anexo29')}</th>
+              <th className="p-4 font-medium min-w-[160px] text-teal-700 bg-teal-50/30 whitespace-nowrap">{t('col.sello_asignado')}</th>
               <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">{t('col.cargado')}</th>
               <th className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap">{t('col.sellado_time')}</th>
               <th className="p-4 font-medium text-slate-800 bg-slate-100/50">{t('col.observaciones')}</th>
@@ -995,9 +1219,9 @@ export const AsignacionesDiarias: React.FC = () => {
                    ) : a.ccpUrl ? (
                      <div className="flex flex-col items-center gap-0.5">
                        <div className="flex items-center justify-center gap-1">
-                         <a href={a.ccpUrl} target="_blank" rel="noopener noreferrer"
+                         <a href={toDriveDownload(a.ccpUrl)}
                             className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
-                            title="Ver CCP en Drive" onClick={e => e.stopPropagation()}>
+                            title="Descargar CCP" onClick={e => e.stopPropagation()}>
                            <FileText size={18} />
                          </a>
                          <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
@@ -1030,9 +1254,9 @@ export const AsignacionesDiarias: React.FC = () => {
                    ) : a.anexo29Url ? (
                      <div className="flex flex-col items-center gap-0.5">
                        <div className="flex items-center justify-center gap-1">
-                         <a href={a.anexo29Url} target="_blank" rel="noopener noreferrer"
+                         <a href={toDriveDownload(a.anexo29Url)}
                             className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
-                            title="Ver Anexo29 en Drive" onClick={e => e.stopPropagation()}>
+                            title="Descargar Anexo29" onClick={e => e.stopPropagation()}>
                            <FileText size={18} />
                          </a>
                          <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer"
@@ -1058,9 +1282,19 @@ export const AsignacionesDiarias: React.FC = () => {
                    )}
                  </td>
                 
-                <td className="p-4 font-mono text-teal-700 font-bold whitespace-nowrap border-l border-teal-100/50 bg-teal-50/10">
-                    {liberacion ? liberacion.selloValidado : '-'}
-                </td>
+                <td className="p-4 border-l border-teal-100/50 bg-teal-50/10 whitespace-nowrap">
+                     {(() => {
+                       const exactSello = sellos.find(s => s.asignacionCajaId === a.id);
+                       const selloRow = exactSello || sellos.find(s => s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha);
+                       if (!selloRow) return <span className="text-slate-300 text-xs">—</span>;
+                       return (
+                         <div className="flex flex-col gap-0">
+                           <span className="font-mono font-bold text-teal-700 text-sm">{selloRow.selloAsignado}</span>
+                           <span className="text-[10px] text-slate-400 font-mono">{selloRow.fechaHoraRegistro || '—'}</span>
+                         </div>
+                       );
+                     })()}
+                 </td>
                 
                 <td className="p-4 text-center">
                     {hasLiberacion ? (
@@ -1174,7 +1408,22 @@ export const AsignacionesDiarias: React.FC = () => {
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-1">Hora (24h)</label>
                         <div lang="en-GB">
-                          <input disabled={isRestrictedRole} type="time" required value={formData.horaAsignacion || ''} onChange={e => setFormData({...formData, horaAsignacion: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100" />
+                          <select disabled={isRestrictedRole} required value={formData.horaAsignacion || ''} onChange={e => setFormData({...formData, horaAsignacion: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100">
+                            <option value="" disabled>Seleccionar Hora</option>
+                            {["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"].map(hr => {
+                              const hourPrefix = hr.substring(0, 2);
+                              const count = asignaciones.filter(a => a.fecha === formData.fecha && a.horaAsignacion?.startsWith(hourPrefix) && (!isEditing || a.id !== formData.id)).length;
+                              if (hr === "11:00") {
+                                return <option key={hr} value={hr} disabled>{hr} - BLOQUEADO</option>;
+                              }
+                              const isFull = count >= 6;
+                              return (
+                                <option key={hr} value={hr} disabled={isFull} className={isFull ? 'text-red-500 font-bold' : ''}>
+                                  {hr} {isFull ? '(Lleno - 6/6)' : `(${count}/6 disponibles)`}
+                                </option>
+                              );
+                            })}
+                          </select>
                         </div>
                       </div>
                       <div>
@@ -1190,9 +1439,9 @@ export const AsignacionesDiarias: React.FC = () => {
                       <div className="space-y-3">
 
                         {/* Carrier */}
-                        <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100 space-y-2">
+                        <div className={`p-3 rounded-xl border space-y-2 ${!formData.carrierCodigo ? 'bg-red-50 border-red-300' : 'bg-indigo-50 border-indigo-100'}`}>
                           <h3 className="text-xs font-bold text-indigo-800 uppercase flex items-center gap-1.5">
-                            <Navigation size={12}/> Carrier Padre (SCAC)
+                            <Navigation size={12}/> Carrier Padre (SCAC) <span className="text-red-500 font-black">*</span>
                           </h3>
                           <SearchableComboBox
                             required
@@ -1205,9 +1454,9 @@ export const AsignacionesDiarias: React.FC = () => {
                         </div>
 
                         {/* Transport Line */}
-                        <div className="p-3 bg-violet-50 rounded-xl border border-violet-100 space-y-2">
+                        <div className={`p-3 rounded-xl border space-y-2 ${!formData.transportLineId ? 'bg-red-50 border-red-300' : 'bg-violet-50 border-violet-100'}`}>
                           <h3 className="text-xs font-bold text-violet-800 uppercase flex items-center gap-1.5">
-                            <Truck size={12}/> Línea de Transporte
+                            <Truck size={12}/> Línea de Transporte <span className="text-red-500 font-black">*</span>
                           </h3>
                           <SearchableComboBox
                             value={formData.transportLineId || ''}
@@ -1222,7 +1471,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
                         {/* Observaciones — (NOT disabled for restricted roles) */}
                         <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                          <h3 className="text-xs font-bold text-slate-600 uppercase">Observaciones</h3>
+                          <h3 className="text-xs font-bold text-slate-600 uppercase">{t('asig.obs_label')}</h3>
                           <input
                             type="text"
                             maxLength={50}
@@ -1239,9 +1488,9 @@ export const AsignacionesDiarias: React.FC = () => {
                       <div className="space-y-3">
 
                         {/* Caja */}
-                        <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 space-y-2">
+                        <div className={`p-3 rounded-xl border space-y-2 ${!formData.numeroCaja ? 'bg-red-50 border-red-300' : 'bg-emerald-50 border-emerald-100'}`}>
                           <h3 className="text-xs font-bold text-emerald-800 uppercase flex items-center gap-1.5">
-                            <Container size={12}/> {t('form.caja_sec')}
+                            <Container size={12}/> {t('form.caja_sec')} <span className="text-red-500 font-black">*</span>
                           </h3>
                           <SearchableComboBox
                             required
@@ -1279,9 +1528,9 @@ export const AsignacionesDiarias: React.FC = () => {
                         </div>
 
                         {/* Driver */}
-                        <div className="p-3 bg-orange-50 rounded-xl border border-orange-100 space-y-2">
+                        <div className={`p-3 rounded-xl border space-y-2 ${!formData.driverId ? 'bg-red-50 border-red-300' : 'bg-orange-50 border-orange-100'}`}>
                           <h3 className="text-xs font-bold text-orange-800 uppercase flex items-center gap-1.5">
-                            <Truck size={12}/> {t('form.tracto_sec')}
+                            <Truck size={12}/> {t('form.tracto_sec')} <span className="text-red-500 font-black">*</span>
                           </h3>
                           <SearchableComboBox
                             required
@@ -1346,7 +1595,10 @@ export const AsignacionesDiarias: React.FC = () => {
               {/* Footer */}
               <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 shrink-0 bg-slate-50 rounded-b-2xl">
                 <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition-colors">Cancelar</button>
-                <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 shadow-md shadow-blue-500/30 transition-all font-bold">
+                <button
+                  type="submit"
+                  disabled={!formData.carrierCodigo || !formData.transportLineId || !formData.numeroCaja || !formData.driverId}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 shadow-md shadow-blue-500/30 transition-all font-bold disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
                   {isEditing ? 'Guardar Cambios' : 'Vincular Asignación'}
                 </button>
               </div>

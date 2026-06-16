@@ -16,6 +16,7 @@ import AppLoader from '../components/AppLoader.tsx';
 
 // ─── Lazy-loaded pages (each loads only when navigated to) ───────────────────
 const Dashboard            = React.lazy(() => import('../pages/Dashboard.tsx').then(m => ({ default: m.Dashboard })));
+const HistoricoExpo        = React.lazy(() => import('../pages/HistoricoExpo.tsx').then(m => ({ default: m.HistoricoExpo })));
 const Operations           = React.lazy(() => import('../pages/Operations.tsx').then(m => ({ default: m.Operations })));
 const VesselTracking       = React.lazy(() => import('../pages/VesselTracking.tsx').then(m => ({ default: m.VesselTracking })));
 const EquipmentTracking    = React.lazy(() => import('../pages/EquipmentTracking.tsx').then(m => ({ default: m.EquipmentTracking })));
@@ -69,7 +70,7 @@ const DemandaCajas53       = React.lazy(() => import('../pages/DemandaCajas53.ts
 const ReservaVentanas53    = React.lazy(() => import('../pages/ReservaVentanas53.tsx').then(m => ({ default: m.ReservaVentanas53 })));
 const WMSControl           = React.lazy(() => import('../pages/wms/WMSControl.tsx').then(m => ({ default: m.WMSControl })));
 const ActivosFijos         = React.lazy(() => import('../pages/ActivosFijos.tsx').then(m => ({ default: m.ActivosFijos })));
-const ReglaOctava          = React.lazy(() => import('../pages/ReglaOctava.tsx').then(m => ({ default: m.ReglaOctava })));
+const ReglaOctava          = React.lazy(() => import('../pages/ReglaOctavaR8.tsx').then(m => ({ default: m.ReglaOctavaR8 })));
 // ─── Fallback spinner while lazy chunk loads ─────────────────────────────────
 const PageSkeleton = () => (
     <div className="flex-1 flex items-center justify-center min-h-[60vh]">
@@ -360,6 +361,9 @@ const AppContent = () => {
             <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
 
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            {window.location.hostname === 'localhost' && (
+              <Route path="/historico-expo" element={<ProtectedRoute><HistoricoExpo /></ProtectedRoute>} />
+            )}
             <Route path="/operations" element={<ProtectedRoute><Operations /></ProtectedRoute>} />
             <Route path="/pre-alerts" element={<ProtectedRoute><PreAlerts /></ProtectedRoute>} />
             <Route path="/vessel-tracking" element={<ProtectedRoute><VesselTracking /></ProtectedRoute>} />

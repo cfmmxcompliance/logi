@@ -1,6 +1,7 @@
-import { collection, doc, setDoc, getDocs, getDocsFromCache, updateDoc, query, where } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, getDocsFromCache, updateDoc, query, where, limit } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { LiberacionRecord } from '../types.ts';
+import { storageService } from './storageService';
 
 const COLLECTION_NAME = 'liberacionesCaja';
 
@@ -74,6 +75,46 @@ export const liberacionService = {
         id: docId,
         createdAt: liberacion.createdAt || new Date().toISOString()
       });
+
+      // --- HISTORICO EXPO AUTOMATION ---
+      try {
+        const selloQ = query(
+          collection(db, 'sellosCaja'), 
+          where('asignacionCajaId', '==', liberacion.asignacionCajaId),
+          limit(1)
+        );
+        const selloSnap = await getDocs(selloQ);
+        let pickupDay = liberacion.fechaHoraRegistro || liberacion.fechaLiberacion; 
+        
+        if (!selloSnap.empty) {
+          const selloData = selloSnap.docs[0].data();
+          pickupDay = selloData.fechaHoraRegistro || selloData.fechaAsignacion || pickupDay;
+        }
+
+        const expId = `exp_${liberacion.asignacionCajaId}`;
+        const historicoRecord = {
+          id: expId,
+          trailer: liberacion.numeroCaja || '',
+          pickupDayCFM: pickupDay,
+          dodaUrl: '',
+          entryUrl: '',
+          dateRequested: '',
+          crossingDate: '',
+          dateReceived: '',
+          daysToReceive: '',
+          cfmRef: '',
+          expDoda: '',
+          comments: '',
+          scacAndCaat: '',
+          createdAt: Date.now()
+        };
+
+        await storageService.upsertHistoricoExpos([historicoRecord]);
+      } catch (automationError) {
+        console.error("Error automating HistoricoExpo generation:", automationError);
+      }
+      // --- END HISTORICO EXPO AUTOMATION ---
+
       return docId;
     } catch (error) {
       console.error('Error adding Liberacion:', error);

@@ -1,4 +1,4 @@
-/*! tailwindcss v4.3.0 | MIT License | https://tailwindcss.com */
+/*! tailwindcss v4.3.1 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer theme, base, components, utilities;
 @layer theme {
@@ -238,10 +238,10 @@
     position: sticky;
   }
   .inset-0 {
-    inset: calc(var(--spacing) * 0);
+    inset: 0;
   }
   .top-0 {
-    top: calc(var(--spacing) * 0);
+    top: 0;
   }
   .top-3 {
     top: calc(var(--spacing) * 3);
@@ -250,7 +250,7 @@
     top: -10%;
   }
   .right-0 {
-    right: calc(var(--spacing) * 0);
+    right: 0;
   }
   .right-\[-10\%\] {
     right: -10%;
@@ -259,7 +259,7 @@
     bottom: -10%;
   }
   .left-0 {
-    left: calc(var(--spacing) * 0);
+    left: 0;
   }
   .left-3 {
     left: calc(var(--spacing) * 3);
@@ -292,7 +292,7 @@
     margin-top: calc(var(--spacing) * 0.5);
   }
   .mt-1 {
-    margin-top: calc(var(--spacing) * 1);
+    margin-top: var(--spacing);
   }
   .mt-2 {
     margin-top: calc(var(--spacing) * 2);
@@ -445,7 +445,7 @@
     justify-content: center;
   }
   .gap-1 {
-    gap: calc(var(--spacing) * 1);
+    gap: var(--spacing);
   }
   .gap-2 {
     gap: calc(var(--spacing) * 2);
@@ -734,7 +734,7 @@
     padding-inline: calc(var(--spacing) * 6);
   }
   .py-1 {
-    padding-block: calc(var(--spacing) * 1);
+    padding-block: var(--spacing);
   }
   .py-2\.5 {
     padding-block: calc(var(--spacing) * 2.5);

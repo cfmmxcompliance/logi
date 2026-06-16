@@ -1,4 +1,4 @@
-import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, SparePartsTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole, XMLCIRecord, FixedAsset, FianzaRecord } from '../types.ts';
+import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, SparePartsTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole, XMLCIRecord, FixedAsset, FianzaRecord, HistoricoExpoRecord } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
   collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc, arrayUnion, increment, limit, startAfter, documentId, getCountFromServer
@@ -18,7 +18,8 @@ const COLS = {
   SPARE_PARTS: 'spare_parts_tracking',
   FIANZAS: 'fianzas',
   FIXED_ASSETS: 'fixed_assets',
-  RULE_8THS: 'rule_8ths'
+  RULE_8THS: 'rule_8ths',
+  HISTORICO_EXPO: 'historico_expo'
 };
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
@@ -29,7 +30,7 @@ const PENDING_WRITES_KEY = 'logimaster_sync_queue';
 
 interface PendingWrite {
   id: string;
-  action: 'UPSERT_PARTS' | 'UPSERT_SHIPMENTS' | 'UPSERT_VESSEL' | 'UPDATE_VESSEL' | 'UPDATE_EQUIPMENT' | 'UPDATE_SPARE_PARTS' | 'UPDATE_CUSTOMS' | 'UPSERT_INVOICES' | 'DELETE_PARTS' | 'DELETE_INVOICES' | 'DELETE_SHIPMENTS' | 'DELETE_VESSEL' | 'DELETE_EQUIPMENT' | 'DELETE_SPARE_PARTS' | 'DELETE_CUSTOMS' | 'UPSERT_SUPPLIER' | 'DELETE_SUPPLIER' | 'UPSERT_LOGISTICS' | 'DELETE_LOGISTICS' | 'LOG_ACTION' | 'SAVE_REPORT' | 'UPSERT_USER' | 'DELETE_USER' | 'SAVE_ARCHIVE' | 'DELETE_ARCHIVE' | 'UPSERT_COSTS' | 'DELETE_COSTS' | 'UPSERT_PRE_ALERTS' | 'DELETE_PRE_ALERTS';
+  action: 'UPSERT_PARTS' | 'UPSERT_SHIPMENTS' | 'UPSERT_VESSEL' | 'UPDATE_VESSEL' | 'UPDATE_EQUIPMENT' | 'UPDATE_SPARE_PARTS' | 'UPDATE_CUSTOMS' | 'UPSERT_INVOICES' | 'DELETE_PARTS' | 'DELETE_INVOICES' | 'DELETE_SHIPMENTS' | 'DELETE_VESSEL' | 'DELETE_EQUIPMENT' | 'DELETE_SPARE_PARTS' | 'DELETE_CUSTOMS' | 'UPSERT_SUPPLIER' | 'DELETE_SUPPLIER' | 'UPSERT_LOGISTICS' | 'DELETE_LOGISTICS' | 'LOG_ACTION' | 'SAVE_REPORT' | 'UPSERT_USER' | 'DELETE_USER' | 'SAVE_ARCHIVE' | 'DELETE_ARCHIVE' | 'UPSERT_COSTS' | 'DELETE_COSTS' | 'UPSERT_PRE_ALERTS' | 'DELETE_PRE_ALERTS' | 'UPSERT_HISTORICO_EXPO' | 'DELETE_HISTORICO_EXPO';
   data: any;
   timestamp: string;
 }
@@ -41,7 +42,7 @@ let dbState: StorageState = {
   customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
   logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
   dailyChanges: [], dailyReports: [], users: [],
-  cfdiInvoices: [], xmlCI: [], fianzas: [], fixedAssets: [], rule8ths: []
+  cfdiInvoices: [], xmlCI: [], fianzas: [], fixedAssets: [], rule8ths: [], historicoExpo: []
 };
 
 let listeners: (() => void)[] = [];
@@ -439,6 +440,13 @@ export const storageService = {
         saveLocal();
       }, e => console.error(e));
       unsubscribers.push(unsubRule8ths);
+
+      const unsubHistoricoExpo = onSnapshot(collection(db, COLS.HISTORICO_EXPO), snap => {
+        dbState.historicoExpo = snap.docs.map(d => ({ id: d.id, ...d.data() } as HistoricoExpoRecord));
+        notifyListeners();
+        saveLocal();
+      }, e => console.error(e));
+      unsubscribers.push(unsubHistoricoExpo);
 
       const qChanges = query(collection(db, COLS.DAILY_CHANGES), orderBy('timestamp', 'desc'), limit(150));
       unsubscribers.push(onSnapshot(qChanges, (snap) => {
@@ -3715,6 +3723,48 @@ export const storageService = {
     const batch = writeBatch(db);
     snap.docs.forEach(d => batch.delete(d.ref));
     await batch.commit();
+  },
+
+  getHistoricoExpo: () => dbState.historicoExpo || [],
+
+  upsertHistoricoExpos: async (records: HistoricoExpoRecord[], syncProgress?: (p: number) => void) => {
+    if (!db) {
+      records.forEach(r => queueWrite('UPSERT_HISTORICO_EXPO', r));
+      return;
+    }
+    const CHUNK_SIZE = 50;
+    let processed = 0;
+    for (let i = 0; i < records.length; i += CHUNK_SIZE) {
+      const chunk = records.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(db);
+      for (const rec of chunk) {
+        const id = rec.id || doc(collection(db, COLS.HISTORICO_EXPO)).id;
+        batch.set(doc(db, COLS.HISTORICO_EXPO, id), sanitizeForFirestore({ ...rec, id }));
+      }
+      try {
+        await batch.commit();
+        processed += chunk.length;
+        if (syncProgress) syncProgress((processed / records.length) * 100);
+      } catch (e) {
+        console.error("Batch error UPSERT_HISTORICO_EXPO:", e);
+      }
+    }
+  },
+
+  deleteHistoricoExpos: async (ids: string[]) => {
+    if (!db) {
+      ids.forEach(id => queueWrite('DELETE_HISTORICO_EXPO', { id }));
+      return;
+    }
+    const CHUNK_SIZE = 50;
+    for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+      const chunk = ids.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(db);
+      for (const id of chunk) {
+        batch.delete(doc(db, COLS.HISTORICO_EXPO, id));
+      }
+      await batch.commit();
+    }
   }
 };
 

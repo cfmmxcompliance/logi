@@ -663,6 +663,23 @@ export interface Rule8th {
   files?: { name: string; url: string; type: string }[];
 }
 
+export interface HistoricoExpoRecord {
+  id?: string;
+  trailer: string;
+  pickupDayCFM: string;
+  dodaUrl?: string;
+  entryUrl?: string;
+  dateRequested: string;
+  crossingDate: string;
+  dateReceived: string;
+  daysToReceive: number | string;
+  cfmRef: string;
+  expDoda: string;
+  comments: string;
+  scacAndCaat: string;
+  createdAt?: number;
+}
+
 export interface StorageState {
   parts: RawMaterialPart[];
   shipments: Shipment[];
@@ -687,6 +704,7 @@ export interface StorageState {
   xmlCI?: XMLCIRecord[];
   fianzas?: FianzaRecord[];
   fixedAssets: FixedAsset[];
+  historicoExpo?: HistoricoExpoRecord[];
 }
 
 export interface SelloRecord {

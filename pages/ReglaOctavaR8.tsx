@@ -53,7 +53,6 @@ export interface R8Detalle {
     fraccionProsec?: string;
     fraccionUnico?: string;
     paisProcedencia?: string;
-    descripcion?: string;
     unidadMedida?: string;
     cantidadAutorizada?: number;
     cantidadEjercida?: number;
@@ -99,6 +98,7 @@ export interface PermisoR8 {
     regla?: string;
     fraccionOriginal?: string;
     fraccionDeclarar?: string;
+    masterdataDescription?: string;
     fracciones?: string;
     regimen?: string;
     tipo?: string;
@@ -271,7 +271,8 @@ export const ReglaOctavaR8 = () => {
                 reader.onload = () => resolve((reader.result as string).split(',')[1]);
                 reader.onerror = error => reject(error);
             });
-            const pdfUrl = await uploadFileToDrive(file.name, fileData, file.type || 'application/pdf', 'PermisosR8');
+            const uploadResult = await uploadFileToDrive(file, 'Permiso R8', 'PermisosR8');
+            const pdfUrl = uploadResult.url;
 
             const extractedData = await geminiService.extractR8Document(fileData, file.type);
             
@@ -384,7 +385,7 @@ export const ReglaOctavaR8 = () => {
         return st === 'VENCIDO' ? 'VENCIDA' : st;
     };
 
-    const filteredDetalle = filterBySearch(detalleData, ['folio', 'fraccionOriginal', 'fraccionDeclarar', 'numeroRegla8va', 'fraccionArancelaria', 'fraccionProsec', 'descripcion'])
+    const filteredDetalle = filterBySearch<R8Detalle>(detalleData, ['folio', 'fraccionOriginal', 'fraccionDeclarar', 'numeroRegla8va', 'fraccionArancelaria', 'fraccionProsec', 'descripcion'])
         .filter(d => filtroActiva === 'Todos' ? true : getDetalleEstatus(d) === filtroActiva)
         .filter(d => filtroPais === 'Todos los países' ? true : (d.paisProcedencia || d.pais) === filtroPais);
 
@@ -423,7 +424,7 @@ export const ReglaOctavaR8 = () => {
         return 'VIGENTE';
     };
 
-    const filteredBalance = filterBySearch(balanceData, ['folio', 'rfcImportador', 'fraccion', 'regimen', 'paises', 'pedimentos'])
+    const filteredBalance = filterBySearch<BalanceR8>(balanceData, ['folio', 'rfcImportador', 'fraccion', 'regimen', 'paises', 'pedimentos'])
         .filter(b => {
             if (filtroHist === 'Todos') return true;
             return getCalculatedEstatus(b) === filtroHist;
@@ -433,7 +434,7 @@ export const ReglaOctavaR8 = () => {
             return b.regimenAutorizado === filtroHistRegimen;
         });
 
-    const filteredPermisos = filterBySearch(permisosData, ['folio', 'permisoPrevio', 'originalTariffFraction', 'fraccionReglaOctava', 'masterdataPartNumber', 'description', 'regla', 'fraccionOriginal', 'fraccionDeclarar']);
+    const filteredPermisos = filterBySearch<PermisoR8>(permisosData, ['folio', 'permisoPrevio', 'originalTariffFraction', 'fraccionReglaOctava', 'masterdataPartNumber', 'description', 'regla', 'fraccionOriginal', 'fraccionDeclarar']);
     
     // Agrupar documentos de Expediente por Permiso Previo para no duplicarlos
     const uniqueExpedienteDocs = Array.from(
@@ -463,7 +464,7 @@ export const ReglaOctavaR8 = () => {
         return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0);
     };
 
-    const uniqueCountries = ['Todos los países', ...Array.from(new Set(detalleData.map(d => d.paisProcedencia || d.pais).filter(Boolean)))];
+    const uniqueCountries = ['Todos los países', ...Array.from(new Set(detalleData.map(d => d.paisProcedencia || d.pais).filter(Boolean))) as Set<string>];
 
     return (
         <div className="p-8 max-w-[1600px] mx-auto bg-slate-50 min-h-screen">

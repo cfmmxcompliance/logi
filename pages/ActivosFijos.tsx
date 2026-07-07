@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { FixedAsset, UserRole } from '../types.ts';
 import { storageService } from '../services/storageService.ts';
 import { uploadFileToDrive } from '../services/googleDriveService.ts';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder.tsx';
 import { 
   Search, Plus, Edit2, Trash2, Download, AlertCircle, 

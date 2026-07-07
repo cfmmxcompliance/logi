@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, Loader2, Sparkles, User as UserIcon, Database, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 import { geminiService } from '../services/geminiService';
 import { storageService } from '../services/storageService';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 interface ChatMessage {
   role: 'user' | 'model';

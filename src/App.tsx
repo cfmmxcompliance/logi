@@ -5,7 +5,7 @@ import { Login } from '../pages/Login.tsx';
 import { NetworkIndicator } from '../components/NetworkIndicator.tsx';
 import { storageService } from '../services/storageService.ts';
 import { trackingService } from '../services/trackingService.ts';
-import { AuthProvider, useAuth } from '../context/AuthContext.tsx';
+import { AuthProvider, useAuth } from '../context/useAuth';
 import { NotificationProvider } from '../context/NotificationContext.tsx';
 import { VucemProvider } from '../context/VucemContext.tsx';
 import { LanguageProvider } from '../context/LanguageContext.tsx';

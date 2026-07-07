@@ -6,7 +6,7 @@ import { PedimentoRecord, UserRole } from '../types.ts';
 import { Database, Play, Anchor, Ship, Container, ClipboardCheck, TrendingUp, AlertTriangle, Loader2, RefreshCw, Calendar, X, Upload, CheckCircle2, Presentation } from 'lucide-react';
 import { exportDashboardPpt } from '../utils/exportDashboardPpt.ts';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import { useLanguage } from '../context/LanguageContext.tsx';
 import { SpecialistsPerformanceTable } from '../components/SpecialistsPerformanceTable.tsx';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
@@ -241,7 +241,9 @@ export const Dashboard = () => {
         importInvoicesByKey,
         exportInvoicesByKey,
         // Chart series
-        containerVolumeData,
+        containerVolume160,
+        containerVolume240,
+        containerVolumeOther,
         importVolumeData:   hasLiveData ? importVolumeData  : [],
         exportVolumeData:   hasLiveData ? exportVolumeData  : [],
         importValueData:    hasLiveData ? importValueData   : [],
@@ -509,31 +511,60 @@ export const Dashboard = () => {
   }, [reports, allRecordsHydrated, startDate, endDate, curYear]);
 
 
-  // Contenedores por mes — una entrada por (año, mes) en orden cronológico
-  const containerVolumeData = useMemo(() => {
-    const buckets = new Map<string, { year: number; month: number; imp: number; exp: number }>();
-    allRecords.forEach(r => {
+  // Helper to build container volume buckets with deduplication
+  const buildContainerBuckets = (records: PedimentoRecord[], filterFn: (r: PedimentoRecord) => boolean, seriesLabels: string[]) => {
+    const buckets = new Map<string, { year: number; month: number; sets: Map<string, Set<string>>; fallbacks: Map<string, number> }>();
+    records.forEach(r => {
+      if (!filterFn(r)) return;
       const m = recordMonth(r);
       const y = recordYear(r);
       if (m < 0 || m > 11 || y < 2000) return;
       const key = `${y}-${String(m).padStart(2, '0')}`;
-      if (!buckets.has(key)) buckets.set(key, { year: y, month: m, imp: 0, exp: 0 });
+      if (!buckets.has(key)) {
+        const sets = new Map<string, Set<string>>();
+        const fallbacks = new Map<string, number>();
+        seriesLabels.forEach(l => { sets.set(l, new Set()); fallbacks.set(l, 0); });
+        buckets.set(key, { year: y, month: m, sets, fallbacks });
+      }
       const b = buckets.get(key)!;
+      const nums = r.containerNumbers;
       const cnt = r.containerCount || 0;
-      if (isImport(r)) b.imp += cnt;
-      else if (isExport(r)) b.exp += cnt;
+      if (!cnt) return;
+      const serie = isImport(r) ? 'Imp.' : isExport(r) ? 'Exp.' : null;
+      if (!serie || !seriesLabels.includes(serie)) return;
+      if (nums && nums.length > 0) {
+        nums.forEach(n => b.sets.get(serie)!.add(n));
+      } else {
+        b.fallbacks.set(serie, (b.fallbacks.get(serie) || 0) + cnt);
+      }
     });
-    // Ordenar cronológicamente: el más antiguo primero
     return Array.from(buckets.values())
       .sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month)
-      .map(({ year, month, imp, exp }) => ({
-        name: `${MONTHS[month]} ${year}`,
-        'Imp.': imp,
-        'Exp.': exp,
-      }));
-  }, [allRecords]);
+      .map(({ year, month, sets, fallbacks }) => {
+        const row: any = { name: `${MONTHS[month]} ${year}` };
+        seriesLabels.forEach(l => { row[l] = (sets.get(l)?.size || 0) + (fallbacks.get(l) || 0); });
+        return row;
+      });
+  };
 
-  // Always-static charts (no field in DataStage for these)
+  // 1. Importaciones — Aduana 160
+  const containerVolume160 = useMemo(() =>
+    buildContainerBuckets(allRecords, r => isImport(r) && String(r.seccion) === '160', ['Imp.'])
+  , [allRecords]);
+
+  // 2. Exportaciones — Aduana 240
+  const containerVolume240 = useMemo(() =>
+    buildContainerBuckets(allRecords, r => isExport(r) && String(r.seccion) === '240', ['Exp.'])
+  , [allRecords]);
+
+  // 3. Resto de transacciones de contenedores
+  const containerVolumeOther = useMemo(() =>
+    buildContainerBuckets(allRecords, r => {
+      if (isImport(r) && String(r.seccion) === '160') return false;
+      if (isExport(r) && String(r.seccion) === '240') return false;
+      return true;
+    }, ['Imp.', 'Exp.'])
+  , [allRecords]);
   const gidSavingsData: any[] = [];
 
   // Operaciones Especiales — live desde DataStage por claves A3, A4, F4, F5, V3
@@ -640,9 +671,9 @@ export const Dashboard = () => {
 
       for (const report of reportsToProcess) {
         setProcState(prev => ({ ...prev, message: `Descargando reporte ${loadedCount + 1} de ${total}...` }));
-        const recs = report.records && report.records.length > 0
-          ? report.records
-          : await (storageService as any).getDataStageReportWithRecords(report.id);
+        // Siempre leer de la subcollection 'items' para garantizar datos actualizados
+        // (el campo report.records del doc principal puede estar obsoleto)
+        const recs = await (storageService as any).getDataStageReportWithRecords(report.id);
         
         allRecs.push(...recs);
         loadedCount++;
@@ -763,26 +794,48 @@ export const Dashboard = () => {
   const totalImportInvoices = importInvoicesByKey.reduce((s,b) => s+b.count, 0);
   const totalExportInvoices = exportInvoicesByKey.reduce((s,b) => s+b.count, 0);
 
-  // === CONTENEDORES (504 → 501) ===
-  // containerCount viene del 504, tipoOperacion del 501
+  // === CONTENEDORES (504 → 501) — deduplicados por número de contenedor ===
+  // containerNumbers viene del 504, tipoOperacion del 501
   const importContainersByKey = useMemo(() => {
-    const map = new Map<string,number>();
+    const mapSets = new Map<string, Set<string>>();
+    const mapFallback = new Map<string, number>();
     allRecords.filter(isImport).forEach(r => {
-      if (!(r.containerCount||0)) return;
+      const cnt = r.containerCount || 0;
+      if (!cnt) return;
       const k = (r.claveDocumento||'?').toUpperCase();
-      map.set(k, (map.get(k)||0) + (r.containerCount||0));
+      if (r.containerNumbers && r.containerNumbers.length > 0) {
+        if (!mapSets.has(k)) mapSets.set(k, new Set());
+        r.containerNumbers.forEach(n => mapSets.get(k)!.add(n));
+      } else {
+        mapFallback.set(k, (mapFallback.get(k)||0) + cnt);
+      }
     });
-    return Array.from(map.entries()).map(([clave,count]) => ({clave,count})).sort((a,b)=>b.count-a.count);
+    const allKeys = new Set([...mapSets.keys(), ...mapFallback.keys()]);
+    return Array.from(allKeys).map(clave => ({
+      clave,
+      count: (mapSets.get(clave)?.size || 0) + (mapFallback.get(clave) || 0)
+    })).sort((a,b) => b.count - a.count);
   }, [allRecords]);
 
   const exportContainersByKey = useMemo(() => {
-    const map = new Map<string,number>();
+    const mapSets = new Map<string, Set<string>>();
+    const mapFallback = new Map<string, number>();
     allRecords.filter(isExport).forEach(r => {
-      if (!(r.containerCount||0)) return;
+      const cnt = r.containerCount || 0;
+      if (!cnt) return;
       const k = (r.claveDocumento||'?').toUpperCase();
-      map.set(k, (map.get(k)||0) + (r.containerCount||0));
+      if (r.containerNumbers && r.containerNumbers.length > 0) {
+        if (!mapSets.has(k)) mapSets.set(k, new Set());
+        r.containerNumbers.forEach(n => mapSets.get(k)!.add(n));
+      } else {
+        mapFallback.set(k, (mapFallback.get(k)||0) + cnt);
+      }
     });
-    return Array.from(map.entries()).map(([clave,count]) => ({clave,count})).sort((a,b)=>b.count-a.count);
+    const allKeys = new Set([...mapSets.keys(), ...mapFallback.keys()]);
+    return Array.from(allKeys).map(clave => ({
+      clave,
+      count: (mapSets.get(clave)?.size || 0) + (mapFallback.get(clave) || 0)
+    })).sort((a,b) => b.count - a.count);
   }, [allRecords]);
 
   const totalImportContainers = importContainersByKey.reduce((s,b)=>s+b.count,0);
@@ -902,22 +955,22 @@ export const Dashboard = () => {
           />
         </div>
 
-        {/* — Gráfica mensual de contenedores — scroll horizontal, orden cronológico — */}
+        {/* — Gráfica: Contenedores Importación — Aduana 160 — */}
         <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
           <div className="mb-3">
-            <h3 className="font-semibold text-slate-800">{t('dash.chart_cont_mes')}</h3>
+            <h3 className="font-semibold text-slate-800">Contenedores Importación — Aduana 160</h3>
             <p className="text-xs text-slate-400 mt-0.5">
               {hasLiveData
-                ? `DataStage — 504 × 501 (IMP/EXP) · ${containerVolumeData.length} ${t('dash.meses')} · ${t('dash.antiguo_izq')}`
+                ? `DataStage — 504 × 501 · ${containerVolume160.length} ${t('dash.meses')} · ${t('dash.antiguo_izq')}`
                 : t('dash.chart_cont_mes_empty')}
             </p>
           </div>
           <div className="overflow-x-auto" style={{ height: 280 }}>
-            <div style={{ minWidth: Math.max(640, containerVolumeData.length * 58) }}>
+            <div style={{ minWidth: Math.max(640, containerVolume160.length * 58) }}>
               <BarChart
-                width={Math.max(640, containerVolumeData.length * 58)}
+                width={Math.max(640, containerVolume160.length * 58)}
                 height={256}
-                data={containerVolumeData}
+                data={containerVolume160}
                 margin={{ top: 4, right: 16, left: 0, bottom: 48 }}
               >
                 <CartesianGrid {...CS.grid}/>
@@ -937,7 +990,87 @@ export const Dashboard = () => {
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }}/>
                 <Bar dataKey="Imp." name={t('dash.imp')} fill="#0ea5e9" radius={[4,4,0,0]} maxBarSize={28}/>
+              </BarChart>
+            </div>
+          </div>
+        </div>
+
+        {/* — Gráfica: Contenedores Exportación — Aduana 240 — */}
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mt-4">
+          <div className="mb-3">
+            <h3 className="font-semibold text-slate-800">Contenedores Exportación — Aduana 240</h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {hasLiveData
+                ? `DataStage — 504 × 501 · ${containerVolume240.length} ${t('dash.meses')} · ${t('dash.antiguo_izq')}`
+                : t('dash.chart_cont_mes_empty')}
+            </p>
+          </div>
+          <div className="overflow-x-auto" style={{ height: 280 }}>
+            <div style={{ minWidth: Math.max(640, containerVolume240.length * 58) }}>
+              <BarChart
+                width={Math.max(640, containerVolume240.length * 58)}
+                height={256}
+                data={containerVolume240}
+                margin={{ top: 4, right: 16, left: 0, bottom: 48 }}
+              >
+                <CartesianGrid {...CS.grid}/>
+                <XAxis
+                  dataKey="name"
+                  {...CS.axis}
+                  angle={-40}
+                  textAnchor="end"
+                  height={60}
+                  interval={0}
+                  tick={{ fill: '#64748b', fontSize: 10 }}
+                />
+                <YAxis {...CS.axis} allowDecimals={false}/>
+                <Tooltip
+                  contentStyle={CS.tt.contentStyle}
+                  labelFormatter={(label) => String(label)}
+                />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }}/>
                 <Bar dataKey="Exp." name={t('dash.exp')} fill="#14b8a6" radius={[4,4,0,0]} maxBarSize={28}/>
+              </BarChart>
+            </div>
+          </div>
+        </div>
+
+        {/* — Gráfica: Otros Contenedores (resto de aduanas) — */}
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mt-4">
+          <div className="mb-3">
+            <h3 className="font-semibold text-slate-800">Contenedores — Otras Aduanas</h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {hasLiveData
+                ? `DataStage — Excl. Imp. 160 y Exp. 240 · ${containerVolumeOther.length} ${t('dash.meses')} · ${t('dash.antiguo_izq')}`
+                : t('dash.chart_cont_mes_empty')}
+            </p>
+          </div>
+          <div className="overflow-x-auto" style={{ height: 280 }}>
+            <div style={{ minWidth: Math.max(640, containerVolumeOther.length * 58) }}>
+              <BarChart
+                width={Math.max(640, containerVolumeOther.length * 58)}
+                height={256}
+                data={containerVolumeOther}
+                margin={{ top: 4, right: 16, left: 0, bottom: 48 }}
+              >
+                <CartesianGrid {...CS.grid}/>
+                <XAxis
+                  dataKey="name"
+                  {...CS.axis}
+                  angle={-40}
+                  textAnchor="end"
+                  height={60}
+                  interval={0}
+                  tick={{ fill: '#64748b', fontSize: 10 }}
+                />
+                <YAxis {...CS.axis} allowDecimals={false}/>
+                <Tooltip
+                  contentStyle={CS.tt.contentStyle}
+                  labelFormatter={(label) => String(label)}
+                />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }}/>
+                <Bar dataKey="Imp." name={t('dash.imp')} fill="#6366f1" radius={[4,4,0,0]} maxBarSize={28}/>
+                <Bar dataKey="Exp." name={t('dash.exp')} fill="#f59e0b" radius={[4,4,0,0]} maxBarSize={28}/>
               </BarChart>
             </div>
           </div>

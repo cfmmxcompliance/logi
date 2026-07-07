@@ -5,7 +5,7 @@ import { reservaVentana53Service } from '../services/reservaVentana53Service';
 import { VentanaCarga53, VentanaEstatus } from '../types/ventanaCarga53';
 import { DemandaCarga53 } from '../types/demandaCarga53';
 import { ReservaVentana53 } from '../types/reservaVentana53';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import {

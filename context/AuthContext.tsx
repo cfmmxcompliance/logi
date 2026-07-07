@@ -1,38 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, UserRole } from '../types.ts';
+import React, { useState, useEffect, ReactNode } from 'react';
+import { User } from '../types.ts';
 import { authService } from '../services/authService.ts';
-
-interface AuthContextType {
-  user: User | null;
-  login: (user: User) => void;
-  logout: () => void;
-  isAuthenticated: boolean;
-  hasRole: (roles: UserRole[]) => boolean;
-  loading: boolean;
-}
-
-const sanitizeRole = (roleStr: string): UserRole => {
-  if (!roleStr) return UserRole.PENDING;
-  const normalized = roleStr.trim().toUpperCase();
-  const map: Record<string, UserRole> = {
-    'ADMIN': UserRole.ADMIN,
-    'EDITOR': UserRole.EDITOR,
-    'AGENT': UserRole.AGENT,
-    'CONTROLLER': UserRole.CONTROLLER,
-    'PENDING': UserRole.PENDING,
-    'EXPO': UserRole.EXPO,
-    'EXPO_ANALIST': UserRole.EXPO_ANALIST,
-    'CARRIER': UserRole.CARRIER,
-    'TRANSPORTISTA': UserRole.TRANSPORTISTA,
-    'EMBARQUES': UserRole.EMBARQUES,
-    'CLIENT': UserRole.CLIENT,
-    'CLIENTE': UserRole.CLIENT,
-    'FINANZAS': UserRole.FINANZAS
-  };
-  return map[normalized] || (roleStr as UserRole);
-};
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext, AuthContextType, sanitizeRole } from './authContext';
 
 export const AuthProvider = ({ children }: { children?: ReactNode }) => {
   const [user, setUser] = useState<User | null>(() => {
@@ -64,13 +33,27 @@ export const AuthProvider = ({ children }: { children?: ReactNode }) => {
       try {
         const parsedUser = JSON.parse(storedUser);
         if (parsedUser.email) {
-          const dbUser = await authService.getUser(parsedUser.email);
+          // Retry up to 3 times with 2s delay before concluding user doesn't exist.
+          // Prevents false logouts caused by transient Firestore unavailability
+          // (HMR reloads, concurrent heavy DB operations, network hiccups, etc.)
+          let dbUser = null;
+          const MAX_RETRIES = 3;
+          for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            dbUser = await authService.getUser(parsedUser.email);
+            if (dbUser) break;
+            if (attempt < MAX_RETRIES) {
+              console.warn(`⚠️ Session validation attempt ${attempt}/${MAX_RETRIES} returned null — retrying in 2s...`);
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+          }
+
           if (dbUser) {
             dbUser.role = sanitizeRole(dbUser.role as unknown as string);
             setUser(dbUser);
             localStorage.setItem('logimaster_user', JSON.stringify(dbUser));
           } else {
-            console.warn('⚠️ Session Expired: User deleted from database.');
+            // Only clear session after 3 failed attempts — user truly doesn't exist
+            console.warn('⚠️ Session Expired: User not found after 3 attempts.');
             localStorage.removeItem('logimaster_user');
             setUser(null);
           }
@@ -109,10 +92,4 @@ export const AuthProvider = ({ children }: { children?: ReactNode }) => {
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+// useAuth hook is in ./useAuth.ts (separated to fix Vite Fast Refresh HMR)

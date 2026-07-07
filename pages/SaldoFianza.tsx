@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { storageService } from '../services/storageService.ts';
 import { authService } from '../services/authService.ts';
 import { FianzaRecord, UserRole } from '../types.ts';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import { useLanguage } from '../context/LanguageContext';
 import { Upload, DollarSign, Calendar, Search, PlusCircle, CheckCircle2, Filter, Download, Trash2, X, Plus, ChevronDown, Lock, FileSpreadsheet, Edit2, Monitor, FileText, Loader2, ExternalLink, AlertTriangle } from 'lucide-react';
 import { uploadFileToDrive } from '../services/googleDriveService.ts';

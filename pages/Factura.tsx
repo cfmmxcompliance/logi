@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useDeferredValue } from 'react';
 import { Upload, FileDown, Search, Plus, Trash2, Edit2, X, Check, FileSpreadsheet, AlertCircle, FileText, CheckCircle, Save, Repeat, History, RotateCcw, AlertTriangle, Calendar, Database } from 'lucide-react';
 import { storageService } from '../services/storageService.ts';
 import { CommercialInvoiceItem, RawMaterialPart, VesselTrackingRecord } from '../types.ts';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import { useNotification } from '../context/NotificationContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
 import { CatalogQueryBuilder, evaluateCondition, QueryCondition } from '../components/CatalogQueryBuilder.tsx';
@@ -416,25 +416,12 @@ export const Factura: React.FC = () => {
     const [showQueryBuilder, setShowQueryBuilder] = useState(false);
     const [queryConditions, setQueryConditions] = useState<QueryCondition[]>([]);
 
-    const [stats, setStats] = useState({
-        totalItems: 0,
-        inCount: 0,
-        a1Count: 0
-    });
-
-    const updateStats = (data: CommercialInvoiceItem[]) => {
-        setStats({
-            totalItems: data.length,
-            inCount: data.filter(i => i.regimen !== 'A1').length,
-            a1Count: data.filter(i => i.regimen === 'A1').length
-        });
-    };
+    // Stats are now computed from filteredItems via useMemo (see below filteredItems definition)
 
     const fetchFactura = async () => {
         const terms = activeSearch.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0);
         if (terms.length === 0) {
             setItems([]);
-            updateStats([]);
             return;
         }
         
@@ -460,7 +447,6 @@ export const Factura: React.FC = () => {
         });
         
         setItems(data);
-        updateStats(data);
         setLoading(false);
     };
 
@@ -1914,6 +1900,19 @@ export const Factura: React.FC = () => {
     const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
     const displayedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+    const stats = React.useMemo(() => {
+        const a1Items = filteredItems.filter(i => i.regimen === 'A1');
+        const inItems = filteredItems.filter(i => i.regimen !== 'A1');
+        return {
+            totalItems: filteredItems.length,
+            inCount: inItems.length,
+            a1Count: a1Items.length,
+            totalQty: filteredItems.reduce((sum, i) => sum + (i.qty || 0), 0),
+            totalQtyA1: a1Items.reduce((sum, i) => sum + (i.qty || 0), 0),
+            totalQtyIN: inItems.reduce((sum, i) => sum + (i.qty || 0), 0)
+        };
+    }, [filteredItems]);
+
     return (
         <div className="flex flex-col h-[calc(100vh-85px)] gap-2">
             {/* Rigid Layout Container */}
@@ -2750,11 +2749,17 @@ export const Factura: React.FC = () => {
 
                 {/* Center: Integrated Stats */}
                 <div className="flex items-center gap-4 bg-slate-50 px-3 py-1 rounded-md border border-slate-100">
-                    <span className="text-slate-500 font-bold">Total: <span className="text-blue-600">{stats.totalItems}</span></span>
+                    <span className="text-slate-500 font-bold">TotalLine: <span className="text-blue-600">{stats.totalItems}</span></span>
                     <span className="w-px h-3 bg-slate-300"></span>
-                    <span className="text-slate-500 font-bold">Standard: <span className="text-emerald-600">{stats.inCount}</span></span>
+                    <span className="text-slate-500 font-bold">IN: <span className="text-emerald-600">{stats.inCount}</span></span>
                     <span className="w-px h-3 bg-slate-300"></span>
                     <span className="text-slate-500 font-bold">A1: <span className="text-purple-600">{stats.a1Count}</span></span>
+                    <span className="w-px h-3 bg-slate-300"></span>
+                    <span className="text-slate-500 font-bold">TotalCant: <span className="text-blue-600">{stats.totalQty.toLocaleString()}</span></span>
+                    <span className="w-px h-3 bg-slate-300"></span>
+                    <span className="text-slate-500 font-bold">Cant A1: <span className="text-purple-600">{stats.totalQtyA1.toLocaleString()}</span></span>
+                    <span className="w-px h-3 bg-slate-300"></span>
+                    <span className="text-slate-500 font-bold">Cant IN: <span className="text-emerald-600">{stats.totalQtyIN.toLocaleString()}</span></span>
                 </div>
 
                 {/* Right: Controls (Selector + Buttons) */}

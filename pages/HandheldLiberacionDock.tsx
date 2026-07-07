@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext.tsx';
+import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../context/useAuth';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { liberacionDockService } from '../services/liberacionDockService.ts';
 import { AsignacionCajaModel, LiberacionDockRecord } from '../types.ts';
@@ -10,6 +10,7 @@ import { uploadFileToDrive } from '../services/googleDriveService.ts';
 import { waitForOnline } from '../hooks/useOnlineStatus.ts';
 import { useUploadGuard } from '../hooks/useUploadGuard.ts';
 import { UploadStatusBanner, UploadStatus } from '../components/UploadStatusBanner.tsx';
+import { savePendingUpload, getPendingUploads, removePendingUpload } from '../services/pendingUploadStore.ts';
 
 export const HandheldLiberacionDock = () => {
   const { user } = useAuth();
@@ -59,8 +60,29 @@ export const HandheldLiberacionDock = () => {
     }
   };
 
+  const drainedRef = useRef(false);
+
+  // Drain any pending uploads from IndexedDB on mount
+  const drainPendingUploads = async () => {
+    if (drainedRef.current) return;
+    drainedRef.current = true;
+    try {
+      const pending = await getPendingUploads();
+      if (pending.length === 0) return;
+      console.log(`[LiberacionDock] ${pending.length} subida(s) pendiente(s) encontrada(s). Reintentando...`);
+      for (const p of pending) {
+        const cajaFile = new File([p.cajaBlob], `retry_${p.numeroCaja}_CAJA.jpg`, { type: p.cajaMimeType });
+        const puertasFile = new File([p.puertasBlob], `retry_${p.numeroCaja}_PUERTAS.jpg`, { type: p.puertasMimeType });
+        await uploadEvidenciasBackground(cajaFile, puertasFile, p.id, p.numeroCaja);
+      }
+    } catch (err) {
+      console.error('[LiberacionDock] Error drenando pendientes:', err);
+    }
+  };
+
   useEffect(() => {
     fetchDataForRange();
+    drainPendingUploads();
   }, [dateStart, dateEnd]);
 
   useEffect(() => {
@@ -174,7 +196,16 @@ export const HandheldLiberacionDock = () => {
 
         await liberacionDockService.updateLiberacionDock(libId, {
           fotos: { cajaUrl, puertasUrl },
+          uploadStatus: 'done',
         });
+
+        // Update local state so icons become clickable immediately
+        setLiberacionesDock(prev => prev.map(l =>
+          l.id === libId ? { ...l, fotos: { cajaUrl, puertasUrl }, uploadStatus: 'done' } : l
+        ));
+
+        // Remove from IndexedDB queue — upload succeeded
+        try { await removePendingUpload(libId); } catch { /* ok */ }
 
         setUploadStatus('done');
         setUploadStatusLabel('2 fotos subidas ✔');
@@ -188,6 +219,10 @@ export const HandheldLiberacionDock = () => {
           setUploadStatusLabel(`Reintentando (${attempt + 1}/${MAX_RETRIES})...`);
           await new Promise(r => setTimeout(r, 2000 * attempt));
         } else {
+          // Mark as failed in Firestore so we know it needs retry
+          try {
+            await liberacionDockService.updateLiberacionDock(libId, { uploadStatus: 'error' });
+          } catch { /* best effort */ }
           setUploadStatus('error');
         }
       }
@@ -215,7 +250,14 @@ export const HandheldLiberacionDock = () => {
       setLiberacionesDock(prev => [...prev, { ...record, id: libId }]);
       setSaveSuccess(true);
       
-      // 2. Iniciar subida a Drive en segundo plano y limpiar UI instantáneamente
+      // 2. Persist photos to IndexedDB so they survive browser close
+      try {
+        await savePendingUpload(libId, selectedCaja.numeroCaja, fotoCajaFile, fotoPuertasFile);
+      } catch (e) {
+        console.warn('[LiberacionDock] No se pudo guardar en IndexedDB:', e);
+      }
+
+      // 3. Start background upload to Drive
       uploadEvidenciasBackground(fotoCajaFile, fotoPuertasFile, libId, selectedCaja.numeroCaja);
 
       setTimeout(() => {
@@ -223,7 +265,9 @@ export const HandheldLiberacionDock = () => {
         setSelectedCaja(null);
         setFotoCajaFile(null);
         setFotoPuertasFile(null);
-        fetchDataForRange();
+        // NOTE: No fetchDataForRange() here — the upload runs in the background
+        // and will update local state directly when URLs are ready.
+        // Fetching now would overwrite the optimistic record with PENDING from Firestore.
       }, 1500);
     } catch (e: any) {
       setErrorMsg(e.message || 'Error al guardar');

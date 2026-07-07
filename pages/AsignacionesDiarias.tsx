@@ -21,12 +21,20 @@ import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../compo
 import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
 import { MultiSearchableComboBox } from '../components/MultiSearchableComboBox';
 import { parseCSV } from '../utils/csvHelpers';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { UserRole } from '../types';
 import modelosCaja from '../utils/modelosCaja.json';
 import { useLanguage } from '../context/LanguageContext';
 import { SelloMismatchAlert } from '../components/SelloMismatchAlert';
 import BarcodePanelModal from '../components/BarcodePanelModal';
+import * as XLSX from 'xlsx';
+
+// Helper: obtiene la fecha de hoy en zona horaria de México (evita brinco de fecha después de 6PM)
+const getMexicoToday = () => {
+  const now = new Date();
+  const mx = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Monterrey', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  return mx; // Returns 'YYYY-MM-DD'
+};
 
 export const AsignacionesDiarias: React.FC = () => {
   const { user } = useAuth();
@@ -52,7 +60,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<Partial<AsignacionCajaModel>>({ 
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: getMexicoToday(),
     horaAsignacion: new Date().toTimeString().substring(0, 5)
   });
   const [isEditing, setIsEditing] = useState(false);
@@ -78,7 +86,7 @@ export const AsignacionesDiarias: React.FC = () => {
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
   const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'CERRADO' | 'POR_CERRAR'>('ALL');
-  const today = new Date().toISOString().split('T')[0];
+  const today = getMexicoToday();
   const savedRange = (() => { try { return JSON.parse(localStorage.getItem('asig_dateRange') || 'null'); } catch { return null; } })();
   const [dateRange, setDateRange] = useState({ 
     start: savedRange?.start || today, 
@@ -103,46 +111,96 @@ export const AsignacionesDiarias: React.FC = () => {
   const handleUploadDoc = async (recordId: string, field: 'layoutUrl' | 'ccpUrl' | 'anexo29Url', file: File, numeroCaja: string) => {
     try {
       setUploadingFor({ id: recordId, field });
+
       const labelMap: Record<string, string> = { layoutUrl: 'LAYOUT', ccpUrl: 'CCP', anexo29Url: 'ANEXO29' };
       const label = labelMap[field] || field.toUpperCase();
       const ext = file.name.split('.').pop() || 'file';
       const ts = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `${label}_${numeroCaja}_${ts}.${ext}`;
+
+      // ── 1. SUBIR A DRIVE ────────────────────────────────────────────────────
       const result = await uploadFileToDrive(file, filename, ASIG_DOCS_FOLDER_ID);
       const url = result?.webViewLink || '';
       const uploadedBy = user?.email || 'sistema';
       const uploadedAt = new Date().toISOString();
 
       if (field === 'layoutUrl') {
-        await asignacionCajaService.updateAsignacion(recordId, {
+        // ── 2. LOGGING + OBTENER fileId ────────────────────────────────────
+        console.log('[Layout] Upload result:', JSON.stringify({ id: result?.id, fileId: (result as any)?.fileId, webViewLink: result?.webViewLink, name: result?.name }));
+        console.log('[Layout] url guardado:', url);
+
+        // Extracción robusta del fileId (soporta todos los formatos de URL de Drive)
+        const extractId = (u: string) => {
+          if (!u) return '';
+          const parts = u.split('/d/');
+          if (parts.length > 1) return parts[1].split(/[/?#]/)[0];
+          const m = u.match(/[?&]id=([\w-]+)/);
+          return m ? m[1] : '';
+        };
+        const driveFileId = result?.id || (result as any)?.fileId || extractId(url);
+        console.log('[Layout] driveFileId resuelto:', driveFileId || '(VACÍO — revisa consola)');
+
+        // ── 3. LEER DESDE DRIVE VÍA GAS ────────────────────────────────────
+        let cfmRef = '';
+        let vehiculos = '';
+        if (driveFileId) {
+          try {
+            const GAS_READ = 'https://script.google.com/macros/s/AKfycbzX3ctF0kOxbw2M4uHbkPp8gsIy-EMQX64M5IEzMHTQs0gUxR-7BOx9BMe2RVEFKeWh/exec';
+            const gasResp = await fetch(`${GAS_READ}?action=readFile&fileId=${driveFileId}`);
+            const gasJson = await gasResp.json() as any;
+
+            // cfmRef desde el nombre del archivo en Drive
+            if (gasJson.name) {
+              const rawName = gasJson.name.replace(/\.[^/.]+$/, '');
+              const pi = rawName.toUpperCase().indexOf('LAY OUT CCP_');
+              if (pi !== -1) cfmRef = rawName.substring(pi + 12).trim();
+            }
+            // vehiculos desde D27
+            if (gasJson.content) {
+              const { read } = await import('xlsx');
+              const wb = read(gasJson.content, { type: 'base64' });
+              const sheet = wb.Sheets[wb.SheetNames[0]];
+              if (sheet['D27']?.v !== undefined) vehiculos = String(sheet['D27'].v).trim();
+            }
+            console.log('[Layout] GAS — cfmRef:', cfmRef || '(vacío)', '| D27:', vehiculos || '(vacío)');
+          } catch (gasErr) {
+            console.warn('[Layout] GAS readFile error:', gasErr);
+          }
+        }
+
+        // cfmRef fallback desde nombre del archivo local si GAS falla
+        if (!cfmRef && file.name) {
+          const rawName = file.name.replace(/\.[^/.]+$/, '');
+          const pi = rawName.toUpperCase().indexOf('LAY OUT CCP_');
+          if (pi !== -1) cfmRef = rawName.substring(pi + 12).trim();
+        }
+
+        // ── 4. GUARDAR EN FIREBASE ──────────────────────────────────────────
+        const layoutUpdates: any = {
           layoutUrl: url,
           layoutUploadedBy: uploadedBy,
           layoutUploadedAt: uploadedAt,
-        });
-        setAsignaciones(prev => prev.map(a => a.id === recordId
-          ? { ...a, layoutUrl: url, layoutUploadedBy: uploadedBy, layoutUploadedAt: uploadedAt }
-          : a));
+          layoutFileName: file.name,
+          layoutFileId: driveFileId,
+          ...(cfmRef    ? { cfmRef }    : {}),
+          ...(vehiculos ? { vehiculos } : {}),
+        };
+
+        await asignacionCajaService.updateAsignacion(recordId, layoutUpdates);
+        setAsignaciones(prev => prev.map(a => a.id === recordId ? { ...a, ...layoutUpdates } : a));
+        if (cfmRef) {
+          const { storageService } = await import('../services/storageService');
+          await storageService.upsertHistoricoExpos([{ id: `exp_${recordId}`, cfmRef } as any]);
+        }
+
       } else if (field === 'ccpUrl') {
-        await asignacionCajaService.updateAsignacion(recordId, {
-          ccpUrl: url,
-          ccpUploadedBy: uploadedBy,
-          ccpUploadedAt: uploadedAt,
-        });
-        setAsignaciones(prev => prev.map(a => a.id === recordId
-          ? { ...a, ccpUrl: url, ccpUploadedBy: uploadedBy, ccpUploadedAt: uploadedAt }
-          : a));
+        await asignacionCajaService.updateAsignacion(recordId, { ccpUrl: url, ccpUploadedBy: uploadedBy, ccpUploadedAt: uploadedAt });
+        setAsignaciones(prev => prev.map(a => a.id === recordId ? { ...a, ccpUrl: url, ccpUploadedBy: uploadedBy, ccpUploadedAt: uploadedAt } : a));
       } else {
-        await asignacionCajaService.updateAsignacion(recordId, {
-          anexo29Url: url,
-          anexo29UploadedBy: uploadedBy,
-          anexo29UploadedAt: uploadedAt,
-        });
-        setAsignaciones(prev => prev.map(a => a.id === recordId
-          ? { ...a, anexo29Url: url, anexo29UploadedBy: uploadedBy, anexo29UploadedAt: uploadedAt }
-          : a));
+        await asignacionCajaService.updateAsignacion(recordId, { anexo29Url: url, anexo29UploadedBy: uploadedBy, anexo29UploadedAt: uploadedAt });
+        setAsignaciones(prev => prev.map(a => a.id === recordId ? { ...a, anexo29Url: url, anexo29UploadedBy: uploadedBy, anexo29UploadedAt: uploadedAt } : a));
       }
-      
-      // DISPARAR EVENTO PARA ACTUALIZAR BADGES EN LA BARRA LATERAL
+
       window.dispatchEvent(new Event('reserva:changed'));
     } catch (e: any) {
       alert(`Error subiendo archivo: ${e.message}`);
@@ -151,6 +209,7 @@ export const AsignacionesDiarias: React.FC = () => {
       window.dispatchEvent(new Event('reserva:changed'));
     }
   };
+
   const columns = ['fecha', 'horaAsignacion', 'numeroOperacion', 'numeroCaja', 'subLinea', 'placasCaja', 'transportLineId', 'driverId', 'nombreDriver', 'placasTracto', 'modeloAsignado'];
 
   useEffect(() => {
@@ -191,6 +250,28 @@ export const AsignacionesDiarias: React.FC = () => {
         setTransportLines(linesData);
         setVigilancias(vigilanciasData);
         setSellos(sellosData);
+        // ── Auto-fill scac + customId for records missing them ──────────────
+        // Runs silently in background after data loads, no await needed
+        (async () => {
+          const toFix = asigData.filter(a => {
+            const tl = linesData.find(l => l.transportLineId === (a as any).transportLineId);
+            const resolvedScac = tl?.TransportLine || '';
+            if (!resolvedScac) return false;          // can't resolve → skip
+            const datePart = ((a as any).fecha || '').replace(/-/g, '');
+            const expectedId = `${(a as any).numeroOperacion || ''}${datePart}${(a as any).carrierCodigo || ''}${resolvedScac}`;
+            return !(a as any).scac || (a as any).customId !== expectedId;
+          });
+          for (const a of toFix) {
+            const tl = linesData.find(l => l.transportLineId === (a as any).transportLineId);
+            const resolvedScac = tl?.TransportLine || '';
+            const datePart = ((a as any).fecha || '').replace(/-/g, '');
+            const newCustomId = `${(a as any).numeroOperacion || ''}${datePart}${(a as any).carrierCodigo || ''}${resolvedScac}`;
+            try {
+              await asignacionCajaService.updateAsignacion(a.id!, { scac: resolvedScac, customId: newCustomId } as any);
+            } catch { /* silent */ }
+          }
+        })();
+        // ─────────────────────────────────────────────────────────────────────
     } catch (e) {
         console.error("Error cargando dependencias de Asignación:", e);
     } finally {
@@ -274,17 +355,33 @@ export const AsignacionesDiarias: React.FC = () => {
     // Compute counts BEFORE cargadoFilter is applied
     let cerradoCount = 0;
     let porCerrarCount = 0;
+    let sinLayoutCount = 0;
+    let sinCcpCount = 0;
+    let vehiculosPorCerrar = 0;
+    let vehiculosCerrado = 0;
 
     result.forEach(a => {
         const hasLiberacion = liberaciones.some(lib => lib.asignacionCajaId === a.id);
-        if (hasLiberacion) cerradoCount++;
-        else porCerrarCount++;
+        const v = parseInt((a as any).vehiculos, 10);
+        if (hasLiberacion) {
+            cerradoCount++;
+            if (!isNaN(v)) vehiculosCerrado += v;
+        } else {
+            porCerrarCount++;
+            if (!(a as any).layoutUrl) sinLayoutCount++;
+            if (!(a as any).ccpUrl)    sinCcpCount++;
+            if (!isNaN(v)) vehiculosPorCerrar += v;
+        }
     });
 
     const filterCounts = {
         ALL: result.length,
         CERRADO: cerradoCount,
-        POR_CERRAR: porCerrarCount
+        POR_CERRAR: porCerrarCount,
+        SIN_LAYOUT: sinLayoutCount,
+        SIN_CCP: sinCcpCount,
+        VEHICULOS_POR_CERRAR: vehiculosPorCerrar,
+        VEHICULOS_CERRADO: vehiculosCerrado,
     };
 
     // Cargado Filter (CERRADO = hasLiberacion, POR_CERRAR = !hasLiberacion)
@@ -452,7 +549,21 @@ export const AsignacionesDiarias: React.FC = () => {
     }
     const finalFormData = { ...formData, carrierCodigo: finalCarrier };
 
+    // Resolve SCAC: the TransportLine code displayed in the SCAC column
+    // Primary: match by transportLineId
+    const resolvedTL = transportLines.find(tl => tl.transportLineId === finalFormData.transportLineId);
+    // Fallback: match by subLinea name if primary lookup has no TransportLine
+    const resolvedTLBySubLinea = !resolvedTL?.TransportLine
+      ? transportLines.find(tl => tl.nombreSubLinea && finalFormData.subLinea && tl.nombreSubLinea.trim().toUpperCase() === (finalFormData.subLinea || '').trim().toUpperCase())
+      : null;
+    const finalScac = resolvedTL?.TransportLine || resolvedTLBySubLinea?.TransportLine || '';
+    (finalFormData as any).scac = finalScac;
+
     if (isEditing && formData.id) {
+      // Recalculate customId so it always reflects the latest op/fecha/carrier/scac
+      const datePart = ((finalFormData as any).fecha || '').replace(/-/g, '');
+      const recalcId = `${(finalFormData as any).numeroOperacion || ''}${datePart}${(finalFormData as any).carrierCodigo || ''}${finalScac || ''}`;
+      if (recalcId) (finalFormData as any).customId = recalcId;
       await asignacionCajaService.updateAsignacion(formData.id, finalFormData);
     } else {
       const newRecord: AsignacionCajaModel = {
@@ -522,7 +633,7 @@ export const AsignacionesDiarias: React.FC = () => {
   };
 
   const openNew = async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getMexicoToday();
       const nextOp = await asignacionCajaService.getNextOperationNumber(today);
 
       // Auto-detect carrier for TRANSPORTISTA: find carrier from their Nombre Comercial
@@ -578,10 +689,12 @@ export const AsignacionesDiarias: React.FC = () => {
   // CIERRE MANUAL BATCH (Admin only) — criterios idénticos al badge Admin del sidebar
   const handleBatchManualClose = async () => {
     const eligible = filteredData.filter(a => {
-      const isRechazado = String((a as any).dockArribo || '').trim().toUpperCase() === 'RECHAZADO';
-      const isNoShow = String((a as any).dockArribo || '').trim().toUpperCase() === 'NO SHOW';
+      const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
+      const isRechazado = dockVal === 'RECHAZADO';
+      const isDrop = dockVal === 'DROP';
+      const isNoShow = dockVal === 'NO SHOW';
       const hasUSDB1 = String((a as any).observaciones || '').toUpperCase().includes('USDB1');
-      if (isRechazado || isNoShow || hasUSDB1) return false;
+      if (isRechazado || isDrop || isNoShow || hasUSDB1) return false;
       const hasCCP = !!(a as any).ccpUrl || !!(a as any).ccpUploadedAt;
       const isClosed = liberaciones.some(l => l.asignacionCajaId === a.id && !!l.selloValidado);
       return hasCCP && !isClosed;
@@ -595,7 +708,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
     setIsBatchClosing(true);
     setBatchResult(null);
-    const todayDate = new Date().toISOString().split('T')[0];
+    const todayDate = getMexicoToday();
     let ok = 0; let err = 0;
 
     for (const a of eligible) {
@@ -811,11 +924,13 @@ export const AsignacionesDiarias: React.FC = () => {
                   continue;
               }
 
+              const csvScac = transportLines.find(tl => tl.transportLineId === transportId)?.TransportLine || '';
               const asig: AsignacionCajaModel = {
                   fecha: rawFecha,
                   horaAsignacion: finalHora,
                   numeroOperacion: rawOperacion || '',
                   carrierCodigo: carrierPadre,
+                  scac: csvScac,
                   transportLineId: transportId,
                   numeroCaja: rawCaja,
                   subLinea: matchCaja ? matchCaja.nombreSubLinea || '' : '',
@@ -867,26 +982,40 @@ export const AsignacionesDiarias: React.FC = () => {
                   onClick={() => setCargadoFilter('ALL')}
                   className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${cargadoFilter === 'ALL' ? 'bg-teal-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
                 >
-                  Todos {filterCounts.ALL > 0 ? `(${filterCounts.ALL})` : ''}
+                  {t('filter.todos')} {filterCounts.ALL > 0 ? `(${filterCounts.ALL})` : ''}
                 </button>
                 <button
-                  onClick={() => setCargadoFilter('POR_CERRAR')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${cargadoFilter === 'POR_CERRAR' ? 'bg-teal-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
-                >
-                  POR CERRAR {filterCounts.POR_CERRAR > 0 ? `(${filterCounts.POR_CERRAR})` : ''}
-                </button>
+                   onClick={() => setCargadoFilter('POR_CERRAR')}
+                   className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex flex-col items-center leading-tight ${cargadoFilter === 'POR_CERRAR' ? 'bg-teal-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
+                 >
+                   <span>{t('filter.por_cerrar')} {filterCounts.POR_CERRAR > 0 ? `(${filterCounts.POR_CERRAR})` : ''}</span>
+                   {(filterCounts.SIN_LAYOUT > 0 || filterCounts.SIN_CCP > 0 || filterCounts.VEHICULOS_POR_CERRAR > 0) && (
+                     <span className={`flex gap-1.5 mt-0.5 text-[10px] font-semibold ${cargadoFilter === 'POR_CERRAR' ? 'text-teal-100' : 'text-slate-400'}`}>
+                       {filterCounts.SIN_LAYOUT > 0 && <span>{t('filter.sin_layout')}: {filterCounts.SIN_LAYOUT}</span>}
+                       {filterCounts.SIN_LAYOUT > 0 && filterCounts.SIN_CCP > 0 && <span>·</span>}
+                       {filterCounts.SIN_CCP > 0 && <span>{t('filter.sin_ccp')}: {filterCounts.SIN_CCP}</span>}
+                       {(filterCounts.SIN_LAYOUT > 0 || filterCounts.SIN_CCP > 0) && filterCounts.VEHICULOS_POR_CERRAR > 0 && <span>·</span>}
+                       {filterCounts.VEHICULOS_POR_CERRAR > 0 && <span>🚗 {filterCounts.VEHICULOS_POR_CERRAR} {t('filter.veh')}</span>}
+                     </span>
+                   )}
+                 </button>
                 <button
                   onClick={() => setCargadoFilter('CERRADO')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${cargadoFilter === 'CERRADO' ? 'bg-teal-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex flex-col items-center leading-tight ${cargadoFilter === 'CERRADO' ? 'bg-teal-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
                 >
-                  CERRADO {filterCounts.CERRADO > 0 ? `(${filterCounts.CERRADO})` : ''}
+                  <span>{t('filter.cerrado')} {filterCounts.CERRADO > 0 ? `(${filterCounts.CERRADO})` : ''}</span>
+                  {filterCounts.VEHICULOS_CERRADO > 0 && (
+                    <span className={`mt-0.5 text-[10px] font-semibold ${cargadoFilter === 'CERRADO' ? 'text-teal-100' : 'text-slate-400'}`}>
+                      🚗 {filterCounts.VEHICULOS_CERRADO} {t('filter.veh')}
+                    </span>
+                  )}
                 </button>
              </div>
 
              <div className="flex items-center bg-white border border-slate-300 rounded-lg pr-2 overflow-hidden shadow-sm">
                 <button 
                   onClick={() => {
-                    const today = new Date().toISOString().split('T')[0];
+                     const today = getMexicoToday();
                     const newRange = { start: today, end: today };
                     setDateRange(newRange);
                     localStorage.setItem('asig_dateRange', JSON.stringify(newRange));
@@ -981,11 +1110,11 @@ export const AsignacionesDiarias: React.FC = () => {
                  onClick={handleBatchManualClose}
                  disabled={isBatchClosing}
                  className="bg-red-600 text-white px-4 py-2 flex items-center rounded-lg hover:bg-red-700 shadow-md shadow-red-500/30 transition-all font-medium text-sm disabled:opacity-60 disabled:cursor-wait whitespace-nowrap"
-                 title="Cierre manual de operaciones pendientes con CCP"
+                 title={t('btn.cierre_title')}
                >
                  {isBatchClosing
-                   ? (<><Loader2 size={18} className="mr-2 animate-spin" />Cerrando...</>)
-                   : (<><Shield size={18} className="mr-2" />Cierre</>)
+                   ? (<><Loader2 size={18} className="mr-2 animate-spin" />{t('btn.cerrando')}</>)
+                   : (<><Shield size={18} className="mr-2" />{t('btn.cierre')}</>)
                  }
                </button>
              )}
@@ -1009,7 +1138,7 @@ export const AsignacionesDiarias: React.FC = () => {
              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
              <input 
                  type="text" 
-                 placeholder="Búsqueda multi-termino (Operación, Caja, Driver, Placas, Transportista, Sellos, etc)..." 
+                 placeholder={t('asig.buscar')} 
                  value={searchTerm} 
                  onChange={e => setSearchTerm(e.target.value)}
                  className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition-shadow"
@@ -1048,6 +1177,15 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">{t('col.cargado')}</th>
               <th className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap">{t('col.sellado_time')}</th>
               <th className="p-4 font-medium text-slate-800 bg-slate-100/50">{t('col.observaciones')}</th>
+              <th className="p-4 font-medium min-w-[180px] text-indigo-800 bg-indigo-50/50 whitespace-nowrap uppercase text-xs">
+                CFM REF <span className="ml-1 text-[9px] bg-indigo-100 text-indigo-500 rounded px-1 py-0.5 font-normal normal-case">auto</span>
+              </th>
+              <th className="p-4 font-medium text-slate-500 bg-slate-50 whitespace-nowrap text-xs">
+                ID <span className="ml-1 text-[9px] bg-slate-200 text-slate-400 rounded px-1 py-0.5 font-normal normal-case">auto</span>
+              </th>
+              <th className="p-4 font-medium min-w-[200px] text-emerald-800 bg-emerald-50/50 whitespace-nowrap uppercase text-xs">
+                {t('col.vehiculos')} <span className="ml-1 text-[9px] bg-emerald-100 text-emerald-500 rounded px-1 py-0.5 font-normal normal-case">auto</span>
+              </th>
               {!isEmbarques && <th className="p-4 font-medium text-right bg-slate-50">{t('btn.acciones')}</th>}
             </tr>
           </thead>
@@ -1060,12 +1198,14 @@ export const AsignacionesDiarias: React.FC = () => {
               const isEven = index % 2 === 0;
               let rowColorClass = isEven ? 'bg-white hover:bg-slate-50' : 'bg-slate-50 hover:bg-slate-100';
 
-              const isRechazado = String((a as any).dockArribo || '').trim().toUpperCase() === 'RECHAZADO';
-              const isNoShow = String((a as any).dockArribo || '').trim().toUpperCase() === 'NO SHOW';
+              const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
+              const isRechazado = dockVal === 'RECHAZADO';
+              const isDrop = dockVal === 'DROP';
+              const isNoShow = dockVal === 'NO SHOW';
               const hasUSDB1 = String((a as any).observaciones || '').toUpperCase().includes('USDB1');
-              const hideDocs = isRechazado || isNoShow || hasUSDB1;
+              const hideDocs = isRechazado || isDrop || isNoShow || hasUSDB1;
 
-              if (isRechazado) {
+              if (isRechazado || isDrop) {
                   rowColorClass = 'bg-yellow-100 hover:bg-yellow-200';
               } else if (isNoShow) {
                   rowColorClass = 'bg-orange-100 hover:bg-orange-200';
@@ -1307,13 +1447,39 @@ export const AsignacionesDiarias: React.FC = () => {
                         </div>
                     )}
                 </td>
-
                 <td className="p-4 font-mono text-xs text-teal-800 font-medium whitespace-nowrap">
                     {liberacion?.fechaHoraRegistro ? liberacion.fechaHoraRegistro : '-'}
                 </td>
                 
                 <td className="p-4 text-xs text-slate-600 truncate max-w-[200px]" title={a.observaciones || ''}>
                     {a.observaciones || '-'}
+                </td>
+                {/* ── CFM REF (extraído del nombre del archivo layout) ── */}
+                <td className="p-4 bg-indigo-50/20 border-l border-indigo-100/50 min-w-[180px]">
+                  {(() => {
+                    // Primary: cfmRef stored in Firebase
+                    // Fallback: derive from layoutFileName at render time
+                    const stored = (a as any).cfmRef || '';
+                    if (stored) return <span className="text-xs font-mono font-semibold text-indigo-700 whitespace-nowrap">{stored}</span>;
+                    const fname = (a as any).layoutFileName || '';
+                    if (fname) {
+                      const prefix = 'LAY OUT CCP_';
+                      const raw = fname.replace(/\.[^/.]+$/, '');
+                      const idx = raw.toUpperCase().indexOf(prefix.toUpperCase());
+                      const derived = idx !== -1 ? raw.substring(idx + prefix.length).trim() : '';
+                      if (derived) return <span className="text-xs font-mono font-semibold text-indigo-600 whitespace-nowrap" title={`Extraído de: ${fname}`}>{derived}</span>;
+                    }
+                    return <span className="text-slate-300 text-xs">—</span>;
+                  })()}
+                </td>
+                <td className="p-4 font-mono text-[10px] text-slate-400 truncate max-w-[180px]" title={(a as any).customId || a.id || ''}>{(a as any).customId || a.id || '-'}</td>
+                {/* ── VEHICULOS ── */}
+                <td className="p-4 bg-emerald-50/20 border-l border-emerald-100/50 min-w-[200px]">
+                  {(a as any).vehiculos ? (
+                    <span className="text-xs text-slate-500 whitespace-nowrap">{(a as any).vehiculos}</span>
+                  ) : (
+                    <span className="text-slate-300 text-xs">—</span>
+                  )}
                 </td>
 
                 {!isEmbarques && (
@@ -1410,25 +1576,34 @@ export const AsignacionesDiarias: React.FC = () => {
                         <div lang="en-GB">
                           <select disabled={isRestrictedRole} required value={formData.horaAsignacion || ''} onChange={e => setFormData({...formData, horaAsignacion: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100">
                             <option value="" disabled>Seleccionar Hora</option>
-                            {["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"].map(hr => {
-                              const hourPrefix = hr.substring(0, 2);
-                              const count = asignaciones.filter(a => a.fecha === formData.fecha && a.horaAsignacion?.startsWith(hourPrefix) && (!isEditing || a.id !== formData.id)).length;
-                              if (hr === "11:00") {
-                                return <option key={hr} value={hr} disabled>{hr} - BLOQUEADO</option>;
-                              }
-                              const isFull = count >= 6;
-                              return (
-                                <option key={hr} value={hr} disabled={isFull} className={isFull ? 'text-red-500 font-bold' : ''}>
-                                  {hr} {isFull ? '(Lleno - 6/6)' : `(${count}/6 disponibles)`}
-                                </option>
-                              );
-                            })}
+                            {(() => {
+                              const useNewSchedule = (formData.fecha || '') >= '2026-07-07';
+                              const hours = useNewSchedule
+                                ? ["07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","12:00","13:00","14:00","15:00"]
+                                : ["07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00"];
+                              return hours.map(hr => {
+                                // Nuevo horario: match exacto HH:MM | Viejo: match por prefijo HH
+                                const count = useNewSchedule
+                                  ? asignaciones.filter(a => a.fecha === formData.fecha && a.horaAsignacion === hr && (!isEditing || a.id !== formData.id)).length
+                                  : asignaciones.filter(a => { const p = hr.substring(0,2); return a.fecha === formData.fecha && a.horaAsignacion?.startsWith(p) && (!isEditing || a.id !== formData.id); }).length;
+                                if (hr === "11:00") return <option key={hr} value={hr} disabled>{hr} - BLOQUEADO</option>;
+                                // Override especial: 15:00 del 06/07/2026 tuvo 8 citas
+                                const maxSlots = (hr === '15:00' && formData.fecha === '2026-07-06') ? 8 : 6;
+                                const isFull = count >= maxSlots;
+                                return (
+                                  <option key={hr} value={hr} disabled={isFull} className={isFull ? 'text-red-500 font-bold' : ''}>
+                                    {hr} {isFull ? `(Lleno - ${maxSlots}/${maxSlots})` : `(${count}/${maxSlots} disponibles)`}
+                                  </option>
+                                );
+                              });
+                            })()}
+
                           </select>
                         </div>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-1">No. Operación</label>
-                        <input disabled={isRestrictedRole} type="text" value={formData.numeroOperacion || ''} onChange={e => setFormData({...formData, numeroOperacion: e.target.value.toUpperCase()})} placeholder="Auto" className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-pink-500 outline-none font-mono uppercase disabled:bg-slate-100" />
+                        <input disabled type="text" value={formData.numeroOperacion || ''} placeholder="Auto" className="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none font-mono uppercase bg-slate-100 text-slate-500 cursor-not-allowed" />
                       </div>
                     </div>
 

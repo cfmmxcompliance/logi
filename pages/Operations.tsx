@@ -4,7 +4,7 @@ import { Shipment, ShipmentStatus, UserRole } from '../types.ts';
 import { Plus, Search, FileDown, FileSpreadsheet, X, Save, Edit2, Trash2, AlertTriangle } from 'lucide-react';
 import { parseCSV } from '../utils/csvHelpers.ts';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 
 const shipmentEmptyState: Shipment = {
     id: '',

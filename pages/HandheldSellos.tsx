@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { selloService } from '../services/selloService.ts';
 import { liberacionService } from '../services/liberacionService.ts';

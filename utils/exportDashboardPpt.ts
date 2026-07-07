@@ -80,7 +80,9 @@ export interface PptExportParams {
   importInvoicesByKey:  ClaveCount[];
   exportInvoicesByKey:  ClaveCount[];
   // Chart data arrays
-  containerVolumeData: any[];
+  containerVolume160: any[];
+  containerVolume240: any[];
+  containerVolumeOther: any[];
   importVolumeData:    any[];
   exportVolumeData:    any[];
   importValueData:     any[];
@@ -303,18 +305,50 @@ export async function exportDashboardPpt(params: PptExportParams): Promise<void>
   }
 
   // ══════════════════════════════════════════════════════════════════════
-  // SLIDE 2 — Contenedores por Mes
+  // SLIDE 2a — Contenedores Importación — Aduana 160
   // ══════════════════════════════════════════════════════════════════════
-  if (params.containerVolumeData.length > 0) {
-    const s2 = prs.addSlide();
-    addHeader(s2,
-      t('dash.chart_cont_mes'),
-      `DataStage 504×501 · ${params.containerVolumeData.length} ${t('dash.meses')} · ${t('dash.antiguo_izq')}`
+  if (params.containerVolume160 && params.containerVolume160.length > 0) {
+    const s2a = prs.addSlide();
+    addHeader(s2a,
+      'Contenedores Importación — Aduana 160',
+      `DataStage 504×501 · ${params.containerVolume160.length} ${t('dash.meses')} · ${t('dash.antiguo_izq')}`
     );
-    s2.addChart('bar' as any,
-      toSeries(params.containerVolumeData, ['Imp.','Exp.'], [t('dash.imp'), t('dash.exp')]),
+    s2a.addChart('bar' as any,
+      toSeries(params.containerVolume160, ['Imp.'], [t('dash.imp')]),
       { ...CHART_BASE, x: 0.28, y: CONTENT_Y, w: SLIDE_W - 0.56, h: CONTENT_H,
-        barDir: 'col', barGrouping: 'clustered', chartColors: PALETTE_CONT }
+        barDir: 'col', barGrouping: 'clustered', chartColors: ['0ea5e9'] }
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // SLIDE 2b — Contenedores Exportación — Aduana 240
+  // ══════════════════════════════════════════════════════════════════════
+  if (params.containerVolume240 && params.containerVolume240.length > 0) {
+    const s2b = prs.addSlide();
+    addHeader(s2b,
+      'Contenedores Exportación — Aduana 240',
+      `DataStage 504×501 · ${params.containerVolume240.length} ${t('dash.meses')} · ${t('dash.antiguo_izq')}`
+    );
+    s2b.addChart('bar' as any,
+      toSeries(params.containerVolume240, ['Exp.'], [t('dash.exp')]),
+      { ...CHART_BASE, x: 0.28, y: CONTENT_Y, w: SLIDE_W - 0.56, h: CONTENT_H,
+        barDir: 'col', barGrouping: 'clustered', chartColors: ['14b8a6'] }
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // SLIDE 2c — Contenedores — Otras Aduanas
+  // ══════════════════════════════════════════════════════════════════════
+  if (params.containerVolumeOther && params.containerVolumeOther.length > 0) {
+    const s2c = prs.addSlide();
+    addHeader(s2c,
+      'Contenedores — Otras Aduanas',
+      `Excl. Imp. 160 y Exp. 240 · ${params.containerVolumeOther.length} ${t('dash.meses')} · ${t('dash.antiguo_izq')}`
+    );
+    s2c.addChart('bar' as any,
+      toSeries(params.containerVolumeOther, ['Imp.','Exp.'], [t('dash.imp'), t('dash.exp')]),
+      { ...CHART_BASE, x: 0.28, y: CONTENT_Y, w: SLIDE_W - 0.56, h: CONTENT_H,
+        barDir: 'col', barGrouping: 'clustered', chartColors: ['6366f1', 'f59e0b'] }
     );
   }
 
@@ -336,8 +370,7 @@ export async function exportDashboardPpt(params: PptExportParams): Promise<void>
       [t('dash.bar_mat_prima'), t('dash.bar_activo_fijo')]),
     { ...CHART_BASE, x: 0.28 + HALF_W + 0.34, y: CONTENT_Y, w: HALF_W, h: CONTENT_H,
       barDir: 'col', barGrouping: 'stacked', chartColors: PALETTE_IMPORT_VAL,
-      title: `${t('dash.chart_imp_val')} (M USD)`, showTitle: true, titleFontSize: 10, titleColor: C_MID,
-      valAxisNumFmt: '0.000"M"' }
+      title: `${t('dash.chart_imp_val')} (M USD)`, showTitle: true, titleFontSize: 10, titleColor: C_MID }
   );
 
   // ══════════════════════════════════════════════════════════════════════
@@ -356,8 +389,7 @@ export async function exportDashboardPpt(params: PptExportParams): Promise<void>
     toSeries(params.exportValueData, ['Valor (M USD)'], [t('dash.bar_valor_exp')]),
     { ...CHART_BASE, x: 0.28 + HALF_W + 0.34, y: CONTENT_Y, w: HALF_W, h: CONTENT_H,
       barDir: 'col', barGrouping: 'clustered', chartColors: PALETTE_EXPORT,
-      title: `${t('dash.chart_exp_val')} (M USD)`, showTitle: true, titleFontSize: 10, titleColor: C_MID,
-      valAxisNumFmt: '0.000"M"' }
+      title: `${t('dash.chart_exp_val')} (M USD)`, showTitle: true, titleFontSize: 10, titleColor: C_MID }
   );
 
   // ══════════════════════════════════════════════════════════════════════
@@ -372,8 +404,7 @@ export async function exportDashboardPpt(params: PptExportParams): Promise<void>
     s5.addChart('bar' as any,
       toSeries(params.dutiesData, dutKeys, dutNames, 1e6),
       { ...CHART_BASE, x: 0.28, y: CONTENT_Y, w: SLIDE_W - 0.56, h: CONTENT_H,
-        barDir: 'col', barGrouping: 'clustered', chartColors: PALETTE_DUTIES,
-        valAxisNumFmt: '0.00"M"' }
+        barDir: 'col', barGrouping: 'clustered', chartColors: PALETTE_DUTIES }
     );
   }
 

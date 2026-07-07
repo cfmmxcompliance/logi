@@ -18,7 +18,8 @@ export const authService = {
         }
 
         // Guard: email vacío causa error críptico de Firestore en Android
-        const cleanEmail = (email || '').trim().toLowerCase();
+        const typedEmail = (email || '').trim();        // Email tal como lo escribió el usuario
+        const cleanEmail = typedEmail.toLowerCase();     // Versión minúsculas para Firebase Auth
         const cleanPassword = (password || '').trim();
         if (!cleanEmail || !cleanEmail.includes('@')) {
             throw { code: 'auth/invalid-email', message: 'Ingresa un correo electrónico válido.' };
@@ -28,33 +29,33 @@ export const authService = {
         }
 
         const username = cleanEmail.split('@')[0];
-        const isRootAdmin = cleanEmail.toLowerCase() === ROOT_ADMIN_EMAIL;
+        const isRootAdmin = cleanEmail === ROOT_ADMIN_EMAIL;
 
         try {
-            // 1. Force Local Cache First
-            // Esto es crucial para redes lentas: getDoc estándar intentará hablar con la red
-            // y colgará la app por hasta 10 segundos antes de leer el caché.
-            // getDocFromCache lee el disco duro de inmediato y solo falla si no existe.
+            // 1. Buscar documento: primero con el email exacto como fue escrito,
+            //    si no existe intentar con minúsculas (fallback para usuarios con ID en minúsculas).
             let userSnap;
-            try {
-                userSnap = await getDocFromCache(doc(db, 'users', cleanEmail));
-                
-                // Si el caché dice que NO existe, forzamos la red porque pudo haber sido borrado localmente
-                // o restaurado en la nube recientemente.
-                if (!userSnap.exists()) {
-                    userSnap = await getDoc(doc(db, 'users', cleanEmail));
-                }
-            } catch (e) {
+            const lookupIds = typedEmail === cleanEmail ? [cleanEmail] : [typedEmail, cleanEmail];
+
+            for (const lookupId of lookupIds) {
                 try {
-                    userSnap = await getDoc(doc(db, 'users', cleanEmail));
+                    const cached = await getDocFromCache(doc(db, 'users', lookupId));
+                    if (cached.exists()) { userSnap = cached; break; }
+                } catch (_) {}
+                try {
+                    const fromNet = await getDoc(doc(db, 'users', lookupId));
+                    if (fromNet.exists()) { userSnap = fromNet; break; }
                 } catch (netErr) {
-                    console.warn('[Auth] First network attempt failed, retrying in 2s...', netErr);
+                    console.warn(`[Auth] Network attempt failed for ${lookupId}, retrying in 2s...`, netErr);
                     await new Promise(r => setTimeout(r, 2000));
-                    userSnap = await getDoc(doc(db, 'users', cleanEmail));
+                    try {
+                        const retry = await getDoc(doc(db, 'users', lookupId));
+                        if (retry.exists()) { userSnap = retry; break; }
+                    } catch (_) {}
                 }
             }
-            
-            if (!userSnap.exists()) {
+
+            if (!userSnap || !userSnap.exists()) {
                 throw { code: 'auth/user-not-found', message: 'User not registered.' };
             }
 

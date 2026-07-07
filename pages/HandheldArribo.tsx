@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { AsignacionCajaModel } from '../types/asignacionCaja.ts';
 import { ArrowLeft, Loader2, Box, Clock, CheckCircle, Truck } from 'lucide-react';
@@ -197,6 +197,7 @@ export const HandheldArribo = () => {
                     <option key={d} value={d}>{d}</option>
                   ))}
                   <option value="RECHAZADO" className="text-red-400 font-bold">RECHAZADO</option>
+                  <option value="DROP" className="text-red-400 font-bold">DROP</option>
                   <option value="NO SHOW" className="text-orange-400 font-bold">NO SHOW</option>
                 </select>
 

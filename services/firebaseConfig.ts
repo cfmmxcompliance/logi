@@ -26,7 +26,8 @@ try {
   db = initializeFirestore(app, { 
     localCache: persistentLocalCache({ 
       tabManager: persistentMultipleTabManager(),
-      cacheSizeBytes: CACHE_SIZE_UNLIMITED
+      // Limitar a 50MB en lugar de ilimitado para evitar QuotaExceededError en IndexedDB
+      cacheSizeBytes: 50 * 1024 * 1024
     }) 
   });
 } catch {

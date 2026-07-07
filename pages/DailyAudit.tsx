@@ -3,7 +3,7 @@ import { storageService } from '../services/storageService.ts';
 import { DailyChange, MasterDataReport, UserRole } from '../types.ts';
 import { Activity, RefreshCcw, Download, FileText, User, Calendar, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import * as XLSX from 'xlsx';
 
 export const DailyAudit = () => {

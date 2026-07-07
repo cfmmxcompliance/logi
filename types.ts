@@ -488,6 +488,7 @@ export interface PedimentoRecord extends GeneralData {
   totalValueUsd: number;
   edDocuments?: number; // Count of CFDIs from 507 (ClaveCaso='ED')
   containerCount?: number; // Count of containers from 504
+  containerNumbers?: string[]; // Actual container numbers from 504 for deduplication
 }
 
 export interface CCPItem {
@@ -666,17 +667,29 @@ export interface Rule8th {
 export interface HistoricoExpoRecord {
   id?: string;
   trailer: string;
+  idNumber?: string;
+  seal?: string;
+  team?: string;
+  transportLine?: string;
+  cfmRef: string;
+  scac?: string;
+  caat?: string;
   pickupDayCFM: string;
   dodaUrl?: string;
   entryUrl?: string;
+  dodaUploadedAt?: string;
+  entryUploadedAt?: string;
+  dodaApertureDate?: string;
+  entryApertureDate?: string;
   dateRequested: string;
   crossingDate: string;
   dateReceived: string;
   daysToReceive: number | string;
-  cfmRef: string;
   expDoda: string;
   comments: string;
+  deliveryDate?: string;
   scacAndCaat: string;
+  ataDestination?: string;
   createdAt?: number;
 }
 
@@ -704,6 +717,7 @@ export interface StorageState {
   xmlCI?: XMLCIRecord[];
   fianzas?: FianzaRecord[];
   fixedAssets: FixedAsset[];
+  rule8ths?: Rule8th[];
   historicoExpo?: HistoricoExpoRecord[];
 }
 

@@ -8,7 +8,7 @@ import { db } from '../services/firebaseConfig';
 import { uploadFileToDrive } from '../services/googleDriveService';
 import { geminiService } from '../services/geminiService';
 import { parseCSV } from '../utils/csvParser';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 export interface BalanceR8 {
     id: string;

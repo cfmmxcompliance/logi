@@ -46,10 +46,14 @@ export const asignacionCajaService = {
   },
 
   async addAsignacion(asignacion: AsignacionCajaModel): Promise<void> {
-    const docId = asignacion.id || doc(collection(db, COLLECTION_NAME)).id;
+    // Auto-generate custom ID: {numeroOperacion}{YYYYMMDD}{carrierCodigo}{scac}
+    const datePart = (asignacion.fecha || '').replace(/-/g, '');
+    const customId = `${asignacion.numeroOperacion || ''}${datePart}${asignacion.carrierCodigo || ''}${asignacion.scac || ''}`;
+    const docId = asignacion.id || customId || doc(collection(db, COLLECTION_NAME)).id;
     const docRef = doc(db, COLLECTION_NAME, docId);
     await setDoc(docRef, {
       id: docId,
+      customId: customId || docId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       ...asignacion

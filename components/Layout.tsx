@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck, Globe, Activity, FolderOpen,
   Navigation, Monitor,
   Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles, CalendarCheck, History, Package, CalendarDays, ClipboardList, AlertTriangle } from 'lucide-react';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import { ConnectionStatus } from './ConnectionStatus.tsx';
 import { UserRole } from '../types.ts';
 import { storageService } from '../services/storageService.ts';
@@ -144,10 +144,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
             const fecha = (a as any).fecha || '';
             const inRange = fecha >= rangeStart && fecha <= rangeEnd;
-            const isRechazado = String((a as any).dockArribo || '').trim().toUpperCase() === 'RECHAZADO';
-            const isNoShow = String((a as any).dockArribo || '').trim().toUpperCase() === 'NO SHOW';
+            const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
+            const isRechazado = dockVal === 'RECHAZADO';
+            const isDrop = dockVal === 'DROP';
+            const isNoShow = dockVal === 'NO SHOW';
             const hasUSDB1 = String((a as any).observaciones || '').toUpperCase().includes('USDB1');
-            if (isRechazado || isNoShow || hasUSDB1) return false;
+            if (isRechazado || isDrop || isNoShow || hasUSDB1) return false;
 
             const hasLayout = !!(a as any).layoutUrl || !!(a as any).layoutUploadedAt;
             const hasCCP = !!(a as any).ccpUrl || !!(a as any).ccpUploadedAt;
@@ -159,10 +161,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           const badgeAdmin = asignaciones.filter(a => {
             const fecha = (a as any).fecha || '';
             const inRange = fecha >= rangeStart && fecha <= rangeEnd;
-            const isRechazado = String((a as any).dockArribo || '').trim().toUpperCase() === 'RECHAZADO';
-            const isNoShow = String((a as any).dockArribo || '').trim().toUpperCase() === 'NO SHOW';
+            const dockVal2 = String((a as any).dockArribo || '').trim().toUpperCase();
+            const isRechazado = dockVal2 === 'RECHAZADO';
+            const isDrop = dockVal2 === 'DROP';
+            const isNoShow = dockVal2 === 'NO SHOW';
             const hasUSDB1 = String((a as any).observaciones || '').toUpperCase().includes('USDB1');
-            if (isRechazado || isNoShow || hasUSDB1) return false;
+            if (isRechazado || isDrop || isNoShow || hasUSDB1) return false;
 
             const hasCCP = !!(a as any).ccpUrl || !!(a as any).ccpUploadedAt;
             const isClosed = liberaciones.some(l => (l as any).asignacionCajaId === a.id && !!(l as any).selloValidado);

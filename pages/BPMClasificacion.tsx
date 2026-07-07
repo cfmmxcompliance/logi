@@ -3,7 +3,7 @@ import { DownloadCloud, UploadCloud, Search, Image as ImageIcon, CheckCircle, Re
 import { bpmService } from '../services/bpmService';
 import { BPMRecord, UserRole } from '../types.ts';
 import * as xlsx from 'xlsx';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 
 const TEMPLATE_HEADERS = [

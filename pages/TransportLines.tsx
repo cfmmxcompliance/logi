@@ -8,7 +8,7 @@ import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../compo
 import { SearchableComboBox, ComboOption } from '../components/SearchableComboBox';
 import { parseCSV } from '../utils/csvHelpers';
 import { useLanguage } from '../context/LanguageContext';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { UserRole } from '../types';
 
 export const TransportLines: React.FC = () => {

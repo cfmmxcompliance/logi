@@ -3,7 +3,7 @@ import { storageService } from '../services/storageService.ts';
 import { Database, Trash2, AlertTriangle, History, RotateCcw, Save, Users, Shield, Play, Key, UserPlus, Mail, Plus, Search } from 'lucide-react';
 import { CatalogQueryBuilder, evaluateCondition, QueryCondition } from '../components/CatalogQueryBuilder.tsx';
 import { RestorePoint, UserRole, User } from '../types.ts';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import { authService } from '../services/authService.ts';
 
 export const Settings = () => {

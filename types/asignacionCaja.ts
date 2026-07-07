@@ -6,6 +6,8 @@ export interface AsignacionCajaModel {
   comentariosArribo?: string; // max 50 chars
   dockArribo?: string;      // DOCK 1..13 — asignado desde handheld
   carrierCodigo?: string;
+  scac?: string;              // TransportLine name shown in SCAC column (e.g. MXTL)
+  customId?: string;          // Structured ID: {numeroOperacion}{YYYYMMDD}{carrierCodigo}{scac}
   transportLineId?: string; // FK -> TransportLine (Razón Social)
   numeroCaja: string;
   numeroOperacion?: string;

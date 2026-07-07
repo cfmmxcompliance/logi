@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { vigilanciaService } from '../services/vigilanciaService.ts';
 import { uploadFileToDrive } from '../services/googleDriveService.ts';

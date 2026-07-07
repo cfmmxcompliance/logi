@@ -990,6 +990,7 @@ export const XMLInvoiceExtractor: React.FC = () => {
                             <input
                                 type="file"
                                 className="hidden"
+                                // @ts-expect-error TODO: Revisión posterior - TS no reconoce oficialmente webkitdirectory en React.InputHTMLAttributes
                                 webkitdirectory=""
                                 directory=""
                                 onChange={handleFolderUpload}

@@ -17,10 +17,11 @@ interface ErrorBoundaryState {
 // Simple Error Boundary Class Component
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
     public state: ErrorBoundaryState = { hasError: false, error: null };
-    readonly props!: Readonly<ErrorBoundaryProps>;
+    public props: ErrorBoundaryProps;
 
     constructor(props: ErrorBoundaryProps) {
         super(props);
+        this.props = props;
     }
 
     static getDerivedStateFromError(error: Error): ErrorBoundaryState {

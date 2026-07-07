@@ -4,7 +4,7 @@ import { VesselTrackingRecord, UserRole } from '../types.ts';
 import { Plus, Search, FileDown, Anchor, FileSpreadsheet, Edit2, X, Save, Trash2, AlertTriangle, Plane } from 'lucide-react';
 import { parseCSV } from '../utils/csvHelpers.ts';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import { useLanguage } from '../context/LanguageContext.tsx';
 
 const vesselEmptyState: VesselTrackingRecord = {

@@ -56,7 +56,7 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
   // ED documents from 507 (ClaveCaso='ED' = CFDI declarados)
   const tempEdCounts = new Map<string, number>(); // pedimentoId -> count
   // Containers from 504 (NumContenedor por pedimento)
-  const tempContainerCounts = new Map<string, number>(); // pedimentoId -> count
+  const tempContainerNums = new Map<string, string[]>(); // pedimentoId -> containerNumbers[]
   // 506: Fechas del pedimento — enriquece fechaEntrada/fechaPago del 501
   const tempFechas: { key: string; claveTipo: string; fechaOp: string; fechaPagoReal: string }[] = [];
   // 520: Destinatarios de la mercancía
@@ -298,7 +298,11 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
             const cols = line.split('|');
             if (cols.length < 4) return;
             const key = `${cols[0]}-${cols[1]}-${cols[2]}`;
-            tempContainerCounts.set(key, (tempContainerCounts.get(key) || 0) + 1);
+            const numCont = (cols[3] || '').trim();
+            if (!numCont) return;
+            if (!tempContainerNums.has(key)) tempContainerNums.set(key, []);
+            const arr = tempContainerNums.get(key)!;
+            if (!arr.includes(numCont)) arr.push(numCont);
           });
         } else if (fileName.endsWith('_Sel.asc') || fileName.toLowerCase().endsWith('_sel.asc')) {
           // _Sel.asc — Selecciones de reconocimiento
@@ -408,9 +412,12 @@ export const processZipFile = async (file: File, onProgress?: (current: number, 
   });
 
   // === CRUCE: 504 → 501 (Contenedores) ===
-  tempContainerCounts.forEach((count, id) => {
+  tempContainerNums.forEach((nums, id) => {
     const record = pedimentoMap.get(id);
-    if (record) record.containerCount = count;
+    if (record) {
+      record.containerNumbers = nums;
+      record.containerCount = nums.length;
+    }
   });
 
   // === CRUCE: 507-ED → 501 (CFDIs de Exportación) ===

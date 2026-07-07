@@ -5,7 +5,7 @@ import { Plus, Edit2, Trash2, Search, Filter, Download, UploadCloud, FileSpreads
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { parseCSV } from '../utils/csvHelpers';
 import { useLanguage } from '../context/LanguageContext';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { UserRole } from '../types';
 
 export const Carriers: React.FC = () => {

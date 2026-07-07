@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import { authService } from '../services/authService.ts';
 import { Lock, User as UserIcon, LogIn, Ship, UserPlus, Key, Loader2 } from 'lucide-react';
 

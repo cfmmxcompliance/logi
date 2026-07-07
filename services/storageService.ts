@@ -491,7 +491,7 @@ export const storageService = {
         }
 
         // (D) Skip items handled by specialized listeners above
-        const queryRef = (key === 'DAILY_CHANGES' || key === 'DAILY_REPORTS' || key === 'LOGS' || key === 'FIXED_ASSETS' || key === 'FIANZAS' || key === 'RULE_8THS')
+        const queryRef = (key === 'DAILY_CHANGES' || key === 'DAILY_REPORTS' || key === 'LOGS' || key === 'FIXED_ASSETS' || key === 'RULE_8THS')
           ? null // Handled above queries
           : collection(db, colName);
 
@@ -833,9 +833,8 @@ export const storageService = {
   // Reports are saved "lean" (records:[]) to avoid Firestore 1MB doc limit.
   getDataStageReportWithRecords: async (reportId: string): Promise<PedimentoRecord[]> => {
     if (!db) return [];
-    // Check if already hydrated in memory
+    // Always fetch fresh from subcollection to ensure updated fields (e.g. containerNumbers)
     const cached = (dbState.dataStageReports || []).find((r: any) => r.id === reportId);
-    if (cached && cached.records && cached.records.length > 0) return cached.records;
 
     try {
       const { collection, getDocs } = await import('firebase/firestore');
@@ -935,7 +934,7 @@ export const storageService = {
     return new Promise<void>((resolve) => {
       onSnapshot(collection(db, COLS.FIXED_ASSETS), snap => {
         dbState.fixedAssets = snap.docs.map(d => ({ id: d.id, ...d.data() } as FixedAsset));
-        storageService.notify();
+        notifyListeners();
         resolve();
       });
     });
@@ -1615,6 +1614,13 @@ export const storageService = {
 
     const id = part.id || part.PART_NUMBER || generateId();
     const standardPN = (part.PART_NUMBER || '').toString().toUpperCase().trim();
+
+    // No guardar registros sin PART_NUMBER
+    if (!standardPN) {
+      console.warn('[updatePart] Rechazado: PART_NUMBER vacío, no se guarda.');
+      return;
+    }
+
     const data = { ...part, id, PART_NUMBER: standardPN, UPDATE_TIME: new Date().toISOString() };
 
     try {
@@ -3739,7 +3745,8 @@ export const storageService = {
       const batch = writeBatch(db);
       for (const rec of chunk) {
         const id = rec.id || doc(collection(db, COLS.HISTORICO_EXPO)).id;
-        batch.set(doc(db, COLS.HISTORICO_EXPO, id), sanitizeForFirestore({ ...rec, id }));
+        // Use merge:true so existing fields (dodaUrl, entryUrl, etc.) are preserved
+        batch.set(doc(db, COLS.HISTORICO_EXPO, id), sanitizeForFirestore({ ...rec, id }), { merge: true });
       }
       try {
         await batch.commit();

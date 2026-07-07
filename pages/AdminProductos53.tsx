@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { productosService, Producto } from '../services/productosService';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { Loader2, Save, CheckCircle, AlertCircle, Package } from 'lucide-react';
 
 export const AdminProductos53: React.FC = () => {

@@ -3,7 +3,7 @@ import { asignacionCajaService } from '../services/asignacionCajaService';
 import { liberacionService } from '../services/liberacionService';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
 import { LiberacionRecord, LiberacionDockRecord } from '../types';
-import { Truck, CheckCircle, Clock, Calendar, RefreshCcw, Search, XCircle, Package2 } from 'lucide-react';
+import { Truck, CheckCircle, Clock, Calendar, RefreshCcw, Search, XCircle, Package2, Download } from 'lucide-react';
 import { liberacionDockService } from '../services/liberacionDockService';
 
 export const DailyVanAssignment: React.FC = () => {
@@ -68,6 +68,49 @@ export const DailyVanAssignment: React.FC = () => {
   const released = assignments.filter(a => getLibForCaja(a.id!));
   const pending = assignments.filter(a => !getLibForCaja(a.id!));
 
+  const exportCSV = () => {
+    const headers = [
+      'HORA', 'ARRIBO', 'OPERACIÓN', 'CAJA (53-FT)', 'DRIVER', 'PLACAS TRACTO',
+      'PLACAS CAJA', 'SCAC', 'SUB-LÍNEA', 'MODELO', 'CREADO POR', 'CREADO AT',
+      'LAYOUT SUBIDO POR', 'LAYOUT AT', 'CCP SUBIDO POR', 'CCP AT',
+      'LIBERACIÓN DOCK', 'LIBERADO POR', 'STATUS'
+    ];
+    const rows = filteredAssignments.map(a => {
+      const lib = getLibForCaja(a.id!);
+      const libDock = getLibDockForCaja(a.id!);
+      const status = lib ? 'LIBERADO' : 'PENDIENTE';
+      return [
+        a.horaAsignacion || '',
+        a.arribo || '',
+        a.numeroOperacion || '',
+        a.numeroCaja || '',
+        a.nombreDriver || '',
+        a.placasTracto || '',
+        a.placasCaja || '',
+        (a as any).scac || a.carrierCodigo || '',
+        a.subLinea || '',
+        (a as any).modeloAsignado || '',
+        (a as any).createdBy || '',
+        (a as any).createdAt ? new Date((a as any).createdAt).toLocaleString('es-MX', { timeZone: 'America/Monterrey' }) : '',
+        (a as any).layoutUploadedBy || '',
+        (a as any).layoutUploadedAt ? new Date((a as any).layoutUploadedAt).toLocaleString('es-MX', { timeZone: 'America/Monterrey' }) : '',
+        (a as any).ccpUploadedBy || '',
+        (a as any).ccpUploadedAt ? new Date((a as any).ccpUploadedAt).toLocaleString('es-MX', { timeZone: 'America/Monterrey' }) : '',
+        libDock?.fechaHoraRegistro || libDock?.fechaLiberacion || '',
+        lib?.creadoPor || lib?.liberadoPor || '',
+        status
+      ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+    });
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `TRUCK_TRACKING_${selectedDate}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="h-[calc(100vh-4rem)] -mt-8 -mx-8 flex flex-col overflow-hidden animate-fade-in bg-slate-900 w-full mx-auto">
       {/* ── FIXED HEADER / CONTROLS ── */}
@@ -94,6 +137,14 @@ export const DailyVanAssignment: React.FC = () => {
               title="Recargar"
             >
               <RefreshCcw size={18} />
+            </button>
+            <button
+              onClick={exportCSV}
+              className="flex items-center gap-2 px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg border border-emerald-600 transition-colors text-sm font-medium"
+              title="Descargar CSV"
+            >
+              <Download size={16} />
+              CSV
             </button>
           </div>
         </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { demandaCarga53Service } from '../services/demandaCarga53Service';
 import { productosService, Producto } from '../services/productosService';
 import { DemandaCarga53, DemandaItem53, DemandaEstatus } from '../types/demandaCarga53';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { UserRole } from '../types';
 import {
   Loader2, Plus, X, Trash2, CheckCircle, AlertCircle,

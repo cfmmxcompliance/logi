@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { storageService } from '../services/storageService.ts';
 import { CostRecord, Supplier, Shipment } from '../types.ts';
 import { Search, DollarSign, Calendar, CheckCircle, AlertCircle, XCircle, Filter, Download, ArrowUpRight, ArrowDownLeft, Upload, FileText, Trash2, Plus, Database, RefreshCw, AlertTriangle } from 'lucide-react';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import { ValidationResultModal } from '../components/ValidationResultModal';
 import { parseCFDI } from '../utils/cfdiParser';
 import { extractTextFromPdf } from '../utils/pdfParser';

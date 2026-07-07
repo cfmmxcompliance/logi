@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useAuth } from '../context/AuthContext.tsx';
+import { useAuth } from '../context/useAuth';
 import { UserRole } from '../types.ts';
 import { storage } from '../services/firebaseConfig.ts';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';

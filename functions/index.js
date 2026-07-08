@@ -635,10 +635,12 @@ exports.autoFillLayout = onDocumentWritten(
     if (!data.layoutUrl) return null;
     if (data.cfmRef && data.vehiculos) return null; // ya completo
 
-    // Solo procesar si layoutUrl cambió (nuevo upload)
+    // Procesar si: layoutUrl cambió  O  si aún faltan cfmRef/vehiculos (reintento)
     const before = event.data.before;
     const beforeData = before.exists ? before.data() : {};
-    if (beforeData.layoutUrl === data.layoutUrl) return null;
+    const urlUnchanged = beforeData.layoutUrl === data.layoutUrl;
+    const missingFields = !data.cfmRef || !data.vehiculos;
+    if (urlUnchanged && !missingFields) return null;
 
     // Extraer fileId de la URL o del campo guardado
     const url = data.layoutUrl || '';
@@ -650,13 +652,24 @@ exports.autoFillLayout = onDocumentWritten(
     }
     if (!fileId) { console.warn('autoFillLayout: sin fileId para', event.params.docId); return null; }
 
-    // Llamar al GAS readFile
+    // Llamar al GAS readFile — hasta 3 intentos con backoff
     const GAS_READ = 'https://script.google.com/macros/s/AKfycbzX3ctF0kOxbw2M4uHbkPp8gsIy-EMQX64M5IEzMHTQs0gUxR-7BOx9BMe2RVEFKeWh/exec';
-    let json;
-    try {
-      const resp = await fetch(`${GAS_READ}?action=readFile&fileId=${fileId}`);
-      json = await resp.json();
-    } catch (e) { console.error('autoFillLayout GAS error:', e.message); return null; }
+    let json = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const resp = await fetch(`${GAS_READ}?action=readFile&fileId=${fileId}`);
+        const text = await resp.text();
+        if (text.trim().startsWith('<')) {
+          throw new Error(`GAS devolvió HTML en intento ${attempt}: ${text.substring(0, 80)}`);
+        }
+        json = JSON.parse(text);
+        break; // éxito
+      } catch (e) {
+        console.warn(`autoFillLayout GAS intento ${attempt}/3 fallido (${event.params.docId}):`, e.message);
+        if (attempt < 3) await new Promise(r => setTimeout(r, 2000 * attempt));
+      }
+    }
+    if (!json) { console.error(`autoFillLayout GAS error (todos los reintentos fallaron) para ${event.params.docId}`); return null; }
 
     const updates = {};
     if (!data.cfmRef && json.name) {
@@ -679,5 +692,88 @@ exports.autoFillLayout = onDocumentWritten(
       console.log(`✓ autoFillLayout ${event.params.docId}:`, JSON.stringify(updates));
     }
     return null;
+  }
+);
+
+// ── BACKFILL HTTP: reprocesa docs con layoutUrl pero sin cfmRef/vehiculos ───────
+// Llamar: GET https://.../backfillMissingFields?token=BACKFILL_SECRET&fecha=2026-07-07
+exports.backfillMissingFields = onRequest(
+  { region: 'us-central1', memory: '512MiB', timeoutSeconds: 300 },
+  async (req, res) => {
+    // Validar token secreto
+    const secret = process.env.BACKFILL_SECRET || 'cfmoto-backfill-2026';
+    if (req.query.token !== secret) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const db = admin.firestore();
+    const GAS_READ = 'https://script.google.com/macros/s/AKfycbzX3ctF0kOxbw2M4uHbkPp8gsIy-EMQX64M5IEzMHTQs0gUxR-7BOx9BMe2RVEFKeWh/exec';
+    const fecha = req.query.fecha || null;
+
+    let q = db.collection('asignacion_cajas').where('layoutUrl', '!=', '');
+    if (fecha) q = db.collection('asignacion_cajas').where('fecha', '==', fecha);
+
+    const snap = await q.get();
+    const candidates = snap.docs.filter(d => {
+      const data = d.data();
+      return data.layoutUrl && (!data.cfmRef || !data.vehiculos);
+    });
+
+    console.log(`backfillMissingFields: ${candidates.length} docs a procesar (fecha=${fecha || 'todas'})`);
+    const results = [];
+
+    for (const docSnap of candidates) {
+      const data = docSnap.data();
+      const docId = docSnap.id;
+      const url = data.layoutUrl || '';
+      let fileId = data.layoutFileId || '';
+      if (!fileId) {
+        const parts = url.split('/d/');
+        if (parts.length > 1) fileId = parts[1].split(/[/?#]/)[0];
+        else { const m = url.match(/[?&]id=([\w-]+)/); fileId = m ? m[1] : ''; }
+      }
+      if (!fileId) { results.push({ docId, status: 'sin fileId' }); continue; }
+
+      let json = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const resp = await fetch(`${GAS_READ}?action=readFile&fileId=${fileId}`);
+          const text = await resp.text();
+          if (text.trim().startsWith('<')) throw new Error('HTML response');
+          json = JSON.parse(text);
+          break;
+        } catch (e) {
+          if (attempt < 3) await new Promise(r => setTimeout(r, 2000 * attempt));
+        }
+      }
+      if (!json) { results.push({ docId, status: 'GAS error' }); continue; }
+
+      const updates = {};
+      if (!data.cfmRef && json.name) {
+        const raw = json.name.replace(/\.[^/.]+$/, '');
+        const pi = raw.toUpperCase().indexOf('LAY OUT CCP_');
+        if (pi !== -1) updates.cfmRef = raw.substring(pi + 12).trim();
+      }
+      if (!data.vehiculos && json.content) {
+        try {
+          const wb = XLSX.read(json.content, { type: 'base64' });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          const v = sheet['D27']?.v;
+          if (v !== undefined) updates.vehiculos = String(v).trim();
+        } catch (_) {}
+      }
+      if (!data.layoutFileId && fileId) updates.layoutFileId = fileId;
+
+      if (Object.keys(updates).length > 0) {
+        await docSnap.ref.update(updates);
+        results.push({ docId, status: 'ok', updates });
+        console.log(`✓ backfill ${docId}:`, JSON.stringify(updates));
+      } else {
+        results.push({ docId, status: 'sin cambios' });
+      }
+    }
+
+    res.json({ processed: candidates.length, results });
   }
 );

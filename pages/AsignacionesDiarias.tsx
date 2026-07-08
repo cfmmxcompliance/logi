@@ -36,6 +36,10 @@ const getMexicoToday = () => {
   return mx; // Returns 'YYYY-MM-DD'
 };
 
+// Hora actual en zona Monterrey — formato HH:MM
+const getMexicoNow = () =>
+  new Date().toLocaleTimeString('en-GB', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit' });
+
 export const AsignacionesDiarias: React.FC = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -61,11 +65,15 @@ export const AsignacionesDiarias: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<Partial<AsignacionCajaModel>>({ 
     fecha: getMexicoToday(),
-    horaAsignacion: new Date().toTimeString().substring(0, 5)
+    horaAsignacion: ''
   });
   const [isEditing, setIsEditing] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [showDuplicateTLModal, setShowDuplicateTLModal] = useState(false);
+  const [colWidths, setColWidths] = useState<Record<string, number>>({});
+  const [tableFixed, setTableFixed] = useState(false);
+  const tableRef = useRef<HTMLTableElement>(null);
   const [mismatchAlert, setMismatchAlert] = useState<{
     numeroCaja: string;
     selloOriginal: string;
@@ -227,6 +235,26 @@ export const AsignacionesDiarias: React.FC = () => {
       }
     }
   }, [showModal, isEditing, subLineaFilter, transportLines]);
+
+  // Auto-marca workingWasAvailable en Firebase cuando se cumple la condición por primera vez
+  useEffect(() => {
+    const now = Date.now();
+    asignaciones.forEach(a => {
+      if (a.workingWasAvailable) return; // ya marcado
+      const exactSello = sellos.find(s => s.asignacionCajaId === a.id);
+      const selloRow = exactSello || sellos.find(s => s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha);
+      const lib = liberaciones.find(l => l.asignacionCajaId === a.id);
+      const hasBc = !!(lib?.selloValidado || selloRow?.selloAsignado);
+      if (!hasBc) return;
+      if ((a as any).arribo || (a as any).dockArribo) return; // ya tiene llegada o dock
+      if (!a.fecha || !a.horaAsignacion) return;
+      const appt = new Date(`${a.fecha}T${a.horaAsignacion}:00`);
+      const minPast = (now - appt.getTime()) / (1000 * 60);
+      if (minPast > 60 && a.id) {
+        asignacionCajaService.updateAsignacion(a.id, { workingWasAvailable: true });
+      }
+    });
+  }, [asignaciones, sellos, liberaciones]);
 
   const loadData = async () => {
     try {
@@ -500,21 +528,49 @@ export const AsignacionesDiarias: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
     if (!formData.carrierCodigo || !formData.transportLineId || !formData.numeroCaja || !formData.driverId) {
       alert('Los campos CARRIER PADRE (SCAC), LÍNEA DE TRANSPORTE, EQUIPMENT y TRUCK TRACTOR son obligatorios.');
       return;
     }
 
+    // VALIDACIÓN: horario aprobado — misma lógica que el dropdown
+    if ((formData.fecha || '') >= '2026-07-07') {
+      const baseHours = ["07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","12:00","13:00","14:00","15:00"];
+      const allSlots = (formData.fecha === '2026-07-07') ? [...baseHours, "15:30", "16:00", "18:30"]
+                       : (formData.fecha === '2026-07-08') ? [...baseHours, "16:00", "17:00"]
+                       : ((formData.fecha || '') >= '2026-07-09') ? [...baseHours, "16:00"]
+                       : baseHours;
+      const validSlots = allSlots.filter(s => s !== '11:00'); // 11:00 siempre bloqueado
+      if (!formData.horaAsignacion || !validSlots.includes(formData.horaAsignacion)) {
+        alert(`El horario "${formData.horaAsignacion || 'sin seleccionar'}" no es un slot aprobado. Por favor selecciona un horario de la lista.`);
+        return;
+      }
+      // Ventana ya iniciada: solo aplica si la fecha es hoy
+      if (formData.fecha === getMexicoToday() && formData.horaAsignacion <= getMexicoNow()) {
+        alert(`La ventana de las ${formData.horaAsignacion} ya inició. Selecciona el siguiente horario disponible.`);
+        return;
+      }
+    }
+
     // VALIDACIÓN DE CAPACIDAD: Máximo 6 operaciones por hora
     if (formData.horaAsignacion && formData.horaAsignacion !== '11:00') {
-      const currentHour = formData.horaAsignacion.substring(0, 2);
+      const useNewSchedule = (formData.fecha || '') >= '2026-07-07';
       let sameHourCount = 0;
       asignaciones.forEach(a => {
-        if (a.fecha === formData.fecha && a.horaAsignacion?.startsWith(currentHour) && (!isEditing || a.id !== formData.id)) {
-          sameHourCount++;
+        if (a.fecha !== formData.fecha) return;
+        if (isEditing && a.id === formData.id) return;
+        if (useNewSchedule) {
+          // Nuevo horario: comparar tiempo exacto HH:MM
+          if (a.horaAsignacion === formData.horaAsignacion) sameHourCount++;
+        } else {
+          // Horario viejo: agrupar por prefijo HH
+          const currentHour = formData.horaAsignacion.substring(0, 2);
+          if (a.horaAsignacion?.startsWith(currentHour)) sameHourCount++;
         }
       });
-      if (sameHourCount >= 6) {
+      const maxSlots = (formData.horaAsignacion === '15:00' && formData.fecha === '2026-07-06') ? 8 : 6;
+      if (sameHourCount >= maxSlots) {
         alert('Horario no asignado seleccionar otro hora de ventana');
         return;
       }
@@ -575,6 +631,15 @@ export const AsignacionesDiarias: React.FC = () => {
     }
     setShowModal(false);
     loadData();
+  } catch (error: any) {
+    if (error?.code === 'DUPLICATE_TL' || error?.message === 'DUPLICATE_TL') {
+      setShowModal(false);
+      setShowDuplicateTLModal(true);
+    } else {
+      console.error('Error guardando asignación:', error);
+      alert('Error al guardar. Intenta de nuevo.');
+    }
+  }
   };
 
   const handleDelete = async (id: string) => {
@@ -647,7 +712,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
       setFormData({
           fecha: today,
-          horaAsignacion: new Date().toTimeString().substring(0, 5),
+          horaAsignacion: '',   // forzar selección manual del slot aprobado
           numeroOperacion: nextOp,
           // CARRIER role: pre-fill their SCAC
           ...(scacFilter ? { carrierCodigo: scacFilter } : {}),
@@ -661,7 +726,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const openEdit = (record: AsignacionCajaModel) => {
       setFormData({
           ...record,
-          horaAsignacion: record.horaAsignacion || new Date().toTimeString().substring(0, 5)
+          horaAsignacion: record.horaAsignacion || ''
       });
       setIsEditing(true);
       setShowModal(true);
@@ -757,7 +822,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // CSV EXPORT
   const exportCSV = () => {
-      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "CARRIER (SCAC)", "NOMBRE COMERCIAL", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO", "ARRIBO", "DOCK", "COMENTARIOS ARRIBO", "TIPO", "LIBERACION DOCK", "LAYOUT", "CCP", "ANEXO29", "SELLO ASIGNADO", "FECHA SELLADO", "OBSERVACIONES"];
+      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "CARRIER (SCAC)", "NOMBRE COMERCIAL", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO", "ARRIBO", "DOCK", "COMENTARIOS ARRIBO", "TIPO", "LIBERACION DOCK", "LAYOUT", "CCP", "ANEXO29", "SELLO ASIGNADO", "FECHA SELLADO", "OBSERVACIONES", "CARRIER REF"];
       const rows = filteredData.map(a => {
           const lib = liberaciones.find(l => l.asignacionCajaId === a.id);
           const tl = transportLines.find(t => t.carrierCodigo === a.carrierCodigo);
@@ -784,7 +849,8 @@ export const AsignacionesDiarias: React.FC = () => {
               a.anexo29UploadedAt ? new Date(a.anexo29UploadedAt).toLocaleString('es-MX', { timeZone: 'America/Monterrey', hour12: false }) : '',
               lib ? lib.selloValidado : '',
               lib && lib.fechaHoraRegistro ? lib.fechaHoraRegistro : '',
-              a.observaciones || ''
+              a.observaciones || '',
+              a.carrierRef || ''
           ];
       });
       const csvContent = [headers, ...rows].map(e => e.map(item => `"${(item || '').replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -800,10 +866,10 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // CSV TEMPLATE
   const downloadTemplate = () => {
-      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "DRIVER ID", "MODELO", "OBSERVACIONES"];
-      const example = ["2026-03-25", "09:30", "OP-001", "EMCU-123456", "ARC-001", "MODEL A, MODEL B", "Carga prioritaria"];
+      const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "DRIVER ID", "MODELO", "OBSERVACIONES", "CARRIER REF"];
+      const example = ["2026-03-25", "09:30", "OP-001", "EMCU-123456", "ARC-001", "MODEL A, MODEL B", "Carga prioritaria", "CFM-26CFTTN-001"];
       // Nota: CARRIER (SCAC) y NOMBRE COMERCIAL se derivan automaticamente del NUMERO CAJA al importar
-      const note  = ["YYYY-MM-DD (obligatorio)", "HH:MM (opcional)", "Auto si vacío", "⚠ DEBE EXISTIR EN CATÁLOGO EQUIPMENT", "⚠ DEBE EXISTIR EN CATÁLOGO DRIVERS", "Ej: BOLT 6, PRO 6 (opcional)", "Máx 50 caracteres"];
+      const note  = ["YYYY-MM-DD (obligatorio)", "HH:MM (opcional)", "Auto si vacío", "⚠ DEBE EXISTIR EN CATÁLOGO EQUIPMENT", "⚠ DEBE EXISTIR EN CATÁLOGO DRIVERS", "Ej: BOLT 6, PRO 6 (opcional)", "Máx 50 caracteres", "Opcional"];
       const csvContent = [headers, note, example].map(e => e.join(",")).join("\n");
       const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -827,13 +893,14 @@ export const AsignacionesDiarias: React.FC = () => {
           if (rows.length < 2) return alert("El archivo está vacío o no tiene datos válidos.");
 
           const headers = rows[0].map(h => h.trim().toUpperCase());
-          const fIdx = headers.findIndex(h => h.includes('FECHA'));
-          const hIdx = headers.findIndex(h => h.includes('HORA'));
-          const oIdx = headers.findIndex(h => h.includes('OPERACI'));
-          const cIdx = headers.findIndex(h => h.includes('CAJA'));
-          const dIdx = headers.findIndex(h => h.includes('DRIVER'));
-          const mIdx = headers.findIndex(h => h.includes('MODELO'));
+          const fIdx  = headers.findIndex(h => h.includes('FECHA'));
+          const hIdx  = headers.findIndex(h => h.includes('HORA'));
+          const oIdx  = headers.findIndex(h => h.includes('OPERACI'));
+          const cIdx  = headers.findIndex(h => h.includes('CAJA'));
+          const dIdx  = headers.findIndex(h => h.includes('DRIVER'));
+          const mIdx  = headers.findIndex(h => h.includes('MODELO'));
           const obsIdx = headers.findIndex(h => h.includes('OBSERVACIONES'));
+          const crIdx  = headers.findIndex(h => h.includes('CARRIER REF'));
 
           if (fIdx === -1 || cIdx === -1 || dIdx === -1) {
               return alert("Estructura inválida. La cabecera debe contener al menos FECHA, NÚMERO CAJA y DRIVER ID.");
@@ -873,6 +940,7 @@ export const AsignacionesDiarias: React.FC = () => {
               const rawDriver = r[dIdx]?.trim().toUpperCase();
               const rawModelo = mIdx !== -1 ? r[mIdx]?.trim().toUpperCase() : '';
               const rawObs = obsIdx !== -1 ? r[obsIdx]?.trim().substring(0, 50) : '';
+              const rawCarrierRef = crIdx !== -1 ? r[crIdx]?.trim() : '';
 
               // Ignorar fila de instrucciones de la plantilla
               if (rawFecha?.startsWith('YYYY') || rawCaja?.startsWith('⚠')) continue;
@@ -940,6 +1008,7 @@ export const AsignacionesDiarias: React.FC = () => {
                   placasTracto: matchDriver ? matchDriver.placasTracto || '' : '',
                   modeloAsignado: rawModelo || '',
                   observaciones: rawObs || '',
+                  ...(rawCarrierRef ? { carrierRef: rawCarrierRef } as any : {}),
                   createdAt: new Date(Date.now() + i).toISOString()
               };
 
@@ -965,6 +1034,29 @@ export const AsignacionesDiarias: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col -mt-8 -mx-8 bg-slate-100 overflow-hidden" style={{ height: 'calc(100vh - 4rem)' }}>
+
+      {/* ── POPUP: Cita duplicada ── */}
+      {showDuplicateTLModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center">
+            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">⚠️</span>
+            </div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Cita ya no disponible</h2>
+            <p className="text-slate-600 mb-6">
+              Este número de operación ya fue asignado por otro usuario.<br/>
+              <span className="font-semibold text-red-600">Selecciona otro horario.</span>
+            </p>
+            <button
+              onClick={() => { setShowDuplicateTLModal(false); loadData(); }}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+            >
+              Aceptar
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex-shrink-0 px-14 pt-8 pb-4 z-20 bg-slate-100 border-b border-slate-200 shadow-sm">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center flex-wrap gap-4">
@@ -1149,50 +1241,124 @@ export const AsignacionesDiarias: React.FC = () => {
 
       <div className="flex-1 flex flex-col min-h-0 px-14 py-6 relative z-10">
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto flex-1 relative">
-        <table className="w-full text-left">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider sticky top-0 z-30 shadow-sm">
+        <table ref={tableRef} className="text-left" style={{ tableLayout: tableFixed ? 'fixed' : 'auto', width: 'max-content', minWidth:'100%' }}>
+          {/* resize handle drag logic — event delegation on thead */}
+          <thead
+            className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider sticky top-0 z-30 shadow-sm"
+            onMouseDown={(e) => {
+              const handle = (e.target as HTMLElement).closest('[data-resize-handle]');
+              if (!handle) return;
+              const th = handle.closest('th') as HTMLTableCellElement;
+              const col = th?.dataset?.col;
+              if (!col) return;
+              e.preventDefault();
+              // Capture all rendered column widths from DOM on first drag
+              const snapshot: Record<string, number> = {};
+              tableRef.current?.querySelectorAll('th[data-col]').forEach(el => {
+                const c = (el as HTMLElement).dataset.col!;
+                snapshot[c] = el.getBoundingClientRect().width;
+              });
+              setColWidths(snapshot);
+              setTableFixed(true);
+              const startX = e.clientX;
+              const startW = snapshot[col] ?? th.getBoundingClientRect().width;
+              document.body.style.cursor = 'col-resize';
+              (document.body.style as any).userSelect = 'none';
+              const onMove = (ev: MouseEvent) => {
+                const newW = Math.max(50, startW + ev.clientX - startX);
+                setColWidths(prev => ({ ...prev, [col]: newW }));
+              };
+              const onUp = () => {
+                document.body.style.cursor = '';
+                (document.body.style as any).userSelect = '';
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+              };
+              window.addEventListener('mousemove', onMove);
+              window.addEventListener('mouseup', onUp);
+            }}
+          >
+            {/* rh = resize handle helper */}
+            {(() => {
+              const rh = (col: string) => (
+                <div
+                  data-resize-handle="true"
+                  data-col={col}
+                  style={{ position:'absolute', right:0, top:0, bottom:0, width:'5px', cursor:'col-resize', zIndex:2 }}
+                  className="hover:bg-blue-400/40 transition-colors"
+                />
+              );
+              const cw = (col: string) => colWidths[col] || undefined;
+              return (
             <tr>
+              {/* Checkbox — fixed sticky */}
               <th className="p-4 w-[50px] min-w-[50px] max-w-[50px] border-r border-slate-200 bg-slate-100 text-center sticky top-0 left-0 z-40">
                   {!isEmbarques && <input type="checkbox" checked={filteredData.length > 0 && selectedIds.size === filteredData.length} onChange={toggleSelectAll} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />}
               </th>
+              {/* OPERACIÓN — fixed sticky */}
               <th className="p-4 font-medium w-[130px] min-w-[130px] max-w-[130px] bg-slate-50 sticky top-0 left-[50px] z-40 border-r border-slate-200">{renderColumnHeader(t('col.operacion'), 'numeroOperacion')}</th>
+              {/* CAJA — fixed sticky */}
               <th className="p-4 font-medium w-[140px] min-w-[140px] max-w-[140px] bg-slate-50 sticky top-0 left-[180px] z-40 border-r border-slate-200">{renderColumnHeader(t('col.caja'), 'numeroCaja')}</th>
+              {/* FECHA — fixed sticky */}
               <th className="p-4 font-medium w-[150px] min-w-[150px] max-w-[150px] bg-slate-50 sticky top-0 left-[320px] z-40 shadow-[4px_0_10px_-3px_rgba(0,0,0,0.1)]">{renderColumnHeader(t('col.fecha'), 'fecha')}</th>
-              <th className="p-4 font-medium min-w-[100px]">{renderColumnHeader(t('col.arribo'), 'arribo')}</th>
-              <th className="p-4 font-medium min-w-[100px]">{t('col.dock')}</th>
-              <th className="p-4 font-medium min-w-[180px]">{renderColumnHeader(t('col.comentariosArribo'), 'comentariosArribo')}</th>
-              <th className="p-4 font-medium min-w-[80px] text-violet-700 bg-violet-50/40 whitespace-nowrap">{t('col.tipo')}</th>
-              <th className="p-4 font-medium">{renderColumnHeader(t('col.placascaja'), 'placasCaja')}</th>
-              <th className="p-4 font-medium min-w-[160px] text-blue-600 uppercase text-xs">{renderColumnHeader(t('col.lineatransporte'), 'transportLineId')}</th>
-              <th className="p-4 font-medium min-w-[140px] text-orange-600 uppercase text-xs">{renderColumnHeader('SCAC', 'carrierCodigo')}</th>
-              <th className="p-4 font-medium min-w-[140px]">{renderColumnHeader(t('col.driver'), 'nombreDriver')}</th>
-              <th className="p-4 font-medium">{renderColumnHeader(t('col.placastracto'), 'placasTracto')}</th>
-              <th className="p-4 font-medium min-w-[120px]">{renderColumnHeader(t('col.modelo'), 'modeloAsignado')}</th>
-              <th className="p-4 font-medium min-w-[170px] text-violet-700 bg-violet-50/40 whitespace-nowrap">{t('col.creado')}</th>
-              <th className="p-4 font-medium min-w-[110px] text-sky-700 bg-sky-50/30 whitespace-nowrap">{t('col.liberacion')}</th>
-              <th className="p-4 font-medium text-center text-indigo-700 bg-indigo-50/30 whitespace-nowrap">{t('col.layout')}</th>
-              <th className="p-4 font-medium text-center text-sky-700 bg-sky-50/30 whitespace-nowrap">{t('col.ccp')}</th>
-              <th className="p-4 font-medium text-center text-emerald-700 bg-emerald-50/30 whitespace-nowrap">{t('col.anexo29')}</th>
-              <th className="p-4 font-medium min-w-[160px] text-teal-700 bg-teal-50/30 whitespace-nowrap">{t('col.sello_asignado')}</th>
-              <th className="p-4 font-medium text-red-800 bg-red-50/30 text-center">{t('col.cargado')}</th>
-              <th className="p-4 font-medium text-teal-800 bg-teal-50/30 whitespace-nowrap">{t('col.sellado_time')}</th>
-              <th className="p-4 font-medium text-slate-800 bg-slate-100/50">{t('col.observaciones')}</th>
-              <th className="p-4 font-medium min-w-[180px] text-indigo-800 bg-indigo-50/50 whitespace-nowrap uppercase text-xs">
-                CFM REF <span className="ml-1 text-[9px] bg-indigo-100 text-indigo-500 rounded px-1 py-0.5 font-normal normal-case">auto</span>
+              {/* Scrollable resizable columns */}
+              <th data-col="arribo" style={{ width: cw('arribo'), minWidth:60, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.arribo'), 'arribo')}{rh('arribo')}</th>
+              <th data-col="dock" style={{ width: cw('dock'), minWidth:50, position:'relative' }} className="p-2 font-medium">{t('col.dock')}{rh('dock')}</th>
+              <th data-col="comentariosArribo" style={{ width: cw('comentariosArribo'), minWidth:80, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.comentariosArribo'), 'comentariosArribo')}{rh('comentariosArribo')}</th>
+              <th data-col="tipo" style={{ width: cw('tipo'), minWidth:50, position:'relative' }} className="p-2 font-medium text-violet-700 bg-violet-50/40">{t('col.tipo')}{rh('tipo')}</th>
+              <th data-col="placasCaja" style={{ width: cw('placasCaja'), minWidth:60, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.placascaja'), 'placasCaja')}{rh('placasCaja')}</th>
+              <th data-col="linea" style={{ width: cw('linea'), minWidth:80, position:'relative' }} className="p-2 font-medium text-blue-600 uppercase text-xs">{renderColumnHeader(t('col.lineatransporte'), 'transportLineId')}{rh('linea')}</th>
+              <th data-col="scac" style={{ width: cw('scac'), minWidth:60, position:'relative' }} className="p-2 font-medium text-orange-600 uppercase text-xs">{renderColumnHeader('SCAC', 'carrierCodigo')}{rh('scac')}</th>
+              <th data-col="driver" style={{ width: cw('driver'), minWidth:70, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.driver'), 'nombreDriver')}{rh('driver')}</th>
+              <th data-col="placasTracto" style={{ width: cw('placasTracto'), minWidth:60, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.placastracto'), 'placasTracto')}{rh('placasTracto')}</th>
+              <th data-col="modelo" style={{ width: cw('modelo'), minWidth:60, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.modelo'), 'modeloAsignado')}{rh('modelo')}</th>
+              <th data-col="creado" style={{ width: cw('creado'), minWidth:80, position:'relative' }} className="p-2 font-medium text-violet-700 bg-violet-50/40">{t('col.creado')}{rh('creado')}</th>
+              <th data-col="liberacion" style={{ width: cw('liberacion'), minWidth:60, position:'relative' }} className="p-2 font-medium text-sky-700 bg-sky-50/30">{t('col.liberacion')}{rh('liberacion')}</th>
+              <th data-col="layout" style={{ width: cw('layout'), minWidth:60, position:'relative' }} className="p-2 font-medium text-center text-indigo-700 bg-indigo-50/30">{t('col.layout')}{rh('layout')}</th>
+              <th data-col="ccp" style={{ width: cw('ccp'), minWidth:60, position:'relative' }} className="p-2 font-medium text-center text-sky-700 bg-sky-50/30">{t('col.ccp')}{rh('ccp')}</th>
+              <th data-col="anexo29" style={{ width: cw('anexo29'), minWidth:60, position:'relative' }} className="p-2 font-medium text-center text-emerald-700 bg-emerald-50/30">{t('col.anexo29')}{rh('anexo29')}</th>
+              <th data-col="sello" style={{ width: cw('sello'), minWidth:80, position:'relative' }} className="p-2 font-medium text-teal-700 bg-teal-50/30">{t('col.sello_asignado')}{rh('sello')}</th>
+              <th data-col="cargado" style={{ width: cw('cargado'), minWidth:60, position:'relative' }} className="p-2 font-medium text-red-800 bg-red-50/30 text-center">{t('col.cargado')}{rh('cargado')}</th>
+              <th data-col="sellado" style={{ width: cw('sellado'), minWidth:70, position:'relative' }} className="p-2 font-medium text-teal-800 bg-teal-50/30">{t('col.sellado_time')}{rh('sellado')}</th>
+              <th data-col="obs" style={{ width: cw('obs'), minWidth:80, position:'relative' }} className="p-2 font-medium text-slate-800 bg-slate-100/50">{t('col.observaciones')}{rh('obs')}</th>
+              <th data-col="cfmRef" style={{ width: cw('cfmRef'), minWidth:80, position:'relative' }} className="p-2 font-medium text-indigo-800 bg-indigo-50/50 uppercase text-xs">
+                CFM REF <span className="ml-1 text-[9px] bg-indigo-100 text-indigo-500 rounded px-1 py-0.5 font-normal normal-case">auto</span>{rh('cfmRef')}
               </th>
-              <th className="p-4 font-medium text-slate-500 bg-slate-50 whitespace-nowrap text-xs">
-                ID <span className="ml-1 text-[9px] bg-slate-200 text-slate-400 rounded px-1 py-0.5 font-normal normal-case">auto</span>
+              <th data-col="docId" style={{ width: cw('docId'), minWidth:70, position:'relative' }} className="p-2 font-medium text-slate-500 bg-slate-50 text-xs">
+                ID <span className="ml-1 text-[9px] bg-slate-200 text-slate-400 rounded px-1 py-0.5 font-normal normal-case">auto</span>{rh('docId')}
               </th>
-              <th className="p-4 font-medium min-w-[200px] text-emerald-800 bg-emerald-50/50 whitespace-nowrap uppercase text-xs">
-                {t('col.vehiculos')} <span className="ml-1 text-[9px] bg-emerald-100 text-emerald-500 rounded px-1 py-0.5 font-normal normal-case">auto</span>
+              <th data-col="vehiculos" style={{ width: cw('vehiculos'), minWidth:70, position:'relative' }} className="p-2 font-medium text-emerald-800 bg-emerald-50/50 uppercase text-xs">
+                {t('col.vehiculos')} <span className="ml-1 text-[9px] bg-emerald-100 text-emerald-500 rounded px-1 py-0.5 font-normal normal-case">auto</span>{rh('vehiculos')}
               </th>
-              {!isEmbarques && <th className="p-4 font-medium text-right bg-slate-50">{t('btn.acciones')}</th>}
+              <th data-col="carrierRef" style={{ width: cw('carrierRef'), minWidth:70, position:'relative' }} className="p-2 font-medium text-indigo-700 bg-indigo-50/40 uppercase text-xs">
+                Carrier Ref{rh('carrierRef')}
+              </th>
+              {!isEmbarques && <th className="p-2 font-medium text-right bg-slate-50">{t('btn.acciones')}</th>}
+
             </tr>
+              );
+            })()}
           </thead>
+
           <tbody className="divide-y divide-slate-100 text-sm">
             {filteredData.map((a, index) => {
               const liberacion = liberaciones.find(lib => lib.asignacionCajaId === a.id);
               const hasLiberacion = !!liberacion;
+              // Barcode check: sello assigned → barcodes have been generated
+              const exactSello = sellos.find(s => s.asignacionCajaId === a.id);
+              const selloRow = exactSello || sellos.find(s => s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha);
+              const hasBarcodes = !!(liberacion?.selloValidado || selloRow?.selloAsignado);
+              // Muestra badge si: ya fue marcado en Firebase (evidencia permanente)
+              // O si AHORA cumple: barcodes + sin arribo + sin dock + >60 min desde la cita
+              const hasArribo = !!((a as any).arribo || '').trim();
+              const hasDock = !!((a as any).dockArribo || '').trim();
+              let minutesPast = 0;
+              if (a.fecha && a.horaAsignacion) {
+                const appt = new Date(`${a.fecha}T${a.horaAsignacion}:00`);
+                minutesPast = (Date.now() - appt.getTime()) / (1000 * 60);
+              }
+              const showWorkingTag = a.workingWasAvailable ||
+                (hasBarcodes && !hasArribo && !hasDock && minutesPast > 60);
 
               // Base alternating stripe for visual consistency
               const isEven = index % 2 === 0;
@@ -1269,7 +1435,14 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 w-[150px] min-w-[150px] max-w-[150px] bg-inherit font-medium text-slate-700 whitespace-nowrap sticky left-[320px] z-20 shadow-[4px_0_10px_-3px_rgba(0,0,0,0.05)]">
                     <div className="flex flex-col gap-0.5">
                        <span className="flex items-center gap-1.5"><Calendar size={12} className="text-blue-500" /> {a.fecha}</span>
-                       {a.horaAsignacion && <span className="text-xs text-slate-400 font-mono pl-0.5">{a.horaAsignacion}</span>}
+                       <div className="flex items-center gap-1.5 flex-wrap">
+                          {a.horaAsignacion && <span className="text-xs text-slate-400 font-mono pl-0.5">{a.horaAsignacion}</span>}
+                          {showWorkingTag && (
+                            <span className="text-[9px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 rounded px-1 py-0.5 leading-tight whitespace-nowrap">
+                              Working as available
+                            </span>
+                          )}
+                        </div>
                     </div>
                 </td>
                 <td className="p-4 font-mono text-amber-600 font-semibold whitespace-nowrap">{(a as any).arribo || '—'}</td>
@@ -1455,7 +1628,7 @@ export const AsignacionesDiarias: React.FC = () => {
                     {a.observaciones || '-'}
                 </td>
                 {/* ── CFM REF (extraído del nombre del archivo layout) ── */}
-                <td className="p-4 bg-indigo-50/20 border-l border-indigo-100/50 min-w-[180px]">
+                <td className="py-1.5 px-3 bg-indigo-50/20 border-l border-indigo-100/50">
                   {(() => {
                     // Primary: cfmRef stored in Firebase
                     // Fallback: derive from layoutFileName at render time
@@ -1474,9 +1647,17 @@ export const AsignacionesDiarias: React.FC = () => {
                 </td>
                 <td className="p-4 font-mono text-[10px] text-slate-400 truncate max-w-[180px]" title={(a as any).customId || a.id || ''}>{(a as any).customId || a.id || '-'}</td>
                 {/* ── VEHICULOS ── */}
-                <td className="p-4 bg-emerald-50/20 border-l border-emerald-100/50 min-w-[200px]">
+                <td className="py-1.5 px-3 bg-emerald-50/20 border-l border-emerald-100/50">
                   {(a as any).vehiculos ? (
                     <span className="text-xs text-slate-500 whitespace-nowrap">{(a as any).vehiculos}</span>
+                  ) : (
+                    <span className="text-slate-300 text-xs">—</span>
+                  )}
+                </td>
+                {/* ── CARRIER REF ── */}
+                <td className="py-1.5 px-3 bg-indigo-50/20 border-l border-indigo-100/50">
+                  {a.carrierRef ? (
+                    <span className="text-xs text-indigo-700 font-mono whitespace-nowrap">{a.carrierRef}</span>
                   ) : (
                     <span className="text-slate-300 text-xs">—</span>
                   )}
@@ -1578,15 +1759,42 @@ export const AsignacionesDiarias: React.FC = () => {
                             <option value="" disabled>Seleccionar Hora</option>
                             {(() => {
                               const useNewSchedule = (formData.fecha || '') >= '2026-07-07';
-                              const hours = useNewSchedule
+                              const baseHours = useNewSchedule
                                 ? ["07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","12:00","13:00","14:00","15:00"]
                                 : ["07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00"];
+                              // Horarios adicionales por fecha
+                              const hours = (formData.fecha === '2026-07-07')
+                                ? [...baseHours, "15:30", "16:00", "18:30"]
+                                : (formData.fecha === '2026-07-08') ? [...baseHours, "16:00", "17:00"]
+                                : ((formData.fecha || '') >= '2026-07-09') ? [...baseHours, "16:00"]
+                                : baseHours;
+                              // Resuelve un tiempo libre (ej. 16:33) al slot aprobado que le corresponde
+                              const resolveToSlot = (time: string, slots: string[]): string => {
+                                const sorted = [...slots].sort();
+                                let resolved = sorted[0];
+                                for (const s of sorted) { if (s <= time) resolved = s; }
+                                return resolved;
+                              };
+                              const isToday = formData.fecha === getMexicoToday();
+                              const mexicoNow = getMexicoNow();
                               return hours.map(hr => {
-                                // Nuevo horario: match exacto HH:MM | Viejo: match por prefijo HH
-                                const count = useNewSchedule
-                                  ? asignaciones.filter(a => a.fecha === formData.fecha && a.horaAsignacion === hr && (!isEditing || a.id !== formData.id)).length
-                                  : asignaciones.filter(a => { const p = hr.substring(0,2); return a.fecha === formData.fecha && a.horaAsignacion?.startsWith(p) && (!isEditing || a.id !== formData.id); }).length;
+                                let count: number;
+                                if (useNewSchedule) {
+                                  // Nuevo horario: cuenta exactos + tiempos libres que caen en este slot
+                                  count = asignaciones.filter(a => {
+                                    if (a.fecha !== formData.fecha) return false;
+                                    if (isEditing && a.id === formData.id) return false;
+                                    if (!a.horaAsignacion) return false;
+                                    return resolveToSlot(a.horaAsignacion, hours) === hr;
+                                  }).length;
+                                } else {
+                                  // Horario viejo: match por prefijo HH
+                                  count = asignaciones.filter(a => { const p = hr.substring(0,2); return a.fecha === formData.fecha && a.horaAsignacion?.startsWith(p) && (!isEditing || a.id !== formData.id); }).length;
+                                }
                                 if (hr === "11:00") return <option key={hr} value={hr} disabled>{hr} - BLOQUEADO</option>;
+                                // Ventana ya iniciada (solo hoy)
+                                const isPast = isToday && hr <= mexicoNow;
+                                if (isPast) return <option key={hr} value={hr} disabled>{hr} - INICIADO</option>;
                                 // Override especial: 15:00 del 06/07/2026 tuvo 8 citas
                                 const maxSlots = (hr === '15:00' && formData.fecha === '2026-07-06') ? 8 : 6;
                                 const isFull = count >= maxSlots;
@@ -1654,6 +1862,18 @@ export const AsignacionesDiarias: React.FC = () => {
                             onChange={e => setFormData({...formData, observaciones: e.target.value})}
                             placeholder="Opcional... (máx. 50 caracteres)"
                             className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                          />
+                        </div>
+
+                        {/* Carrier Ref — campo manual */}
+                        <div className="p-3 bg-indigo-50/40 rounded-xl border border-indigo-100 space-y-2">
+                          <h3 className="text-xs font-bold text-indigo-700 uppercase">Carrier Ref</h3>
+                          <input
+                            type="text"
+                            value={formData.carrierRef || ''}
+                            onChange={e => setFormData({...formData, ...({ carrierRef: e.target.value } as any)})}
+                            placeholder="Ej. CFM-26CFTTN-..."
+                            className="w-full border border-indigo-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none font-mono"
                           />
                         </div>
 

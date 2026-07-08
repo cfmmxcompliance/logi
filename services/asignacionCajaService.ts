@@ -46,6 +46,22 @@ export const asignacionCajaService = {
   },
 
   async addAsignacion(asignacion: AsignacionCajaModel): Promise<void> {
+    // ── DUPLICATE TL GUARD: query fresca (no cache) ──────────────────────────
+    if (asignacion.numeroOperacion && asignacion.fecha) {
+      const dupQ = query(
+        collection(db, COLLECTION_NAME),
+        where('fecha', '==', asignacion.fecha),
+        where('numeroOperacion', '==', asignacion.numeroOperacion)
+      );
+      const { getDocs: getDocsNet } = await import('firebase/firestore');
+      const dupSnap = await getDocsNet(dupQ);
+      if (!dupSnap.empty) {
+        const err = new Error('DUPLICATE_TL');
+        (err as any).code = 'DUPLICATE_TL';
+        throw err;
+      }
+    }
+    // ── GUARDAR ──────────────────────────────────────────────────────────────
     // Auto-generate custom ID: {numeroOperacion}{YYYYMMDD}{carrierCodigo}{scac}
     const datePart = (asignacion.fecha || '').replace(/-/g, '');
     const customId = `${asignacion.numeroOperacion || ''}${datePart}${asignacion.carrierCodigo || ''}${asignacion.scac || ''}`;

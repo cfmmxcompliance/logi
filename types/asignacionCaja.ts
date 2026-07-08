@@ -18,6 +18,7 @@ export interface AsignacionCajaModel {
   placasTracto: string;
   modeloAsignado?: string;
   observaciones?: string;
+  carrierRef?: string;          // Referencia manual del carrier (ej. CFM-26CFTTN-...)
   notas?: string;
   // Bridge fields (set when created from ReservaVentanas53)
   reservaId?: string;         // ID of the linked ReservaVentana53
@@ -38,4 +39,5 @@ export interface AsignacionCajaModel {
   anexo29Url?: string;
   anexo29UploadedBy?: string;
   anexo29UploadedAt?: string;
+  workingWasAvailable?: boolean;  // set true permanently when barcode+no arribo+no dock+>1h
 }

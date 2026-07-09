@@ -2,12 +2,12 @@ import { XMLCIRecord } from '../types.ts';
 import { storageService } from './storageService.ts';
 
 export const xmlciService = {
-    extractAndSave: async (xmlDoc: Document, invoiceNo: string, date: string, currency: string, uuid: string, fileName: string = '') => {
+    extractRecord: (xmlDoc: Document, invoiceNo: string, date: string, currency: string, uuid: string, fileName: string = ''): XMLCIRecord | null => {
         try {
             const comprobante = xmlDoc.getElementsByTagName("cfdi:Comprobante")[0] || xmlDoc.getElementsByTagName("Comprobante")[0];
             const emisor = xmlDoc.getElementsByTagName("cfdi:Emisor")[0] || xmlDoc.getElementsByTagName("Emisor")[0];
 
-            if (!comprobante || !emisor) return;
+            if (!comprobante || !emisor) return null;
 
             const emisorRfc = emisor.getAttribute("Rfc") || "";
             const emisorNombre = emisor.getAttribute("Nombre") || "";
@@ -42,7 +42,7 @@ export const xmlciService = {
                 emisorDomicilio = `${calle} ${nExt}, CP ${cp}, ${mnpio} ${edo}`.trim();
             }
 
-            const currency = (comprobante.getAttribute("Moneda") || "USD").toUpperCase();
+            const docCurrency = (comprobante.getAttribute("Moneda") || "USD").toUpperCase();
 
             const record: XMLCIRecord = {
                 id: uuid || `${invoiceNo}-${emisorRfc}`,
@@ -53,18 +53,19 @@ export const xmlciService = {
                 invoiceNo: invoiceNo,
                 fecha: date,
                 incoterm: extractedIncoterm,
-                moneda: currency,
+                moneda: docCurrency,
                 valMonFact: totalVal,
                 factorMoneda: exchangeRate || 1,
-                valDolares: currency === 'USD' ? totalVal : (totalVal / (exchangeRate || 1)),
+                valDolares: docCurrency === 'USD' ? totalVal : (totalVal / (exchangeRate || 1)),
                 uuid: uuid,
                 archivo: fileName,
                 updatedAt: new Date().toISOString()
             };
 
-            await storageService.addXMLCIRecords([record]);
+            return record;
         } catch (error) {
             console.error("Error in xmlciService:", error);
+            return null;
         }
     }
 };

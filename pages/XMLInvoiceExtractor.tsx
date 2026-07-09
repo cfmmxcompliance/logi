@@ -809,6 +809,7 @@ export const XMLInvoiceExtractor: React.FC = () => {
             setUploading(true);
         }
 
+        const newXmlciRecords: any[] = [];
         for (const parsed of parsedFiles) {
             const isDuplicate = parsed.uuid && existingUUIDs.has(parsed.uuid);
             const isVinMotorBlocked = blockedUUIDs.has(parsed.uuid);
@@ -817,9 +818,11 @@ export const XMLInvoiceExtractor: React.FC = () => {
                 continue;
             }
             try {
-                await xmlciService.extractAndSave(parsed.xmlDoc, parsed.invoiceNo,
+                const record = xmlciService.extractRecord(parsed.xmlDoc, parsed.invoiceNo,
                     parsed.fileItems[0]?.date || '', parsed.fileItems[0]?.currency || 'USD',
                     parsed.uuid, parsed.fileItems[0]?.archivo || '');
+                if (record) newXmlciRecords.push(record);
+                
                 newItems.push(...parsed.fileItems);
                 count++;
             } catch (err) {
@@ -829,6 +832,9 @@ export const XMLInvoiceExtractor: React.FC = () => {
 
         if (count > 0) {
             try {
+                if (newXmlciRecords.length > 0) {
+                    await storageService.addXMLCIRecords(newXmlciRecords);
+                }
                 const addedCount = await storageService.addCFDIInvoices(newItems);
                 if (addedCount && addedCount > 0) {
                     showNotification('Extracción y Guardado Completo', `Se extrajeron y guardaron ${addedCount} registros únicos en la nueva tabla (cfdi_invoices).`, 'success');

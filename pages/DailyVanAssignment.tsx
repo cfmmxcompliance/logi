@@ -73,12 +73,46 @@ export const DailyVanAssignment: React.FC = () => {
       'HORA', 'ARRIBO', 'OPERACIÓN', 'CAJA (53-FT)', 'DRIVER', 'PLACAS TRACTO',
       'PLACAS CAJA', 'SCAC', 'SUB-LÍNEA', 'MODELO', 'CREADO POR', 'CREADO AT',
       'LAYOUT SUBIDO POR', 'LAYOUT AT', 'CCP SUBIDO POR', 'CCP AT',
-      'LIBERACIÓN DOCK', 'LIBERADO POR', 'STATUS'
+      'LIBERACIÓN DOCK', 'LIBERADO POR', 'STATUS',
+      'TIEMPO DE RETRASO', 'TIEMPO EN PLANTA'
     ];
+    
+    const formatMins = (mins: number | null) => {
+      if (mins === null || isNaN(mins)) return '';
+      if (mins < 0) return `Temprano (${Math.abs(mins)}m)`;
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    };
+
+    const parseTime = (date: string, time: string) => {
+      if (!date || !time) return null;
+      const t = time.replace(/[a-zA-Z\s]/g, '');
+      const [h, m] = t.split(':');
+      if (!h || !m) return null;
+      return new Date(`${date}T${h.padStart(2, '0')}:${m.padStart(2, '0')}:00`);
+    };
+
     const rows = filteredAssignments.map(a => {
       const lib = getLibForCaja(a.id!);
       const libDock = getLibDockForCaja(a.id!);
       const status = lib ? 'LIBERADO' : 'PENDIENTE';
+      const apptDate = parseTime(a.fecha, a.horaAsignacion || '');
+      const arrDate = parseTime(a.fecha, a.arribo || '');
+      const relStr = libDock?.fechaHoraRegistro || libDock?.fechaLiberacion || lib?.fechaHoraRegistro;
+      // Handle "YYYY-MM-DD HH:mm:ss" replacing space with T for valid Date parsing
+      const relDate = relStr ? new Date(relStr.replace(' ', 'T')) : null;
+
+      let retraso = null;
+      if (apptDate && arrDate) {
+        retraso = Math.round((arrDate.getTime() - apptDate.getTime()) / 60000);
+      }
+      
+      let enPlanta = null;
+      if (arrDate && relDate && !isNaN(relDate.getTime())) {
+        enPlanta = Math.round((relDate.getTime() - arrDate.getTime()) / 60000);
+      }
+
       return [
         a.horaAsignacion || '',
         a.arribo || '',
@@ -98,7 +132,9 @@ export const DailyVanAssignment: React.FC = () => {
         (a as any).ccpUploadedAt ? new Date((a as any).ccpUploadedAt).toLocaleString('es-MX', { timeZone: 'America/Monterrey' }) : '',
         libDock?.fechaHoraRegistro || libDock?.fechaLiberacion || '',
         lib?.creadoPor || lib?.liberadoPor || '',
-        status
+        status,
+        formatMins(retraso),
+        formatMins(enPlanta)
       ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
     });
     const csv = [headers.join(','), ...rows].join('\n');
@@ -209,6 +245,8 @@ export const DailyVanAssignment: React.FC = () => {
                     <th className="px-4 py-3">#</th>
                     <th className="px-4 py-3">Hora</th>
                     <th className="px-4 py-3">Arribo</th>
+                    <th className="px-4 py-3 text-red-400">Retraso</th>
+                    <th className="px-4 py-3 text-emerald-400">T. Planta</th>
                     <th className="px-4 py-3">Operación</th>
                     <th className="px-4 py-3">Caja (53-ft Dry Van)</th>
                     <th className="px-4 py-3">Driver</th>
@@ -226,11 +264,51 @@ export const DailyVanAssignment: React.FC = () => {
                     const lib = getLibForCaja(asig.id!);
                     const isEven = idx % 2 === 0;
                     const rowBg = isEven ? 'bg-slate-800/30' : 'bg-slate-900/40';
+
+                    // Parse times for UI
+                    const parseTimeUi = (date: string, time: string) => {
+                      if (!date || !time) return null;
+                      const t = time.replace(/[a-zA-Z\s]/g, '');
+                      const [h, m] = t.split(':');
+                      if (!h || !m) return null;
+                      return new Date(`${date}T${h.padStart(2, '0')}:${m.padStart(2, '0')}:00`);
+                    };
+
+                    const apptDateUi = parseTimeUi(asig.fecha, asig.horaAsignacion || '');
+                    const arrDateUi = parseTimeUi(asig.fecha, asig.arribo || '');
+                    const dockRec = getLibDockForCaja(asig.id!);
+                    const relStrUi = dockRec?.fechaHoraRegistro || dockRec?.fechaLiberacion || lib?.fechaHoraRegistro;
+                    const relDateUi = relStrUi ? new Date(relStrUi.replace(' ', 'T')) : null;
+
+                    let retrasoMins = null;
+                    if (apptDateUi && arrDateUi) retrasoMins = Math.round((arrDateUi.getTime() - apptDateUi.getTime()) / 60000);
+                    
+                    let enPlantaMins = null;
+                    if (arrDateUi && relDateUi && !isNaN(relDateUi.getTime())) enPlantaMins = Math.round((relDateUi.getTime() - arrDateUi.getTime()) / 60000);
+
+                    const formatTimeBadge = (mins: number | null, isRetraso: boolean) => {
+                      if (mins === null || isNaN(mins)) return <span className="text-slate-600">—</span>;
+                      if (mins < 0) return <span className="text-slate-400 text-xs">Temprano</span>;
+                      const h = Math.floor(mins / 60);
+                      const m = mins % 60;
+                      const text = h > 0 ? `${h}h ${m}m` : `${m}m`;
+                      
+                      if (isRetraso) {
+                        if (mins > 30) return <span className="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-xs font-bold">{text}</span>;
+                        return <span className="text-amber-400 font-medium text-xs">{text}</span>;
+                      } else {
+                        if (mins > 120) return <span className="bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded text-xs font-bold">{text}</span>;
+                        return <span className="text-emerald-400 font-medium text-xs">{text}</span>;
+                      }
+                    };
+
                     return (
                       <tr key={asig.id} className={`${rowBg} hover:bg-slate-700/50 transition-colors`}>
                         <td className="px-4 py-3 text-slate-500 text-xs">{idx + 1}</td>
                         <td className="px-4 py-3 font-mono font-bold text-blue-400">{asig.horaAsignacion || '—'}</td>
                         <td className="px-4 py-3 font-mono text-amber-300 font-semibold">{asig.arribo || '—'}</td>
+                        <td className="px-4 py-3">{formatTimeBadge(retrasoMins, true)}</td>
+                        <td className="px-4 py-3">{formatTimeBadge(enPlantaMins, false)}</td>
                         <td className="px-4 py-3 text-pink-400 font-semibold">{asig.numeroOperacion || '—'}</td>
                         <td className="px-4 py-3">
                           <span className="font-bold text-white font-mono tracking-wider">{asig.numeroCaja}</span>

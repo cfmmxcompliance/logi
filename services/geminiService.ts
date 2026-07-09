@@ -479,7 +479,7 @@ export const geminiService = {
         `;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-flash-latest',
           contents: {
             parts: [{ inlineData: { mimeType: 'application/pdf', data: chunk.base64 } }, { text: prompt }]
           },
@@ -735,7 +735,7 @@ export const geminiService = {
       `;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-flash-latest',
           contents: { parts: [{ text: prompt }] },
           config: { responseMimeType: 'application/json' }
         });
@@ -836,7 +836,7 @@ export const geminiService = {
     `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-flash-latest',
         contents: {
           parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
         },
@@ -898,7 +898,7 @@ export const geminiService = {
 
     try {
       console.log("Attempting Shipping Doc Extraction with gemini-2.0-flash...");
-      const result = await tryModel('gemini-2.5-flash');
+      const result = await tryModel('gemini-flash-latest');
 
       if (!result.bookingNo || (result.containers || []).length === 0) {
         throw new Error("Incomplete Extraction: Missing BL or Containers");
@@ -918,7 +918,7 @@ export const geminiService = {
       const fullPrompt = `Analyze this Mexican Customs data summary and provide an executive summary in Spanish. ${summary}. Context: ${promptContext}`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-flash-latest',
         contents: { parts: [{ text: fullPrompt }] }
       });
 
@@ -1004,7 +1004,7 @@ export const geminiService = {
         while (attempt < maxAttempts) {
           try {
             const result = await client.models.generateContent({
-              model: 'gemini-2.5-flash',
+              model: 'gemini-flash-latest',
               contents: { parts: [{ inlineData: { mimeType: 'application/pdf', data: chunk.base64 } }, { text: prompt }] },
               config: { responseMimeType: 'application/json', maxOutputTokens: 8192 }
             });
@@ -1124,7 +1124,7 @@ export const geminiService = {
     // Simplified Logic: Use verified 2.0 Flash
     try {
       console.log("Attempting Structure Analysis with gemini-2.0-flash...");
-      return await tryModel('gemini-2.5-flash');
+      return await tryModel('gemini-flash-latest');
     } catch (e1: any) {
       console.error("Structure Analysis Failed", e1);
       throw new Error(`Analysis Failed: ${e1.message}`);
@@ -1285,7 +1285,7 @@ export const geminiService = {
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-latest',
       contents: {
         parts: [{ inlineData: { mimeType: 'application/pdf', data: targetBase64 } }, { text: prompt }]
       },
@@ -1329,7 +1329,7 @@ export const geminiService = {
       const mimeType = 'image/jpeg'; 
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-flash-latest',
         contents: {
           parts: [{ inlineData: { mimeType, data: base64Image } }, { text: prompt }]
         },
@@ -1399,7 +1399,7 @@ export const geminiService = {
 
     // Primer intento de generación
     let response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-latest',
       contents: currentMessages,
       config: {
         tools: chatTools as any
@@ -1523,7 +1523,7 @@ export const geminiService = {
 
       // Segundo intento de generación con el contexto de la función
       response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-flash-latest',
         contents: currentMessages,
         config: {
           tools: chatTools as any
@@ -1538,7 +1538,7 @@ export const geminiService = {
       // Hacemos una nueva llamada limpia, esta vez activando SÓLO la herramienta de Google Search.
       try {
         const googleResponse = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-flash-latest',
           contents: messages, // Utilizamos los mensajes originales limpios de function calling
           config: {
             tools: [{ googleSearch: {} }] as any
@@ -1588,7 +1588,7 @@ export const geminiService = {
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-flash-latest',
         contents: {
           parts: [{ inlineData: { mimeType: 'image/jpeg', data: base64Image } }, { text: prompt }]
         },
@@ -1643,7 +1643,7 @@ export const geminiService = {
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-flash-latest',
         contents: {
           parts: [{ inlineData: { mimeType, data: base64Data } }, { text: prompt }]
         },

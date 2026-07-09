@@ -49,6 +49,8 @@ export const HandheldSellos = () => {
   const [aiRenderKey, setAiRenderKey] = useState(0);
   const [currentImageFile, setCurrentImageFile] = useState<File | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [isAiRunning, setIsAiRunning] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
 
@@ -227,18 +229,23 @@ export const HandheldSellos = () => {
 
       // Run Gemini AI in the background without blocking
       const base64Data = compressedBase64.split(',')[1];
+      setIsAiRunning(true);
+      setAiError(null);
       geminiService.extractSelloNumber(base64Data)
         .then(extractedNumber => {
           if (extractedNumber && extractedNumber !== 'NO_DETECTADO') {
             setSelloValue(extractedNumber);
+          } else {
+            setAiError('No se detectó el sello. Escríbelo manualmente.');
           }
         })
         .catch(aiError => {
           console.warn('Gemini no pudo extraer sello:', aiError);
-          // Silent fail - user can type manually
+          setAiError('Error de IA. Escribe el número manualmente.');
         })
         .finally(() => {
           setAiRenderKey(k => k + 1);
+          setIsAiRunning(false);
         });
     } catch (e) {
       console.error(e);
@@ -688,9 +695,14 @@ export const HandheldSellos = () => {
                               </label>
                           </div>
                           
-                          {isProcessingImage && (
+                          {(isProcessingImage || isAiRunning) && (
                               <div className="absolute -bottom-6 left-2 text-xs text-blue-400 font-medium animate-pulse flex items-center gap-1">
-                                  <span>Gemini extrayendo datos... (~5s)</span>
+                                  <span>{isAiRunning ? '🤖 Leyendo sello con IA...' : 'Comprimiendo imagen...'}</span>
+                              </div>
+                          )}
+                          {aiError && !isAiRunning && (
+                              <div className="absolute -bottom-6 left-2 text-xs text-amber-400 font-medium flex items-center gap-1">
+                                  <span>⚠️ {aiError}</span>
                               </div>
                           )}
                       </div>
@@ -705,10 +717,12 @@ export const HandheldSellos = () => {
                               className="w-full max-h-52 object-contain"
                             />
                           )}
-                          {isProcessingImage && (
+                          {(isProcessingImage || isAiRunning) && (
                             <div className="absolute inset-0 bg-slate-950/70 flex flex-col items-center justify-center gap-2">
                               <Loader2 size={28} className="animate-spin text-blue-400" />
-                              <span className="text-xs text-blue-300 font-medium">Gemini extrayendo número...</span>
+                              <span className="text-xs text-blue-300 font-medium">
+                                {isAiRunning ? '🤖 IA leyendo número de sello...' : 'Procesando imagen...'}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -717,7 +731,7 @@ export const HandheldSellos = () => {
                       {/* GUARDAR A TODO ANCHO */}
                       <button
                         onClick={handleSaveSello}
-                        disabled={isSaving || isProcessingImage || !selloValue.trim()}
+                        disabled={isSaving || isProcessingImage || isAiRunning || !selloValue.trim()}
                         className="w-full mt-8 bg-emerald-500 hover:bg-emerald-400 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-2 text-lg active:scale-95"
                       >
                          {isSaving ? <Loader2 size={24} className="animate-spin" /> : <Save size={24} />}

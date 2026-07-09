@@ -149,66 +149,57 @@ export const XMLInvoiceExtractor: React.FC = () => {
             const targetAbbr = MONTH_ABBR[targetMonth - 1];
             const sourceUrl = `https://aduanas-mexico.com.mx/indicadores_tc.php?year=${yearStr}`;
 
-            // Proxy chain — tries each until one returns valid HTML
-            const proxyChain: { name: string; fetch: () => Promise<string> }[] = [
-                {
-                    name: 'allorigins',
-                    fetch: async () => {
+            // Proxies en PARALELO — el primero que responda con HTML válido gana
+            // Tiempo máximo: 7s (en lugar de 4×7=28s en serie)
+            const makeProxyPromise = (name: string, fetchFn: () => Promise<string>): Promise<string> =>
+                fetchFn().then(html => {
+                    if (!html || html.length < 1000) throw new Error(`${name}: respuesta vacía`);
+                    return html;
+                }).catch(e => {
+                    console.warn(`TC proxy ${name} failed:`, e.message);
+                    throw e;
+                });
+
+            let found: string | null = null;
+            let lastErr = '';
+
+            try {
+                const html = await Promise.any([
+                    makeProxyPromise('allorigins', async () => {
                         const r = await fetch(
                             `https://api.allorigins.win/get?url=${encodeURIComponent(sourceUrl)}`,
                             { signal: AbortSignal.timeout(7000), cache: 'no-store' }
                         );
                         const j = await r.json();
                         return j.contents || '';
-                    }
-                },
-                {
-                    name: 'corsproxy.io',
-                    fetch: async () => {
+                    }),
+                    makeProxyPromise('corsproxy.io', async () => {
                         const r = await fetch(
                             `https://corsproxy.io/?${encodeURIComponent(sourceUrl)}`,
                             { signal: AbortSignal.timeout(7000), cache: 'no-store' }
                         );
                         return r.text();
-                    }
-                },
-                {
-                    name: 'cors.sh',
-                    fetch: async () => {
+                    }),
+                    makeProxyPromise('cors.sh', async () => {
                         const r = await fetch(sourceUrl, {
                             signal: AbortSignal.timeout(7000),
                             cache: 'no-store',
                             headers: { 'x-cors-api-key': 'temp_7aa1b24a-3e5d-4f8a-a7b1-c2e9d8f0123b' }
                         });
                         return r.text();
-                    }
-                },
-                {
-                    name: 'thingproxy',
-                    fetch: async () => {
+                    }),
+                    makeProxyPromise('thingproxy', async () => {
                         const r = await fetch(
                             `https://thingproxy.freeboard.io/fetch/${sourceUrl}`,
                             { signal: AbortSignal.timeout(7000), cache: 'no-store' }
                         );
                         return r.text();
-                    }
-                },
-            ];
-
-            let found: string | null = null;
-            let lastErr = '';
-
-            for (const proxy of proxyChain) {
-                try {
-                    const html = await proxy.fetch();
-                    if (!html || html.length < 1000) { lastErr = `${proxy.name}: respuesta vacía`; continue; }
-                    found = parseHtml(html, targetDay, targetAbbr, targetMonth);
-                    if (found) break; // success
-                    lastErr = `${proxy.name}: dato no encontrado`;
-                } catch (e: any) {
-                    lastErr = `${proxy.name}: ${e.message}`;
-                    console.warn(`TC proxy ${proxy.name} failed:`, e.message);
-                }
+                    }),
+                ]);
+                found = parseHtml(html, targetDay, targetAbbr, targetMonth);
+                if (!found) lastErr = 'Ningún proxy devolvió el dato';
+            } catch (e: any) {
+                lastErr = 'Todos los proxies fallaron';
             }
 
             if (found) {
@@ -845,9 +836,10 @@ export const XMLInvoiceExtractor: React.FC = () => {
                     showNotification('Atención', `Se procesaron ${count} XMLs, pero los registros ya existían en la tabla (cfdi_invoices).`, 'warning');
                 }
                 setItems(prev => [...prev, ...newItems]);
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Error auto-saving to Firebase CFDI", error);
-                showNotification('Error', 'Se extrajeron los datos pero falló el guardado automático remoto.', 'error');
+                const reason = error?.message || error?.code || String(error) || 'Error desconocido';
+                showNotification('Error al guardar', `Datos extraídos OK, pero falló Firestore: ${reason}`, 'error');
                 setItems(prev => [...prev, ...newItems]);
             }
         } else if (duplicates.length > 0 && approvedToOverwrite.length === 0) {

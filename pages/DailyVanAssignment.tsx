@@ -12,6 +12,7 @@ export const DailyVanAssignment: React.FC = () => {
   const [liberacionesDock, setLiberacionesDock] = useState<LiberacionDockRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'CERRADO' | 'POR_CERRAR'>('ALL');
 
   const getLocalToday = () => {
     const today = new Date();
@@ -59,6 +60,38 @@ export const DailyVanAssignment: React.FC = () => {
     );
   }, [assignments, searchQuery]);
 
+  // Counts para el filtro (siempre sobre el resultado de búsqueda, antes de aplicar cargadoFilter)
+  const filterCounts = useMemo(() => {
+    let porCerrar = 0, cerrado = 0, sinLayout = 0, sinCcp = 0, vehPorCerrar = 0, vehCerrado = 0;
+    filteredAssignments.forEach(a => {
+      const hasLib = liberaciones.some(l => l.asignacionCajaId === a.id);
+      const v = parseInt((a as any).vehiculos || '0', 10);
+      if (hasLib) {
+        cerrado++;
+        if (!isNaN(v)) vehCerrado += v;
+      } else {
+        porCerrar++;
+        if (!(a as any).layoutUrl) sinLayout++;
+        if (!(a as any).ccpUrl)    sinCcp++;
+        if (!isNaN(v)) vehPorCerrar += v;
+      }
+    });
+    return {
+      ALL: filteredAssignments.length, CERRADO: cerrado, POR_CERRAR: porCerrar,
+      SIN_LAYOUT: sinLayout, SIN_CCP: sinCcp,
+      VEHICULOS_POR_CERRAR: vehPorCerrar, VEHICULOS_CERRADO: vehCerrado,
+    };
+  }, [filteredAssignments, liberaciones]);
+
+  // Resultado final con cargadoFilter aplicado
+  const displayedAssignments = useMemo(() => {
+    if (cargadoFilter === 'ALL') return filteredAssignments;
+    return filteredAssignments.filter(a => {
+      const hasLib = liberaciones.some(l => l.asignacionCajaId === a.id);
+      return cargadoFilter === 'CERRADO' ? hasLib : !hasLib;
+    });
+  }, [filteredAssignments, cargadoFilter, liberaciones]);
+
   const getLibForCaja = (asigId: string) =>
     liberaciones.find(l => l.asignacionCajaId === asigId);
 
@@ -74,7 +107,7 @@ export const DailyVanAssignment: React.FC = () => {
       'PLACAS CAJA', 'SCAC', 'SUB-LÍNEA', 'MODELO', 'CREADO POR', 'CREADO AT',
       'LAYOUT SUBIDO POR', 'LAYOUT AT', 'CCP SUBIDO POR', 'CCP AT',
       'LIBERACIÓN DOCK', 'LIBERADO POR', 'STATUS',
-      'TIEMPO DE RETRASO', 'TIEMPO EN PLANTA'
+      'TIEMPO DE RETRASO', 'TIEMPO EN PLANTA', 'LY&CCP', 'T.CIERRE'
     ];
     
     const formatMins = (mins: number | null) => {
@@ -93,25 +126,32 @@ export const DailyVanAssignment: React.FC = () => {
       return new Date(`${date}T${h.padStart(2, '0')}:${m.padStart(2, '0')}:00`);
     };
 
+    // Parser para el formato es-MX: "9/7/2026, 09:33:53" → Date válida
+    const parseEsMx = (str: string | undefined): Date | null => {
+      if (!str) return null;
+      const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{2}:\d{2}:\d{2})/);
+      if (m) return new Date(`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}T${m[4]}`);
+      const d = new Date(str.replace(' ', 'T'));
+      return isNaN(d.getTime()) ? null : d;
+    };
+
     const rows = filteredAssignments.map(a => {
       const lib = getLibForCaja(a.id!);
       const libDock = getLibDockForCaja(a.id!);
       const status = lib ? 'LIBERADO' : 'PENDIENTE';
       const apptDate = parseTime(a.fecha, a.horaAsignacion || '');
-      const arrDate = parseTime(a.fecha, a.arribo || '');
-      const relStr = libDock?.fechaHoraRegistro || libDock?.fechaLiberacion || lib?.fechaHoraRegistro;
-      // Handle "YYYY-MM-DD HH:mm:ss" replacing space with T for valid Date parsing
-      const relDate = relStr ? new Date(relStr.replace(' ', 'T')) : null;
+      const arrDate  = parseTime(a.fecha, a.arribo || '');
 
-      let retraso = null;
-      if (apptDate && arrDate) {
-        retraso = Math.round((arrDate.getTime() - apptDate.getTime()) / 60000);
-      }
-      
-      let enPlanta = null;
-      if (arrDate && relDate && !isNaN(relDate.getTime())) {
-        enPlanta = Math.round((relDate.getTime() - arrDate.getTime()) / 60000);
-      }
+      // T. Planta: desde arribo hasta liberación dock; si aún no hay liberación, tiempo real actual
+      const relStr = libDock?.fechaHoraRegistro || lib?.fechaHoraRegistro;
+      const relDate = parseEsMx(relStr) || (arrDate ? new Date() : null);
+      const hasLib  = !!(parseEsMx(relStr)); // solo muestra si hay liberación real o no
+
+      let retraso: number | null = null;
+      if (apptDate && arrDate) retraso = Math.round((arrDate.getTime() - apptDate.getTime()) / 60000);
+
+      let enPlanta: number | null = null;
+      if (arrDate && relDate) enPlanta = Math.round((relDate.getTime() - arrDate.getTime()) / 60000);
 
       return [
         a.horaAsignacion || '',
@@ -133,8 +173,37 @@ export const DailyVanAssignment: React.FC = () => {
         libDock?.fechaHoraRegistro || libDock?.fechaLiberacion || '',
         lib?.creadoPor || lib?.liberadoPor || '',
         status,
+        enPlanta !== null ? formatMins(enPlanta) + (hasLib ? '' : ' (en patio)') : '',
         formatMins(retraso),
-        formatMins(enPlanta)
+        // LY&CCP
+        (() => {
+          const lyAt  = (a as any).layoutUploadedAt ? new Date((a as any).layoutUploadedAt) : null;
+          const ccpAt = (a as any).ccpUploadedAt   ? new Date((a as any).ccpUploadedAt)    : null;
+          if (!lyAt) return '';
+          const endAt = ccpAt || new Date();
+          const mins = Math.round((endAt.getTime() - lyAt.getTime()) / 60000);
+          if (isNaN(mins) || mins < 0) return '';
+          const h = Math.floor(mins / 60), m = mins % 60;
+          return (h > 0 ? `${h}h ${m}m` : `${m}m`) + (!ccpAt ? ' (live)' : '');
+        })(),
+        // T.CIERRE = Liberado por - Arribo
+        (() => {
+          if (!a.arribo) return '';
+          const arrC = parseTime(a.fecha, a.arribo);
+          if (!arrC) return '';
+          const parseEsMxCsv = (s?: string): Date | null => {
+            if (!s) return null;
+            const mx = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{2}:\d{2}:\d{2})/);
+            if (mx) return new Date(`${mx[3]}-${mx[2].padStart(2,'0')}-${mx[1].padStart(2,'0')}T${mx[4]}`);
+            const d = new Date(s.replace(' ','T')); return isNaN(d.getTime()) ? null : d;
+          };
+          const lib = getLibForCaja(a.id!);
+          const libD = parseEsMxCsv(lib?.fechaHoraRegistro) || new Date();
+          const mins = Math.round((libD.getTime() - arrC.getTime()) / 60000);
+          if (isNaN(mins) || mins < 0) return '';
+          const h = Math.floor(mins / 60), m = mins % 60;
+          return (h > 0 ? `${h}h ${m}m` : `${m}m`) + (!lib ? ' (live)' : '');
+        })()
       ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
     });
     const csv = [headers.join(','), ...rows].join('\n');
@@ -221,10 +290,118 @@ export const DailyVanAssignment: React.FC = () => {
             </button>
           )}
         </div>
+
+        {/* Filtro Todos / POR CERRAR / CERRADO */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center bg-slate-800 border border-slate-700 rounded-lg p-1 shadow-sm">
+            <button
+              onClick={() => setCargadoFilter('ALL')}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                cargadoFilter === 'ALL' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700'
+              }`}
+            >
+              Todos ({filterCounts.ALL})
+            </button>
+            <button
+              onClick={() => setCargadoFilter('POR_CERRAR')}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex flex-col items-center leading-tight ${
+                cargadoFilter === 'POR_CERRAR' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700'
+              }`}
+            >
+              <span>POR CERRAR ({filterCounts.POR_CERRAR})</span>
+              {(filterCounts.SIN_LAYOUT > 0 || filterCounts.SIN_CCP > 0 || filterCounts.VEHICULOS_POR_CERRAR > 0) && (
+                <span className={`flex gap-1.5 mt-0.5 text-[10px] font-semibold ${
+                  cargadoFilter === 'POR_CERRAR' ? 'text-teal-100' : 'text-slate-500'
+                }`}>
+                  {filterCounts.SIN_LAYOUT > 0 && <span>sin layout: {filterCounts.SIN_LAYOUT}</span>}
+                  {filterCounts.SIN_LAYOUT > 0 && filterCounts.SIN_CCP > 0 && <span>·</span>}
+                  {filterCounts.SIN_CCP > 0 && <span>sin CCP: {filterCounts.SIN_CCP}</span>}
+                  {(filterCounts.SIN_LAYOUT > 0 || filterCounts.SIN_CCP > 0) && filterCounts.VEHICULOS_POR_CERRAR > 0 && <span>·</span>}
+                  {filterCounts.VEHICULOS_POR_CERRAR > 0 && <span>🚗 {filterCounts.VEHICULOS_POR_CERRAR} veh.</span>}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setCargadoFilter('CERRADO')}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex flex-col items-center leading-tight ${
+                cargadoFilter === 'CERRADO' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700'
+              }`}
+            >
+              <span>CERRADO ({filterCounts.CERRADO})</span>
+              {filterCounts.VEHICULOS_CERRADO > 0 && (
+                <span className={`mt-0.5 text-[10px] font-semibold ${
+                  cargadoFilter === 'CERRADO' ? 'text-teal-100' : 'text-slate-500'
+                }`}>
+                  🚗 {filterCounts.VEHICULOS_CERRADO} veh.
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* ── SCROLLABLE TABLE AREA ── */}
       <div className="flex-1 flex flex-col min-h-0 px-4 sm:px-6 md:px-8 pb-8 relative z-10 space-y-4">
+
+        {/* ── DOCK STATUS PANEL ── */}
+        {!loading && (() => {
+          const DOCK_FROM = 5;
+          const DOCK_TO   = 10;
+          const dockStatus: Record<string, AsignacionCajaModel | null> = {};
+          for (let i = DOCK_FROM; i <= DOCK_TO; i++) dockStatus[`DOCK ${i}`] = null;
+
+          assignments.forEach(a => {
+            if (!a.dockArribo) return;
+            const key = a.dockArribo.trim().toUpperCase();
+            if (!(key in dockStatus)) return;
+            const hasLibDock = liberacionesDock.some(l => l.asignacionCajaId === a.id);
+            if (!hasLibDock) dockStatus[key] = a;
+          });
+
+          const ocupados = Object.values(dockStatus).filter(Boolean).length;
+          const libres   = (DOCK_TO - DOCK_FROM + 1) - ocupados;
+
+          return (
+            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Estado de Docks</span>
+                <div className="flex gap-3 text-xs">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+                    <span className="text-emerald-400 font-semibold">{libres} libres</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
+                    <span className="text-red-400 font-semibold">{ocupados} ocupados</span>
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {Array.from({length: DOCK_TO - DOCK_FROM + 1}, (_, i) => DOCK_FROM + i).map(n => {
+                  const key = `DOCK ${n}`;
+                  const asig = dockStatus[key];
+                  return asig ? (
+                    <div key={key} title={`${asig.numeroCaja} — ${asig.nombreDriver}`}
+                      className="flex-1 bg-red-500/10 border border-red-500/40 rounded-lg p-2 flex flex-col items-center gap-0.5 cursor-default">
+                      <span className="text-[10px] font-bold text-red-400 uppercase leading-none">{key}</span>
+                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      <span className="text-[9px] text-red-300/80 font-mono leading-none truncate w-full text-center" title={asig.numeroCaja}>{asig.numeroCaja}</span>
+                      <span className="text-[8px] text-slate-500 leading-none truncate w-full text-center">{asig.numeroOperacion || '—'}</span>
+                    </div>
+                  ) : (
+                    <div key={key}
+                      className="flex-1 bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-2 flex flex-col items-center gap-0.5 cursor-default">
+                      <span className="text-[10px] font-bold text-emerald-600 uppercase leading-none">{key}</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500/50" />
+                      <span className="text-[9px] text-emerald-700/60 leading-none">libre</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Table */}
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-auto flex-1 relative">
           <div className="min-w-max h-full">
@@ -233,7 +410,7 @@ export const DailyVanAssignment: React.FC = () => {
                 <RefreshCcw className="animate-spin mb-4" size={28} />
                 <p>Cargando asignaciones...</p>
               </div>
-            ) : filteredAssignments.length === 0 ? (
+            ) : displayedAssignments.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-slate-500">
                 <Truck size={40} className="mb-3 opacity-40" />
                 <p className="font-medium">No hay asignaciones para esta fecha</p>
@@ -247,6 +424,8 @@ export const DailyVanAssignment: React.FC = () => {
                     <th className="px-4 py-3">Arribo</th>
                     <th className="px-4 py-3 text-red-400">Retraso</th>
                     <th className="px-4 py-3 text-emerald-400">T. Planta</th>
+                    <th className="px-4 py-3 text-cyan-400 whitespace-nowrap">LY&amp;CCP</th>
+                    <th className="px-4 py-3 text-violet-300 whitespace-nowrap">T.CIERRE</th>
                     <th className="px-4 py-3">Operación</th>
                     <th className="px-4 py-3">Caja (53-ft Dry Van)</th>
                     <th className="px-4 py-3">Driver</th>
@@ -260,7 +439,7 @@ export const DailyVanAssignment: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700/50">
-                  {filteredAssignments.map((asig, idx) => {
+                  {displayedAssignments.map((asig, idx) => {
                     const lib = getLibForCaja(asig.id!);
                     const isEven = idx % 2 === 0;
                     const rowBg = isEven ? 'bg-slate-800/30' : 'bg-slate-900/40';
@@ -277,26 +456,36 @@ export const DailyVanAssignment: React.FC = () => {
                     const apptDateUi = parseTimeUi(asig.fecha, asig.horaAsignacion || '');
                     const arrDateUi = parseTimeUi(asig.fecha, asig.arribo || '');
                     const dockRec = getLibDockForCaja(asig.id!);
-                    const relStrUi = dockRec?.fechaHoraRegistro || dockRec?.fechaLiberacion || lib?.fechaHoraRegistro;
-                    const relDateUi = relStrUi ? new Date(relStrUi.replace(' ', 'T')) : null;
+
+                    const relStrUi = dockRec?.fechaHoraRegistro || lib?.fechaHoraRegistro;
+                    const parseEsMxUi = (s?: string): Date | null => {
+                      if (!s) return null;
+                      const mx = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{2}:\d{2}:\d{2})/);
+                      if (mx) return new Date(`${mx[3]}-${mx[2].padStart(2,'0')}-${mx[1].padStart(2,'0')}T${mx[4]}`);
+                      const d = new Date(s.replace(' ','T')); return isNaN(d.getTime()) ? null : d;
+                    };
+                    const libDate = parseEsMxUi(relStrUi);
+                    const endDateUi = libDate || (arrDateUi ? new Date() : null);
+                    const isLive = !libDate && !!arrDateUi;
 
                     let retrasoMins = null;
                     if (apptDateUi && arrDateUi) retrasoMins = Math.round((arrDateUi.getTime() - apptDateUi.getTime()) / 60000);
-                    
+
                     let enPlantaMins = null;
-                    if (arrDateUi && relDateUi && !isNaN(relDateUi.getTime())) enPlantaMins = Math.round((relDateUi.getTime() - arrDateUi.getTime()) / 60000);
+                    if (arrDateUi && endDateUi && !isNaN(endDateUi.getTime())) enPlantaMins = Math.round((endDateUi.getTime() - arrDateUi.getTime()) / 60000);
 
                     const formatTimeBadge = (mins: number | null, isRetraso: boolean) => {
                       if (mins === null || isNaN(mins)) return <span className="text-slate-600">—</span>;
-                      if (mins < 0) return <span className="text-slate-400 text-xs">Temprano</span>;
+                      if (isRetraso && mins <= 0) return <span className="text-slate-400 text-xs font-mono">0</span>;
                       const h = Math.floor(mins / 60);
                       const m = mins % 60;
                       const text = h > 0 ? `${h}h ${m}m` : `${m}m`;
-                      
+
                       if (isRetraso) {
                         if (mins > 30) return <span className="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-xs font-bold">{text}</span>;
                         return <span className="text-amber-400 font-medium text-xs">{text}</span>;
                       } else {
+                        if (mins < 0) return <span className="text-slate-400 text-xs">—</span>;
                         if (mins > 120) return <span className="bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded text-xs font-bold">{text}</span>;
                         return <span className="text-emerald-400 font-medium text-xs">{text}</span>;
                       }
@@ -308,8 +497,68 @@ export const DailyVanAssignment: React.FC = () => {
                         <td className="px-4 py-3 font-mono font-bold text-blue-400">{asig.horaAsignacion || '—'}</td>
                         <td className="px-4 py-3 font-mono text-amber-300 font-semibold">{asig.arribo || '—'}</td>
                         <td className="px-4 py-3">{formatTimeBadge(retrasoMins, true)}</td>
-                        <td className="px-4 py-3">{formatTimeBadge(enPlantaMins, false)}</td>
-                        <td className="px-4 py-3 text-pink-400 font-semibold">{asig.numeroOperacion || '—'}</td>
+                        <td className="px-4 py-3">
+                          {enPlantaMins !== null ? (
+                            <span className="flex items-center gap-1">
+                              {isLive && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" title="En patio - tiempo real" />}
+                              {formatTimeBadge(enPlantaMins, false)}
+                            </span>
+                          ) : <span className="text-slate-600">—</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          {(() => {
+                            const lyAt  = (asig as any).layoutUploadedAt ? new Date((asig as any).layoutUploadedAt) : null;
+                            const ccpAt = (asig as any).ccpUploadedAt   ? new Date((asig as any).ccpUploadedAt)    : null;
+                            // Sin layout → nada que mostrar
+                            if (!lyAt) return <span className="text-slate-600">—</span>;
+                            // Con CCP: tiempo real entre layout y ccp
+                            const endAt = ccpAt || new Date();
+                            const isLiveLyCcp = !ccpAt;
+                            const mins = Math.round((endAt.getTime() - lyAt.getTime()) / 60000);
+                            if (isNaN(mins) || mins < 0) return <span className="text-slate-600">—</span>;
+                            const h = Math.floor(mins / 60), m = mins % 60;
+                            const text = h > 0 ? `${h}h ${m}m` : `${m}m`;
+                            const badge = mins > 60
+                              ? <span className="bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded text-xs font-bold">{text}</span>
+                              : <span className="text-cyan-400 font-medium text-xs">{text}</span>;
+                            return (
+                              <span className="flex items-center gap-1">
+                                {isLiveLyCcp && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" title="Sin CCP - tiempo real" />}
+                                {badge}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                         {/* T.CIERRE = Liberado por timestamp - Arribo */}
+                         <td className="px-4 py-3">
+                           {(() => {
+                             // Reutiliza arrDateUi (ya validado, mismo que T.Planta)
+                             if (!arrDateUi) return <span className="text-slate-600">—</span>;
+                             const parseEsMxC = (s?: string): Date | null => {
+                               if (!s) return null;
+                               const mx = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{2}:\d{2}:\d{2})/);
+                               if (mx) return new Date(`${mx[3]}-${mx[2].padStart(2,'0')}-${mx[1].padStart(2,'0')}T${mx[4]}`);
+                               const d = new Date(s.replace(' ','T')); return isNaN(d.getTime()) ? null : d;
+                             };
+                             const libDate  = parseEsMxC(lib?.fechaHoraRegistro);
+                             const endDateC = libDate || new Date();
+                             const isLiveC  = !libDate;
+                             const mins = Math.round((endDateC.getTime() - arrDateUi.getTime()) / 60000);
+                             if (isNaN(mins) || mins < 0) return <span className="text-slate-600">—</span>;
+                             const h = Math.floor(mins / 60), m = mins % 60;
+                             const text = h > 0 ? `${h}h ${m}m` : `${m}m`;
+                             const badge = mins > 120
+                               ? <span className="bg-violet-500/20 text-violet-300 px-1.5 py-0.5 rounded text-xs font-bold">{text}</span>
+                               : <span className="text-violet-300 font-medium text-xs">{text}</span>;
+                             return (
+                               <span className="flex items-center gap-1">
+                                 {isLiveC && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" title="Sin cierre - tiempo real" />}
+                                 {badge}
+                               </span>
+                             );
+                           })()}
+                         </td>
+                         <td className="px-4 py-3 text-pink-400 font-semibold">{asig.numeroOperacion || '—'}</td>
                         <td className="px-4 py-3">
                           <span className="font-bold text-white font-mono tracking-wider">{asig.numeroCaja}</span>
                         </td>
@@ -361,7 +610,6 @@ export const DailyVanAssignment: React.FC = () => {
                           )}
                         </td>
 
-                        {/* CCP */}
                         <td className="px-4 py-3">
                           {(asig as any).ccpUploadedBy || (asig as any).ccpUploadedAt ? (
                             <div className="flex flex-col gap-0">

@@ -1328,9 +1328,9 @@ export const storageService = {
       }
     };
 
-    // 3. Write new items — chunks of 100 (smaller = more resilient on unstable network)
+    // 3. Write new items — max batch size (400) for speed; retry handles unstable network
     if (uniqueNewItems.length > 0) {
-      const CHUNK = 100;
+      const CHUNK = 400;
       const chunks = [];
       for (let i = 0; i < uniqueNewItems.length; i += CHUNK) {
         chunks.push(uniqueNewItems.slice(i, i + CHUNK));
@@ -1348,7 +1348,7 @@ export const storageService = {
 
     // 4. Patch archivo field on existing items that were missing it
     if (itemsToUpdateArchivo.length > 0) {
-      const CHUNK = 100;
+      const CHUNK = 400;
       const patchChunks = [];
       for (let i = 0; i < itemsToUpdateArchivo.length; i += CHUNK) {
         patchChunks.push(itemsToUpdateArchivo.slice(i, i + CHUNK));

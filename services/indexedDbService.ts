@@ -1,7 +1,7 @@
 import { openDB, IDBPDatabase } from 'idb';
 
 const DB_NAME = 'LogiMasterDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_NAME = 'master_data';
 
 export const indexedDbService = {
@@ -35,6 +35,9 @@ export const indexedDbService = {
                     }
                     if (!db.objectStoreNames.contains('app_state')) {
                         db.createObjectStore('app_state', { keyPath: 'id' });
+                    }
+                    if (!db.objectStoreNames.contains('cfdi_invoices')) {
+                        db.createObjectStore('cfdi_invoices', { keyPath: 'id' });
                     }
                 },
             });

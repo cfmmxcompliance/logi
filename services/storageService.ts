@@ -394,6 +394,13 @@ export const storageService = {
         console.log(`🧾 Pre-loaded ${dbState.commercialInvoices.length} invoices from IndexedDB`);
       }
 
+      // CFDI Invoices (XML extraction cache)
+      const localCfdi = await indexedDbService.getAllData('cfdi_invoices');
+      if (localCfdi.length > 0) {
+        dbState.cfdiInvoices = localCfdi;
+        console.log(`📄 Pre-loaded ${localCfdi.length} CFDI invoices from IndexedDB`);
+      }
+
       // Logs
       const localLogs = await indexedDbService.getAllLogs();
       if (localLogs.length > 0) {
@@ -1326,6 +1333,8 @@ export const storageService = {
         await batch.commit();
       }
       dbState.cfdiInvoices = [...(dbState.cfdiInvoices || []), ...uniqueNewItems];
+      // Persist new items to IndexedDB cache so next page open is instant
+      indexedDbService.saveData('cfdi_invoices', uniqueNewItems).catch(() => {});
     }
 
     // 4. Patch archivo field on existing items that were missing it
@@ -1502,16 +1511,41 @@ export const storageService = {
   getCFDIInvoices: () => dbState.cfdiInvoices || [],
 
   refreshCFDIInvoices: async () => {
-    if (!db) return [];
+    if (!db) {
+      // Offline: return from IndexedDB cache
+      return dbState.cfdiInvoices || [];
+    }
+    // If already in memory (pre-loaded from IndexedDB), skip Firestore fetch
+    if ((dbState.cfdiInvoices || []).length > 0) {
+      return dbState.cfdiInvoices || [];
+    }
     try {
-      console.log("⬇️ Fetching XML Invoices (On-Demand)...");
+      console.log("⬇️ Fetching XML Invoices from Firestore (first load)...");
       const snap = await getDocs(collection(db, COLS.CFDI_INVOICES));
       dbState.cfdiInvoices = snap.docs.map(d => ({ ...d.data(), id: d.id } as CommercialInvoiceItem));
+      // Persist to IndexedDB so next load is instant
+      indexedDbService.saveData('cfdi_invoices', dbState.cfdiInvoices).catch(() => {});
       notifyListeners();
       return dbState.cfdiInvoices;
     } catch (e) {
       console.error("Failed to refresh CFDI invoices", e);
-      return [];
+      return dbState.cfdiInvoices || [];
+    }
+  },
+
+  // Force a fresh Firestore sync (bypasses IndexedDB cache)
+  forceRefreshCFDIInvoices: async () => {
+    if (!db) return dbState.cfdiInvoices || [];
+    try {
+      console.log("⬇️ Force-fetching XML Invoices from Firestore...");
+      const snap = await getDocs(collection(db, COLS.CFDI_INVOICES));
+      dbState.cfdiInvoices = snap.docs.map(d => ({ ...d.data(), id: d.id } as CommercialInvoiceItem));
+      indexedDbService.saveData('cfdi_invoices', dbState.cfdiInvoices).catch(() => {});
+      notifyListeners();
+      return dbState.cfdiInvoices;
+    } catch (e) {
+      console.error("Failed to force refresh CFDI invoices", e);
+      return dbState.cfdiInvoices || [];
     }
   },
 

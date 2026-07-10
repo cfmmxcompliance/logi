@@ -996,27 +996,6 @@ export const XMLInvoiceExtractor: React.FC = () => {
                             />
                         )}
                     </label>
-
-                    <button
-                        onClick={async () => {
-                            setLoading(true);
-                            try {
-                                const fresh = await storageService.forceRefreshCFDIInvoices();
-                                setItems(fresh);
-                                showNotification('Sincronizado', `${fresh.length} registros actualizados desde Firestore.`, 'success');
-                            } catch (e) {
-                                showNotification('Error', 'No se pudo sincronizar con Firestore.', 'error');
-                            } finally {
-                                setLoading(false);
-                            }
-                        }}
-                        disabled={loading || uploading}
-                        title="Forzar sincronización desde Firestore"
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 disabled:opacity-40"
-                    >
-                        <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-                        <span className="hidden sm:inline">Sincronizar</span>
-                    </button>
                 </div>
             </header>
 

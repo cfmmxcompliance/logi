@@ -1294,15 +1294,12 @@ export const storageService = {
 
   addCFDIInvoices: async (newItems: CommercialInvoiceItem[]) => {
     // 1. Deduplication by item.id (deterministic: VIN or uuid-index)
-    //    Using id instead of invoiceNo-partNo-qty allows re-uploads with corrected
-    //    UUIDs (which generate new IDs) to actually save without being silently rejected.
     const existingIds = new Set(
       (dbState.cfdiInvoices || []).map((i: any) => i.id)
     );
-
     const uniqueNewItems = newItems.filter(item => !existingIds.has(item.id));
 
-    // 2. Items that already exist (same id) but are missing the archivo field — patch them
+    // 2. Items that already exist (same id) but missing archivo — patch them
     const existingById = new Map((dbState.cfdiInvoices || []).map((i: any) => [i.id, i]));
     const itemsToUpdateArchivo = newItems.filter(item => {
       const existing = existingById.get(item.id);
@@ -1312,29 +1309,52 @@ export const storageService = {
 
     if (!db) throw new Error("Sin conexión a Internet.");
 
-    // 3. Write new items
-    if (uniqueNewItems.length > 0) {
-      const chunks = [];
-      for (let i = 0; i < uniqueNewItems.length; i += 400) {
-        chunks.push(uniqueNewItems.slice(i, i + 400));
+    // Helper: commit a batch with exponential-backoff retries (for unstable Wi-Fi)
+    const commitWithRetry = async (b: ReturnType<typeof writeBatch>, label: string) => {
+      const MAX = 3;
+      for (let attempt = 1; attempt <= MAX; attempt++) {
+        try {
+          await b.commit();
+          return;
+        } catch (e: any) {
+          if (attempt === MAX) {
+            console.warn(`[CFDI] Chunk "${label}" falló después de ${MAX} intentos — se saltará (IDs idempotentes, re-sube el XML para reintentar):`, e?.message);
+            return; // skip instead of crashing the whole upload
+          }
+          const delay = 1000 * attempt; // 1s, 2s
+          console.warn(`[CFDI] Chunk "${label}" intento ${attempt} falló, reintentando en ${delay}ms...`);
+          await new Promise(r => setTimeout(r, delay));
+        }
       }
-      for (const chunk of chunks) {
+    };
+
+    // 3. Write new items — chunks of 100 (smaller = more resilient on unstable network)
+    if (uniqueNewItems.length > 0) {
+      const CHUNK = 100;
+      const chunks = [];
+      for (let i = 0; i < uniqueNewItems.length; i += CHUNK) {
+        chunks.push(uniqueNewItems.slice(i, i + CHUNK));
+      }
+      for (let ci = 0; ci < chunks.length; ci++) {
+        const chunk = chunks[ci];
         const batch = writeBatch(db);
         chunk.forEach((item) => {
           batch.set(doc(db, COLS.CFDI_INVOICES, item.id), sanitizeForFirestore(item));
         });
-        await batch.commit();
+        await commitWithRetry(batch, `new-${ci + 1}/${chunks.length}`);
       }
       dbState.cfdiInvoices = [...(dbState.cfdiInvoices || []), ...uniqueNewItems];
     }
 
     // 4. Patch archivo field on existing items that were missing it
     if (itemsToUpdateArchivo.length > 0) {
+      const CHUNK = 100;
       const patchChunks = [];
-      for (let i = 0; i < itemsToUpdateArchivo.length; i += 400) {
-        patchChunks.push(itemsToUpdateArchivo.slice(i, i + 400));
+      for (let i = 0; i < itemsToUpdateArchivo.length; i += CHUNK) {
+        patchChunks.push(itemsToUpdateArchivo.slice(i, i + CHUNK));
       }
-      for (const chunk of patchChunks) {
+      for (let ci = 0; ci < patchChunks.length; ci++) {
+        const chunk = patchChunks[ci];
         const batch = writeBatch(db);
         chunk.forEach((item) => {
           batch.set(doc(db, COLS.CFDI_INVOICES, item.id),
@@ -1342,9 +1362,8 @@ export const storageService = {
             { merge: true }
           );
         });
-        await batch.commit();
+        await commitWithRetry(batch, `patch-${ci + 1}/${patchChunks.length}`);
       }
-      // Update in-memory state too
       const norm = (s: string) => String(s || '').trim().toUpperCase();
       dbState.cfdiInvoices = (dbState.cfdiInvoices || []).map((existing: any) => {
         const match = itemsToUpdateArchivo.find(ni =>

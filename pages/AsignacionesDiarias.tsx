@@ -1750,7 +1750,25 @@ export const AsignacionesDiarias: React.FC = () => {
                     <div className="grid grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-1">Fecha Operativa</label>
-                        <input disabled={isRestrictedRole} type="date" required value={formData.fecha || ''} onChange={e => setFormData({...formData, fecha: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100" />
+                        <input
+                          disabled={isRestrictedRole}
+                          type="date"
+                          required
+                          value={formData.fecha || ''}
+                          onChange={async (e) => {
+                            const newFecha = e.target.value;
+                            // Update date immediately, show placeholder while recalculating TL
+                            setFormData(prev => ({ ...prev, fecha: newFecha, numeroOperacion: '...' }));
+                            if (newFecha && !isEditing) {
+                              // Recalculate TL for the ACTUAL appointment date, not today
+                              const nextOp = await asignacionCajaService.getNextOperationNumber(newFecha);
+                              setFormData(prev => ({ ...prev, fecha: newFecha, numeroOperacion: nextOp }));
+                            } else {
+                              setFormData(prev => ({ ...prev, fecha: newFecha }));
+                            }
+                          }}
+                          className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100"
+                        />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-1">Hora (24h)</label>

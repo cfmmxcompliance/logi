@@ -112,6 +112,10 @@ export const HistoricoExpo = () => {
   const [cfmRefMap, setCfmRefMap] = useState<Map<string, string>>(new Map());
   // Map asignacionCajaId -> vehiculos (from asignacion_cajas.vehiculos)
   const [vehiculosMap, setVehiculosMap] = useState<Map<string, string>>(new Map());
+  // Map asignacionCajaId -> numeroCaja (for enriching TRAILER column)
+  const [trailerMap, setTrailerMap] = useState<Map<string, string>>(new Map());
+  // Map asignacionCajaId -> subLinea (for enriching LÍNEA TRANSPORTE column)
+  const [transportLineMap, setTransportLineMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     const load = () => {
@@ -151,19 +155,27 @@ export const HistoricoExpo = () => {
         const cidMap = new Map<string, string>();
         const cfmRefLocal = new Map<string, string>();
         const vehMap = new Map<string, string>();
+        const trlMap = new Map<string, string>();
+        const tlnMap = new Map<string, string>();
         snap.forEach(d => {
           const data = d.data();
           if (d.id) {
-            if (data.scac)      scacMap.set(d.id, data.scac);
-            if (data.customId)  cidMap.set(d.id, data.customId);
-            if (data.cfmRef)    cfmRefLocal.set(d.id, data.cfmRef);
-            if (data.vehiculos) vehMap.set(d.id, data.vehiculos);
+            if (data.scac)       scacMap.set(d.id, data.scac);
+            if (data.customId)   cidMap.set(d.id, data.customId);
+            if (data.cfmRef)     cfmRefLocal.set(d.id, data.cfmRef);
+            if (data.vehiculos)  vehMap.set(d.id, data.vehiculos);
+            // Enrich TRAILER and LÍNEA TRANSPORTE from the assignment
+            if (data.numeroCaja) trlMap.set(d.id, String(data.numeroCaja));
+            const tLine = data.subLinea || data.transportLine || '';
+            if (tLine) tlnMap.set(d.id, tLine);
           }
         });
         setAsignacionesScacMap(scacMap);
         setCustomIdMap(cidMap);
         setCfmRefMap(cfmRefLocal);
         setVehiculosMap(vehMap);
+        setTrailerMap(trlMap);
+        setTransportLineMap(tlnMap);
 
         // ── Persist cfmRef + vehiculos into historico_expo records ──────────
         // Ensures both fields are backed up in the record itself, not just
@@ -265,6 +277,10 @@ export const HistoricoExpo = () => {
       if (!enriched.cfmRef && asigId && cfmRefMap.has(asigId)) enriched.cfmRef = cfmRefMap.get(asigId);
       // VEHICULOS from asignacion_cajas.vehiculos
       if (asigId && vehiculosMap.has(asigId)) enriched.vehiculos = vehiculosMap.get(asigId);
+      // TRAILER from asignacion_cajas.numeroCaja (fills in records created before liberacion)
+      if (!enriched.trailer && asigId && trailerMap.has(asigId)) enriched.trailer = trailerMap.get(asigId);
+      // LÍNEA TRANSPORTE from asignacion_cajas.subLinea
+      if (!enriched.transportLine && asigId && transportLineMap.has(asigId)) enriched.transportLine = transportLineMap.get(asigId);
       return enriched;
     });
 

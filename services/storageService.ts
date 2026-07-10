@@ -1309,23 +1309,26 @@ export const storageService = {
 
     if (!db) throw new Error("Sin conexión a Internet.");
 
-    // Helper: commit a batch with exponential-backoff retries (for unstable Wi-Fi)
-    const commitWithRetry = async (b: ReturnType<typeof writeBatch>, label: string) => {
+    // Helper: commit with retries — returns true on success, false if all retries exhausted
+    let failedItemCount = 0;
+    const commitWithRetry = async (b: ReturnType<typeof writeBatch>, label: string, itemCount: number): Promise<boolean> => {
       const MAX = 3;
       for (let attempt = 1; attempt <= MAX; attempt++) {
         try {
           await b.commit();
-          return;
+          return true;
         } catch (e: any) {
           if (attempt === MAX) {
-            console.warn(`[CFDI] Chunk "${label}" falló después de ${MAX} intentos — se saltará (IDs idempotentes, re-sube el XML para reintentar):`, e?.message);
-            return; // skip instead of crashing the whole upload
+            console.warn(`[CFDI] Chunk "${label}" falló después de ${MAX} intentos — se saltará:`, e?.message);
+            failedItemCount += itemCount;
+            return false;
           }
-          const delay = 1000 * attempt; // 1s, 2s
+          const delay = 1000 * attempt;
           console.warn(`[CFDI] Chunk "${label}" intento ${attempt} falló, reintentando en ${delay}ms...`);
           await new Promise(r => setTimeout(r, delay));
         }
       }
+      return false;
     };
 
     // 3. Write new items — max batch size (400) for speed; retry handles unstable network
@@ -1341,7 +1344,7 @@ export const storageService = {
         chunk.forEach((item) => {
           batch.set(doc(db, COLS.CFDI_INVOICES, item.id), sanitizeForFirestore(item));
         });
-        await commitWithRetry(batch, `new-${ci + 1}/${chunks.length}`);
+        await commitWithRetry(batch, `new-${ci + 1}/${chunks.length}`, chunk.length);
       }
       dbState.cfdiInvoices = [...(dbState.cfdiInvoices || []), ...uniqueNewItems];
     }
@@ -1362,7 +1365,7 @@ export const storageService = {
             { merge: true }
           );
         });
-        await commitWithRetry(batch, `patch-${ci + 1}/${patchChunks.length}`);
+        await commitWithRetry(batch, `patch-${ci + 1}/${patchChunks.length}`, chunk.length);
       }
       const norm = (s: string) => String(s || '').trim().toUpperCase();
       dbState.cfdiInvoices = (dbState.cfdiInvoices || []).map((existing: any) => {
@@ -1377,10 +1380,17 @@ export const storageService = {
     if (uniqueNewItems.length === 0 && itemsToUpdateArchivo.length === 0) return 0;
 
     try {
-      logAction('XML_CFDI_IMPORT', `Líneas XML extraídas: ${uniqueNewItems.length}, actualizadas: ${itemsToUpdateArchivo.length}`);
+      logAction('XML_CFDI_IMPORT', `Líneas XML extraídas: ${uniqueNewItems.length}, actualizadas: ${itemsToUpdateArchivo.length}, fallidas: ${failedItemCount}`);
     } catch (e) { }
 
     notifyListeners();
+
+    // If any chunks failed after all retries, throw so the UI can warn the user
+    if (failedItemCount > 0) {
+      const saved = uniqueNewItems.length - failedItemCount;
+      throw new Error(`Red inestable: ${saved} registros guardados, ${failedItemCount} no se pudieron guardar. Vuelve a subir los XMLs afectados para completar el proceso.`);
+    }
+
     return uniqueNewItems.length + itemsToUpdateArchivo.length;
   },
 

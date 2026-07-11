@@ -26,6 +26,7 @@ export const HandheldLiberacionDock = () => {
   const [dateStart, setDateStart] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }));
   const [dateEnd, setDateEnd] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }));
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDIENTES' | 'LIBERADAS'>('ALL');
 
   const [fotoCajaFile, setFotoCajaFile] = useState<File | null>(null);
   const [fotoPuertasFile, setFotoPuertasFile] = useState<File | null>(null);
@@ -280,6 +281,21 @@ export const HandheldLiberacionDock = () => {
     return <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white"><Loader2 className="animate-spin mb-4 text-sky-400" size={32} />Cargando...</div>;
   }
 
+  const cajasProcesadas = filteredCajas.map(c => {
+    const lib = getLiberacionDockForCaja(c.id!);
+    return { ...c, liberada: !!lib, lib };
+  });
+
+  const totalAll = cajasProcesadas.length;
+  const totalLiberadas = cajasProcesadas.filter(c => c.liberada).length;
+  const totalPendientes = totalAll - totalLiberadas;
+
+  const displayedCajas = cajasProcesadas.filter(c => {
+    if (statusFilter === 'PENDIENTES') return !c.liberada;
+    if (statusFilter === 'LIBERADAS') return c.liberada;
+    return true;
+  });
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col text-slate-100 font-sans relative">
       <UploadStatusBanner status={uploadStatus} label={uploadStatusLabel} error={uploadError} />
@@ -294,12 +310,53 @@ export const HandheldLiberacionDock = () => {
       </div>
 
       {!selectedCaja && !saveSuccess && (
-        <HandheldToolbar
-          dateStart={dateStart} setDateStart={setDateStart}
-          dateEnd={dateEnd} setDateEnd={setDateEnd}
-          searchTerm={searchTerm} setSearchTerm={setSearchTerm}
-          onSearch={() => {}}
-        />
+        <>
+          <HandheldToolbar
+            dateStart={dateStart} setDateStart={setDateStart}
+            dateEnd={dateEnd} setDateEnd={setDateEnd}
+            searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+            onSearch={() => {}}
+          />
+          {cajasProcesadas.length > 0 && (
+            <div className="px-4 pb-3 bg-slate-900 border-b border-slate-800">
+              <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl p-1 gap-1">
+                {/* Todos */}
+                <button
+                  onClick={() => setStatusFilter('ALL')}
+                  className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all ${statusFilter === 'ALL' ? 'bg-sky-500 text-slate-900 shadow' : 'text-slate-400 hover:bg-slate-800'}`}
+                >
+                  Todos ({totalAll})
+                </button>
+
+                {/* Pendientes */}
+                <button
+                  onClick={() => setStatusFilter('PENDIENTES')}
+                  className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all flex flex-col items-center leading-tight ${statusFilter === 'PENDIENTES' ? 'bg-sky-500 text-slate-900 shadow' : 'text-slate-400 hover:bg-slate-800'}`}
+                >
+                  <span>PENDIENTES ({totalPendientes})</span>
+                  {totalPendientes > 0 && (
+                    <span className={`text-[10px] font-semibold mt-0.5 ${statusFilter === 'PENDIENTES' ? 'text-sky-900/80' : 'text-slate-500'}`}>
+                      sin liberar: {totalPendientes}
+                    </span>
+                  )}
+                </button>
+
+                {/* Liberadas */}
+                <button
+                  onClick={() => setStatusFilter('LIBERADAS')}
+                  className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all flex flex-col items-center leading-tight ${statusFilter === 'LIBERADAS' ? 'bg-sky-500 text-slate-900 shadow' : 'text-slate-400 hover:bg-slate-800'}`}
+                >
+                  <span>LIBERADAS ({totalLiberadas})</span>
+                  {totalLiberadas > 0 && (
+                    <span className={`text-[10px] font-semibold mt-0.5 ${statusFilter === 'LIBERADAS' ? 'text-sky-900/80' : 'text-slate-500'}`}>
+                      🟢 {totalLiberadas} cajas
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <div className="flex-1 overflow-y-auto p-4 pb-24">
@@ -319,11 +376,22 @@ export const HandheldLiberacionDock = () => {
           </div>
         ) : !selectedCaja ? (
           <div>
-            <h2 className="text-xs font-bold text-slate-500 tracking-widest uppercase mb-4 px-1 mt-4">CAJAS ENCONTRADAS ({filteredCajas.length})</h2>
-            <div className="grid grid-cols-1 gap-3">
-              {filteredCajas.map(c => {
-                const lib = getLiberacionDockForCaja(c.id!);
-                const yaLiberada = !!lib;
+            <h2 className="text-xs font-bold text-slate-500 tracking-widest uppercase mb-4 px-1 mt-4">CAJAS ENCONTRADAS ({displayedCajas.length})</h2>
+            {displayedCajas.length === 0 ? (
+              <div className="text-center py-12 bg-slate-900/50 rounded-2xl border border-slate-800/50 mt-2">
+                <Box size={48} className="mx-auto text-slate-700 mb-4" />
+                <h3 className="text-lg font-bold text-slate-400 mb-1">
+                  {statusFilter === 'PENDIENTES' ? 'No hay cajas pendientes' :
+                   statusFilter === 'LIBERADAS' ? 'No hay cajas liberadas' :
+                   'No se encontraron cajas'}
+                </h3>
+                <p className="text-slate-500 text-sm">Prueba cambiando la fecha o el filtro de estado.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {displayedCajas.map(c => {
+                  const lib = c.lib;
+                  const yaLiberada = c.liberada;
                 return (
                   <div key={c.id} onClick={() => { if (!yaLiberada) setSelectedCaja(c); }} className={`relative p-5 rounded-2xl border transition-all ${yaLiberada ? 'bg-emerald-950/20 border-emerald-900/50 opacity-90' : 'bg-slate-900 hover:bg-slate-800 border-slate-800 active:scale-95 cursor-pointer shadow-sm'}`}>
                     {yaLiberada && (
@@ -376,6 +444,7 @@ export const HandheldLiberacionDock = () => {
                 );
               })}
             </div>
+            )}
           </div>
         ) : (
           <div className="animate-in slide-in-from-right-4 duration-200">

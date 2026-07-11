@@ -150,7 +150,7 @@ export const HandheldArribo = () => {
             {/* Todos */}
             <button
               onClick={() => setStatusFilter('ALL')}
-              className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all ${statusFilter === 'ALL' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-800'}`}
+              className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all ${statusFilter === 'ALL' ? 'bg-amber-500 text-slate-900 shadow' : 'text-slate-400 hover:bg-slate-800'}`}
             >
               Todos ({totalAll})
             </button>
@@ -158,11 +158,11 @@ export const HandheldArribo = () => {
             {/* Pendientes */}
             <button
               onClick={() => setStatusFilter('PENDIENTES')}
-              className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all flex flex-col items-center leading-tight ${statusFilter === 'PENDIENTES' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-800'}`}
+              className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all flex flex-col items-center leading-tight ${statusFilter === 'PENDIENTES' ? 'bg-amber-500 text-slate-900 shadow' : 'text-slate-400 hover:bg-slate-800'}`}
             >
               <span>PENDIENTES ({totalPendientes})</span>
               {sinArribo > 0 && (
-                <span className={`text-[10px] font-semibold mt-0.5 ${statusFilter === 'PENDIENTES' ? 'text-teal-100' : 'text-slate-500'}`}>
+                <span className={`text-[10px] font-semibold mt-0.5 ${statusFilter === 'PENDIENTES' ? 'text-amber-900/80' : 'text-slate-500'}`}>
                   sin arribo: {sinArribo}
                 </span>
               )}
@@ -171,11 +171,11 @@ export const HandheldArribo = () => {
             {/* Arribados */}
             <button
               onClick={() => setStatusFilter('ARRIBADOS')}
-              className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all flex flex-col items-center leading-tight ${statusFilter === 'ARRIBADOS' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-800'}`}
+              className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all flex flex-col items-center leading-tight ${statusFilter === 'ARRIBADOS' ? 'bg-amber-500 text-slate-900 shadow' : 'text-slate-400 hover:bg-slate-800'}`}
             >
               <span>ARRIBADOS ({totalArribados})</span>
               {totalArribados > 0 && (
-                <span className={`text-[10px] font-semibold mt-0.5 ${statusFilter === 'ARRIBADOS' ? 'text-teal-100' : 'text-slate-500'}`}>
+                <span className={`text-[10px] font-semibold mt-0.5 ${statusFilter === 'ARRIBADOS' ? 'text-amber-900/80' : 'text-slate-500'}`}>
                   🟢 {totalArribados} cajas
                 </span>
               )}

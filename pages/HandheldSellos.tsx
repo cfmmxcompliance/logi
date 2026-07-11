@@ -40,8 +40,8 @@ export const HandheldSellos = () => {
 
   const [dateStart, setDateStart] = useState<string>(getLocalToday());
   const [dateEnd, setDateEnd] = useState<string>(getLocalToday());
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDIENTES' | 'SELLADAS'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredCajas, setFilteredCajas] = useState<AsignacionCajaModel[]>([]);
 
   // Modal State
   const [selectedCaja, setSelectedCaja] = useState<AsignacionCajaModel | null>(null);
@@ -160,18 +160,8 @@ export const HandheldSellos = () => {
   }, [dateStart, dateEnd]);
 
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredCajas(cajasDelDia);
-      return;
-    }
-    const term = searchTerm.toLowerCase();
-    setFilteredCajas(cajasDelDia.filter(c => 
-      (c.numeroCaja || '').toLowerCase().includes(term) ||
-      (c.placas || '').toLowerCase().includes(term) ||
-      (c.numeroOperacion || '').toLowerCase().includes(term) ||
-      (c.transportista || '').toLowerCase().includes(term)
-    ));
-  }, [cajasDelDia, searchTerm]);
+    setStatusFilter('ALL');
+  }, [dateStart, dateEnd]);
 
   // --- IMAGE COMPRESSION UTILITY ---
   const compressImage = (file: File): Promise<string> => {
@@ -404,6 +394,26 @@ export const HandheldSellos = () => {
     return sellosDelDia.find(s => s.asignacionCajaId === cajaId);
   };
 
+  const totalAll        = cajasDelDia.length;
+  const totalSelladas   = cajasDelDia.filter(c => !!getSelloForCaja(c.id || '')).length;
+  const totalPendientes = totalAll - totalSelladas;
+  const sinSello        = totalPendientes; // alias semántico para el sub-label
+
+  const byText = !searchTerm.trim()
+    ? cajasDelDia
+    : cajasDelDia.filter(c =>
+        (c.numeroCaja || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.placas || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.numeroOperacion || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.transportista || '').toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+  const filteredCajas = byText.filter(caja => {
+    if (statusFilter === 'SELLADAS')   return !!getSelloForCaja(caja.id || '');
+    if (statusFilter === 'PENDIENTES') return !getSelloForCaja(caja.id || '');
+    return true;
+  });
+
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col font-sans">
       {/* Banner flotante de upload — no bloquea nada */}
@@ -435,11 +445,54 @@ export const HandheldSellos = () => {
       </header>
 
       {!selectedCaja && !mismatchAlert && !replaceConfirm && (
-        <HandheldToolbar
-          dateStart={dateStart} setDateStart={setDateStart}
-          dateEnd={dateEnd} setDateEnd={setDateEnd}
-          searchTerm={searchTerm} setSearchTerm={setSearchTerm}
-        />
+        <>
+          <HandheldToolbar
+            dateStart={dateStart} setDateStart={setDateStart}
+            dateEnd={dateEnd} setDateEnd={setDateEnd}
+            searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+          />
+
+          {/* Segmented Control — Todos / Pendientes / Selladas */}
+          {!loading && cajasDelDia.length > 0 && (
+            <div className="px-4 pb-3 bg-slate-800 border-b border-slate-700">
+              <div className="flex items-center bg-slate-900 border border-slate-700 rounded-xl p-1 gap-1">
+                {/* Todos */}
+                <button
+                  onClick={() => setStatusFilter('ALL')}
+                  className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all ${statusFilter === 'ALL' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700'}`}
+                >
+                  Todos ({totalAll})
+                </button>
+
+                {/* Pendientes */}
+                <button
+                  onClick={() => setStatusFilter('PENDIENTES')}
+                  className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all flex flex-col items-center leading-tight ${statusFilter === 'PENDIENTES' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700'}`}
+                >
+                  <span>PENDIENTES ({totalPendientes})</span>
+                  {sinSello > 0 && (
+                    <span className={`text-[10px] font-semibold mt-0.5 ${statusFilter === 'PENDIENTES' ? 'text-teal-100' : 'text-slate-500'}`}>
+                      sin sello: {sinSello}
+                    </span>
+                  )}
+                </button>
+
+                {/* Selladas */}
+                <button
+                  onClick={() => setStatusFilter('SELLADAS')}
+                  className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all flex flex-col items-center leading-tight ${statusFilter === 'SELLADAS' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700'}`}
+                >
+                  <span>SELLADAS ({totalSelladas})</span>
+                  {totalSelladas > 0 && (
+                    <span className={`text-[10px] font-semibold mt-0.5 ${statusFilter === 'SELLADAS' ? 'text-teal-100' : 'text-slate-500'}`}>
+                      🟢 {totalSelladas} cajas
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* CONTENT */}
@@ -454,18 +507,19 @@ export const HandheldSellos = () => {
              <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mb-4">
                  <Box size={32} className="text-slate-500" />
              </div>
-             <h2 className="text-xl font-bold text-slate-300">No hay cajas asignadas</h2>
+             <h2 className="text-xl font-bold text-slate-300">
+               {statusFilter === 'SELLADAS' ? 'No hay cajas selladas' : statusFilter === 'PENDIENTES' ? 'No hay cajas pendientes' : 'No hay cajas asignadas'}
+             </h2>
              <p className="text-slate-500 mt-2 text-sm max-w-[250px]">
-               No se encontraron asignaciones terrestres para este rango.
+               {statusFilter === 'SELLADAS' ? 'Aún no se ha sellado ninguna caja en este rango.' : statusFilter === 'PENDIENTES' ? 'Todas las cajas del día ya fueron selladas.' : 'No se encontraron asignaciones terrestres para este rango.'}
              </p>
           </div>
         ) : (
           <div className="space-y-3">
              <div className="flex justify-between items-end pb-2">
-                 <h2 className="text-slate-400 text-sm font-bold uppercase tracking-wider">Cajas ({filteredCajas.length})</h2>
-                 <span className="text-xs bg-slate-800 px-2 py-1 rounded-md text-slate-300 border border-slate-700">
-                     {sellosDelDia.length} Selladas
-                 </span>
+                 <h2 className="text-slate-400 text-sm font-bold uppercase tracking-wider">
+                   {statusFilter === 'ALL' ? `Cajas (${filteredCajas.length})` : statusFilter === 'SELLADAS' ? `Selladas (${filteredCajas.length})` : `Pendientes (${filteredCajas.length})`}
+                 </h2>
              </div>
              
              {filteredCajas.map((caja, index) => {

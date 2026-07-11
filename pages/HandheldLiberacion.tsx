@@ -30,6 +30,7 @@ export const HandheldLiberacion = () => {
   };
 
   const [selectedDate, setSelectedDate] = useState<string>(getLocalToday());
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDIENTES' | 'LIBERADAS'>('ALL');
 
   // Modal State
   const [selectedCaja, setSelectedCaja] = useState<AsignacionCajaModel | null>(null);
@@ -146,6 +147,10 @@ export const HandheldLiberacion = () => {
 
   useEffect(() => {
     fetchDataForDate(selectedDate);
+  }, [selectedDate]);
+
+  useEffect(() => {
+    setStatusFilter('ALL');
   }, [selectedDate]);
 
   // --- IMAGE COMPRESSION UTILITY ---
@@ -422,6 +427,17 @@ export const HandheldLiberacion = () => {
   // Helper check
   const getLiberacionForCaja = (cajaId: string) => liberacionesDelDia.find(l => l.asignacionCajaId === cajaId);
 
+  const totalAll       = cajasDelDia.length;
+  const totalLiberadas = cajasDelDia.filter(c => !!getLiberacionForCaja(c.id!)).length;
+  const totalPendientes = totalAll - totalLiberadas;
+  const sinSello       = cajasDelDia.filter(c => !getLiberacionForCaja(c.id!) && !sellosDelDia.some(s => s.numeroCaja === c.numeroCaja)).length;
+
+  const filteredCajas = cajasDelDia.filter(caja => {
+    if (statusFilter === 'LIBERADAS')  return !!getLiberacionForCaja(caja.id!);
+    if (statusFilter === 'PENDIENTES') return !getLiberacionForCaja(caja.id!);
+    return true;
+  });
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col font-sans">
       {/* Banner de red lenta — barra delgada que desaparece sola, sin popup */}
@@ -454,7 +470,8 @@ export const HandheldLiberacion = () => {
       </div>
 
       {/* Toolbar */}
-      <div className="bg-slate-900 border-b border-slate-800 p-4 sticky top-[68px] z-[9]">
+      <div className="bg-slate-900 border-b border-slate-800 px-4 pt-3 pb-3 sticky top-[68px] z-[9] flex flex-col gap-3">
+          {/* Date Picker */}
           <div className="flex items-center justify-between bg-slate-800 rounded-xl p-1 border border-slate-700">
              <input 
                type="date"
@@ -463,6 +480,45 @@ export const HandheldLiberacion = () => {
                className="w-full bg-transparent text-slate-300 font-bold px-3 py-2 outline-none focus:ring-0 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
              />
           </div>
+
+          {/* Segmented Control — Todos / Pendientes / Liberadas */}
+          {!loading && cajasDelDia.length > 0 && (
+            <div className="flex items-center bg-slate-800 border border-slate-700 rounded-xl p-1 gap-1">
+              {/* Todos */}
+              <button
+                onClick={() => setStatusFilter('ALL')}
+                className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all ${statusFilter === 'ALL' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700'}`}
+              >
+                Todos ({totalAll})
+              </button>
+
+              {/* Pendientes */}
+              <button
+                onClick={() => setStatusFilter('PENDIENTES')}
+                className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all flex flex-col items-center leading-tight ${statusFilter === 'PENDIENTES' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700'}`}
+              >
+                <span>PENDIENTES ({totalPendientes})</span>
+                {sinSello > 0 && (
+                  <span className={`text-[10px] font-semibold mt-0.5 ${statusFilter === 'PENDIENTES' ? 'text-teal-100' : 'text-slate-500'}`}>
+                    sin sello: {sinSello}
+                  </span>
+                )}
+              </button>
+
+              {/* Liberadas */}
+              <button
+                onClick={() => setStatusFilter('LIBERADAS')}
+                className={`flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all flex flex-col items-center leading-tight ${statusFilter === 'LIBERADAS' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700'}`}
+              >
+                <span>LIBERADAS ({totalLiberadas})</span>
+                {totalLiberadas > 0 && (
+                  <span className={`text-[10px] font-semibold mt-0.5 ${statusFilter === 'LIBERADAS' ? 'text-teal-100' : 'text-slate-500'}`}>
+                    🟢 {totalLiberadas} cajas
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
       </div>
 
       {/* Main List */}
@@ -478,8 +534,18 @@ export const HandheldLiberacion = () => {
                 <p className="font-medium text-lg text-slate-400">Sin Movimientos</p>
                 <p className="text-sm mt-1">No hay cajas asignadas en plataforma para esta fecha.</p>
             </div>
+        ) : filteredCajas.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-slate-500 text-center px-4 border border-dashed border-slate-800 rounded-2xl bg-slate-900/30">
+                <Box size={48} className="mb-4 opacity-50" />
+                <p className="font-medium text-lg text-slate-400">
+                  {statusFilter === 'LIBERADAS' ? 'No hay cajas liberadas' : 'No hay cajas pendientes'}
+                </p>
+                <p className="text-sm mt-1">
+                  {statusFilter === 'LIBERADAS' ? 'Aún no se ha liberado ninguna caja este día.' : 'Todas las cajas del día ya fueron liberadas.'}
+                </p>
+            </div>
         ) : (
-            cajasDelDia.map((caja, index) => {
+            filteredCajas.map((caja, index) => {
                 const lib = getLiberacionForCaja(caja.id!);
                 const yaLiberada = !!lib;
                 // Also check if it even has a Sello

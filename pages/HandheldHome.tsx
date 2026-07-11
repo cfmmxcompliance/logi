@@ -29,6 +29,22 @@ export const HandheldHome = () => {
 
                 <div className="grid grid-cols-1 gap-4 mt-4">
                     
+                    {/* Registro de Arribo */}
+                    {user?.role !== UserRole.HANDHELD_AF && (
+                        <button
+                           onClick={() => navigate('/m/arribo')}
+                           className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group"
+                        >
+                           <div className="w-16 h-16 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(245,158,11,0.3)] group-hover:scale-105 transition-transform">
+                              <Truck size={32} />
+                           </div>
+                           <div>
+                               <h2 className="text-lg font-bold text-white tracking-tight">Registro de Arribo</h2>
+                               <p className="text-slate-400 text-sm mt-1 font-medium">Hora y comentarios de llegada</p>
+                           </div>
+                        </button>
+                    )}
+
                     {/* Cajas y Sellos */}
                     {user?.role !== UserRole.HANDHELD_USER2 && user?.role !== UserRole.HANDHELD_AF && (
                         <button 
@@ -45,68 +61,52 @@ export const HandheldHome = () => {
                         </button>
                     )}
 
-                    {/* Vigilancia — Inspección 7 puntos + Placas */}
-                    {user?.role !== UserRole.HANDHELD_AF && (
-                        <button
-                           onClick={() => navigate('/m/vigilancia')}
-                       className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group mt-4"
-                    >
-                       <div className="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(239,68,68,0.3)] group-hover:scale-105 transition-transform">
-                          <Shield size={32} />
-                       </div>
-                       <div>
-                           <h2 className="text-lg font-bold text-white tracking-tight">Vigilancia</h2>
-                           <p className="text-slate-400 text-sm mt-1 font-medium">Inspección 7 puntos + Placas</p>
-                       </div>
-                    </button>
-                    )}
-
                     {/* Liberación de Dock — Fotos 1 y 2 */}
                     {user?.role !== UserRole.HANDHELD_AF && (
                         <button
                            onClick={() => navigate('/m/liberacion-dock')}
-                       className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group mt-4"
-                    >
-                       <div className="w-16 h-16 bg-sky-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(14,165,233,0.3)] group-hover:scale-105 transition-transform">
-                          <Anchor size={32} />
-                       </div>
-                       <div>
-                           <h2 className="text-lg font-bold text-white tracking-tight">Liberación de Dock</h2>
-                           <p className="text-slate-400 text-sm mt-1 font-medium">Foto Caja Cargada y Puertas</p>
-                       </div>
-                    </button>
+                           className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group"
+                        >
+                           <div className="w-16 h-16 bg-sky-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(14,165,233,0.3)] group-hover:scale-105 transition-transform">
+                              <Anchor size={32} />
+                           </div>
+                           <div>
+                               <h2 className="text-lg font-bold text-white tracking-tight">Liberación de Dock</h2>
+                               <p className="text-slate-400 text-sm mt-1 font-medium">Foto Caja Cargada y Puertas</p>
+                           </div>
+                        </button>
                     )}
 
                     {/* Liberación de Caja — Solo Sello */}
                     {user?.role !== UserRole.HANDHELD_AF && (
                         <button
                            onClick={() => navigate('/m/liberacion')}
-                       className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group mt-4"
-                    >
-                       <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] group-hover:scale-105 transition-transform">
-                          <DoorOpen size={32} />
-                       </div>
-                       <div>
-                           <h2 className="text-lg font-bold text-white tracking-tight">Liberación de Caja</h2>
-                           <p className="text-slate-400 text-sm mt-1 font-medium">Cierre Definitivo — Sello</p>
-                       </div>
-                    </button>
+                           className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group"
+                        >
+                           <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] group-hover:scale-105 transition-transform">
+                              <DoorOpen size={32} />
+                           </div>
+                           <div>
+                               <h2 className="text-lg font-bold text-white tracking-tight">Liberación de Caja</h2>
+                               <p className="text-slate-400 text-sm mt-1 font-medium">Cierre Definitivo — Sello</p>
+                           </div>
+                        </button>
                     )}
 
-                    {/* Registro de Arribo */}
+                    {/* Vigilancia — Inspección 7 puntos + Placas */}
                     {user?.role !== UserRole.HANDHELD_AF && (
                         <button
-                           onClick={() => navigate('/m/arribo')}
-                       className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group mt-4"
-                    >
-                       <div className="w-16 h-16 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(245,158,11,0.3)] group-hover:scale-105 transition-transform">
-                          <Truck size={32} />
-                       </div>
-                       <div>
-                           <h2 className="text-lg font-bold text-white tracking-tight">Registro de Arribo</h2>
-                           <p className="text-slate-400 text-sm mt-1 font-medium">Hora y comentarios de llegada</p>
-                       </div>
-                    </button>
+                           onClick={() => navigate('/m/vigilancia')}
+                           className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group"
+                        >
+                           <div className="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(239,68,68,0.3)] group-hover:scale-105 transition-transform">
+                              <Shield size={32} />
+                           </div>
+                           <div>
+                               <h2 className="text-lg font-bold text-white tracking-tight">Vigilancia</h2>
+                               <p className="text-slate-400 text-sm mt-1 font-medium">Inspección 7 puntos + Placas</p>
+                           </div>
+                        </button>
                     )}
 
                 </div>

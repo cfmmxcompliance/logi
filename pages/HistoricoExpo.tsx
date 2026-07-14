@@ -5,7 +5,7 @@ import { uploadFileToDrive } from '../services/googleDriveService.ts';
 import { HistoricoExpoRecord } from '../types.ts';
 import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../components/CatalogQueryBuilder';
 import { parseCSV } from '../utils/csvHelpers';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, getDocsFromCache } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 
 const DODA_FOLDER_ID = '14qiNMFvgyUuR4Z-e9beQzNqWw__CyMQZ';
@@ -135,7 +135,13 @@ export const HistoricoExpo = () => {
   useEffect(() => {
     const loadSellos = async () => {
       try {
-        const snap = await getDocs(collection(db, 'sellos'));
+        let snap;
+        try {
+          snap = await getDocsFromCache(collection(db, 'sellos'));
+          if (snap.empty) throw new Error('cache miss');
+        } catch {
+          snap = await getDocs(collection(db, 'sellos'));
+        }
         const map = new Map<string, string>();
         snap.forEach(d => {
           const data = d.data();
@@ -155,7 +161,13 @@ export const HistoricoExpo = () => {
   useEffect(() => {
     const loadAsignaciones = async () => {
       try {
-        const snap = await getDocs(collection(db, 'asignacion_cajas'));
+        let snap;
+        try {
+          snap = await getDocsFromCache(collection(db, 'asignacion_cajas'));
+          if (snap.empty) throw new Error('cache miss');
+        } catch {
+          snap = await getDocs(collection(db, 'asignacion_cajas'));
+        }
         const scacMap = new Map<string, string>();
         const cidMap = new Map<string, string>();
         const cfmRefLocal = new Map<string, string>();

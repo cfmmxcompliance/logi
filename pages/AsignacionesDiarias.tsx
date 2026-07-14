@@ -1868,8 +1868,10 @@ export const AsignacionesDiarias: React.FC = () => {
                             value={formData.transportLineId || ''}
                             onChange={val => setFormData({...formData, transportLineId: val, driverId: '', nombreDriver: '', placasTracto: ''})}
                             options={transportLines
-                              .filter(tl => !formData.carrierCodigo || tl.carrierCodigo === formData.carrierCodigo)
-                              .map(tl => ({ value: tl.transportLineId, label: tl.nombreSubLinea || tl.TransportLine }))}
+                              .filter(tl => !formData.carrierCodigo || 
+                                tl.TransportLine === formData.carrierCodigo ||
+                                tl.carrierCodigo === formData.carrierCodigo)
+                              .map(tl => ({ value: tl.transportLineId, label: tl.nombreSubLinea || tl.TransportLine, sublabel: tl.TransportLine }))}
                             placeholder={formData.carrierCodigo ? 'Seleccionar Sub-Línea...' : 'Selecciona un Carrier primero'}
                             disabled={isRestrictedRole || !formData.carrierCodigo}
                           />

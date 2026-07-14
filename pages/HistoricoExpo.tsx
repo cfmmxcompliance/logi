@@ -88,8 +88,13 @@ export const HistoricoExpo = () => {
   const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'CERRADO' | 'POR_CERRAR'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const today = getMexicoToday();
+  const get90DaysAgo = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 90);
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Monterrey', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+  };
   const [dateRange, setDateRange] = useState({ 
-    start: today, 
+    start: get90DaysAgo(), 
     end: today 
   });
   
@@ -353,7 +358,7 @@ export const HistoricoExpo = () => {
     }
 
     return { filteredRecords: finalResult, counts: newCounts };
-  }, [records, dateRange, searchTerm, activeMassQuery, cargadoFilter, sellosMap, asignacionesScacMap, customIdMap, cfmRefMap]);
+  }, [records, dateRange, searchTerm, activeMassQuery, cargadoFilter, sellosMap, asignacionesScacMap, customIdMap, cfmRefMap, vehiculosMap, trailerMap, transportLineMap]);
 
 
   // --- CSV LOGIC ---

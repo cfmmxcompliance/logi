@@ -78,36 +78,32 @@ export const liberacionService = {
 
       // --- HISTORICO EXPO AUTOMATION ---
       try {
-       // --- AUTOMATE HISTORICO EXPO RECORD ---
-        // Usa la FECHA/HORA SELLADO (del sello asignado) como pickupDayCFM
+        // --- AUTOMATE HISTORICO EXPO RECORD ---
+        // Usa la FECHA de la asignacion (YYYY-MM-DD hora Mexico) como pickupDayCFM
+        // Esto evita el problema de zona horaria UTC vs Mexico despues de las 6 PM
         let pickupDay = '';
         let transportLine = '';
         let team = '';
         let seal = '';
 
         if (liberacion.asignacionCajaId) {
-           // Buscar el sello para obtener su fechaHoraRegistro (= FECHA/HORA SELLADO)
+           // Obtener el sello para sellado y equipo
            try {
              const sellosQ = query(collection(db, 'sellos'), where('asignacionCajaId', '==', liberacion.asignacionCajaId), limit(1));
              const sellosSnap = await getDocs(sellosQ);
              if (!sellosSnap.empty) {
                const selloData = sellosSnap.docs[0].data();
-               pickupDay = selloData.fechaHoraRegistro || '';
                seal = selloData.selloAsignado || '';
              }
            } catch (e) {
-             console.warn('[HistoricoExpo] Error fetching sello for pickupDay:', e);
-           }
-
-           // Fallback: si no hay sello, usar la fecha de la liberación
-           if (!pickupDay) {
-             pickupDay = liberacion.fechaHoraRegistro || liberacion.fechaLiberacion || new Date().toLocaleString('es-MX', { timeZone: 'America/Monterrey', hour12: false });
+             console.warn('[HistoricoExpo] Error fetching sello:', e);
            }
 
            const asigDoc = await getDoc(doc(db, 'asignacion_cajas', liberacion.asignacionCajaId));
             if (asigDoc.exists()) {
                 const asigData = asigDoc.data();
-                // Use the persisted scac field (e.g. "MXTL") if available
+                // ✅ Usar asignacion_cajas.fecha como pickupDayCFM (YYYY-MM-DD, ya en hora México)
+                pickupDay = asigData.fecha || liberacion.fechaLiberacion || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
                 team = asigData.scac || '';
                 const tId = asigData.transportLineId || asigData.transportLine || '';
                 if (tId) {
@@ -115,7 +111,6 @@ export const liberacionService = {
                     const tlSnap = await getDocs(tlQ);
                     if (!tlSnap.empty) {
                         const tlData = tlSnap.docs[0].data();
-                        // Fallback: if scac was not persisted yet, use TransportLine from catalog
                         if (!team) team = tlData.TransportLine || tId;
                         transportLine = tlData.nombreSubLinea || tlData.TransportLine || tId;
                     } else {
@@ -123,9 +118,12 @@ export const liberacionService = {
                         transportLine = tId;
                     }
                 }
+            } else {
+               // Fallback: fecha de la liberación en hora México
+               pickupDay = liberacion.fechaLiberacion || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
             }
         } else {
-           pickupDay = liberacion.fechaHoraRegistro || liberacion.fechaLiberacion || new Date().toLocaleString('es-MX', { timeZone: 'America/Monterrey', hour12: false });
+           pickupDay = liberacion.fechaLiberacion || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
         }
 
         const expId = `exp_${liberacion.asignacionCajaId}`;
@@ -166,7 +164,7 @@ export const liberacionService = {
           expDoda: '',
           comments: '',
           scacAndCaat: '',
-          createdAt: Date.now()
+          createdAt: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' })
         };
 
         await storageService.upsertHistoricoExpos([historicoRecord]);

@@ -220,7 +220,7 @@ export const HistoricoExpo = () => {
   }, []);
 
   const handleCreate = async () => {
-    const newRecord = { ...emptyRecord, createdAt: Date.now() };
+    const newRecord = { ...emptyRecord, createdAt: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }) };
     await storageService.upsertHistoricoExpos([newRecord]);
     setEditingId(newRecord.id || null);
     setEditForm(newRecord);
@@ -304,19 +304,22 @@ export const HistoricoExpo = () => {
     // 1. Date Range Filter
     if (dateRange.start && dateRange.end) {
       baseResult = baseResult.filter(r => {
-        const dtStr = r.pickupDayCFM || new Date(r.createdAt || Date.now()).toISOString();
+        const dtStr = r.pickupDayCFM || 
+          new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
         let parsedDate = '';
         
-        if (dtStr.includes('/')) {
+        if (dtStr.match(/^\d{4}-\d{2}-\d{2}/)) {
+            // Formato ISO YYYY-MM-DD — el más confiable, usar directamente
+            parsedDate = dtStr.substring(0, 10);
+        } else if (dtStr.includes('/')) {
+            // Formato DD/M/YYYY o DD/MM/YYYY (es-MX locale)
             let datePart = dtStr.split(',')[0].trim();
             datePart = datePart.split(' ')[0].trim();
-            const parts = datePart.split('/'); 
+            const parts = datePart.split('/');
             if(parts.length >= 3) {
                 const year = parts[2].substring(0, 4);
                 parsedDate = `${year}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
             }
-        } else if (dtStr.match(/^\d{4}-\d{2}-\d{2}/)) {
-            parsedDate = dtStr.substring(0, 10);
         } else {
             parsedDate = new Date(r.createdAt || Date.now()).toISOString().split('T')[0];
         }

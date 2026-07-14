@@ -539,7 +539,7 @@ export const AsignacionesDiarias: React.FC = () => {
       const baseHours = ["07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","12:00","13:00","14:00","15:00"];
       const allSlots = (formData.fecha === '2026-07-07') ? [...baseHours, "15:30", "16:00", "18:30"]
                        : (formData.fecha === '2026-07-08') ? [...baseHours, "16:00", "17:00"]
-                       : (formData.fecha === '2026-07-14') ? [...baseHours, "16:00", "17:00"]
+                       : (formData.fecha === '2026-07-14') ? [...baseHours, "16:00", "17:00", "18:00"]
                        : ((formData.fecha || '') >= '2026-07-09') ? [...baseHours, "16:00"]
                        : baseHours;
       const validSlots = allSlots.filter(s => s !== '11:00'); // 11:00 siempre bloqueado
@@ -570,7 +570,9 @@ export const AsignacionesDiarias: React.FC = () => {
           if (a.horaAsignacion?.startsWith(currentHour)) sameHourCount++;
         }
       });
-      const maxSlots = (formData.horaAsignacion === '15:00' && formData.fecha === '2026-07-06') ? 8 : 6;
+      const maxSlots = (formData.horaAsignacion === '15:00' && formData.fecha === '2026-07-06') ? 8
+                     : (formData.horaAsignacion === '18:00' && formData.fecha === '2026-07-14') ? 1
+                     : 6;
       if (sameHourCount >= maxSlots) {
         alert('Horario no asignado seleccionar otro hora de ventana');
         return;
@@ -1785,7 +1787,7 @@ export const AsignacionesDiarias: React.FC = () => {
                               const hours = (formData.fecha === '2026-07-07')
                                 ? [...baseHours, "15:30", "16:00", "18:30"]
                                 : (formData.fecha === '2026-07-08') ? [...baseHours, "16:00", "17:00"]
-                                : (formData.fecha === '2026-07-14') ? [...baseHours, "16:00", "17:00"]
+                                : (formData.fecha === '2026-07-14') ? [...baseHours, "16:00", "17:00", "18:00"]
                                 : ((formData.fecha || '') >= '2026-07-09') ? [...baseHours, "16:00"]
                                 : baseHours;
                               // Resuelve un tiempo libre (ej. 16:33) al slot aprobado que le corresponde

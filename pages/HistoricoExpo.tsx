@@ -872,27 +872,20 @@ export const HistoricoExpo = () => {
           isOpen={isMassQueryOpen}
           onClose={() => setIsMassQueryOpen(false)}
           conditions={queryConditions}
-          onConditionsChange={setQueryConditions}
-          onApply={(conds) => {
-            setActiveMassQuery(conds);
+          setConditions={setQueryConditions}
+          onApply={() => {
+            setActiveMassQuery(queryConditions);
             setIsMassQueryOpen(false);
           }}
+          onClear={() => {
+            setQueryConditions([{ id: '1', column: 'trailer', operator: 'in', type: 'string', input: '' }]);
+            setActiveMassQuery(null);
+          }}
           columns={[
-            { id: 'trailer', label: 'TRAILER', type: 'string' },
-            { id: 'idNumber', label: 'IDNUMBER', type: 'string' },
-            { id: 'seal', label: 'SEAL', type: 'string' },
-            { id: 'transportLine', label: 'LÍNEA TRANSPORTE', type: 'string' },
-            { id: 'cfmRef', label: 'CFM REF', type: 'string' },
-            { id: 'scac', label: 'SCAC', type: 'string' },
-            { id: 'caat', label: 'CAAT', type: 'string' },
-            { id: 'pickupDayCFM', label: 'PICKUP DAY CFM', type: 'string' },
-            { id: 'dodaApertureDate', label: 'DODA APERTURE DATE', type: 'string' },
-            { id: 'entryApertureDate', label: 'ENTRY APERTURE DATE', type: 'string' },
-            { id: 'dateRequested', label: 'DATE REQUESTED', type: 'string' },
-            { id: 'crossingDate', label: 'CROSSING DATE', type: 'string' },
-            { id: 'expDoda', label: 'EXP DODA', type: 'string' },
-            { id: 'deliveryDate', label: 'DELIVERY DATE', type: 'string' },
-            { id: 'ataDestination', label: 'ATA DESTINATION', type: 'string' }
+            'trailer', 'idNumber', 'seal', 'transportLine', 'cfmRef',
+            'scac', 'caat', 'pickupDayCFM', 'dodaApertureDate',
+            'entryApertureDate', 'dateRequested', 'crossingDate',
+            'expDoda', 'deliveryDate', 'ataDestination'
           ]}
         />
       )}

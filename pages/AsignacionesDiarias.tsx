@@ -571,7 +571,7 @@ export const AsignacionesDiarias: React.FC = () => {
         }
       });
       const maxSlots = (formData.horaAsignacion === '15:00' && formData.fecha === '2026-07-06') ? 8
-                     : (formData.horaAsignacion === '18:00' && formData.fecha === '2026-07-14') ? 1
+                     : (formData.fecha === '2026-07-14' && (formData.horaAsignacion === '17:00' || formData.horaAsignacion === '18:00')) ? 1
                      : 6;
       if (sameHourCount >= maxSlots) {
         alert('Horario no asignado seleccionar otro hora de ventana');

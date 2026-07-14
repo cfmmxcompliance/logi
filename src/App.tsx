@@ -361,9 +361,7 @@ const AppContent = () => {
             <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
 
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            {window.location.hostname === 'localhost' && (
-              <Route path="/historico-expo" element={<ProtectedRoute><HistoricoExpo /></ProtectedRoute>} />
-            )}
+            <Route path="/historico-expo" element={<ProtectedRoute><HistoricoExpo /></ProtectedRoute>} />
             <Route path="/operations" element={<ProtectedRoute><Operations /></ProtectedRoute>} />
             <Route path="/pre-alerts" element={<ProtectedRoute><PreAlerts /></ProtectedRoute>} />
             <Route path="/vessel-tracking" element={<ProtectedRoute><VesselTracking /></ProtectedRoute>} />

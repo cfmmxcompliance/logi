@@ -828,14 +828,15 @@ export const AsignacionesDiarias: React.FC = () => {
       const headers = ["FECHA", "HORA", "NO. OPERACIÓN", "NÚMERO CAJA", "CARRIER (SCAC)", "NOMBRE COMERCIAL", "SUB-LÍNEA", "PLACAS CAJA", "DRIVER ID", "NOMBRE DRIVER", "PLACAS TRACTO", "MODELO", "ARRIBO", "DOCK", "COMENTARIOS ARRIBO", "TIPO", "LIBERACION DOCK", "LAYOUT", "CCP", "ANEXO29", "SELLO ASIGNADO", "FECHA SELLADO", "OBSERVACIONES", "CARRIER REF"];
       const rows = filteredData.map(a => {
           const lib = liberaciones.find(l => l.asignacionCajaId === a.id);
-          const tl = transportLines.find(t => t.carrierCodigo === a.carrierCodigo);
+          const tl = transportLines.find(t => t.transportLineId === (a as any).transportLineId) 
+                  || transportLines.find(t => t.carrierCodigo === a.carrierCodigo);
           return [
               a.fecha,
               a.horaAsignacion || '',
               a.numeroOperacion || '',
               a.numeroCaja,
-              a.carrierCodigo || '',
-              tl?.TransportLine || '',
+              (a as any).scac || a.carrierCodigo || '',
+              tl?.nombreSubLinea || tl?.TransportLine || a.subLinea || '',
               a.subLinea || '',
               a.placasCaja || '',
               a.driverId,

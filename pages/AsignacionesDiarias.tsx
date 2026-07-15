@@ -705,24 +705,35 @@ export const AsignacionesDiarias: React.FC = () => {
       const today = getMexicoToday();
       const nextOp = await asignacionCajaService.getNextOperationNumber(today);
 
-      // Auto-detect carrier for TRANSPORTISTA: find carrier from their Nombre Comercial
+      // Auto-detect carrier for TRANSPORTISTA: find parent carrier from their sub-line SCAC
       let autoCarrier = '';
+      let autoSubScac = '';
       if (subLineaFilter) {
           const matchingTL = transportLines.find(
-              tl => (tl.TransportLine || '').toLowerCase() === subLineaFilter.toLowerCase()
+              tl => (tl.TransportLine || '').toUpperCase() === subLineaFilter.toUpperCase()
           );
           autoCarrier = matchingTL?.carrierCodigo || '';
+          autoSubScac = subLineaFilter; // lock to user's sub-line SCAC
+      }
+
+      // For CARRIER role: if they have only one sub-line SCAC, pre-select it
+      let autoCarrierSubScac = '';
+      if (scacFilter) {
+          const carrierLines = transportLines.filter(
+              tl => tl.carrierCodigo === scacFilter || tl.TransportLine === scacFilter
+          );
+          const uniqueSubScacs = [...new Set(carrierLines.map(tl => tl.TransportLine).filter(Boolean))];
+          if (uniqueSubScacs.length === 1) autoCarrierSubScac = uniqueSubScacs[0];
       }
 
       setFormData({
           fecha: today,
-          horaAsignacion: '',   // forzar selección manual del slot aprobado
+          horaAsignacion: '',
           numeroOperacion: nextOp,
-          // CARRIER role: pre-fill their SCAC
-          ...(scacFilter ? { carrierCodigo: scacFilter } : {}),
-          // TRANSPORTISTA role: pre-fill the carrier of their Nombre Comercial
-          ...(autoCarrier ? { carrierCodigo: autoCarrier } : {})
-      });
+          ...(scacFilter ? { carrierCodigo: scacFilter, ...(autoCarrierSubScac ? { scac: autoCarrierSubScac } : {}) } : {}),
+          ...(autoCarrier ? { carrierCodigo: autoCarrier } : {}),
+          ...(autoSubScac ? { scac: autoSubScac } : {})
+      } as any);
       setIsEditing(false);
       setShowModal(true);
   };
@@ -1861,13 +1872,17 @@ export const AsignacionesDiarias: React.FC = () => {
                               const matchingLines = transportLines.filter(tl =>
                                 tl.TransportLine === val || tl.carrierCodigo === val
                               );
-                              // Auto-seleccionar si solo hay una sub-línea
-                              const autoLineId = matchingLines.length === 1 ? matchingLines[0].transportLineId : '';
+                              // Obtener SCACs únicos de sub-línea
+                              const uniqueSubScacs = [...new Set(matchingLines.map(tl => tl.TransportLine).filter(Boolean))];
+                              const autoSubScac = uniqueSubScacs.length === 1 ? uniqueSubScacs[0] : '';
+                              // Si hay un solo SCAC de sub-línea con un solo carrier → auto-select
+                              const linesForSubScac = autoSubScac ? matchingLines.filter(tl => tl.TransportLine === autoSubScac) : [];
+                              const autoLineId = linesForSubScac.length === 1 ? linesForSubScac[0].transportLineId : '';
                               setFormData({
                                 ...formData,
                                 carrierCodigo: val,
                                 transportLineId: autoLineId,
-                                scac: autoLineId ? (matchingLines[0]?.TransportLine || val) : '',
+                                scac: autoSubScac || '',
                                 numeroCaja: '', driverId: '', subLinea: '', placasCaja: '', nombreDriver: '', placasTracto: ''
                               } as any);
                             }}
@@ -1876,6 +1891,38 @@ export const AsignacionesDiarias: React.FC = () => {
                             disabled={isRestrictedRole || !!scacFilter || !!subLineaFilter}
                           />
                         </div>
+
+                        {/* Sub-Line SCAC — visible solo cuando el carrier tiene múltiples SCACs */}
+                        {(() => {
+                          const carrierLines = transportLines.filter(tl =>
+                            tl.carrierCodigo === formData.carrierCodigo ||
+                            tl.TransportLine === formData.carrierCodigo
+                          );
+                          const uniqueSubScacs = [...new Set(carrierLines.map(tl => tl.TransportLine).filter(Boolean))];
+                          if (!formData.carrierCodigo || uniqueSubScacs.length <= 1) return null;
+                          const selectedSubScac = (formData as any).scac || '';
+                          return (
+                            <div className={`p-3 rounded-xl border space-y-2 ${!selectedSubScac ? 'bg-red-50 border-red-300' : 'bg-cyan-50 border-cyan-100'}`}>
+                              <h3 className="text-xs font-bold text-cyan-800 uppercase flex items-center gap-1.5">
+                                <Truck size={12}/> Sub-Line (SCAC) <span className="text-red-500 font-black">*</span>
+                              </h3>
+                              <SearchableComboBox
+                                value={selectedSubScac}
+                                onChange={subScac => {
+                                  setFormData({
+                                    ...formData,
+                                    scac: subScac,
+                                    transportLineId: '',
+                                    driverId: '', nombreDriver: '', placasTracto: ''
+                                  } as any);
+                                }}
+                                options={uniqueSubScacs.map(s => ({ value: s, label: s }))}
+                                placeholder="Seleccionar Sub-Line SCAC..."
+                                disabled={isRestrictedRole || !formData.carrierCodigo || !!subLineaFilter}
+                              />
+                            </div>
+                          );
+                        })()}
 
                         {/* Transport Line */}
                         <div className={`p-3 rounded-xl border space-y-2 ${!formData.transportLineId ? 'bg-red-50 border-red-300' : 'bg-violet-50 border-violet-100'}`}>
@@ -1889,9 +1936,22 @@ export const AsignacionesDiarias: React.FC = () => {
                               setFormData({...formData, transportLineId: val, scac: tl?.TransportLine || formData.carrierCodigo || '', driverId: '', nombreDriver: '', placasTracto: ''} as any);
                             }}
                             options={transportLines
-                              .filter(tl => !formData.carrierCodigo || 
-                                tl.TransportLine === formData.carrierCodigo ||
-                                tl.carrierCodigo === formData.carrierCodigo)
+                              .filter(tl => {
+                                if (!formData.carrierCodigo) return false;
+                                const matchesCarrier = tl.TransportLine === formData.carrierCodigo || tl.carrierCodigo === formData.carrierCodigo;
+                                if (!matchesCarrier) return false;
+                                // Si hay un subLineScac seleccionado, filtrar también por él
+                                const selectedSubScac = (formData as any).scac || '';
+                                const uniqueSubScacs = [...new Set(
+                                  transportLines
+                                    .filter(t => t.carrierCodigo === formData.carrierCodigo || t.TransportLine === formData.carrierCodigo)
+                                    .map(t => t.TransportLine).filter(Boolean)
+                                )];
+                                if (uniqueSubScacs.length > 1 && selectedSubScac) {
+                                  return tl.TransportLine === selectedSubScac;
+                                }
+                                return true;
+                              })
                               .map(tl => ({ value: tl.transportLineId, label: tl.nombreSubLinea || tl.TransportLine, sublabel: tl.TransportLine }))}
                             placeholder={formData.carrierCodigo ? 'Seleccionar Sub-Línea...' : 'Selecciona un Carrier primero'}
                             disabled={isRestrictedRole || !formData.carrierCodigo}

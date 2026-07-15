@@ -572,7 +572,7 @@ export const AsignacionesDiarias: React.FC = () => {
         }
       });
       const maxSlots = (formData.horaAsignacion === '15:00' && formData.fecha === '2026-07-06') ? 8
-                     : (formData.fecha === '2026-07-14' && (formData.horaAsignacion === '17:00' || formData.horaAsignacion === '18:00')) ? 1
+                     : (formData.fecha === '2026-07-14' && (formData.horaAsignacion === '17:00' || formData.horaAsignacion === '18:00')) ? 2
                      : 6;
       if (sameHourCount >= maxSlots) {
         alert('Horario no asignado seleccionar otro hora de ventana');
@@ -1822,7 +1822,7 @@ export const AsignacionesDiarias: React.FC = () => {
                                 if (isPast) return <option key={hr} value={hr} disabled>{hr} - INICIADO</option>;
                                 // Override especial: 15:00 del 06/07/2026 tuvo 8 citas
                                 const maxSlots = (hr === '15:00' && formData.fecha === '2026-07-06') ? 8
-                                               : (formData.fecha === '2026-07-14' && (hr === '17:00' || hr === '18:00')) ? 1
+                                               : (formData.fecha === '2026-07-14' && (hr === '17:00' || hr === '18:00')) ? 2
                                                : 6;
                                 const isFull = count >= maxSlots;
                                 return (

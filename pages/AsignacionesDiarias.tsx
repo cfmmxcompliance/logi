@@ -591,6 +591,7 @@ export const AsignacionesDiarias: React.FC = () => {
       const allSlots = (formData.fecha === '2026-07-07') ? [...baseHours, "15:30", "16:00", "18:30"]
                        : (formData.fecha === '2026-07-08') ? [...baseHours, "16:00", "17:00"]
                        : (formData.fecha === '2026-07-14') ? [...baseHours, "16:00", "17:00", "18:00"]
+                       : (formData.fecha === '2026-07-15') ? [...baseHours, "16:00", "17:00"]
                        : ((formData.fecha || '') >= '2026-07-09') ? [...baseHours, "16:00"]
                        : baseHours;
       const validSlots = allSlots.filter(s => s !== '11:00'); // 11:00 siempre bloqueado

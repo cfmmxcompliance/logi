@@ -625,7 +625,7 @@ export const HistoricoExpo = () => {
       <div className="p-6">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm whitespace-nowrap">
+            <table className="w-max text-left border-collapse text-sm whitespace-nowrap">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-medium">
                 <tr>
                   <th className="px-3 py-2 whitespace-nowrap text-center">

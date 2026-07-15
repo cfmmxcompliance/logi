@@ -547,8 +547,9 @@ export const AsignacionesDiarias: React.FC = () => {
         alert(`El horario "${formData.horaAsignacion || 'sin seleccionar'}" no es un slot aprobado. Por favor selecciona un horario de la lista.`);
         return;
       }
-      // Ventana ya iniciada: solo aplica si la fecha es hoy
-      if (formData.fecha === getMexicoToday() && formData.horaAsignacion <= getMexicoNow()) {
+      // Ventana ya iniciada: solo aplica si la fecha es hoy — excepción manual 18:00 del 14/07/2026
+      const isManualOverride18 = (formData.fecha === '2026-07-14' && formData.horaAsignacion === '18:00');
+      if (!isManualOverride18 && formData.fecha === getMexicoToday() && formData.horaAsignacion <= getMexicoNow()) {
         alert(`La ventana de las ${formData.horaAsignacion} ya inició. Selecciona el siguiente horario disponible.`);
         return;
       }
@@ -1815,8 +1816,9 @@ export const AsignacionesDiarias: React.FC = () => {
                                   count = asignaciones.filter(a => { const p = hr.substring(0,2); return a.fecha === formData.fecha && a.horaAsignacion?.startsWith(p) && (!isEditing || a.id !== formData.id); }).length;
                                 }
                                 if (hr === "11:00") return <option key={hr} value={hr} disabled>{hr} - BLOQUEADO</option>;
-                                // Ventana ya iniciada (solo hoy)
-                                const isPast = isToday && hr <= mexicoNow;
+                                // Ventana ya iniciada (solo hoy) — excepción: 18:00 del 14/07/2026 habilitada manualmente
+                                const isManualOverride = (formData.fecha === '2026-07-14' && hr === '18:00');
+                                const isPast = isToday && hr <= mexicoNow && !isManualOverride;
                                 if (isPast) return <option key={hr} value={hr} disabled>{hr} - INICIADO</option>;
                                 // Override especial: 15:00 del 06/07/2026 tuvo 8 citas
                                 const maxSlots = (hr === '15:00' && formData.fecha === '2026-07-06') ? 8

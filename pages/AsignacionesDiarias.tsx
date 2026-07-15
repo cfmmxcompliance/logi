@@ -427,16 +427,66 @@ export const AsignacionesDiarias: React.FC = () => {
             let valA: any = a[sortConfig.key as keyof AsignacionCajaModel];
             let valB: any = b[sortConfig.key as keyof AsignacionCajaModel];
 
-            // Special case for Liberacion
+            // Computed / Special columns
             if (sortConfig.key === 'selloLiberacion') {
                 const libA = liberaciones.find(l => l.asignacionCajaId === a.id);
                 const libB = liberaciones.find(l => l.asignacionCajaId === b.id);
                 valA = libA ? libA.selloValidado : '';
                 valB = libB ? libB.selloValidado : '';
+            } else if (sortConfig.key === 'tipoCaja') {
+                const cajaA = cajas.find(c => c.NumeroCaja === a.numeroCaja);
+                const cajaB = cajas.find(c => c.NumeroCaja === b.numeroCaja);
+                valA = cajaA?.tipo || '';
+                valB = cajaB?.tipo || '';
+            } else if (sortConfig.key === 'transportLineId') {
+                const tlA = transportLines.find(tl => tl.transportLineId === a.transportLineId);
+                const tlB = transportLines.find(tl => tl.transportLineId === b.transportLineId);
+                valA = tlA?.nombreSubLinea || a.transportLineId || '';
+                valB = tlB?.nombreSubLinea || b.transportLineId || '';
+            } else if (sortConfig.key === 'carrierCodigo') {
+                const tlA = transportLines.find(tl => tl.transportLineId === a.transportLineId);
+                const tlB = transportLines.find(tl => tl.transportLineId === b.transportLineId);
+                valA = tlA?.TransportLine || a.carrierCodigo || '';
+                valB = tlB?.TransportLine || b.carrierCodigo || '';
+            } else if (sortConfig.key === 'liberacionDock') {
+                const ldA = liberacionesDock.find(ld => ld.asignacionCajaId === a.id);
+                const ldB = liberacionesDock.find(ld => ld.asignacionCajaId === b.id);
+                valA = ldA ? (ldA.fechaHoraRegistro || ldA.fechaLiberacion || '') : '';
+                valB = ldB ? (ldB.fechaHoraRegistro || ldB.fechaLiberacion || '') : '';
+            } else if (sortConfig.key === 'layoutStatus') {
+                valA = a.layoutUrl ? 1 : 0;
+                valB = b.layoutUrl ? 1 : 0;
+            } else if (sortConfig.key === 'ccpStatus') {
+                valA = a.ccpUrl ? 1 : 0;
+                valB = b.ccpUrl ? 1 : 0;
+            } else if (sortConfig.key === 'anexo29Status') {
+                valA = (a as any).anexo29Url ? 1 : 0;
+                valB = (b as any).anexo29Url ? 1 : 0;
+            } else if (sortConfig.key === 'isCargado') {
+                valA = liberaciones.some(l => l.asignacionCajaId === a.id) ? 1 : 0;
+                valB = liberaciones.some(l => l.asignacionCajaId === b.id) ? 1 : 0;
+            } else if (sortConfig.key === 'fechaSellado') {
+                const libA = liberaciones.find(l => l.asignacionCajaId === a.id);
+                const libB = liberaciones.find(l => l.asignacionCajaId === b.id);
+                valA = libA ? (libA as any).fecha : '';
+                valB = libB ? (libB as any).fecha : '';
+            } else if (sortConfig.key === 'cfmRef') {
+                const libA = liberaciones.find(l => l.asignacionCajaId === a.id);
+                const libB = liberaciones.find(l => l.asignacionCajaId === b.id);
+                valA = libA ? (libA as any).cfmRef || '' : '';
+                valB = libB ? (libB as any).cfmRef || '' : '';
+            } else if (sortConfig.key === 'vehiculosCount') {
+                const libA = liberaciones.find(l => l.asignacionCajaId === a.id);
+                const libB = liberaciones.find(l => l.asignacionCajaId === b.id);
+                valA = libA ? parseInt((libA as any).vehiculosAsociados || '0', 10) : 0;
+                valB = libB ? parseInt((libB as any).vehiculosAsociados || '0', 10) : 0;
+            } else if (sortConfig.key === 'docId') {
+                valA = a.id || '';
+                valB = b.id || '';
             }
 
-            if (!valA) valA = '';
-            if (!valB) valB = '';
+            if (!valA && valA !== 0) valA = '';
+            if (!valB && valB !== 0) valB = '';
             
             if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
             if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
@@ -459,7 +509,7 @@ export const AsignacionesDiarias: React.FC = () => {
     }
 
     return { filteredData: result, filterCounts };
-  }, [asignaciones, searchTerm, cargadoFilter, dateRange, activeMassQuery, sortConfig, liberaciones, liberacionesDock, scacFilter, subLineaFilter, transportLines, user]);
+  }, [asignaciones, searchTerm, cargadoFilter, dateRange, activeMassQuery, sortConfig, liberaciones, liberacionesDock, scacFilter, subLineaFilter, transportLines, user, cajas]);
 
 
   const handleApplyMassQuery = () => {
@@ -492,7 +542,7 @@ export const AsignacionesDiarias: React.FC = () => {
       return <ChevronUp size={16} className="inline-block ml-1 text-slate-400 opacity-50 group-hover:opacity-100 transition-opacity" />;
   };
 
-  const renderColumnHeader = (label: string, key: string) => (
+  const renderColumnHeader = (label: React.ReactNode, key: string) => (
     <div 
         onClick={() => handleSort(key)} 
         className={`flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors group ${sortConfig?.key === key ? 'text-blue-700 font-bold' : ''}`}
@@ -1321,35 +1371,35 @@ export const AsignacionesDiarias: React.FC = () => {
               <th className="p-4 font-medium w-[150px] min-w-[150px] max-w-[150px] bg-slate-50 sticky top-0 left-[320px] z-40 shadow-[4px_0_10px_-3px_rgba(0,0,0,0.1)]">{renderColumnHeader(t('col.fecha'), 'fecha')}</th>
               {/* Scrollable resizable columns */}
               <th data-col="arribo" style={{ width: cw('arribo'), minWidth:60, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.arribo'), 'arribo')}{rh('arribo')}</th>
-              <th data-col="dock" style={{ width: cw('dock'), minWidth:50, position:'relative' }} className="p-2 font-medium">{t('col.dock')}{rh('dock')}</th>
+              <th data-col="dock" style={{ width: cw('dock'), minWidth:50, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.dock'), 'dockArribo')}{rh('dock')}</th>
               <th data-col="comentariosArribo" style={{ width: cw('comentariosArribo'), minWidth:80, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.comentariosArribo'), 'comentariosArribo')}{rh('comentariosArribo')}</th>
-              <th data-col="tipo" style={{ width: cw('tipo'), minWidth:50, position:'relative' }} className="p-2 font-medium text-violet-700 bg-violet-50/40">{t('col.tipo')}{rh('tipo')}</th>
+              <th data-col="tipo" style={{ width: cw('tipo'), minWidth:50, position:'relative' }} className="p-2 font-medium text-violet-700 bg-violet-50/40">{renderColumnHeader(t('col.tipo'), 'tipoCaja')}{rh('tipo')}</th>
               <th data-col="placasCaja" style={{ width: cw('placasCaja'), minWidth:60, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.placascaja'), 'placasCaja')}{rh('placasCaja')}</th>
               <th data-col="linea" style={{ width: cw('linea'), minWidth:80, position:'relative' }} className="p-2 font-medium text-blue-600 uppercase text-xs">{renderColumnHeader(t('col.lineatransporte'), 'transportLineId')}{rh('linea')}</th>
               <th data-col="scac" style={{ width: cw('scac'), minWidth:60, position:'relative' }} className="p-2 font-medium text-orange-600 uppercase text-xs">{renderColumnHeader('SCAC', 'carrierCodigo')}{rh('scac')}</th>
               <th data-col="driver" style={{ width: cw('driver'), minWidth:70, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.driver'), 'nombreDriver')}{rh('driver')}</th>
               <th data-col="placasTracto" style={{ width: cw('placasTracto'), minWidth:60, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.placastracto'), 'placasTracto')}{rh('placasTracto')}</th>
               <th data-col="modelo" style={{ width: cw('modelo'), minWidth:60, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.modelo'), 'modeloAsignado')}{rh('modelo')}</th>
-              <th data-col="creado" style={{ width: cw('creado'), minWidth:80, position:'relative' }} className="p-2 font-medium text-violet-700 bg-violet-50/40">{t('col.creado')}{rh('creado')}</th>
-              <th data-col="liberacion" style={{ width: cw('liberacion'), minWidth:60, position:'relative' }} className="p-2 font-medium text-sky-700 bg-sky-50/30">{t('col.liberacion')}{rh('liberacion')}</th>
-              <th data-col="layout" style={{ width: cw('layout'), minWidth:60, position:'relative' }} className="p-2 font-medium text-center text-indigo-700 bg-indigo-50/30">{t('col.layout')}{rh('layout')}</th>
-              <th data-col="ccp" style={{ width: cw('ccp'), minWidth:60, position:'relative' }} className="p-2 font-medium text-center text-sky-700 bg-sky-50/30">{t('col.ccp')}{rh('ccp')}</th>
-              <th data-col="anexo29" style={{ width: cw('anexo29'), minWidth:60, position:'relative' }} className="p-2 font-medium text-center text-emerald-700 bg-emerald-50/30">{t('col.anexo29')}{rh('anexo29')}</th>
-              <th data-col="sello" style={{ width: cw('sello'), minWidth:80, position:'relative' }} className="p-2 font-medium text-teal-700 bg-teal-50/30">{t('col.sello_asignado')}{rh('sello')}</th>
-              <th data-col="cargado" style={{ width: cw('cargado'), minWidth:60, position:'relative' }} className="p-2 font-medium text-red-800 bg-red-50/30 text-center">{t('col.cargado')}{rh('cargado')}</th>
-              <th data-col="sellado" style={{ width: cw('sellado'), minWidth:70, position:'relative' }} className="p-2 font-medium text-teal-800 bg-teal-50/30">{t('col.sellado_time')}{rh('sellado')}</th>
-              <th data-col="obs" style={{ width: cw('obs'), minWidth:80, position:'relative' }} className="p-2 font-medium text-slate-800 bg-slate-100/50">{t('col.observaciones')}{rh('obs')}</th>
+              <th data-col="creado" style={{ width: cw('creado'), minWidth:80, position:'relative' }} className="p-2 font-medium text-violet-700 bg-violet-50/40">{renderColumnHeader(t('col.creado'), 'createdAt')}{rh('creado')}</th>
+              <th data-col="liberacion" style={{ width: cw('liberacion'), minWidth:60, position:'relative' }} className="p-2 font-medium text-sky-700 bg-sky-50/30">{renderColumnHeader(t('col.liberacion'), 'liberacionDock')}{rh('liberacion')}</th>
+              <th data-col="layout" style={{ width: cw('layout'), minWidth:60, position:'relative' }} className="p-2 font-medium text-center text-indigo-700 bg-indigo-50/30">{renderColumnHeader(t('col.layout'), 'layoutStatus')}{rh('layout')}</th>
+              <th data-col="ccp" style={{ width: cw('ccp'), minWidth:60, position:'relative' }} className="p-2 font-medium text-center text-sky-700 bg-sky-50/30">{renderColumnHeader(t('col.ccp'), 'ccpStatus')}{rh('ccp')}</th>
+              <th data-col="anexo29" style={{ width: cw('anexo29'), minWidth:60, position:'relative' }} className="p-2 font-medium text-center text-emerald-700 bg-emerald-50/30">{renderColumnHeader(t('col.anexo29'), 'anexo29Status')}{rh('anexo29')}</th>
+              <th data-col="sello" style={{ width: cw('sello'), minWidth:80, position:'relative' }} className="p-2 font-medium text-teal-700 bg-teal-50/30">{renderColumnHeader(t('col.sello_asignado'), 'selloLiberacion')}{rh('sello')}</th>
+              <th data-col="cargado" style={{ width: cw('cargado'), minWidth:60, position:'relative' }} className="p-2 font-medium text-red-800 bg-red-50/30 text-center">{renderColumnHeader(t('col.cargado'), 'isCargado')}{rh('cargado')}</th>
+              <th data-col="sellado" style={{ width: cw('sellado'), minWidth:70, position:'relative' }} className="p-2 font-medium text-teal-800 bg-teal-50/30">{renderColumnHeader(t('col.sellado_time'), 'fechaSellado')}{rh('sellado')}</th>
+              <th data-col="obs" style={{ width: cw('obs'), minWidth:80, position:'relative' }} className="p-2 font-medium text-slate-800 bg-slate-100/50">{renderColumnHeader(t('col.observaciones'), 'observaciones')}{rh('obs')}</th>
               <th data-col="cfmRef" style={{ width: cw('cfmRef'), minWidth:80, position:'relative' }} className="p-2 font-medium text-indigo-800 bg-indigo-50/50 uppercase text-xs">
-                CFM REF <span className="ml-1 text-[9px] bg-indigo-100 text-indigo-500 rounded px-1 py-0.5 font-normal normal-case">auto</span>{rh('cfmRef')}
+                {renderColumnHeader(<>CFM REF <span className="ml-1 text-[9px] bg-indigo-100 text-indigo-500 rounded px-1 py-0.5 font-normal normal-case">auto</span></>, 'cfmRef')}{rh('cfmRef')}
               </th>
               <th data-col="docId" style={{ width: cw('docId'), minWidth:70, position:'relative' }} className="p-2 font-medium text-slate-500 bg-slate-50 text-xs">
-                ID <span className="ml-1 text-[9px] bg-slate-200 text-slate-400 rounded px-1 py-0.5 font-normal normal-case">auto</span>{rh('docId')}
+                {renderColumnHeader(<>ID <span className="ml-1 text-[9px] bg-slate-200 text-slate-400 rounded px-1 py-0.5 font-normal normal-case">auto</span></>, 'docId')}{rh('docId')}
               </th>
               <th data-col="vehiculos" style={{ width: cw('vehiculos'), minWidth:70, position:'relative' }} className="p-2 font-medium text-emerald-800 bg-emerald-50/50 uppercase text-xs">
-                {t('col.vehiculos')} <span className="ml-1 text-[9px] bg-emerald-100 text-emerald-500 rounded px-1 py-0.5 font-normal normal-case">auto</span>{rh('vehiculos')}
+                {renderColumnHeader(<>{t('col.vehiculos')} <span className="ml-1 text-[9px] bg-emerald-100 text-emerald-500 rounded px-1 py-0.5 font-normal normal-case">auto</span></>, 'vehiculosCount')}{rh('vehiculos')}
               </th>
               <th data-col="carrierRef" style={{ width: cw('carrierRef'), minWidth:70, position:'relative' }} className="p-2 font-medium text-indigo-700 bg-indigo-50/40 uppercase text-xs">
-                Carrier Ref{rh('carrierRef')}
+                {renderColumnHeader("Carrier Ref", 'carrierRef')}{rh('carrierRef')}
               </th>
               {!isEmbarques && <th className="p-2 font-medium text-right bg-slate-50">{t('btn.acciones')}</th>}
 

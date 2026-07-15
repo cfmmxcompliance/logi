@@ -70,6 +70,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [cancelModal, setCancelModal] = useState<{ ids: string[]; reason: string } | null>(null);
   const [showDuplicateTLModal, setShowDuplicateTLModal] = useState(false);
   const [colWidths, setColWidths] = useState<Record<string, number>>({});
   const [tableFixed, setTableFixed] = useState(false);
@@ -698,43 +699,78 @@ export const AsignacionesDiarias: React.FC = () => {
   }
   };
 
+  const isAdmin = user?.role === UserRole.ADMIN;
+
   const handleDelete = async (id: string) => {
     if (!id) return;
     if (pendingDeleteId === id) {
-      // Segunda confirmación — ejecutar borrado
+      // Segunda confirmación
       setPendingDeleteId(null);
-      try {
-        await asignacionCajaService.deleteAsignacion(id);
-        setSelectedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
-        loadData();
-      } catch (error: any) {
-        console.error('Error eliminando asignación:', error);
-        alert(`Error al eliminar: ${error?.message || 'Verifica tu conexión e intenta de nuevo.'}`);
-        loadData();
+      if (isAdmin) {
+        // Admin: borrado real
+        try {
+          await asignacionCajaService.deleteAsignacion(id);
+          setSelectedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+          loadData();
+        } catch (error: any) {
+          console.error('Error eliminando asignación:', error);
+          alert(`Error al eliminar: ${error?.message || 'Verifica tu conexión e intenta de nuevo.'}`);
+          loadData();
+        }
+      } else {
+        // No-Admin: mostrar modal de motivo de cancelación
+        setCancelModal({ ids: [id], reason: '' });
       }
     } else {
-      // Primera interacción — mostrar confirmación inline
+      // Primera interacción — confirmación inline
       setPendingDeleteId(id);
       setTimeout(() => setPendingDeleteId(prev => prev === id ? null : prev), 3000);
     }
   };
 
+  const handleCancelSubmit = async () => {
+    if (!cancelModal) return;
+    const reason = cancelModal.reason.trim();
+    if (!reason) {
+      alert('Por favor escribe el motivo de cancelación antes de continuar.');
+      return;
+    }
+    try {
+      for (const id of cancelModal.ids) {
+        await asignacionCajaService.updateAsignacion(id, {
+          dockArribo: 'CANCELED',
+          comentariosArribo: reason,
+        });
+      }
+      setCancelModal(null);
+      setSelectedIds(new Set());
+      loadData();
+    } catch (error: any) {
+      console.error('Error cancelando asignación:', error);
+      alert(`Error al cancelar: ${error?.message || 'Verifica tu conexión e intenta de nuevo.'}`);
+    }
+  };
 
   const handleMassDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (confirm(`¿Seguro que deseas eliminar las ${selectedIds.size} asignaciones seleccionadas?`)) {
-        setLoading(true);
-        try {
-            for (const id of selectedIds) {
-                await asignacionCajaService.deleteAsignacion(id);
-            }
-            setSelectedIds(new Set());
-            loadData();
-        } catch (error) {
-            console.error("Error deleting items", error);
-            alert("Hubo un error borrando algunas asignaciones.");
-            loadData();
+    if (!confirm(`¿Seguro que deseas eliminar/cancelar las ${selectedIds.size} asignaciones seleccionadas?`)) return;
+    if (isAdmin) {
+      // Admin: borrado real
+      setLoading(true);
+      try {
+        for (const id of selectedIds) {
+          await asignacionCajaService.deleteAsignacion(id);
         }
+        setSelectedIds(new Set());
+        loadData();
+      } catch (error) {
+        console.error('Error deleting items', error);
+        alert('Hubo un error borrando algunas asignaciones.');
+        loadData();
+      }
+    } else {
+      // No-Admin: modal de motivo de cancelación
+      setCancelModal({ ids: [...selectedIds], reason: '' });
     }
   };
 
@@ -1121,6 +1157,53 @@ export const AsignacionesDiarias: React.FC = () => {
             >
               Aceptar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Motivo de Cancelación (roles no-Admin) ── */}
+      {cancelModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-2xl">🚫</span>
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">Motivo de Cancelación</h2>
+                <p className="text-sm text-slate-500">
+                  {cancelModal.ids.length === 1
+                    ? 'El registro no será eliminado. Se marcará como CANCELED en DOCK.'
+                    : `Los ${cancelModal.ids.length} registros se marcarán como CANCELED en DOCK.`}
+                </p>
+              </div>
+            </div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              ¿Por qué se cancela esta cita? <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              autoFocus
+              rows={4}
+              value={cancelModal.reason}
+              onChange={e => setCancelModal(prev => prev ? { ...prev, reason: e.target.value } : prev)}
+              placeholder="Escribe el motivo de cancelación..."
+              className="w-full border border-slate-300 rounded-xl p-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+            />
+            <p className="text-xs text-slate-400 mt-1 mb-5">Este texto aparecerá en la columna <span className="font-semibold">COMENTARIOS ARRIBO</span>.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelSubmit}
+                className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+              >
+                Confirmar Cancelación
+              </button>
+              <button
+                onClick={() => setCancelModal(null)}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-xl transition-colors"
+              >
+                Volver
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1735,7 +1818,7 @@ export const AsignacionesDiarias: React.FC = () => {
                   <td className="p-4 flex gap-1.5 justify-end items-center min-w-[130px]">
                     {pendingDeleteId === a.id ? (
                       <>
-                        <span className="text-xs text-red-600 font-semibold whitespace-nowrap">¿Eliminar?</span>
+                        <span className="text-xs text-red-600 font-semibold whitespace-nowrap">{isAdmin ? '¿Eliminar?' : '¿Cancelar?'}</span>
                         <button onClick={() => handleDelete(a.id!)} className="px-2 py-0.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 font-medium">Sí</button>
                         <button onClick={() => setPendingDeleteId(null)} className="px-2 py-0.5 text-xs bg-slate-200 text-slate-600 rounded hover:bg-slate-300 font-medium">No</button>
                       </>

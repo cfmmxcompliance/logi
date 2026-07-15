@@ -12,6 +12,9 @@ import { demandaCarga53Service } from '../services/demandaCarga53Service.ts';
 import { reservaVentana53Service } from '../services/reservaVentana53Service.ts';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig.ts';
+import { asignacionCajaService } from '../services/asignacionCajaService.ts';
+import { liberacionService } from '../services/liberacionService.ts';
+import { transportLineService } from '../services/transportLineService.ts';
 
 const SyncIndicator = () => {
   const [syncing, setSyncing] = React.useState(false);
@@ -122,16 +125,17 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         // getDocs directo igual que Ventana 53
         let badge = 0;
         try {
-          const snapAsig = await getDocs(collection(db, 'asignacion_cajas'));
-          const snapLib = await getDocs(collection(db, 'liberacionesCaja'));
-          const asignaciones = snapAsig.docs.map(d => ({ id: d.id, ...d.data() as any }));
-          const liberaciones = snapLib.docs.map(d => ({ id: d.id, ...d.data() as any }));
-          
-          let transportLines: any[] = [];
-          try {
-            const snapTL = await getDocs(collection(db, 'transportLines'));
-            transportLines = snapTL.docs.map(d => ({ id: d.id, ...d.data() as any }));
-          } catch { /* Ignorar error de permisos */ }
+          // Leer el rango de fechas que el usuario tiene seleccionado en el módulo
+          const savedRange = (() => { try { return JSON.parse(localStorage.getItem('asig_dateRange') || 'null'); } catch { return null; } })();
+          const today = new Date().toISOString().split('T')[0];
+          const rangeStart = savedRange?.start || today;
+          const rangeEnd = savedRange?.end || today;
+
+          const [asignaciones, liberaciones, transportLines] = await Promise.all([
+             asignacionCajaService.getAsignacionesByDateRange(rangeStart, rangeEnd).catch(() => []),
+             liberacionService.getLiberacionesByDateRange(rangeStart, rangeEnd).catch(() => []),
+             transportLineService.getAllTransportLines().catch(() => [])
+          ]);
 
           const userScac = String(user?.scac || '').trim().toUpperCase();
           const matchingTLs = new Set(
@@ -140,12 +144,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 .map(tl => tl.transportLineId)
                 .filter(Boolean)
           );
-
-          // Leer el rango de fechas que el usuario tiene seleccionado en el módulo
-          const savedRange = (() => { try { return JSON.parse(localStorage.getItem('asig_dateRange') || 'null'); } catch { return null; } })();
-          const today = new Date().toISOString().split('T')[0];
-          const rangeStart = savedRange?.start || today;
-          const rangeEnd = savedRange?.end || today;
 
           badge = asignaciones.filter(a => {
             // Role-based visibility filtering
@@ -158,8 +156,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               if (!matchesId && !matchesName) return false;
             }
 
-            const fecha = (a as any).fecha || '';
-            const inRange = fecha >= rangeStart && fecha <= rangeEnd;
             const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
             const isRechazado = dockVal === 'RECHAZADO';
             const isDrop = dockVal === 'DROP';
@@ -170,7 +166,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             const hasLayout = !!(a as any).layoutUrl || !!(a as any).layoutUploadedAt;
             const hasCCP = !!(a as any).ccpUrl || !!(a as any).ccpUploadedAt;
             const isClosed = liberaciones.some(l => (l as any).asignacionCajaId === a.id && !!(l as any).selloValidado);
-            return inRange && hasLayout && !hasCCP && !isClosed;
+            return hasLayout && !hasCCP && !isClosed;
           }).length;
 
           // Admin/Expo/Embarques: CCP subido pero sin cierre (selloValidado)

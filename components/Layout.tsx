@@ -135,11 +135,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
           badge = asignaciones.filter(a => {
             // Role-based visibility filtering
+            // Role-based visibility filtering
             if (user?.role === UserRole.CARRIER && user?.scac) {
-              if (String((a as any).linea || '').trim().toUpperCase() !== String(user.scac).trim().toUpperCase()) return false;
+              if (String((a as any).carrierCodigo || '').trim().toUpperCase() !== String(user.scac).trim().toUpperCase()) return false;
             }
-            if (user?.role === UserRole.TRANSPORTISTA && user?.subLinea) {
-              if (String((a as any).subLinea || '').trim().toUpperCase() !== String(user.subLinea).trim().toUpperCase()) return false;
+            if (user?.role === UserRole.TRANSPORTISTA && user?.scac) {
+              if (String((a as any).subLinea || (a as any).scac || '').trim().toUpperCase() !== String(user.scac).trim().toUpperCase()) return false;
             }
 
             const fecha = (a as any).fecha || '';

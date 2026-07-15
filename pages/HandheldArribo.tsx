@@ -83,12 +83,13 @@ export const HandheldArribo = () => {
     setSavingId(caja.id);
     try {
       const arribo = getNow();
+      const arriboAt = new Date().toISOString();
       const comentariosArribo = (comentarios[caja.id] || '').slice(0, 50);
       const dockArribo = docks[caja.id] || '';
-      await asignacionCajaService.updateAsignacion(caja.id, { arribo, comentariosArribo, dockArribo });
+      await asignacionCajaService.updateAsignacion(caja.id, { arribo, arriboAt, comentariosArribo, dockArribo });
 
       setCajasDelDia(prev =>
-        prev.map(c => c.id === caja.id ? { ...c, arribo, comentariosArribo, dockArribo } : c)
+        prev.map(c => c.id === caja.id ? { ...c, arribo, arriboAt, comentariosArribo, dockArribo } : c)
       );
     } catch (e: any) {
       console.error('Error registrando arribo:', e);

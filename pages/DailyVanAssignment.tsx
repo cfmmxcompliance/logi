@@ -450,6 +450,7 @@ export const DailyVanAssignment: React.FC = () => {
                     <th className="px-4 py-3">Placas Tracto</th>
                     <th className="px-4 py-3">Placas Caja</th>
                     <th className="px-4 py-3 text-violet-400 whitespace-nowrap">Creado</th>
+                    <th className="px-4 py-3 text-amber-300 whitespace-nowrap">Arribo At</th>
                     <th className="px-4 py-3 text-indigo-400 text-center whitespace-nowrap">Layout</th>
                     <th className="px-4 py-3 text-sky-400 text-center whitespace-nowrap">CCP</th>
                     <th className="px-4 py-3 text-sky-300 whitespace-nowrap">Liberación Dock</th>
@@ -596,6 +597,22 @@ export const DailyVanAssignment: React.FC = () => {
                               </span>
                               <span className="text-[10px] text-slate-500 font-mono">
                                 {new Date((asig as any).createdAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-600 text-xs">—</span>
+                          )}
+                        </td>
+
+                        {/* ARRIBO AT */}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {asig.arriboAt ? (
+                            <div className="flex flex-col gap-0">
+                              <span className="text-xs text-amber-300 font-mono font-semibold">
+                                {new Date(asig.arriboAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              </span>
+                              <span className="text-[10px] text-amber-400/70 font-mono">
+                                {new Date(asig.arriboAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
                               </span>
                             </div>
                           ) : (

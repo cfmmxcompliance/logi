@@ -3,6 +3,7 @@ export interface AsignacionCajaModel {
   fecha: string; // YYYY-MM-DD
   horaAsignacion?: string; // HH:mm
   arribo?: string;          // HH:mm — hora real de arribo
+  arriboAt?: string;        // ISO timestamp completo del momento de registro de arribo
   comentariosArribo?: string; // max 50 chars
   dockArribo?: string;      // DOCK 1..13 — asignado desde handheld
   carrierCodigo?: string;

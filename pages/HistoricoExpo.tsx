@@ -380,14 +380,14 @@ export const HistoricoExpo = () => {
   const exportCSV = () => {
     if (filteredRecords.length === 0) return alert('No hay registros para exportar');
     const headers = [
-      'TRAILER', 'IDNUMBER', 'SEAL', 'TEAM', 'LÍNEA TRANSPORTE', 'CFM REF', 'SCAC', 'CAAT',
-      'PICKUP DAY CFM', 'DODA URL', 'ENTRY URL', 'DODA APERTURE DATE', 'ENTRY APERTURE DATE',
+      'TRAILER', 'IDNUMBER', 'SEAL', 'TEAM', 'LÍNEA TRANSPORTE', 'CFM REF', 'PICKUP DAY CFM', 'SCAC', 'CAAT',
+      'DODA URL', 'ENTRY URL', 'DODA APERTURE DATE', 'ENTRY APERTURE DATE',
       'DATE REQUESTED', 'CROSSING DATE', 'Date Received', 'Days to Receive',
       'EXP DODA', 'COMMENTS', 'DELIVERY DATE', 'ATA DESTINATION'
     ];
     const rows = filteredRecords.map(r => [
-      r.trailer, r.idNumber, r.seal, r.team, r.transportLine, r.cfmRef, r.scac, r.caat,
-      r.pickupDayCFM, r.dodaUrl, r.entryUrl, r.dodaApertureDate, r.entryApertureDate,
+      r.trailer, r.idNumber, r.seal, r.team, r.transportLine, r.cfmRef, r.pickupDayCFM, r.scac, r.caat,
+      r.dodaUrl, r.entryUrl, r.dodaApertureDate, r.entryApertureDate,
       r.dateRequested, r.crossingDate, r.dateReceived, r.daysToReceive,
       r.expDoda, r.comments, r.deliveryDate || r.scacAndCaat, r.ataDestination
     ]);
@@ -638,9 +638,9 @@ export const HistoricoExpo = () => {
                   <th className="p-4">TEAM</th>
                   <th className="p-4">LÍNEA TRANSPORTE</th>
                   <th className="p-4">CFM REF</th>
+                  <th className="p-4">PICKUP DAY CFM</th>
                   <th className="p-4">SCAC</th>
                   <th className="p-4">CAAT</th>
-                  <th className="p-4">PICKUP DAY CFM</th>
                   <th className="p-4 text-center">DODA</th>
                   <th className="p-4 text-center">ENTRY</th>
                   <th className="p-4">DODA APERTURE DATE</th>
@@ -673,11 +673,11 @@ export const HistoricoExpo = () => {
                       <td className="p-4 font-mono text-xs font-semibold text-orange-600">{record.team}</td>
                       <td className="p-4 text-slate-700">{record.transportLine}</td>
                       <td className="p-4 text-slate-700">{record.cfmRef}</td>
+                      <td className="p-4"><span className={record.pickupDayCFM ? 'text-slate-700' : 'text-slate-300'}>{formatMexicanDate(record.pickupDayCFM) || '—'}</span></td>
                       <td className="p-4 font-mono text-xs text-slate-600">{record.scac}</td>
 
                       {/* ── EDITABLE (shown read-only in table, editable in modal) ── */}
                       <td className="p-4"><span className={record.caat ? 'text-slate-700' : 'text-slate-300'}>{record.caat || '—'}</span></td>
-                      <td className="p-4"><span className={record.pickupDayCFM ? 'text-slate-700' : 'text-slate-300'}>{formatMexicanDate(record.pickupDayCFM) || '—'}</span></td>
 
 
                       {/* DODA */}

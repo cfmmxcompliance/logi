@@ -1803,6 +1803,7 @@ export const AsignacionesDiarias: React.FC = () => {
                                 ? [...baseHours, "15:30", "16:00", "18:30"]
                                 : (formData.fecha === '2026-07-08') ? [...baseHours, "16:00", "17:00"]
                                 : (formData.fecha === '2026-07-14') ? [...baseHours, "16:00", "17:00", "18:00"]
+                                : (formData.fecha === '2026-07-15') ? [...baseHours, "16:00", "17:00"]
                                 : ((formData.fecha || '') >= '2026-07-09') ? [...baseHours, "16:00"]
                                 : baseHours;
                               // Resuelve un tiempo libre (ej. 16:33) al slot aprobado que le corresponde
@@ -1829,8 +1830,9 @@ export const AsignacionesDiarias: React.FC = () => {
                                   count = asignaciones.filter(a => { const p = hr.substring(0,2); return a.fecha === formData.fecha && a.horaAsignacion?.startsWith(p) && (!isEditing || a.id !== formData.id); }).length;
                                 }
                                 if (hr === "11:00") return <option key={hr} value={hr} disabled>{hr} - BLOQUEADO</option>;
-                                // Ventana ya iniciada (solo hoy) — excepción: 18:00 del 14/07/2026 habilitada manualmente
-                                const isManualOverride = (formData.fecha === '2026-07-14' && hr === '18:00');
+                                // Ventana ya iniciada (solo hoy) — excepción: manual overrides
+                                const isManualOverride = (formData.fecha === '2026-07-14' && hr === '18:00')
+                                                      || (formData.fecha === '2026-07-15' && hr === '17:00');
                                 const isPast = isToday && hr <= mexicoNow && !isManualOverride;
                                 if (isPast) return <option key={hr} value={hr} disabled>{hr} - INICIADO</option>;
                                 // Override especial: 15:00 del 06/07/2026 tuvo 8 citas

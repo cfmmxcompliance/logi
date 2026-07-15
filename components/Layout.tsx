@@ -124,8 +124,18 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         try {
           const snapAsig = await getDocs(collection(db, 'asignacion_cajas'));
           const snapLib = await getDocs(collection(db, 'liberacionesCaja'));
+          const snapTL = await getDocs(collection(db, 'transportLines'));
           const asignaciones = snapAsig.docs.map(d => ({ id: d.id, ...d.data() as any }));
           const liberaciones = snapLib.docs.map(d => ({ id: d.id, ...d.data() as any }));
+          const transportLines = snapTL.docs.map(d => ({ id: d.id, ...d.data() as any }));
+
+          const userScac = String(user?.scac || '').trim().toUpperCase();
+          const matchingTLs = new Set(
+            transportLines
+                .filter(tl => String(tl.TransportLine || '').trim().toUpperCase() === userScac)
+                .map(tl => tl.transportLineId)
+                .filter(Boolean)
+          );
 
           // Leer el rango de fechas que el usuario tiene seleccionado en el módulo
           const savedRange = (() => { try { return JSON.parse(localStorage.getItem('asig_dateRange') || 'null'); } catch { return null; } })();
@@ -135,12 +145,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
           badge = asignaciones.filter(a => {
             // Role-based visibility filtering
-            // Role-based visibility filtering
             if (user?.role === UserRole.CARRIER && user?.scac) {
-              if (String((a as any).carrierCodigo || '').trim().toUpperCase() !== String(user.scac).trim().toUpperCase()) return false;
+              if (String((a as any).carrierCodigo || '').trim().toUpperCase() !== userScac) return false;
             }
             if (user?.role === UserRole.TRANSPORTISTA && user?.scac) {
-              if (String((a as any).subLinea || (a as any).scac || '').trim().toUpperCase() !== String(user.scac).trim().toUpperCase()) return false;
+              const matchesId = (a as any).transportLineId && matchingTLs.has((a as any).transportLineId);
+              const matchesName = String((a as any).subLinea || (a as any).scac || '').trim().toUpperCase() === userScac;
+              if (!matchesId && !matchesName) return false;
             }
 
             const fecha = (a as any).fecha || '';

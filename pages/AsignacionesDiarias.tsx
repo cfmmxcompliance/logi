@@ -1819,7 +1819,9 @@ export const AsignacionesDiarias: React.FC = () => {
                                 const isPast = isToday && hr <= mexicoNow;
                                 if (isPast) return <option key={hr} value={hr} disabled>{hr} - INICIADO</option>;
                                 // Override especial: 15:00 del 06/07/2026 tuvo 8 citas
-                                const maxSlots = (hr === '15:00' && formData.fecha === '2026-07-06') ? 8 : 6;
+                                const maxSlots = (hr === '15:00' && formData.fecha === '2026-07-06') ? 8
+                                               : (formData.fecha === '2026-07-14' && (hr === '17:00' || hr === '18:00')) ? 1
+                                               : 6;
                                 const isFull = count >= maxSlots;
                                 return (
                                   <option key={hr} value={hr} disabled={isFull} className={isFull ? 'text-red-500 font-bold' : ''}>

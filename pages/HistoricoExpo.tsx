@@ -661,27 +661,27 @@ export const HistoricoExpo = () => {
                   
                   return (
                     <tr key={record.id} className={`hover:bg-slate-50/50 transition-colors ${selectedIds.has(record.id!) ? 'bg-indigo-50/40 ring-1 ring-inset ring-indigo-200' : ''}`}>
-                      <td className="p-4 text-center">
+                      <td className="px-3 py-2 whitespace-nowrap text-center">
                         <input type="checkbox" checked={selectedIds.has(record.id!)} onChange={() => toggleSelect(record.id!)} className="w-4 h-4 accent-indigo-600 cursor-pointer" />
                       </td>
 
                       {/* ── READ-ONLY: sourced from Asignación Diaria ── */}
-                      <td className="p-4 text-slate-700 font-medium">{record.trailer}</td>
-                      <td className="p-4 font-mono text-xs text-slate-500">{record.idNumber}</td>
-                      <td className="p-4 text-slate-700">{record.seal}</td>
-                      <td className="p-4 text-xs text-slate-500 whitespace-nowrap">{(record as any).vehiculos || '—'}</td>
-                      <td className="p-4 font-mono text-xs font-semibold text-orange-600">{record.team}</td>
-                      <td className="p-4 text-slate-700">{record.transportLine}</td>
-                      <td className="p-4 text-slate-700">{record.cfmRef}</td>
-                      <td className="p-4"><span className={record.pickupDayCFM ? 'text-slate-700' : 'text-slate-300'}>{formatMexicanDate(record.pickupDayCFM) || '—'}</span></td>
-                      <td className="p-4 font-mono text-xs text-slate-600">{record.scac}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-slate-700 font-medium">{record.trailer}</td>
+                      <td className="px-3 py-2 whitespace-nowrap font-mono text-xs text-slate-500">{record.idNumber}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-slate-700">{record.seal}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500 whitespace-nowrap">{(record as any).vehiculos || '—'}</td>
+                      <td className="px-3 py-2 whitespace-nowrap font-mono text-xs font-semibold text-orange-600">{record.team}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-slate-700">{record.transportLine}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-slate-700">{record.cfmRef}</td>
+                      <td className="px-3 py-2 whitespace-nowrap"><span className={record.pickupDayCFM ? 'text-slate-700' : 'text-slate-300'}>{formatMexicanDate(record.pickupDayCFM) || '—'}</span></td>
+                      <td className="px-3 py-2 whitespace-nowrap font-mono text-xs text-slate-600">{record.scac}</td>
 
                       {/* ── EDITABLE (shown read-only in table, editable in modal) ── */}
-                      <td className="p-4"><span className={record.caat ? 'text-slate-700' : 'text-slate-300'}>{record.caat || '—'}</span></td>
+                      <td className="px-3 py-2 whitespace-nowrap"><span className={record.caat ? 'text-slate-700' : 'text-slate-300'}>{record.caat || '—'}</span></td>
 
 
                       {/* DODA */}
-                      <td className="p-4 text-center bg-indigo-50/20 border-l border-indigo-100/50">
+                      <td className="px-3 py-2 whitespace-nowrap text-center bg-indigo-50/20 border-l border-indigo-100/50">
                         {uploadingFor?.id === record.id && uploadingFor.field === 'dodaUrl' ? (
                           <Loader2 size={18} className="animate-spin text-indigo-400 mx-auto" />
                         ) : record.dodaUrl ? (
@@ -708,7 +708,7 @@ export const HistoricoExpo = () => {
                       </td>
 
                       {/* ENTRY */}
-                      <td className="p-4 text-center bg-emerald-50/20 border-l border-emerald-100/50 border-r">
+                      <td className="px-3 py-2 whitespace-nowrap text-center bg-emerald-50/20 border-l border-emerald-100/50 border-r">
                         {uploadingFor?.id === record.id && uploadingFor.field === 'entryUrl' ? (
                           <Loader2 size={18} className="animate-spin text-emerald-400 mx-auto" />
                         ) : record.entryUrl ? (
@@ -734,16 +734,16 @@ export const HistoricoExpo = () => {
                         )}
                       </td>
 
-                      <td className="p-4"><span className={record.dodaApertureDate ? 'text-slate-700' : 'text-slate-300'}>{record.dodaApertureDate || '—'}</span></td>
-                      <td className="p-4"><span className={record.entryApertureDate ? 'text-slate-700' : 'text-slate-300'}>{record.entryApertureDate || '—'}</span></td>
-                      <td className="p-4"><span className={record.dateRequested ? 'text-slate-700' : 'text-slate-300'}>{record.dateRequested || '—'}</span></td>
-                      <td className="p-4"><span className={record.crossingDate ? 'text-slate-700' : 'text-slate-300'}>{record.crossingDate || '—'}</span></td>
-                      <td className="p-4"><span className={record.dateReceived ? 'text-slate-700' : 'text-slate-300'}>{record.dateReceived || '—'}</span></td>
-                      <td className="p-4"><span className={record.daysToReceive ? 'text-slate-700' : 'text-slate-300'}>{record.daysToReceive || '—'}</span></td>
-                      <td className="p-4"><span className={record.expDoda ? 'text-slate-700' : 'text-slate-300'}>{record.expDoda || '—'}</span></td>
-                      <td className="p-4"><span className={record.comments ? 'text-slate-700' : 'text-slate-300'}>{record.comments || '—'}</span></td>
-                      <td className="p-4"><span className={(record.deliveryDate || record.scacAndCaat) ? 'text-slate-700' : 'text-slate-300'}>{record.deliveryDate || record.scacAndCaat || '—'}</span></td>
-                      <td className="p-4"><span className={record.ataDestination ? 'text-slate-700' : 'text-slate-300'}>{record.ataDestination || '—'}</span></td>
+                      <td className="px-3 py-2 whitespace-nowrap"><span className={record.dodaApertureDate ? 'text-slate-700' : 'text-slate-300'}>{record.dodaApertureDate || '—'}</span></td>
+                      <td className="px-3 py-2 whitespace-nowrap"><span className={record.entryApertureDate ? 'text-slate-700' : 'text-slate-300'}>{record.entryApertureDate || '—'}</span></td>
+                      <td className="px-3 py-2 whitespace-nowrap"><span className={record.dateRequested ? 'text-slate-700' : 'text-slate-300'}>{record.dateRequested || '—'}</span></td>
+                      <td className="px-3 py-2 whitespace-nowrap"><span className={record.crossingDate ? 'text-slate-700' : 'text-slate-300'}>{record.crossingDate || '—'}</span></td>
+                      <td className="px-3 py-2 whitespace-nowrap"><span className={record.dateReceived ? 'text-slate-700' : 'text-slate-300'}>{record.dateReceived || '—'}</span></td>
+                      <td className="px-3 py-2 whitespace-nowrap"><span className={record.daysToReceive ? 'text-slate-700' : 'text-slate-300'}>{record.daysToReceive || '—'}</span></td>
+                      <td className="px-3 py-2 whitespace-nowrap"><span className={record.expDoda ? 'text-slate-700' : 'text-slate-300'}>{record.expDoda || '—'}</span></td>
+                      <td className="px-3 py-2 whitespace-nowrap"><span className={record.comments ? 'text-slate-700' : 'text-slate-300'}>{record.comments || '—'}</span></td>
+                      <td className="px-3 py-2 whitespace-nowrap"><span className={(record.deliveryDate || record.scacAndCaat) ? 'text-slate-700' : 'text-slate-300'}>{record.deliveryDate || record.scacAndCaat || '—'}</span></td>
+                      <td className="px-3 py-2 whitespace-nowrap"><span className={record.ataDestination ? 'text-slate-700' : 'text-slate-300'}>{record.ataDestination || '—'}</span></td>
                     </tr>
                   );
                 })}

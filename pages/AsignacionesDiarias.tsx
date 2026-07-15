@@ -1856,7 +1856,21 @@ export const AsignacionesDiarias: React.FC = () => {
                           <SearchableComboBox
                             required
                             value={formData.carrierCodigo || ''}
-                            onChange={val => setFormData({...formData, carrierCodigo: val, transportLineId: '', numeroCaja: '', driverId: '', subLinea: '', placasCaja: '', nombreDriver: '', placasTracto: ''})}
+                            onChange={val => {
+                              // Filtrar sub-líneas que pertenecen a este SCAC
+                              const matchingLines = transportLines.filter(tl =>
+                                tl.TransportLine === val || tl.carrierCodigo === val
+                              );
+                              // Auto-seleccionar si solo hay una sub-línea
+                              const autoLineId = matchingLines.length === 1 ? matchingLines[0].transportLineId : '';
+                              setFormData({
+                                ...formData,
+                                carrierCodigo: val,
+                                transportLineId: autoLineId,
+                                scac: autoLineId ? (matchingLines[0]?.TransportLine || val) : '',
+                                numeroCaja: '', driverId: '', subLinea: '', placasCaja: '', nombreDriver: '', placasTracto: ''
+                              } as any);
+                            }}
                             options={carriers.map(c => ({ value: c.codigo, label: c.nombre, sublabel: c.codigo }))}
                             placeholder="Seleccionar Carrier..."
                             disabled={isRestrictedRole || !!scacFilter || !!subLineaFilter}
@@ -1870,7 +1884,10 @@ export const AsignacionesDiarias: React.FC = () => {
                           </h3>
                           <SearchableComboBox
                             value={formData.transportLineId || ''}
-                            onChange={val => setFormData({...formData, transportLineId: val, driverId: '', nombreDriver: '', placasTracto: ''})}
+                            onChange={val => {
+                              const tl = transportLines.find(t => t.transportLineId === val);
+                              setFormData({...formData, transportLineId: val, scac: tl?.TransportLine || formData.carrierCodigo || '', driverId: '', nombreDriver: '', placasTracto: ''} as any);
+                            }}
                             options={transportLines
                               .filter(tl => !formData.carrierCodigo || 
                                 tl.TransportLine === formData.carrierCodigo ||

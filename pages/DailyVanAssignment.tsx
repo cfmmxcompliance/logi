@@ -608,7 +608,12 @@ export const DailyVanAssignment: React.FC = () => {
                         <td className="px-4 py-3 whitespace-nowrap">
                           {asig.arriboAt ? (
                             <div className="flex flex-col gap-0">
-                              <span className="text-xs text-amber-300 font-mono font-semibold">
+                              {asig.arriboBy && (
+                                <span className="text-[10px] font-bold text-amber-300 truncate max-w-[160px]" title={asig.arriboBy}>
+                                  {asig.arriboBy}
+                                </span>
+                              )}
+                              <span className="text-xs text-slate-300 font-mono">
                                 {new Date(asig.arriboAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
                               </span>
                               <span className="text-[10px] text-amber-400/70 font-mono">

@@ -289,12 +289,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <SidebarItem to="/models" icon={Box} label={sidebarOpen ? "Models (Expo)" : ""} />
               <SidebarItem to="/pricing-matrix" icon={DollarSign} label={sidebarOpen ? "Pricing Matrix" : ""} />
               <SidebarItem to="/shipping-schedules" icon={Ship} label={sidebarOpen ? "Shipping Sched." : ""} />
+              <SidebarItem to="/daily-van-assignment" icon={CalendarCheck} label={sidebarOpen ? "Daily Van Assignment" : ""} />
             </>
-          )}
-
-          {/* Daily Van Assignment -> Admin, Controller, Carrier, Expo Analist */}
-          {[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.CARRIER, UserRole.EXPO_ANALIST].includes(user?.role as UserRole) && (
-            <SidebarItem to="/daily-van-assignment" icon={CalendarCheck} label={sidebarOpen ? "Daily Van Assignment" : ""} />
           )}
 
           {/* Macro Module -> Admin solamente */}
@@ -329,6 +325,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     : (asignacionesBadgeAdmin > 0 ? asignacionesBadgeAdmin : undefined)
                 }
               />
+              {/* Daily Van Assignment para Operational Transport (no EMBARQUES ni TRANSPORTISTA) */}
+              {user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.TRANSPORTISTA && (
+                <SidebarItem to="/daily-van-assignment" icon={CalendarCheck} label={sidebarOpen ? "Daily Van Assignment" : ""} />
+              )}
               {/* Módulos Demanda / Reserva 53' — Admin y Controller */}
               {user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && (
                 <>
@@ -362,6 +362,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {user?.role === UserRole.EXPO_ANALIST && (
             <>
               <SidebarItem to="/wms-control" icon={PackageOpen} label={sidebarOpen ? "WMS Control" : ""} />
+              <SidebarItem to="/daily-van-assignment" icon={CalendarCheck} label={sidebarOpen ? "Daily Van Assignment" : ""} />
               <SidebarItem 
                 to="/asignaciones-diarias" 
                 icon={Navigation} 

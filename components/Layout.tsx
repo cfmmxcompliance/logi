@@ -124,10 +124,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         try {
           const snapAsig = await getDocs(collection(db, 'asignacion_cajas'));
           const snapLib = await getDocs(collection(db, 'liberacionesCaja'));
-          const snapTL = await getDocs(collection(db, 'transportLines'));
           const asignaciones = snapAsig.docs.map(d => ({ id: d.id, ...d.data() as any }));
           const liberaciones = snapLib.docs.map(d => ({ id: d.id, ...d.data() as any }));
-          const transportLines = snapTL.docs.map(d => ({ id: d.id, ...d.data() as any }));
+          
+          let transportLines: any[] = [];
+          try {
+            const snapTL = await getDocs(collection(db, 'transportLines'));
+            transportLines = snapTL.docs.map(d => ({ id: d.id, ...d.data() as any }));
+          } catch { /* Ignorar error de permisos */ }
 
           const userScac = String(user?.scac || '').trim().toUpperCase();
           const matchingTLs = new Set(

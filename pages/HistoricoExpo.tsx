@@ -805,72 +805,82 @@ export const HistoricoExpo = () => {
                   </div>
                 </div>
 
-                {/* EDITABLE fields */}
-                {/* Top row: SCAC | CAAT */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">SCAC</label>
-                    <input className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none font-mono uppercase" value={(editForm as any).scac || ''} onChange={e => setEditForm({...editForm, scac: e.target.value} as any)} placeholder="Ej. TQLA" />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">CAAT</label>
-                    <input className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" value={editForm.caat || ''} onChange={e => setEditForm({...editForm, caat: e.target.value} as any)} placeholder="Número CAAT" />
-                  </div>
-                </div>
-
-                {/* Remaining date fields — 2 columns */}
-                <div className="grid grid-cols-2 gap-4">
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">DODA APERTURE DATE</label>
-                    <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" value={(editForm as any).dodaApertureDate || ''} onChange={e => setEditForm({...editForm, dodaApertureDate: e.target.value} as any)} />
+                <div className="flex flex-col gap-5">
+                  {/* CARRIER Section */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">CARRIER</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">SCAC</label>
+                        <input className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none font-mono uppercase bg-white" value={(editForm as any).scac || ''} onChange={e => setEditForm({...editForm, scac: e.target.value} as any)} placeholder="Ej. TQLA" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">CAAT</label>
+                        <input className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none bg-white" value={editForm.caat || ''} onChange={e => setEditForm({...editForm, caat: e.target.value} as any)} placeholder="Número CAAT" />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">ENTRY APERTURE DATE</label>
-                    <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" value={(editForm as any).entryApertureDate || ''} onChange={e => setEditForm({...editForm, entryApertureDate: e.target.value} as any)} />
+                  {/* BROKER Section */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">BROKER</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">DODA APERTURE DATE</label>
+                        <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none bg-white" value={(editForm as any).dodaApertureDate || ''} onChange={e => setEditForm({...editForm, dodaApertureDate: e.target.value} as any)} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">CROSSING DATE</label>
+                        <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none bg-white" value={editForm.crossingDate || ''} onChange={e => setEditForm({...editForm, crossingDate: e.target.value})} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">EXP DODA</label>
+                        <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none bg-white" value={editForm.expDoda || ''} onChange={e => setEditForm({...editForm, expDoda: e.target.value})} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">ENTRY APERTURE DATE</label>
+                        <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none bg-white" value={(editForm as any).entryApertureDate || ''} onChange={e => setEditForm({...editForm, entryApertureDate: e.target.value} as any)} />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">DATE REQUESTED</label>
-                    <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" value={editForm.dateRequested || ''} onChange={e => setEditForm({...editForm, dateRequested: e.target.value})} />
+                  {/* DESTINATION Section */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">DESTINATION</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">DELIVERY DATE</label>
+                        <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none bg-white" value={(editForm as any).deliveryDate || ''} onChange={e => setEditForm({...editForm, deliveryDate: e.target.value} as any)} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">ATA DESTINATION</label>
+                        <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none bg-white" value={(editForm as any).ataDestination || ''} onChange={e => setEditForm({...editForm, ataDestination: e.target.value} as any)} />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">CROSSING DATE</label>
-                    <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" value={editForm.crossingDate || ''} onChange={e => setEditForm({...editForm, crossingDate: e.target.value})} />
+                  {/* OTROS DATOS Section */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">OTROS DATOS</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">DATE REQUESTED</label>
+                        <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none bg-white" value={editForm.dateRequested || ''} onChange={e => setEditForm({...editForm, dateRequested: e.target.value})} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">DATE RECEIVED</label>
+                        <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none bg-white" value={editForm.dateReceived || ''} onChange={e => setEditForm({...editForm, dateReceived: e.target.value})} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">DAYS TO RECEIVE</label>
+                        <input className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none bg-white" value={editForm.daysToReceive || ''} onChange={e => setEditForm({...editForm, daysToReceive: e.target.value})} placeholder="0" />
+                      </div>
+                      <div className="flex flex-col gap-1 col-span-2">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">COMMENTS</label>
+                        <textarea className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none resize-none bg-white" rows={2} value={editForm.comments || ''} onChange={e => setEditForm({...editForm, comments: e.target.value})} placeholder="Observaciones..." />
+                      </div>
+                    </div>
                   </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">DATE RECEIVED</label>
-                    <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" value={editForm.dateReceived || ''} onChange={e => setEditForm({...editForm, dateReceived: e.target.value})} />
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">DAYS TO RECEIVE</label>
-                    <input className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" value={editForm.daysToReceive || ''} onChange={e => setEditForm({...editForm, daysToReceive: e.target.value})} placeholder="0" />
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">EXP DODA</label>
-                    <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" value={editForm.expDoda || ''} onChange={e => setEditForm({...editForm, expDoda: e.target.value})} />
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">DELIVERY DATE</label>
-                    <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" value={(editForm as any).deliveryDate || ''} onChange={e => setEditForm({...editForm, deliveryDate: e.target.value} as any)} />
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">ATA DESTINATION</label>
-                    <input type="date" className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" value={(editForm as any).ataDestination || ''} onChange={e => setEditForm({...editForm, ataDestination: e.target.value} as any)} />
-                  </div>
-
-                  <div className="flex flex-col gap-1 col-span-2">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">COMMENTS</label>
-                    <textarea className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none resize-none" rows={2} value={editForm.comments || ''} onChange={e => setEditForm({...editForm, comments: e.target.value})} placeholder="Observaciones..." />
-                  </div>
-
                 </div>
               </div>
 

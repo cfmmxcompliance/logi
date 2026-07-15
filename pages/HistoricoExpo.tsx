@@ -798,7 +798,7 @@ export const HistoricoExpo = () => {
                     <div><span className="text-slate-400 text-xs">IDNUMBER</span><p className="font-mono text-xs text-slate-600">{rec.idNumber || '—'}</p></div>
                     <div><span className="text-slate-400 text-xs">SEAL</span><p className="text-slate-700">{rec.seal || '—'}</p></div>
                     <div><span className="text-slate-400 text-xs">VEHICULOS</span><p className="text-slate-700">{(rec as any).vehiculos || '—'}</p></div>
-                    <div><span className="text-slate-400 text-xs">TEAM (SCAC)</span><p className="font-mono font-bold text-orange-600">{rec.team || '—'}</p></div>
+                    <div><span className="text-slate-400 text-xs">TEAM</span><p className="font-mono font-bold text-orange-600">{rec.team || '—'}</p></div>
                     <div><span className="text-slate-400 text-xs">LÍNEA TRANSPORTE</span><p className="text-slate-700">{rec.transportLine || '—'}</p></div>
                     <div><span className="text-slate-400 text-xs">CFM REF</span><p className="text-slate-700">{rec.cfmRef || '—'}</p></div>
                     <div><span className="text-slate-400 text-xs">PICKUP DAY CFM</span><p className="text-slate-700">{rec.pickupDayCFM ? formatMexicanDate(rec.pickupDayCFM) : '—'}</p></div>

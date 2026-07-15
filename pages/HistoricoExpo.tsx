@@ -603,7 +603,7 @@ export const HistoricoExpo = () => {
 
           <div className="flex items-center gap-2 shrink-0">
             <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
-            <button onClick={() => fileInputRef.current?.click()} className="px-3 py-2 bg-slate-50 text-emerald-600 hover:bg-emerald-50 rounded-lg border border-slate-200 transition-colors shadow-sm flex items-center" title="Importar CSV">
+            <button onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} className="px-3 py-2 bg-slate-50 text-emerald-600 hover:bg-emerald-50 rounded-lg border border-slate-200 transition-colors shadow-sm flex items-center" title="Importar CSV">
               <FileSpreadsheet size={18} />
             </button>
             <button className="px-3 py-2 bg-slate-50 text-indigo-600 hover:bg-indigo-50 rounded-lg border border-slate-200 transition-colors shadow-sm flex items-center" title="Subir Documentos">
@@ -660,8 +660,17 @@ export const HistoricoExpo = () => {
                   const isEditing = editingId === record.id;
                   
                   return (
-                    <tr key={record.id} className={`hover:bg-slate-50/50 transition-colors ${selectedIds.has(record.id!) ? 'bg-indigo-50/40 ring-1 ring-inset ring-indigo-200' : ''}`}>
-                      <td className="px-3 py-2 whitespace-nowrap text-center">
+                    <tr 
+                      key={record.id} 
+                      onClick={() => {
+                        setEditingId(record.id!);
+                        setEditForm(record);
+                        // Optional: also select it visually
+                        setSelectedIds(new Set([record.id!]));
+                      }}
+                      className={`hover:bg-slate-50/50 transition-colors cursor-pointer ${selectedIds.has(record.id!) ? 'bg-indigo-50/40 ring-1 ring-inset ring-indigo-200' : ''}`}
+                    >
+                      <td className="px-3 py-2 whitespace-nowrap text-center" onClick={e => e.stopPropagation()}>
                         <input type="checkbox" checked={selectedIds.has(record.id!)} onChange={() => toggleSelect(record.id!)} className="w-4 h-4 accent-indigo-600 cursor-pointer" />
                       </td>
 

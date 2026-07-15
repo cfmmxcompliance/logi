@@ -20,17 +20,21 @@ export const DailyVanAssignment: React.FC = () => {
     return new Date(today.getTime() - tzOffset).toISOString().split('T')[0];
   };
 
-  const [selectedDate, setSelectedDate] = useState(getLocalToday());
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>(() => {
+    const today = getLocalToday();
+    return { start: today, end: today };
+  });
 
-  const fetchData = async (date: string) => {
+  const fetchData = async (start: string, end: string) => {
     setLoading(true);
     try {
       const [asigData, libData, libDockData] = await Promise.all([
-        asignacionCajaService.getAsignacionesByDate(date),
-        liberacionService.getLiberacionesByDate(date),
-        liberacionDockService.getLiberacionesDockByDate(date),
+        asignacionCajaService.getAsignacionesByDateRange(start, end),
+        liberacionService.getLiberacionesByDateRange(start, end),
+        liberacionDockService.getLiberacionesDockByDateRange(start, end),
       ]);
       asigData.sort((a, b) => {
+        if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
         const timeA = a.horaAsignacion || '00:00';
         const timeB = b.horaAsignacion || '00:00';
         return timeA < timeB ? -1 : 1;
@@ -46,8 +50,8 @@ export const DailyVanAssignment: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchData(selectedDate);
-  }, [selectedDate]);
+    fetchData(dateRange.start, dateRange.end);
+  }, [dateRange.start, dateRange.end]);
 
   const filteredAssignments = useMemo(() => {
     if (!searchQuery.trim()) return assignments;
@@ -211,7 +215,7 @@ export const DailyVanAssignment: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `TRUCK_TRACKING_${selectedDate}.csv`;
+    a.download = `TRUCK_TRACKING_${dateRange.start}_al_${dateRange.end}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -229,15 +233,29 @@ export const DailyVanAssignment: React.FC = () => {
             </h1>
             <p className="text-slate-400 mt-1 text-sm">Seguimiento de unidades y estado de liberación operativa</p>
           </div>
-          <div className="flex items-center gap-3">
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={e => setSelectedDate(e.target.value)}
-              className="bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5">
+              <span className="text-slate-400 text-xs font-medium whitespace-nowrap">Inicio</span>
+              <input
+                type="date"
+                value={dateRange.start}
+                onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                className="bg-transparent text-white text-sm focus:outline-none"
+              />
+            </div>
+            <span className="text-slate-500 text-sm">—</span>
+            <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5">
+              <span className="text-slate-400 text-xs font-medium whitespace-nowrap">Fin</span>
+              <input
+                type="date"
+                value={dateRange.end}
+                min={dateRange.start}
+                onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                className="bg-transparent text-white text-sm focus:outline-none"
+              />
+            </div>
             <button
-              onClick={() => fetchData(selectedDate)}
+              onClick={() => fetchData(dateRange.start, dateRange.end)}
               className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg border border-slate-700 transition-colors"
               title="Recargar"
             >

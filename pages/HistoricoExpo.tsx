@@ -628,31 +628,31 @@ export const HistoricoExpo = () => {
             <table className="w-full text-left border-collapse text-sm whitespace-nowrap">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-medium">
                 <tr>
-                  <th className="p-4 text-center">
+                  <th className="px-3 py-2 whitespace-nowrap text-center">
                     <input type="checkbox" checked={filteredRecords.length > 0 && selectedIds.size === filteredRecords.length} onChange={toggleSelectAll} className="w-4 h-4 accent-indigo-600 cursor-pointer" />
                   </th>
-                  <th className="p-4">TRAILER</th>
-                  <th className="p-4">IDNUMBER</th>
-                  <th className="p-4">SEAL</th>
-                  <th className="p-4 text-slate-500 whitespace-nowrap">VEHICULOS</th>
-                  <th className="p-4">TEAM</th>
-                  <th className="p-4">LÍNEA TRANSPORTE</th>
-                  <th className="p-4">CFM REF</th>
-                  <th className="p-4">PICKUP DAY CFM</th>
-                  <th className="p-4">SCAC</th>
-                  <th className="p-4">CAAT</th>
-                  <th className="p-4 text-center">DODA</th>
-                  <th className="p-4 text-center">ENTRY</th>
-                  <th className="p-4">DODA APERTURE DATE</th>
-                  <th className="p-4">ENTRY APERTURE DATE</th>
-                  <th className="p-4">DATE REQUESTED</th>
-                  <th className="p-4">CROSSING DATE</th>
-                  <th className="p-4">Date Received</th>
-                  <th className="p-4">Days to Receive</th>
-                  <th className="p-4">EXP DODA</th>
-                  <th className="p-4">COMMENTS</th>
-                  <th className="p-4">DELIVERY DATE</th>
-                  <th className="p-4">ATA DESTINATION</th>
+                  <th className="px-3 py-2 whitespace-nowrap">TRAILER</th>
+                  <th className="px-3 py-2 whitespace-nowrap">IDNUMBER</th>
+                  <th className="px-3 py-2 whitespace-nowrap">SEAL</th>
+                  <th className="px-3 py-2 whitespace-nowrap text-slate-500 whitespace-nowrap">VEHICULOS</th>
+                  <th className="px-3 py-2 whitespace-nowrap">TEAM</th>
+                  <th className="px-3 py-2 whitespace-nowrap">LÍNEA TRANSPORTE</th>
+                  <th className="px-3 py-2 whitespace-nowrap">CFM REF</th>
+                  <th className="px-3 py-2 whitespace-nowrap">PICKUP DAY CFM</th>
+                  <th className="px-3 py-2 whitespace-nowrap">SCAC</th>
+                  <th className="px-3 py-2 whitespace-nowrap">CAAT</th>
+                  <th className="px-3 py-2 whitespace-nowrap text-center">DODA</th>
+                  <th className="px-3 py-2 whitespace-nowrap text-center">ENTRY</th>
+                  <th className="px-3 py-2 whitespace-nowrap">DODA APERTURE DATE</th>
+                  <th className="px-3 py-2 whitespace-nowrap">ENTRY APERTURE DATE</th>
+                  <th className="px-3 py-2 whitespace-nowrap">DATE REQUESTED</th>
+                  <th className="px-3 py-2 whitespace-nowrap">CROSSING DATE</th>
+                  <th className="px-3 py-2 whitespace-nowrap">Date Received</th>
+                  <th className="px-3 py-2 whitespace-nowrap">Days to Receive</th>
+                  <th className="px-3 py-2 whitespace-nowrap">EXP DODA</th>
+                  <th className="px-3 py-2 whitespace-nowrap">COMMENTS</th>
+                  <th className="px-3 py-2 whitespace-nowrap">DELIVERY DATE</th>
+                  <th className="px-3 py-2 whitespace-nowrap">ATA DESTINATION</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

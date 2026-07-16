@@ -290,38 +290,38 @@ export const HandheldAsignaciones = () => {
                 {/* Row 4: Arribo + Retraso + T.Planta */}
                 <div className="grid grid-cols-3 gap-2">
                   {/* Arribo */}
-                  <div className="bg-slate-900/50 rounded-xl p-2 flex flex-col items-center">
-                    <span className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Arribo</span>
-                    <span className={`text-sm font-bold font-mono mt-0.5 ${a.arribo ? 'text-amber-400' : 'text-slate-600'}`}>
+                  <div className="bg-slate-900/50 rounded-xl p-3 flex flex-col items-center justify-center">
+                    <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider mb-1">Arribo</span>
+                    <span className={`text-base font-bold font-mono ${a.arribo ? 'text-amber-400' : 'text-slate-600'}`}>
                       {a.arribo || '—'}
                     </span>
                   </div>
 
                   {/* Retraso */}
-                  <div className="bg-slate-900/50 rounded-xl p-2 flex flex-col items-center">
-                    <span className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Retraso</span>
+                  <div className="bg-slate-900/50 rounded-xl p-3 flex flex-col items-center justify-center">
+                    <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider mb-1">Retraso</span>
                     {retrasoMins !== null && a.arribo ? (
-                      <span className={`text-xs font-bold mt-0.5 ${retrasoMins > 30 ? 'text-red-400' : retrasoMins > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                      <span className={`text-sm font-bold ${retrasoMins > 30 ? 'text-red-400' : retrasoMins > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
                         {retrasoMins <= 0 ? 'A tiempo' : `+${formatMins(retrasoMins)}`}
                       </span>
                     ) : (
-                      <span className="text-slate-600 text-xs mt-0.5">—</span>
+                      <span className="text-slate-600 text-sm">—</span>
                     )}
                   </div>
 
                   {/* T. Planta */}
-                  <div className="bg-slate-900/50 rounded-xl p-2 flex flex-col items-center">
-                    <span className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">T. Planta</span>
+                  <div className="bg-slate-900/50 rounded-xl p-3 flex flex-col items-center justify-center">
+                    <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider mb-1">T. Planta</span>
                     {enPlantaMins !== null && a.arribo ? (
-                      <span className={`text-xs font-bold mt-0.5 flex items-center gap-0.5 ${
+                      <span className={`text-sm font-bold flex items-center gap-1 ${
                         hasLib ? 'text-emerald-400' :
                         enPlantaMins > 120 ? 'text-orange-400' : 'text-emerald-400'
                       }`}>
-                        {!hasLib && <span className="w-1 h-1 rounded-full bg-yellow-400 animate-pulse inline-block mr-0.5" />}
+                        {!hasLib && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse inline-block" />}
                         {formatMins(enPlantaMins)}
                       </span>
                     ) : (
-                      <span className="text-slate-600 text-xs mt-0.5">—</span>
+                      <span className="text-slate-600 text-sm">—</span>
                     )}
                   </div>
                 </div>

@@ -28,21 +28,7 @@ export const HandheldHome = () => {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 mt-4">
-                                        {/* Asignaciones Diarias 53' */}
-                     {user?.role !== UserRole.HANDHELD_AF && (
-                         <button
-                            onClick={() => navigate('/m/asignaciones')}
-                            className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group"
-                         >
-                            <div className="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(5,150,105,0.3)] group-hover:scale-105 transition-transform">
-                               <LayoutList size={32} />
-                            </div>
-                            <div>
-                                <h2 className="text-lg font-bold text-white tracking-tight">Asignación 53' Cajas Secas</h2>
-                                <p className="text-slate-400 text-sm mt-1 font-medium">Vista operativa del día</p>
-                            </div>
-                         </button>
-                     )}
+
 
                      {/* Registro de Arribo */}
                      {user?.role !== UserRole.HANDHELD_AF && (
@@ -120,6 +106,22 @@ export const HandheldHome = () => {
                            <div>
                                <h2 className="text-lg font-bold text-white tracking-tight">Vigilancia</h2>
                                <p className="text-slate-400 text-sm mt-1 font-medium">Inspección 7 puntos + Placas</p>
+                           </div>
+                        </button>
+                    )}
+
+                    {/* Asignaciones Diarias 53' */}
+                    {user?.role !== UserRole.HANDHELD_AF && (
+                        <button
+                           onClick={() => navigate('/m/asignaciones')}
+                           className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group"
+                        >
+                           <div className="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(5,150,105,0.3)] group-hover:scale-105 transition-transform">
+                              <LayoutList size={32} />
+                           </div>
+                           <div>
+                               <h2 className="text-lg font-bold text-white tracking-tight">Asignación 53' Cajas Secas</h2>
+                               <p className="text-slate-400 text-sm mt-1 font-medium">Vista operativa del día</p>
                            </div>
                         </button>
                     )}

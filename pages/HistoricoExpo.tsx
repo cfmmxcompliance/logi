@@ -265,6 +265,28 @@ export const HistoricoExpo = () => {
     }
   };
 
+  const handleDownloadDoda = async (record: HistoricoExpoRecord) => {
+    if (!record.dodaApertureDate) {
+      const today = getMexicoToday();
+      try {
+        await storageService.upsertHistoricoExpos([{ ...record, dodaApertureDate: today }]);
+      } catch (e) {
+        console.error('Error updating DODA APERTURE DATE', e);
+      }
+    }
+  };
+
+  const handleDownloadEntry = async (record: HistoricoExpoRecord) => {
+    if (!record.entryApertureDate) {
+      const today = getMexicoToday();
+      try {
+        await storageService.upsertHistoricoExpos([{ ...record, entryApertureDate: today }]);
+      } catch (e) {
+        console.error('Error updating ENTRY APERTURE DATE', e);
+      }
+    }
+  };
+
   const toDriveDownload = (url: string) => {
     if (!url) return '#';
     const match = url.match(/\/d\/(.*?)\/view/);
@@ -696,7 +718,7 @@ export const HistoricoExpo = () => {
                         ) : record.dodaUrl ? (
                           <div className="flex flex-col items-center gap-0.5">
                             <div className="flex items-center justify-center gap-1">
-                              <a href={toDriveDownload(record.dodaUrl)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors" title="Descargar DODA" onClick={e => e.stopPropagation()}>
+                              <a href={toDriveDownload(record.dodaUrl)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors" title="Descargar DODA" onClick={e => { e.stopPropagation(); handleDownloadDoda(record); }}>
                                 <FileText size={18} />
                               </a>
                               <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer" title="Reemplazar DODA" onClick={e => e.stopPropagation()}>
@@ -723,7 +745,7 @@ export const HistoricoExpo = () => {
                         ) : record.entryUrl ? (
                           <div className="flex flex-col items-center gap-0.5">
                             <div className="flex items-center justify-center gap-1">
-                              <a href={toDriveDownload(record.entryUrl)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-100 transition-colors" title="Descargar ENTRY" onClick={e => e.stopPropagation()}>
+                              <a href={toDriveDownload(record.entryUrl)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-100 transition-colors" title="Descargar ENTRY" onClick={e => { e.stopPropagation(); handleDownloadEntry(record); }}>
                                 <FileText size={18} />
                               </a>
                               <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer" title="Reemplazar ENTRY" onClick={e => e.stopPropagation()}>

@@ -21,6 +21,15 @@ const getMexicoNow = () => {
   return new Date().toLocaleString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
+const formatLegacyDate = (d: string) => {
+  if (!d) return '—';
+  if (d.includes('-') && d.length === 10) {
+    const [y, m, day] = d.split('-');
+    return `${day}/${m}/${y}`;
+  }
+  return d;
+};
+
 const emptyRecord: HistoricoExpoRecord = {
   trailer: '',
   idNumber: '',
@@ -804,11 +813,11 @@ export const HistoricoExpo = () => {
                         {(record.dodaApertureHistory && record.dodaApertureHistory.length > 0) ? (
                           <div className="flex flex-col items-center gap-0.5 mt-1">
                             {record.dodaApertureHistory.map((d, i) => (
-                              <span key={i} className="text-[10px] text-indigo-400 font-mono whitespace-nowrap leading-tight">{d}</span>
+                              <span key={i} className="text-[10px] text-indigo-400 font-mono whitespace-nowrap leading-tight">{formatLegacyDate(d)}</span>
                             ))}
                           </div>
                         ) : record.dodaApertureDate ? (
-                          <span className="text-[10px] text-indigo-400 font-mono whitespace-nowrap mt-1">{record.dodaApertureDate}</span>
+                          <span className="text-[10px] text-indigo-400 font-mono whitespace-nowrap mt-1">{formatLegacyDate(record.dodaApertureDate)}</span>
                         ) : (
                           <span className="text-[10px] text-slate-300 font-mono mt-1">—</span>
                         )}
@@ -817,11 +826,11 @@ export const HistoricoExpo = () => {
                         {(record.entryApertureHistory && record.entryApertureHistory.length > 0) ? (
                           <div className="flex flex-col items-center gap-0.5 mt-1">
                             {record.entryApertureHistory.map((d, i) => (
-                              <span key={i} className="text-[10px] text-emerald-400 font-mono whitespace-nowrap leading-tight">{d}</span>
+                              <span key={i} className="text-[10px] text-emerald-400 font-mono whitespace-nowrap leading-tight">{formatLegacyDate(d)}</span>
                             ))}
                           </div>
                         ) : record.entryApertureDate ? (
-                          <span className="text-[10px] text-emerald-400 font-mono whitespace-nowrap mt-1">{record.entryApertureDate}</span>
+                          <span className="text-[10px] text-emerald-400 font-mono whitespace-nowrap mt-1">{formatLegacyDate(record.entryApertureDate)}</span>
                         ) : (
                           <span className="text-[10px] text-slate-300 font-mono mt-1">—</span>
                         )}

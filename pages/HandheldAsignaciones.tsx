@@ -115,7 +115,7 @@ export const HandheldAsignaciones = () => {
   const tabs: { key: StatusFilter; label: string; color: string }[] = [
     { key: 'TODOS',      label: 'Todos',      color: 'bg-slate-600' },
     { key: 'PENDIENTES', label: 'Pendientes', color: 'bg-blue-600' },
-    { key: 'LLEGADOS',   label: 'Llegados',   color: 'bg-amber-500' },
+    { key: 'LLEGADOS',   label: 'En Proceso', color: 'bg-amber-500' },
     { key: 'CERRADO',    label: 'Cerrado',    color: 'bg-emerald-600' },
     { key: 'CANCELADO',  label: 'Cancelado',  color: 'bg-red-600' },
   ];
@@ -215,7 +215,7 @@ export const HandheldAsignaciones = () => {
         <div className="px-4 pt-3 pb-1 grid grid-cols-4 gap-2">
           {[
             { label: 'Pendientes', val: counts.PENDIENTES, color: 'text-blue-400',    bg: 'bg-blue-500/10 border-blue-500/20' },
-            { label: 'Llegados',   val: counts.LLEGADOS,   color: 'text-amber-400',   bg: 'bg-amber-500/10 border-amber-500/20' },
+            { label: 'En Proceso', val: counts.LLEGADOS,   color: 'text-amber-400',   bg: 'bg-amber-500/10 border-amber-500/20' },
             { label: 'Cerrado',    val: counts.CERRADO,    color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
             { label: 'Cancelado',  val: counts.CANCELADO,  color: 'text-red-400',     bg: 'bg-red-500/10 border-red-500/20' },
           ].map(k => (
@@ -315,7 +315,7 @@ export const HandheldAsignaciones = () => {
                   }`}>
                     {status === 'CANCELADO' ? '✕ Cancelado' :
                      status === 'CERRADO'   ? '✓ Cerrado' :
-                     status === 'LLEGADOS'  ? '● Llegado' : '○ Pendiente'}
+                     status === 'LLEGADOS'  ? '● En Proceso' : '○ Pendiente'}
                   </span>
                 </div>
 

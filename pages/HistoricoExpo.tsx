@@ -251,10 +251,19 @@ export const HistoricoExpo = () => {
       const existingRecord = records.find(r => r.id === recordId);
       if (existingRecord) {
         const uploadedAt = new Date().toLocaleString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+        const histField = field === 'dodaUrl' ? 'dodaUploadHistory' : 'entryUploadHistory';
+        const dateField = field === 'dodaUrl' ? 'dodaUploadedAt' : 'entryUploadedAt';
+        const currHist = existingRecord[histField] || [];
+        if (existingRecord[dateField] && currHist.length === 0) {
+          currHist.push(existingRecord[dateField] as string);
+        }
+        const newHist = [...currHist, uploadedAt];
+
         await storageService.upsertHistoricoExpos([{
           ...existingRecord,
           [field]: result.webViewLink || '',
-          [field === 'dodaUrl' ? 'dodaUploadedAt' : 'entryUploadedAt']: uploadedAt
+          [dateField]: uploadedAt,
+          [histField]: newHist
         }]);
       }
     } catch (e) {
@@ -266,10 +275,15 @@ export const HistoricoExpo = () => {
   };
 
   const handleDownloadDoda = async (record: HistoricoExpoRecord) => {
-    if (!record.dodaApertureDate) {
-      const today = getMexicoToday();
+    const today = getMexicoToday();
+    const currHist = record.dodaApertureHistory || [];
+    if (record.dodaApertureDate && currHist.length === 0) {
+      currHist.push(record.dodaApertureDate);
+    }
+    if (!currHist.includes(today)) {
+      const newHist = [...currHist, today];
       try {
-        await storageService.upsertHistoricoExpos([{ ...record, dodaApertureDate: today }]);
+        await storageService.upsertHistoricoExpos([{ ...record, dodaApertureDate: today, dodaApertureHistory: newHist }]);
       } catch (e) {
         console.error('Error updating DODA APERTURE DATE', e);
       }
@@ -277,10 +291,15 @@ export const HistoricoExpo = () => {
   };
 
   const handleDownloadEntry = async (record: HistoricoExpoRecord) => {
-    if (!record.entryApertureDate) {
-      const today = getMexicoToday();
+    const today = getMexicoToday();
+    const currHist = record.entryApertureHistory || [];
+    if (record.entryApertureDate && currHist.length === 0) {
+      currHist.push(record.entryApertureDate);
+    }
+    if (!currHist.includes(today)) {
+      const newHist = [...currHist, today];
       try {
-        await storageService.upsertHistoricoExpos([{ ...record, entryApertureDate: today }]);
+        await storageService.upsertHistoricoExpos([{ ...record, entryApertureDate: today, entryApertureHistory: newHist }]);
       } catch (e) {
         console.error('Error updating ENTRY APERTURE DATE', e);
       }
@@ -726,8 +745,14 @@ export const HistoricoExpo = () => {
                                 <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(record.id!, 'dodaUrl', f, record.trailer); e.target.value = ''; }} />
                               </label>
                             </div>
-                            {record.dodaUploadedAt && (
-                              <span className="text-[10px] text-indigo-400 font-mono whitespace-nowrap">{record.dodaUploadedAt}</span>
+                            {(record.dodaUploadHistory && record.dodaUploadHistory.length > 0) ? (
+                              <div className="flex flex-col items-center gap-0.5 mt-1">
+                                {record.dodaUploadHistory.map((d, i) => (
+                                  <span key={i} className="text-[10px] text-indigo-400 font-mono whitespace-nowrap leading-tight">{d}</span>
+                                ))}
+                              </div>
+                            ) : record.dodaUploadedAt && (
+                              <span className="text-[10px] text-indigo-400 font-mono whitespace-nowrap mt-1">{record.dodaUploadedAt}</span>
                             )}
                           </div>
                         ) : (
@@ -753,8 +778,14 @@ export const HistoricoExpo = () => {
                                 <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(record.id!, 'entryUrl', f, record.trailer); e.target.value = ''; }} />
                               </label>
                             </div>
-                            {record.entryUploadedAt && (
-                              <span className="text-[10px] text-emerald-400 font-mono whitespace-nowrap">{record.entryUploadedAt}</span>
+                            {(record.entryUploadHistory && record.entryUploadHistory.length > 0) ? (
+                              <div className="flex flex-col items-center gap-0.5 mt-1">
+                                {record.entryUploadHistory.map((d, i) => (
+                                  <span key={i} className="text-[10px] text-emerald-400 font-mono whitespace-nowrap leading-tight">{d}</span>
+                                ))}
+                              </div>
+                            ) : record.entryUploadedAt && (
+                              <span className="text-[10px] text-emerald-400 font-mono whitespace-nowrap mt-1">{record.entryUploadedAt}</span>
                             )}
                           </div>
                         ) : (
@@ -765,8 +796,32 @@ export const HistoricoExpo = () => {
                         )}
                       </td>
 
-                      <td className="px-3 py-2 whitespace-nowrap"><span className={record.dodaApertureDate ? 'text-slate-700' : 'text-slate-300'}>{record.dodaApertureDate || '—'}</span></td>
-                      <td className="px-3 py-2 whitespace-nowrap"><span className={record.entryApertureDate ? 'text-slate-700' : 'text-slate-300'}>{record.entryApertureDate || '—'}</span></td>
+                      <td className="px-3 py-2 whitespace-nowrap align-top">
+                        {(record.dodaApertureHistory && record.dodaApertureHistory.length > 0) ? (
+                          <div className="flex flex-col gap-1">
+                            {record.dodaApertureHistory.map((d, i) => (
+                              <span key={i} className="text-slate-700 block">{d}</span>
+                            ))}
+                          </div>
+                        ) : record.dodaApertureDate ? (
+                          <span className="text-slate-700 block">{record.dodaApertureDate}</span>
+                        ) : (
+                          <span className="text-slate-300 block">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap align-top">
+                        {(record.entryApertureHistory && record.entryApertureHistory.length > 0) ? (
+                          <div className="flex flex-col gap-1">
+                            {record.entryApertureHistory.map((d, i) => (
+                              <span key={i} className="text-slate-700 block">{d}</span>
+                            ))}
+                          </div>
+                        ) : record.entryApertureDate ? (
+                          <span className="text-slate-700 block">{record.entryApertureDate}</span>
+                        ) : (
+                          <span className="text-slate-300 block">—</span>
+                        )}
+                      </td>
                       <td className="px-3 py-2 whitespace-nowrap"><span className={record.dateRequested ? 'text-slate-700' : 'text-slate-300'}>{record.dateRequested || '—'}</span></td>
                       <td className="px-3 py-2 whitespace-nowrap"><span className={record.crossingDate ? 'text-slate-700' : 'text-slate-300'}>{record.crossingDate || '—'}</span></td>
                       <td className="px-3 py-2 whitespace-nowrap"><span className={record.dateReceived ? 'text-slate-700' : 'text-slate-300'}>{record.dateReceived || '—'}</span></td>

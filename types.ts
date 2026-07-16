@@ -679,8 +679,12 @@ export interface HistoricoExpoRecord {
   entryUrl?: string;
   dodaUploadedAt?: string;
   entryUploadedAt?: string;
+  dodaUploadHistory?: string[];
+  entryUploadHistory?: string[];
   dodaApertureDate?: string;
   entryApertureDate?: string;
+  dodaApertureHistory?: string[];
+  entryApertureHistory?: string[];
   dateRequested: string;
   crossingDate: string;
   dateReceived: string;

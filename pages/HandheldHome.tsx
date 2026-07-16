@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/useAuth';
-import { LogOut, ShieldCheck, Box, DoorOpen, Truck, Anchor, Shield, Monitor } from 'lucide-react';
+import { LogOut, ShieldCheck, Box, DoorOpen, Truck, Anchor, Shield, Monitor, LayoutList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../types.ts';
 
@@ -28,22 +28,37 @@ export const HandheldHome = () => {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 mt-4">
-                    
-                    {/* Registro de Arribo */}
-                    {user?.role !== UserRole.HANDHELD_AF && (
-                        <button
-                           onClick={() => navigate('/m/arribo')}
-                           className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group"
-                        >
-                           <div className="w-16 h-16 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(245,158,11,0.3)] group-hover:scale-105 transition-transform">
-                              <Truck size={32} />
-                           </div>
-                           <div>
-                               <h2 className="text-lg font-bold text-white tracking-tight">Registro de Arribo</h2>
-                               <p className="text-slate-400 text-sm mt-1 font-medium">Hora y comentarios de llegada</p>
-                           </div>
-                        </button>
-                    )}
+                                        {/* Asignaciones Diarias 53' */}
+                     {user?.role !== UserRole.HANDHELD_AF && (
+                         <button
+                            onClick={() => navigate('/m/asignaciones')}
+                            className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group"
+                         >
+                            <div className="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(5,150,105,0.3)] group-hover:scale-105 transition-transform">
+                               <LayoutList size={32} />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-bold text-white tracking-tight">Asignación 53' Cajas Secas</h2>
+                                <p className="text-slate-400 text-sm mt-1 font-medium">Vista operativa del día</p>
+                            </div>
+                         </button>
+                     )}
+
+                     {/* Registro de Arribo */}
+                     {user?.role !== UserRole.HANDHELD_AF && (
+                         <button
+                            onClick={() => navigate('/m/arribo')}
+                            className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group"
+                         >
+                            <div className="w-16 h-16 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(245,158,11,0.3)] group-hover:scale-105 transition-transform">
+                               <Truck size={32} />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-bold text-white tracking-tight">Registro de Arribo</h2>
+                                <p className="text-slate-400 text-sm mt-1 font-medium">Hora y comentarios de llegada</p>
+                            </div>
+                         </button>
+                     )}
 
                     {/* Cajas y Sellos */}
                     {user?.role !== UserRole.HANDHELD_USER2 && user?.role !== UserRole.HANDHELD_AF && (

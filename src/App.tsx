@@ -62,6 +62,7 @@ const HandheldLiberacion   = React.lazy(() => import('../pages/HandheldLiberacio
 const HandheldLiberacionDock = React.lazy(() => import('../pages/HandheldLiberacionDock.tsx').then(m => ({ default: m.HandheldLiberacionDock })));
 const HandheldArribo       = React.lazy(() => import('../pages/HandheldArribo.tsx').then(m => ({ default: m.HandheldArribo })));
 const HandheldVigilancia   = React.lazy(() => import('../pages/HandheldVigilancia.tsx').then(m => ({ default: m.HandheldVigilancia })));
+const HandheldAsignaciones = React.lazy(() => import('../pages/HandheldAsignaciones.tsx').then(m => ({ default: m.HandheldAsignaciones })));
 const BPMClasificacion     = React.lazy(() => import('../pages/BPMClasificacion.tsx').then(m => ({ default: m.BPMClasificacion })));
 const DailyVanAssignment   = React.lazy(() => import('../pages/DailyVanAssignment.tsx').then(m => ({ default: m.DailyVanAssignment })));
 const AdminProductos53     = React.lazy(() => import('../pages/AdminProductos53.tsx').then(m => ({ default: m.AdminProductos53 })));
@@ -427,6 +428,7 @@ const AppContent = () => {
             <Route path="/m/liberacion-dock" element={<ProtectedRoute><HandheldLiberacionDock /></ProtectedRoute>} />
             <Route path="/m/arribo" element={<ProtectedRoute><HandheldArribo /></ProtectedRoute>} />
             <Route path="/m/vigilancia" element={<ProtectedRoute><HandheldVigilancia /></ProtectedRoute>} />
+            <Route path="/m/asignaciones" element={<ProtectedRoute><HandheldAsignaciones /></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

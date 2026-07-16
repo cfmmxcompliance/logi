@@ -3,6 +3,7 @@ import { useAuth } from '../context/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { liberacionService } from '../services/liberacionService.ts';
+import { liberacionDockService } from '../services/liberacionDockService.ts';
 import { AsignacionCajaModel } from '../types/asignacionCaja.ts';
 import { HandheldToolbar } from '../components/HandheldToolbar.tsx';
 import {
@@ -46,16 +47,22 @@ export const HandheldAsignaciones = () => {
 
   const [asignaciones, setAsignaciones] = useState<AsignacionCajaModel[]>([]);
   const [liberacionIds, setLiberacionIds] = useState<Set<string>>(new Set());
+  const [liberacionDockIds, setLiberacionDockIds] = useState<Set<string>>(new Set());
 
   const fetchData = async (silent = false) => {
     if (!silent) setLoading(true);
     else setRefreshing(true);
     try {
-      const [asigs, libs] = await Promise.all([
+      const [asigs, libs, libsDock] = await Promise.all([
         dateStart === dateEnd
           ? asignacionCajaService.getAsignacionesByDate(dateStart)
           : asignacionCajaService.getAsignacionesByDateRange(dateStart, dateEnd),
-        liberacionService.getLiberacionesByDate(dateStart),
+        dateStart === dateEnd
+          ? liberacionService.getLiberacionesByDate(dateStart)
+          : liberacionService.getLiberacionesByDateRange(dateStart, dateEnd),
+        dateStart === dateEnd
+          ? liberacionDockService.getLiberacionesDockByDate(dateStart)
+          : liberacionDockService.getLiberacionesDockByDateRange(dateStart, dateEnd),
       ]);
       asigs.sort((a, b) => {
         if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
@@ -63,6 +70,7 @@ export const HandheldAsignaciones = () => {
       });
       setAsignaciones(asigs);
       setLiberacionIds(new Set(libs.map(l => l.asignacionCajaId)));
+      setLiberacionDockIds(new Set(libsDock.map(l => l.asignacionCajaId)));
     } catch (e) {
       console.error(e);
     } finally {
@@ -145,6 +153,62 @@ export const HandheldAsignaciones = () => {
         dateEnd={dateEnd}     setDateEnd={setDateEnd}
         searchTerm={searchTerm} setSearchTerm={setSearchTerm}
       />
+
+      {/* ── Dock Status ── */}
+      {!loading && (() => {
+        const DOCK_FROM = 5;
+        const DOCK_TO   = 10;
+        const dockStatus: Record<string, AsignacionCajaModel | null> = {};
+        for (let i = DOCK_FROM; i <= DOCK_TO; i++) dockStatus[`DOCK ${i}`] = null;
+
+        asignaciones.forEach(a => {
+          if (!a.dockArribo) return;
+          const key = a.dockArribo.trim().toUpperCase();
+          if (!(key in dockStatus)) return;
+          if (!liberacionDockIds.has(a.id!)) dockStatus[key] = a;
+        });
+
+        const ocupados = Object.values(dockStatus).filter(Boolean).length;
+        const libres   = (DOCK_TO - DOCK_FROM + 1) - ocupados;
+
+        return (
+          <div className="mx-4 mt-4 mb-1 bg-slate-900/60 border border-slate-700/50 rounded-xl p-3">
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Estado de Docks</span>
+              <div className="flex gap-3 text-[10px]">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                  <span className="text-emerald-400 font-semibold">{libres} libres</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+                  <span className="text-red-400 font-semibold">{ocupados} ocup.</span>
+                </span>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {Array.from({length: DOCK_TO - DOCK_FROM + 1}, (_, i) => DOCK_FROM + i).map(n => {
+                const key = `DOCK ${n}`;
+                const asig = dockStatus[key];
+                return asig ? (
+                  <div key={key} className="bg-red-500/10 border border-red-500/30 rounded-lg p-1.5 flex flex-col items-center justify-center text-center">
+                    <span className="text-[9px] font-bold text-red-400 uppercase leading-tight">{key}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1 mb-1 animate-pulse" />
+                    <span className="text-[9px] text-red-300 font-mono font-bold w-full truncate leading-tight">{asig.numeroCaja}</span>
+                    <span className="text-[8px] text-slate-500 w-full truncate leading-tight mt-0.5">{asig.numeroOperacion || '—'}</span>
+                  </div>
+                ) : (
+                  <div key={key} className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-1.5 flex flex-col items-center justify-center text-center">
+                    <span className="text-[9px] font-bold text-emerald-500/80 uppercase leading-tight mb-1">{key}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/50 mb-1" />
+                    <span className="text-[8px] text-emerald-600/70 font-semibold leading-tight">Libre</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── KPI strip ── */}
       {!loading && (

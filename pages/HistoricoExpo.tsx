@@ -17,6 +17,10 @@ const getMexicoToday = () => {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Monterrey', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 };
 
+const getMexicoNow = () => {
+  return new Date().toLocaleString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
 const emptyRecord: HistoricoExpoRecord = {
   trailer: '',
   idNumber: '',
@@ -275,7 +279,7 @@ export const HistoricoExpo = () => {
   };
 
   const handleDownloadDoda = async (record: HistoricoExpoRecord) => {
-    const today = getMexicoToday();
+    const today = getMexicoNow();
     const currHist = record.dodaApertureHistory || [];
     if (record.dodaApertureDate && currHist.length === 0) {
       currHist.push(record.dodaApertureDate);
@@ -291,7 +295,7 @@ export const HistoricoExpo = () => {
   };
 
   const handleDownloadEntry = async (record: HistoricoExpoRecord) => {
-    const today = getMexicoToday();
+    const today = getMexicoNow();
     const currHist = record.entryApertureHistory || [];
     if (record.entryApertureDate && currHist.length === 0) {
       currHist.push(record.entryApertureDate);
@@ -796,30 +800,30 @@ export const HistoricoExpo = () => {
                         )}
                       </td>
 
-                      <td className="px-3 py-2 whitespace-nowrap align-top">
+                      <td className="px-3 py-2 whitespace-nowrap align-top text-center border-l border-indigo-100/50">
                         {(record.dodaApertureHistory && record.dodaApertureHistory.length > 0) ? (
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-col items-center gap-0.5 mt-1">
                             {record.dodaApertureHistory.map((d, i) => (
-                              <span key={i} className="text-slate-700 block">{d}</span>
+                              <span key={i} className="text-[10px] text-indigo-400 font-mono whitespace-nowrap leading-tight">{d}</span>
                             ))}
                           </div>
                         ) : record.dodaApertureDate ? (
-                          <span className="text-slate-700 block">{record.dodaApertureDate}</span>
+                          <span className="text-[10px] text-indigo-400 font-mono whitespace-nowrap mt-1">{record.dodaApertureDate}</span>
                         ) : (
-                          <span className="text-slate-300 block">—</span>
+                          <span className="text-[10px] text-slate-300 font-mono mt-1">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap align-top">
+                      <td className="px-3 py-2 whitespace-nowrap align-top text-center border-l border-emerald-100/50">
                         {(record.entryApertureHistory && record.entryApertureHistory.length > 0) ? (
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-col items-center gap-0.5 mt-1">
                             {record.entryApertureHistory.map((d, i) => (
-                              <span key={i} className="text-slate-700 block">{d}</span>
+                              <span key={i} className="text-[10px] text-emerald-400 font-mono whitespace-nowrap leading-tight">{d}</span>
                             ))}
                           </div>
                         ) : record.entryApertureDate ? (
-                          <span className="text-slate-700 block">{record.entryApertureDate}</span>
+                          <span className="text-[10px] text-emerald-400 font-mono whitespace-nowrap mt-1">{record.entryApertureDate}</span>
                         ) : (
-                          <span className="text-slate-300 block">—</span>
+                          <span className="text-[10px] text-slate-300 font-mono mt-1">—</span>
                         )}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap"><span className={record.dateRequested ? 'text-slate-700' : 'text-slate-300'}>{record.dateRequested || '—'}</span></td>

@@ -637,11 +637,12 @@ export const AsignacionesDiarias: React.FC = () => {
         return;
     }
 
-    // VALIDACIÓN DE DUPLICADOS: No permitir misma caja el mismo día
+    // VALIDACIÓN DE DUPLICADOS: No permitir misma caja el mismo día (excepto si está CANCELADA)
     const isDuplicate = asignaciones.some(a => 
       a.fecha === formData.fecha && 
       a.numeroCaja === formData.numeroCaja && 
-      (!isEditing || a.id !== formData.id)
+      (!isEditing || a.id !== formData.id) &&
+      a.dockArribo !== 'CANCELED'
     );
 
     if (isDuplicate) {
@@ -1520,10 +1521,13 @@ export const AsignacionesDiarias: React.FC = () => {
               const isRechazado = dockVal === 'RECHAZADO';
               const isDrop = dockVal === 'DROP';
               const isNoShow = dockVal === 'NO SHOW';
+              const isCanceled = dockVal === 'CANCELED';
               const hasUSDB1 = String((a as any).observaciones || '').toUpperCase().includes('USDB1');
-              const hideDocs = isRechazado || isDrop || isNoShow || hasUSDB1;
+              const hideDocs = isRechazado || isDrop || isNoShow || isCanceled || hasUSDB1;
 
-              if (isRechazado || isDrop) {
+              if (isCanceled) {
+                  rowColorClass = 'bg-red-100 hover:bg-red-200';
+              } else if (isRechazado || isDrop) {
                   rowColorClass = 'bg-yellow-100 hover:bg-yellow-200';
               } else if (isNoShow) {
                   rowColorClass = 'bg-orange-100 hover:bg-orange-200';

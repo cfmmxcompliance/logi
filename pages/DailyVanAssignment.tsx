@@ -461,7 +461,9 @@ export const DailyVanAssignment: React.FC = () => {
                   {displayedAssignments.map((asig, idx) => {
                     const lib = getLibForCaja(asig.id!);
                     const isEven = idx % 2 === 0;
-                    const rowBg = isEven ? 'bg-slate-800/30' : 'bg-slate-900/40';
+                    const isCanceled = (asig.dockArribo || '').trim().toUpperCase() === 'CANCELED';
+                    let rowBg = isEven ? 'bg-slate-800/30' : 'bg-slate-900/40';
+                    if (isCanceled) rowBg = 'bg-red-900/40';
 
                     // Parse times for UI
                     const parseTimeUi = (date: string, time: string) => {

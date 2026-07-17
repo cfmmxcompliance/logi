@@ -65,6 +65,29 @@ export const liberacionService = {
     }
   },
 
+  async getLiberacionesByAsignacionIds(ids: string[]): Promise<LiberacionRecord[]> {
+    if (!db || !ids || ids.length === 0) return [];
+    try {
+      const chunks = [];
+      for (let i = 0; i < ids.length; i += 30) {
+        chunks.push(ids.slice(i, i + 30));
+      }
+      const results: LiberacionRecord[] = [];
+      for (const chunk of chunks) {
+        const q = query(
+          collection(db, COLLECTION_NAME),
+          where('asignacionCajaId', 'in', chunk)
+        );
+        const snapshot = await getDocs(q);
+        snapshot.docs.forEach(d => results.push({ id: d.id, ...d.data() } as LiberacionRecord));
+      }
+      return results;
+    } catch (error) {
+      console.error('Error fetching liberaciones by ids:', error);
+      return [];
+    }
+  },
+
   async addLiberacion(liberacion: LiberacionRecord): Promise<string> {
     if (!db) throw new Error("Sin conexión a la base de datos (db nulo).");
     try {

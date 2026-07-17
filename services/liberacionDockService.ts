@@ -63,6 +63,29 @@ export const liberacionDockService = {
     }
   },
 
+  async getLiberacionesDockByAsignacionIds(ids: string[]): Promise<LiberacionDockRecord[]> {
+    if (!db || !ids || ids.length === 0) return [];
+    try {
+      const chunks = [];
+      for (let i = 0; i < ids.length; i += 30) {
+        chunks.push(ids.slice(i, i + 30));
+      }
+      const results: LiberacionDockRecord[] = [];
+      for (const chunk of chunks) {
+        const q = query(
+          collection(db, COLLECTION_NAME),
+          where('asignacionCajaId', 'in', chunk)
+        );
+        const snapshot = await getDocs(q);
+        snapshot.docs.forEach(d => results.push({ id: d.id, ...d.data() } as LiberacionDockRecord));
+      }
+      return results;
+    } catch (error) {
+      console.error('Error fetching liberacionesDock by ids:', error);
+      return [];
+    }
+  },
+
   async addLiberacionDock(record: LiberacionDockRecord): Promise<string> {
     if (!db) throw new Error('Sin conexión a la base de datos.');
     const docId = record.id || doc(collection(db, COLLECTION_NAME)).id;

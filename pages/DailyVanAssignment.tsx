@@ -28,10 +28,12 @@ export const DailyVanAssignment: React.FC = () => {
   const fetchData = async (start: string, end: string) => {
     setLoading(true);
     try {
-      const [asigData, libData, libDockData] = await Promise.all([
-        asignacionCajaService.getAsignacionesByDateRange(start, end),
-        liberacionService.getLiberacionesByDateRange(start, end),
-        liberacionDockService.getLiberacionesDockByDateRange(start, end),
+      const asigData = await asignacionCajaService.getAsignacionesByDateRange(start, end);
+      const asigIds = asigData.map(a => a.id!).filter(Boolean);
+
+      const [libData, libDockData] = await Promise.all([
+        liberacionService.getLiberacionesByAsignacionIds(asigIds),
+        liberacionDockService.getLiberacionesDockByAsignacionIds(asigIds),
       ]);
       asigData.sort((a, b) => {
         if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;

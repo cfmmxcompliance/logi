@@ -259,15 +259,13 @@ export const AsignacionesDiarias: React.FC = () => {
 
   const loadData = async () => {
     try {
-        const asigData = await asignacionCajaService.getAsignacionesByDateRange(dateRange.start, dateRange.end).catch(() => []);
-        const asigIds = asigData.map(a => a.id!).filter(Boolean);
-
-        const [cajasData, driversData, carriersData, liberacionesData, liberacionesDockData, linesData, vigilanciasData, sellosData] = await Promise.all([
+        const [asigData, cajasData, driversData, carriersData, liberacionesData, liberacionesDockData, linesData, vigilanciasData, sellosData] = await Promise.all([
+            asignacionCajaService.getAsignacionesByDateRange(dateRange.start, dateRange.end).catch(() => []),
             cajaService.getAllCajas().catch(() => []),
             driverService.getAllDrivers().catch(() => []),
             carrierService.getAllCarriers().catch(() => []),
-            liberacionService.getLiberacionesByAsignacionIds(asigIds).catch(() => []),
-            liberacionDockService.getLiberacionesDockByAsignacionIds(asigIds).catch(() => []),
+            liberacionService.getLiberacionesByDateRange(dateRange.start, dateRange.end).catch(() => []),
+            liberacionDockService.getLiberacionesDockByDateRange(dateRange.start, dateRange.end).catch(() => []),
             transportLineService.getAllTransportLines().catch(() => []),
             vigilanciaService.getByDateRange(dateRange.start, dateRange.end).catch(() => []),
             selloService.getAllSellos().catch(() => [])

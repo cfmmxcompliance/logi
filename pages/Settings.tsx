@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { storageService } from '../services/storageService.ts';
-import { Database, Trash2, AlertTriangle, History, RotateCcw, Save, Users, Shield, Play, Key, UserPlus, Mail, Plus, Search } from 'lucide-react';
+import { carrierService } from '../services/carrierService.ts';
+import { Database, Trash2, AlertTriangle, History, RotateCcw, Save, Users, Shield, Play, Key, UserPlus, Mail, Plus, Search, Truck } from 'lucide-react';
 import { CatalogQueryBuilder, evaluateCondition, QueryCondition } from '../components/CatalogQueryBuilder.tsx';
 import { RestorePoint, UserRole, User } from '../types.ts';
 import { useAuth } from '../context/useAuth';
@@ -14,6 +15,13 @@ export const Settings = () => {
     const [systemUsers, setSystemUsers] = useState<User[]>([]);
     const [reportEmails, setReportEmails] = useState<string[]>([]);
     const [newEmail, setNewEmail] = useState('');
+
+    // ── Layout notifications by SCAC ────────────────────────────────────────
+    const [layoutSubs, setLayoutSubs] = useState<Record<string, string[]>>({});
+    const [availableScacs, setAvailableScacs] = useState<string[]>([]);
+    const [selectedScac, setSelectedScac] = useState<string>('');
+    const [newLayoutEmail, setNewLayoutEmail] = useState('');
+    const [savingLayout, setSavingLayout] = useState(false);
 
     const [userFilter, setUserFilter] = useState('');
     const [showUserQueryBuilder, setShowUserQueryBuilder] = useState(false);
@@ -84,6 +92,14 @@ export const Settings = () => {
             authService.getUsers().then(users => setSystemUsers(users));
             // @ts-ignore
             storageService.getAuditReportEmails().then(emails => setReportEmails(emails));
+            // Load layout subscriptions + carrier SCAC list
+            // @ts-ignore
+            storageService.getLayoutNotificationsByScac().then((data: Record<string, string[]>) => setLayoutSubs(data));
+            carrierService.getAllCarriers().then(carriers => {
+                const scacs = [...new Set(carriers.map((c: any) => (c.scac || c.carrierCodigo || c.codigo || '').trim().toUpperCase()).filter(Boolean))].sort();
+                setAvailableScacs(scacs);
+                if (scacs.length > 0) setSelectedScac(scacs[0]);
+            }).catch(() => {});
         }
 
         // Subscribe to changes (e.g. if auto-backup runs)
@@ -594,6 +610,120 @@ export const Settings = () => {
                                     ))
                                 )}
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* LAYOUT NOTIFICATIONS BY SCAC */}
+                {isAdmin && (
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="p-6 border-b border-slate-100">
+                            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <Truck className="text-indigo-500" size={24} />
+                                Notificaciones de Layout por Carrier
+                            </h2>
+                            <p className="text-slate-500 text-sm mt-1">
+                                Cuando se suba un LAYOUT, se notificará al SCAC de la sub-línea <strong>y</strong> al Carrier Padre. Gestiona los suscriptores por código de carrier.
+                            </p>
+                        </div>
+                        <div className="p-6 space-y-5">
+                            {/* Selector de SCAC */}
+                            <div className="flex items-center gap-3">
+                                <label className="text-sm font-semibold text-slate-600 whitespace-nowrap">Carrier / SCAC:</label>
+                                <select
+                                    value={selectedScac}
+                                    onChange={e => setSelectedScac(e.target.value)}
+                                    className="flex-1 border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                                >
+                                    {availableScacs.length === 0 && <option value="">Cargando carriers...</option>}
+                                    {availableScacs.map(s => (
+                                        <option key={s} value={s}>{s} {layoutSubs[s]?.length ? `(${layoutSubs[s].length} suscriptor${layoutSubs[s].length > 1 ? 'es' : ''})` : ''}</option>
+                                    ))}
+                                </select>
+                                {/* Input manual si el SCAC no está en la lista */}
+                                <input
+                                    type="text"
+                                    placeholder="O escribe un SCAC..."
+                                    value={availableScacs.includes(selectedScac) ? '' : selectedScac}
+                                    onChange={e => setSelectedScac(e.target.value.trim().toUpperCase())}
+                                    className="w-36 border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                />
+                            </div>
+
+                            {/* Agregar email */}
+                            {selectedScac && (
+                                <div className="flex gap-2">
+                                    <input
+                                        type="email"
+                                        value={newLayoutEmail}
+                                        onChange={e => setNewLayoutEmail(e.target.value)}
+                                        placeholder={`Email para ${selectedScac}...`}
+                                        className="flex-1 border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        onKeyDown={async e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                                    />
+                                    <button
+                                        disabled={savingLayout}
+                                        onClick={async () => {
+                                            const email = newLayoutEmail.trim().toLowerCase();
+                                            if (!email.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
+                                                alert('Email inválido.');
+                                                return;
+                                            }
+                                            const current = layoutSubs[selectedScac] || [];
+                                            if (current.includes(email)) { alert('Este email ya está en la lista.'); return; }
+                                            const updated = { ...layoutSubs, [selectedScac]: [...current, email] };
+                                            setSavingLayout(true);
+                                            // @ts-ignore
+                                            const ok = await storageService.updateLayoutNotificationsByScac(updated);
+                                            if (ok) { setLayoutSubs(updated); setNewLayoutEmail(''); }
+                                            setSavingLayout(false);
+                                        }}
+                                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-colors font-bold text-sm disabled:opacity-50"
+                                    >
+                                        <Plus size={16} /> Agregar
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Lista de emails del SCAC seleccionado */}
+                            {selectedScac && (
+                                <div className="space-y-2">
+                                    {!(layoutSubs[selectedScac]?.length) ? (
+                                        <p className="text-slate-400 text-sm italic py-4 text-center">
+                                            No hay suscriptores para <strong>{selectedScac}</strong>. Agrega el primero arriba.
+                                        </p>
+                                    ) : (
+                                        layoutSubs[selectedScac].map((email, idx) => (
+                                            <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold uppercase">
+                                                        {email.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm font-medium text-slate-700">{email}</span>
+                                                        <span className="ml-2 text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 rounded px-1.5 py-0.5 font-bold">{selectedScac}</span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!window.confirm(`¿Quitar ${email} de ${selectedScac}?`)) return;
+                                                        const updated = {
+                                                            ...layoutSubs,
+                                                            [selectedScac]: layoutSubs[selectedScac].filter(e => e !== email)
+                                                        };
+                                                        // @ts-ignore
+                                                        const ok = await storageService.updateLayoutNotificationsByScac(updated);
+                                                        if (ok) setLayoutSubs(updated);
+                                                    }}
+                                                    className="text-slate-400 hover:text-red-500 p-1 transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

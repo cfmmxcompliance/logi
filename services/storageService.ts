@@ -3533,6 +3533,41 @@ export const storageService = {
     }
   },
 
+  // ── Notificaciones de Layout por SCAC / Carrier ─────────────────────────
+  getLayoutNotificationsByScac: async (): Promise<Record<string, string[]>> => {
+    if (!db) return {};
+    try {
+      const { doc, getDoc } = await import('firebase/firestore');
+      const snap = await getDoc(doc(db, COLS.SUBSCRIPTIONS, 'layout_by_scac'));
+      if (!snap.exists()) return {};
+      const data = snap.data();
+      // Filtra solo las claves que son arrays de strings (excluye updatedAt, etc.)
+      const result: Record<string, string[]> = {};
+      Object.entries(data).forEach(([k, v]) => {
+        if (Array.isArray(v)) result[k] = v as string[];
+      });
+      return result;
+    } catch (e) {
+      console.error('Failed to get layout notifications by scac', e);
+      return {};
+    }
+  },
+
+  updateLayoutNotificationsByScac: async (data: Record<string, string[]>): Promise<boolean> => {
+    if (!db) return false;
+    try {
+      const { doc, setDoc } = await import('firebase/firestore');
+      await setDoc(doc(db, COLS.SUBSCRIPTIONS, 'layout_by_scac'), {
+        ...data,
+        updatedAt: new Date().toISOString()
+      }, { merge: false }); // merge: false para limpiar SCACs eliminados
+      return true;
+    } catch (e) {
+      console.error('Failed to update layout notifications by scac', e);
+      return false;
+    }
+  },
+
   triggerManualAuditReport: async (date?: string): Promise<{ success: boolean; message: string }> => {
     try {
       const functions = getFunctions();

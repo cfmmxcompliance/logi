@@ -681,3 +681,129 @@ exports.autoFillLayout = onDocumentWritten(
     return null;
   }
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// sendLayoutNotificationEmail
+// Firestore trigger: asignacion_cajas/{docId}
+// Dispara cuando layoutUrl pasa de vacío → con valor (primera subida solamente).
+// Envía correo a suscriptores del SCAC de la sub-línea Y del Carrier Padre.
+// ─────────────────────────────────────────────────────────────────────────────
+exports.sendLayoutNotificationEmail = onDocumentWritten(
+  { document: 'asignacion_cajas/{docId}', region: 'us-central1', memory: '256MiB' },
+  async (event) => {
+    const before = event.data?.before?.data() || {};
+    const after  = event.data?.after?.data()  || {};
+
+    // Solo cuando layoutUrl pasa de vacío → con valor (no en reprocesos)
+    if (before.layoutUrl || !after.layoutUrl) return null;
+
+    const scac         = (after.scac          || '').trim().toUpperCase();
+    const carrierPadre = (after.carrierCodigo || '').trim().toUpperCase();
+
+    if (!scac && !carrierPadre) {
+      console.log('sendLayoutNotificationEmail: sin SCAC ni carrierCodigo, omitiendo.');
+      return null;
+    }
+
+    // Lee suscriptores de Firestore (audit_subscriptions/layout_by_scac)
+    let allSubs = {};
+    try {
+      const subSnap = await db.doc('audit_subscriptions/layout_by_scac').get();
+      if (subSnap.exists) {
+        const raw = subSnap.data();
+        Object.entries(raw).forEach(([k, v]) => {
+          if (Array.isArray(v)) allSubs[k] = v;
+        });
+      }
+    } catch (e) {
+      console.error('sendLayoutNotificationEmail: error leyendo suscriptores:', e.message);
+      return null;
+    }
+
+    // Junta emails de SCAC + Carrier Padre, sin duplicados
+    const emailsScac   = allSubs[scac]         || [];
+    const emailsPadre  = allSubs[carrierPadre] || [];
+    const emails = [...new Set([...emailsScac, ...emailsPadre])].filter(Boolean);
+
+    if (emails.length === 0) {
+      console.log(`sendLayoutNotificationEmail: sin suscriptores para SCAC=${scac} / Padre=${carrierPadre}`);
+      return null;
+    }
+
+    // Datos del registro para el correo
+    const numeroCaja      = after.numeroCaja      || '—';
+    const numeroOp        = after.numeroOperacion || '—';
+    const subLinea        = after.subLinea        || scac || '—';
+    const driver          = after.nombreDriver    || '—';
+    const cfmRef          = after.cfmRef          || '—';
+    const vehiculos       = after.vehiculos       || '—';
+    const subidoPor       = after.layoutUploadedBy || '—';
+    const layoutFileName  = after.layoutFileName  || '—';
+    const hora            = new Date().toLocaleString('es-MX', {
+      timeZone: 'America/Mexico_City', hour12: false,
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+
+    const htmlBody = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+    .card { background: #fff; border-radius: 8px; padding: 28px 32px; max-width: 560px;
+            margin: 0 auto; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    h2 { color: #1e3a5f; margin: 0 0 6px; font-size: 20px; }
+    .sub { color: #6b7280; font-size: 13px; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    td { padding: 9px 12px; font-size: 14px; border-bottom: 1px solid #e5e7eb; }
+    td:first-child { color: #6b7280; width: 42%; font-weight: 600; }
+    td:last-child { color: #111827; }
+    .badge { display:inline-block; background:#dbeafe; color:#1d4ed8;
+             border-radius:4px; padding:2px 8px; font-size:12px; font-weight:700; }
+    .footer { font-size:11px; color:#9ca3af; text-align:center; margin-top:20px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>📋 LAYOUT subido — ${numeroOp}</h2>
+    <p class="sub">Asignación Diaria de Cajas Secas 53' · ${hora}</p>
+    <table>
+      <tr><td>No. Operación</td><td><span class="badge">${numeroOp}</span></td></tr>
+      <tr><td>Número de Caja</td><td><strong>${numeroCaja}</strong></td></tr>
+      <tr><td>Carrier / SCAC</td><td>${carrierPadre} <span style="color:#6b7280;font-size:12px;">(${subLinea})</span></td></tr>
+      <tr><td>Driver</td><td>${driver}</td></tr>
+      <tr><td>CFM Ref</td><td>${cfmRef}</td></tr>
+      <tr><td>Vehículos</td><td>${vehiculos}</td></tr>
+      <tr><td>Archivo</td><td style="font-size:12px;">${layoutFileName}</td></tr>
+      <tr><td>Subido por</td><td>${subidoPor}</td></tr>
+      <tr><td>Fecha/Hora</td><td>${hora}</td></tr>
+    </table>
+    <p class="footer">Este correo fue generado automáticamente por Logimaster · CFMoto Compliance</p>
+  </div>
+</body>
+</html>`;
+
+    try {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: CONFIG.SENDER_EMAIL, pass: process.env.EMAIL_PASSWORD }
+      });
+
+      await transporter.sendMail({
+        from: `"Logimaster Compliance" <${CONFIG.SENDER_EMAIL}>`,
+        to: CONFIG.SENDER_EMAIL,
+        bcc: emails.join(', '),
+        subject: `📋 LAYOUT subido — ${numeroOp} / Caja ${numeroCaja} (${scac || carrierPadre})`,
+        html: htmlBody
+      });
+
+      console.log(`✓ sendLayoutNotificationEmail: correo enviado a ${emails.length} suscriptor(es) para ${scac}/${carrierPadre}`);
+    } catch (e) {
+      console.error('sendLayoutNotificationEmail: error enviando correo:', e.message);
+    }
+
+    return null;
+  }
+);

@@ -1,9 +1,14 @@
 import React from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell
+  BarChart, Bar as _Bar, XAxis, YAxis, CartesianGrid, Tooltip as _RechartsTooltip, Legend as _Legend, ResponsiveContainer,
+  PieChart, Pie as _Pie, Cell
 } from 'recharts';
 import { PedimentoRecord } from '../../types.ts';
+
+const Bar = _Bar as any;
+const RechartsTooltip = _RechartsTooltip as any;
+const Legend = _Legend as any;
+const Pie = _Pie as any;
 
 interface ChartsProps {
   data: PedimentoRecord[];

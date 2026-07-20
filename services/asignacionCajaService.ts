@@ -113,14 +113,14 @@ export const asignacionCajaService = {
       sellosSnap.forEach(d => batch.delete(doc(db, 'sellos', d.id)));
 
       // 2. Mark associated liberacion for deletion
-      const libQ = query(collection(db, 'liberaciones'), where('asignacionCajaId', '==', id));
+      const libQ = query(collection(db, 'liberacionesCaja'), where('asignacionCajaId', '==', id));
       const libSnap = await getDocs(libQ);
-      libSnap.forEach(d => batch.delete(doc(db, 'liberaciones', d.id)));
+      libSnap.forEach(d => batch.delete(doc(db, 'liberacionesCaja', d.id)));
 
       // 3. Mark associated liberacion_dock for deletion
-      const dockQ = query(collection(db, 'liberaciones_dock'), where('asignacionCajaId', '==', id));
+      const dockQ = query(collection(db, 'liberacionesDock'), where('asignacionCajaId', '==', id));
       const dockSnap = await getDocs(dockQ);
-      dockSnap.forEach(d => batch.delete(doc(db, 'liberaciones_dock', d.id)));
+      dockSnap.forEach(d => batch.delete(doc(db, 'liberacionesDock', d.id)));
 
       // 4. Mark the main asignacion for deletion
       batch.delete(doc(db, COLLECTION_NAME, id));

@@ -497,7 +497,7 @@ export const ReglaOctava = () => {
                                                 <div className="flex items-center gap-2">
                                                     <span>{rule.permisoPrevio || 'N/A'}</span>
                                                     {isPermisoOk && (
-                                                        <ShieldCheck size={16} className="text-green-500 flex-shrink-0" title="Permiso existe en MD" />
+                                                        <ShieldCheck size={16} className="text-green-500 flex-shrink-0" />
                                                     )}
                                                 </div>
                                             </td>

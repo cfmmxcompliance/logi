@@ -926,7 +926,7 @@ export const DatabaseView = () => {
 
             // FORCE HARD SYNC: Wipe local and re-fetch to guarantee mirror state
             setProcState(prev => ({ ...prev, message: 'Finalizing sync with cloud...' }));
-            await storageService.loadMasterData(true);
+            await storageService.loadMasterData();
 
             setProcState({
                 isOpen: true,
@@ -1534,7 +1534,7 @@ export const DatabaseView = () => {
                             </div>
                         ) : (
                             <button
-                                onClick={() => hasLoaded ? storageService.loadMasterData(true) : handleLoad()}
+                                onClick={() => hasLoaded ? storageService.loadMasterData() : handleLoad()}
                                 className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all"
                                 title={hasLoaded ? "Force Full Sync from Cloud" : "Cargar datos"}
                             >

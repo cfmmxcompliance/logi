@@ -175,7 +175,7 @@ export const CaptureDocumentTabs: React.FC<Props> = ({ enrichedPayload, infoEnvi
     const modelGroups     = groupBy(vins, 'modelo');
     const containers      = Object.keys(containerGroups);
     const firstContainer  = containers[0] || '';
-    const firstSeal       = containerGroups[firstContainer]?.[0]?.sealNo || '';
+    const firstSeal       = (containerGroups[firstContainer]?.[0] as any)?.sealNo || '';
     return {
       vins, invoiceNo, asnNo, serie, folio, invoiceDate,
       totalUnits, totalValUsd, totalPuAdu, totalBruto, totalNeto, totalBrutoLb,

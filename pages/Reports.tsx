@@ -1,7 +1,11 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { storageService } from '../services/storageService.ts';
 import { Upload, FileSpreadsheet, Search, Filter, DollarSign, Container, Clock, AlertTriangle } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as _Tooltip, Legend as _Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie as _Pie, Cell } from 'recharts';
+
+const Pie = _Pie as any;
+const Tooltip = _Tooltip as any;
+const Legend = _Legend as any;
 import { parseCSV } from '../utils/csvHelpers.ts';
 import { ProcessingModal, ProcessingState, INITIAL_PROCESSING_STATE } from '../components/ProcessingModal.tsx';
 

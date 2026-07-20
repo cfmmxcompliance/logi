@@ -272,7 +272,7 @@ export const ReglaOctavaR8 = () => {
                 reader.onerror = error => reject(error);
             });
             const uploadResult = await uploadFileToDrive(file, 'Permiso R8', 'PermisosR8');
-            const pdfUrl = uploadResult.url;
+            const pdfUrl = uploadResult.webViewLink;
 
             const extractedData = await geminiService.extractR8Document(fileData, file.type);
             
@@ -464,7 +464,7 @@ export const ReglaOctavaR8 = () => {
         return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0);
     };
 
-    const uniqueCountries = ['Todos los países', ...Array.from(new Set(detalleData.map(d => d.paisProcedencia || d.pais).filter(Boolean))) as Set<string>];
+    const uniqueCountries = ['Todos los países', ...Array.from(new Set(detalleData.map(d => d.paisProcedencia || d.pais).filter(Boolean))) as string[]];
 
     return (
         <div className="p-8 max-w-[1600px] mx-auto bg-slate-50 min-h-screen">

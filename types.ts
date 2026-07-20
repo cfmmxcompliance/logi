@@ -405,6 +405,8 @@ export interface GeneralData {
   igiTotal?: number; // New: Extracted IGI (Total)
   lineaCaptura?: string; // New: Extracted Alphanumeric Capture Line
   isFixedAsset?: boolean; // New: Activo Fijo flag
+  destinatario?: string;
+  destinatarioRfc?: string;
 }
 
 export interface DSInvoiceData {
@@ -694,7 +696,7 @@ export interface HistoricoExpoRecord {
   deliveryDate?: string;
   scacAndCaat: string;
   ataDestination?: string;
-  createdAt?: number;
+  createdAt?: number | string;
 }
 
 export interface StorageState {

@@ -1,6 +1,11 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import JSZip from 'jszip';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, ComposedChart, Line } from 'recharts';
+import { BarChart, Bar as _Bar, XAxis, YAxis, CartesianGrid, Tooltip as _Tooltip, Legend as _Legend, ResponsiveContainer, AreaChart, Area as _Area, ComposedChart, Line as _Line } from 'recharts';
+const Bar = _Bar as any;
+const Tooltip = _Tooltip as any;
+const Legend = _Legend as any;
+const Area = _Area as any;
+const Line = _Line as any;
 import { storageService } from '../services/storageService.ts';
 import { PedimentoRecord, UserRole } from '../types.ts';
 import { Database, Play, Anchor, Ship, Container, ClipboardCheck, TrendingUp, AlertTriangle, Loader2, RefreshCw, Calendar, X, Upload, CheckCircle2, Presentation } from 'lucide-react';

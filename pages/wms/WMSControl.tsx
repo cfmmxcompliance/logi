@@ -500,7 +500,7 @@ function WMSVehicles({ vehicles, transfers, isAdmin, onReverse }: any) {
                 const vin = vehicle?.vin || vehicleId;
 
                 // 1. Delete vehicle record
-                await deleteDoc(doc(db, 'wms_vehicles', vehicleId));
+                await deleteDoc(doc(db, 'wms_vehicles', vehicleId as string));
 
                 // 2. Cascade: delete related transfers using in-memory list (no extra query needed)
                 const relatedTransfers = (transfers || []).filter((t: any) => t.vin === vin);
@@ -590,7 +590,7 @@ function WMSVehicles({ vehicles, transfers, isAdmin, onReverse }: any) {
                                 const vin = v?.vin || id;
                                 const txCount = (transfers || []).filter((t: any) => t.vin === vin).length;
                                 return (
-                                    <div key={id} className="font-mono text-blue-400 text-sm py-0.5 flex justify-between">
+                                    <div key={id as string} className="font-mono text-blue-400 text-sm py-0.5 flex justify-between">
                                         <span>• {vin}</span>
                                         <span className="text-slate-500 text-xs">{txCount} transacción(es)</span>
                                     </div>

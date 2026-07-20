@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { storageService } from '../services/storageService.ts';
 import { carrierService } from '../services/carrierService.ts';
+import { transportLineService } from '../services/transportLineService.ts';
 import { Database, Trash2, AlertTriangle, History, RotateCcw, Save, Users, Shield, Play, Key, UserPlus, Mail, Plus, Search, Truck } from 'lucide-react';
 import { CatalogQueryBuilder, evaluateCondition, QueryCondition } from '../components/CatalogQueryBuilder.tsx';
 import { RestorePoint, UserRole, User } from '../types.ts';
@@ -17,10 +18,13 @@ export const Settings = () => {
     const [newEmail, setNewEmail] = useState('');
 
     // ── Layout notifications by SCAC ────────────────────────────────────────
-    const [layoutSubs, setLayoutSubs] = useState<Record<string, string[]>>({});
-    const [availableScacs, setAvailableScacs] = useState<string[]>([]);
-    const [selectedScac, setSelectedScac] = useState<string>('');
-    const [newLayoutEmail, setNewLayoutEmail] = useState('');
+    const [layoutRules, setLayoutRules] = useState<any[]>([]);
+    const [newRuleCarrier, setNewRuleCarrier] = useState('');
+    const [newRuleScac, setNewRuleScac] = useState('');
+    const [newRuleEmails, setNewRuleEmails] = useState('');
+    const [availableCarriers, setAvailableCarriers] = useState<string[]>([]);
+    const [availableSubLines, setAvailableSubLines] = useState<string[]>([]);
+    
     const [savingLayout, setSavingLayout] = useState(false);
 
     const [userFilter, setUserFilter] = useState('');
@@ -94,11 +98,15 @@ export const Settings = () => {
             storageService.getAuditReportEmails().then(emails => setReportEmails(emails));
             // Load layout subscriptions + carrier SCAC list
             // @ts-ignore
-            storageService.getLayoutNotificationsByScac().then((data: Record<string, string[]>) => setLayoutSubs(data));
-            carrierService.getAllCarriers().then(carriers => {
-                const scacs = [...new Set(carriers.map((c: any) => (c.scac || c.carrierCodigo || c.codigo || '').trim().toUpperCase()).filter(Boolean))].sort();
-                setAvailableScacs(scacs);
-                if (scacs.length > 0) setSelectedScac(scacs[0]);
+            storageService.getLayoutRules().then(rules => setLayoutRules(rules));
+            Promise.all([
+                carrierService.getAllCarriers(),
+                transportLineService.getAllTransportLines()
+            ]).then(([carriers, lines]) => {
+                const cList = [...new Set(carriers.map((c: any) => (c.scac || c.carrierCodigo || c.codigo || '').trim().toUpperCase()).filter(Boolean))].sort();
+                setAvailableCarriers(cList);
+                const sList = [...new Set(lines.map((l: any) => (l.TransportLine || '').trim().toUpperCase()).filter(Boolean))].sort();
+                setAvailableSubLines(sList);
             }).catch(() => {});
         }
 
@@ -614,116 +622,103 @@ export const Settings = () => {
                     </div>
                 )}
 
-                {/* LAYOUT NOTIFICATIONS BY SCAC */}
+                {/* LAYOUT NOTIFICATIONS BY RULE */}
                 {isAdmin && (
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
                         <div className="p-6 border-b border-slate-100">
                             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                                 <Truck className="text-indigo-500" size={24} />
-                                Notificaciones de Layout por Carrier
+                                Notificaciones de Layout (Reglas)
                             </h2>
                             <p className="text-slate-500 text-sm mt-1">
-                                Cuando se suba un LAYOUT, se notificará al SCAC de la sub-línea <strong>y</strong> al Carrier Padre. Gestiona los suscriptores por código de carrier.
+                                Define reglas exactas combinando Carrier Padre y/o Sub-línea (SCAC) para asignar múltiples correos en un solo registro.
                             </p>
                         </div>
                         <div className="p-6 space-y-5">
-                            {/* Selector de SCAC */}
-                            <div className="flex items-center gap-3">
-                                <label className="text-sm font-semibold text-slate-600 whitespace-nowrap">Carrier / SCAC:</label>
-                                <select
-                                    value={selectedScac}
-                                    onChange={e => setSelectedScac(e.target.value)}
-                                    className="flex-1 border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                            <div className="flex flex-wrap gap-3 items-end bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                <div className="flex-1 min-w-[150px]">
+                                    <label className="text-xs font-semibold text-slate-600 mb-1 block">Carrier Padre (Opcional)</label>
+                                    <select value={newRuleCarrier} onChange={e => setNewRuleCarrier(e.target.value)} className="w-full border border-slate-200 rounded-lg py-2 px-3 text-sm outline-none">
+                                        <option value="">-- Cualquiera --</option>
+                                        {availableCarriers.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex-1 min-w-[150px]">
+                                    <label className="text-xs font-semibold text-slate-600 mb-1 block">SCAC / Sub-línea (Opcional)</label>
+                                    <input
+                                        type="text"
+                                        list="scac-options"
+                                        placeholder="Ej: MXTL"
+                                        value={newRuleScac}
+                                        onChange={e => setNewRuleScac(e.target.value.toUpperCase().trim())}
+                                        className="w-full border border-slate-200 rounded-lg py-2 px-3 text-sm outline-none"
+                                    />
+                                    <datalist id="scac-options">
+                                        {availableSubLines.map(s => <option key={s} value={s}>{s}</option>)}
+                                    </datalist>
+                                </div>
+                                <div className="flex-[2] min-w-[200px]">
+                                    <label className="text-xs font-semibold text-slate-600 mb-1 block">Correos (Separados por coma)</label>
+                                    <input type="text" placeholder="ejemplo@arcb.com, otro@arcb.com" value={newRuleEmails} onChange={e => setNewRuleEmails(e.target.value)} className="w-full border border-slate-200 rounded-lg py-2 px-3 text-sm outline-none" />
+                                </div>
+                                <button
+                                    disabled={savingLayout || (!newRuleCarrier && !newRuleScac) || !newRuleEmails}
+                                    onClick={async () => {
+                                        const emails = newRuleEmails.split(',').map(e => e.trim()).filter(e => e.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/));
+                                        if (emails.length === 0) { alert('Ingresa al menos un correo válido'); return; }
+                                        const newRule = { id: Date.now().toString(), carrier: newRuleCarrier, scac: newRuleScac, emails };
+                                        const updated = [...layoutRules, newRule];
+                                        setSavingLayout(true);
+                                        // @ts-ignore
+                                        const ok = await storageService.updateLayoutRules(updated);
+                                        if (ok) { setLayoutRules(updated); setNewRuleCarrier(''); setNewRuleScac(''); setNewRuleEmails(''); }
+                                        else alert('Error al guardar en base de datos');
+                                        setSavingLayout(false);
+                                    }}
+                                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors font-bold text-sm disabled:opacity-50 h-[38px]"
                                 >
-                                    {availableScacs.length === 0 && <option value="">Cargando carriers...</option>}
-                                    {availableScacs.map(s => (
-                                        <option key={s} value={s}>{s} {layoutSubs[s]?.length ? `(${layoutSubs[s].length} suscriptor${layoutSubs[s].length > 1 ? 'es' : ''})` : ''}</option>
-                                    ))}
-                                </select>
-                                {/* Input manual si el SCAC no está en la lista */}
-                                <input
-                                    type="text"
-                                    placeholder="O escribe un SCAC..."
-                                    value={availableScacs.includes(selectedScac) ? '' : selectedScac}
-                                    onChange={e => setSelectedScac(e.target.value.trim().toUpperCase())}
-                                    className="w-36 border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                                />
+                                    + Crear Regla
+                                </button>
                             </div>
 
-                            {/* Agregar email */}
-                            {selectedScac && (
-                                <div className="flex gap-2">
-                                    <input
-                                        type="email"
-                                        value={newLayoutEmail}
-                                        onChange={e => setNewLayoutEmail(e.target.value)}
-                                        placeholder={`Email para ${selectedScac}...`}
-                                        className="flex-1 border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                                        onKeyDown={async e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-                                    />
-                                    <button
-                                        disabled={savingLayout}
-                                        onClick={async () => {
-                                            const email = newLayoutEmail.trim().toLowerCase();
-                                            if (!email.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
-                                                alert('Email inválido.');
-                                                return;
-                                            }
-                                            const current = layoutSubs[selectedScac] || [];
-                                            if (current.includes(email)) { alert('Este email ya está en la lista.'); return; }
-                                            const updated = { ...layoutSubs, [selectedScac]: [...current, email] };
-                                            setSavingLayout(true);
-                                            // @ts-ignore
-                                            const ok = await storageService.updateLayoutNotificationsByScac(updated);
-                                            if (ok) { setLayoutSubs(updated); setNewLayoutEmail(''); }
-                                            setSavingLayout(false);
-                                        }}
-                                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-colors font-bold text-sm disabled:opacity-50"
-                                    >
-                                        <Plus size={16} /> Agregar
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* Lista de emails del SCAC seleccionado */}
-                            {selectedScac && (
-                                <div className="space-y-2">
-                                    {!(layoutSubs[selectedScac]?.length) ? (
-                                        <p className="text-slate-400 text-sm italic py-4 text-center">
-                                            No hay suscriptores para <strong>{selectedScac}</strong>. Agrega el primero arriba.
-                                        </p>
-                                    ) : (
-                                        layoutSubs[selectedScac].map((email, idx) => (
-                                            <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold uppercase">
-                                                        {email.charAt(0)}
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-sm font-medium text-slate-700">{email}</span>
-                                                        <span className="ml-2 text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 rounded px-1.5 py-0.5 font-bold">{selectedScac}</span>
-                                                    </div>
+                            <div className="space-y-2">
+                                {layoutRules.length === 0 ? (
+                                    <p className="text-slate-400 text-sm italic py-4 text-center">No hay reglas de notificación configuradas.</p>
+                                ) : (
+                                    layoutRules.map(rule => (
+                                        <div key={rule.id} className="flex flex-col md:flex-row md:items-center justify-between p-3 bg-white rounded-lg border border-slate-200 shadow-sm gap-4">
+                                            <div className="flex gap-4 items-center">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] text-slate-400 font-bold uppercase">Padre</span>
+                                                    <span className="text-sm font-bold text-slate-700">{rule.carrier || '*Cualquiera*'}</span>
                                                 </div>
-                                                <button
-                                                    onClick={async () => {
-                                                        if (!window.confirm(`¿Quitar ${email} de ${selectedScac}?`)) return;
-                                                        const updated = {
-                                                            ...layoutSubs,
-                                                            [selectedScac]: layoutSubs[selectedScac].filter(e => e !== email)
-                                                        };
-                                                        // @ts-ignore
-                                                        const ok = await storageService.updateLayoutNotificationsByScac(updated);
-                                                        if (ok) setLayoutSubs(updated);
-                                                    }}
-                                                    className="text-slate-400 hover:text-red-500 p-1 transition-colors"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                <div className="text-slate-300 font-light text-2xl">/</div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] text-slate-400 font-bold uppercase">SCAC</span>
+                                                    <span className="text-sm font-bold text-slate-700">{rule.scac || '*Cualquiera*'}</span>
+                                                </div>
                                             </div>
-                                        ))
-                                    )}
-                                </div>
-                            )}
+                                            <div className="flex-1 flex flex-wrap gap-1">
+                                                {rule.emails.map((e: string) => (
+                                                    <span key={e} className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-md border border-slate-200">{e}</span>
+                                                ))}
+                                            </div>
+                                            <button
+                                                onClick={async () => {
+                                                    const updated = layoutRules.filter(r => r.id !== rule.id);
+                                                    // @ts-ignore
+                                                    const ok = await storageService.updateLayoutRules(updated);
+                                                    if (ok) setLayoutRules(updated);
+                                                    else alert('Error al borrar');
+                                                }}
+                                                className="text-slate-400 hover:text-red-500 p-2 transition-colors rounded-lg hover:bg-red-50"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}

@@ -3568,6 +3568,36 @@ export const storageService = {
     }
   },
 
+  getLayoutRules: async (): Promise<any[]> => {
+    if (!db) return [];
+    try {
+      const { doc, getDoc } = await import('firebase/firestore');
+      const snap = await getDoc(doc(db, COLS.SUBSCRIPTIONS, 'layout_rules'));
+      if (snap.exists()) {
+        return snap.data().rules || [];
+      }
+      return [];
+    } catch (e) {
+      console.error('Failed to get layout rules', e);
+      return [];
+    }
+  },
+
+  updateLayoutRules: async (rules: any[]): Promise<boolean> => {
+    if (!db) return false;
+    try {
+      const { doc, setDoc } = await import('firebase/firestore');
+      await setDoc(doc(db, COLS.SUBSCRIPTIONS, 'layout_rules'), {
+        rules,
+        updatedAt: new Date().toISOString()
+      }, { merge: false });
+      return true;
+    } catch (e) {
+      console.error('Failed to update layout rules', e);
+      return false;
+    }
+  },
+
   triggerManualAuditReport: async (date?: string): Promise<{ success: boolean; message: string }> => {
     try {
       const functions = getFunctions();
@@ -3845,3 +3875,4 @@ if (typeof window !== 'undefined') {
 }
 
 export default storageService;
+  // Append new methods for layout_rules

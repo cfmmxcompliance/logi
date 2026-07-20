@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ReactNode } from 'react';
-import { User } from '../types.ts';
+import { User, UserRole } from '../types.ts';
 import { authService } from '../services/authService.ts';
 import { AuthContext, AuthContextType, sanitizeRole } from './authContext';
 

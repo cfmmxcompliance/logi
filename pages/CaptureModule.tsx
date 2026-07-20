@@ -270,7 +270,7 @@ export const CaptureModule: React.FC = () => {
                         />
                         <datalist id="invoices-list">
                             {Array.from(new Set(schedules.map(s => s.invoiceNo))).filter(Boolean).map(inv => (
-                                <option key={inv} value={inv} />
+                                <option key={inv as string} value={inv as string} />
                             ))}
                         </datalist>
                      </div>
@@ -592,18 +592,18 @@ export const CaptureModule: React.FC = () => {
                  {/* Resumen por Contenedor */}
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                    {containers.map((cno) => {
-                     const group = byContainer[cno] || [];
+                     const group = byContainer[cno as string] || [];
                      const sello = group[0]?.sealNo || '—';
                      const fecha = group[0]?.outDate || '—';
                      const cVal  = group.reduce((s, v) => s + Number(v.valorUsd  || 0), 0);
                      const cPeso = group.reduce((s, v) => s + Number(v.pesoBruto || 0), 0);
                      const modelos = [...new Set(group.map((v) => v.modelo))];
                      return (
-                       <div key={cno} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 hover:shadow-md transition-shadow">
+                       <div key={cno as string} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 hover:shadow-md transition-shadow">
                          <div className="flex items-start justify-between mb-3">
                            <div>
                              <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Contenedor</p>
-                             <p className="text-xl font-black text-slate-800 font-mono">{cno}</p>
+                             <p className="text-xl font-black text-slate-800 font-mono">{cno as string}</p>
                            </div>
                            <span className="bg-emerald-50 text-emerald-700 text-xs font-black px-3 py-1.5 rounded-full border border-emerald-200">
                              {group.length} VINs

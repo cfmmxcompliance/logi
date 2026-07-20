@@ -98,15 +98,16 @@ if (!rootElement) {
 
 try {
     const root = ReactDOM.createRoot(rootElement);
+    const SafeErrorBoundary = ErrorBoundary as any;
     root.render(
         <React.StrictMode>
-            <ErrorBoundary>
+            <SafeErrorBoundary>
                 <AuthProvider>
                     <NotificationProvider>
                         <App />
                     </NotificationProvider>
                 </AuthProvider>
-            </ErrorBoundary>
+            </SafeErrorBoundary>
         </React.StrictMode>
     );
 } catch (error: any) {

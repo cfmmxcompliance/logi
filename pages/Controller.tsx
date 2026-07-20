@@ -699,6 +699,31 @@ export const Controller = () => {
                     }
                 }
 
+                const normalizeUuid = (u: string | undefined) => (u || '').trim().toLowerCase();
+                const currentUuid = normalizeUuid(xmlResult.uuid);
+
+                // Enhanced Duplicate Detection
+                const existingCost = costs.find(c => {
+                    // 0. Explicit Replacement (Highest Priority)
+                    if (targetReplacementId && c.id === targetReplacementId) return true;
+
+                    // 1. UUID Match (High Confidence)
+                    if (currentUuid && normalizeUuid(c.uuid) === currentUuid && currentUuid !== '-') return true;
+
+                    // 2. Fallback: Invoice + Amount (Medium Confidence, but prevents obvious visual duplicates)
+                    if (c.invoiceNo && xmlResult.invoiceNo) {
+                        const normInvDb = c.invoiceNo.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        const normInvXml = xmlResult.invoiceNo.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        const invoiceMatch = normInvDb === normInvXml || (normInvDb.length > 5 && (normInvDb.includes(normInvXml) || normInvXml.includes(normInvDb)));
+                        if (invoiceMatch) {
+                            if (Math.abs((c.amount || 0) - (xmlResult.amount || 0)) < 1.0) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                });
+
                 // 3b. Subir archivos a Google Drive (Payments folder)
                 // Bug #2 Fix: antes se guardaba base64 en Firestore, lo que superaba el límite de 1MB.
                 // Ahora se sube a Drive via GAS y se guarda solo la URL de Drive en Firestore.
@@ -750,34 +775,7 @@ export const Controller = () => {
                 console.log(`BL Found: ${extractedBl} -> Linked: ${targetShipment ? targetShipment.blNo : 'No'}`);
 
                 // 5. Construct Record
-                const normalizeUuid = (u: string | undefined) => (u || '').trim().toLowerCase();
-                const currentUuid = normalizeUuid(xmlResult.uuid);
 
-                // Enhanced Duplicate Detection
-                const existingCost = costs.find(c => {
-                    // 0. Explicit Replacement (Highest Priority)
-                    if (targetReplacementId && c.id === targetReplacementId) return true;
-
-                    // 1. UUID Match (High Confidence)
-                    if (currentUuid && normalizeUuid(c.uuid) === currentUuid && currentUuid !== '-') return true;
-
-                    // 2. Fallback: Invoice + Amount (Medium Confidence, but prevents obvious visual duplicates)
-                    // Useful if data was entered manually without UUID, or XML parse variance
-                    if (c.invoiceNo && xmlResult.invoiceNo) {
-                        const normInvDb = c.invoiceNo.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-                        const normInvXml = xmlResult.invoiceNo.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-                        // Allow fuzzy match if invoice is contained or exact
-                        const invoiceMatch = normInvDb === normInvXml || (normInvDb.length > 5 && (normInvDb.includes(normInvXml) || normInvXml.includes(normInvDb)));
-
-                        if (invoiceMatch) {
-                            // Check Amount Tolerance (±1.00)
-                            if (Math.abs((c.amount || 0) - (xmlResult.amount || 0)) < 1.0) {
-                                return true;
-                            }
-                        }
-                    }
-                    return false;
-                });
 
                 const validId = targetReplacementId || existingCost?.id || (Date.now().toString(36) + Math.random().toString(36).substring(2));
 

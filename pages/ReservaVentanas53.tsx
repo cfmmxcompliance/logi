@@ -770,8 +770,8 @@ export const ReservaVentanas53: React.FC = () => {
                     className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white"
                   >
                     <option value="">-- Seleccionar nombre comercial --</option>
-                    {[...new Set(transportLines.map(t => t.TransportLine))].sort().map(name => (
-                      <option key={name} value={name}>{name}</option>
+                    {Array.from(new Set(transportLines.map(t => t.TransportLine))).sort().map(name => (
+                      <option key={name as string} value={name as string}>{name as string}</option>
                     ))}
                   </select>
                 </div>

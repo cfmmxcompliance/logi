@@ -1442,7 +1442,7 @@ export const geminiService = {
             const sample: any[] = [];
 
             for (const item of dataArray) {
-              const raw = item[filterColumn];
+              const raw = item[filterColumn as string];
               const strVal = raw !== undefined && raw !== null ? String(raw).trim() : '';
               let matches = false;
 
@@ -1453,7 +1453,7 @@ export const geminiService = {
 
               if (matches) {
                 matchCount++;
-                if (sample.length < 5) sample.push({ PART_NUMBER: item.PART_NUMBER, [filterColumn]: strVal });
+                if (sample.length < 5) sample.push({ PART_NUMBER: item.PART_NUMBER, [filterColumn as string]: strVal });
               }
             }
 
@@ -1467,23 +1467,23 @@ export const geminiService = {
               message: `De ${dataArray.length} registros en memoria, ${matchCount} cumplen: ${filterColumn} ${filterOperator} ${filterValue || ''}`
             };
           } else if (action === 'count') {
-            const snapshot = await getCountFromServer(collection(db, col));
+            const snapshot = await getCountFromServer(collection(db, col as string));
             const totalEnDB = snapshot.data().count;
             functionResponseData = { totalEnDB, note: `Esta es la cantidad real e histórica de registros en la nube para la colección ${col}.` };
           } else {
             // Search: intenta primero Firebase con índice, luego escaneo local en TODOS los campos
-            const term = (searchTerm || '').trim();
+            const term = ((searchTerm as string) || '').trim();
             const termUpper = term.toUpperCase();
             let cloudResults: any[] = [];
 
             try {
               let q;
               if (termUpper && col === 'parts') {
-                q = query(collection(db, col), where('PART_NUMBER', '>=', termUpper), where('PART_NUMBER', '<=', termUpper + '\uf8ff'), limit(50));
+                q = query(collection(db, col as string), where('PART_NUMBER', '>=', termUpper), where('PART_NUMBER', '<=', termUpper + '\uf8ff'), limit(50));
               } else if (termUpper && col === 'shipments') {
-                q = query(collection(db, col), where('BL_NUMBER', '>=', termUpper), where('BL_NUMBER', '<=', termUpper + '\uf8ff'), limit(50));
+                q = query(collection(db, col as string), where('BL_NUMBER', '>=', termUpper), where('BL_NUMBER', '<=', termUpper + '\uf8ff'), limit(50));
               } else {
-                q = query(collection(db, col), orderBy('UPDATE_TIME', 'desc'), limit(50));
+                q = query(collection(db, col as string), orderBy('UPDATE_TIME', 'desc'), limit(50));
               }
               const snap = await getDocs(q);
               cloudResults = snap.docs.map(d => d.data());

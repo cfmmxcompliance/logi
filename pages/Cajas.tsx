@@ -148,7 +148,7 @@ export const Cajas: React.FC = () => {
     const matchTL = String(targetTL || '').trim().toUpperCase();
     const docs = transportLines.filter(l => String(l.TransportLine || '').trim().toUpperCase() === matchTL);
     const extracted = docs.map(getSafeSubline).filter(v => v !== '');
-    return Array.from(new Set(extracted));
+    return Array.from(new Set(extracted)) as string[];
   };
 
   const openEdit = (caja: CajaModel) => {

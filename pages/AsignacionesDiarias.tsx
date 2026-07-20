@@ -592,6 +592,7 @@ export const AsignacionesDiarias: React.FC = () => {
                        : (formData.fecha === '2026-07-08') ? [...baseHours, "16:00", "17:00"]
                        : (formData.fecha === '2026-07-14') ? [...baseHours, "16:00", "17:00", "18:00"]
                        : (formData.fecha === '2026-07-15') ? [...baseHours, "16:00", "17:00"]
+                       : (formData.fecha === '2026-07-20') ? [...baseHours, "16:00", "18:00"]
                        : ((formData.fecha || '') >= '2026-07-09') ? [...baseHours, "16:00"]
                        : baseHours;
       const validSlots = allSlots.filter(s => s !== '11:00'); // 11:00 siempre bloqueado
@@ -601,7 +602,8 @@ export const AsignacionesDiarias: React.FC = () => {
       }
       // Ventana ya iniciada: solo aplica si la fecha es hoy — excepción manual 18:00 del 14/07/2026 y 17:00 del 15/07/2026
       const isManualOverride18 = (formData.fecha === '2026-07-14' && formData.horaAsignacion === '18:00')
-                               || (formData.fecha === '2026-07-15' && formData.horaAsignacion === '17:00');
+                               || (formData.fecha === '2026-07-15' && formData.horaAsignacion === '17:00')
+                               || (formData.fecha === '2026-07-20' && formData.horaAsignacion === '18:00');
       if (!isManualOverride18 && formData.fecha === getMexicoToday() && formData.horaAsignacion <= getMexicoNow()) {
         alert(`La ventana de las ${formData.horaAsignacion} ya inició. Selecciona el siguiente horario disponible.`);
         return;
@@ -812,7 +814,7 @@ export const AsignacionesDiarias: React.FC = () => {
           const carrierLines = transportLines.filter(
               tl => tl.carrierCodigo === scacFilter || tl.TransportLine === scacFilter
           );
-          const uniqueSubScacs = [...new Set(carrierLines.map(tl => tl.TransportLine).filter(Boolean))];
+          const uniqueSubScacs = [...new Set(carrierLines.map(tl => tl.TransportLine).filter(Boolean))] as string[];
           if (uniqueSubScacs.length === 1) autoCarrierSubScac = uniqueSubScacs[0];
       }
 

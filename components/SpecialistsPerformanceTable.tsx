@@ -67,7 +67,7 @@ export const SpecialistsPerformanceTable: React.FC<Props> = ({ customs }) => {
       return acc;
     }, {} as Record<string, { name: string, bls: Set<string>, completedBls: Set<string>, totalContainers: number, completedContainers: number }>);
 
-    const baseData = Object.values(grouped).map(g => ({
+    const baseData = (Object.values(grouped) as any[]).map(g => ({
       name: g.name,
       config: SPECIALIST_CONFIG[g.name] || { num: '??', bg: '#ffffff', color: '#000000' },
       totalBls: g.bls.size,

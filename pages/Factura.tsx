@@ -471,9 +471,9 @@ export const Factura: React.FC = () => {
                     setInvoiceCount(prog.total);
                 } else {
                     // Fallback to fetching it directly
-                    const { db, COLS } = await import('../services/firebaseConfig.ts');
+                    const { db } = await import('../services/firebaseConfig.ts');
                     const { collection, getCountFromServer } = await import('firebase/firestore');
-                    const collRef = collection(db, COLS.INVOICES);
+                    const collRef = collection(db, 'commercial_invoices');
                     const snap = await getCountFromServer(collRef);
                     setInvoiceCount(snap.data().count);
                 }

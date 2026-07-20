@@ -28,7 +28,7 @@ export default function ActivosFijosScreen() {
     
     const refresh = () => setAssets([...storageService.getFixedAssets()]);
     refresh();
-    return storageService.subscribe(refresh);
+    storageService.subscribe(refresh);
   }, []);
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -608,7 +608,7 @@ export default function ActivosFijosScreen() {
                            alt="Evidencia" 
                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" 
                            onError={(e) => {
-                             const target = e.target;
+                             const target = e.target as any;
                              if (!target.src.includes('preview')) {
                                const match = p.url.match(/\/d\/([a-zA-Z0-9_-]+)/);
                                if (match && match[1]) {
@@ -654,7 +654,7 @@ export default function ActivosFijosScreen() {
               className="max-w-full max-h-full object-contain rounded-lg"
               onContextMenu={e => e.preventDefault()} // Prevenir clic derecho/descarga
               onError={(e) => {
-                const target = e.target;
+                const target = e.target as any;
                 if (!target.src.includes('preview')) {
                   const match = previewImage.match(/\/d\/([a-zA-Z0-9_-]+)/) || previewImage.match(/id=([a-zA-Z0-9_-]+)/);
                   if (match && match[1]) {

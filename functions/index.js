@@ -14,17 +14,17 @@ require("dotenv").config(); // Load environment variables
 
 setGlobalOptions({ region: "us-central1" });
 
-// Set global options for v2 functions
-setGlobalOptions({ region: "us-central1" });
-
 admin.initializeApp();
 const db = admin.firestore();
 
-console.log("🚀 Functions Initialized. Env Check:", {
+// Lazy startup log — deferred so it doesn't block Cloud Run healthcheck
+setImmediate(() => {
+  console.log("🚀 Functions Initialized. Env Check:", {
     hasClientId: !!process.env.GOOGLE_CLIENT_ID,
     hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
     hasRefreshToken: !!process.env.GOOGLE_REFRESH_TOKEN,
     hasEmailPass: !!process.env.EMAIL_PASSWORD
+  });
 });
 
 function getMXDate(isoString) {
@@ -488,8 +488,9 @@ exports.saveBpmPhotoToDrive = onCall({
  */
 exports.deleteFileFromDriveV2 = onCall({
     cors: true,
-    memory: "128MiB",
-    timeoutSeconds: 30
+    region: "us-central1",
+    memory: "256MiB",
+    timeoutSeconds: 60
 }, async (request) => {
     const { data } = request;
     const { fileId } = data;
@@ -705,25 +706,38 @@ exports.sendLayoutNotificationEmail = onDocumentWritten(
       return null;
     }
 
-    // Lee suscriptores de Firestore (audit_subscriptions/layout_by_scac)
-    let allSubs = {};
+    // Lee reglas de Firestore (audit_subscriptions/layout_rules)
+    let rules = [];
     try {
-      const subSnap = await db.doc('audit_subscriptions/layout_by_scac').get();
-      if (subSnap.exists) {
-        const raw = subSnap.data();
-        Object.entries(raw).forEach(([k, v]) => {
-          if (Array.isArray(v)) allSubs[k] = v;
-        });
+      const snap = await db.doc('audit_subscriptions/layout_rules').get();
+      if (snap.exists) {
+        rules = snap.data().rules || [];
       }
     } catch (e) {
-      console.error('sendLayoutNotificationEmail: error leyendo suscriptores:', e.message);
+      console.error('sendLayoutNotificationEmail: error leyendo reglas:', e.message);
       return null;
     }
 
-    // Junta emails de SCAC + Carrier Padre, sin duplicados
-    const emailsScac   = allSubs[scac]         || [];
-    const emailsPadre  = allSubs[carrierPadre] || [];
-    const emails = [...new Set([...emailsScac, ...emailsPadre])].filter(Boolean);
+    // Evalúa qué reglas aplican
+    let matchedEmails = [];
+    for (const rule of rules) {
+      const rCarrier = (rule.carrier || '').trim().toUpperCase();
+      const rScac = (rule.scac || '').trim().toUpperCase();
+      
+      let matchCarrier = true;
+      let matchScac = true;
+      
+      if (rCarrier) matchCarrier = (rCarrier === carrierPadre);
+      if (rScac) matchScac = (rScac === scac);
+      
+      if ((rCarrier || rScac) && matchCarrier && matchScac) {
+         if (Array.isArray(rule.emails)) {
+           matchedEmails.push(...rule.emails);
+         }
+      }
+    }
+    
+    const emails = [...new Set(matchedEmails)].filter(Boolean);
 
     if (emails.length === 0) {
       console.log(`sendLayoutNotificationEmail: sin suscriptores para SCAC=${scac} / Padre=${carrierPadre}`);
@@ -731,8 +745,10 @@ exports.sendLayoutNotificationEmail = onDocumentWritten(
     }
 
     // Datos del registro para el correo
+    const docId           = after.id              || event.params.docId || '—';
     const numeroCaja      = after.numeroCaja      || '—';
-    const numeroOp        = after.numeroOperacion || '—';
+    const numeroOp        = docId; // Usar el ID del documento en lugar de numeroOperacion
+    const carrierRef      = after.carrierRef      || '—';
     const subLinea        = after.subLinea        || scac || '—';
     const driver          = after.nombreDriver    || '—';
     const cfmRef          = after.cfmRef          || '—';
@@ -770,9 +786,10 @@ exports.sendLayoutNotificationEmail = onDocumentWritten(
     <h2>📋 LAYOUT subido — ${numeroOp}</h2>
     <p class="sub">Asignación Diaria de Cajas Secas 53' · ${hora}</p>
     <table>
-      <tr><td>No. Operación</td><td><span class="badge">${numeroOp}</span></td></tr>
+      <tr><td>No. Operación (ID)</td><td><span class="badge">${numeroOp}</span></td></tr>
       <tr><td>Número de Caja</td><td><strong>${numeroCaja}</strong></td></tr>
       <tr><td>Carrier / SCAC</td><td>${carrierPadre} <span style="color:#6b7280;font-size:12px;">(${subLinea})</span></td></tr>
+      <tr><td>Carrier Ref</td><td>${carrierRef}</td></tr>
       <tr><td>Driver</td><td>${driver}</td></tr>
       <tr><td>CFM Ref</td><td>${cfmRef}</td></tr>
       <tr><td>Vehículos</td><td>${vehiculos}</td></tr>
@@ -786,6 +803,29 @@ exports.sendLayoutNotificationEmail = onDocumentWritten(
 </html>`;
 
     try {
+      let attachments = [];
+
+      // Si existe un ID de archivo en Drive, lo descargamos para adjuntarlo
+      if (after.layoutFileId) {
+        try {
+          console.log(`sendLayoutNotificationEmail: Descargando archivo ${after.layoutFileId} desde Drive...`);
+          const drive = getDriveClient();
+          const response = await drive.files.get({
+            fileId: after.layoutFileId,
+            alt: 'media'
+          }, { responseType: 'arraybuffer' });
+          
+          attachments.push({
+            filename: layoutFileName !== '—' ? layoutFileName : `LAYOUT_${numeroCaja}.xlsx`,
+            content: Buffer.from(response.data)
+          });
+          console.log(`sendLayoutNotificationEmail: Archivo descargado exitosamente. Tamaño: ${response.data.byteLength} bytes.`);
+        } catch (downloadErr) {
+          console.error(`sendLayoutNotificationEmail: Error descargando el archivo de Drive:`, downloadErr.message);
+          // Opcional: Podríamos adjuntar un txt de error, pero es mejor simplemente enviarlo sin adjunto.
+        }
+      }
+
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: { user: CONFIG.SENDER_EMAIL, pass: process.env.EMAIL_PASSWORD }
@@ -796,10 +836,11 @@ exports.sendLayoutNotificationEmail = onDocumentWritten(
         to: CONFIG.SENDER_EMAIL,
         bcc: emails.join(', '),
         subject: `📋 LAYOUT subido — ${numeroOp} / Caja ${numeroCaja} (${scac || carrierPadre})`,
-        html: htmlBody
+        html: htmlBody,
+        attachments: attachments
       });
 
-      console.log(`✓ sendLayoutNotificationEmail: correo enviado a ${emails.length} suscriptor(es) para ${scac}/${carrierPadre}`);
+      console.log(`✓ sendLayoutNotificationEmail: correo enviado a ${emails.length} suscriptor(es) para ${scac}/${carrierPadre} con ${attachments.length} adjuntos`);
     } catch (e) {
       console.error('sendLayoutNotificationEmail: error enviando correo:', e.message);
     }

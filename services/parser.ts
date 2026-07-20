@@ -38,7 +38,7 @@ const extractCode = (filename: string): string => {
   return cleanName;
 };
 
-export const processZipFile = async (file: File, onProgress?: (current: number, total: number) => void): Promise<{ records: PedimentoRecord[], rawFiles: RawFileParsed[], stats: DSProcessingStats }> => {
+export const processZipFile = async (file: File, onProgress?: (current: number, total: number) => void): Promise<{ records: PedimentoRecord[], rawFiles: RawFileParsed[], stats: DSProcessingStats, reviewsByMonth?: any[], monthlyDuties?: any[] }> => {
   const zip = new JSZip();
   const loadedZip = await zip.loadAsync(file);
 

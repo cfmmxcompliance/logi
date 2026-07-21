@@ -69,7 +69,8 @@ export const TransportLines: React.FC = () => {
               c.TransportLine.toLowerCase().includes(lowerTerm) ||
               c.razonSocial.toLowerCase().includes(lowerTerm) ||
               c.carrierCodigo.toLowerCase().includes(lowerTerm) ||
-              (c.nombreSubLinea && c.nombreSubLinea.toLowerCase().includes(lowerTerm))
+              (c.nombreSubLinea && c.nombreSubLinea.toLowerCase().includes(lowerTerm)) ||
+              (c.lineaMexicana && c.lineaMexicana.toLowerCase().includes(lowerTerm))
           );
       }
       if (activeMassQuery && activeMassQuery.length > 0) {
@@ -319,7 +320,7 @@ export const TransportLines: React.FC = () => {
       <CatalogQueryBuilder 
           isOpen={isMassQueryOpen}
           onClose={() => setIsMassQueryOpen(false)}
-          columns={['transportLineId', 'carrierCodigo', 'TransportLine', 'razonSocial']}
+          columns={['transportLineId', 'carrierCodigo', 'TransportLine', 'nombreSubLinea', 'razonSocial', 'lineaMexicana']}
           conditions={queryConditions}
           setConditions={setQueryConditions}
           onApply={handleApplyMassQuery}

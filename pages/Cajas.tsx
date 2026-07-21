@@ -39,7 +39,7 @@ export const Cajas: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useLanguage();
 
-  const cajaColumns = ['NumeroCaja', 'carrierCodigo', 'TransportLine', 'nombreSubLinea', 'TipoCaja', 'placas'];
+  const cajaColumns = ['NumeroCaja', 'carrierCodigo', 'TransportLine', 'nombreSubLinea', 'TipoCaja', 'placas', 'claveApendice10', 'tipo'];
 
   useEffect(() => {
     loadCajas();
@@ -88,7 +88,10 @@ export const Cajas: React.FC = () => {
         c.carrierCodigo.toLowerCase().includes(lowerTerm) ||
         c.TransportLine.toLowerCase().includes(lowerTerm) ||
         (c.nombreSubLinea && c.nombreSubLinea.toLowerCase().includes(lowerTerm)) ||
-        c.TipoCaja.toLowerCase().includes(lowerTerm)
+        c.TipoCaja.toLowerCase().includes(lowerTerm) ||
+        (c.placas && c.placas.toLowerCase().includes(lowerTerm)) ||
+        (c.claveApendice10 && c.claveApendice10.toLowerCase().includes(lowerTerm)) ||
+        ((c as any).tipo && (c as any).tipo.toLowerCase().includes(lowerTerm))
       );
     }
     if (activeMassQuery && activeMassQuery.length > 0) {

@@ -87,7 +87,9 @@ export const Drivers: React.FC = () => {
               c.licencia.toLowerCase().includes(lowerTerm) ||
               (c.placasTracto && c.placasTracto.toLowerCase().includes(lowerTerm)) ||
               c.carrierCodigo.toLowerCase().includes(lowerTerm) ||
-              getTransportLineName(c.transportLineId).toLowerCase().includes(lowerTerm)
+              getTransportLineName(c.transportLineId).toLowerCase().includes(lowerTerm) ||
+              c.telefono.toLowerCase().includes(lowerTerm) ||
+              (c.tipoLicencia && c.tipoLicencia.toLowerCase().includes(lowerTerm))
           );
       }
       if (activeMassQuery && activeMassQuery.length > 0) {
@@ -403,7 +405,7 @@ export const Drivers: React.FC = () => {
       <CatalogQueryBuilder
           isOpen={isMassQueryOpen}
           onClose={() => setIsMassQueryOpen(false)}
-          columns={['driverId', 'carrierCodigo', 'nombre', 'licencia', 'telefono', 'placasTracto']}
+          columns={['driverId', 'carrierCodigo', 'transportLineId', 'nombre', 'licencia', 'tipoLicencia', 'telefono', 'placasTracto']}
           conditions={queryConditions}
           setConditions={setQueryConditions}
           onApply={handleApplyMassQuery}

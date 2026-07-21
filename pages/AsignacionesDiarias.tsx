@@ -219,7 +219,7 @@ export const AsignacionesDiarias: React.FC = () => {
     }
   };
 
-  const columns = ['fecha', 'horaAsignacion', 'numeroOperacion', 'numeroCaja', 'subLinea', 'placasCaja', 'transportLineId', 'driverId', 'nombreDriver', 'placasTracto', 'modeloAsignado'];
+  const columns = ['fecha', 'horaAsignacion', 'numeroOperacion', 'numeroCaja', 'subLinea', 'placasCaja', 'transportLineId', 'driverId', 'nombreDriver', 'placasTracto', 'modeloAsignado', 'carrierCodigo', 'observaciones', 'arribo', 'dockArribo', 'cfmRef', 'vehiculos'];
 
   useEffect(() => {
     loadData();
@@ -366,7 +366,11 @@ export const AsignacionesDiarias: React.FC = () => {
                 ((a as any).arribo || '').toLowerCase().includes(term) ||
                 ((a as any).dockArribo || '').toLowerCase().includes(term) ||
                 ((transportLines.find(t => t.carrierCodigo === a.carrierCodigo))?.TransportLine || '').toLowerCase().includes(term) ||
-                ((liberaciones.find(l => l.asignacionCajaId === a.id))?.selloValidado || '').toLowerCase().includes(term)
+                ((liberaciones.find(l => l.asignacionCajaId === a.id))?.selloValidado || '').toLowerCase().includes(term) ||
+                (a.horaAsignacion || '').toLowerCase().includes(term) ||
+                (a.transportLineId || '').toLowerCase().includes(term) ||
+                ((a as any).cfmRef || '').toLowerCase().includes(term) ||
+                (String((a as any).vehiculos || '')).toLowerCase().includes(term)
             )
         );
     }

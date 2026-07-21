@@ -263,17 +263,14 @@ export const XMLInvoiceExtractor: React.FC = () => {
                     const storedUUIDNormNoDash = stripDashes(storedUUIDNorm);
 
                     const searchableContent = [
-                        item.invoiceNo,
-                        item.partNo,
-                        item.vin,
-                        item.engine,
-                        item.model,
-                        item.rawDescripcion,
-                        item.spanishDescription,
-                        item.unidad,
-                        storedUUID,
-                        item.currency,
-                        (item as any).archivo
+                        item.invoiceNo, item.partNo, item.vin, item.engine, item.model,
+                        item.rawDescripcion, item.spanishDescription, item.unidad,
+                        storedUUID, item.currency, (item as any).archivo,
+                        item.date, item.item, item.englishName, item.hts, item.prosec,
+                        item.rb, item.um, item.regimen, item.containerNo, item.incoterm,
+                        item.assignedSpecialist, item.vendorName, item.vendorRfc, item.vendorAddress,
+                        item.qty, item.netWeight, item.unitPrice, item.totalAmount,
+                        item.pesoNetokg, item.pesoBrutokg, item.valAgregado
                     ].map(v => (v || '').toString().toLowerCase());
 
                     // OR logic: show the record if it matches ANY of the searched terms
@@ -1450,6 +1447,29 @@ export const XMLInvoiceExtractor: React.FC = () => {
                                                     <option value="rawDescripcion">Descripción XML</option>
                                                     <option value="spanishDescription">Descripción ES</option>
                                                     <option value="uuid">UUID</option>
+                                                    <option value="date">Fecha</option>
+                                                    <option value="item">Ítem</option>
+                                                    <option value="englishName">Inglés</option>
+                                                    <option value="hts">HTS</option>
+                                                    <option value="prosec">PROSEC</option>
+                                                    <option value="rb">RB</option>
+                                                    <option value="qty">Cantidad</option>
+                                                    <option value="um">UM</option>
+                                                    <option value="netWeight">Peso Neto</option>
+                                                    <option value="unitPrice">Precio Unitario</option>
+                                                    <option value="totalAmount">Monto Total</option>
+                                                    <option value="regimen">Régimen</option>
+                                                    <option value="containerNo">Contenedor</option>
+                                                    <option value="incoterm">Incoterm</option>
+                                                    <option value="currency">Moneda</option>
+                                                    <option value="assignedSpecialist">Especialista</option>
+                                                    <option value="pesoNetokg">Peso Neto Kg</option>
+                                                    <option value="pesoBrutokg">Peso Bruto Kg</option>
+                                                    <option value="valAgregado">Val Agregado</option>
+                                                    <option value="unidad">Unidad</option>
+                                                    <option value="vendorName">Proveedor</option>
+                                                    <option value="vendorRfc">RFC Prov</option>
+                                                    <option value="vendorAddress">Dirección Prov</option>
                                                 </select>
                                             </div>
 

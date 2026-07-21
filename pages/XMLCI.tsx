@@ -194,15 +194,10 @@ export const XMLCI: React.FC = () => {
                     const storedUUIDNorm = norm(r.uuid || '').toLowerCase();
 
                     const searchableContent = [
-                        r.idFiscal,
-                        r.nombre,
-                        r.domicilio,
-                        r.invoiceNo,
-                        r.fecha,
-                        r.incoterm,
-                        r.moneda,
-                        (r.uuid || '').toLowerCase(),
-                        (r as any).archivo
+                        r.idFiscal, r.nombre, r.domicilio, r.invoiceNo, r.fecha, r.incoterm,
+                        r.moneda, (r.uuid || '').toLowerCase(), (r as any).archivo,
+                        r.valMonFact, r.valDolares, r.totalAduana, r.fletes, r.seguros,
+                        r.embalajes, r.otrosIncrementables, r.descuentos
                     ].map(v => (v || '').toString().toLowerCase());
 
                     // OR logic: match any term against any field
@@ -787,6 +782,17 @@ export const XMLCI: React.FC = () => {
                                                 <option value="invoiceNo">Num. Factura</option>
                                                 <option value="incoterm">Incoterm</option>
                                                 <option value="uuid">UUID</option>
+                                                <option value="domicilio">Domicilio</option>
+                                                <option value="fecha">Fecha</option>
+                                                <option value="moneda">Moneda</option>
+                                                <option value="valMonFact">Val Mon Fact</option>
+                                                <option value="valDolares">Val Dólares</option>
+                                                <option value="totalAduana">Total Aduana</option>
+                                                <option value="fletes">Fletes</option>
+                                                <option value="seguros">Seguros</option>
+                                                <option value="embalajes">Embalajes</option>
+                                                <option value="otrosIncrementables">Otros Incrementables</option>
+                                                <option value="descuentos">Descuentos</option>
                                             </select>
                                         </div>
 

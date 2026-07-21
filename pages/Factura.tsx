@@ -1718,13 +1718,15 @@ export const Factura: React.FC = () => {
                 ${normalize(i.item)}
                 ${normalize((i as any).bl || '')}
                 ${normalize(invoiceToBLMap[i.invoiceNo])}
-                ${normalize(i.rb)}
+                ${normalize(i.date)}
                 ${normalize(i.qty)}
+                ${normalize(i.netWeight)}
                 ${normalize(i.unitPrice)}
                 ${normalize(i.totalAmount)}
-                ${normalize(i.netWeight)}
                 ${normalize(i.prosec)}
-                ${normalize(i.date)}
+                ${normalize(i.rb)}
+                ${normalize(i.currency)}
+                ${normalize(i.assignedSpecialist)}
             `;
             // AND Condition: ALL terms (from comma split) must match somewhere in this row
             return terms.every(term => rowSearchStr.includes(term));
@@ -3029,7 +3031,7 @@ export const Factura: React.FC = () => {
             <CatalogQueryBuilder
                 isOpen={showQueryBuilder}
                 onClose={() => setShowQueryBuilder(false)}
-                columns={['partNo', 'invoiceNo', 'bl', 'containerNo', 'hts', 'regimen', 'incoterm', 'englishName', 'spanishDescription']}
+                columns={['partNo', 'invoiceNo', 'bl', 'containerNo', 'hts', 'regimen', 'incoterm', 'englishName', 'spanishDescription', 'date', 'model', 'item', 'currency', 'assignedSpecialist', 'prosec', 'rb', 'qty', 'netWeight', 'unitPrice', 'totalAmount']}
                 conditions={queryConditions}
                 setConditions={setQueryConditions}
                 onApply={() => setShowQueryBuilder(false)}

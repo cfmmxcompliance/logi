@@ -1688,6 +1688,8 @@ export const CIExtractor: React.FC = () => {
                 ${normalize(i.netWeight)}
                 ${normalize(i.prosec)}
                 ${normalize(i.date)}
+                ${normalize(i.currency)}
+                ${normalize(i.assignedSpecialist)}
             `;
             // AND Condition: ALL terms (from comma split) must match somewhere in this row
             return terms.every(term => rowSearchStr.includes(term));
@@ -3003,7 +3005,7 @@ export const CIExtractor: React.FC = () => {
             <CatalogQueryBuilder
                 isOpen={showQueryBuilder}
                 onClose={() => setShowQueryBuilder(false)}
-                columns={['partNo', 'invoiceNo', 'bl', 'containerNo', 'hts', 'regimen', 'incoterm', 'englishName', 'spanishDescription']}
+                columns={['partNo', 'invoiceNo', 'bl', 'containerNo', 'hts', 'regimen', 'incoterm', 'englishName', 'spanishDescription', 'date', 'model', 'item', 'currency', 'assignedSpecialist', 'prosec', 'rb', 'qty', 'netWeight', 'unitPrice', 'totalAmount']}
                 conditions={queryConditions}
                 setConditions={setQueryConditions}
                 onApply={() => setShowQueryBuilder(false)}

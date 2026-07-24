@@ -39,6 +39,8 @@ const CIExtractor          = React.lazy(() => import('../pages/CIExtractor.tsx')
 const Factura              = React.lazy(() => import('../pages/Factura.tsx').then(m => ({ default: m.Factura })));
 const XMLInvoiceExtractor  = React.lazy(() => import('../pages/XMLInvoiceExtractor.tsx').then(m => ({ default: m.XMLInvoiceExtractor })));
 const XMLCI                = React.lazy(() => import('../pages/XMLCI.tsx').then(m => ({ default: m.XMLCI })));
+const ExpoSuit             = React.lazy(() => import('../pages/ExpoSuit.tsx'));
+const COVEExtractor        = React.lazy(() => import('../pages/COVEExtractor.tsx').then(m => ({ default: m.COVEExtractor })));
 const Models               = React.lazy(() => import('../pages/Models').then(m => ({ default: m.Models })));
 const Cajas                = React.lazy(() => import('../pages/Cajas.tsx').then(m => ({ default: m.Cajas })));
 const AsignacionesDiarias  = React.lazy(() => import('../pages/AsignacionesDiarias.tsx').then(m => ({ default: m.AsignacionesDiarias })));
@@ -63,6 +65,7 @@ const HandheldLiberacionDock = React.lazy(() => import('../pages/HandheldLiberac
 const HandheldArribo       = React.lazy(() => import('../pages/HandheldArribo.tsx').then(m => ({ default: m.HandheldArribo })));
 const HandheldVigilancia   = React.lazy(() => import('../pages/HandheldVigilancia.tsx').then(m => ({ default: m.HandheldVigilancia })));
 const HandheldAsignaciones = React.lazy(() => import('../pages/HandheldAsignaciones.tsx').then(m => ({ default: m.HandheldAsignaciones })));
+const HandheldContrato     = React.lazy(() => import('../pages/HandheldContrato.tsx').then(m => ({ default: m.HandheldContrato })));
 const BPMClasificacion     = React.lazy(() => import('../pages/BPMClasificacion.tsx').then(m => ({ default: m.BPMClasificacion })));
 const DailyVanAssignment   = React.lazy(() => import('../pages/DailyVanAssignment.tsx').then(m => ({ default: m.DailyVanAssignment })));
 const AdminProductos53     = React.lazy(() => import('../pages/AdminProductos53.tsx').then(m => ({ default: m.AdminProductos53 })));
@@ -72,6 +75,7 @@ const ReservaVentanas53    = React.lazy(() => import('../pages/ReservaVentanas53
 const WMSControl           = React.lazy(() => import('../pages/wms/WMSControl.tsx').then(m => ({ default: m.WMSControl })));
 const ActivosFijos         = React.lazy(() => import('../pages/ActivosFijos.tsx').then(m => ({ default: m.ActivosFijos })));
 const ReglaOctava          = React.lazy(() => import('../pages/ReglaOctavaR8.tsx').then(m => ({ default: m.ReglaOctavaR8 })));
+const Embarques            = React.lazy(() => import('../pages/Embarques.tsx').then(m => ({ default: m.Embarques })));
 // ─── Fallback spinner while lazy chunk loads ─────────────────────────────────
 const PageSkeleton = () => (
     <div className="flex-1 flex items-center justify-center min-h-[60vh]">
@@ -124,9 +128,12 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
         if (user?.role === UserRole.HANDHELD_USER2 && location.pathname === '/m/sellos') {
              return <Navigate to="/m/home" replace />;
         }
+        if ((user?.role === UserRole.HANDHELD_USER2 || user?.role === UserRole.HANDHELD_AF) && location.pathname === '/m/contrato') {
+             return <Navigate to="/m/home" replace />;
+        }
     } else if (user?.role) {
-        // Non-Handheld (Desktop) users cannot access /m/... (except ADMIN for testing)
-        if (isHandheldPath && user.role !== UserRole.ADMIN) {
+        // Non-Handheld (Desktop) users cannot access /m/... (except ADMIN, EXPO, EXPO_ANALIST, EMBARQUES for testing)
+        if (isHandheldPath && ![UserRole.ADMIN, UserRole.EXPO, UserRole.EXPO_ANALIST, UserRole.EMBARQUES].includes(user.role as any)) {
             return <Navigate to="/" replace />;
         }
     }
@@ -145,7 +152,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Expo constraints
     if (user?.role === UserRole.EXPO) {
-        const allowed = ['/asignaciones-diarias', '/xml-ci', '/xml-invoices'];
+        const allowed = ['/asignaciones-diarias', '/xml-ci', '/xml-invoices', '/exposuit'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/asignaciones-diarias" replace />;
     }
 
@@ -157,7 +164,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Embarques constraints
     if (user?.role === UserRole.EMBARQUES) {
-        const allowed = ['/asignaciones-diarias'];
+        const allowed = ['/asignaciones-diarias', '/embarques'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/asignaciones-diarias" replace />;
     }
 
@@ -373,6 +380,8 @@ const AppContent = () => {
             <Route path="/factura" element={<ProtectedRoute><Factura /></ProtectedRoute>} />
             <Route path="/xml-invoices" element={<ProtectedRoute><XMLInvoiceExtractor /></ProtectedRoute>} />
             <Route path="/xml-ci" element={<ProtectedRoute><XMLCI /></ProtectedRoute>} />
+            <Route path="/exposuit" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO]}><ExpoSuit /></ProtectedRoute>} />
+            <Route path="/cove-extractor" element={<ProtectedRoute><COVEExtractor /></ProtectedRoute>} />
             <Route path="/saldo-fianza" element={<ProtectedRoute><SaldoFianza /></ProtectedRoute>} />
             <Route path="/catalogo-sat" element={<ProtectedRoute><CatalogoSAT /></ProtectedRoute>} />
             <Route path="/ccp-builder" element={<ProtectedRoute><CCPBuilder /></ProtectedRoute>} />
@@ -384,6 +393,7 @@ const AppContent = () => {
             <Route path="/pricing-matrix" element={<ProtectedRoute><PricingMatrix /></ProtectedRoute>} />
             <Route path="/cajas" element={<ProtectedRoute><Cajas /></ProtectedRoute>} />
             <Route path="/asignaciones-diarias" element={<ProtectedRoute><AsignacionesDiarias /></ProtectedRoute>} />
+            <Route path="/embarques" element={<ProtectedRoute><Embarques /></ProtectedRoute>} />
             <Route path="/incidencias-vigilancia" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]}><IncidenciasVigilancia /></ProtectedRoute>} />
             <Route path="/macro" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO]}><CaptureModule /></ProtectedRoute>} />
             <Route path="/historial-capturas" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO]}><HistorialCapturas /></ProtectedRoute>} />
@@ -429,6 +439,7 @@ const AppContent = () => {
             <Route path="/m/arribo" element={<ProtectedRoute><HandheldArribo /></ProtectedRoute>} />
             <Route path="/m/vigilancia" element={<ProtectedRoute><HandheldVigilancia /></ProtectedRoute>} />
             <Route path="/m/asignaciones" element={<ProtectedRoute><HandheldAsignaciones /></ProtectedRoute>} />
+            <Route path="/m/contrato" element={<ProtectedRoute><HandheldContrato /></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

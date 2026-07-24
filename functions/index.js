@@ -848,3 +848,148 @@ exports.sendLayoutNotificationEmail = onDocumentWritten(
     return null;
   }
 );
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// sendConfirmacionCitaEmail
+// Firestore trigger: asignacion_cajas/{docId}
+// Dispara cuando citaConfirmadaAt pasa de vacío → con valor, o cambia su valor.
+// Envía correo a suscriptores del SCAC de la sub-línea Y del Carrier Padre.
+// ─────────────────────────────────────────────────────────────────────────────
+exports.sendConfirmacionCitaEmail = onDocumentWritten(
+  { document: 'asignacion_cajas/{docId}', region: 'us-central1', memory: '256MiB' },
+  async (event) => {
+    const before = event.data?.before?.data() || {};
+    const after  = event.data?.after?.data()  || {};
+
+    // Solo cuando citaConfirmadaAt cambia
+    if (!after.citaConfirmadaAt || before.citaConfirmadaAt === after.citaConfirmadaAt) {
+      return null;
+    }
+
+    const scac         = (after.scac          || '').trim().toUpperCase();
+    const carrierPadre = (after.carrierCodigo || '').trim().toUpperCase();
+
+    if (!scac && !carrierPadre) {
+      console.log('sendConfirmacionCitaEmail: sin SCAC ni carrierCodigo, omitiendo.');
+      return null;
+    }
+
+    // Lee reglas de Firestore (audit_subscriptions/confirmacion_cita_rules)
+    let rules = [];
+    try {
+      const snap = await db.doc('audit_subscriptions/confirmacion_cita_rules').get();
+      if (snap.exists) {
+        rules = snap.data().rules || [];
+      }
+    } catch (e) {
+      console.error('sendConfirmacionCitaEmail: error leyendo reglas:', e.message);
+      return null;
+    }
+
+    // Evalúa qué reglas aplican
+    let matchedEmails = [];
+    for (const rule of rules) {
+      const rCarrier = (rule.carrier || '').trim().toUpperCase();
+      const rScac = (rule.scac || '').trim().toUpperCase();
+      
+      let matchCarrier = true;
+      let matchScac = true;
+      
+      if (rCarrier) matchCarrier = (rCarrier === carrierPadre);
+      if (rScac) matchScac = (rScac === scac);
+      
+      if ((rCarrier || rScac) && matchCarrier && matchScac) {
+         if (Array.isArray(rule.emails)) {
+           matchedEmails.push(...rule.emails);
+         }
+      }
+    }
+    
+    const emails = [...new Set(matchedEmails)].filter(Boolean);
+
+    if (emails.length === 0) {
+      console.log(`sendConfirmacionCitaEmail: sin suscriptores para SCAC=${scac} / Padre=${carrierPadre}`);
+      return null;
+    }
+
+    // Datos del registro para el correo
+    const docId           = after.id              || event.params.docId || '—';
+    const numeroCaja      = after.numeroCaja      || '—';
+    const numeroOp        = docId;
+    const carrierRef      = after.carrierRef      || '—';
+    const subLinea        = after.subLinea        || scac || '—';
+    const driver          = after.nombreDriver    || '—';
+    const placasTracto    = after.placasTracto    || '—';
+    const fechaAsignacion = after.fecha           || '—';
+    const horaAsignacion  = after.horaAsignacion  || '—';
+    const subidoPor       = after.createdBy       || after.actualizadoPor || 'sistema';
+    const hora            = new Date().toLocaleString('es-MX', {
+      timeZone: 'America/Mexico_City', hour12: false,
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+
+    const htmlBody = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+    .card { background: #fff; border-radius: 8px; padding: 28px 32px; max-width: 560px;
+            margin: 0 auto; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    h2 { color: #16a34a; margin: 0 0 6px; font-size: 20px; }
+    .sub { color: #6b7280; font-size: 13px; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    td { padding: 9px 12px; font-size: 14px; border-bottom: 1px solid #e5e7eb; }
+    td:first-child { color: #6b7280; width: 42%; font-weight: 600; }
+    td:last-child { color: #111827; }
+    .badge { display:inline-block; background:#dcfce7; color:#166534;
+             border-radius:4px; padding:2px 8px; font-size:12px; font-weight:700; }
+    .footer { font-size:11px; color:#9ca3af; text-align:center; margin-top:20px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>✅ Confirmación de Cita — ${numeroOp}</h2>
+    <p class="sub">Asignación Diaria de Cajas Secas 53' · ${hora}</p>
+    <table>
+      <tr><td>No. Operación (ID)</td><td><span class="badge">${numeroOp}</span></td></tr>
+      <tr><td>Número de Caja</td><td><strong>${numeroCaja}</strong></td></tr>
+      <tr><td>Carrier / SCAC</td><td>${carrierPadre} <span style="color:#6b7280;font-size:12px;">(${subLinea})</span></td></tr>
+      <tr><td>Carrier Ref</td><td>${carrierRef}</td></tr>
+      <tr><td>Driver</td><td>${driver}</td></tr>
+      <tr><td>Placas Tracto</td><td>${placasTracto}</td></tr>
+      <tr><td>Fecha Asignación</td><td>${fechaAsignacion}</td></tr>
+      <tr><td>Hora Asignación</td><td>${horaAsignacion}</td></tr>
+      <tr><td>Confirmado por</td><td>${subidoPor}</td></tr>
+      <tr><td>Fecha/Hora Notificación</td><td>${hora}</td></tr>
+    </table>
+    <p class="footer">Este correo fue generado automáticamente por Logimaster · CFMoto Compliance</p>
+  </div>
+</body>
+</html>`;
+
+    try {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: CONFIG.SENDER_EMAIL, pass: process.env.EMAIL_PASSWORD }
+      });
+
+      await transporter.sendMail({
+        from: `"Logimaster Compliance" <${CONFIG.SENDER_EMAIL}>`,
+        to: CONFIG.SENDER_EMAIL,
+        bcc: emails.join(', '),
+        subject: `✅ Cita Confirmada — ${numeroOp} / Caja ${numeroCaja} (${scac || carrierPadre})`,
+        html: htmlBody
+      });
+
+      console.log(`✓ sendConfirmacionCitaEmail: correo enviado a ${emails.length} suscriptor(es) para ${scac}/${carrierPadre}`);
+    } catch (e) {
+      console.error('sendConfirmacionCitaEmail: error enviando correo:', e.message);
+    }
+
+    return null;
+  }
+);

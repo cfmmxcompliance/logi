@@ -1350,7 +1350,51 @@ export const geminiService = {
     }
   },
 
+  async extractContratoNumber(base64Image: string): Promise<string> {
+    try {
+      console.log("Starting Contrato Extraction from Image...");
+      const ai = getClient();
+      const prompt = `
+        You are an expert in reading Chinese logistics documents.
+        Your task is to extract the CONTRACT NUMBER from this image.
+        
+        The contract number appears on the document after the Chinese label "合同号：" (which means "Contract No:").
+        
+        Example format: CFM-26-N-CFM17757-1-M or CFM-26MX-N-CFM641601-1-M
+        
+        Rules:
+        1. Look for the text immediately after "合同号：" or "合同号:" characters.
+        2. The contract number typically starts with "CFM" and follows the pattern CFM-XX-N-CFMXXXXX-X-M.
+        3. Return ONLY the contract number string. No extra text, no labels.
+        4. Do NOT include the "合同号：" prefix in your answer.
+        5. Return exactly "NO_DETECTADO" ONLY if you cannot find any contract number in the image.
+        6. If you see a QR code and a contract number near it, return the contract number.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-flash-latest',
+        contents: {
+          parts: [{ inlineData: { mimeType: 'image/jpeg', data: base64Image } }, { text: prompt }]
+        },
+        config: {
+          responseMimeType: 'text/plain',
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+          ] as any
+        }
+      });
+      return response.text?.trim() || "NO_DETECTADO";
+    } catch (e) {
+      console.error("Contrato Extraction Error:", e);
+      return "NO_DETECTADO";
+    }
+  },
+
   async chatAssistant(messages: any[]): Promise<string> {
+
     const ai = getClient();
     
     // Configurar herramientas: Búsqueda en DB interna (Function Calling)

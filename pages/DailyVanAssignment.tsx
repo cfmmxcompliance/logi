@@ -68,7 +68,9 @@ export const DailyVanAssignment: React.FC = () => {
   const filterCounts = useMemo(() => {
     let porCerrar = 0, cerrado = 0, sinLayout = 0, sinCcp = 0, vehPorCerrar = 0, vehCerrado = 0;
     filteredAssignments.forEach(a => {
-      const hasLib = liberaciones.some(l => l.asignacionCajaId === a.id);
+      const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
+      const isExcluded = dockVal === 'RECHAZADO' || dockVal === 'DROP' || dockVal === 'NO SHOW';
+      const hasLib = isExcluded || liberaciones.some(l => l.asignacionCajaId === a.id);
       const v = parseInt((a as any).vehiculos || '0', 10);
       if (hasLib) {
         cerrado++;
@@ -91,7 +93,9 @@ export const DailyVanAssignment: React.FC = () => {
   const displayedAssignments = useMemo(() => {
     if (cargadoFilter === 'ALL') return filteredAssignments;
     return filteredAssignments.filter(a => {
-      const hasLib = liberaciones.some(l => l.asignacionCajaId === a.id);
+      const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
+      const isExcluded = dockVal === 'RECHAZADO' || dockVal === 'DROP' || dockVal === 'NO SHOW';
+      const hasLib = isExcluded || liberaciones.some(l => l.asignacionCajaId === a.id);
       return cargadoFilter === 'CERRADO' ? hasLib : !hasLib;
     });
   }, [filteredAssignments, cargadoFilter, liberaciones]);
@@ -102,8 +106,15 @@ export const DailyVanAssignment: React.FC = () => {
   const getLibDockForCaja = (asigId: string) =>
     liberacionesDock.find(l => l.asignacionCajaId === asigId);
 
-  const released = assignments.filter(a => getLibForCaja(a.id!));
-  const pending = assignments.filter(a => !getLibForCaja(a.id!));
+  const released = assignments.filter(a => {
+      const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
+      return dockVal === 'RECHAZADO' || dockVal === 'DROP' || dockVal === 'NO SHOW' || getLibForCaja(a.id!);
+  });
+  const pending = assignments.filter(a => {
+      const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
+      const isExcluded = dockVal === 'RECHAZADO' || dockVal === 'DROP' || dockVal === 'NO SHOW';
+      return !isExcluded && !getLibForCaja(a.id!);
+  });
 
   const exportCSV = () => {
     const headers = [
@@ -461,9 +472,15 @@ export const DailyVanAssignment: React.FC = () => {
                   {displayedAssignments.map((asig, idx) => {
                     const lib = getLibForCaja(asig.id!);
                     const isEven = idx % 2 === 0;
-                    const isCanceled = (asig.dockArribo || '').trim().toUpperCase() === 'CANCELED';
+                    const dockValForColor = (asig.dockArribo || '').trim().toUpperCase();
+                    const isCanceled = dockValForColor === 'CANCELED';
+                    const isRechazado = dockValForColor === 'RECHAZADO';
+                    const isDrop = dockValForColor === 'DROP';
+                    const isNoShow = dockValForColor === 'NO SHOW';
                     let rowBg = isEven ? 'bg-slate-800/30' : 'bg-slate-900/40';
-                    if (isCanceled) rowBg = 'bg-red-900/40';
+                    if (isCanceled) rowBg = 'bg-red-900/40 text-red-100';
+                    else if (isRechazado || isDrop) rowBg = 'bg-yellow-900/40 text-yellow-100';
+                    else if (isNoShow) rowBg = 'bg-orange-900/40 text-orange-100';
 
                     // Parse times for UI
                     const parseTimeUi = (date: string, time: string) => {
@@ -485,7 +502,11 @@ export const DailyVanAssignment: React.FC = () => {
                       if (mx) return new Date(`${mx[3]}-${mx[2].padStart(2,'0')}-${mx[1].padStart(2,'0')}T${mx[4]}`);
                       const d = new Date(s.replace(' ','T')); return isNaN(d.getTime()) ? null : d;
                     };
-                    const libDate = parseEsMxUi(relStrUi);
+                    let libDate = parseEsMxUi(relStrUi);
+                    if (!libDate && (isRechazado || isDrop || isNoShow) && (asig as any).updatedAt) {
+                        const d = new Date((asig as any).updatedAt);
+                        if (!isNaN(d.getTime())) libDate = d;
+                    }
                     const endDateUi = libDate || (arrDateUi ? new Date() : null);
                     const isLive = !libDate && !!arrDateUi;
 
@@ -561,7 +582,11 @@ export const DailyVanAssignment: React.FC = () => {
                                if (mx) return new Date(`${mx[3]}-${mx[2].padStart(2,'0')}-${mx[1].padStart(2,'0')}T${mx[4]}`);
                                const d = new Date(s.replace(' ','T')); return isNaN(d.getTime()) ? null : d;
                              };
-                             const libDate  = parseEsMxC(lib?.fechaHoraRegistro);
+                             let libDate  = parseEsMxC(lib?.fechaHoraRegistro);
+                             if (!libDate && (isRechazado || isDrop || isNoShow) && (asig as any).updatedAt) {
+                                 const d = new Date((asig as any).updatedAt);
+                                 if (!isNaN(d.getTime())) libDate = d;
+                             }
                              const endDateC = libDate || new Date();
                              const isLiveC  = !libDate;
                              const mins = Math.round((endDateC.getTime() - arrDateUi.getTime()) / 60000);

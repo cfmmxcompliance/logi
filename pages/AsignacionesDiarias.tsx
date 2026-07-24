@@ -94,7 +94,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
-  const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'CERRADO' | 'POR_CERRAR'>('ALL');
+  const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'CERRADO' | 'POR_CERRAR' | 'CANCELADO'>('ALL');
   const today = getMexicoToday();
   const savedRange = (() => { try { return JSON.parse(localStorage.getItem('asig_dateRange') || 'null'); } catch { return null; } })();
   const [dateRange, setDateRange] = useState({ 
@@ -386,7 +386,12 @@ export const AsignacionesDiarias: React.FC = () => {
     }
 
     // Compute counts BEFORE cargadoFilter is applied
+    // Helper: true si la fila está en algún status de cancelación
+    const isCanceledStatus = (dockVal: string) =>
+        dockVal === 'RECHAZADO' || dockVal === 'DROP' || dockVal === 'NO SHOW' || dockVal === 'CANCELED';
+
     let cerradoCount = 0;
+    let canceladoCount = 0;
     let porCerrarCount = 0;
     let sinLayoutCount = 0;
     let sinCcpCount = 0;
@@ -394,9 +399,11 @@ export const AsignacionesDiarias: React.FC = () => {
     let vehiculosCerrado = 0;
 
     result.forEach(a => {
-        const hasLiberacion = liberaciones.some(lib => lib.asignacionCajaId === a.id);
+        const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
         const v = parseInt((a as any).vehiculos, 10);
-        if (hasLiberacion) {
+        if (isCanceledStatus(dockVal)) {
+            canceladoCount++;
+        } else if (liberaciones.some(lib => lib.asignacionCajaId === a.id)) {
             cerradoCount++;
             if (!isNaN(v)) vehiculosCerrado += v;
         } else {
@@ -410,6 +417,7 @@ export const AsignacionesDiarias: React.FC = () => {
     const filterCounts = {
         ALL: result.length,
         CERRADO: cerradoCount,
+        CANCELADO: canceladoCount,
         POR_CERRAR: porCerrarCount,
         SIN_LAYOUT: sinLayoutCount,
         SIN_CCP: sinCcpCount,
@@ -417,11 +425,14 @@ export const AsignacionesDiarias: React.FC = () => {
         VEHICULOS_CERRADO: vehiculosCerrado,
     };
 
-    // Cargado Filter (CERRADO = hasLiberacion, POR_CERRAR = !hasLiberacion)
+    // Cargado Filter
     if (cargadoFilter !== 'ALL') {
         result = result.filter(a => {
-            const hasLiberacion = liberaciones.some(lib => lib.asignacionCajaId === a.id);
-            return cargadoFilter === 'CERRADO' ? hasLiberacion : !hasLiberacion;
+            const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
+            if (cargadoFilter === 'CANCELADO') return isCanceledStatus(dockVal);
+            if (cargadoFilter === 'CERRADO')   return !isCanceledStatus(dockVal) && liberaciones.some(lib => lib.asignacionCajaId === a.id);
+            // POR_CERRAR
+            return !isCanceledStatus(dockVal) && !liberaciones.some(lib => lib.asignacionCajaId === a.id);
         });
     }
 
@@ -597,6 +608,7 @@ export const AsignacionesDiarias: React.FC = () => {
                        : (formData.fecha === '2026-07-14') ? [...baseHours, "16:00", "17:00", "18:00"]
                        : (formData.fecha === '2026-07-15') ? [...baseHours, "16:00", "17:00"]
                        : (formData.fecha === '2026-07-20') ? [...baseHours, "16:00", "18:00"]
+                       : (formData.fecha === '2026-07-22') ? [...baseHours, "16:00", "17:00"]
                        : ((formData.fecha || '') >= '2026-07-09') ? [...baseHours, "16:00"]
                        : baseHours;
       const validSlots = allSlots.filter(s => s !== '11:00'); // 11:00 siempre bloqueado
@@ -607,7 +619,8 @@ export const AsignacionesDiarias: React.FC = () => {
       // Ventana ya iniciada: solo aplica si la fecha es hoy — excepción manual 18:00 del 14/07/2026 y 17:00 del 15/07/2026
       const isManualOverride18 = (formData.fecha === '2026-07-14' && formData.horaAsignacion === '18:00')
                                || (formData.fecha === '2026-07-15' && formData.horaAsignacion === '17:00')
-                               || (formData.fecha === '2026-07-20' && formData.horaAsignacion === '18:00');
+                               || (formData.fecha === '2026-07-20' && formData.horaAsignacion === '18:00')
+                               || (formData.fecha === '2026-07-22' && formData.horaAsignacion === '17:00');
       if (!isManualOverride18 && formData.fecha === getMexicoToday() && formData.horaAsignacion <= getMexicoNow()) {
         alert(`La ventana de las ${formData.horaAsignacion} ya inició. Selecciona el siguiente horario disponible.`);
         return;
@@ -633,6 +646,7 @@ export const AsignacionesDiarias: React.FC = () => {
       const maxSlots = (formData.horaAsignacion === '15:00' && formData.fecha === '2026-07-06') ? 8
                      : (formData.fecha === '2026-07-14' && (formData.horaAsignacion === '17:00' || formData.horaAsignacion === '18:00')) ? 1
                      : (formData.fecha === '2026-07-15' && formData.horaAsignacion === '17:00') ? 6
+                     : (formData.fecha === '2026-07-22' && formData.horaAsignacion === '17:00') ? 2
                      : 6;
       if (sameHourCount >= maxSlots) {
         alert('Horario no asignado seleccionar otro hora de ventana');
@@ -679,6 +693,7 @@ export const AsignacionesDiarias: React.FC = () => {
       : null;
     const finalScac = resolvedTL?.TransportLine || resolvedTLBySubLinea?.TransportLine || '';
     (finalFormData as any).scac = finalScac;
+    (finalFormData as any).citaConfirmadaAt = new Date().toISOString();
 
     if (isEditing && formData.id) {
       // Recalculate customId so it always reflects the latest op/fecha/carrier/scac
@@ -1261,6 +1276,12 @@ export const AsignacionesDiarias: React.FC = () => {
                     </span>
                   )}
                 </button>
+                 <button
+                   onClick={() => setCargadoFilter('CANCELADO')}
+                   className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${cargadoFilter === 'CANCELADO' ? 'bg-red-600 text-white shadow' : 'text-red-500 hover:bg-red-50'}`}
+                 >
+                   {t('filter.cancelado')} {filterCounts.CANCELADO > 0 ? `(${filterCounts.CANCELADO})` : ''}
+                 </button>
              </div>
 
              <div className="flex items-center bg-white border border-slate-300 rounded-lg pr-2 overflow-hidden shadow-sm">
@@ -1502,7 +1523,9 @@ export const AsignacionesDiarias: React.FC = () => {
           <tbody className="divide-y divide-slate-100 text-sm">
             {filteredData.map((a, index) => {
               const liberacion = liberaciones.find(lib => lib.asignacionCajaId === a.id);
-              const hasLiberacion = !!liberacion;
+              const dockValForIcon = String((a as any).dockArribo || '').trim().toUpperCase();
+              const isExcludedIcon = dockValForIcon === 'RECHAZADO' || dockValForIcon === 'DROP' || dockValForIcon === 'NO SHOW';
+              const hasLiberacion = isExcludedIcon || !!liberacion;
               // Barcode check: sello assigned → barcodes have been generated
               const exactSello = sellos.find(s => s.asignacionCajaId === a.id);
               const selloRow = exactSello || sellos.find(s => s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha);
@@ -1783,7 +1806,16 @@ export const AsignacionesDiarias: React.FC = () => {
                     )}
                 </td>
                 <td className="p-4 font-mono text-xs text-teal-800 font-medium whitespace-nowrap">
-                    {liberacion?.fechaHoraRegistro ? liberacion.fechaHoraRegistro : '-'}
+                    {(() => {
+                        if (liberacion?.fechaHoraRegistro) return liberacion.fechaHoraRegistro;
+                        if (isExcludedIcon && (a as any).updatedAt) {
+                            const d = new Date((a as any).updatedAt);
+                            if (!isNaN(d.getTime())) {
+                                return `${d.toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}, ${d.toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}`;
+                            }
+                        }
+                        return '-';
+                    })()}
                 </td>
                 
                 <td className="p-4 text-xs text-slate-600 truncate max-w-[200px]" title={a.observaciones || ''}>
@@ -1949,6 +1981,7 @@ export const AsignacionesDiarias: React.FC = () => {
                                 : (formData.fecha === '2026-07-14') ? [...baseHours, "16:00", "17:00", "18:00"]
                                 : (formData.fecha === '2026-07-15') ? [...baseHours, "16:00", "17:00"]
                                 : (formData.fecha === '2026-07-20') ? [...baseHours, "16:00", "18:00"]
+                                : (formData.fecha === '2026-07-22') ? [...baseHours, "16:00", "17:00"]
                                 : ((formData.fecha || '') >= '2026-07-09') ? [...baseHours, "16:00"]
                                 : baseHours;
                               // Resuelve un tiempo libre (ej. 16:33) al slot aprobado que le corresponde
@@ -1977,13 +2010,16 @@ export const AsignacionesDiarias: React.FC = () => {
                                 if (hr === "11:00") return <option key={hr} value={hr} disabled>{hr} - BLOQUEADO</option>;
                                 // Ventana ya iniciada (solo hoy) — excepción: manual overrides
                                 const isManualOverride = (formData.fecha === '2026-07-14' && hr === '18:00')
-                                                      || (formData.fecha === '2026-07-15' && hr === '17:00');
+                                                      || (formData.fecha === '2026-07-15' && hr === '17:00')
+                                                      || (formData.fecha === '2026-07-20' && hr === '18:00')
+                                                      || (formData.fecha === '2026-07-22' && hr === '17:00');
                                 const isPast = isToday && hr <= mexicoNow && !isManualOverride;
                                 if (isPast) return <option key={hr} value={hr} disabled>{hr} - INICIADO</option>;
                                 // Override especial: 15:00 del 06/07/2026 tuvo 8 citas
                                 const maxSlots = (hr === '15:00' && formData.fecha === '2026-07-06') ? 8
                                                : (formData.fecha === '2026-07-14' && (hr === '17:00' || hr === '18:00')) ? 1
                                                : (formData.fecha === '2026-07-15' && hr === '17:00') ? 6
+                                               : (formData.fecha === '2026-07-22' && hr === '17:00') ? 2
                                                : 6;
                                 const isFull = count >= maxSlots;
                                 return (

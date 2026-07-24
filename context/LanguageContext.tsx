@@ -99,6 +99,7 @@ export const translations: Translations = {
     "filter.todos": { es: "Todos", en: "All", zh: "全部" },
     "filter.por_cerrar": { es: "POR CERRAR", en: "PENDING", zh: "待关闭" },
     "filter.cerrado": { es: "CERRADO", en: "CLOSED", zh: "已关闭" },
+    "filter.cancelado": { es: "CANCELADO", en: "CANCELLED", zh: "已取消" },
     "filter.sin_layout": { es: "sin layout", en: "no layout", zh: "无布局" },
     "filter.sin_ccp": { es: "sin CCP", en: "no CCP", zh: "无CCP" },
     "filter.veh": { es: "veh.", en: "veh.", zh: "辆" },

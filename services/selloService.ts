@@ -17,6 +17,22 @@ export const selloService = {
     }
   },
 
+  async getSelloByAsignacionCajaId(asignacionCajaId: string): Promise<SelloRecord | null> {
+    if (!db) return null;
+    try {
+      const q = query(
+        collection(db, COLLECTION_NAME),
+        where('asignacionCajaId', '==', asignacionCajaId)
+      );
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) return null;
+      return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as SelloRecord;
+    } catch (error) {
+      console.error('Error fetching sello by asignacionCajaId:', error);
+      return null;
+    }
+  },
+
   async getSellosByDate(fecha: string): Promise<SelloRecord[]> {
     if (!db) return [];
     try {

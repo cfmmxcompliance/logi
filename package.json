@@ -15,7 +15,7 @@
     "dotenv": "^17.2.3",
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
-    "firebase": "^12.7.0",
+    "firebase": "^12.16.0",
     "googleapis": "^170.1.0",
     "idb": "8.0.0",
     "jsbarcode": "^3.12.3",

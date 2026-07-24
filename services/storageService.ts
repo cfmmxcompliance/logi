@@ -1394,6 +1394,29 @@ export const storageService = {
     return uniqueNewItems.length + itemsToUpdateArchivo.length;
   },
 
+  checkCFDIExistsByUUID: async (uuids: string[]): Promise<Set<string>> => {
+    if (!db || uuids.length === 0) return new Set();
+    const existing = new Set<string>();
+    try {
+      // Chunk queries to 30 items per batch to comply with Firestore 'in' limit
+      const chunks = [];
+      for (let i = 0; i < uuids.length; i += 30) {
+        chunks.push(uuids.slice(i, i + 30));
+      }
+      for (const chunk of chunks) {
+        const q = query(collection(db, COLS.CFDI_INVOICES), where("uuid", "in", chunk));
+        const snap = await getDocs(q);
+        snap.forEach(doc => {
+          const data = doc.data();
+          if (data.uuid) existing.add(data.uuid);
+        });
+      }
+    } catch (e) {
+      console.error("Error checking duplicates by UUID:", e);
+    }
+    return existing;
+  },
+
   addXMLCIRecords: async (newRecords: XMLCIRecord[]) => {
     if (newRecords.length === 0) return 0;
     if (!db) throw new Error("Sin conexión a Internet.");
@@ -3231,6 +3254,129 @@ export const storageService = {
     }
   },
 
+  searchCFDIInvoicesByPrefix: async (terms: string[]): Promise<any[]> => {
+    if (!db || !terms || terms.length === 0) return [];
+    
+    try {
+      const merged = new Map();
+      const addDocs = (snapShot: any) => {
+        snapShot.docs.forEach((d: any) => {
+          if (!merged.has(d.id)) {
+            merged.set(d.id, { ...d.data(), id: d.id });
+          }
+        });
+      };
+
+      if (terms.length === 1) {
+        let rawPrefix = terms[0].trim();
+        if (rawPrefix.length === 32 && !rawPrefix.includes('-')) {
+            rawPrefix = rawPrefix.replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5");
+        }
+        if (rawPrefix.length < 3) return []; // Too short for prefix
+        
+        const norm = rawPrefix.toUpperCase();
+        const lower = rawPrefix.toLowerCase();
+
+        const fieldsUpper = ['invoiceNo', 'partNo', 'vin', 'engine', 'model'];
+        const queries = fieldsUpper.map(field => 
+          getDocs(query(collection(db, COLS.CFDI_INVOICES), where(field, '>=', norm), where(field, '<=', norm + '\uf8ff'), limit(200)))
+        );
+        // Also UUID upper and lower
+        queries.push(getDocs(query(collection(db, COLS.CFDI_INVOICES), where('uuid', '>=', lower), where('uuid', '<=', lower + '\uf8ff'), limit(200))));
+        queries.push(getDocs(query(collection(db, COLS.CFDI_INVOICES), where('uuid', '>=', norm), where('uuid', '<=', norm + '\uf8ff'), limit(200))));
+
+        const results = await Promise.all(queries);
+        results.forEach(addDocs);
+      } else {
+        // Multiple terms: chunk into 10s and use 'in' queries for exact match
+        for (let i = 0; i < terms.length; i += 10) {
+          const chunk = terms.slice(i, i + 10).map(t => {
+              let trimmed = t.trim();
+              if (trimmed.length === 32 && !trimmed.includes('-')) trimmed = trimmed.replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5");
+              return trimmed.toUpperCase();
+          });
+          const chunkLower = chunk.map(t => t.toLowerCase());
+          
+          const fields = ['invoiceNo', 'partNo', 'vin', 'engine'];
+          const queries = fields.map(field => 
+            getDocs(query(collection(db, COLS.CFDI_INVOICES), where(field, 'in', chunk)))
+          );
+          queries.push(getDocs(query(collection(db, COLS.CFDI_INVOICES), where('uuid', 'in', chunkLower))));
+          queries.push(getDocs(query(collection(db, COLS.CFDI_INVOICES), where('uuid', 'in', chunk))));
+
+          const results = await Promise.all(queries);
+          results.forEach(addDocs);
+        }
+      }
+      
+      return Array.from(merged.values());
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  },
+
+  searchXMLCIRecordsByPrefix: async (terms: string[]): Promise<any[]> => {
+    if (!db || !terms || terms.length === 0) return [];
+    
+    try {
+      const merged = new Map();
+      const addDocs = (snapShot: any) => {
+        snapShot.docs.forEach((d: any) => {
+          if (!merged.has(d.id)) {
+            merged.set(d.id, { ...d.data(), id: d.id });
+          }
+        });
+      };
+
+      if (terms.length === 1) {
+        let rawPrefix = terms[0].trim();
+        if (rawPrefix.length === 32 && !rawPrefix.includes('-')) {
+            rawPrefix = rawPrefix.replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5");
+        }
+        if (rawPrefix.length < 3) return []; // Too short
+        
+        const norm = rawPrefix.toUpperCase();
+        const lower = rawPrefix.toLowerCase();
+        
+        const fieldsUpper = ['invoiceNo', 'idFiscal', 'nombre'];
+        const queries = fieldsUpper.map(field => 
+          getDocs(query(collection(db, COLS.XML_CI), where(field, '>=', norm), where(field, '<=', norm + '\uf8ff'), limit(200)))
+        );
+
+        queries.push(getDocs(query(collection(db, COLS.XML_CI), where('uuid', '>=', lower), where('uuid', '<=', lower + '\uf8ff'), limit(200))));
+        queries.push(getDocs(query(collection(db, COLS.XML_CI), where('uuid', '>=', norm), where('uuid', '<=', norm + '\uf8ff'), limit(200))));
+
+        const results = await Promise.all(queries);
+        results.forEach(addDocs);
+      } else {
+        for (let i = 0; i < terms.length; i += 10) {
+          const chunk = terms.slice(i, i + 10).map(t => {
+              let trimmed = t.trim();
+              if (trimmed.length === 32 && !trimmed.includes('-')) trimmed = trimmed.replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5");
+              return trimmed.toUpperCase();
+          });
+          const chunkLower = chunk.map(t => t.toLowerCase());
+          
+          const fields = ['invoiceNo', 'idFiscal', 'nombre'];
+          const queries = fields.map(field => 
+            getDocs(query(collection(db, COLS.XML_CI), where(field, 'in', chunk)))
+          );
+          queries.push(getDocs(query(collection(db, COLS.XML_CI), where('uuid', 'in', chunkLower))));
+          queries.push(getDocs(query(collection(db, COLS.XML_CI), where('uuid', 'in', chunk))));
+
+          const results = await Promise.all(queries);
+          results.forEach(addDocs);
+        }
+      }
+      
+      return Array.from(merged.values());
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  },
+
   deleteSnapshot: async (id: string) => {
     try {
       const points = await indexedDbService.getAllData('restore_points');
@@ -3594,6 +3740,36 @@ export const storageService = {
       return true;
     } catch (e) {
       console.error('Failed to update layout rules', e);
+      return false;
+    }
+  },
+
+  getConfirmacionCitaRules: async (): Promise<any[]> => {
+    if (!db) return [];
+    try {
+      const { doc, getDoc } = await import('firebase/firestore');
+      const snap = await getDoc(doc(db, COLS.SUBSCRIPTIONS, 'confirmacion_cita_rules'));
+      if (snap.exists()) {
+        return snap.data().rules || [];
+      }
+      return [];
+    } catch (e) {
+      console.error('Failed to get confirmacion cita rules', e);
+      return [];
+    }
+  },
+
+  updateConfirmacionCitaRules: async (rules: any[]): Promise<boolean> => {
+    if (!db) return false;
+    try {
+      const { doc, setDoc } = await import('firebase/firestore');
+      await setDoc(doc(db, COLS.SUBSCRIPTIONS, 'confirmacion_cita_rules'), {
+        rules,
+        updatedAt: new Date().toISOString()
+      }, { merge: false });
+      return true;
+    } catch (e) {
+      console.error('Failed to update confirmacion cita rules', e);
       return false;
     }
   },

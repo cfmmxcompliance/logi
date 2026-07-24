@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck, Globe, Activity, FolderOpen,
   Navigation, Monitor,
-  Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles, CalendarCheck, History, Package, CalendarDays, ClipboardList, AlertTriangle } from 'lucide-react';
+  Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles, CalendarCheck, History, Package, CalendarDays, ClipboardList, AlertTriangle, FileSearch } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { ConnectionStatus } from './ConnectionStatus.tsx';
 import { UserRole } from '../types.ts';
@@ -79,6 +79,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [reservasBadge, setReservasBadge] = useState(0);
   const [asignacionesBadge, setAsignacionesBadge] = useState(0);       // Carrier/Transportista
   const [asignacionesBadgeAdmin, setAsignacionesBadgeAdmin] = useState(0); // Admin/Expo/Embarques
+  const [ccpAlerts, setCcpAlerts] = useState<any[]>([]);
+  const previousAdminCcpIds = React.useRef<Set<string>>(new Set());
   const { user, logout } = useAuth();
   const { toggleLanguage, language, t } = useLanguage();
   const location = useLocation();
@@ -170,7 +172,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           }).length;
 
           // Admin/Expo/Embarques: CCP subido pero sin cierre (selloValidado)
-          const badgeAdmin = asignaciones.filter(a => {
+          const adminCcpList = asignaciones.filter(a => {
             const fecha = (a as any).fecha || '';
             const inRange = fecha >= rangeStart && fecha <= rangeEnd;
             const dockVal2 = String((a as any).dockArribo || '').trim().toUpperCase();
@@ -183,8 +185,23 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             const hasCCP = !!(a as any).ccpUrl || !!(a as any).ccpUploadedAt;
             const isClosed = liberaciones.some(l => (l as any).asignacionCajaId === a.id && !!(l as any).selloValidado);
             return inRange && hasCCP && !isClosed;
-          }).length;
-          setAsignacionesBadgeAdmin(badgeAdmin);
+          });
+          
+          const currentCcpIds = new Set(adminCcpList.map(a => a.id));
+          
+          if (previousAdminCcpIds.current.size > 0) {
+            const newAlerts = adminCcpList.filter(a => !previousAdminCcpIds.current.has(a.id));
+            if (newAlerts.length > 0) {
+               setCcpAlerts(prev => {
+                  const existingIds = new Set(prev.map(p => p.id));
+                  const toAdd = newAlerts.filter(na => !existingIds.has(na.id));
+                  return [...prev, ...toAdd];
+               });
+            }
+          }
+          previousAdminCcpIds.current = currentCcpIds;
+
+          setAsignacionesBadgeAdmin(adminCcpList.length);
         } catch { /* sin permisos o sin datos */ }
         setAsignacionesBadge(badge);
       } catch { /* silent */ }
@@ -238,7 +255,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 <>
                   <SidebarItem to="/xml-invoices" icon={Database} label={sidebarOpen ? "Facturas XML" : ""} />
                   <SidebarItem to="/xml-ci" icon={FileText} label={sidebarOpen ? "XMLCI" : ""} />
+                  {(user?.role === UserRole.ADMIN || user?.role === UserRole.EXPO) && (
+                    <SidebarItem to="/exposuit" icon={Package} label={sidebarOpen ? "ExpoSuit V.01" : ""} />
+                  )}
                   <SidebarItem to="/ccp-builder" icon={Truck} label={sidebarOpen ? "CCP Builder" : ""} />
+                  <SidebarItem to="/cove-extractor" icon={FileSearch} label={sidebarOpen ? "COVE Extractor" : ""} />
                 </>
               )}
             </>
@@ -336,6 +357,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     : (asignacionesBadgeAdmin > 0 ? asignacionesBadgeAdmin : undefined)
                 }
               />
+              {user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && (
+                <SidebarItem to="/embarques" icon={Package} label={sidebarOpen ? "Embarques" : ""} />
+              )}
               {/* TRUCK_TRACKING para Operational Transport (no EMBARQUES ni TRANSPORTISTA) */}
               {user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.TRANSPORTISTA && (
                 <SidebarItem to="/daily-van-assignment" icon={CalendarCheck} label={sidebarOpen ? "TRUCK_TRACKING" : ""} />
@@ -366,6 +390,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               />
               <SidebarItem to="/xml-invoices" icon={Database} label={sidebarOpen ? "XML Invoice Extractor" : ""} />
               <SidebarItem to="/xml-ci" icon={FileText} label={sidebarOpen ? "XMLCI Consolidated" : ""} />
+              <SidebarItem to="/ccp-builder" icon={Truck} label={sidebarOpen ? "CCP Builder" : ""} />
+              <SidebarItem to="/exposuit" icon={Package} label={sidebarOpen ? "ExpoSuit V.01" : ""} />
             </>
           )}
 

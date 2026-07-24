@@ -16,6 +16,46 @@ export const asignacionCajaService = {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsignacionCajaModel));
   },
 
+  async getAsignacionByNumeroOperacion(numeroOperacion: string): Promise<AsignacionCajaModel | null> {
+    const q = query(
+      collection(db, COLLECTION_NAME),
+      where('numeroOperacion', '==', numeroOperacion)
+    );
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+    
+    // Sort in memory to get the most recent one (to avoid needing a composite index)
+    const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsignacionCajaModel));
+    docs.sort((a, b) => {
+      const dateA = a.fecha + (a.createdAt || '');
+      const dateB = b.fecha + (b.createdAt || '');
+      return dateB.localeCompare(dateA); // Descending
+    });
+    
+    return docs[0];
+  },
+
+
+
+  async getAsignacionByNumeroCaja(numeroCaja: string): Promise<AsignacionCajaModel | null> {
+    const q = query(
+      collection(db, COLLECTION_NAME),
+      where('numeroCaja', '==', numeroCaja)
+    );
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+
+    // Sort in memory to get the most recent one (avoiding composite index requirement)
+    const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsignacionCajaModel));
+    docs.sort((a, b) => {
+      const dateA = a.fecha + (a.createdAt || '');
+      const dateB = b.fecha + (b.createdAt || '');
+      return dateB.localeCompare(dateA); // Descending
+    });
+
+    return docs[0];
+  },
+
   // ⚡ Cache-first: returns cached data in < 50ms, then caller can refresh from network
   async getAsignacionesByDateCached(fecha: string): Promise<AsignacionCajaModel[]> {
     const q = query(collection(db, COLLECTION_NAME), where('fecha', '==', fecha));

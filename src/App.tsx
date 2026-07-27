@@ -76,6 +76,7 @@ const WMSControl           = React.lazy(() => import('../pages/wms/WMSControl.ts
 const ActivosFijos         = React.lazy(() => import('../pages/ActivosFijos.tsx').then(m => ({ default: m.ActivosFijos })));
 const ReglaOctava          = React.lazy(() => import('../pages/ReglaOctavaR8.tsx').then(m => ({ default: m.ReglaOctavaR8 })));
 const Embarques            = React.lazy(() => import('../pages/Embarques.tsx').then(m => ({ default: m.Embarques })));
+const DriverCheckIn        = React.lazy(() => import('../pages/DriverCheckIn.tsx').then(m => ({ default: m.DriverCheckIn })));
 // ─── Fallback spinner while lazy chunk loads ─────────────────────────────────
 const PageSkeleton = () => (
     <div className="flex-1 flex items-center justify-center min-h-[60vh]">
@@ -152,13 +153,13 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Expo constraints
     if (user?.role === UserRole.EXPO) {
-        const allowed = ['/asignaciones-diarias', '/xml-ci', '/xml-invoices', '/exposuit'];
+        const allowed = ['/asignaciones-diarias', '/embarques', '/xml-ci', '/xml-invoices', '/exposuit', '/ccp-builder'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/asignaciones-diarias" replace />;
     }
 
-    // Expo Analist constraints
-    if (user?.role === UserRole.EXPO_ANALIST) {
-        const allowed = ['/wms-control', '/daily-van-assignment', '/asignaciones-diarias', '/admin-productos-53', '/demanda-cajas-53', '/admin-ventanas-53'];
+    // Expo Analist and Coordinator constraints
+    if (user?.role === UserRole.EXPO_ANALIST || user?.role === UserRole.EXPO_COORDINATOR) {
+        const allowed = ['/wms-control', '/daily-van-assignment', '/asignaciones-diarias', '/embarques', '/admin-productos-53', '/demanda-cajas-53', '/admin-ventanas-53'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/wms-control" replace />;
     }
 
@@ -367,6 +368,7 @@ const AppContent = () => {
         <Suspense fallback={<PageSkeleton />}>
         <Routes>
             <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
+            <Route path="/check-in" element={<DriverCheckIn />} />
 
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/historico-expo" element={<ProtectedRoute><HistoricoExpo /></ProtectedRoute>} />
@@ -393,7 +395,7 @@ const AppContent = () => {
             <Route path="/pricing-matrix" element={<ProtectedRoute><PricingMatrix /></ProtectedRoute>} />
             <Route path="/cajas" element={<ProtectedRoute><Cajas /></ProtectedRoute>} />
             <Route path="/asignaciones-diarias" element={<ProtectedRoute><AsignacionesDiarias /></ProtectedRoute>} />
-            <Route path="/embarques" element={<ProtectedRoute><Embarques /></ProtectedRoute>} />
+            <Route path="/embarques" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO, UserRole.EXPO_ANALIST, UserRole.EXPO_COORDINATOR, UserRole.EMBARQUES]}><Embarques /></ProtectedRoute>} />
             <Route path="/incidencias-vigilancia" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]}><IncidenciasVigilancia /></ProtectedRoute>} />
             <Route path="/macro" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO]}><CaptureModule /></ProtectedRoute>} />
             <Route path="/historial-capturas" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO]}><HistorialCapturas /></ProtectedRoute>} />

@@ -84,7 +84,7 @@ export const HandheldAsignaciones = () => {
   // ── Classify each record ───────────────────────────────────────────────────
   const classify = (a: AsignacionCajaModel) => {
     const dock = (a.dockArribo || '').trim().toUpperCase();
-    if (dock === 'CANCELED') return 'CANCELADO';
+    if (['RECHAZADO', 'DROP', 'NO SHOW', 'CANCELED'].includes(dock)) return 'CANCELADO';
     if (liberacionIds.has(a.id!)) return 'CERRADO';
     if (a.arribo) return 'LLEGADOS';
     return 'PENDIENTES';
@@ -346,7 +346,7 @@ export const HandheldAsignaciones = () => {
                                              'bg-sky-500/10 border-sky-500/20 text-sky-300'
                     }`}>
                       <Anchor size={10} className="inline mr-1 opacity-70" />
-                      {dock}
+                      {liberacionDockIds.has(a.id!) && !['CANCELED', 'RECHAZADO', 'NO SHOW', 'DROP'].includes(dock) ? 'Dock Liberado' : dock}
                     </span>
                   )}
                 </div>

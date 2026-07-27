@@ -12,7 +12,7 @@ export const DailyVanAssignment: React.FC = () => {
   const [liberacionesDock, setLiberacionesDock] = useState<LiberacionDockRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'CERRADO' | 'POR_CERRAR'>('ALL');
+  const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'CERRADO' | 'POR_CERRAR' | 'CANCELADO'>('ALL');
 
   const getLocalToday = () => {
     const today = new Date();
@@ -66,13 +66,18 @@ export const DailyVanAssignment: React.FC = () => {
 
   // Counts para el filtro (siempre sobre el resultado de búsqueda, antes de aplicar cargadoFilter)
   const filterCounts = useMemo(() => {
-    let porCerrar = 0, cerrado = 0, sinLayout = 0, sinCcp = 0, vehPorCerrar = 0, vehCerrado = 0;
+    const isCanceledStatus = (v: string) => ['RECHAZADO', 'DROP', 'NO SHOW', 'CANCELED', 'CANCELADO'].includes(v);
+    
+    let porCerrar = 0, cerrado = 0, cancelado = 0, sinLayout = 0, sinCcp = 0, vehPorCerrar = 0, vehCerrado = 0;
     filteredAssignments.forEach(a => {
       const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
-      const isExcluded = dockVal === 'RECHAZADO' || dockVal === 'DROP' || dockVal === 'NO SHOW';
-      const hasLib = isExcluded || liberaciones.some(l => l.asignacionCajaId === a.id);
+      const isCanceled = isCanceledStatus(dockVal);
+      const hasLib = liberaciones.some(l => l.asignacionCajaId === a.id);
       const v = parseInt((a as any).vehiculos || '0', 10);
-      if (hasLib) {
+      
+      if (isCanceled) {
+        cancelado++;
+      } else if (hasLib) {
         cerrado++;
         if (!isNaN(v)) vehCerrado += v;
       } else {
@@ -83,7 +88,7 @@ export const DailyVanAssignment: React.FC = () => {
       }
     });
     return {
-      ALL: filteredAssignments.length, CERRADO: cerrado, POR_CERRAR: porCerrar,
+      ALL: filteredAssignments.length, CERRADO: cerrado, POR_CERRAR: porCerrar, CANCELADO: cancelado,
       SIN_LAYOUT: sinLayout, SIN_CCP: sinCcp,
       VEHICULOS_POR_CERRAR: vehPorCerrar, VEHICULOS_CERRADO: vehCerrado,
     };
@@ -91,12 +96,18 @@ export const DailyVanAssignment: React.FC = () => {
 
   // Resultado final con cargadoFilter aplicado
   const displayedAssignments = useMemo(() => {
+    const isCanceledStatus = (v: string) => ['RECHAZADO', 'DROP', 'NO SHOW', 'CANCELED', 'CANCELADO'].includes(v);
+    
     if (cargadoFilter === 'ALL') return filteredAssignments;
     return filteredAssignments.filter(a => {
       const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
-      const isExcluded = dockVal === 'RECHAZADO' || dockVal === 'DROP' || dockVal === 'NO SHOW';
-      const hasLib = isExcluded || liberaciones.some(l => l.asignacionCajaId === a.id);
-      return cargadoFilter === 'CERRADO' ? hasLib : !hasLib;
+      const isCanceled = isCanceledStatus(dockVal);
+      const hasLib = liberaciones.some(l => l.asignacionCajaId === a.id);
+      
+      if (cargadoFilter === 'CANCELADO') return isCanceled;
+      if (cargadoFilter === 'CERRADO') return !isCanceled && hasLib;
+      // POR_CERRAR
+      return !isCanceled && !hasLib;
     });
   }, [filteredAssignments, cargadoFilter, liberaciones]);
 
@@ -364,6 +375,14 @@ export const DailyVanAssignment: React.FC = () => {
                   🚗 {filterCounts.VEHICULOS_CERRADO} veh.
                 </span>
               )}
+            </button>
+            <button
+              onClick={() => setCargadoFilter('CANCELADO')}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex flex-col items-center leading-tight ${
+                cargadoFilter === 'CANCELADO' ? 'bg-red-600 text-white shadow' : 'text-red-500 hover:bg-red-50'
+              }`}
+            >
+              <span>CANCELADO ({filterCounts.CANCELADO})</span>
             </button>
           </div>
         </div>

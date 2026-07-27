@@ -33,9 +33,11 @@ export const authService = {
 
         try {
             // 1. Buscar documento: primero con el email exacto como fue escrito,
-            //    si no existe intentar con minúsculas (fallback para usuarios con ID en minúsculas).
+            //    si no existe intentar con minúsculas, y finalmente con solo el username
+            //    (fallback para usuarios cuyo ID en Firestore es solo "jorge.rodriguez" en vez del email completo).
             let userSnap;
-            const lookupIds = typedEmail === cleanEmail ? [cleanEmail] : [typedEmail, cleanEmail];
+            const baseIds = typedEmail === cleanEmail ? [cleanEmail] : [typedEmail, cleanEmail];
+            const lookupIds = [...baseIds, username]; // username = parte antes del @
 
             for (const lookupId of lookupIds) {
                 try {

@@ -25,6 +25,7 @@ export enum UserRole {
   CONTROLLER = 'Controller', // Finance & Expense Control
   EXPO = 'Expo',         // Exporter partner
   EXPO_ANALIST = 'Expo Analist', // Exporter Analyst
+  EXPO_COORDINATOR = 'Expo Coordinator', // Exporter Coordinator
   CARRIER = 'Carrier',   // Transport/Shipping partner (filtered by SCAC)
   TRANSPORTISTA = 'Transportista', // Sub-línea partner (filtered by nombreSubLinea)
   VIEWER = 'Viewer',      // Read only

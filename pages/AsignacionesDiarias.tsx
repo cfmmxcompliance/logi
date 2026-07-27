@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { asignacionCajaService } from '../services/asignacionCajaService';
+import { ccpNotificationService } from '../services/ccpNotificationService';
 import { cajaService } from '../services/cajaService';
 import { driverService } from '../services/driverService';
 import { carrierService } from '../services/carrierService';
+import { contratoService } from '../services/contratoService.ts';
 import { liberacionService } from '../services/liberacionService';
 import { transportLineService } from '../services/transportLineService';
 import { vigilanciaService } from '../services/vigilanciaService';
+import { citasConfigService } from '../services/citasConfigService';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
 import { CajaModel } from '../types/caja';
 import { DriverModel } from '../types/driver';
@@ -13,7 +16,7 @@ import { CarrierModel } from '../types/carrier';
 import { TransportLineModel } from '../types/transportLine';
 import { LiberacionRecord, LiberacionDockRecord, SelloRecord } from '../types';
 import { VigilanciaRecord } from '../types/vigilancia';
-import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle, ChevronUp, ChevronDown, RefreshCw, FileText, Loader2, Shield, AlertTriangle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle, ChevronUp, ChevronDown, RefreshCw, FileText, Loader2, Shield, AlertTriangle, Clock } from 'lucide-react';
 import { liberacionDockService } from '../services/liberacionDockService';
 import { selloService } from '../services/selloService';
 import { uploadFileToDrive } from '../services/googleDriveService.ts';
@@ -27,6 +30,7 @@ import modelosCaja from '../utils/modelosCaja.json';
 import { useLanguage } from '../context/LanguageContext';
 import { SelloMismatchAlert } from '../components/SelloMismatchAlert';
 import BarcodePanelModal from '../components/BarcodePanelModal';
+import { CitasConfigModal } from '../components/CitasConfigModal';
 import * as XLSX from 'xlsx';
 
 // Helper: obtiene la fecha de hoy en zona horaria de México (evita brinco de fecha después de 6PM)
@@ -39,6 +43,155 @@ const getMexicoToday = () => {
 // Hora actual en zona Monterrey — formato HH:MM
 const getMexicoNow = () =>
   new Date().toLocaleTimeString('en-GB', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit' });
+
+const getAllSlotsForDate = (fecha: string, configOverrides: Record<string, number> = {}) => {
+  const baseHours = (fecha || '') >= '2026-07-07'
+    ? ["07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","12:00","13:00","14:00","15:00"]
+    : ["07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00"];
+    
+  let allSlots = baseHours;
+  if (fecha === '2026-07-07') allSlots = [...baseHours, "15:30", "16:00", "18:30"];
+  else if (fecha === '2026-07-08') allSlots = [...baseHours, "16:00", "17:00"];
+  else if (fecha === '2026-07-14') allSlots = [...baseHours, "16:00", "17:00", "18:00"];
+  else if (fecha === '2026-07-15') allSlots = [...baseHours, "16:00", "17:00"];
+  else if (fecha === '2026-07-20') allSlots = [...baseHours, "16:00", "18:00"];
+  else if (fecha === '2026-07-22') allSlots = [...baseHours, "16:00", "17:00"];
+  else if ((fecha || '') >= '2026-07-09') {
+    const d = new Date(fecha + 'T12:00:00');
+    const day = d.getDay();
+    if (day === 0) { // Domingo (no hay citas)
+      allSlots = [];
+    } else if (day >= 1 && day <= 4) { // Lunes a Jueves (hasta 17:00)
+      allSlots = [...baseHours, "16:00", "17:00"];
+    } else if (day === 5) { // Viernes (hasta 15:00)
+      allSlots = [...baseHours];
+    } else if (day === 6) { // Sábado (hasta 14:00)
+      allSlots = baseHours.filter(h => h <= '14:00');
+    }
+  }
+
+  return Array.from(new Set([...allSlots, ...Object.keys(configOverrides)])).sort();
+};
+
+const resolveToSlot = (time: string, slots: string[]): string => {
+  const sorted = [...slots].sort();
+  let resolved = sorted[0];
+  for (const s of sorted) { if (s <= time) resolved = s; }
+  return resolved;
+};
+
+// Algoritmo de Cascada para asegurar que no se exceda el maxSlots por adelantamientos
+const calculateWaterfallOccupancy = (fecha: string, asignacionesDia: any[], dayConfig: any, useNewSchedule: boolean) => {
+  const allSlotsForDate = getAllSlotsForDate(fecha, dayConfig);
+  const isCanceled = (val: string) => val === 'RECHAZADO' || val === 'DROP' || val === 'NO SHOW' || val === 'CANCELED' || val === 'CANCELADO';
+  
+  const activeAsignaciones = asignacionesDia.filter(a => !isCanceled((a.dockArribo || '').trim().toUpperCase()));
+  
+  const sortedAsig = [...activeAsignaciones].sort((a, b) => {
+    const timeA = (a.arribo || a.horaAsignacion) || '';
+    const timeB = (b.arribo || b.horaAsignacion) || '';
+    return timeA.localeCompare(timeB);
+  });
+
+  const slotOccupancy: Record<string, number> = {};
+  allSlotsForDate.forEach(s => slotOccupancy[s] = 0);
+
+  const getMaxSlots = (s: string) => {
+    return dayConfig[s] !== undefined 
+      ? dayConfig[s] 
+      : (s === '11:00' ? 0 
+         : (s === '15:00' && fecha === '2026-07-06') ? 8
+         : (fecha === '2026-07-14' && (s === '17:00' || s === '18:00')) ? 1
+         : (fecha === '2026-07-15' && s === '17:00') ? 6
+         : (fecha === '2026-07-22' && s === '17:00') ? 2
+         : 6);
+  };
+
+  const onTime: any[] = [];
+  const early: any[] = [];
+  const late: any[] = [];
+
+  for (const asig of activeAsignaciones) {
+    let original = resolveToSlot(asig.horaAsignacion || '', allSlotsForDate);
+    if (!useNewSchedule) {
+      original = (asig.horaAsignacion || '').substring(0, 2) + ':00';
+    }
+    
+    if (!asig.arribo) {
+      onTime.push({ asig, original });
+      continue;
+    }
+    
+    let target = resolveToSlot(asig.arribo, allSlotsForDate);
+    if (!useNewSchedule) {
+      target = asig.arribo.substring(0, 2) + ':00';
+    }
+
+    if (target === original) {
+      onTime.push({ asig, original });
+    } else if (target < original) {
+      early.push({ asig, target, original });
+    } else {
+      late.push({ asig, target, original });
+    }
+  }
+
+  // 1. Asignar On-Time (tienen prioridad en su horario)
+  for (const item of onTime) {
+    if (slotOccupancy[item.original] === undefined) slotOccupancy[item.original] = 0;
+    slotOccupancy[item.original]++;
+  }
+
+  // 2. Asignar Early (ordenados por arribo)
+  early.sort((a, b) => (a.asig.arribo || '').localeCompare(b.asig.arribo || ''));
+  for (const item of early) {
+    let assigned = false;
+    const startIndex = allSlotsForDate.indexOf(item.target);
+    const endIndex = allSlotsForDate.indexOf(item.original);
+    
+    if (startIndex !== -1 && endIndex !== -1) {
+      for (let i = startIndex; i < endIndex; i++) {
+        const s = allSlotsForDate[i];
+        if (slotOccupancy[s] < getMaxSlots(s)) {
+          slotOccupancy[s]++;
+          assigned = true;
+          break;
+        }
+      }
+    }
+    
+    if (!assigned) {
+      if (slotOccupancy[item.original] === undefined) slotOccupancy[item.original] = 0;
+      slotOccupancy[item.original]++;
+    }
+  }
+
+  // 3. Asignar Late (ordenados por arribo)
+  late.sort((a, b) => (a.asig.arribo || '').localeCompare(b.asig.arribo || ''));
+  for (const item of late) {
+    let assigned = false;
+    const startIndex = allSlotsForDate.indexOf(item.target);
+    
+    if (startIndex !== -1) {
+      for (let i = startIndex; i < allSlotsForDate.length; i++) {
+        const s = allSlotsForDate[i];
+        if (slotOccupancy[s] < getMaxSlots(s)) {
+          slotOccupancy[s]++;
+          assigned = true;
+          break;
+        }
+      }
+    }
+    
+    if (!assigned) {
+      const fallback = item.target || allSlotsForDate[allSlotsForDate.length - 1];
+      if (slotOccupancy[fallback] === undefined) slotOccupancy[fallback] = 0;
+      slotOccupancy[fallback]++;
+    }
+  }
+
+  return slotOccupancy;
+};
 
 export const AsignacionesDiarias: React.FC = () => {
   const { user } = useAuth();
@@ -59,6 +212,8 @@ export const AsignacionesDiarias: React.FC = () => {
   const [vigilancias, setVigilancias] = useState<VigilanciaRecord[]>([]);
   const [sellos, setSellos] = useState<SelloRecord[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [citasConfig, setCitasConfig] = useState<Record<string, Record<string, number>>>({});
+  const [showCitasModal, setShowCitasModal] = useState(false);
   const [importErrors, setImportErrors] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -202,9 +357,51 @@ export const AsignacionesDiarias: React.FC = () => {
           await storageService.upsertHistoricoExpos([{ id: `exp_${recordId}`, cfmRef } as any]);
         }
 
+        // Sincronizar con Embarques (contratos)
+        const asigRecord = asignaciones.find(a => a.id === recordId);
+        if (asigRecord && asigRecord.numeroOperacion) {
+          const contratoDoc = await contratoService.getContratoByNumeroOperacion(asigRecord.numeroOperacion, asigRecord.fecha);
+          if (contratoDoc && contratoDoc.id) {
+            await contratoService.updateContrato(contratoDoc.id, {
+              layoutUrl: url,
+              layoutUploadedBy: uploadedBy,
+              layoutUploadedAt: uploadedAt,
+              layoutFileName: file.name,
+            });
+          }
+        }
+
       } else if (field === 'ccpUrl') {
-        await asignacionCajaService.updateAsignacion(recordId, { ccpUrl: url, ccpUploadedBy: uploadedBy, ccpUploadedAt: uploadedAt });
-        setAsignaciones(prev => prev.map(a => a.id === recordId ? { ...a, ccpUrl: url, ccpUploadedBy: uploadedBy, ccpUploadedAt: uploadedAt } : a));
+        const ccpUpdates = { 
+          ccpUrl: url, 
+          ccpUploadedBy: uploadedBy, 
+          ccpUploadedAt: uploadedAt,
+          ccpFileName: file.name,
+          ccpFileId: driveFileId
+        };
+        await asignacionCajaService.updateAsignacion(recordId, ccpUpdates);
+        // Trigger notification
+        const asigDoc = asignaciones.find(a => a.id === recordId);
+        if (asigDoc) {
+          const tlName = (asigDoc as any).numeroOperacion || 'Sin Operación';
+          const subLineaName = (asigDoc as any).subLinea || 'Desconocido';
+          const carrierDisplay = `${tlName} / ${subLineaName}`;
+          await ccpNotificationService.addNotification(carrierDisplay, numeroCaja);
+          
+          // Sincronizar con Embarques (contratos)
+          if (asigDoc.numeroOperacion) {
+            const contratoDoc = await contratoService.getContratoByNumeroOperacion(asigDoc.numeroOperacion, asigDoc.fecha);
+            if (contratoDoc && contratoDoc.id) {
+              await contratoService.updateContrato(contratoDoc.id, {
+                ccpUrl: url,
+                ccpUploadedBy: uploadedBy,
+                ccpUploadedAt: uploadedAt,
+                ccpFileName: file.name,
+              });
+            }
+          }
+        }
+        setAsignaciones(prev => prev.map(a => a.id === recordId ? { ...a, ...ccpUpdates } : a));
       } else {
         await asignacionCajaService.updateAsignacion(recordId, { anexo29Url: url, anexo29UploadedBy: uploadedBy, anexo29UploadedAt: uploadedAt });
         setAsignaciones(prev => prev.map(a => a.id === recordId ? { ...a, anexo29Url: url, anexo29UploadedBy: uploadedBy, anexo29UploadedAt: uploadedAt } : a));
@@ -259,7 +456,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
   const loadData = async () => {
     try {
-        const [asigData, cajasData, driversData, carriersData, liberacionesData, liberacionesDockData, linesData, vigilanciasData, sellosData] = await Promise.all([
+        const [asigData, cajasData, driversData, carriersData, liberacionesData, liberacionesDockData, linesData, vigilanciasData, sellosData, citasConfigData] = await Promise.all([
             asignacionCajaService.getAsignacionesByDateRange(dateRange.start, dateRange.end).catch(() => []),
             cajaService.getAllCajas().catch(() => []),
             driverService.getAllDrivers().catch(() => []),
@@ -268,7 +465,8 @@ export const AsignacionesDiarias: React.FC = () => {
             liberacionDockService.getLiberacionesDockByDateRange(dateRange.start, dateRange.end).catch(() => []),
             transportLineService.getAllTransportLines().catch(() => []),
             vigilanciaService.getByDateRange(dateRange.start, dateRange.end).catch(() => []),
-            selloService.getAllSellos().catch(() => [])
+            selloService.getAllSellos().catch(() => []),
+            citasConfigService.getCitasConfigByDateRange(dateRange.start, dateRange.end).catch(() => ({}))
         ]);
         setAsignaciones(asigData.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()));
         setCajas(cajasData);
@@ -279,6 +477,7 @@ export const AsignacionesDiarias: React.FC = () => {
         setTransportLines(linesData);
         setVigilancias(vigilanciasData);
         setSellos(sellosData);
+        setCitasConfig(citasConfigData);
         // ── Auto-fill scac + customId for records missing them ──────────────
         // Runs silently in background after data loads, no await needed
         (async () => {
@@ -602,59 +801,56 @@ export const AsignacionesDiarias: React.FC = () => {
 
     // VALIDACIÓN: horario aprobado — misma lógica que el dropdown
     if ((formData.fecha || '') >= '2026-07-07') {
-      const baseHours = ["07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","12:00","13:00","14:00","15:00"];
-      const allSlots = (formData.fecha === '2026-07-07') ? [...baseHours, "15:30", "16:00", "18:30"]
-                       : (formData.fecha === '2026-07-08') ? [...baseHours, "16:00", "17:00"]
-                       : (formData.fecha === '2026-07-14') ? [...baseHours, "16:00", "17:00", "18:00"]
-                       : (formData.fecha === '2026-07-15') ? [...baseHours, "16:00", "17:00"]
-                       : (formData.fecha === '2026-07-20') ? [...baseHours, "16:00", "18:00"]
-                       : (formData.fecha === '2026-07-22') ? [...baseHours, "16:00", "17:00"]
-                       : ((formData.fecha || '') >= '2026-07-09') ? [...baseHours, "16:00"]
-                       : baseHours;
-      const validSlots = allSlots.filter(s => s !== '11:00'); // 11:00 siempre bloqueado
+      const dayConfig = citasConfig[formData.fecha || ''] || {};
+      const allSlots = getAllSlotsForDate(formData.fecha || '', dayConfig);
+      
+      const validSlots = allSlots.filter(s => s !== '11:00' || dayConfig['11:00'] !== undefined);
+      
       if (!formData.horaAsignacion || !validSlots.includes(formData.horaAsignacion)) {
         alert(`El horario "${formData.horaAsignacion || 'sin seleccionar'}" no es un slot aprobado. Por favor selecciona un horario de la lista.`);
         return;
       }
+      
       // Ventana ya iniciada: solo aplica si la fecha es hoy — excepción manual 18:00 del 14/07/2026 y 17:00 del 15/07/2026
       const isManualOverride18 = (formData.fecha === '2026-07-14' && formData.horaAsignacion === '18:00')
                                || (formData.fecha === '2026-07-15' && formData.horaAsignacion === '17:00')
                                || (formData.fecha === '2026-07-20' && formData.horaAsignacion === '18:00')
                                || (formData.fecha === '2026-07-22' && formData.horaAsignacion === '17:00');
-      if (!isManualOverride18 && formData.fecha === getMexicoToday() && formData.horaAsignacion <= getMexicoNow()) {
+      const isConfigured = dayConfig[formData.horaAsignacion] !== undefined;
+      
+      if (!isManualOverride18 && !isConfigured && formData.fecha === getMexicoToday() && formData.horaAsignacion <= getMexicoNow()) {
         alert(`La ventana de las ${formData.horaAsignacion} ya inició. Selecciona el siguiente horario disponible.`);
         return;
       }
     }
 
-    // VALIDACIÓN DE CAPACIDAD: Máximo 6 operaciones por hora
-    if (formData.horaAsignacion && formData.horaAsignacion !== '11:00') {
-      const useNewSchedule = (formData.fecha || '') >= '2026-07-07';
-      let sameHourCount = 0;
-      asignaciones.forEach(a => {
-        if (a.fecha !== formData.fecha) return;
-        if (isEditing && a.id === formData.id) return;
-        if (useNewSchedule) {
-          // Nuevo horario: comparar tiempo exacto HH:MM
-          if (a.horaAsignacion === formData.horaAsignacion) sameHourCount++;
-        } else {
-          // Horario viejo: agrupar por prefijo HH
-          const currentHour = formData.horaAsignacion.substring(0, 2);
-          if (a.horaAsignacion?.startsWith(currentHour)) sameHourCount++;
-        }
-      });
-      const maxSlots = (formData.horaAsignacion === '15:00' && formData.fecha === '2026-07-06') ? 8
-                     : (formData.fecha === '2026-07-14' && (formData.horaAsignacion === '17:00' || formData.horaAsignacion === '18:00')) ? 1
-                     : (formData.fecha === '2026-07-15' && formData.horaAsignacion === '17:00') ? 6
-                     : (formData.fecha === '2026-07-22' && formData.horaAsignacion === '17:00') ? 2
-                     : 6;
-      if (sameHourCount >= maxSlots) {
-        alert('Horario no asignado seleccionar otro hora de ventana');
+    // VALIDACIÓN DE CAPACIDAD: Máximo 6 operaciones por hora (o dinámico)
+    if (formData.horaAsignacion) {
+      const dayConfig = citasConfig[formData.fecha || ''] || {};
+      const maxSlots = dayConfig[formData.horaAsignacion] !== undefined 
+        ? dayConfig[formData.horaAsignacion] 
+        : ((formData.horaAsignacion === '15:00' && formData.fecha === '2026-07-06') ? 8
+           : (formData.fecha === '2026-07-14' && (formData.horaAsignacion === '17:00' || formData.horaAsignacion === '18:00')) ? 1
+           : (formData.fecha === '2026-07-15' && formData.horaAsignacion === '17:00') ? 6
+           : (formData.fecha === '2026-07-22' && formData.horaAsignacion === '17:00') ? 2
+           : 6);
+           
+      if (maxSlots === 0 || (formData.horaAsignacion === '11:00' && dayConfig['11:00'] === undefined)) {
+        alert('Horario no asignado seleccionar otra hora de ventana');
         return;
       }
-    } else if (formData.horaAsignacion === '11:00') {
-        alert('Horario no asignado seleccionar otro hora de ventana');
+
+      const useNewSchedule = (formData.fecha || '') >= '2026-07-07';
+      
+      const asignacionesDia = asignaciones.filter(a => a.fecha === formData.fecha && (!isEditing || a.id !== formData.id));
+      const waterfallOccupancy = calculateWaterfallOccupancy(formData.fecha || '', asignacionesDia, dayConfig, useNewSchedule);
+      
+      const sameHourCount = waterfallOccupancy[formData.horaAsignacion] || 0;
+      
+      if (sameHourCount >= maxSlots) {
+        alert('Horario no asignado seleccionar otra hora de ventana');
         return;
+      }
     }
 
     // VALIDACIÓN DE DUPLICADOS: No permitir misma caja el mismo día (excepto si está CANCELADA)
@@ -1038,13 +1234,17 @@ export const AsignacionesDiarias: React.FC = () => {
           let errors: string[] = [];
           const seenInBatch = new Set<string>();
           
-          const hourCounts: Record<string, number> = {};
-          asignaciones.forEach(a => {
-            if (a.fecha && a.horaAsignacion) {
-               const key = `${a.fecha}|${a.horaAsignacion.substring(0, 2)}`;
-               hourCounts[key] = (hourCounts[key] || 0) + 1;
+          const waterfallByDate: Record<string, Record<string, number>> = {};
+          
+          const getOccupancy = (fecha: string) => {
+            if (!waterfallByDate[fecha]) {
+               const dayCfg = citasConfig[fecha] || {};
+               const useNew = fecha >= '2026-07-07';
+               const asigDia = asignaciones.filter(a => a.fecha === fecha);
+               waterfallByDate[fecha] = calculateWaterfallOccupancy(fecha, asigDia, dayCfg, useNew);
             }
-          });
+            return waterfallByDate[fecha];
+          };
 
           for (let i = 1; i < rows.length; i++) {
               const r = rows[i];
@@ -1098,11 +1298,35 @@ export const AsignacionesDiarias: React.FC = () => {
                  continue;
               }
 
-              if ((hourCounts[hourKey] || 0) >= 6) {
-                  errors.push(`Fila ${i + 1}: El horario ${hrPrefix}:00 ya tiene el máximo de 6 operaciones para la fecha ${rawFecha} — fila omitida.`);
+              const dayConfig = citasConfig[rawFecha] || {};
+              const hrPrefixExact = hrPrefix + ':00';
+              const useNewSchedule = rawFecha >= '2026-07-07';
+              const occupancy = getOccupancy(rawFecha);
+              
+              const slots = getAllSlotsForDate(rawFecha, dayConfig);
+              const resolvedSlot = resolveToSlot(finalHora, slots);
+
+              const maxSlots = dayConfig[resolvedSlot] !== undefined 
+                ? dayConfig[resolvedSlot]
+                : (rawFecha === '2026-07-24' && hrPrefix === '14') ? 7 : 6;
+                
+              if (maxSlots === 0 || (resolvedSlot === '11:00' && dayConfig['11:00'] === undefined)) {
+                  errors.push(`Fila ${i + 1}: El horario ${resolvedSlot} está bloqueado o sin capacidad para la fecha ${rawFecha} — fila omitida.`);
                   continue;
               }
-              hourCounts[hourKey] = (hourCounts[hourKey] || 0) + 1;
+              
+              const currentCount = useNewSchedule ? (occupancy[resolvedSlot] || 0) : (occupancy[`${hrPrefix}:00`] || 0);
+              
+              if (currentCount >= maxSlots) {
+                  errors.push(`Fila ${i + 1}: El horario ${resolvedSlot} ya tiene el máximo de ${maxSlots} operaciones para la fecha ${rawFecha} — fila omitida.`);
+                  continue;
+              }
+              
+              if (useNewSchedule) {
+                 occupancy[resolvedSlot] = currentCount + 1;
+              } else {
+                 occupancy[`${hrPrefix}:00`] = currentCount + 1;
+              }
 
               const matchCaja = cajas.find(c => c.NumeroCaja.toUpperCase() === rawCaja);
               const matchDriver = drivers.find(d => d.driverId.toUpperCase() === rawDriver);
@@ -1376,6 +1600,17 @@ export const AsignacionesDiarias: React.FC = () => {
                  </button>
              )}
 
+             {(user?.role === UserRole.ADMIN || user?.role === UserRole.EXPO_COORDINATOR) && (
+               <button
+                 onClick={() => setShowCitasModal(true)}
+                 className="px-4 py-2 bg-slate-800 text-white hover:bg-slate-900 rounded-lg shadow-md transition-all font-medium text-sm flex items-center"
+                 title="Configurar capacidad de citas por día/hora"
+               >
+                 <Clock size={16} className="mr-2" />
+                 Citas
+               </button>
+             )}
+
              {/* Cierre manual batch — Admin only */}
              {user?.role === UserRole.ADMIN && (
                <button
@@ -1631,7 +1866,13 @@ export const AsignacionesDiarias: React.FC = () => {
                     </div>
                 </td>
                 <td className="p-4 font-mono text-amber-600 font-semibold whitespace-nowrap">{(a as any).arribo || '—'}</td>
-                <td className="p-4 font-mono text-sky-700 font-semibold whitespace-nowrap text-xs">{(a as any).dockArribo || '—'}</td>
+                <td className="p-4 font-mono text-sky-700 font-semibold whitespace-nowrap text-xs">
+                  {(() => {
+                    if (isRechazado || isDrop || isNoShow || isCanceled) return (a as any).dockArribo;
+                    if (liberacionesDock.some(lib => lib.asignacionCajaId === a.id)) return 'Dock Liberado';
+                    return (a as any).dockArribo || '—';
+                  })()}
+                </td>
                 <td className="p-4 text-slate-500 text-xs max-w-[180px] truncate" title={(a as any).comentariosArribo || ''}>{(a as any).comentariosArribo || '—'}</td>
                 <td className="p-4 text-violet-700 text-xs font-bold whitespace-nowrap">{cajas.find(c => c.NumeroCaja === a.numeroCaja)?.tipo || '—'}</td>
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium">{a.placasCaja || '-'}</td>
@@ -1717,7 +1958,7 @@ export const AsignacionesDiarias: React.FC = () => {
                    ) : a.ccpUrl ? (
                      <div className="flex flex-col items-center gap-0.5">
                        <div className="flex items-center justify-center gap-1">
-                         <a href={toDriveDownload(a.ccpUrl)}
+                         <a href={toDriveDownload(a.ccpUrl)} target="_blank" rel="noreferrer"
                             className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
                             title="Descargar CCP" onClick={e => e.stopPropagation()}>
                            <FileText size={18} />
@@ -1737,9 +1978,9 @@ export const AsignacionesDiarias: React.FC = () => {
                      </div>
                    ) : (
                      <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-sky-500 hover:bg-sky-50 transition-colors cursor-pointer"
-                            title="Subir CCP PDF" onClick={e => e.stopPropagation()}>
+                            title="Subir CCP" onClick={e => e.stopPropagation()}>
                        <FileText size={18} />
-                       <input type="file" accept="application/pdf" className="hidden"
+                       <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden"
                               onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(a.id!, 'ccpUrl', f, a.numeroCaja); e.target.value = ''; }} />
                      </label>
                    )}
@@ -1891,7 +2132,7 @@ export const AsignacionesDiarias: React.FC = () => {
       </div>{/* end table container */}
       </div>{/* end table area */}
 
-      {/* Alerta crítica de sello cambiado */}
+{/* Alerta crítica de sello cambiado */}
       <SelloMismatchAlert
         isOpen={!!mismatchAlert}
         numeroCaja={mismatchAlert?.numeroCaja || ''}
@@ -1920,6 +2161,16 @@ export const AsignacionesDiarias: React.FC = () => {
           onApply={handleApplyMassQuery}
           onClear={handleClearMassQuery}
       />
+
+      {/* CitasConfigModal */}
+      {showCitasModal && (
+        <CitasConfigModal 
+          onClose={() => setShowCitasModal(false)}
+          onSaved={async () => {
+            await loadData();
+          }}
+        />
+      )}
 
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[110] animate-fade-in p-4">
@@ -1974,16 +2225,9 @@ export const AsignacionesDiarias: React.FC = () => {
                               const baseHours = useNewSchedule
                                 ? ["07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","12:00","13:00","14:00","15:00"]
                                 : ["07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00"];
-                              // Horarios adicionales por fecha
-                              const hours = (formData.fecha === '2026-07-07')
-                                ? [...baseHours, "15:30", "16:00", "18:30"]
-                                : (formData.fecha === '2026-07-08') ? [...baseHours, "16:00", "17:00"]
-                                : (formData.fecha === '2026-07-14') ? [...baseHours, "16:00", "17:00", "18:00"]
-                                : (formData.fecha === '2026-07-15') ? [...baseHours, "16:00", "17:00"]
-                                : (formData.fecha === '2026-07-20') ? [...baseHours, "16:00", "18:00"]
-                                : (formData.fecha === '2026-07-22') ? [...baseHours, "16:00", "17:00"]
-                                : ((formData.fecha || '') >= '2026-07-09') ? [...baseHours, "16:00"]
-                                : baseHours;
+                              const dayConfig = citasConfig[formData.fecha || ''] || {};
+                              
+                              const hours = getAllSlotsForDate(formData.fecha || '', dayConfig);
                               // Resuelve un tiempo libre (ej. 16:33) al slot aprobado que le corresponde
                               const resolveToSlot = (time: string, slots: string[]): string => {
                                 const sorted = [...slots].sort();
@@ -1993,38 +2237,35 @@ export const AsignacionesDiarias: React.FC = () => {
                               };
                               const isToday = formData.fecha === getMexicoToday();
                               const mexicoNow = getMexicoNow();
+                              
+                              const asignacionesDia = asignaciones.filter(a => a.fecha === formData.fecha && (!isEditing || a.id !== formData.id));
+                              const waterfallOccupancy = calculateWaterfallOccupancy(formData.fecha || '', asignacionesDia, dayConfig, useNewSchedule);
+                              
                               return hours.map(hr => {
-                                let count: number;
-                                if (useNewSchedule) {
-                                  // Nuevo horario: cuenta exactos + tiempos libres que caen en este slot
-                                  count = asignaciones.filter(a => {
-                                    if (a.fecha !== formData.fecha) return false;
-                                    if (isEditing && a.id === formData.id) return false;
-                                    if (!a.horaAsignacion) return false;
-                                    return resolveToSlot(a.horaAsignacion, hours) === hr;
-                                  }).length;
-                                } else {
-                                  // Horario viejo: match por prefijo HH
-                                  count = asignaciones.filter(a => { const p = hr.substring(0,2); return a.fecha === formData.fecha && a.horaAsignacion?.startsWith(p) && (!isEditing || a.id !== formData.id); }).length;
-                                }
-                                if (hr === "11:00") return <option key={hr} value={hr} disabled>{hr} - BLOQUEADO</option>;
-                                // Ventana ya iniciada (solo hoy) — excepción: manual overrides
+                                let count = waterfallOccupancy[hr] || 0;
+                                
+                                const isConfigured = dayConfig[hr] !== undefined;
+                                
+                                if (hr === "11:00" && !isConfigured) return <option key={hr} value={hr} disabled>{hr} - BLOQUEADO</option>;
+                                // Ventana ya iniciada (solo hoy) — excepción: manual overrides o config explícita
                                 const isManualOverride = (formData.fecha === '2026-07-14' && hr === '18:00')
                                                       || (formData.fecha === '2026-07-15' && hr === '17:00')
                                                       || (formData.fecha === '2026-07-20' && hr === '18:00')
                                                       || (formData.fecha === '2026-07-22' && hr === '17:00');
-                                const isPast = isToday && hr <= mexicoNow && !isManualOverride;
+                                const isPast = isToday && hr <= mexicoNow && !isManualOverride && !isConfigured;
                                 if (isPast) return <option key={hr} value={hr} disabled>{hr} - INICIADO</option>;
                                 // Override especial: 15:00 del 06/07/2026 tuvo 8 citas
-                                const maxSlots = (hr === '15:00' && formData.fecha === '2026-07-06') ? 8
+                                const maxSlots = isConfigured ? dayConfig[hr] 
+                                               : (hr === '15:00' && formData.fecha === '2026-07-06') ? 8
                                                : (formData.fecha === '2026-07-14' && (hr === '17:00' || hr === '18:00')) ? 1
                                                : (formData.fecha === '2026-07-15' && hr === '17:00') ? 6
                                                : (formData.fecha === '2026-07-22' && hr === '17:00') ? 2
+                                               : (formData.fecha === '2026-07-24' && hr === '14:00') ? 7
                                                : 6;
-                                const isFull = count >= maxSlots;
+                                const isFull = count >= maxSlots || maxSlots === 0;
                                 return (
                                   <option key={hr} value={hr} disabled={isFull} className={isFull ? 'text-red-500 font-bold' : ''}>
-                                    {hr} {isFull ? `(Lleno - ${maxSlots}/${maxSlots})` : `(${count}/${maxSlots} disponibles)`}
+                                    {hr} {isFull ? (maxSlots === 0 ? '(Bloqueado)' : `(Lleno - ${maxSlots}/${maxSlots})`) : `(${count}/${maxSlots} disponibles)`}
                                   </option>
                                 );
                               });

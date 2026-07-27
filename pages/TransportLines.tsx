@@ -271,6 +271,7 @@ export const TransportLines: React.FC = () => {
               <tr>
               <th className="p-4 font-medium">{t('tl.id')}</th>
               <th className="p-4 font-medium">{t('tl.carrier')}</th>
+              <th className="p-4 font-medium">{t('tl.comercial')}</th>
               <th className="p-4 font-medium">{t('tl.sublinea')}</th>
               <th className="p-4 font-medium">{t('tl.razon')}</th>
               <th className="p-4 font-medium">{t('tl.mexicana')}</th>

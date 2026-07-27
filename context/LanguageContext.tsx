@@ -125,6 +125,7 @@ export const translations: Translations = {
     "driver.placas": { es: "Placas Tracto", en: "Tractor Plates" },
     "tl.id": { es: "Línea ID (Key)", en: "Line ID (Key)" },
     "tl.carrier": { es: "Carrier Padre", en: "Parent Carrier" },
+    "tl.comercial": { es: "Nombre Comercial", en: "Commercial Name" },
     "tl.sublinea": { es: "Nombre Sub-Línea", en: "Sub-Line Name" },
     "tl.razon": { es: "Razón Social", en: "Legal Name" },
     "tl.mexicana": { es: "Línea Mexicana", en: "Mexican Line" },

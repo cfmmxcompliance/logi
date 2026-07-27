@@ -16,7 +16,7 @@ export const asignacionCajaService = {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsignacionCajaModel));
   },
 
-  async getAsignacionByNumeroOperacion(numeroOperacion: string): Promise<AsignacionCajaModel | null> {
+  async getAsignacionByNumeroOperacion(numeroOperacion: string, fecha?: string): Promise<AsignacionCajaModel | null> {
     const q = query(
       collection(db, COLLECTION_NAME),
       where('numeroOperacion', '==', numeroOperacion)
@@ -24,12 +24,45 @@ export const asignacionCajaService = {
     const snapshot = await getDocs(q);
     if (snapshot.empty) return null;
     
+    let docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsignacionCajaModel));
+    
+    if (fecha) {
+      docs = docs.filter(d => d.fecha === fecha);
+    }
+    
+    if (docs.length === 0) return null;
+
     // Sort in memory to get the most recent one (to avoid needing a composite index)
-    const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsignacionCajaModel));
     docs.sort((a, b) => {
       const dateA = a.fecha + (a.createdAt || '');
       const dateB = b.fecha + (b.createdAt || '');
       return dateB.localeCompare(dateA); // Descending
+    });
+    
+    return docs[0];
+  },
+
+  async getAsignacionByCarrierRef(carrierRef: string, fecha?: string): Promise<AsignacionCajaModel | null> {
+    const q = query(
+      collection(db, COLLECTION_NAME),
+      where('carrierRef', '==', carrierRef)
+    );
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+    
+    let docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsignacionCajaModel));
+    
+    // Si pasamos fecha, filtramos en memoria para evitar requerir index compuesto
+    if (fecha) {
+      docs = docs.filter(d => d.fecha === fecha);
+    }
+    if (docs.length === 0) return null;
+
+    // Sort in memory to get the most recent one
+    docs.sort((a, b) => {
+      const dateA = a.fecha + (a.createdAt || '');
+      const dateB = b.fecha + (b.createdAt || '');
+      return dateB.localeCompare(dateA);
     });
     
     return docs[0];

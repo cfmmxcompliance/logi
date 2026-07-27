@@ -4,6 +4,7 @@ import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settin
   Navigation, Monitor,
   Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles, CalendarCheck, History, Package, CalendarDays, ClipboardList, AlertTriangle, FileSearch } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
+import { CcpNotificationListener } from './CcpNotificationListener';
 import { ConnectionStatus } from './ConnectionStatus.tsx';
 import { UserRole } from '../types.ts';
 import { storageService } from '../services/storageService.ts';
@@ -240,7 +241,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {user?.role !== UserRole.AGENT && user?.role !== UserRole.EXPO && user?.role !== UserRole.EXPO_ANALIST && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
+          {user?.role !== UserRole.AGENT && user?.role !== UserRole.EXPO && user?.role !== UserRole.EXPO_ANALIST && user?.role !== UserRole.EXPO_COORDINATOR && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
             <>
               <SidebarItem to="/historico-expo" icon={History} label={sidebarOpen ? "Histórico Expo" : ""} />
               <SidebarItem to="/operations" icon={Ship} label={sidebarOpen ? "Shipment Plan" : ""} />
@@ -266,7 +267,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           )}
 
           {/* Saldo Fianza: Desktop Only */ }
-          {![UserRole.CLIENT, UserRole.CARRIER, UserRole.TRANSPORTISTA, UserRole.EMBARQUES, UserRole.EXPO, UserRole.EXPO_ANALIST].includes(user?.role as UserRole) && (
+          {![UserRole.CLIENT, UserRole.CARRIER, UserRole.TRANSPORTISTA, UserRole.EMBARQUES, UserRole.EXPO, UserRole.EXPO_ANALIST, UserRole.EXPO_COORDINATOR].includes(user?.role as UserRole) && (
              <div className="hidden lg:block">
                  <SidebarItem to="/saldo-fianza" icon={DollarSign} label={sidebarOpen ? "Saldo Fianza" : ""} />
              </div>
@@ -388,6 +389,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 label={sidebarOpen ? t("menu.asignaciones") : ""} 
                 badge={asignacionesBadgeAdmin > 0 ? asignacionesBadgeAdmin : undefined} 
               />
+              <SidebarItem to="/embarques" icon={Package} label={sidebarOpen ? "Embarques" : ""} />
               <SidebarItem to="/xml-invoices" icon={Database} label={sidebarOpen ? "XML Invoice Extractor" : ""} />
               <SidebarItem to="/xml-ci" icon={FileText} label={sidebarOpen ? "XMLCI Consolidated" : ""} />
               <SidebarItem to="/ccp-builder" icon={Truck} label={sidebarOpen ? "CCP Builder" : ""} />
@@ -395,8 +397,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {/* Expo_Analist Specific Block */}
-          {user?.role === UserRole.EXPO_ANALIST && (
+          {/* Expo Analist and Coordinator Specific Block */}
+          {(user?.role === UserRole.EXPO_ANALIST || user?.role === UserRole.EXPO_COORDINATOR) && (
             <>
               <SidebarItem to="/wms-control" icon={PackageOpen} label={sidebarOpen ? "WMS Control" : ""} />
               <SidebarItem to="/daily-van-assignment" icon={CalendarCheck} label={sidebarOpen ? "TRUCK_TRACKING" : ""} />
@@ -406,6 +408,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 label={sidebarOpen ? t("menu.asignaciones") : ""} 
                 badge={asignacionesBadgeAdmin > 0 ? asignacionesBadgeAdmin : undefined} 
               />
+              <SidebarItem to="/embarques" icon={Package} label={sidebarOpen ? "Embarques" : ""} />
               <SidebarItem to="/admin-productos-53" icon={Package} label={sidebarOpen ? 'Productos 53\'' : ''} />
               <SidebarItem to="/admin-ventanas-53" icon={CalendarDays} label={sidebarOpen ? 'Ventanas 53\'' : ''}
                 badge={ventanasBadge > 0 ? ventanasBadge : undefined} />
@@ -419,7 +422,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           )}
 
           {/* Daily Audit: Accessible to Everyone (except Pending, Carrier, Expo, Embarques, Client, Editor) */}
-          {user?.role !== UserRole.EDITOR && user?.role !== UserRole.PENDING && user?.role !== UserRole.EXPO && user?.role !== UserRole.EXPO_ANALIST && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
+          {user?.role !== UserRole.EDITOR && user?.role !== UserRole.PENDING && user?.role !== UserRole.EXPO && user?.role !== UserRole.EXPO_ANALIST && user?.role !== UserRole.EXPO_COORDINATOR && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
             <SidebarItem to="/daily-audit" icon={Activity} label={sidebarOpen ? "Control de Auditoría" : ""} />
           )}
 
@@ -464,6 +467,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           )}
         </div>
       </aside>
+
+      {/* Notificaciones Globales */}
+      <CcpNotificationListener />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0">

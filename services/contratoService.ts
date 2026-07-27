@@ -32,6 +32,38 @@ export const contratoService = {
     }
   },
 
+  async getContratoByNumeroOperacion(numeroOperacion: string, fecha?: string): Promise<ContratoRecord | null> {
+    if (!db) return null;
+    try {
+      const q = query(
+        collection(db, COLLECTION_NAME),
+        where('numeroOperacion', '==', numeroOperacion)
+      );
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) return null;
+      
+      let docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ContratoRecord));
+      
+      if (fecha) {
+        docs = docs.filter(d => d.fecha === fecha);
+      }
+      
+      if (docs.length === 0) return null;
+      
+      // Sort in memory to get the most recent one (if multiple match)
+      docs.sort((a, b) => {
+        const dateA = (a.fecha || '') + (a.createdAt || '');
+        const dateB = (b.fecha || '') + (b.createdAt || '');
+        return dateB.localeCompare(dateA); // Descending
+      });
+      
+      return docs[0];
+    } catch (error) {
+      console.error('Error fetching contrato by numeroOperacion:', error);
+      return null;
+    }
+  },
+
   async getContratosByDateRange(start: string, end: string): Promise<ContratoRecord[]> {
     if (!db) return [];
     try {

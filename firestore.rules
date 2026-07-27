@@ -41,6 +41,7 @@ service cloud.firestore {
     match /carriers/{docId} { allow read, write: if true; }
     match /drivers/{docId} { allow read, write: if true; }
     match /cajas/{docId} { allow read, write: if true; }
+    match /notificaciones_ccp/{docId} { allow read, write: if true; }
     match /transport_lines/{docId} { allow read, write: if true; }
     match /pricing_matrix/{docId} { allow read, write: if true; }
     match /shipping_schedules/{docId} { allow read, write: if true; }
@@ -70,6 +71,8 @@ service cloud.firestore {
     match /wms_vehicles/{docId} { allow read, write: if true; }
     match /wms_transfers/{docId} { allow read, write: if true; }
     match /vigilancia/{docId} { allow read, write: if true; }
+    match /citasConfiguracion/{docId} { allow read, write: if true; }
+    match /driver_check_ins/{docId} { allow read, write: if true; }
 
     match /daily_reports/{docId} { allow read, write: if true; }
     match /system_metadata/{docId} { allow read, write: if true; }

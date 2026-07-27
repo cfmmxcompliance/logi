@@ -420,6 +420,17 @@ export const AsignacionesDiarias: React.FC = () => {
 
   useEffect(() => {
     loadData();
+
+    const handleRefresh = () => {
+      loadData();
+    };
+    window.addEventListener('data:refresh', handleRefresh);
+    window.addEventListener('reserva:changed', handleRefresh);
+
+    return () => {
+      window.removeEventListener('data:refresh', handleRefresh);
+      window.removeEventListener('reserva:changed', handleRefresh);
+    };
   }, [dateRange.start, dateRange.end]);
 
   // TRANSPORTISTA: si transportLines carga DESPUES de abrir el modal, auto-rellena el carrier

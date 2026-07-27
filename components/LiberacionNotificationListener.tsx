@@ -58,7 +58,7 @@ export const LiberacionNotificationListener: React.FC = () => {
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] animate-fade-in p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform animate-scale-up">
-        <div className="bg-emerald-600 p-6 flex flex-col items-center justify-center text-white">
+        <div className="bg-sky-600 p-6 flex flex-col items-center justify-center text-white">
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4">
             <PackageCheck size={32} />
           </div>
@@ -67,11 +67,11 @@ export const LiberacionNotificationListener: React.FC = () => {
         
         <div className="p-6 flex flex-col gap-4">
           <p className="text-slate-600 text-center text-lg">
-            La línea para <span className="font-bold text-slate-800">{activeNotif.tl || 'Transporte'}</span> acaba de ser <span className="font-bold text-emerald-600">LIBERADA</span> para la caja:
+            La línea para <span className="font-bold text-slate-800">{activeNotif.tl || 'Transporte'}</span> acaba de ser <span className="font-bold text-sky-600">LIBERADA</span> para la caja:
           </p>
           
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
-            <span className="text-3xl font-black text-emerald-600 tracking-tight">{activeNotif.caja}</span>
+            <span className="text-3xl font-black text-sky-600 tracking-tight">{activeNotif.caja}</span>
           </div>
           
           <p className="text-xs text-slate-400 text-center">
@@ -80,7 +80,7 @@ export const LiberacionNotificationListener: React.FC = () => {
 
           <button
             onClick={handleEnterado}
-            className="mt-2 w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 text-lg active:scale-95"
+            className="mt-2 w-full h-12 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-lg shadow-sky-600/30 transition-all flex items-center justify-center gap-2 text-lg active:scale-95"
           >
             <CheckCircle size={20} />
             Enterado

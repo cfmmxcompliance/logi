@@ -940,6 +940,10 @@ export const AsignacionesDiarias: React.FC = () => {
         // Admin: borrado real
         try {
           await asignacionCajaService.deleteAsignacion(id);
+          // Desvincular sello
+          const sello = await selloService.getSelloByAsignacionCajaId(id);
+          if (sello?.id) await selloService.deleteSello(sello.id);
+          
           setSelectedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
           loadData();
         } catch (error: any) {
@@ -971,6 +975,9 @@ export const AsignacionesDiarias: React.FC = () => {
           dockArribo: 'CANCELED',
           comentariosArribo: reason,
         });
+        // Desvincular sello
+        const sello = await selloService.getSelloByAsignacionCajaId(id);
+        if (sello?.id) await selloService.deleteSello(sello.id);
       }
       setCancelModal(null);
       setSelectedIds(new Set());
@@ -990,6 +997,9 @@ export const AsignacionesDiarias: React.FC = () => {
       try {
         for (const id of selectedIds) {
           await asignacionCajaService.deleteAsignacion(id);
+          // Desvincular sello
+          const sello = await selloService.getSelloByAsignacionCajaId(id);
+          if (sello?.id) await selloService.deleteSello(sello.id);
         }
         setSelectedIds(new Set());
         loadData();

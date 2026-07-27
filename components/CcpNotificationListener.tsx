@@ -39,6 +39,8 @@ export const CcpNotificationListener: React.FC = () => {
       notifs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       
       setNotifications(notifs);
+      // Disparar evento para actualizar tablas de fondo (ej. Embarques)
+      window.dispatchEvent(new Event('data:refresh'));
     });
 
     return () => unsubscribe();
@@ -53,6 +55,7 @@ export const CcpNotificationListener: React.FC = () => {
     // Ocultar optimisticamente
     setNotifications(prev => prev.filter(n => n.id !== activeNotif.id));
     await ccpNotificationService.markAsRead(activeNotif.id, user.email);
+    window.dispatchEvent(new Event('data:refresh'));
   };
 
   return (

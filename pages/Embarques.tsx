@@ -232,6 +232,17 @@ export const Embarques: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+
+    const handleRefresh = () => {
+      fetchData();
+    };
+    window.addEventListener('data:refresh', handleRefresh);
+    window.addEventListener('reserva:changed', handleRefresh);
+
+    return () => {
+      window.removeEventListener('data:refresh', handleRefresh);
+      window.removeEventListener('reserva:changed', handleRefresh);
+    };
   }, [startDate, endDate]);
 
   const filteredData = data.filter(item => {

@@ -228,7 +228,7 @@ export const DriverCheckIn = () => {
 
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans overflow-x-hidden w-full max-w-[100vw]">
       {/* Header */}
       <div className="bg-slate-950 border-b border-slate-800 p-4 sticky top-0 z-10 flex items-center justify-center shadow-lg">
         <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
@@ -237,7 +237,7 @@ export const DriverCheckIn = () => {
         </h1>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-6">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6">
         
         {step === 'INITIAL' && (
           <div className="w-full max-w-md space-y-6">
@@ -246,19 +246,18 @@ export const DriverCheckIn = () => {
               <p className="text-slate-400 text-lg">Ingresa tu código de reservación (Carrier Reference) para registrar tu llegada.</p>
             </div>
             
-            <form onSubmit={handleSearch} className="space-y-6 bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+            <form onSubmit={handleSearch} className="space-y-6 bg-slate-800/50 p-4 sm:p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">Fecha de la cita</label>
-                <div className="relative">
-                  <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                  <input
-                    type="date"
-                    value={searchDate}
-                    onChange={(e) => setSearchDate(e.target.value)}
-                    className="w-full bg-slate-950 border-2 border-slate-700 rounded-xl pl-12 pr-4 py-4 text-white text-lg focus:outline-none focus:border-indigo-500 transition-colors"
-                    required
-                  />
-                </div>
+                <label className="block text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
+                  <CalendarIcon size={16} className="text-slate-400" /> Fecha de la cita
+                </label>
+                <input
+                  type="date"
+                  value={searchDate}
+                  onChange={(e) => setSearchDate(e.target.value)}
+                  className="w-full bg-slate-950 border-2 border-slate-700 rounded-xl px-4 py-4 text-white text-lg focus:outline-none focus:border-indigo-500 transition-colors"
+                  required
+                />
               </div>
 
               <div>

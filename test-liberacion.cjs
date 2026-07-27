@@ -14,7 +14,7 @@ async function run() {
   try {
     const docRef = await addDoc(collection(db, 'notificaciones_liberacion'), {
       tl: 'Simulación Transportes',
-      caja: 'SIMULACION-9999',
+      caja: 'SIMULACION-AZUL',
       createdAt: new Date().toISOString(),
       leidoPor: []
     });

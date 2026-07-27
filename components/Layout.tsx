@@ -5,6 +5,7 @@ import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settin
   Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles, CalendarCheck, History, Package, CalendarDays, ClipboardList, AlertTriangle, FileSearch } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { CcpNotificationListener } from './CcpNotificationListener';
+import { LiberacionNotificationListener } from './LiberacionNotificationListener';
 import { ConnectionStatus } from './ConnectionStatus.tsx';
 import { UserRole } from '../types.ts';
 import { storageService } from '../services/storageService.ts';
@@ -470,6 +471,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
       {/* Notificaciones Globales */}
       <CcpNotificationListener />
+      <LiberacionNotificationListener />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0">

@@ -2,6 +2,7 @@ import { collection, doc, setDoc, getDocs, getDoc, getDocsFromCache, updateDoc, 
 import { db } from './firebaseConfig';
 import { LiberacionRecord } from '../types.ts';
 import { storageService } from './storageService';
+import { liberacionNotificationService } from './liberacionNotificationService';
 
 const COLLECTION_NAME = 'liberacionesCaja';
 
@@ -118,6 +119,13 @@ export const liberacionService = {
                         transportLine = tId;
                     }
                 }
+                
+                // NOTIFICATION: Trigger Liberacion Notification
+                try {
+                    const cajaStr = asigData.numeroCaja || 'Desconocida';
+                    const tlStr = transportLine || 'Desconocido';
+                    await liberacionNotificationService.addNotification(tlStr, cajaStr);
+                } catch(e) { console.error('Error notifying liberacion', e); }
             } else {
                // Fallback: fecha de la liberación en hora México
                pickupDay = liberacion.fechaLiberacion || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });

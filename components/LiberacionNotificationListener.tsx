@@ -3,12 +3,12 @@ import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/f
 import { db } from '../services/firebaseConfig';
 import { useAuth } from '../context/useAuth';
 import { UserRole } from '../types';
-import { ccpNotificationService, CcpNotification } from '../services/ccpNotificationService';
-import { FileText, CheckCircle } from 'lucide-react';
+import { liberacionNotificationService, LiberacionNotification } from '../services/liberacionNotificationService';
+import { PackageCheck, CheckCircle } from 'lucide-react';
 
-export const CcpNotificationListener: React.FC = () => {
+export const LiberacionNotificationListener: React.FC = () => {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<CcpNotification[]>([]);
+  const [notifications, setNotifications] = useState<LiberacionNotification[]>([]);
 
   useEffect(() => {
     // Solo mostramos a estos roles
@@ -18,15 +18,15 @@ export const CcpNotificationListener: React.FC = () => {
     }
 
     const q = query(
-      collection(db, 'notificaciones_ccp')
+      collection(db, 'notificaciones_liberacion')
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const notifs: CcpNotification[] = [];
+      const notifs: LiberacionNotification[] = [];
       const userEmail = user.email || '';
       
       snapshot.forEach(doc => {
-        const data = doc.data() as CcpNotification;
+        const data = doc.data() as LiberacionNotification;
         // Solo mostramos notificaciones recientes (últimos 3 días para no saturar) 
         // Y que el usuario actual NO haya leído
         const isRecent = (new Date().getTime() - new Date(data.createdAt).getTime()) < 3 * 24 * 60 * 60 * 1000;
@@ -52,7 +52,7 @@ export const CcpNotificationListener: React.FC = () => {
     if (!activeNotif.id || !user?.email) return;
     // Ocultar optimisticamente
     setNotifications(prev => prev.filter(n => n.id !== activeNotif.id));
-    await ccpNotificationService.markAsRead(activeNotif.id, user.email);
+    await liberacionNotificationService.markAsRead(activeNotif.id, user.email);
   };
 
   return (
@@ -60,14 +60,14 @@ export const CcpNotificationListener: React.FC = () => {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform animate-scale-up">
         <div className="bg-emerald-600 p-6 flex flex-col items-center justify-center text-white">
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4">
-            <FileText size={32} />
+            <PackageCheck size={32} />
           </div>
-          <h2 className="text-2xl font-bold text-center">¡Nuevo CCP Cargado!</h2>
+          <h2 className="text-2xl font-bold text-center">¡Línea Liberada!</h2>
         </div>
         
         <div className="p-6 flex flex-col gap-4">
           <p className="text-slate-600 text-center text-lg">
-            El proveedor de <span className="font-bold text-slate-800">{activeNotif.tl || 'Transporte'}</span> acaba de subir la Carta Porte (CCP) para la caja:
+            La línea para <span className="font-bold text-slate-800">{activeNotif.tl || 'Transporte'}</span> acaba de ser <span className="font-bold text-emerald-600">LIBERADA</span> para la caja:
           </p>
           
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">

@@ -248,14 +248,14 @@ export const DriverCheckIn = () => {
             
             <form onSubmit={handleSearch} className="space-y-6 bg-slate-800/50 p-4 sm:p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
                   <CalendarIcon size={16} className="text-slate-400" /> Fecha de la cita
                 </label>
                 <input
                   type="date"
                   value={searchDate}
                   onChange={(e) => setSearchDate(e.target.value)}
-                  className="w-full bg-slate-950 border-2 border-slate-700 rounded-xl px-4 py-4 text-white text-lg focus:outline-none focus:border-indigo-500 transition-colors"
+                  className="block w-full min-w-0 appearance-none bg-slate-950 border-2 border-slate-700 rounded-xl px-4 py-4 text-white text-lg focus:outline-none focus:border-indigo-500 transition-colors"
                   required
                 />
               </div>
@@ -434,7 +434,7 @@ export const DriverCheckIn = () => {
                   type="date"
                   value={expectedDate}
                   onChange={(e) => setExpectedDate(e.target.value)}
-                  className="w-full bg-slate-950 border-2 border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                  className="block w-full min-w-0 appearance-none bg-slate-950 border-2 border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors"
                 />
               </div>
 

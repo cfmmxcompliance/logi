@@ -4,6 +4,7 @@ import { useAuth } from '../context/useAuth';
 import { contratoService } from '../services/contratoService.ts';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { checkInService } from '../services/checkInService';
+import { selloService } from '../services/selloService';
 import { ContratoRecord } from '../types/contrato';
 import { UserRole } from '../types.ts';
 import { CheckInModel } from '../types/checkIn';
@@ -202,11 +203,20 @@ export const Embarques: React.FC = () => {
     try {
       const asigData = await contratoService.getContratosByDateRange(startDate, endDate);
       const asignaciones = await asignacionCajaService.getAsignacionesByDateRange(startDate, endDate).catch(() => []);
+      const sellos = await selloService.getSellosByDateRange(startDate, endDate).catch(() => []);
       
       const mergedData = asigData.map(c => {
         const a = asignaciones.find(x => x.numeroOperacion === c.numeroOperacion);
+        
+        let selloFinal = c.selloAsignado;
+        if (!selloFinal && a) {
+           const sRow = sellos.find(s => s.asignacionCajaId === a.id || (s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha));
+           if (sRow) selloFinal = sRow.selloAsignado;
+        }
+
         return { 
           ...c, 
+          selloAsignado: selloFinal,
           scac: (a as any)?.scac || a?.carrierCodigo || '',
           carrierRef: a?.carrierRef || '',
           observaciones: a?.observaciones || ''

@@ -2054,11 +2054,12 @@ export const AsignacionesDiarias: React.FC = () => {
                        
                        const exactSello = sellos.find(s => s.asignacionCajaId === a.id);
                        const selloRow = exactSello || sellos.find(s => s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha);
-                       if (!selloRow) return <span className="text-slate-300 text-xs">—</span>;
+                       const selloFinal = selloRow?.selloAsignado || liberacion?.selloValidado;
+                       if (!selloFinal) return <span className="text-slate-300 text-xs">—</span>;
                        return (
                          <div className="flex flex-col gap-0">
-                           <span className="font-mono font-bold text-teal-700 text-sm">{selloRow.selloAsignado}</span>
-                           <span className="text-[10px] text-slate-400 font-mono">{selloRow.fechaHoraRegistro || '—'}</span>
+                           <span className="font-mono font-bold text-teal-700 text-sm">{selloFinal}</span>
+                           <span className="text-[10px] text-slate-400 font-mono">{selloRow?.fechaHoraRegistro || liberacion?.fechaHoraRegistro || '—'}</span>
                          </div>
                        );
                      })()}

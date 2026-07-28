@@ -2050,7 +2050,12 @@ export const AsignacionesDiarias: React.FC = () => {
                 
                 <td className="p-4 border-l border-teal-100/50 bg-teal-50/10 whitespace-nowrap">
                      {(() => {
-                       if (hideDocs) return <span className="text-slate-400 font-bold">—</span>;
+                       const isRechazado = String((a as any).dockArribo || '').trim().toUpperCase() === 'RECHAZADO';
+                       const isDrop = String((a as any).dockArribo || '').trim().toUpperCase() === 'DROP';
+                       const isNoShow = String((a as any).dockArribo || '').trim().toUpperCase() === 'NO SHOW';
+                       const isCanceled = String((a as any).dockArribo || '').trim().toUpperCase() === 'CANCELED' || String((a as any).dockArribo || '').trim().toUpperCase() === 'CANCELADO';
+                       const hideSello = isRechazado || isDrop || isNoShow || isCanceled;
+                       if (hideSello) return <span className="text-slate-400 font-bold">—</span>;
                        
                        const exactSello = sellos.find(s => s.asignacionCajaId === a.id);
                        const selloRow = exactSello || sellos.find(s => s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha);

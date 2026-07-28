@@ -12,7 +12,7 @@ export const LiberacionNotificationListener: React.FC = () => {
 
   useEffect(() => {
     // Solo mostramos a estos roles
-    const allowedRoles = [UserRole.ADMIN, UserRole.EXPO, UserRole.EXPO_ANALIST, UserRole.EXPO_COORDINATOR, UserRole.EMBARQUES];
+    const allowedRoles = [UserRole.ADMIN, UserRole.EXPO_COORDINATOR];
     if (!user || !user.role || !allowedRoles.includes(user.role as any)) {
       return;
     }

@@ -1806,7 +1806,7 @@ export const AsignacionesDiarias: React.FC = () => {
               const isRechazado = dockVal === 'RECHAZADO';
               const isDrop = dockVal === 'DROP';
               const isNoShow = dockVal === 'NO SHOW';
-              const isCanceled = dockVal === 'CANCELED';
+              const isCanceled = dockVal === 'CANCELED' || dockVal === 'CANCELADO';
               const hasUSDB1 = String((a as any).observaciones || '').toUpperCase().includes('USDB1');
               const hideDocs = isRechazado || isDrop || isNoShow || isCanceled || hasUSDB1;
 
@@ -2044,6 +2044,8 @@ export const AsignacionesDiarias: React.FC = () => {
                 
                 <td className="p-4 border-l border-teal-100/50 bg-teal-50/10 whitespace-nowrap">
                      {(() => {
+                       if (hideDocs) return <span className="text-slate-400 font-bold">—</span>;
+                       
                        const exactSello = sellos.find(s => s.asignacionCajaId === a.id);
                        const selloRow = exactSello || sellos.find(s => s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha);
                        if (!selloRow) return <span className="text-slate-300 text-xs">—</span>;

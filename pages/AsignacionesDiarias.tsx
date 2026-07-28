@@ -255,7 +255,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
-  const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'CERRADO' | 'POR_CERRAR' | 'CANCELADO'>('ALL');
+  const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'PENDIENTES' | 'LLEGADOS' | 'CERRADO' | 'CANCELADO'>('ALL');
   const today = getMexicoDateString();
   const savedRange = (() => { try { return JSON.parse(localStorage.getItem('asig_dateRange') || 'null'); } catch { return null; } })();
   const [dateRange, setDateRange] = useState({ 
@@ -606,9 +606,10 @@ export const AsignacionesDiarias: React.FC = () => {
     const isCanceledStatus = (dockVal: string) =>
         dockVal === 'RECHAZADO' || dockVal === 'DROP' || dockVal === 'NO SHOW' || dockVal === 'CANCELED';
 
+    let pendientesCount = 0;
+    let llegadosCount = 0;
     let cerradoCount = 0;
     let canceladoCount = 0;
-    let porCerrarCount = 0;
     let sinLayoutCount = 0;
     let sinCcpCount = 0;
     let vehiculosPorCerrar = 0;
@@ -622,8 +623,13 @@ export const AsignacionesDiarias: React.FC = () => {
         } else if (liberaciones.some(lib => lib.asignacionCajaId === a.id)) {
             cerradoCount++;
             if (!isNaN(v)) vehiculosCerrado += v;
+        } else if ((a as any).arribo) {
+            llegadosCount++;
+            if (!(a as any).layoutUrl) sinLayoutCount++;
+            if (!(a as any).ccpUrl)    sinCcpCount++;
+            if (!isNaN(v)) vehiculosPorCerrar += v;
         } else {
-            porCerrarCount++;
+            pendientesCount++;
             if (!(a as any).layoutUrl) sinLayoutCount++;
             if (!(a as any).ccpUrl)    sinCcpCount++;
             if (!isNaN(v)) vehiculosPorCerrar += v;
@@ -631,10 +637,11 @@ export const AsignacionesDiarias: React.FC = () => {
     });
 
     const filterCounts = {
-        ALL: result.length,
+        ALL: result.length - canceladoCount,
+        PENDIENTES: pendientesCount,
+        LLEGADOS: llegadosCount,
         CERRADO: cerradoCount,
         CANCELADO: canceladoCount,
-        POR_CERRAR: porCerrarCount,
         SIN_LAYOUT: sinLayoutCount,
         SIN_CCP: sinCcpCount,
         VEHICULOS_POR_CERRAR: vehiculosPorCerrar,
@@ -642,13 +649,19 @@ export const AsignacionesDiarias: React.FC = () => {
     };
 
     // Cargado Filter
-    if (cargadoFilter !== 'ALL') {
+    if (cargadoFilter === 'ALL') {
+        result = result.filter(a => {
+            const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
+            return !isCanceledStatus(dockVal);
+        });
+    } else {
         result = result.filter(a => {
             const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
             if (cargadoFilter === 'CANCELADO') return isCanceledStatus(dockVal);
             if (cargadoFilter === 'CERRADO')   return !isCanceledStatus(dockVal) && liberaciones.some(lib => lib.asignacionCajaId === a.id);
-            // POR_CERRAR
-            return !isCanceledStatus(dockVal) && !liberaciones.some(lib => lib.asignacionCajaId === a.id);
+            if (cargadoFilter === 'LLEGADOS')  return !isCanceledStatus(dockVal) && !liberaciones.some(lib => lib.asignacionCajaId === a.id) && (a as any).arribo;
+            // PENDIENTES
+            return !isCanceledStatus(dockVal) && !liberaciones.some(lib => lib.asignacionCajaId === a.id) && !(a as any).arribo;
         });
     }
 
@@ -1494,45 +1507,26 @@ export const AsignacionesDiarias: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-3 flex-wrap">
-             <div className="flex items-center bg-white border border-slate-300 rounded-lg p-1 shadow-sm">
-                <button
-                  onClick={() => setCargadoFilter('ALL')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${cargadoFilter === 'ALL' ? 'bg-teal-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
-                >
-                  {t('filter.todos')} {filterCounts.ALL > 0 ? `(${filterCounts.ALL})` : ''}
-                </button>
-                <button
-                   onClick={() => setCargadoFilter('POR_CERRAR')}
-                   className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex flex-col items-center leading-tight ${cargadoFilter === 'POR_CERRAR' ? 'bg-teal-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
-                 >
-                   <span>{t('filter.por_cerrar')} {filterCounts.POR_CERRAR > 0 ? `(${filterCounts.POR_CERRAR})` : ''}</span>
-                   {(filterCounts.SIN_LAYOUT > 0 || filterCounts.SIN_CCP > 0 || filterCounts.VEHICULOS_POR_CERRAR > 0) && (
-                     <span className={`flex gap-1.5 mt-0.5 text-[10px] font-semibold ${cargadoFilter === 'POR_CERRAR' ? 'text-teal-100' : 'text-slate-400'}`}>
-                       {filterCounts.SIN_LAYOUT > 0 && <span>{t('filter.sin_layout')}: {filterCounts.SIN_LAYOUT}</span>}
-                       {filterCounts.SIN_LAYOUT > 0 && filterCounts.SIN_CCP > 0 && <span>·</span>}
-                       {filterCounts.SIN_CCP > 0 && <span>{t('filter.sin_ccp')}: {filterCounts.SIN_CCP}</span>}
-                       {(filterCounts.SIN_LAYOUT > 0 || filterCounts.SIN_CCP > 0) && filterCounts.VEHICULOS_POR_CERRAR > 0 && <span>·</span>}
-                       {filterCounts.VEHICULOS_POR_CERRAR > 0 && <span>🚗 {filterCounts.VEHICULOS_POR_CERRAR} {t('filter.veh')}</span>}
-                     </span>
-                   )}
-                 </button>
-                <button
-                  onClick={() => setCargadoFilter('CERRADO')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex flex-col items-center leading-tight ${cargadoFilter === 'CERRADO' ? 'bg-teal-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
-                >
-                  <span>{t('filter.cerrado')} {filterCounts.CERRADO > 0 ? `(${filterCounts.CERRADO})` : ''}</span>
-                  {filterCounts.VEHICULOS_CERRADO > 0 && (
-                    <span className={`mt-0.5 text-[10px] font-semibold ${cargadoFilter === 'CERRADO' ? 'text-teal-100' : 'text-slate-400'}`}>
-                      🚗 {filterCounts.VEHICULOS_CERRADO} {t('filter.veh')}
-                    </span>
-                  )}
-                </button>
-                 <button
-                   onClick={() => setCargadoFilter('CANCELADO')}
-                   className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${cargadoFilter === 'CANCELADO' ? 'bg-red-600 text-white shadow' : 'text-red-500 hover:bg-red-50'}`}
-                 >
-                   {t('filter.cancelado')} {filterCounts.CANCELADO > 0 ? `(${filterCounts.CANCELADO})` : ''}
-                 </button>
+             {/* ── KPI strip (Selector homologado con handheld, estilo día) ── */}
+             <div className="flex gap-1 bg-white p-1 rounded-lg shadow-sm border border-slate-300">
+               <button onClick={() => setCargadoFilter('ALL')} className={`rounded-md p-1 min-w-[60px] flex flex-col items-center justify-center transition-all border ${cargadoFilter === 'ALL' ? 'bg-slate-100 border-slate-200 text-slate-800 shadow-sm' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+                  <span className="text-sm font-black">{filterCounts.ALL}</span>
+                  <span className="text-[8px] font-bold uppercase tracking-wider mt-0.5">{t('filter.todos')}</span>
+               </button>
+               {[
+                 { key: 'PENDIENTES', label: 'Pendientes', val: filterCounts.PENDIENTES, colorSelected: 'text-blue-700', colorUnselected: 'text-blue-600', bg: cargadoFilter === 'PENDIENTES' ? 'bg-blue-50 border-blue-200 shadow-sm' : 'border-transparent hover:bg-slate-50' },
+                 { key: 'LLEGADOS',   label: 'En Proceso', val: filterCounts.LLEGADOS,   colorSelected: 'text-amber-700', colorUnselected: 'text-amber-600', bg: cargadoFilter === 'LLEGADOS' ? 'bg-amber-50 border-amber-200 shadow-sm' : 'border-transparent hover:bg-slate-50' },
+                 { key: 'CERRADO',    label: 'Cerrado',    val: filterCounts.CERRADO,    colorSelected: 'text-emerald-700', colorUnselected: 'text-emerald-600', bg: cargadoFilter === 'CERRADO' ? 'bg-emerald-50 border-emerald-200 shadow-sm' : 'border-transparent hover:bg-slate-50' },
+                 { key: 'CANCELADO',  label: 'Cancelado',  val: filterCounts.CANCELADO,  colorSelected: 'text-red-700', colorUnselected: 'text-red-600', bg: cargadoFilter === 'CANCELADO' ? 'bg-red-50 border-red-200 shadow-sm' : 'border-transparent hover:bg-slate-50' },
+               ].map(k => {
+                 const isSelected = cargadoFilter === k.key;
+                 return (
+                   <button key={k.key} onClick={() => setCargadoFilter(k.key as any)} className={`rounded-md border p-1 min-w-[70px] flex flex-col items-center justify-center transition-all ${k.bg} ${isSelected ? k.colorSelected : 'text-slate-500 hover:text-slate-700'}`}>
+                     <span className={`text-sm font-black ${isSelected ? k.colorSelected : k.colorUnselected}`}>{k.val}</span>
+                     <span className="text-[8px] font-bold uppercase tracking-wider mt-0.5">{k.label}</span>
+                   </button>
+                 );
+               })}
              </div>
 
              <div className="flex items-center bg-white border border-slate-300 rounded-lg pr-2 overflow-hidden shadow-sm">

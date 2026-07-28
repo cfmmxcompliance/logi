@@ -92,13 +92,15 @@ export const HandheldAsignaciones = () => {
 
   // ── Counts for filter tabs ─────────────────────────────────────────────────
   const counts: Record<StatusFilter, number> = {
-    TODOS: asignaciones.length,
+    TODOS: 0,
     PENDIENTES: 0, LLEGADOS: 0, CERRADO: 0, CANCELADO: 0,
   };
   asignaciones.forEach(a => { counts[classify(a)]++; });
+  counts.TODOS = asignaciones.length - counts.CANCELADO;
 
   // ── Filter + search ────────────────────────────────────────────────────────
   const filtered = asignaciones.filter(a => {
+    if (statusFilter === 'TODOS' && classify(a) === 'CANCELADO') return false;
     if (statusFilter !== 'TODOS' && classify(a) !== statusFilter) return false;
     if (!searchTerm.trim()) return true;
     const q = searchTerm.toLowerCase();

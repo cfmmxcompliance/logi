@@ -352,6 +352,9 @@ export const Embarques: React.FC = () => {
   };
 
   const filteredCheckIns = checkInsData.filter(a => {
+    const checkInDate = a.checkInAt ? a.checkInAt.split('T')[0] : '';
+    if (checkInDate && (checkInDate < startDate || checkInDate > endDate)) return false;
+
     if (checkInFilter === 'CON_CITA') {
       if (a.checkInStatus && a.checkInStatus !== 'PUNTUAL / OK') return false;
     } else if (checkInFilter === 'SIN_CITA') {

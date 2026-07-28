@@ -40,6 +40,12 @@ const getMexicoToday = () => {
   return mx; // Returns 'YYYY-MM-DD'
 };
 
+const getMexicoDateString = () => {
+  const mxDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${mxDate.getFullYear()}-${pad(mxDate.getMonth() + 1)}-${pad(mxDate.getDate())}`;
+};
+
 // Hora actual en zona Monterrey — formato HH:MM
 const getMexicoNow = () =>
   new Date().toLocaleTimeString('en-GB', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit' });
@@ -219,7 +225,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<Partial<AsignacionCajaModel>>({ 
-    fecha: getMexicoToday(),
+    fecha: getMexicoDateString(),
     horaAsignacion: ''
   });
   const [isEditing, setIsEditing] = useState(false);
@@ -250,7 +256,7 @@ export const AsignacionesDiarias: React.FC = () => {
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
   const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'CERRADO' | 'POR_CERRAR' | 'CANCELADO'>('ALL');
-  const today = getMexicoToday();
+  const today = getMexicoDateString();
   const savedRange = (() => { try { return JSON.parse(localStorage.getItem('asig_dateRange') || 'null'); } catch { return null; } })();
   const [dateRange, setDateRange] = useState({ 
     start: savedRange?.start || today, 
@@ -829,7 +835,7 @@ export const AsignacionesDiarias: React.FC = () => {
                                || (formData.fecha === '2026-07-22' && formData.horaAsignacion === '17:00');
       const isConfigured = dayConfig[formData.horaAsignacion] !== undefined;
       
-      if (!isManualOverride18 && !isConfigured && formData.fecha === getMexicoToday() && formData.horaAsignacion <= getMexicoNow()) {
+      if (!isManualOverride18 && !isConfigured && formData.fecha === getMexicoDateString() && formData.horaAsignacion <= getMexicoNow()) {
         alert(`La ventana de las ${formData.horaAsignacion} ya inició. Selecciona el siguiente horario disponible.`);
         return;
       }
@@ -1030,7 +1036,7 @@ export const AsignacionesDiarias: React.FC = () => {
   };
 
   const openNew = async () => {
-      const today = getMexicoToday();
+      const today = getMexicoDateString();
       const nextOp = await asignacionCajaService.getNextOperationNumber(today);
 
       // Auto-detect carrier for TRANSPORTISTA: find parent carrier from their sub-line SCAC
@@ -1116,7 +1122,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
     setIsBatchClosing(true);
     setBatchResult(null);
-    const todayDate = getMexicoToday();
+    const todayDate = getMexicoDateString();
     let ok = 0; let err = 0;
 
     for (const a of eligible) {

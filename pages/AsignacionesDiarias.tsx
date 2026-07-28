@@ -288,20 +288,20 @@ export const AsignacionesDiarias: React.FC = () => {
       const uploadedBy = user?.email || 'sistema';
       const uploadedAt = new Date().toISOString();
 
+      // Extracción robusta del fileId (soporta todos los formatos de URL de Drive)
+      const extractId = (u: string) => {
+        if (!u) return '';
+        const parts = u.split('/d/');
+        if (parts.length > 1) return parts[1].split(/[/?#]/)[0];
+        const m = u.match(/[?&]id=([\w-]+)/);
+        return m ? m[1] : '';
+      };
+      const driveFileId = result?.id || (result as any)?.fileId || extractId(url);
+
       if (field === 'layoutUrl') {
         // ── 2. LOGGING + OBTENER fileId ────────────────────────────────────
         console.log('[Layout] Upload result:', JSON.stringify({ id: result?.id, fileId: (result as any)?.fileId, webViewLink: result?.webViewLink, name: result?.name }));
         console.log('[Layout] url guardado:', url);
-
-        // Extracción robusta del fileId (soporta todos los formatos de URL de Drive)
-        const extractId = (u: string) => {
-          if (!u) return '';
-          const parts = u.split('/d/');
-          if (parts.length > 1) return parts[1].split(/[/?#]/)[0];
-          const m = u.match(/[?&]id=([\w-]+)/);
-          return m ? m[1] : '';
-        };
-        const driveFileId = result?.id || (result as any)?.fileId || extractId(url);
         console.log('[Layout] driveFileId resuelto:', driveFileId || '(VACÍO — revisa consola)');
 
         // ── 3. LEER DESDE DRIVE VÍA GAS ────────────────────────────────────

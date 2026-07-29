@@ -9,6 +9,7 @@ import { PackageCheck, CheckCircle } from 'lucide-react';
 export const LiberacionNotificationListener: React.FC = () => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<LiberacionNotification[]>([]);
+  const isClosingAll = React.useRef(false);
 
   useEffect(() => {
     // Solo mostramos a estos roles
@@ -22,6 +23,8 @@ export const LiberacionNotificationListener: React.FC = () => {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (isClosingAll.current) return;
+
       const notifs: LiberacionNotification[] = [];
       const userEmail = user.email || '';
       
@@ -57,9 +60,11 @@ export const LiberacionNotificationListener: React.FC = () => {
 
   const handleCerrarTodas = async () => {
     if (!user?.email) return;
+    isClosingAll.current = true;
     const notifIds = notifications.map(n => n.id!);
     setNotifications([]);
     await Promise.all(notifIds.map(id => liberacionNotificationService.markAsRead(id, user.email!)));
+    isClosingAll.current = false;
     window.dispatchEvent(new Event('data:refresh'));
   };
 

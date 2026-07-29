@@ -9,6 +9,7 @@ import { FileText, CheckCircle } from 'lucide-react';
 export const CcpNotificationListener: React.FC = () => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<CcpNotification[]>([]);
+  const isClosingAll = React.useRef(false);
 
   useEffect(() => {
     // Solo mostramos a estos roles
@@ -22,6 +23,8 @@ export const CcpNotificationListener: React.FC = () => {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (isClosingAll.current) return;
+
       const notifs: CcpNotification[] = [];
       const userEmail = user.email || '';
       
@@ -60,9 +63,11 @@ export const CcpNotificationListener: React.FC = () => {
 
   const handleCerrarTodas = async () => {
     if (!user?.email) return;
+    isClosingAll.current = true;
     const notifIds = notifications.map(n => n.id!);
     setNotifications([]);
     await Promise.all(notifIds.map(id => ccpNotificationService.markAsRead(id, user.email!)));
+    isClosingAll.current = false;
     window.dispatchEvent(new Event('data:refresh'));
   };
 

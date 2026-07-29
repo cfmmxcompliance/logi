@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
-import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout.tsx';
 import { Login } from '../pages/Login.tsx';
 import { NetworkIndicator } from '../components/NetworkIndicator.tsx';

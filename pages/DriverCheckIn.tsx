@@ -36,7 +36,7 @@ export const DriverCheckIn = () => {
     const fetchTLs = async () => {
       try {
         const data = await transportLineService.getAllTransportLines();
-        setTransportLines(data.filter(t => t.isActive !== false));
+        setTransportLines(data.filter(t => (t as any).isActive !== false));
       } catch (e) {
         console.error('Error fetching transport lines:', e);
       }

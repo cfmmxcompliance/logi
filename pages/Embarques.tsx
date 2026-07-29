@@ -105,7 +105,7 @@ export const Embarques: React.FC = () => {
       // Sincronizar con Asignación Diaria de Cajas
       const record = data.find(d => d.id === recordId);
       if (record && record.numeroOperacion) {
-        const asigDoc = await asignacionCajaService.getAsignacionByNumeroOperacion(record.numeroOperacion, record.fecha);
+        const asigDoc = await asignacionCajaService.getAsignacionByNumeroOperacion(record.numeroOperacion);
         if (asigDoc && asigDoc.id) {
           const asigUpdates: any = {
             layoutUrl: url,
@@ -134,22 +134,23 @@ export const Embarques: React.FC = () => {
   const handleUploadCCP = async (recordId: string, numeroCaja: string, file: File) => {
     try {
       setUploadingFor(recordId);
-      const { url, id: driveFileId } = await uploadFileToDrive(file, `CCP_${numeroCaja}`);
+      const uploadResult = await uploadFileToDrive(file, `CCP_${numeroCaja}`);
+      const { url, id: driveFileId } = uploadResult as any;
       const uploadedBy = user?.email || user?.name || 'Desconocido';
       const uploadedAt = new Date().toISOString();
 
       await contratoService.updateContrato(recordId, {
-        ccpUrl: url,
+        ccpUrl: url || (uploadResult as any).webViewLink,
         ccpUploadedBy: uploadedBy,
         ccpUploadedAt: uploadedAt,
-        ccpFileName: file.name,
+        ccpFileName: file.name
       });
       setData(prev => prev.map(d => d.id === recordId ? { ...d, ccpUrl: url, ccpUploadedBy: uploadedBy, ccpUploadedAt: uploadedAt, ccpFileName: file.name } : d));
 
       // Sincronizar con Asignación Diaria de Cajas
       const record = data.find(d => d.id === recordId);
       if (record && record.numeroOperacion) {
-        const asigDoc = await asignacionCajaService.getAsignacionByNumeroOperacion(record.numeroOperacion, record.fecha);
+        const asigDoc = await asignacionCajaService.getAsignacionByNumeroOperacion(record.numeroOperacion);
         if (asigDoc && asigDoc.id) {
           const asigUpdates: any = {
             ccpUrl: url,

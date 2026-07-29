@@ -58,6 +58,14 @@ export const CcpNotificationListener: React.FC = () => {
     window.dispatchEvent(new Event('data:refresh'));
   };
 
+  const handleCerrarTodas = async () => {
+    if (!user?.email) return;
+    const notifIds = notifications.map(n => n.id!);
+    setNotifications([]);
+    await Promise.all(notifIds.map(id => ccpNotificationService.markAsRead(id, user.email!)));
+    window.dispatchEvent(new Event('data:refresh'));
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] animate-fade-in p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform animate-scale-up">
@@ -90,9 +98,19 @@ export const CcpNotificationListener: React.FC = () => {
           </button>
           
           {notifications.length > 1 && (
-            <p className="text-center text-sm text-slate-500 mt-2">
-              (Tienes {notifications.length - 1} notificación(es) más pendiente(s))
-            </p>
+            <div className="flex flex-col items-center gap-2 mt-2 w-full">
+              <p className="text-center text-sm text-slate-500">
+                (Tienes {notifications.length - 1} notificación(es) más pendiente(s))
+              </p>
+              {user?.role !== UserRole.EXPO_COORDINATOR && user?.role !== UserRole.EMBARQUES && (
+                <button
+                  onClick={handleCerrarTodas}
+                  className="w-full h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl transition-all text-sm active:scale-95"
+                >
+                  Cerrar todas las notificaciones
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

@@ -81,7 +81,12 @@ export const contratoService = {
   },
 
   async addContrato(contrato: ContratoRecord): Promise<boolean> {
-    if (!db) throw new Error("Sin conexión a la base de datos (db nulo).");
+    if (!db) throw new Error("Sin conexión a DB");
+    if (contrato.numeroCaja) contrato.numeroCaja = contrato.numeroCaja.trim().toUpperCase();
+    if (contrato.numeroOperacion) contrato.numeroOperacion = contrato.numeroOperacion.trim().toUpperCase();
+    if (contrato.selloAsignado) contrato.selloAsignado = contrato.selloAsignado.trim().toUpperCase();
+    if (contrato.contrato) contrato.contrato = contrato.contrato.trim().toUpperCase();
+
     try {
       const docId = contrato.id || doc(collection(db, COLLECTION_NAME)).id;
       const docRef = doc(db, COLLECTION_NAME, docId);
@@ -99,6 +104,11 @@ export const contratoService = {
 
   async updateContrato(id: string, contrato: Partial<ContratoRecord>): Promise<boolean> {
     if (!db) return false;
+    if (contrato.numeroCaja) contrato.numeroCaja = contrato.numeroCaja.trim().toUpperCase();
+    if (contrato.numeroOperacion) contrato.numeroOperacion = contrato.numeroOperacion.trim().toUpperCase();
+    if (contrato.selloAsignado) contrato.selloAsignado = contrato.selloAsignado.trim().toUpperCase();
+    if (contrato.contrato) contrato.contrato = contrato.contrato.trim().toUpperCase();
+
     try {
       const docRef = doc(db, COLLECTION_NAME, id);
       await updateDoc(docRef, contrato);

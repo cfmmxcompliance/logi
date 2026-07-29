@@ -83,12 +83,14 @@ export const selloService = {
 
   async addSello(sello: SelloRecord): Promise<boolean> {
     if (!db) throw new Error("Sin conexión a la base de datos (db nulo).");
+    if (sello.numeroCaja) sello.numeroCaja = sello.numeroCaja.trim().toUpperCase();
+    if (sello.selloAsignado) sello.selloAsignado = sello.selloAsignado.trim().toUpperCase();
+
     try {
       const docId = sello.id || doc(collection(db, COLLECTION_NAME)).id;
       const docRef = doc(db, COLLECTION_NAME, docId);
       await setDoc(docRef, {
         ...sello,
-        id: docId,
         createdAt: sello.createdAt || new Date().toISOString()
       });
       return true;
@@ -100,6 +102,9 @@ export const selloService = {
 
   async updateSello(id: string, sello: Partial<SelloRecord>): Promise<boolean> {
     if (!db) return false;
+    if (sello.numeroCaja) sello.numeroCaja = sello.numeroCaja.trim().toUpperCase();
+    if (sello.selloAsignado) sello.selloAsignado = sello.selloAsignado.trim().toUpperCase();
+
     try {
       const docRef = doc(db, COLLECTION_NAME, id);
       await updateDoc(docRef, sello);

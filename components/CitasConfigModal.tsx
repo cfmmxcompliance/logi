@@ -113,7 +113,7 @@ export const CitasConfigModal: React.FC<Props> = ({ onClose, onSaved }) => {
                         type="number" 
                         min="0"
                         max="50"
-                        value={cap}
+                        value={cap as number}
                         onChange={e => setHoras(prev => ({ ...prev, [hr]: parseInt(e.target.value) || 0 }))}
                         className="w-16 text-center border border-slate-300 rounded p-1 text-sm font-bold text-slate-700 outline-none focus:border-teal-500"
                       />

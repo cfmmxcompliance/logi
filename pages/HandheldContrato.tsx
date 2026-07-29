@@ -14,6 +14,10 @@ export const HandheldContrato: React.FC = () => {
   const [selloValue, setSelloValue] = useState('');
   const [contratoValue, setContratoValue] = useState('');
   
+  // Date selector as requested: PDA MUST follow the date in the module
+  // No assuming default dates. The user MUST explicitly select it.
+  const [dateStart, setDateStart] = useState<string>('');
+  
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   
@@ -118,8 +122,8 @@ export const HandheldContrato: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!cajaValue || !contratoValue) {
-      alert("Faltan datos requeridos (Caja y Contrato).");
+    if (!dateStart || !cajaValue || !selloValue || !contratoValue) {
+      alert("Faltan datos requeridos. Es obligatorio llenar la Fecha, Número de Caja, Sello Asignado y Número de Contrato antes de guardar.");
       return;
     }
     
@@ -128,29 +132,26 @@ export const HandheldContrato: React.FC = () => {
     setSaveSuccess(false);
 
     try {
+      const mxDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
+
       const scannedVal = cajaValue.trim().toUpperCase();
-      let caja = await asignacionCajaService.getAsignacionByNumeroCaja(scannedVal);
+      let caja = await asignacionCajaService.getAsignacionByNumeroCaja(scannedVal, dateStart);
       if (!caja) {
-        caja = await asignacionCajaService.getAsignacionByNumeroOperacion(scannedVal);
+        caja = await asignacionCajaService.getAsignacionByNumeroOperacion(scannedVal, dateStart);
       }
 
       if (!caja || !caja.id) {
-        setAiError("La caja especificada no fue encontrada. Verifica el número de caja o NO. OPERACIÓN.");
+        setAiError(`La caja o NO. OPERACIÓN especificada no fue encontrada para la fecha ${dateStart}. Por favor revise la fecha o pida a Tráfico que cree la asignación.`);
         setIsSaving(false);
         return;
       }
-
-      // 1. Create ContratoRecord
-      const mxDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
-      const pad = (n: number) => n.toString().padStart(2, '0');
-      const fechaHoy = `${mxDate.getFullYear()}-${pad(mxDate.getMonth() + 1)}-${pad(mxDate.getDate())}`;
 
       await contratoService.addContrato({
         numeroOperacion: caja.numeroOperacion || '',
         numeroCaja: caja.numeroCaja,
         selloAsignado: selloValue.trim(),
         contrato: contratoValue.trim(),
-        fecha: fechaHoy,
+        fecha: dateStart,
         createdAt: new Date().toISOString(),
         usuario: user?.email || 'Handheld Contrato'
       });
@@ -207,9 +208,21 @@ export const HandheldContrato: React.FC = () => {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-5 space-y-6 pb-12">
-        {/* Formularios de Escaneo (Caja y Sello) */}
-        <div className="space-y-4">
+      <div className="flex-1 overflow-y-auto pb-24 relative bg-slate-50/50">
+        
+        {/* Date Selector Header */}
+        <div className="px-4 py-3 bg-white border-b border-slate-200">
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Fecha de Operación</label>
+          <input
+            type="date"
+            value={dateStart}
+            onChange={(e) => setDateStart(e.target.value)}
+            className="w-full p-2.5 border-2 border-slate-200 rounded-xl text-slate-700 font-bold focus:border-indigo-500 outline-none transition-colors"
+          />
+        </div>
+
+        <div className="p-4 space-y-4">
+          
           <div className="bg-slate-900 rounded-2xl p-4 border border-slate-800 focus-within:border-indigo-500/50 transition-colors">
             <div className="flex items-center gap-2 mb-2 text-indigo-400">
               <Box size={16} />

@@ -17,18 +17,21 @@ export const asignacionCajaService = {
   },
 
   async getAsignacionByNumeroOperacion(numeroOperacion: string, fecha?: string): Promise<AsignacionCajaModel | null> {
-    const q = query(
+    let q = query(
       collection(db, COLLECTION_NAME),
       where('numeroOperacion', '==', numeroOperacion)
     );
+    if (fecha) {
+      q = query(
+        collection(db, COLLECTION_NAME),
+        where('numeroOperacion', '==', numeroOperacion),
+        where('fecha', '==', fecha)
+      );
+    }
     const snapshot = await getDocs(q);
     if (snapshot.empty) return null;
     
-    let docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsignacionCajaModel));
-    
-    if (fecha) {
-      docs = docs.filter(d => d.fecha === fecha);
-    }
+    const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsignacionCajaModel));
     
     if (docs.length === 0) return null;
 
@@ -70,11 +73,18 @@ export const asignacionCajaService = {
 
 
 
-  async getAsignacionByNumeroCaja(numeroCaja: string): Promise<AsignacionCajaModel | null> {
-    const q = query(
+  async getAsignacionByNumeroCaja(numeroCaja: string, fecha?: string): Promise<AsignacionCajaModel | null> {
+    let q = query(
       collection(db, COLLECTION_NAME),
       where('numeroCaja', '==', numeroCaja)
     );
+    if (fecha) {
+      q = query(
+        collection(db, COLLECTION_NAME),
+        where('numeroCaja', '==', numeroCaja),
+        where('fecha', '==', fecha)
+      );
+    }
     const snapshot = await getDocs(q);
     if (snapshot.empty) return null;
 
@@ -119,6 +129,10 @@ export const asignacionCajaService = {
   },
 
   async addAsignacion(asignacion: AsignacionCajaModel): Promise<void> {
+    if (asignacion.numeroCaja) asignacion.numeroCaja = asignacion.numeroCaja.trim().toUpperCase();
+    if (asignacion.numeroOperacion) asignacion.numeroOperacion = asignacion.numeroOperacion.trim().toUpperCase();
+    if (asignacion.scac) asignacion.scac = asignacion.scac.trim().toUpperCase();
+    
     // ── DUPLICATE TL GUARD: query fresca (no cache) ──────────────────────────
     if (asignacion.numeroOperacion && asignacion.fecha) {
       const dupQ = query(
@@ -168,6 +182,10 @@ export const asignacionCajaService = {
   },
 
   async updateAsignacion(id: string, asignacion: Partial<AsignacionCajaModel>): Promise<void> {
+    if (asignacion.numeroCaja) asignacion.numeroCaja = asignacion.numeroCaja.trim().toUpperCase();
+    if (asignacion.numeroOperacion) asignacion.numeroOperacion = asignacion.numeroOperacion.trim().toUpperCase();
+    if (asignacion.scac) asignacion.scac = asignacion.scac.trim().toUpperCase();
+
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, {
       ...asignacion,

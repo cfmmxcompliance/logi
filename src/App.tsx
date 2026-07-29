@@ -422,7 +422,7 @@ const AppContent = () => {
                 </ProtectedRoute>
             } />
             <Route path="/proforma-validator" element={<ProtectedRoute><ProformaValidator /></ProtectedRoute>} />
-            <Route path="/bom-analyzer" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EDITOR]}><BOMAnalyzer /></ProtectedRoute>} />
+            <Route path="/bom-analyzer" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EDITOR, UserRole.ANALISTA_CUMPLIMIENTO]}><BOMAnalyzer /></ProtectedRoute>} />
             <Route path="/ai-assistant" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]}><AIAssistant /></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><SmartDocs /></ProtectedRoute>} />
             <Route path="/database" element={<ProtectedRoute><DatabaseView /></ProtectedRoute>} />
@@ -434,8 +434,8 @@ const AppContent = () => {
             <Route path="/bpm" element={<ProtectedRoute><BPMClasificacion /></ProtectedRoute>} />
             <Route path="/daily-van-assignment" element={<ProtectedRoute><DailyVanAssignment /></ProtectedRoute>} />
             <Route path="/wms-control" element={<ProtectedRoute><WMSControl /></ProtectedRoute>} />
-            <Route path="/activos-fijos" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]}><ActivosFijos /></ProtectedRoute>} />
-            <Route path="/r8va" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER]}><ReglaOctava /></ProtectedRoute>} />
+            <Route path="/activos-fijos" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.ANALISTA_CUMPLIMIENTO]}><ActivosFijos /></ProtectedRoute>} />
+            <Route path="/r8va" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.ANALISTA_CUMPLIMIENTO]}><ReglaOctava /></ProtectedRoute>} />
 
             {/* Módulos Demanda y Reserva de Cajas 53' */}
             <Route path="/admin-productos-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.EXPO_ANALIST]}><AdminProductos53 /></ProtectedRoute>} />

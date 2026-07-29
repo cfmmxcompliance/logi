@@ -242,7 +242,24 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {user?.role !== UserRole.AGENT && user?.role !== UserRole.EXPO && user?.role !== UserRole.EXPO_ANALIST && user?.role !== UserRole.EXPO_COORDINATOR && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
+          {user?.role === UserRole.ANALISTA_CUMPLIMIENTO && (
+            <>
+              <SidebarItem to="/commercial-invoices" icon={FileText} label={sidebarOpen ? "CI Extractor" : ""} />
+              <SidebarItem to="/factura" icon={FileText} label={sidebarOpen ? "Factura" : ""} />
+              <SidebarItem to="/cove-extractor" icon={FileSearch} label={sidebarOpen ? "COVE Extractor" : ""} />
+              <SidebarItem to="/saldo-fianza" icon={DollarSign} label={sidebarOpen ? "Saldo Fianza" : ""} />
+              <SidebarItem to="/activos-fijos" icon={Monitor} label={sidebarOpen ? "Activo Fijo" : ""} />
+              <SidebarItem to="/r8va" icon={FileCheck} label={sidebarOpen ? "Control R8va" : ""} />
+              <SidebarItem to="/data-stage" icon={Scale} label={sidebarOpen ? "Data Stage (SAT)" : ""} />
+              <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
+              <SidebarItem to="/bpm" icon={Box} label={sidebarOpen ? "BPM Clasificación" : ""} />
+              <SidebarItem to="/bom-analyzer" icon={Cpu} label={sidebarOpen ? "BOM Analyzer" : ""} />
+              <SidebarItem to="/audit-logs" icon={History} label={sidebarOpen ? "Control Auditoria (Logs)" : ""} />
+              <SidebarItem to="/daily-audit" icon={History} label={sidebarOpen ? "Control Auditoria (Daily)" : ""} />
+            </>
+          )}
+
+          {user?.role !== UserRole.AGENT && user?.role !== UserRole.EXPO && user?.role !== UserRole.EXPO_ANALIST && user?.role !== UserRole.EXPO_COORDINATOR && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && user?.role !== UserRole.ANALISTA_CUMPLIMIENTO && (
             <>
               <SidebarItem to="/historico-expo" icon={History} label={sidebarOpen ? "Histórico Expo" : ""} />
               <SidebarItem to="/operations" icon={Ship} label={sidebarOpen ? "Shipment Plan" : ""} />

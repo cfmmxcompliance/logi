@@ -36,6 +36,7 @@ export enum UserRole {
   EMBARQUES = 'Embarques', // Equipo encargado de control de embarques
   CLIENT = 'Cliente',    // Read-only access: Asignación Diaria de Cajas Secas 53' only
   FINANZAS = 'Finanzas', // Read-only access: Saldo Fianza module only
+  ANALISTA_CUMPLIMIENTO = 'Analista Cumplimiento', // Solo acceso a módulos de cumplimiento
 }
 
 export interface User {

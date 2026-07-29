@@ -217,6 +217,16 @@ const AppContent = () => {
 
     const { isAuthenticated, loading, user } = useAuth();
     const initCalledRef = useRef(false);
+    
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    // Force mobile version of check-in
+    useEffect(() => {
+        if (location.pathname === '/' && window.innerWidth <= 768) {
+            navigate('/check-in', { replace: true });
+        }
+    }, [location.pathname, navigate]);
 
     useEffect(() => {
         if (loading) return;

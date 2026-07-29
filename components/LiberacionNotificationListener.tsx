@@ -60,6 +60,7 @@ export const LiberacionNotificationListener: React.FC = () => {
     const notifIds = notifications.map(n => n.id!);
     setNotifications([]);
     await Promise.all(notifIds.map(id => liberacionNotificationService.markAsRead(id, user.email!)));
+    window.dispatchEvent(new Event('data:refresh'));
   };
 
   return (

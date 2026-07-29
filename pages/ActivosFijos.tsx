@@ -25,7 +25,7 @@ const AF_DRIVE_FOLDER_ID = '1SDMN4BEa6TeyAcgpAABB9bis1OUXmLAa';
 
 export const ActivosFijos: React.FC = () => {
   const { user, hasRole } = useAuth();
-  const isAdmin = hasRole([UserRole.ADMIN]);
+  const hasAccess = hasRole([UserRole.ADMIN, UserRole.ANALISTA_CUMPLIMIENTO]);
 
   const [assets, setAssets] = useState<FixedAsset[]>(storageService.getFixedAssets());
   const [searchTerm, setSearchTerm] = useState('');
@@ -515,7 +515,7 @@ export const ActivosFijos: React.FC = () => {
     </div>
   );
 
-  if (!isAdmin) {
+  if (!hasAccess) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh]">
         <AlertCircle size={48} className="text-red-500 mb-4" />

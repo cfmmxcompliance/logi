@@ -253,8 +253,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <SidebarItem to="/data-stage" icon={Scale} label={sidebarOpen ? "Data Stage (SAT)" : ""} />
               <SidebarItem to="/database" icon={Database} label={sidebarOpen ? "Master Data" : ""} />
               <SidebarItem to="/bpm" icon={Box} label={sidebarOpen ? "BPM Clasificación" : ""} />
-              <SidebarItem to="/bom-analyzer" icon={Cpu} label={sidebarOpen ? "BOM Analyzer" : ""} />
-              <SidebarItem to="/audit-logs" icon={History} label={sidebarOpen ? "Control Auditoria (Logs)" : ""} />
               <SidebarItem to="/daily-audit" icon={History} label={sidebarOpen ? "Control Auditoria (Daily)" : ""} />
             </>
           )}

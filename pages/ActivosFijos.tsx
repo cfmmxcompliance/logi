@@ -23,12 +23,51 @@ const AF_ORDER_KEYS = [
 
 const AF_DRIVE_FOLDER_ID = '1SDMN4BEa6TeyAcgpAABB9bis1OUXmLAa';
 
+const formatDateFix = (dateStr?: string) => {
+  if (!dateStr) return '-';
+  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const [y, m, d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
+  }
+  if (!isNaN(Number(dateStr)) && Number(dateStr) > 10000) {
+    const val = Number(dateStr);
+    const date = new Date(Math.round((val - 25569) * 86400 * 1000));
+    const d = date.getUTCDate().toString().padStart(2, '0');
+    const m = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+    const y = date.getUTCFullYear();
+    return `${d}/${m}/${y}`;
+  }
+  if (dateStr.includes('T')) {
+    const date = new Date(dateStr);
+    const d = date.getUTCDate().toString().padStart(2, '0');
+    const m = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+    const y = date.getUTCFullYear();
+    return `${d}/${m}/${y}`;
+  }
+  return dateStr;
+};
+
+const SortableHeader = ({ label, field, sortConfig, onSort, className = "" }: any) => (
+  <th 
+    className={`px-3 py-3 cursor-pointer hover:bg-slate-200 select-none transition-colors ${className}`}
+    onClick={() => onSort(field)}
+  >
+    <div className="flex items-center gap-1">
+      {label}
+      {sortConfig?.key === field && (
+        <span className="text-indigo-600 font-bold">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+      )}
+    </div>
+  </th>
+);
+
 export const ActivosFijos: React.FC = () => {
   const { user, hasRole } = useAuth();
   const hasAccess = hasRole([UserRole.ADMIN, UserRole.ANALISTA_CUMPLIMIENTO]);
 
   const [assets, setAssets] = useState<FixedAsset[]>(storageService.getFixedAssets());
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<FixedAsset | null>(null);
   const [managingPhotos, setManagingPhotos] = useState<FixedAsset | null>(null);
@@ -84,6 +123,14 @@ export const ActivosFijos: React.FC = () => {
     setSummaryModal({ ...summaryModal, isOpen: false });
   };
 
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
   React.useEffect(() => {
     const refresh = () => setAssets([...storageService.getFixedAssets()]);
     refresh();
@@ -112,8 +159,18 @@ export const ActivosFijos: React.FC = () => {
       });
     }
 
+    if (sortConfig) {
+      result = [...result].sort((a, b) => {
+        const valA = String((a as any)[sortConfig.key] || '').toLowerCase();
+        const valB = String((b as any)[sortConfig.key] || '').toLowerCase();
+        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
     return result;
-  }, [assets, searchTerm, conditions]);
+  }, [assets, searchTerm, conditions, sortConfig]);
 
   const handleOpenModal = (asset?: FixedAsset) => {
     if (asset) {
@@ -293,7 +350,7 @@ export const ActivosFijos: React.FC = () => {
       'CONTAINER NUMBER:': a.containerNumber,
       'IMPORT PEDIMENTO': a.pedimento,
       'PDF PEDIMENTO': a.pedimentoPdfUrl ? 'SI (Adjunto)' : 'NO',
-      'DATE': a.date,
+      'DATE': formatDateFix(a.date),
       'CLAVE PEDIMENTO': a.clavePedimento,
       'SECUENT PEDIMENTO': a.secuenciaPedimento,
       'DESCRIPTION AND PART NUMBER': a.descriptionPartNumber,
@@ -590,47 +647,47 @@ export const ActivosFijos: React.FC = () => {
           <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="bg-slate-50 text-slate-600 uppercase text-[11px] font-bold border-b border-slate-200">
               <tr>
-                <th className="px-3 py-3">BOL NUMBER: MBL</th>
-                <th className="px-3 py-3">CONTAINER NUMBER:</th>
-                <th className="px-3 py-3">IMPORT PEDIMENTO</th>
+                <SortableHeader label="BOL NUMBER: MBL" field="mbl" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="CONTAINER NUMBER:" field="containerNumber" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="IMPORT PEDIMENTO" field="pedimento" sortConfig={sortConfig} onSort={handleSort} />
                 <th className="px-3 py-3 text-center">PDF PEDIMENTO</th>
-                <th className="px-3 py-3">DATE</th>
-                <th className="px-3 py-3">CLAVE PEDIMENTO</th>
-                <th className="px-3 py-3">SECUENT PEDIMENTO</th>
-                <th className="px-3 py-3">DESCRIPTION AND PART NUMBER</th>
-                <th className="px-3 py-3">HTS CODE</th>
-                <th className="px-3 py-3">QTY</th>
-                <th className="px-3 py-3">PART NUMBER OR OTHER ID</th>
-                <th className="px-3 py-3">NUMERO DE PARTE CFMOTO</th>
-                <th className="px-3 py-3">SPANISH</th>
-                <th className="px-3 py-3">ENGLISH</th>
-                <th className="px-3 py-3">CHINESE</th>
-                <th className="px-3 py-3">Nombre del material</th>
-                <th className="px-3 py-3">PHYSICAL BRAND IN PRODUCT</th>
-                <th className="px-3 py-3">PHYSICAL MODEL IN PRODUCT</th>
-                <th className="px-3 py-3">PHYSICAL SERIAL NUMBER IN PRODUCT</th>
+                <SortableHeader label="DATE" field="date" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="CLAVE PEDIMENTO" field="clavePedimento" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="SECUENT PEDIMENTO" field="secuenciaPedimento" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="DESCRIPTION AND PART NUMBER" field="descriptionPartNumber" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="HTS CODE" field="htsCode" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="QTY" field="qty" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="PART NUMBER OR OTHER ID" field="partNumber" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="NUMERO DE PARTE CFMOTO" field="cfmotoPartNumber" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="SPANISH" field="spanishDescription" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="ENGLISH" field="englishDescription" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="CHINESE" field="chineseDescription" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Nombre del material" field="materialName" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="PHYSICAL BRAND IN PRODUCT" field="physicalBrand" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="PHYSICAL MODEL IN PRODUCT" field="physicalModel" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="PHYSICAL SERIAL NUMBER IN PRODUCT" field="physicalSerialNumber" sortConfig={sortConfig} onSort={handleSort} />
                 <th className="px-3 py-3 text-center">FOTOS</th>
-                <th className="px-3 py-3">¿Existe?</th>
-                <th className="px-3 py-3">COUNTRY ORIGIN</th>
-                <th className="px-3 py-3">INVOICE</th>
-                <th className="px-3 py-3">UNIT PRICE USD</th>
-                <th className="px-3 py-3">AMOUNT USD</th>
-                <th className="px-3 py-3">VALIDADO DATA STAGE</th>
-                <th className="px-3 py-3">BRAND AT PEDIMENTO</th>
-                <th className="px-3 py-3">MODEL AT PEDIMENTO</th>
-                <th className="px-3 py-3">SERIAL NUMBER AT PEDIMENTO</th>
-                <th className="px-3 py-3">LOCALIZATION IN THE PLANT</th>
-                <th className="px-3 py-3">TRAZABLE OR NOT TRAZABLE</th>
-                <th className="px-3 py-3">PHYSICAL / DIGITAL PEDIMENTO</th>
-                <th className="px-3 py-3">PHYSICAL IDENTIFICATION CUSTOMS INFO</th>
-                <th className="px-3 py-3">RESPONSIBLE</th>
-                <th className="px-3 py-3">PART OF THE PROCESS</th>
-                <th className="px-3 py-3">WAREHOUSE</th>
-                <th className="px-3 py-3">AREA</th>
-                <th className="px-3 py-3">DOCUMENT</th>
+                <SortableHeader label="¿Existe?" field="exists" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="COUNTRY ORIGIN" field="countryOrigin" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="INVOICE" field="invoice" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="UNIT PRICE USD" field="unitPriceUsd" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="AMOUNT USD" field="amountUsd" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="VALIDADO DATA STAGE" field="validadoDataStage" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="BRAND AT PEDIMENTO" field="brandPedimento" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="MODEL AT PEDIMENTO" field="modelPedimento" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="SERIAL NUMBER AT PEDIMENTO" field="serialNumberPedimento" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="LOCALIZATION IN THE PLANT" field="localizationPlant" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="TRAZABLE OR NOT TRAZABLE" field="trazable" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="PHYSICAL / DIGITAL PEDIMENTO" field="physicalDigitalPedimento" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="PHYSICAL IDENTIFICATION CUSTOMS INFO" field="physicalIdCustomsInfo" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="RESPONSIBLE" field="responsible" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="PART OF THE PROCESS" field="partOfProcess" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="WAREHOUSE" field="warehouse" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="AREA" field="area" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="DOCUMENT" field="document" sortConfig={sortConfig} onSort={handleSort} />
                 <th className="px-3 py-3 text-center">PDF FACTURA</th>
-                <th className="px-3 py-3">ETIQUETA</th>
-                <th className="px-3 py-3">COMMENTS</th>
+                <SortableHeader label="ETIQUETA" field="etiqueta" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="COMMENTS" field="comments" sortConfig={sortConfig} onSort={handleSort} />
                 <th className="px-3 py-3 text-right sticky right-0 bg-slate-50 border-l border-slate-200 z-10">Acciones</th>
               </tr>
             </thead>
@@ -671,7 +728,7 @@ export const ActivosFijos: React.FC = () => {
                       </div>
                     </td>
 
-                    <td className="px-3 py-2 text-slate-600">{a.date ? new Date(a.date).toLocaleDateString() : '-'}</td>
+                    <td className="px-3 py-2 text-slate-600">{formatDateFix(a.date)}</td>
                     <td className="px-3 py-2 text-slate-600">{a.clavePedimento || '-'}</td>
                     <td className="px-3 py-2 text-slate-600">{a.secuenciaPedimento || '-'}</td>
                     <td className="px-3 py-2 text-slate-600 max-w-[200px] truncate" title={a.descriptionPartNumber}>{a.descriptionPartNumber || '-'}</td>

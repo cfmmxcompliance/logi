@@ -377,7 +377,7 @@ export const HandheldLiberacion = () => {
 
     try {
       // 1. Valida sello en Firebase
-      const assignedSelloRecord = sellosDelDia.find(s => s.numeroCaja === selectedCaja.numeroCaja);
+      const assignedSelloRecord = sellosDelDia.find(s => s.asignacionCajaId === selectedCaja.id) || sellosDelDia.find(s => s.numeroCaja === selectedCaja.numeroCaja);
       if (!assignedSelloRecord) {
         throw new Error('⛔ ALERTA: Esta caja NO TIENE NINGÚN SELLO REGISTRADO para el día de hoy. No se puede liberar.');
       }
@@ -576,7 +576,7 @@ export const HandheldLiberacion = () => {
                 const lib = getLiberacionForCaja(caja.id!);
                 const yaLiberada = !!lib;
                 // Also check if it even has a Sello
-                const tieneSello = sellosDelDia.some(s => s.numeroCaja === caja.numeroCaja);
+                const tieneSello = sellosDelDia.some(s => s.asignacionCajaId === caja.id) || sellosDelDia.some(s => s.numeroCaja === caja.numeroCaja);
                 
                 return (
                     <div 

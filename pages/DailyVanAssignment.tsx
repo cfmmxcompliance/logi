@@ -4,6 +4,7 @@ import { liberacionService } from '../services/liberacionService';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
 import { LiberacionRecord, LiberacionDockRecord } from '../types';
 import { Truck, CheckCircle, Clock, Calendar, RefreshCcw, Search, XCircle, Package2, Download } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 import { liberacionDockService } from '../services/liberacionDockService';
 
 export const DailyVanAssignment: React.FC = () => {
@@ -11,8 +12,9 @@ export const DailyVanAssignment: React.FC = () => {
   const [liberaciones, setLiberaciones] = useState<LiberacionRecord[]>([]);
   const [liberacionesDock, setLiberacionesDock] = useState<LiberacionDockRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t, language, setLanguage } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
-  const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'CERRADO' | 'POR_CERRAR' | 'CANCELADO'>('ALL');
+  const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'PENDIENTES' | 'EN_PROCESO' | 'CERRADO' | 'CANCELADO'>('ALL');
 
   const getLocalToday = () => {
     const today = new Date();
@@ -68,7 +70,10 @@ export const DailyVanAssignment: React.FC = () => {
   const filterCounts = useMemo(() => {
     const isCanceledStatus = (v: string) => ['RECHAZADO', 'DROP', 'NO SHOW', 'CANCELED', 'CANCELADO'].includes(v);
     
-    let porCerrar = 0, cerrado = 0, cancelado = 0, sinLayout = 0, sinCcp = 0, vehPorCerrar = 0, vehCerrado = 0;
+    let pendientes = 0, enProceso = 0, cerrado = 0, cancelado = 0, vehCerrado = 0;
+    let pendSinLayout = 0, pendSinCcp = 0, pendVeh = 0;
+    let procSinLayout = 0, procSinCcp = 0, procVeh = 0;
+
     filteredAssignments.forEach(a => {
       const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
       const isCanceled = isCanceledStatus(dockVal);
@@ -80,17 +85,24 @@ export const DailyVanAssignment: React.FC = () => {
       } else if (hasLib) {
         cerrado++;
         if (!isNaN(v)) vehCerrado += v;
+      } else if (a.arribo) {
+        enProceso++;
+        if (!(a as any).layoutUrl) procSinLayout++;
+        if (!(a as any).ccpUrl)    procSinCcp++;
+        if (!isNaN(v)) procVeh += v;
       } else {
-        porCerrar++;
-        if (!(a as any).layoutUrl) sinLayout++;
-        if (!(a as any).ccpUrl)    sinCcp++;
-        if (!isNaN(v)) vehPorCerrar += v;
+        pendientes++;
+        if (!(a as any).layoutUrl) pendSinLayout++;
+        if (!(a as any).ccpUrl)    pendSinCcp++;
+        if (!isNaN(v)) pendVeh += v;
       }
     });
     return {
-      ALL: filteredAssignments.length, CERRADO: cerrado, POR_CERRAR: porCerrar, CANCELADO: cancelado,
-      SIN_LAYOUT: sinLayout, SIN_CCP: sinCcp,
-      VEHICULOS_POR_CERRAR: vehPorCerrar, VEHICULOS_CERRADO: vehCerrado,
+      ALL: filteredAssignments.length - cancelado, 
+      PENDIENTES: pendientes, EN_PROCESO: enProceso, CERRADO: cerrado, CANCELADO: cancelado,
+      PEND_SIN_LAYOUT: pendSinLayout, PEND_SIN_CCP: pendSinCcp, PEND_VEH: pendVeh,
+      PROC_SIN_LAYOUT: procSinLayout, PROC_SIN_CCP: procSinCcp, PROC_VEH: procVeh,
+      VEHICULOS_CERRADO: vehCerrado,
     };
   }, [filteredAssignments, liberaciones]);
 
@@ -98,16 +110,20 @@ export const DailyVanAssignment: React.FC = () => {
   const displayedAssignments = useMemo(() => {
     const isCanceledStatus = (v: string) => ['RECHAZADO', 'DROP', 'NO SHOW', 'CANCELED', 'CANCELADO'].includes(v);
     
-    if (cargadoFilter === 'ALL') return filteredAssignments;
+    if (cargadoFilter === 'ALL') {
+      return filteredAssignments.filter(a => {
+        const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
+        return !isCanceledStatus(dockVal);
+      });
+    }
+
     return filteredAssignments.filter(a => {
       const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
-      const isCanceled = isCanceledStatus(dockVal);
-      const hasLib = liberaciones.some(l => l.asignacionCajaId === a.id);
-      
-      if (cargadoFilter === 'CANCELADO') return isCanceled;
-      if (cargadoFilter === 'CERRADO') return !isCanceled && hasLib;
-      // POR_CERRAR
-      return !isCanceled && !hasLib;
+      if (cargadoFilter === 'CANCELADO') return isCanceledStatus(dockVal);
+      if (cargadoFilter === 'CERRADO') return !isCanceledStatus(dockVal) && liberaciones.some(l => l.asignacionCajaId === a.id);
+      if (cargadoFilter === 'EN_PROCESO') return !isCanceledStatus(dockVal) && !liberaciones.some(l => l.asignacionCajaId === a.id) && !!a.arribo;
+      if (cargadoFilter === 'PENDIENTES') return !isCanceledStatus(dockVal) && !liberaciones.some(l => l.asignacionCajaId === a.id) && !a.arribo;
+      return true;
     });
   }, [filteredAssignments, cargadoFilter, liberaciones]);
 
@@ -129,16 +145,12 @@ export const DailyVanAssignment: React.FC = () => {
 
   const exportCSV = () => {
     const headers = [
-      'HORA', 'ARRIBO', 'OPERACIÓN', 'CAJA (53-FT)', 'DRIVER', 'PLACAS TRACTO',
-      'PLACAS CAJA', 'SCAC', 'SUB-LÍNEA', 'MODELO', 'CREADO POR', 'CREADO AT',
-      'LAYOUT SUBIDO POR', 'LAYOUT AT', 'CCP SUBIDO POR', 'CCP AT',
-      'LIBERACIÓN DOCK', 'LIBERADO POR', 'STATUS',
-      'TIEMPO DE RETRASO', 'TIEMPO EN PLANTA', 'LY&CCP', 'T.CIERRE'
+      t('truck.col.hora'), t('truck.col.arribo'), t('truck.col.operacion'), t('truck.col.caja'), t('truck.col.driver'), t('truck.col.placas_tracto'), t('truck.col.placas_caja'), t('truck.col.scac'), t('truck.col.sublinea'), t('truck.col.modelo'), t('truck.col.creado_por'), t('truck.col.creado_at'), t('truck.col.layout_por'), t('truck.col.layout_at'), t('truck.col.ccp_por'), t('truck.col.ccp_at'), t('truck.col.lib_dock'), t('truck.col.lib_por'), t('truck.col.status'), t('truck.col.retraso'), t('truck.col.en_planta'), t('truck.col.ly_ccp'), t('truck.col.t_cierre')
     ];
     
     const formatMins = (mins: number | null) => {
       if (mins === null || isNaN(mins)) return '';
-      if (mins < 0) return `Temprano (${Math.abs(mins)}m)`;
+      if (mins < 0) return `${t('truck.temprano')} (${Math.abs(mins)}m)`;
       const h = Math.floor(mins / 60);
       const m = mins % 60;
       return h > 0 ? `${h}h ${m}m` : `${m}m`;
@@ -164,7 +176,7 @@ export const DailyVanAssignment: React.FC = () => {
     const rows = filteredAssignments.map(a => {
       const lib = getLibForCaja(a.id!);
       const libDock = getLibDockForCaja(a.id!);
-      const status = lib ? 'LIBERADO' : 'PENDIENTE';
+      const status = lib ? t('truck.liberado') : t('truck.pendiente');
       const apptDate = parseTime(a.fecha, a.horaAsignacion || '');
       const arrDate  = parseTime(a.fecha, a.arribo || '');
 
@@ -199,7 +211,7 @@ export const DailyVanAssignment: React.FC = () => {
         libDock?.fechaHoraRegistro || libDock?.fechaLiberacion || '',
         lib?.creadoPor || lib?.liberadoPor || '',
         status,
-        enPlanta !== null ? formatMins(enPlanta) + (hasLib ? '' : ' (en patio)') : '',
+        enPlanta !== null ? formatMins(enPlanta) + (hasLib ? '' : ` ${t('truck.en_patio')}`) : '',
         formatMins(retraso),
         // LY&CCP
         (() => {
@@ -237,7 +249,7 @@ export const DailyVanAssignment: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `TRUCK_TRACKING_${dateRange.start}_al_${dateRange.end}.csv`;
+    a.download = `${t('truck.title')}_${dateRange.start}_al_${dateRange.end}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -251,13 +263,31 @@ export const DailyVanAssignment: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
               <Truck className="text-blue-400" size={32} />
-              TRUCK_TRACKING
+              {t('truck.title')}
             </h1>
-            <p className="text-slate-400 mt-1 text-sm">Seguimiento de unidades y estado de liberación operativa</p>
+            <p className="text-slate-400 mt-1 text-sm">{t('truck.subtitle')}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Language Selector */}
+            <div className="flex items-center rounded-lg border border-slate-700 overflow-hidden text-xs font-bold shadow-sm bg-slate-800 mr-2">
+              {(['es','en','zh'] as const).map((lang, i) => (
+                <button
+                  key={lang}
+                  onClick={() => language !== lang && setLanguage(lang)}
+                  className={`px-3 py-2 transition-colors ${
+                    language === lang
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-400 hover:bg-slate-700 hover:text-white'
+                  } ${i > 0 ? 'border-l border-slate-700' : ''}`}
+                  title={lang === 'es' ? 'Español' : lang === 'en' ? 'English' : '中文'}
+                >
+                  {lang === 'zh' ? '中' : lang.toUpperCase()}
+                </button>
+              ))}
+            </div>
+
             <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5">
-              <span className="text-slate-400 text-xs font-medium whitespace-nowrap">Inicio</span>
+              <span className="text-slate-400 text-xs font-medium whitespace-nowrap">{t('truck.inicio')}</span>
               <input
                 type="date"
                 value={dateRange.start}
@@ -267,7 +297,7 @@ export const DailyVanAssignment: React.FC = () => {
             </div>
             <span className="text-slate-500 text-sm">—</span>
             <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5">
-              <span className="text-slate-400 text-xs font-medium whitespace-nowrap">Fin</span>
+              <span className="text-slate-400 text-xs font-medium whitespace-nowrap">{t('truck.fin')}</span>
               <input
                 type="date"
                 value={dateRange.end}
@@ -279,14 +309,14 @@ export const DailyVanAssignment: React.FC = () => {
             <button
               onClick={() => fetchData(dateRange.start, dateRange.end)}
               className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg border border-slate-700 transition-colors"
-              title="Recargar"
+              title={t('truck.recargar')}
             >
               <RefreshCcw size={18} />
             </button>
             <button
               onClick={exportCSV}
               className="flex items-center gap-2 px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg border border-emerald-600 transition-colors text-sm font-medium"
-              title="Descargar CSV"
+              title={t('truck.descargar_csv')}
             >
               <Download size={16} />
               CSV
@@ -297,10 +327,10 @@ export const DailyVanAssignment: React.FC = () => {
         {/* KPI Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Asignadas', value: assignments.length, icon: Package2, color: 'blue' },
-            { label: 'Liberadas', value: released.length, icon: CheckCircle, color: 'emerald' },
-            { label: 'Pendientes', value: pending.length, icon: Clock, color: 'amber' },
-            { label: '% Completado', value: assignments.length ? `${Math.round((released.length / assignments.length) * 100)}%` : '—', icon: Calendar, color: 'purple' },
+            { label: t('truck.total_asignadas'), value: assignments.length, icon: Package2, color: 'blue' },
+            { label: t('truck.liberadas'), value: released.length, icon: CheckCircle, color: 'emerald' },
+            { label: t('truck.pendientes'), value: pending.length, icon: Clock, color: 'amber' },
+            { label: t('truck.completado'), value: assignments.length ? `${Math.round((released.length / assignments.length) * 100)}%` : '—', icon: Calendar, color: 'purple' },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className={`bg-slate-800/60 border border-${color}-500/20 rounded-xl p-4 flex items-center gap-4`}>
               <div className={`w-10 h-10 rounded-lg bg-${color}-500/10 flex items-center justify-center`}>
@@ -321,7 +351,7 @@ export const DailyVanAssignment: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Buscar por caja, chofer, placas, operación..."
+            placeholder={t('truck.buscar')}
             className="w-full bg-transparent border-none focus:outline-none text-white placeholder:text-slate-500 py-1.5 text-sm"
           />
           {searchQuery && (
@@ -340,24 +370,43 @@ export const DailyVanAssignment: React.FC = () => {
                 cargadoFilter === 'ALL' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700'
               }`}
             >
-              Todos ({filterCounts.ALL})
+              {t('filter.todos')} ({filterCounts.ALL})
             </button>
             <button
-              onClick={() => setCargadoFilter('POR_CERRAR')}
+              onClick={() => setCargadoFilter('PENDIENTES')}
               className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex flex-col items-center leading-tight ${
-                cargadoFilter === 'POR_CERRAR' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700'
+                cargadoFilter === 'PENDIENTES' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700'
               }`}
             >
-              <span>POR CERRAR ({filterCounts.POR_CERRAR})</span>
-              {(filterCounts.SIN_LAYOUT > 0 || filterCounts.SIN_CCP > 0 || filterCounts.VEHICULOS_POR_CERRAR > 0) && (
+              <span>{t('filter.pendientes')} ({filterCounts.PENDIENTES})</span>
+              {(filterCounts.PEND_SIN_LAYOUT > 0 || filterCounts.PEND_SIN_CCP > 0 || filterCounts.PEND_VEH > 0) && (
                 <span className={`flex gap-1.5 mt-0.5 text-[10px] font-semibold ${
-                  cargadoFilter === 'POR_CERRAR' ? 'text-teal-100' : 'text-slate-500'
+                  cargadoFilter === 'PENDIENTES' ? 'text-teal-100' : 'text-slate-500'
                 }`}>
-                  {filterCounts.SIN_LAYOUT > 0 && <span>sin layout: {filterCounts.SIN_LAYOUT}</span>}
-                  {filterCounts.SIN_LAYOUT > 0 && filterCounts.SIN_CCP > 0 && <span>·</span>}
-                  {filterCounts.SIN_CCP > 0 && <span>sin CCP: {filterCounts.SIN_CCP}</span>}
-                  {(filterCounts.SIN_LAYOUT > 0 || filterCounts.SIN_CCP > 0) && filterCounts.VEHICULOS_POR_CERRAR > 0 && <span>·</span>}
-                  {filterCounts.VEHICULOS_POR_CERRAR > 0 && <span>🚗 {filterCounts.VEHICULOS_POR_CERRAR} veh.</span>}
+                  {filterCounts.PEND_SIN_LAYOUT > 0 && <span>{t('filter.sin_layout')}: {filterCounts.PEND_SIN_LAYOUT}</span>}
+                  {filterCounts.PEND_SIN_LAYOUT > 0 && filterCounts.PEND_SIN_CCP > 0 && <span>·</span>}
+                  {filterCounts.PEND_SIN_CCP > 0 && <span>{t('filter.sin_ccp')}: {filterCounts.PEND_SIN_CCP}</span>}
+                  {(filterCounts.PEND_SIN_LAYOUT > 0 || filterCounts.PEND_SIN_CCP > 0) && filterCounts.PEND_VEH > 0 && <span>·</span>}
+                  {filterCounts.PEND_VEH > 0 && <span>🚗 {filterCounts.PEND_VEH} {t('filter.veh')}</span>}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setCargadoFilter('EN_PROCESO')}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex flex-col items-center leading-tight ${
+                cargadoFilter === 'EN_PROCESO' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700'
+              }`}
+            >
+              <span>{t('filter.en_proceso')} ({filterCounts.EN_PROCESO})</span>
+              {(filterCounts.PROC_SIN_LAYOUT > 0 || filterCounts.PROC_SIN_CCP > 0 || filterCounts.PROC_VEH > 0) && (
+                <span className={`flex gap-1.5 mt-0.5 text-[10px] font-semibold ${
+                  cargadoFilter === 'EN_PROCESO' ? 'text-teal-100' : 'text-slate-500'
+                }`}>
+                  {filterCounts.PROC_SIN_LAYOUT > 0 && <span>{t('filter.sin_layout')}: {filterCounts.PROC_SIN_LAYOUT}</span>}
+                  {filterCounts.PROC_SIN_LAYOUT > 0 && filterCounts.PROC_SIN_CCP > 0 && <span>·</span>}
+                  {filterCounts.PROC_SIN_CCP > 0 && <span>{t('filter.sin_ccp')}: {filterCounts.PROC_SIN_CCP}</span>}
+                  {(filterCounts.PROC_SIN_LAYOUT > 0 || filterCounts.PROC_SIN_CCP > 0) && filterCounts.PROC_VEH > 0 && <span>·</span>}
+                  {filterCounts.PROC_VEH > 0 && <span>🚗 {filterCounts.PROC_VEH} {t('filter.veh')}</span>}
                 </span>
               )}
             </button>
@@ -367,12 +416,12 @@ export const DailyVanAssignment: React.FC = () => {
                 cargadoFilter === 'CERRADO' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700'
               }`}
             >
-              <span>CERRADO ({filterCounts.CERRADO})</span>
+              <span>{t('filter.cerrado')} ({filterCounts.CERRADO})</span>
               {filterCounts.VEHICULOS_CERRADO > 0 && (
                 <span className={`mt-0.5 text-[10px] font-semibold ${
                   cargadoFilter === 'CERRADO' ? 'text-teal-100' : 'text-slate-500'
                 }`}>
-                  🚗 {filterCounts.VEHICULOS_CERRADO} veh.
+                  🚗 {filterCounts.VEHICULOS_CERRADO} {t('filter.veh')}
                 </span>
               )}
             </button>
@@ -382,7 +431,7 @@ export const DailyVanAssignment: React.FC = () => {
                 cargadoFilter === 'CANCELADO' ? 'bg-red-600 text-white shadow' : 'text-red-500 hover:bg-red-50'
               }`}
             >
-              <span>CANCELADO ({filterCounts.CANCELADO})</span>
+              <span>{t('filter.cancelado')} ({filterCounts.CANCELADO})</span>
             </button>
           </div>
         </div>
@@ -412,15 +461,15 @@ export const DailyVanAssignment: React.FC = () => {
           return (
             <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Estado de Docks</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('truck.estado_docks')}</span>
                 <div className="flex gap-3 text-xs">
                   <span className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-                    <span className="text-emerald-400 font-semibold">{libres} libres</span>
+                    <span className="text-emerald-400 font-semibold">{libres} {t('truck.libres').toLowerCase()}</span>
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
-                    <span className="text-red-400 font-semibold">{ocupados} ocupados</span>
+                    <span className="text-red-400 font-semibold">{ocupados} {t('truck.ocupados').toLowerCase()}</span>
                   </span>
                 </div>
               </div>
@@ -441,7 +490,7 @@ export const DailyVanAssignment: React.FC = () => {
                       className="flex-1 bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-2 flex flex-col items-center gap-0.5 cursor-default">
                       <span className="text-[10px] font-bold text-emerald-600 uppercase leading-none">{key}</span>
                       <span className="w-2 h-2 rounded-full bg-emerald-500/50" />
-                      <span className="text-[9px] text-emerald-700/60 leading-none">libre</span>
+                      <span className="text-[9px] text-emerald-700/60 leading-none">{t('truck.libre')}</span>
                     </div>
                   );
                 })}
@@ -468,23 +517,23 @@ export const DailyVanAssignment: React.FC = () => {
                 <thead className="bg-slate-900 text-xs uppercase text-slate-400 font-semibold sticky top-0 z-50 shadow-sm border-b border-slate-700/50">
                   <tr>
                     <th className="px-4 py-3">#</th>
-                    <th className="px-4 py-3">Hora</th>
-                    <th className="px-4 py-3">Arribo</th>
-                    <th className="px-4 py-3 text-red-400">Retraso</th>
-                    <th className="px-4 py-3 text-emerald-400">T. Planta</th>
-                    <th className="px-4 py-3 text-cyan-400 whitespace-nowrap">LY&amp;CCP</th>
-                    <th className="px-4 py-3 text-violet-300 whitespace-nowrap">T.CIERRE</th>
-                    <th className="px-4 py-3">Operación</th>
-                    <th className="px-4 py-3">Caja (53-ft Dry Van)</th>
-                    <th className="px-4 py-3">Driver</th>
-                    <th className="px-4 py-3">Placas Tracto</th>
-                    <th className="px-4 py-3">Placas Caja</th>
-                    <th className="px-4 py-3 text-violet-400 whitespace-nowrap">Creado</th>
-                    <th className="px-4 py-3 text-amber-300 whitespace-nowrap">Arribo At</th>
-                    <th className="px-4 py-3 text-indigo-400 text-center whitespace-nowrap">Layout</th>
+                    <th className="px-4 py-3">{t('truck.col.hora')}</th>
+                    <th className="px-4 py-3">{t('truck.col.arribo')}</th>
+                    <th className="px-4 py-3 text-red-400">{t('truck.col.retraso')}</th>
+                    <th className="px-4 py-3 text-emerald-400">{t('truck.col.en_planta')}</th>
+                    <th className="px-4 py-3 text-cyan-400 whitespace-nowrap">{t('truck.col.ly_ccp')}</th>
+                    <th className="px-4 py-3 text-violet-300 whitespace-nowrap">{t('truck.col.t_cierre')}</th>
+                    <th className="px-4 py-3">{t('truck.col.operacion')}</th>
+                    <th className="px-4 py-3">{t('truck.col.caja')}</th>
+                    <th className="px-4 py-3">{t('truck.col.driver')}</th>
+                    <th className="px-4 py-3">{t('truck.col.placas_tracto')}</th>
+                    <th className="px-4 py-3">{t('truck.col.placas_caja')}</th>
+                    <th className="px-4 py-3 text-violet-400 whitespace-nowrap">{t('truck.col.creado_at')}</th>
+                    <th className="px-4 py-3 text-amber-300 whitespace-nowrap">{t('truck.col.arribo')} AT</th>
+                    <th className="px-4 py-3 text-indigo-400 text-center whitespace-nowrap">LAYOUT</th>
                     <th className="px-4 py-3 text-sky-400 text-center whitespace-nowrap">CCP</th>
-                    <th className="px-4 py-3 text-sky-300 whitespace-nowrap">Liberación Dock</th>
-                    <th className="px-4 py-3">Liberado por</th>
+                    <th className="px-4 py-3 text-sky-300 whitespace-nowrap">{t('truck.col.lib_dock')}</th>
+                    <th className="px-4 py-3">{t('truck.col.lib_por')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700/50">
@@ -761,8 +810,8 @@ export const DailyVanAssignment: React.FC = () => {
         {assignments.length > 0 && (
           <div className="flex-shrink-0 bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
             <div className="flex justify-between text-sm mb-2">
-              <span className="text-slate-400">Progreso de Liberación</span>
-              <span className="text-white font-semibold">{released.length} / {assignments.length} cajas</span>
+              <span className="text-slate-400">{t('truck.progreso_lib')}</span>
+              <span className="text-white font-semibold">{released.length} / {assignments.length} {t('truck.cajas')}</span>
             </div>
             <div className="w-full bg-slate-700 rounded-full h-3">
               <div
@@ -771,8 +820,8 @@ export const DailyVanAssignment: React.FC = () => {
               />
             </div>
             <div className="flex justify-between text-xs mt-1 text-slate-500">
-              <span>{pending.length} pendientes</span>
-              <span>{Math.round((released.length / assignments.length) * 100)}% completado</span>
+              <span>{pending.length} {t('truck.pendientes_text')}</span>
+              <span>{Math.round((released.length / assignments.length) * 100)}{t('truck.completado')}</span>
             </div>
           </div>
         )}

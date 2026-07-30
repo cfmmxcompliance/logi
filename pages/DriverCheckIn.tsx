@@ -89,8 +89,8 @@ export const DriverCheckIn = () => {
       const checkInAt = new Date().toISOString();
       const checkInStatus = 'PUNTUAL / OK';
 
-      const matchTl = transportLines.find(t => t.transportLineId === asignacion.transportLineId || t.carrierCodigo === asignacion.carrierCodigo || t.carrierCodigo === asignacion.scac);
-      const lineaName = matchTl ? matchTl.razonSocial : (asignacion.transportista || '');
+      const matchTl = transportLines.find(t => t.transportLineId === asignacion.transportLineId) || transportLines.find(t => t.carrierCodigo === asignacion.carrierCodigo) || transportLines.find(t => t.carrierCodigo === asignacion.scac);
+      const lineaName = matchTl ? (matchTl.nombreSubLinea || matchTl.TransportLine) : (asignacion.transportista || '');
       const scacName = asignacion.scac || asignacion.carrierCodigo || (matchTl ? matchTl.carrierCodigo : '');
 
       await checkInService.createCheckIn({
@@ -182,7 +182,7 @@ export const DriverCheckIn = () => {
           fechaAgendada: partialMatch.fecha || '',
           horaAgendada: partialMatch.horaAsignacion || '',
           scac: partialMatch.scac || partialMatch.carrierCodigo || tl?.carrierCodigo || '',
-          transportista: tl?.razonSocial || partialMatch.transportista || '',
+          transportista: tl?.nombreSubLinea || tl?.TransportLine || partialMatch.transportista || '',
           processed: false
         });
         
@@ -212,7 +212,7 @@ export const DriverCheckIn = () => {
           numeroTracto: numeroTracto.trim().toUpperCase() || '',
           nombreDriver: nombreDriver.trim().toUpperCase() || '',
           scac: subLine || '',
-          transportista: tl?.razonSocial || '',
+          transportista: tl?.nombreSubLinea || tl?.TransportLine || '',
           processed: false
         });
         alert('Sin cita. Solicita cita a linea transportista');
@@ -297,8 +297,8 @@ export const DriverCheckIn = () => {
               
               <div className="space-y-4 text-left">
                 {(() => {
-                  const matchTl = transportLines.find(t => t.transportLineId === asignacion.transportLineId || t.carrierCodigo === asignacion.carrierCodigo || t.carrierCodigo === asignacion.scac);
-                  const lineaName = matchTl ? matchTl.razonSocial : (asignacion.transportista || asignacion.scac || 'N/A');
+                  const matchTl = transportLines.find(t => t.transportLineId === asignacion.transportLineId) || transportLines.find(t => t.carrierCodigo === asignacion.carrierCodigo) || transportLines.find(t => t.carrierCodigo === asignacion.scac);
+                  const lineaName = matchTl ? (matchTl.nombreSubLinea || matchTl.TransportLine) : (asignacion.transportista || asignacion.scac || 'N/A');
                   const scacName = asignacion.scac || asignacion.carrierCodigo || (matchTl ? matchTl.carrierCodigo : 'N/A');
                   
                   return (
@@ -467,12 +467,12 @@ export const DriverCheckIn = () => {
                         key={tl.transportLineId}
                         onClick={() => {
                           setSelectedTransportId(tl.transportLineId);
-                          setTlSearchTerm(`${tl.razonSocial} ${tl.nombreSubLinea ? `- ${tl.nombreSubLinea} ` : ''}(${tl.carrierCodigo})`);
+                          setTlSearchTerm(tl.nombreSubLinea || tl.TransportLine || tl.razonSocial);
                           setShowTlDropdown(false);
                         }}
                         className="px-4 py-3 cursor-pointer hover:bg-slate-700 text-slate-200 border-b border-slate-700/50 last:border-0"
                       >
-                        {tl.razonSocial} {tl.nombreSubLinea && <span className="text-indigo-300 ml-1">- {tl.nombreSubLinea}</span>} <span className="text-slate-400 text-sm ml-1">({tl.carrierCodigo})</span>
+                        {tl.nombreSubLinea || tl.TransportLine || tl.razonSocial} <span className="text-slate-400 text-sm ml-1">({tl.carrierCodigo})</span>
                       </li>
                     ))}
                     {transportLines.filter(tl => 

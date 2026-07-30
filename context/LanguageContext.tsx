@@ -11,6 +11,55 @@ interface Translations {
 }
 
 export const translations: Translations = {
+    // Truck Tracking
+    "truck.title": { es: "TRUCK_TRACKING", en: "TRUCK_TRACKING", zh: "卡车跟踪" },
+    "truck.subtitle": { es: "Seguimiento de unidades y estado de liberación operativa", en: "Unit tracking and operational release status", zh: "单位跟踪和操作放行状态" },
+    "truck.inicio": { es: "Inicio", en: "Start", zh: "开始" },
+    "truck.fin": { es: "Fin", en: "End", zh: "结束" },
+    "truck.recargar": { es: "Recargar", en: "Reload", zh: "重新加载" },
+    "truck.descargar_csv": { es: "Descargar CSV", en: "Download CSV", zh: "下载 CSV" },
+    "truck.total_asignadas": { es: "Total Asignadas", en: "Total Assigned", zh: "总分配" },
+    "truck.liberadas": { es: "Liberadas", en: "Released", zh: "已放行" },
+    "truck.pendientes": { es: "Pendientes", en: "Pending", zh: "待处理" },
+    "truck.pendientes_text": { es: "pendientes", en: "pending", zh: "待处理" },
+    "truck.completado": { es: "% completado", en: "% completed", zh: "完成百分比" },
+    "truck.progreso_lib": { es: "Progreso de Liberación", en: "Release Progress", zh: "放行进度" },
+    "truck.cajas": { es: "cajas", en: "vans", zh: "货车" },
+    "truck.buscar": { es: "Buscar por caja, chofer, placas, operación...", en: "Search by van, driver, plates, operation...", zh: "按货车、司机、车牌、操作搜索..." },
+    "truck.estado_docks": { es: "Estado de Docks", en: "Dock Status", zh: "月台状态" },
+    "truck.ocupados": { es: "Ocupados", en: "Occupied", zh: "占用" },
+    "truck.libres": { es: "Libres", en: "Free", zh: "空闲" },
+    "truck.libre": { es: "libre", en: "free", zh: "空闲" },
+    "truck.vehiculos": { es: "vehículos", en: "vehicles", zh: "车辆" },
+    "filter.en_proceso": { es: "EN PROCESO", en: "IN PROCESS", zh: "进行中" },
+    "filter.pendientes": { es: "PENDIENTES", en: "PENDING", zh: "待处理" },
+    "truck.en_patio": { es: "(en patio)", en: "(in yard)", zh: "(在堆场)" },
+    "truck.temprano": { es: "Temprano", en: "Early", zh: "早到" },
+    "truck.col.hora": { es: "HORA", en: "TIME", zh: "时间" },
+    "truck.col.arribo": { es: "ARRIBO", en: "ARRIVAL", zh: "到达" },
+    "truck.col.operacion": { es: "OPERACIÓN", en: "OPERATION", zh: "操作" },
+    "truck.col.caja": { es: "CAJA (53-FT)", en: "DRY VAN (53-FT)", zh: "干货车 (53-FT)" },
+    "truck.col.driver": { es: "DRIVER", en: "DRIVER", zh: "司机" },
+    "truck.col.placas_tracto": { es: "PLACAS TRACTO", en: "TRUCK PLATES", zh: "牵引车牌" },
+    "truck.col.placas_caja": { es: "PLACAS CAJA", en: "VAN PLATES", zh: "货车车牌" },
+    "truck.col.scac": { es: "SCAC", en: "SCAC", zh: "SCAC" },
+    "truck.col.sublinea": { es: "SUB-LÍNEA", en: "SUB-LINE", zh: "子线路" },
+    "truck.col.modelo": { es: "MODELO", en: "MODEL", zh: "型号" },
+    "truck.col.creado_por": { es: "CREADO POR", en: "CREATED BY", zh: "创建人" },
+    "truck.col.creado_at": { es: "CREADO AT", en: "CREATED AT", zh: "创建时间" },
+    "truck.col.layout_por": { es: "LAYOUT SUBIDO POR", en: "LAYOUT UPLOADED BY", zh: "布局上传人" },
+    "truck.col.layout_at": { es: "LAYOUT AT", en: "LAYOUT AT", zh: "布局时间" },
+    "truck.col.ccp_por": { es: "CCP SUBIDO POR", en: "CCP UPLOADED BY", zh: "CCP上传人" },
+    "truck.col.ccp_at": { es: "CCP AT", en: "CCP AT", zh: "CCP时间" },
+    "truck.col.lib_dock": { es: "LIBERACIÓN DOCK", en: "DOCK RELEASE", zh: "月台放行" },
+    "truck.col.lib_por": { es: "LIBERADO POR", en: "RELEASED BY", zh: "放行人" },
+    "truck.col.status": { es: "STATUS", en: "STATUS", zh: "状态" },
+    "truck.col.retraso": { es: "TIEMPO DE RETRASO", en: "DELAY TIME", zh: "延迟时间" },
+    "truck.col.en_planta": { es: "TIEMPO EN PLANTA", en: "TIME IN PLANT", zh: "厂内时间" },
+    "truck.col.ly_ccp": { es: "LY&CCP", en: "LY&CCP", zh: "LY&CCP" },
+    "truck.col.t_cierre": { es: "T.CIERRE", en: "CLOSE TIME", zh: "关闭时间" },
+    "truck.liberado": { es: "LIBERADO", en: "RELEASED", zh: "已放行" },
+    "truck.pendiente": { es: "PENDIENTE", en: "PENDING", zh: "待处理" },
     // Menú Principal y Títulos Operativos
     "menu.cajas": { es: "Catálogo de Cajas Secas 53'", en: "53-foot Dry Van Catalog" },
     "menu.asignaciones": { es: "Asignación Diaria de Cajas", en: "Daily 53' Dry Van Assignment" },
@@ -492,6 +541,7 @@ Object.entries(ZH).forEach(([key, zh]) => {
 interface LanguageContextProps {
     language: Language;
     toggleLanguage: () => void;
+    setLanguage: (lang: Language) => void;
     t: (key: string) => string;
 }
 
@@ -517,7 +567,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
 
     return (
-        <LanguageContext.Provider value={{ language, toggleLanguage, t }}>
+        <LanguageContext.Provider value={{ language, toggleLanguage, setLanguage, t }}>
             {children}
         </LanguageContext.Provider>
     );

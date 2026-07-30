@@ -88,6 +88,63 @@ export const ActivosFijos: React.FC = () => {
   const [summaryModal, setSummaryModal] = useState<{isOpen: boolean, column: string, data: {val: string, count: number}[], totalCount: number}>({isOpen: false, column: '', data: [], totalCount: 0});
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
+  // Bulk Selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  
+  // Bulk Amendment
+  const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
+  const [bulkEditField, setBulkEditField] = useState<string>('');
+  const [bulkEditValue, setBulkEditValue] = useState('');
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.checked) {
+          setSelectedIds(new Set(filteredAssets.map(a => a.id).filter(Boolean) as string[]));
+      } else {
+          setSelectedIds(new Set());
+      }
+  };
+
+  const handleApplyBulkEdit = async () => {
+      if (!bulkEditField) return;
+      if (selectedIds.size === 0) return;
+      
+      const newAssets = [...assets];
+      let updatedCount = 0;
+      
+      for (const id of selectedIds) {
+          const index = newAssets.findIndex(a => a.id === id);
+          if (index !== -1) {
+              const currentAsset = newAssets[index];
+              const updated = { ...currentAsset, [bulkEditField]: bulkEditValue };
+              await storageService.updateFixedAsset(updated);
+              newAssets[index] = updated;
+              updatedCount++;
+          }
+      }
+      
+      setAssets(newAssets);
+      setIsBulkEditModalOpen(false);
+      setBulkEditField('');
+      setBulkEditValue('');
+      setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+      if (selectedIds.size === 0) return;
+      if (!window.confirm(`¿Estás seguro de que deseas eliminar ${selectedIds.size} activo(s)? Esta acción no se puede deshacer.`)) return;
+
+      const toDelete = Array.from(selectedIds);
+      try {
+          for (const id of toDelete) {
+              await storageService.deleteFixedAsset(id);
+          }
+          setAssets(prev => prev.filter(a => !toDelete.includes(a.id!)));
+          setSelectedIds(new Set());
+      } catch (e: any) {
+          alert(`Error al eliminar: ${e.message}`);
+      }
+  };
+
   const handleOpenSummary = (key: string) => {
       if (key === 'pedimentoPdfUrl' || key === 'facturaPdfUrl' || key === 'photos') return;
       const frequencyMap: Record<string, number> = {};
@@ -614,8 +671,24 @@ export const ActivosFijos: React.FC = () => {
             onClick={() => setIsQueryBuilderOpen(true)}
             className={`flex items-center gap-2 border px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm ${conditions.length > 0 ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}
           >
-            <Database size={18} /> Filters {conditions.length > 0 && `(${conditions.length})`}
+            <Filter size={18} /> Filtros Masivos {conditions.length > 0 && `(${conditions.length})`}
           </button>
+          {selectedIds.size > 0 && (
+            <>
+              <button
+                  onClick={() => setIsBulkEditModalOpen(true)}
+                  className="flex items-center gap-2 bg-amber-100 border border-amber-300 text-amber-800 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-amber-200 transition-colors shadow-sm"
+              >
+                  <Edit2 size={18} /> Bulk Amendment ({selectedIds.size})
+              </button>
+              <button
+                  onClick={handleBulkDelete}
+                  className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-red-100 transition-colors shadow-sm"
+              >
+                  <Trash2 size={18} /> Eliminar ({selectedIds.size})
+              </button>
+            </>
+          )}
           <button 
             onClick={handleExport}
             className="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors shadow-sm"
@@ -647,6 +720,9 @@ export const ActivosFijos: React.FC = () => {
           <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="bg-slate-50 text-slate-600 uppercase text-[11px] font-bold border-b border-slate-200">
               <tr>
+                <th className="px-3 py-3 w-[40px] text-center sticky left-0 z-30 bg-slate-50">
+                  <input type="checkbox" checked={filteredAssets.length > 0 && selectedIds.size === filteredAssets.length} onChange={handleSelectAll} className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer" />
+                </th>
                 <SortableHeader label="BOL NUMBER: MBL" field="mbl" sortConfig={sortConfig} onSort={handleSort} />
                 <SortableHeader label="CONTAINER NUMBER:" field="containerNumber" sortConfig={sortConfig} onSort={handleSort} />
                 <SortableHeader label="IMPORT PEDIMENTO" field="pedimento" sortConfig={sortConfig} onSort={handleSort} />
@@ -701,6 +777,9 @@ export const ActivosFijos: React.FC = () => {
               ) : (
                 filteredAssets.map(a => (
                   <tr key={a.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-3 py-2 text-center sticky left-0 z-20 bg-white border-r border-slate-100">
+                      <input type="checkbox" checked={selectedIds.has(a.id!)} onChange={(e) => { const next = new Set(selectedIds); if (e.target.checked) next.add(a.id!); else next.delete(a.id!); setSelectedIds(next); }} className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer" />
+                    </td>
                     <td className="px-3 py-2 font-semibold text-slate-800">{a.mbl || '-'}</td>
                     <td className="px-3 py-2 text-slate-600">{a.containerNumber || '-'}</td>
                     <td className="px-3 py-2 text-indigo-600 font-medium">{a.pedimento || '-'}</td>
@@ -1077,7 +1156,7 @@ export const ActivosFijos: React.FC = () => {
       <CatalogQueryBuilder 
         isOpen={isQueryBuilderOpen}
         onClose={() => setIsQueryBuilderOpen(false)}
-        columns={['mbl', 'containerNumber', 'pedimento', 'htsCode', 'partNumber', 'cfmotoPartNumber', 'materialName', 'physicalSerialNumber', 'localizationPlant', 'countryOrigin']}
+        columns={AF_ORDER_KEYS}
         conditions={conditions}
         setConditions={setConditions}
         onApply={() => setIsQueryBuilderOpen(false)}
@@ -1232,6 +1311,63 @@ export const ActivosFijos: React.FC = () => {
 
           </div>
         </div>
+      )}
+
+      {/* BULK EDIT MODAL */}
+      {isBulkEditModalOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                  <div className="bg-amber-50 p-6 flex flex-col items-center text-center border-b border-amber-100">
+                      <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-3">
+                          <Edit2 size={24} />
+                      </div>
+                      <h3 className="text-lg font-bold text-amber-900">Bulk Amendment</h3>
+                      <p className="text-sm text-amber-800 mt-2">
+                          Applying change to <span className="font-bold">{selectedIds.size}</span> selected records.
+                      </p>
+                  </div>
+                  <div className="p-6 space-y-4">
+                      <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Select Field</label>
+                          <select
+                              value={bulkEditField}
+                              onChange={(e) => setBulkEditField(e.target.value)}
+                              className="w-full rounded-md border-slate-300 shadow-sm focus:ring-amber-500 focus:border-amber-500 border p-2 text-sm"
+                          >
+                              <option value="">-- Choose Field --</option>
+                              {AF_ORDER_KEYS.map(key => (
+                                  <option key={key} value={key}>{key.replace(/([A-Z])/g, ' $1').trim().toUpperCase()}</option>
+                              ))}
+                          </select>
+                      </div>
+                      <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">New Value</label>
+                          <input
+                              type="text"
+                              value={bulkEditValue}
+                              onChange={(e) => setBulkEditValue(e.target.value)}
+                              placeholder="Enter new value..."
+                              className="w-full rounded-md border-slate-300 shadow-sm focus:ring-amber-500 focus:border-amber-500 border p-2 text-sm"
+                          />
+                      </div>
+                  </div>
+                  <div className="p-6 bg-slate-50 flex gap-3 border-t border-slate-100">
+                      <button
+                          onClick={() => setIsBulkEditModalOpen(false)}
+                          className="flex-1 px-4 py-2 text-slate-600 hover:text-slate-800 font-medium"
+                      >
+                          Cancel
+                      </button>
+                      <button
+                          onClick={handleApplyBulkEdit}
+                          disabled={!bulkEditField}
+                          className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                          Apply Change
+                      </button>
+                  </div>
+              </div>
+          </div>
       )}
     </div>
   );

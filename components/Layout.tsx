@@ -497,7 +497,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               {(['es','en','zh'] as const).map((lang, i) => (
                 <button
                   key={lang}
-                  onClick={() => language !== lang && toggleLanguage()}
+                  onClick={() => language !== lang && setLanguage(lang)}
                   className={`px-2.5 py-1.5 transition-colors ${
                     language === lang
                       ? 'bg-blue-600 text-white'

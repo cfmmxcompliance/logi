@@ -438,9 +438,9 @@ const AppContent = () => {
             <Route path="/r8va" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.ANALISTA_CUMPLIMIENTO]}><ReglaOctava /></ProtectedRoute>} />
 
             {/* Módulos Demanda y Reserva de Cajas 53' */}
-            <Route path="/admin-productos-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.EXPO_ANALIST]}><AdminProductos53 /></ProtectedRoute>} />
-            <Route path="/admin-ventanas-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.EXPO_ANALIST]}><AdminVentanas53 /></ProtectedRoute>} />
-            <Route path="/demanda-cajas-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.EXPO_ANALIST]}><DemandaCajas53 /></ProtectedRoute>} />
+            <Route path="/admin-productos-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.EXPO_ANALIST, UserRole.EXPO_COORDINATOR]}><AdminProductos53 /></ProtectedRoute>} />
+            <Route path="/admin-ventanas-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.EXPO_ANALIST, UserRole.EXPO_COORDINATOR]}><AdminVentanas53 /></ProtectedRoute>} />
+            <Route path="/demanda-cajas-53" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER, UserRole.EXPO_ANALIST, UserRole.EXPO_COORDINATOR]}><DemandaCajas53 /></ProtectedRoute>} />
             <Route path="/reserva-ventanas-53" element={<ProtectedRoute><ReservaVentanas53 /></ProtectedRoute>} />
 
             {/* Handheld Routes */}

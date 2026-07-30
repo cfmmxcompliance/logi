@@ -242,17 +242,26 @@ export const Embarques: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    let cancelled = false;
+
+    const safeFetch = async () => {
+      if (cancelled) return;
+      await fetchData();
+    };
+
+    safeFetch();
 
     const handleRefresh = () => {
-      fetchData();
+      safeFetch();
     };
+
     window.addEventListener('data:refresh', handleRefresh);
-    window.addEventListener('reserva:changed', handleRefresh);
+    // NOTE: 'reserva:changed' was intentionally removed — it's dispatched
+    // by AsignacionesDiarias on every date change, causing infinite reload loops.
 
     return () => {
+      cancelled = true;
       window.removeEventListener('data:refresh', handleRefresh);
-      window.removeEventListener('reserva:changed', handleRefresh);
     };
   }, [startDate, endDate]);
 
@@ -523,8 +532,8 @@ export const Embarques: React.FC = () => {
             <>
               <button
                 onClick={handleDelete}
-                disabled={isDeleting || isAssigning || user?.role !== UserRole.ADMIN}
-                title={user?.role !== UserRole.ADMIN ? "Sólo el administrador puede borrar" : ""}
+                disabled={isDeleting || isAssigning || (user?.role !== UserRole.ADMIN && user?.role !== UserRole.EXPO_COORDINATOR)}
+                title={(user?.role !== UserRole.ADMIN && user?.role !== UserRole.EXPO_COORDINATOR) ? "Sólo el administrador o Expo Coordinator pueden borrar" : ""}
                 className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
                 {isDeleting ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}

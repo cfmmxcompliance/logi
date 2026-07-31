@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Package, Search, Download, RefreshCw, Loader2, Calendar, Trash2 , ChevronUp, ChevronDown, UserCheck, FileText, UploadCloud } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Package, Search, Download, RefreshCw, Loader2, Calendar, Trash2 , ChevronUp, ChevronDown, UserCheck, FileText, UploadCloud, MessageCircle } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { contratoService } from '../services/contratoService.ts';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
@@ -66,64 +66,58 @@ export const Embarques: React.FC = () => {
 
       let cfmRef = '';
       let vehiculos = '';
-      if (driveFileId) {
-        try {
-          const GAS_READ = 'https://script.google.com/macros/s/AKfycbzX3ctF0kOxbw2M4uHbkPp8gsIy-EMQX64M5IEzMHTQs0gUxR-7BOx9BMe2RVEFKeWh/exec';
-          const gasResp = await fetch(`${GAS_READ}?action=readFile&fileId=${driveFileId}`);
-          const gasJson = await gasResp.json() as any;
 
-          if (gasJson.name) {
-            const rawName = gasJson.name.replace(/\.[^/.]+$/, '');
-            const pi = rawName.toUpperCase().indexOf('LAY OUT CCP_');
-            if (pi !== -1) cfmRef = rawName.substring(pi + 12).trim();
-          }
-          if (gasJson.content) {
-            const { read } = await import('xlsx');
-            const wb = read(gasJson.content, { type: 'base64' });
-            const sheet = wb.Sheets[wb.SheetNames[0]];
-            if (sheet['D27']?.v !== undefined) vehiculos = String(sheet['D27'].v).trim();
-          }
-        } catch (gasErr) {
-          console.warn('[Layout Embarques] GAS readFile error:', gasErr);
-        }
-      }
-
-      if (!cfmRef && file.name) {
+      if (file.name) {
         const rawName = file.name.replace(/\.[^/.]+$/, '');
         const pi = rawName.toUpperCase().indexOf('LAY OUT CCP_');
         if (pi !== -1) cfmRef = rawName.substring(pi + 12).trim();
       }
 
-      await contratoService.updateContrato(recordId, {
-        layoutUrl: url,
-        layoutUploadedBy: uploadedBy,
-        layoutUploadedAt: uploadedAt,
-        layoutFileName: file.name,
-      });
-      setData(prev => prev.map(d => d.id === recordId ? { ...d, layoutUrl: url, layoutUploadedBy: uploadedBy, layoutUploadedAt: uploadedAt, layoutFileName: file.name } : d));
-
-      // Sincronizar con Asignación Diaria de Cajas
-      const record = data.find(d => d.id === recordId);
-      if (record && record.numeroOperacion) {
-        const asigDoc = await asignacionCajaService.getAsignacionByNumeroOperacion(record.numeroOperacion);
-        if (asigDoc && asigDoc.id) {
-          const asigUpdates: any = {
-            layoutUrl: url,
-            layoutUploadedBy: uploadedBy,
-            layoutUploadedAt: uploadedAt,
-            layoutFileName: file.name,
-            layoutFileId: driveFileId,
-            ...(cfmRef ? { cfmRef } : {}),
-            ...(vehiculos ? { vehiculos } : {}),
-          };
-          await asignacionCajaService.updateAsignacion(asigDoc.id, asigUpdates);
-          
-          if (cfmRef) {
-            const { storageService } = await import('../services/storageService');
-            await storageService.upsertHistoricoExpos([{ id: `exp_${asigDoc.id}`, cfmRef } as any]);
-          }
-        }
+      try {
+        const { read } = await import('xlsx');
+        const buffer = await file.arrayBuffer();
+        const wb = read(buffer, { type: 'array' });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        if (sheet && sheet['D27']?.v !== undefined) vehiculos = String(sheet['D27'].v).trim();
+      } catch (err) {
+        console.warn('[Layout Embarques] Local parse error:', err);
       }
+
+      // Construir la cadena de sincronización con Asignación (secuencial internamente, paralela con el update del contrato)
+      const record = data.find(d => d.id === recordId);
+      const asigChain: Promise<any> = record?.numeroOperacion
+        ? asignacionCajaService.getAsignacionByNumeroOperacion(record.numeroOperacion).then(async asigDoc => {
+            if (asigDoc && asigDoc.id) {
+              const asigUpdates: any = {
+                layoutUrl: url,
+                layoutUploadedBy: uploadedBy,
+                layoutUploadedAt: uploadedAt,
+                layoutFileName: file.name,
+                layoutFileId: driveFileId,
+                ...(cfmRef ? { cfmRef } : {}),
+                ...(vehiculos ? { vehiculos } : {}),
+              };
+              await asignacionCajaService.updateAsignacion(asigDoc.id, asigUpdates);
+              if (cfmRef) {
+                const { storageService } = await import('../services/storageService');
+                await storageService.upsertHistoricoExpos([{ id: `exp_${asigDoc.id}`, cfmRef } as any]);
+              }
+            }
+          })
+        : Promise.resolve();
+
+      // Correr en paralelo: update del contrato + toda la cadena de asignación
+      await Promise.all([
+        contratoService.updateContrato(recordId, {
+          layoutUrl: url,
+          layoutUploadedBy: uploadedBy,
+          layoutUploadedAt: uploadedAt,
+          layoutFileName: file.name,
+        }),
+        asigChain
+      ]);
+
+      setData(prev => prev.map(d => d.id === recordId ? { ...d, layoutUrl: url, layoutUploadedBy: uploadedBy, layoutUploadedAt: uploadedAt, layoutFileName: file.name } : d));
     } catch (e: any) {
       alert(`Error subiendo LAYOUT: ${e.message}`);
     } finally {
@@ -139,29 +133,35 @@ export const Embarques: React.FC = () => {
       const uploadedBy = user?.email || user?.name || 'Desconocido';
       const uploadedAt = new Date().toISOString();
 
-      await contratoService.updateContrato(recordId, {
-        ccpUrl: url || (uploadResult as any).webViewLink,
-        ccpUploadedBy: uploadedBy,
-        ccpUploadedAt: uploadedAt,
-        ccpFileName: file.name
-      });
-      setData(prev => prev.map(d => d.id === recordId ? { ...d, ccpUrl: url, ccpUploadedBy: uploadedBy, ccpUploadedAt: uploadedAt, ccpFileName: file.name } : d));
-
       // Sincronizar con Asignación Diaria de Cajas
       const record = data.find(d => d.id === recordId);
+      let asigPromise: Promise<any> = Promise.resolve();
       if (record && record.numeroOperacion) {
-        const asigDoc = await asignacionCajaService.getAsignacionByNumeroOperacion(record.numeroOperacion);
-        if (asigDoc && asigDoc.id) {
-          const asigUpdates: any = {
-            ccpUrl: url,
-            ccpUploadedBy: uploadedBy,
-            ccpUploadedAt: uploadedAt,
-            ccpFileName: file.name,
-            ccpFileId: driveFileId,
-          };
-          await asignacionCajaService.updateAsignacion(asigDoc.id, asigUpdates);
-        }
+        asigPromise = asignacionCajaService.getAsignacionByNumeroOperacion(record.numeroOperacion).then(asigDoc => {
+          if (asigDoc && asigDoc.id) {
+            const asigUpdates: any = {
+              ccpUrl: url,
+              ccpUploadedBy: uploadedBy,
+              ccpUploadedAt: uploadedAt,
+              ccpFileName: file.name,
+              ccpFileId: driveFileId,
+            };
+            return asignacionCajaService.updateAsignacion(asigDoc.id, asigUpdates);
+          }
+        });
       }
+
+      await Promise.all([
+        contratoService.updateContrato(recordId, {
+          ccpUrl: url || (uploadResult as any).webViewLink,
+          ccpUploadedBy: uploadedBy,
+          ccpUploadedAt: uploadedAt,
+          ccpFileName: file.name
+        }),
+        asigPromise
+      ]);
+
+      setData(prev => prev.map(d => d.id === recordId ? { ...d, ccpUrl: url, ccpUploadedBy: uploadedBy, ccpUploadedAt: uploadedAt, ccpFileName: file.name } : d));
     } catch (e: any) {
       alert(`Error subiendo CCP: ${e.message}`);
     } finally {
@@ -202,9 +202,12 @@ export const Embarques: React.FC = () => {
     setLoading(true);
     setSelectedIds(new Set());
     try {
-      const asigData = await contratoService.getContratosByDateRange(startDate, endDate);
-      const asignaciones = await asignacionCajaService.getAsignacionesByDateRange(startDate, endDate).catch(() => []);
-      const sellos = await selloService.getSellosByDateRange(startDate, endDate).catch(() => []);
+      const [asigData, asignaciones, sellos, checkIns] = await Promise.all([
+        contratoService.getContratosByDateRange(startDate, endDate),
+        asignacionCajaService.getAsignacionesByDateRange(startDate, endDate).catch(() => []),
+        selloService.getSellosByDateRange(startDate, endDate).catch(() => []),
+        checkInService.getUnprocessedCheckIns().catch(() => [])
+      ]);
       
       const mergedData = asigData.map(c => {
         const a = asignaciones.find(x => x.numeroOperacion === c.numeroOperacion);
@@ -224,9 +227,10 @@ export const Embarques: React.FC = () => {
         };
       });
       
-      setData(mergedData);
+      // DEDUPLICATION GUARD: Remove exact Firestore document duplicates by ID
+      const deduped = Array.from(new Map(mergedData.map(r => [r.id, r])).values());
       
-      const checkIns = await checkInService.getUnprocessedCheckIns().catch(() => []);
+      setData(deduped);
       setCheckInsData(checkIns);
       
       const initialDocks: Record<string, string> = {};
@@ -265,34 +269,39 @@ export const Embarques: React.FC = () => {
     };
   }, [startDate, endDate]);
 
-  const filteredData = data.filter(item => {
-    if (activeTab === 'CON_LAYOUT' && !item.layoutUrl) return false;
-    if (activeTab === 'CON_CCP' && !item.ccpUrl) return false;
-    if (activeTab === 'SIN_CIERREEMB' && item.cerrado) return false;
+  const filteredData = useMemo(() => {
+    return data.filter(item => {
+      if (activeTab === 'CON_LAYOUT' && !item.layoutUrl) return false;
+      if (activeTab === 'CON_CCP' && !item.ccpUrl) return false;
+      if (activeTab === 'SIN_CIERREEMB' && item.cerrado) return false;
 
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      const sello = (item.selloAsignado || '').toLowerCase();
-      const match = (item.numeroOperacion || '').toLowerCase().includes(term) ||
-                    (item.numeroCaja || '').toLowerCase().includes(term) ||
-                    (item.contrato || '').toLowerCase().includes(term) ||
-                    sello.includes(term);
-      if (!match) return false;
-    }
-    return true;
-  });
-
-  const sortedData = [...filteredData];
-  if (sortConfig) {
-    sortedData.sort((a, b) => {
-      let valA: string = (a[sortConfig.key as keyof ContratoRecord] || '').toString().toLowerCase();
-      let valB: string = (b[sortConfig.key as keyof ContratoRecord] || '').toString().toLowerCase();
-
-      if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        const sello = (item.selloAsignado || '').toLowerCase();
+        const match = (item.numeroOperacion || '').toLowerCase().includes(term) ||
+                      (item.numeroCaja || '').toLowerCase().includes(term) ||
+                      (item.contrato || '').toLowerCase().includes(term) ||
+                      sello.includes(term);
+        if (!match) return false;
+      }
+      return true;
     });
-  }
+  }, [data, activeTab, searchTerm]);
+
+  const sortedData = useMemo(() => {
+    const sorted = [...filteredData];
+    if (sortConfig) {
+      sorted.sort((a, b) => {
+        let valA: string = (a[sortConfig.key as keyof ContratoRecord] || '').toString().toLowerCase();
+        let valB: string = (b[sortConfig.key as keyof ContratoRecord] || '').toString().toLowerCase();
+
+        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return sorted;
+  }, [filteredData, sortConfig]);
 
   const handleSort = (key: string) => {
     if (sortConfig && sortConfig.key === key) {
@@ -716,6 +725,18 @@ export const Embarques: React.FC = () => {
                             className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
                           >
                             Guardar
+                          </button>
+                          <button
+                            onClick={() => {
+                              const dockStr = docks[a.id!] || '___';
+                              const numDock = dockStr.replace('DOCK ', '');
+                              const text = `Chofer: ${a.nombreDriver || 'N/A'}\nNo. Operación: ${a.numeroOperacion || 'S/N'}\nCaja: ${a.numeroCaja || 'S/N'}\nIngresar a Dock: ${numDock}\nPlanta: 5`;
+                              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                            }}
+                            title="Notificar por WhatsApp"
+                            className="p-1.5 bg-[#25D366] text-white rounded hover:bg-[#128C7E] transition-colors shadow-sm"
+                          >
+                            <MessageCircle size={18} />
                           </button>
                         </td>
                       </tr>

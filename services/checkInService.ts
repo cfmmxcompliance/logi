@@ -19,6 +19,24 @@ export const checkInService = {
   },
 
   async createCheckIn(data: Omit<CheckInModel, 'id'>): Promise<string> {
+    // DEDUPLICATION GUARD: If an active (unprocessed) check-in already exists
+    // for the same asignación, return its ID instead of creating a duplicate.
+    if (data.asignacionCajaId) {
+      try {
+        const q = query(
+          collection(db, COLLECTION_NAME),
+          where('asignacionCajaId', '==', data.asignacionCajaId),
+          where('processed', '==', false)
+        );
+        const existing = await getDocs(q);
+        if (!existing.empty) {
+          console.warn('[CheckIn] Duplicate blocked — active check-in already exists for asignacionCajaId:', data.asignacionCajaId);
+          return existing.docs[0].id;
+        }
+      } catch (e) {
+        console.warn('[CheckIn] Dedup query failed, proceeding with insert:', e);
+      }
+    }
     const id = uuidv4();
     const payload = { ...data, id };
     await setDoc(doc(db, COLLECTION_NAME, id), payload);

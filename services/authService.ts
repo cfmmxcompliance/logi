@@ -41,19 +41,17 @@ export const authService = {
 
             for (const lookupId of lookupIds) {
                 try {
-                    const cached = await getDocFromCache(doc(db, 'users', lookupId));
-                    if (cached.exists()) { userSnap = cached; break; }
-                } catch (_) {}
-                try {
+                    // ALWAYS try network first during login to get fresh role/password
                     const fromNet = await getDoc(doc(db, 'users', lookupId));
                     if (fromNet.exists()) { userSnap = fromNet; break; }
                 } catch (netErr) {
-                    console.warn(`[Auth] Network attempt failed for ${lookupId}, retrying in 2s...`, netErr);
-                    await new Promise(r => setTimeout(r, 2000));
+                    console.warn(`[Auth] Network attempt failed for ${lookupId}, trying cache...`, netErr);
                     try {
-                        const retry = await getDoc(doc(db, 'users', lookupId));
-                        if (retry.exists()) { userSnap = retry; break; }
+                        const cached = await getDocFromCache(doc(db, 'users', lookupId));
+                        if (cached.exists()) { userSnap = cached; break; }
                     } catch (_) {}
+                    
+                    // If both fail, we continue to the next lookupId (e.g. lowercase, username)
                 }
             }
 

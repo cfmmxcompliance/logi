@@ -1,6 +1,7 @@
 import { collection, doc, setDoc, getDocs, getDocsFromCache, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { ContratoRecord } from '../types/contrato';
+import { nowMX } from '../utils/mexTime';
 
 const COLLECTION_NAME = 'contratos';
 
@@ -93,7 +94,7 @@ export const contratoService = {
       await setDoc(docRef, {
         ...contrato,
         id: docId,
-        createdAt: contrato.createdAt || new Date().toISOString()
+        createdAt: contrato.createdAt || nowMX()
       });
       return true;
     } catch (error) {

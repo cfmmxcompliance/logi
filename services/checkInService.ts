@@ -6,14 +6,13 @@ import { v4 as uuidv4 } from 'uuid';
 const COLLECTION_NAME = 'driver_check_ins';
 
 export const checkInService = {
-  async getUnprocessedCheckIns(): Promise<CheckInModel[]> {
-    const q = query(
-      collection(db, COLLECTION_NAME),
-      where('processed', '==', false)
-    );
+  async getUnprocessedCheckIns(startDate?: string, endDate?: string): Promise<CheckInModel[]> {
+    const constraints: any[] = [where('processed', '==', false)];
+    if (startDate) constraints.push(where('checkInAt', '>=', startDate));
+    if (endDate)   constraints.push(where('checkInAt', '<=', endDate + 'T23:59:59'));
+    const q = query(collection(db, COLLECTION_NAME), ...constraints);
     const snapshot = await getDocs(q);
     const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CheckInModel));
-    // Sort in memory instead of relying on composite index just in case
     docs.sort((a, b) => b.checkInAt.localeCompare(a.checkInAt));
     return docs;
   },

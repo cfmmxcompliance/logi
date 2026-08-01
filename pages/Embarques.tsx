@@ -11,20 +11,15 @@ import { CheckInModel } from '../types/checkIn';
 import { uploadFileToDrive } from '../services/googleDriveService.ts';
 import * as XLSX from 'xlsx';
 
-// Helper for Mexico City date (YYYY-MM-DD)
-const getMexicoDateString = () => {
-  const mxDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${mxDate.getFullYear()}-${pad(mxDate.getMonth() + 1)}-${pad(mxDate.getDate())}`;
-};
+import { nowMX, todayMX, toMXDate } from '../utils/mexTime';
 
 export const Embarques: React.FC = () => {
   const [data, setData] = useState<ContratoRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  const [startDate, setStartDate] = useState(getMexicoDateString());
-  const [endDate, setEndDate] = useState(getMexicoDateString());
+  const [startDate, setStartDate] = useState(todayMX());
+  const [endDate, setEndDate] = useState(todayMX());
 
   const [activeTab, setActiveTab] = useState<'TODOS' | 'CON_LAYOUT' | 'SIN_CIERREEMB' | 'CON_CCP' | 'CHECK_IN'>('TODOS');
   const [checkInsData, setCheckInsData] = useState<CheckInModel[]>([]);
@@ -53,7 +48,7 @@ export const Embarques: React.FC = () => {
       const result = await uploadFileToDrive(file, filename, EMBARQUES_FOLDER_ID);
       const url = result?.webViewLink || '';
       const uploadedBy = user?.email || 'sistema';
-      const uploadedAt = new Date().toISOString();
+      const uploadedAt = nowMX();
       
       const extractId = (u: string) => {
         if (!u) return '';
@@ -131,7 +126,7 @@ export const Embarques: React.FC = () => {
       const uploadResult = await uploadFileToDrive(file, `CCP_${numeroCaja}`);
       const { url, id: driveFileId } = uploadResult as any;
       const uploadedBy = user?.email || user?.name || 'Desconocido';
-      const uploadedAt = new Date().toISOString();
+      const uploadedAt = nowMX();
 
       // Sincronizar con Asignación Diaria de Cajas
       const record = data.find(d => d.id === recordId);
@@ -206,7 +201,7 @@ export const Embarques: React.FC = () => {
         contratoService.getContratosByDateRange(startDate, endDate),
         asignacionCajaService.getAsignacionesByDateRange(startDate, endDate).catch(() => []),
         selloService.getSellosByDateRange(startDate, endDate).catch(() => []),
-        checkInService.getUnprocessedCheckIns().catch(() => [])
+        checkInService.getUnprocessedCheckIns(startDate, endDate).catch(() => [])
       ]);
       
       const mergedData = asigData.map(c => {
@@ -381,7 +376,8 @@ export const Embarques: React.FC = () => {
   };
 
   const filteredCheckIns = checkInsData.filter(a => {
-    const checkInDate = a.checkInAt ? a.checkInAt.split('T')[0] : '';
+    // Use toMXDate to convert any stored timestamp to Mexico local date before comparing
+    const checkInDate = toMXDate(a.checkInAt || '');
     if (checkInDate && (checkInDate < startDate || checkInDate > endDate)) return false;
 
     if (checkInFilter === 'CON_CITA') {

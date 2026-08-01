@@ -1,6 +1,7 @@
 import { collection, doc, setDoc, getDocs, getDocsFromCache, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
+import { nowMX } from '../utils/mexTime';
 
 const COLLECTION_NAME = 'asignacion_cajas';
 
@@ -157,8 +158,8 @@ export const asignacionCajaService = {
     await setDoc(docRef, {
       id: docId,
       customId: customId || docId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: nowMX(),
+      updatedAt: nowMX(),
       ...asignacion
     });
   },
@@ -189,7 +190,7 @@ export const asignacionCajaService = {
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, {
       ...asignacion,
-      updatedAt: new Date().toISOString()
+      updatedAt: nowMX()
     });
   },
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { nowMX, todayMX } from '../utils/mexTime';
 import { transportLineService } from '../services/transportLineService';
 import { asignacionCajaService } from '../services/asignacionCajaService';
 import { checkInService } from '../services/checkInService';
@@ -8,14 +9,8 @@ import { CheckCircle2, AlertCircle, ArrowRight, Truck, Calendar as CalendarIcon,
 import { v4 as uuidv4 } from 'uuid';
 
 export const DriverCheckIn = () => {
-  const getLocalDate = () => {
-    const today = new Date();
-    const tzOffset = today.getTimezoneOffset() * 60000;
-    return new Date(today.getTime() - tzOffset).toISOString().split('T')[0];
-  };
-
   const [carrierRef, setCarrierRef] = useState('');
-  const [searchDate, setSearchDate] = useState(getLocalDate());
+  const [searchDate, setSearchDate] = useState(todayMX());
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'INITIAL' | 'MATCH' | 'SUCCESS' | 'ERROR_NO_MATCH' | 'MANUAL_FORM'>('INITIAL');
   const [asignacion, setAsignacion] = useState<AsignacionCajaModel | null>(null);
@@ -86,7 +81,7 @@ export const DriverCheckIn = () => {
     if (!asignacion || !asignacion.id) return;
     setLoading(true);
     try {
-      const checkInAt = new Date().toISOString();
+      const checkInAt = nowMX();
       const checkInStatus = 'PUNTUAL / OK';
 
       const matchTl = transportLines.find(t => t.transportLineId === asignacion.transportLineId) || transportLines.find(t => t.carrierCodigo === asignacion.carrierCodigo) || transportLines.find(t => t.carrierCodigo === asignacion.scac);
@@ -163,7 +158,7 @@ export const DriverCheckIn = () => {
         (placasTracto && a.placasTracto?.toUpperCase() === placasTracto.trim().toUpperCase())
       );
 
-      const checkInAt = new Date().toISOString();
+      const checkInAt = nowMX();
 
       if (partialMatch && partialMatch.id) {
         // Todas las citas manuales que encuentran coincidencia deben pasar a validación

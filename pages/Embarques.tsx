@@ -201,7 +201,7 @@ export const Embarques: React.FC = () => {
         contratoService.getContratosByDateRange(startDate, endDate),
         asignacionCajaService.getAsignacionesByDateRange(startDate, endDate).catch(() => []),
         selloService.getSellosByDateRange(startDate, endDate).catch(() => []),
-        checkInService.getUnprocessedCheckIns(startDate, endDate).catch(() => [])
+        checkInService.getUnprocessedCheckIns().catch(() => [])
       ]);
       
       const mergedData = asigData.map(c => {

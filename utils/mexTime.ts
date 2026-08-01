@@ -16,7 +16,16 @@ const MX_TZ = 'America/Mexico_City';
  * Use this instead of new Date().toISOString() throughout the entire system.
  */
 export const nowMX = (): string => {
-  return new Date().toLocaleString('sv-SE', { timeZone: MX_TZ }).replace(' ', 'T') + '-06:00';
+  const d = new Date();
+  const datePart = d.toLocaleDateString('en-CA', { timeZone: MX_TZ }); // YYYY-MM-DD
+  const timePart = d.toLocaleTimeString('en-GB', { 
+    timeZone: MX_TZ, 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit', 
+    hour12: false 
+  }); // HH:mm:ss
+  return `${datePart}T${timePart}-06:00`;
 };
 
 /**

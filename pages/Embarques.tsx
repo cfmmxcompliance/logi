@@ -516,7 +516,12 @@ export const Embarques: React.FC = () => {
                 activeTab === 'CHECK_IN' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
               }`}
             >
-              Check in <span className={`${activeTab === 'CHECK_IN' ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-600'} px-1.5 py-0.5 rounded text-[10px] font-bold`}>{checkInsData.length}</span>
+              Check in <span className={`${activeTab === 'CHECK_IN' ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-600'} px-1.5 py-0.5 rounded text-[10px] font-bold`}>
+                {checkInsData.filter(a => {
+                  const d = toMXDate(a.checkInAt || '');
+                  return !d || (d >= startDate && d <= endDate);
+                }).length}
+              </span>
             </button>
           </div>
           

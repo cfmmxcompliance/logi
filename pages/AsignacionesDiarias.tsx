@@ -2121,7 +2121,9 @@ export const AsignacionesDiarias: React.FC = () => {
                 {/* ── CARRIER REF ── */}
                 <td className="py-1.5 px-3 bg-indigo-50/20 border-l border-indigo-100/50">
                   {a.driverId ? (
-                    <span className="text-xs text-indigo-700 font-mono whitespace-nowrap">{a.driverId}</span>
+                    <span className="text-xs text-indigo-700 font-mono whitespace-nowrap">
+                      {typeof a.driverId === 'object' ? JSON.stringify(a.driverId) : String(a.driverId)}
+                    </span>
                   ) : (
                     <span className="text-slate-300 text-xs">—</span>
                   )}

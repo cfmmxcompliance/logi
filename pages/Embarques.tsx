@@ -16,7 +16,16 @@ import { nowMX, todayMX, toMXDate } from '../utils/mexTime';
 export const Embarques: React.FC = () => {
   const [data, setData] = useState<ContratoRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
   
   const [startDate, setStartDate] = useState(todayMX());
   const [endDate, setEndDate] = useState(todayMX());
@@ -204,12 +213,32 @@ export const Embarques: React.FC = () => {
         checkInService.getUnprocessedCheckIns().catch(() => [])
       ]);
       
+      // O(1) Lookup Maps for faster merging (Phase 1 Optimization)
+      const asigMap = new Map<string, typeof asignaciones[0]>();
+      asignaciones.forEach(a => {
+        if (a.numeroOperacion) {
+          asigMap.set(a.numeroOperacion, a);
+        }
+      });
+
+      const sellosMap = new Map<string, typeof sellos[0]>();
+      const sellosByCajaDateMap = new Map<string, typeof sellos[0]>();
+      sellos.forEach(s => {
+        if (s.asignacionCajaId) sellosMap.set(s.asignacionCajaId, s);
+        if (s.numeroCaja && s.fechaAsignacion) {
+          sellosByCajaDateMap.set(`${s.numeroCaja}_${s.fechaAsignacion}`, s);
+        }
+      });
+      
       const mergedData = asigData.map(c => {
-        const a = asignaciones.find(x => x.numeroOperacion === c.numeroOperacion);
+        const a = asigMap.get(c.numeroOperacion || '');
         
         let selloFinal = c.selloAsignado;
         if (!selloFinal && a) {
-           const sRow = sellos.find(s => s.asignacionCajaId === a.id || (s.numeroCaja === a.numeroCaja && s.fechaAsignacion === a.fecha));
+           let sRow = sellosMap.get(a.id || '');
+           if (!sRow) {
+             sRow = sellosByCajaDateMap.get(`${a.numeroCaja}_${a.fecha}`);
+           }
            if (sRow) selloFinal = sRow.selloAsignado;
         }
 
@@ -270,8 +299,8 @@ export const Embarques: React.FC = () => {
       if (activeTab === 'CON_CCP' && !item.ccpUrl) return false;
       if (activeTab === 'SIN_CIERREEMB' && item.cerrado) return false;
 
-      if (searchTerm) {
-        const term = searchTerm.toLowerCase();
+      if (debouncedSearchTerm) {
+        const term = debouncedSearchTerm.toLowerCase();
         const sello = (item.selloAsignado || '').toLowerCase();
         const match = (item.numeroOperacion || '').toLowerCase().includes(term) ||
                       (item.numeroCaja || '').toLowerCase().includes(term) ||
@@ -281,7 +310,7 @@ export const Embarques: React.FC = () => {
       }
       return true;
     });
-  }, [data, activeTab, searchTerm]);
+  }, [data, activeTab, debouncedSearchTerm]);
 
   const sortedData = useMemo(() => {
     const sorted = [...filteredData];
@@ -388,8 +417,8 @@ export const Embarques: React.FC = () => {
       if (a.checkInStatus !== 'CITA CON POSIBLE ERROR') return false;
     }
 
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
+    if (debouncedSearchTerm) {
+      const term = debouncedSearchTerm.toLowerCase();
       const match = (a.numeroOperacion || '').toLowerCase().includes(term) ||
                     (a.numeroCaja || '').toLowerCase().includes(term) ||
                     (a.placasTracto || '').toLowerCase().includes(term) ||

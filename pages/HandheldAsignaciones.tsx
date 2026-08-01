@@ -325,14 +325,8 @@ export const HandheldAsignaciones = () => {
                   </div>
                   <div className="flex flex-col min-w-0">
                     <span className="text-xs font-semibold text-slate-300 truncate">{a.nombreDriver || '—'}</span>
-                    <span className="text-[11px] text-slate-500 font-mono flex items-center gap-2 flex-wrap">
-                      <span>Placas: {a.placasTracto || '—'}</span>
-                      {a.carrierRef && (
-                        <span className="bg-slate-800 px-1.5 py-0.5 rounded text-indigo-400 font-bold">
-                          REF: {a.carrierRef}
-                        </span>
-                      )}
-                    </span>
+                    <span className="text-[11px] text-slate-500 font-mono">{a.placasTracto || '—'}</span>
+                    <span className="text-[11px] text-indigo-400 font-mono font-bold mt-0.5">REF: {a.carrierRef || 'N/A'}</span>
                   </div>
                 </div>
 

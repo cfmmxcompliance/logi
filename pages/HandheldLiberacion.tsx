@@ -14,6 +14,7 @@ import { useUploadGuard } from '../hooks/useUploadGuard.ts';
 import { waitForOnline } from '../hooks/useOnlineStatus.ts';
 import { UploadStatusBanner, UploadStatus } from '../components/UploadStatusBanner.tsx';
 import { SelloMismatchAlert } from '../components/SelloMismatchAlert.tsx';
+import { nowMX, todayMX } from '../utils/mexTime';
 
 export const HandheldLiberacion = () => {
   const navigate = useNavigate();
@@ -23,15 +24,8 @@ export const HandheldLiberacion = () => {
   const [liberacionesDelDia, setLiberacionesDelDia] = useState<LiberacionRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Initialize date to local today
-  const getLocalToday = () => {
-    const today = new Date();
-    const tzOffset = today.getTimezoneOffset() * 60000;
-    return (new Date(today.getTime() - tzOffset)).toISOString().split('T')[0];
-  };
-
-  const [dateStart, setDateStart] = useState<string>(getLocalToday());
-  const [dateEnd, setDateEnd] = useState<string>(getLocalToday());
+  const [dateStart, setDateStart] = useState<string>(todayMX());
+  const [dateEnd, setDateEnd] = useState<string>(todayMX());
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDIENTES' | 'LIBERADAS'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -402,7 +396,7 @@ export const HandheldLiberacion = () => {
         usuario: user?.email || user?.username || user?.name || 'operario',
         fechaHoraRegistro: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City', hour12: false }),
         fotos: { cajaUrl: '', puertasUrl: '', selloUrl: 'PENDING' },
-        createdAt: new Date().toISOString(),
+        createdAt: nowMX(),
       };
 
       await liberacionService.addLiberacion(newLiberacion);

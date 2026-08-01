@@ -43,7 +43,7 @@ export const Embarques: React.FC = () => {
     try {
       setUploadingFor(recordId);
       const ext = file.name.split('.').pop() || 'file';
-      const ts = new Date().toISOString().replace(/[:.]/g, '-');
+      const ts = nowMX().replace(/[:.-]/g, '');
       const filename = `LAYOUT_${numeroCaja}_${ts}.${ext}`;
       const result = await uploadFileToDrive(file, filename, EMBARQUES_FOLDER_ID);
       const url = result?.webViewLink || '';
@@ -361,7 +361,7 @@ export const Embarques: React.FC = () => {
         };
         await asignacionCajaService.updateAsignacion(checkIn.asignacionCajaId, {
            arribo: getNowTime(),
-           arriboAt: new Date().toISOString(),
+           arriboAt: nowMX(),
            arriboBy: user?.email || 'Embarques',
            dockArribo: dock,
            checkInStatus: checkIn.checkInStatus

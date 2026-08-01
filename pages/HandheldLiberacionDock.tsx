@@ -12,6 +12,7 @@ import { waitForOnline } from '../hooks/useOnlineStatus.ts';
 import { useUploadGuard } from '../hooks/useUploadGuard.ts';
 import { UploadStatusBanner, UploadStatus } from '../components/UploadStatusBanner.tsx';
 import { savePendingUpload, getPendingUploads, removePendingUpload } from '../services/pendingUploadStore.ts';
+import { nowMX, todayMX } from '../utils/mexTime';
 
 export const HandheldLiberacionDock = () => {
   const { user } = useAuth();
@@ -24,8 +25,8 @@ export const HandheldLiberacionDock = () => {
   const [selectedCaja, setSelectedCaja] = useState<AsignacionCajaModel | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const [dateStart, setDateStart] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }));
-  const [dateEnd, setDateEnd] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }));
+  const [dateStart, setDateStart] = useState(() => todayMX());
+  const [dateEnd, setDateEnd] = useState(() => todayMX());
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDIENTES' | 'LIBERADAS'>('ALL');
 
@@ -244,7 +245,7 @@ export const HandheldLiberacionDock = () => {
         usuario: user?.email || user?.username || user?.name || 'operario',
         fechaHoraRegistro: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City', hour12: false }),
         fotos: { cajaUrl: 'PENDING', puertasUrl: 'PENDING' },
-        createdAt: new Date().toISOString(),
+        createdAt: nowMX(),
       };
       const libId = await liberacionDockService.addLiberacionDock(record);
       

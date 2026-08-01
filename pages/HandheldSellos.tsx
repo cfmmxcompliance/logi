@@ -14,6 +14,7 @@ import { waitForOnline } from '../hooks/useOnlineStatus.ts';
 import { UploadStatusBanner, UploadStatus } from '../components/UploadStatusBanner.tsx';
 import { SelloMismatchAlert } from '../components/SelloMismatchAlert.tsx';
 import { HandheldToolbar } from '../components/HandheldToolbar.tsx';
+import { nowMX, todayMX } from '../utils/mexTime';
 
 export const HandheldSellos = () => {
   const navigate = useNavigate();
@@ -31,15 +32,8 @@ export const HandheldSellos = () => {
     selloLiberacion: string;
   } | null>(null);
 
-  // Initialize date to local today YYYY-MM-DD
-  const getLocalToday = () => {
-    const today = new Date();
-    const tzOffset = today.getTimezoneOffset() * 60000;
-    return (new Date(today.getTime() - tzOffset)).toISOString().split('T')[0];
-  };
-
-  const [dateStart, setDateStart] = useState<string>(getLocalToday());
-  const [dateEnd, setDateEnd] = useState<string>(getLocalToday());
+  const [dateStart, setDateStart] = useState<string>(todayMX());
+  const [dateEnd, setDateEnd] = useState<string>(todayMX());
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDIENTES' | 'SELLADAS'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -326,7 +320,7 @@ export const HandheldSellos = () => {
         selloAsignado: selloValue.toUpperCase().trim(),
         usuario: userIdentifier,
         fechaHoraRegistro: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City', hour12: false }),
-        createdAt: selloExistente?.createdAt || new Date().toISOString()
+        createdAt: selloExistente?.createdAt || nowMX()
       };
       // NO esperamos la foto — guardamos el registro de sello INMEDIATAMENTE
       // Pre-generamos el id para poder referenciarlo en el background upload

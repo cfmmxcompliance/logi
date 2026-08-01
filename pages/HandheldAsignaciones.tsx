@@ -11,14 +11,11 @@ import {
   AlertTriangle, XCircle, Timer, Anchor, FileText, FileCheck,
   RefreshCcw
 } from 'lucide-react';
+import { todayMX } from '../utils/mexTime';
 
 type StatusFilter = 'TODOS' | 'PENDIENTES' | 'LLEGADOS' | 'CERRADO' | 'CANCELADO';
 
-const getLocalToday = () => {
-  const now = new Date();
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-    .toISOString().split('T')[0];
-};
+  // getLocalToday removed, using todayMX() instead
 
 const parseHHmm = (fecha: string, hora: string): Date | null => {
   if (!fecha || !hora) return null;
@@ -38,8 +35,8 @@ export const HandheldAsignaciones = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [dateStart, setDateStart] = useState(getLocalToday());
-  const [dateEnd, setDateEnd] = useState(getLocalToday());
+  const [dateStart, setDateStart] = useState<string>(todayMX());
+  const [dateEnd, setDateEnd] = useState<string>(todayMX());
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('TODOS');
   const [loading, setLoading] = useState(true);

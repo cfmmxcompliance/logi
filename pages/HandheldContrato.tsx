@@ -5,6 +5,7 @@ import { geminiService } from '../services/geminiService.ts';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { contratoService } from '../services/contratoService.ts';
 import { useAuth } from '../context/useAuth';
+import { nowMX } from '../utils/mexTime';
 
 export const HandheldContrato: React.FC = () => {
   const navigate = useNavigate();
@@ -152,7 +153,7 @@ export const HandheldContrato: React.FC = () => {
         selloAsignado: selloValue.trim(),
         contrato: contratoValue.trim(),
         fecha: dateStart,
-        createdAt: new Date().toISOString(),
+        createdAt: nowMX(),
         usuario: user?.email || 'Handheld Contrato'
       });
       

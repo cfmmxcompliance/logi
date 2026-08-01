@@ -5,6 +5,7 @@ import { AsignacionCajaModel } from '../types/asignacionCaja.ts';
 import { ArrowLeft, Loader2, Box, Clock, CheckCircle, Truck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { HandheldToolbar } from '../components/HandheldToolbar.tsx';
+import { nowMX, todayMX } from '../utils/mexTime';
 
 export const HandheldArribo = () => {
   const navigate = useNavigate();
@@ -19,14 +20,8 @@ export const HandheldArribo = () => {
 
   const DOCK_OPTIONS = Array.from({ length: 13 }, (_, i) => `DOCK ${i + 1}`);
 
-  const getLocalToday = () => {
-    const today = new Date();
-    const tzOffset = today.getTimezoneOffset() * 60000;
-    return new Date(today.getTime() - tzOffset).toISOString().split('T')[0];
-  };
-
-  const [dateStart, setDateStart] = useState<string>(getLocalToday());
-  const [dateEnd, setDateEnd] = useState<string>(getLocalToday());
+  const [dateStart, setDateStart] = useState<string>(todayMX());
+  const [dateEnd, setDateEnd] = useState<string>(todayMX());
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDIENTES' | 'ARRIBADOS'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -83,7 +78,7 @@ export const HandheldArribo = () => {
     setSavingId(caja.id);
     try {
       const arribo = getNow();
-      const arriboAt = new Date().toISOString();
+      const arriboAt = nowMX();
       const arriboBy = user?.email || user?.displayName || 'desconocido';
       const comentariosArribo = (comentarios[caja.id] || '').slice(0, 50);
       const dockArribo = docks[caja.id] || '';

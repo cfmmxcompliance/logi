@@ -339,10 +339,7 @@ export const Factura: React.FC = () => {
     const searchTimerRef = useRef<NodeJS.Timeout>();
 
     const handleSearch = (val: string) => {
-        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-        searchTimerRef.current = setTimeout(() => {
-            setSearchTerm(val);
-        }, 300);
+        setSearchTerm(val);
     };
 
     const [items, setItems] = useState<CommercialInvoiceItem[]>([]);

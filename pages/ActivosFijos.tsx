@@ -220,9 +220,8 @@ export const ActivosFijos: React.FC = () => {
       result = [...result].sort((a, b) => {
         const valA = String((a as any)[sortConfig.key] || '').toLowerCase();
         const valB = String((b as any)[sortConfig.key] || '').toLowerCase();
-        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
+        const cmp = valA.localeCompare(valB, undefined, { numeric: true });
+        return sortConfig.direction === 'asc' ? cmp : -cmp;
       });
     }
 

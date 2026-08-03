@@ -581,6 +581,10 @@ export const AsignacionesDiarias: React.FC = () => {
                 (a.fecha || '').toLowerCase().includes(term) ||
                 ((a as any).arribo || '').toLowerCase().includes(term) ||
                 ((a as any).dockArribo || '').toLowerCase().includes(term) ||
+                ((a as any).comentariosArribo || '').toLowerCase().includes(term) ||
+                ((a as any).tipoCaja || '').toLowerCase().includes(term) ||
+                ((a as any).carrierRef || '').toLowerCase().includes(term) ||
+                ((a as any).customId || a.id || '').toLowerCase().includes(term) ||
                 ((transportLines.find(t => t.carrierCodigo === a.carrierCodigo))?.TransportLine || '').toLowerCase().includes(term) ||
                 ((liberaciones.find(l => l.asignacionCajaId === a.id))?.selloValidado || '').toLowerCase().includes(term) ||
                 (a.horaAsignacion || '').toLowerCase().includes(term) ||

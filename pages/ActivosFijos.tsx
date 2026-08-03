@@ -194,14 +194,16 @@ export const ActivosFijos: React.FC = () => {
     return storageService.subscribe(refresh);
   }, []);
 
+  const deferredSearchTerm = React.useDeferredValue(searchTerm);
+
   const filteredAssets = useMemo(() => {
     let result = assets;
     
     // Multi-term Search
-    if (searchTerm) {
-      const terms = searchTerm.toLowerCase().split(/[\s,]+/).filter(Boolean);
+    if (deferredSearchTerm) {
+      const terms = deferredSearchTerm.toLowerCase().split(/[\s,]+/).filter(Boolean);
       result = result.filter(a => {
-        const fullString = Object.values(a).map(v => String(v || '')).join(' ').toLowerCase();
+        const fullString = JSON.stringify(a).toLowerCase();
         return terms.every(term => fullString.includes(term));
       });
     }
@@ -226,7 +228,7 @@ export const ActivosFijos: React.FC = () => {
     }
 
     return result;
-  }, [assets, searchTerm, conditions, sortConfig]);
+  }, [assets, deferredSearchTerm, conditions, sortConfig]);
 
   const handleOpenModal = (asset?: FixedAsset) => {
     if (asset) {

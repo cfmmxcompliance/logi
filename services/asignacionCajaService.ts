@@ -56,6 +56,9 @@ export const asignacionCajaService = {
     
     let docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsignacionCajaModel));
     
+    // Ignore canceled assignments that might still share the same carrierRef
+    docs = docs.filter(d => d.dockArribo !== 'CANCELED' && d.dockArribo !== 'CANCELADO');
+    
     // Si pasamos fecha, filtramos en memoria para evitar requerir index compuesto
     if (fecha) {
       docs = docs.filter(d => d.fecha === fecha);

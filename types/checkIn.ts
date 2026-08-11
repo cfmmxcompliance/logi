@@ -14,5 +14,6 @@ export interface CheckInModel {
   scac: string;
   transportista: string;
   processed: boolean;
+  celular?: string;
   dockAsignado?: string;
 }

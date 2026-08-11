@@ -14,6 +14,8 @@ export const HandheldContrato: React.FC = () => {
   const [cajaValue, setCajaValue] = useState('');
   const [selloValue, setSelloValue] = useState('');
   const [contratoValue, setContratoValue] = useState('');
+  const [contrato2Value, setContrato2Value] = useState('');
+  const [activeInputTarget, setActiveInputTarget] = useState<'contrato1' | 'contrato2'>('contrato1');
   
   // Date selector as requested: PDA MUST follow the date in the module
   // No assuming default dates. The user MUST explicitly select it.
@@ -32,6 +34,7 @@ export const HandheldContrato: React.FC = () => {
   const cajaInputRef = useRef<HTMLInputElement>(null);
   const selloInputRef = useRef<HTMLInputElement>(null);
   const contratoInputRef = useRef<HTMLInputElement>(null);
+  const contrato2InputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!currentImageFile) { setLocalPreviewUrl(null); return; }
@@ -84,7 +87,8 @@ export const HandheldContrato: React.FC = () => {
   const runGeminiExtraction = async (file: File) => {
     setIsAiRunning(true);
     setAiError(null);
-    setContratoValue('');
+    if (activeInputTarget === 'contrato1') setContratoValue('');
+    else setContrato2Value('');
     try {
       const base64Data = await fileToBase64Payload(file);
       const text = await geminiService.extractContratoNumber(base64Data);
@@ -93,7 +97,8 @@ export const HandheldContrato: React.FC = () => {
         setAiError('No se detectó un número de contrato. Intenta tomar la foto más de cerca o sin reflejos.');
       } else {
         const cleanedText = text.replace(/[^A-Za-z0-9_-]/g, '').toUpperCase();
-        setContratoValue(cleanedText);
+        if (activeInputTarget === 'contrato1') setContratoValue(cleanedText);
+        else setContrato2Value(cleanedText);
       }
     } catch (err: any) {
       setAiError(err.message || 'Error al comunicar con la IA.');
@@ -152,6 +157,7 @@ export const HandheldContrato: React.FC = () => {
         numeroCaja: caja.numeroCaja,
         selloAsignado: selloValue.trim(),
         contrato: contratoValue.trim(),
+        contrato2: contrato2Value.trim(),
         fecha: dateStart,
         createdAt: nowMX(),
         usuario: user?.email || 'Handheld Contrato'
@@ -174,8 +180,10 @@ export const HandheldContrato: React.FC = () => {
     setCajaValue('');
     setSelloValue('');
     setContratoValue('');
+    setContrato2Value('');
     setCurrentImageFile(null);
     setAiError(null);
+    setActiveInputTarget('contrato1');
     if (cajaInputRef.current) cajaInputRef.current.focus();
   };
 
@@ -264,13 +272,11 @@ export const HandheldContrato: React.FC = () => {
 
         {/* Zona del Contrato (Manual o IA) */}
         <div className="bg-slate-800/50 rounded-3xl p-5 border border-slate-700/50">
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            
-            {/* Input Manual */}
+          <div className="flex flex-col md:flex-row items-center gap-4 border-b border-slate-700/50 pb-6 mb-6">
             <div className="flex-1 w-full relative">
               <div className="flex items-center gap-2 mb-2 text-emerald-400">
                 <FileText size={16} />
-                <span className="text-xs font-bold uppercase tracking-widest">Número de Contrato</span>
+                <span className="text-xs font-bold uppercase tracking-widest">Número de Contrato 1</span>
               </div>
               <input
                 ref={contratoInputRef}
@@ -279,27 +285,67 @@ export const HandheldContrato: React.FC = () => {
                 onChange={e => setContratoValue(e.target.value)}
                 placeholder="Ingresa contrato..."
                 className="w-full bg-slate-900 border-2 border-slate-700 rounded-2xl px-4 py-4 text-white font-black text-xl font-mono outline-none focus:border-emerald-500 transition-colors"
+                onKeyDown={e => {
+                  if (e.key === 'Enter') contrato2InputRef.current?.focus();
+                }}
               />
-              {isAiRunning && (
+              {isAiRunning && activeInputTarget === 'contrato1' && (
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-2">
                   <Loader2 className="animate-spin text-emerald-400" size={24} />
                 </div>
               )}
             </div>
 
-            {/* O (Separador) */}
-            <div className="text-slate-500 font-bold text-xs uppercase my-2 md:my-0">
-              Ó USA IA
-            </div>
+            <div className="text-slate-500 font-bold text-xs uppercase my-2 md:my-0">Ó USA IA</div>
 
-            {/* Botón de Cámara (INICIO) */}
             <button
-              onClick={() => !isProcessingImage && !isAiRunning && fileInputRef.current?.click()}
+              onClick={() => {
+                if (isProcessingImage || isAiRunning) return;
+                setActiveInputTarget('contrato1');
+                setTimeout(() => fileInputRef.current?.click(), 0);
+              }}
               className="w-full md:w-auto shrink-0 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-transform active:scale-95 shadow-lg shadow-indigo-900/40"
             >
               <Camera size={28} className="mb-1" />
               <span className="font-black text-xl tracking-tight leading-none">INICIO</span>
               <span className="text-[10px] text-indigo-200 font-bold uppercase">Tomar Foto</span>
+            </button>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="flex-1 w-full relative">
+              <div className="flex items-center gap-2 mb-2 text-slate-400">
+                <FileText size={16} />
+                <span className="text-xs font-bold uppercase tracking-widest">Número de Contrato 2 (Opcional)</span>
+              </div>
+              <input
+                ref={contrato2InputRef}
+                type="text"
+                value={contrato2Value}
+                onChange={e => setContrato2Value(e.target.value)}
+                placeholder="Ingresa contrato 2 (Opcional)..."
+                className="w-full bg-slate-900 border-2 border-slate-700 rounded-2xl px-4 py-4 text-white font-black text-xl font-mono outline-none focus:border-indigo-500 transition-colors"
+              />
+              {isAiRunning && activeInputTarget === 'contrato2' && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-2">
+                  <Loader2 className="animate-spin text-indigo-400" size={24} />
+                </div>
+              )}
+            </div>
+
+            <div className="text-slate-500 font-bold text-xs uppercase my-2 md:my-0">Ó USA IA</div>
+
+            <button
+              onClick={() => {
+                if (isProcessingImage || isAiRunning) return;
+                setActiveInputTarget('contrato2');
+                setTimeout(() => fileInputRef.current?.click(), 0);
+              }}
+              className="w-full md:w-auto shrink-0 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-transform active:scale-95 shadow-lg shadow-indigo-900/40"
+            >
+              <Camera size={28} className="mb-1" />
+              <span className="font-black text-xl tracking-tight leading-none">INICIO</span>
+              <span className="text-[10px] text-indigo-200 font-bold uppercase">Tomar Foto 2</span>
             </button>
           </div>
           

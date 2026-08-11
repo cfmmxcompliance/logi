@@ -994,9 +994,16 @@ export const AsignacionesDiarias: React.FC = () => {
     }
     try {
       for (const id of cancelModal.ids) {
+        const record = asignaciones.find((a) => a.id === id);
+        let newCarrierRef = record?.carrierRef || '';
+        if (newCarrierRef && !newCarrierRef.endsWith('X')) {
+          newCarrierRef += 'X';
+        }
+
         await asignacionCajaService.updateAsignacion(id, {
           dockArribo: 'CANCELED',
           comentariosArribo: reason,
+          ...(newCarrierRef !== record?.carrierRef ? { carrierRef: newCarrierRef } : {})
         });
         // Desvincular sello
         const sello = await selloService.getSelloByAsignacionCajaId(id);

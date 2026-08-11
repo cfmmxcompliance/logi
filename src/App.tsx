@@ -141,7 +141,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Carrier constraints
     if (user?.role === UserRole.CARRIER) {
-        const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/asignaciones-diarias', '/reserva-ventanas-53', '/daily-van-assignment'];
+        const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/asignaciones-diarias', '/reserva-ventanas-53', '/daily-van-assignment', '/embarques', '/historico-expo'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/transport-lines" replace />;
     }
 
@@ -405,7 +405,7 @@ const AppContent = () => {
             <Route path="/pricing-matrix" element={<ProtectedRoute><PricingMatrix /></ProtectedRoute>} />
             <Route path="/cajas" element={<ProtectedRoute><Cajas /></ProtectedRoute>} />
             <Route path="/asignaciones-diarias" element={<ProtectedRoute><AsignacionesDiarias /></ProtectedRoute>} />
-            <Route path="/embarques" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO, UserRole.EXPO_ANALIST, UserRole.EXPO_COORDINATOR, UserRole.EMBARQUES]}><Embarques /></ProtectedRoute>} />
+            <Route path="/embarques" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO, UserRole.EXPO_ANALIST, UserRole.EXPO_COORDINATOR, UserRole.EMBARQUES, UserRole.CARRIER]}><Embarques /></ProtectedRoute>} />
             <Route path="/incidencias-vigilancia" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]}><IncidenciasVigilancia /></ProtectedRoute>} />
             <Route path="/macro" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO]}><CaptureModule /></ProtectedRoute>} />
             <Route path="/historial-capturas" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.EXPO]}><HistorialCapturas /></ProtectedRoute>} />

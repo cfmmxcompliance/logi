@@ -7,6 +7,8 @@ import { CatalogQueryBuilder, QueryCondition, evaluateCondition } from '../compo
 import { parseCSV } from '../utils/csvHelpers';
 import { collection, getDocs, getDocsFromCache } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
+import { useAuth } from '../context/useAuth';
+import { UserRole } from '../types.ts';
 
 const DODA_FOLDER_ID = '14qiNMFvgyUuR4Z-e9beQzNqWw__CyMQZ';
 const ENTRY_FOLDER_ID = '1BORtOzX23VOYtHBicGphlOf-CDp993oI';
@@ -74,6 +76,10 @@ const formatMexicanDate = (dtStr: string | undefined | null) => {
 };
 
 export const HistoricoExpo = () => {
+  const { user } = useAuth();
+  const isCarrier = user?.role === UserRole.CARRIER;
+  const carrierScac = user?.scac?.trim().toUpperCase();
+
   const [records, setRecords] = useState<HistoricoExpoRecord[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<HistoricoExpoRecord>(emptyRecord);
@@ -101,14 +107,9 @@ export const HistoricoExpo = () => {
   const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'CERRADO' | 'POR_CERRAR'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const today = getMexicoToday();
-  const get90DaysAgo = () => {
-    const d = new Date();
-    d.setDate(d.getDate() - 90);
-    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Monterrey', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
-  };
   const [dateRange, setDateRange] = useState({ 
-    start: get90DaysAgo(), 
-    end: today 
+    start: '', 
+    end: '' 
   });
   
   const [isMassQueryOpen, setIsMassQueryOpen] = useState(false);
@@ -126,6 +127,8 @@ export const HistoricoExpo = () => {
   const [asignacionesScacMap, setAsignacionesScacMap] = useState<Map<string, string>>(new Map());
   // Map asignacionCajaId -> customId (structured ID: {op}{fecha}{carrier}{scac})
   const [customIdMap, setCustomIdMap] = useState<Map<string, string>>(new Map());
+  // Fallback Map: {op}{fecha} -> asignacionCajaId
+  const [opDateMap, setOpDateMap] = useState<Map<string, string>>(new Map());
   // Map asignacionCajaId -> cfmRef (extracted from layout filename)
   const [cfmRefMap, setCfmRefMap] = useState<Map<string, string>>(new Map());
   // Map asignacionCajaId -> vehiculos (from asignacion_cajas.vehiculos)
@@ -134,6 +137,12 @@ export const HistoricoExpo = () => {
   const [trailerMap, setTrailerMap] = useState<Map<string, string>>(new Map());
   // Map asignacionCajaId -> subLinea (for enriching LÍNEA TRANSPORTE column)
   const [transportLineMap, setTransportLineMap] = useState<Map<string, string>>(new Map());
+  // Map asignacionCajaId -> carrierCodigo
+  const [carrierCodigoMap, setCarrierCodigoMap] = useState<Map<string, string>>(new Map());
+  // Map asignacionCajaId -> fecha
+  const [fechaMap, setFechaMap] = useState<Map<string, string>>(new Map());
+  // Fallback map: `${numeroCaja}_${fecha}` -> asignacionCajaId (excluding canceled)
+  const [trailerFechaMap, setTrailerFechaMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     const load = () => {
@@ -148,13 +157,7 @@ export const HistoricoExpo = () => {
   useEffect(() => {
     const loadSellos = async () => {
       try {
-        let snap;
-        try {
-          snap = await getDocsFromCache(collection(db, 'sellos'));
-          if (snap.empty) throw new Error('cache miss');
-        } catch {
-          snap = await getDocs(collection(db, 'sellos'));
-        }
+        const snap = await getDocs(collection(db, 'sellos'));
         const map = new Map<string, string>();
         snap.forEach(d => {
           const data = d.data();
@@ -174,50 +177,86 @@ export const HistoricoExpo = () => {
   useEffect(() => {
     const loadAsignaciones = async () => {
       try {
-        let snap;
-        try {
-          snap = await getDocsFromCache(collection(db, 'asignacion_cajas'));
-          if (snap.empty) throw new Error('cache miss');
-        } catch {
-          snap = await getDocs(collection(db, 'asignacion_cajas'));
-        }
+        const snap = await getDocs(collection(db, 'asignacion_cajas'));
         const scacMap = new Map<string, string>();
         const cidMap = new Map<string, string>();
+        const opdMap = new Map<string, string>();
         const cfmRefLocal = new Map<string, string>();
         const vehMap = new Map<string, string>();
         const trlMap = new Map<string, string>();
         const tlnMap = new Map<string, string>();
+        const carrierMap = new Map<string, string>();
+        const fMap = new Map<string, string>();
+        const trailerFechaLocal = new Map<string, string>();
         snap.forEach(d => {
           const data = d.data();
           if (d.id) {
+            // Skip canceled records for fallback map
+            const isCanceled = data.dockArribo === 'CANCELED' || data.dockArribo === 'CANCELADO';
             if (data.scac)       scacMap.set(d.id, data.scac);
             if (data.customId)   cidMap.set(d.id, data.customId);
+            if (data.numeroOperacion && data.fecha) {
+               const op = data.numeroOperacion.trim().padEnd(5, 'X').substring(0, 5).toUpperCase();
+               const dt = data.fecha.replace(/-/g, '');
+               opdMap.set(`${op}${dt}`, d.id);
+            }
             if (data.cfmRef)     cfmRefLocal.set(d.id, data.cfmRef);
-            if (data.vehiculos)  vehMap.set(d.id, data.vehiculos);
+            if (data.vehiculos)  vehMap.set(d.id, String(data.vehiculos));
             // Enrich TRAILER and LÍNEA TRANSPORTE from the assignment
             if (data.numeroCaja) trlMap.set(d.id, String(data.numeroCaja));
             const tLine = data.subLinea || data.transportLine || '';
             if (tLine) tlnMap.set(d.id, tLine);
+            if (data.carrierCodigo) carrierMap.set(d.id, data.carrierCodigo);
+            if (data.fecha) fMap.set(d.id, data.fecha);
+            // Fallback: trailer + fecha -> docId (only non-canceled)
+            if (!isCanceled && data.numeroCaja && data.fecha) {
+              trailerFechaLocal.set(`${String(data.numeroCaja).trim().toUpperCase()}_${data.fecha}`, d.id);
+            }
           }
         });
         setAsignacionesScacMap(scacMap);
         setCustomIdMap(cidMap);
+        setOpDateMap(opdMap);
         setCfmRefMap(cfmRefLocal);
         setVehiculosMap(vehMap);
         setTrailerMap(trlMap);
         setTransportLineMap(tlnMap);
+        setCarrierCodigoMap(carrierMap);
+        setFechaMap(fMap);
+        setTrailerFechaMap(trailerFechaLocal);
 
         // ── Persist cfmRef + vehiculos into historico_expo records ──────────
         // Ensures both fields are backed up in the record itself, not just
         // looked up dynamically (protects against broken asignacionCajaId links)
         const expoRecords = storageService.getHistoricoExpo();
+        
+        // Build reverse map for resolving customId to docId for persistence
+        const reverseCustomIdMap = new Map<string, string>();
+        snap.forEach(d => {
+           const data = d.data();
+           if (d.id && data.customId) reverseCustomIdMap.set(data.customId, d.id);
+        });
+
         const toUpdate: any[] = [];
         expoRecords.forEach(r => {
-          const asigId = (r as any).idNumber || (r.id?.startsWith('exp_') ? r.id.substring(4) : '');
+          let asigId = (r as any).idNumber || (r.id?.startsWith('exp_') ? r.id.substring(4) : '');
+          if (asigId) {
+            if (reverseCustomIdMap.has(asigId)) {
+              asigId = reverseCustomIdMap.get(asigId)!;
+            } else if (asigId.length >= 13) {
+              const prefix = asigId.substring(0, 13);
+              if (opdMap.has(prefix)) asigId = opdMap.get(prefix)!;
+            }
+          }
           if (!asigId) return;
           const updates: any = { ...r };
           let changed = false;
-          if (!r.cfmRef && cfmRefLocal.has(asigId)) { updates.cfmRef = cfmRefLocal.get(asigId); changed = true; }
+          if (!r.cfmRef && cfmRefLocal.has(asigId)) { 
+            let cf = cfmRefLocal.get(asigId)!;
+            if (cf.includes('_')) cf = cf.split('_')[0];
+            updates.cfmRef = cf; 
+            changed = true; 
+          }
           if (!(r as any).vehiculos && vehMap.has(asigId)) { updates.vehiculos = vehMap.get(asigId); changed = true; }
           if (changed) toUpdate.push(updates);
         });
@@ -334,53 +373,137 @@ export const HistoricoExpo = () => {
 
   // --- FILTERING LOGIC ---
   const { filteredRecords, counts } = useMemo(() => {
+    // Build reverse map for resolving customId to docId
+    const reverseCustomIdMap = new Map<string, string>();
+    for (const [docId, customId] of customIdMap.entries()) {
+      if (customId) reverseCustomIdMap.set(customId.trim(), docId);
+    }
+
     // Filter out completely empty "phantom" records, enrich idNumber, seal and team
     let baseResult = records.filter(r => r.trailer?.trim() || r.cfmRef?.trim()).map(r => {
-      const asigId = r.idNumber || (r.id?.startsWith('exp_') ? r.id.substring(4) : '');
+      let asigId = r.idNumber?.trim() || (r.id?.startsWith('exp_') ? r.id.substring(4) : '');
+      const originalAsigId = asigId;
+      if (asigId) {
+        if (reverseCustomIdMap.has(asigId)) {
+          asigId = reverseCustomIdMap.get(asigId)!;
+        } else if (asigId.length >= 13) {
+          const prefix = asigId.substring(0, 13);
+          if (opDateMap.has(prefix)) asigId = opDateMap.get(prefix)!;
+        }
+      }
+      // Final fallback: buscar por trailer + fecha (el más confiable cuando el ID no coincide)
+      const rawDateForKey = r.pickupDayCFM || r.dateRequested || '';
+      let normalizedDateForKey = '';
+      if (rawDateForKey.match(/^\d{4}-\d{2}-\d{2}/)) {
+        normalizedDateForKey = rawDateForKey.substring(0, 10);
+      } else if (rawDateForKey.includes('/')) {
+        // DD/MM/YYYY or DD/M/YYYY -> YYYY-MM-DD
+        const parts = rawDateForKey.split(',')[0].trim().split('/');
+        if (parts.length >= 3) normalizedDateForKey = `${parts[2].substring(0,4)}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+      }
+      const trailerKey = `${(r.trailer || '').trim().toUpperCase()}_${normalizedDateForKey}`;
+      if (r.trailer && normalizedDateForKey && !vehiculosMap.has(asigId) && !cfmRefMap.has(asigId) && trailerFechaMap.has(trailerKey)) {
+        asigId = trailerFechaMap.get(trailerKey)!;
+      }
+
+
+
       const enriched: any = { ...r };
+      
+      // Helper function for bulletproof enrichment
+      const shouldEnrich = (val: any) => {
+        const t = typeof val === 'string' ? val.trim() : val;
+        return !t || t === '—' || t === '-';
+      };
+
       // IDNUMBER: always use customId from asignacion_cajas (structured ID)
       if (asigId && customIdMap.has(asigId)) enriched.idNumber = customIdMap.get(asigId);
       else if (!enriched.idNumber && asigId) enriched.idNumber = asigId;
-      if (!enriched.seal && asigId && sellosMap.has(asigId)) enriched.seal = sellosMap.get(asigId);
+      
+      if (shouldEnrich(enriched.seal) && asigId && sellosMap.has(asigId)) enriched.seal = sellosMap.get(asigId);
+      
       // TEAM always comes from asignacion_cajas.scac (overrides any stale value in historico_expo)
       if (asigId && asignacionesScacMap.has(asigId)) enriched.team = asignacionesScacMap.get(asigId);
+      
       // CFM REF from asignacion_cajas.cfmRef (extracted from layout filename)
-      if (!enriched.cfmRef && asigId && cfmRefMap.has(asigId)) enriched.cfmRef = cfmRefMap.get(asigId);
+      let currentCfm = enriched.cfmRef;
+      if (shouldEnrich(currentCfm) && asigId && cfmRefMap.has(asigId)) currentCfm = cfmRefMap.get(asigId);
+      if (currentCfm && typeof currentCfm === 'string' && currentCfm.includes('_')) {
+        currentCfm = currentCfm.split('_')[0];
+      }
+      enriched.cfmRef = currentCfm;
+      
       // VEHICULOS from asignacion_cajas.vehiculos
-      if (asigId && vehiculosMap.has(asigId)) enriched.vehiculos = vehiculosMap.get(asigId);
+      if (shouldEnrich(enriched.vehiculos) && asigId && vehiculosMap.has(asigId)) enriched.vehiculos = vehiculosMap.get(asigId);
+      
       // TRAILER from asignacion_cajas.numeroCaja (fills in records created before liberacion)
-      if (!enriched.trailer && asigId && trailerMap.has(asigId)) enriched.trailer = trailerMap.get(asigId);
+      if (shouldEnrich(enriched.trailer) && asigId && trailerMap.has(asigId)) enriched.trailer = trailerMap.get(asigId);
+      
       // LÍNEA TRANSPORTE from asignacion_cajas.subLinea
-      if (!enriched.transportLine && asigId && transportLineMap.has(asigId)) enriched.transportLine = transportLineMap.get(asigId);
+      if (shouldEnrich(enriched.transportLine) && asigId && transportLineMap.has(asigId)) enriched.transportLine = transportLineMap.get(asigId);
+      
+      // CARRIER CODIGO from asignacion_cajas.carrierCodigo
+      if (shouldEnrich(enriched.carrierCodigo) && asigId && carrierCodigoMap.has(asigId)) enriched.carrierCodigo = carrierCodigoMap.get(asigId);
+      
+      // DATE REQUESTED from asignacion_cajas.fecha
+      if (shouldEnrich(enriched.dateRequested) && asigId && fechaMap.has(asigId)) enriched.dateRequested = fechaMap.get(asigId);
+      
       return enriched;
     });
 
-    // 1. Date Range Filter
-    if (dateRange.start && dateRange.end) {
+    // 0. Carrier Filter (Role-based restriction)
+    if (isCarrier && carrierScac) {
       baseResult = baseResult.filter(r => {
-        const dtStr = r.pickupDayCFM || 
-          new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
-        let parsedDate = '';
+        const team = r.team?.trim().toUpperCase() || '';
+        const scac = r.scac?.trim().toUpperCase() || '';
+        const scacAndCaat = r.scacAndCaat?.trim().toUpperCase() || '';
+        const carrier = r.carrierCodigo?.trim().toUpperCase() || '';
         
-        if (dtStr.match(/^\d{4}-\d{2}-\d{2}/)) {
-            // Formato ISO YYYY-MM-DD — el más confiable, usar directamente
-            parsedDate = dtStr.substring(0, 10);
-        } else if (dtStr.includes('/')) {
-            // Formato DD/M/YYYY o DD/MM/YYYY (es-MX locale)
-            let datePart = dtStr.split(',')[0].trim();
-            datePart = datePart.split(' ')[0].trim();
-            const parts = datePart.split('/');
-            if(parts.length >= 3) {
-                const year = parts[2].substring(0, 4);
-                parsedDate = `${year}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
-            }
-        } else {
-            parsedDate = new Date(r.createdAt || Date.now()).toISOString().split('T')[0];
-        }
-        
-        return parsedDate >= dateRange.start && parsedDate <= dateRange.end;
+        return (
+          (team && (team.includes(carrierScac) || carrierScac.includes(team))) ||
+          (scac && (scac.includes(carrierScac) || carrierScac.includes(scac))) ||
+          (scacAndCaat && (scacAndCaat.includes(carrierScac) || carrierScac.includes(scacAndCaat))) ||
+          (carrier && (carrier.includes(carrierScac) || carrierScac.includes(carrier)))
+        );
       });
     }
+
+    // 1. Date Range Filter
+    if (!dateRange.start || !dateRange.end) {
+      return { filteredRecords: [], counts: { ALL: 0, CERRADO: 0, POR_CERRAR: 0 } };
+    }
+
+    baseResult = baseResult.filter(r => {
+      let extractedDate = '';
+      if (r.idNumber && r.idNumber.length >= 13) {
+        const possibleDate = r.idNumber.substring(5, 13);
+        if (possibleDate.match(/^\d{8}$/)) {
+          extractedDate = `${possibleDate.substring(0,4)}-${possibleDate.substring(4,6)}-${possibleDate.substring(6,8)}`;
+        }
+      }
+      
+      const dtStr = r.pickupDayCFM || r.dateRequested || extractedDate || r.createdAt || 
+        new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+      let parsedDate = '';
+      
+      if (dtStr.match(/^\d{4}-\d{2}-\d{2}/)) {
+          // Formato ISO YYYY-MM-DD — el más confiable, usar directamente
+          parsedDate = dtStr.substring(0, 10);
+      } else if (dtStr.includes('/')) {
+          // Formato DD/M/YYYY o DD/MM/YYYY (es-MX locale)
+          let datePart = dtStr.split(',')[0].trim();
+          datePart = datePart.split(' ')[0].trim();
+          const parts = datePart.split('/');
+          if(parts.length >= 3) {
+              const year = parts[2].substring(0, 4);
+              parsedDate = `${year}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+          }
+      } else {
+          parsedDate = new Date(r.createdAt || Date.now()).toISOString().split('T')[0];
+      }
+      
+      return parsedDate >= dateRange.start && parsedDate <= dateRange.end;
+    });
 
     // 2. Search Term
     if (searchTerm) {
@@ -427,7 +550,7 @@ export const HistoricoExpo = () => {
     }
 
     return { filteredRecords: finalResult, counts: newCounts };
-  }, [records, dateRange, searchTerm, activeMassQuery, cargadoFilter, sellosMap, asignacionesScacMap, customIdMap, cfmRefMap, vehiculosMap, trailerMap, transportLineMap]);
+  }, [records, dateRange, searchTerm, activeMassQuery, cargadoFilter, sellosMap, asignacionesScacMap, customIdMap, opDateMap, cfmRefMap, vehiculosMap, trailerMap, transportLineMap, carrierCodigoMap, fechaMap, trailerFechaMap]);
 
 
   // --- CSV LOGIC ---
@@ -573,7 +696,7 @@ export const HistoricoExpo = () => {
             >
               <Pencil size={16} /> Editar registro
             </button>
-          ) : (
+          ) : !isCarrier ? (
             // Default: disabled hint
             <button
               disabled
@@ -582,7 +705,7 @@ export const HistoricoExpo = () => {
             >
               <Pencil size={16} /> Editar registro
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -656,13 +779,17 @@ export const HistoricoExpo = () => {
           <div className="flex-1"></div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
-            <button onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} className="px-3 py-2 bg-slate-50 text-emerald-600 hover:bg-emerald-50 rounded-lg border border-slate-200 transition-colors shadow-sm flex items-center" title="Importar CSV">
-              <FileSpreadsheet size={18} />
-            </button>
-            <button className="px-3 py-2 bg-slate-50 text-indigo-600 hover:bg-indigo-50 rounded-lg border border-slate-200 transition-colors shadow-sm flex items-center" title="Subir Documentos">
-              <UploadCloud size={18} />
-            </button>
+            {!isCarrier && (
+              <>
+                <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
+                <button onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} className="px-3 py-2 bg-slate-50 text-emerald-600 hover:bg-emerald-50 rounded-lg border border-slate-200 transition-colors shadow-sm flex items-center" title="Importar CSV">
+                  <FileSpreadsheet size={18} />
+                </button>
+                <button className="px-3 py-2 bg-slate-50 text-indigo-600 hover:bg-indigo-50 rounded-lg border border-slate-200 transition-colors shadow-sm flex items-center" title="Subir Documentos">
+                  <UploadCloud size={18} />
+                </button>
+              </>
+            )}
             <button onClick={exportCSV} className="px-4 py-2 bg-white text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-300 transition-colors shadow-sm flex items-center text-sm font-medium gap-2">
               <Download size={16} /> Exportar
             </button>
@@ -683,7 +810,9 @@ export const HistoricoExpo = () => {
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-medium">
                 <tr>
                   <th className="px-3 py-2 whitespace-nowrap text-center">
-                    <input type="checkbox" checked={filteredRecords.length > 0 && selectedIds.size === filteredRecords.length} onChange={toggleSelectAll} className="w-4 h-4 accent-indigo-600 cursor-pointer" />
+                    {!isCarrier && (
+                      <input type="checkbox" checked={filteredRecords.length > 0 && selectedIds.size === filteredRecords.length} onChange={toggleSelectAll} className="w-4 h-4 accent-indigo-600 cursor-pointer" />
+                    )}
                   </th>
                   <th className="px-3 py-2 whitespace-nowrap">TRAILER</th>
                   <th className="px-3 py-2 whitespace-nowrap">IDNUMBER</th>
@@ -725,7 +854,9 @@ export const HistoricoExpo = () => {
                       className={`hover:bg-slate-50/50 transition-colors cursor-pointer ${selectedIds.has(record.id!) ? 'bg-indigo-50/40 ring-1 ring-inset ring-indigo-200' : ''}`}
                     >
                       <td className="px-3 py-2 whitespace-nowrap text-center" onClick={e => e.stopPropagation()}>
-                        <input type="checkbox" checked={selectedIds.has(record.id!)} onChange={() => toggleSelect(record.id!)} className="w-4 h-4 accent-indigo-600 cursor-pointer" />
+                        {!isCarrier && (
+                          <input type="checkbox" checked={selectedIds.has(record.id!)} onChange={() => toggleSelect(record.id!)} className="w-4 h-4 accent-indigo-600 cursor-pointer" />
+                        )}
                       </td>
 
                       {/* ── READ-ONLY: sourced from Asignación Diaria ── */}
@@ -753,10 +884,12 @@ export const HistoricoExpo = () => {
                               <a href={toDriveDownload(record.dodaUrl)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors" title="Descargar DODA" onClick={e => { e.stopPropagation(); handleDownloadDoda(record); }}>
                                 <FileText size={18} />
                               </a>
-                              <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer" title="Reemplazar DODA" onClick={e => e.stopPropagation()}>
-                                <UploadCloud size={16} />
-                                <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(record.id!, 'dodaUrl', f, record.trailer); e.target.value = ''; }} />
-                              </label>
+                              {!isCarrier && (
+                                <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer" title="Reemplazar DODA" onClick={e => e.stopPropagation()}>
+                                  <UploadCloud size={16} />
+                                  <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(record.id!, 'dodaUrl', f, record.trailer); e.target.value = ''; }} />
+                                </label>
+                              )}
                             </div>
                             {(record.dodaUploadHistory && record.dodaUploadHistory.length > 0) ? (
                               <div className="flex flex-col items-center gap-0.5 mt-1">
@@ -768,11 +901,13 @@ export const HistoricoExpo = () => {
                               <span className="text-[10px] text-indigo-400 font-mono whitespace-nowrap mt-1">{record.dodaUploadedAt}</span>
                             )}
                           </div>
-                        ) : (
+                        ) : !isCarrier ? (
                           <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer" title="Subir DODA" onClick={e => e.stopPropagation()}>
                             <UploadCloud size={18} />
                             <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(record.id!, 'dodaUrl', f, record.trailer); e.target.value = ''; }} />
                           </label>
+                        ) : (
+                          <span className="text-slate-300 italic">—</span>
                         )}
                       </td>
 
@@ -786,10 +921,12 @@ export const HistoricoExpo = () => {
                               <a href={toDriveDownload(record.entryUrl)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-100 transition-colors" title="Descargar ENTRY" onClick={e => { e.stopPropagation(); handleDownloadEntry(record); }}>
                                 <FileText size={18} />
                               </a>
-                              <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer" title="Reemplazar ENTRY" onClick={e => e.stopPropagation()}>
-                                <UploadCloud size={16} />
-                                <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(record.id!, 'entryUrl', f, record.trailer); e.target.value = ''; }} />
-                              </label>
+                              {!isCarrier && (
+                                <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer" title="Reemplazar ENTRY" onClick={e => e.stopPropagation()}>
+                                  <UploadCloud size={16} />
+                                  <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(record.id!, 'entryUrl', f, record.trailer); e.target.value = ''; }} />
+                                </label>
+                              )}
                             </div>
                             {(record.entryUploadHistory && record.entryUploadHistory.length > 0) ? (
                               <div className="flex flex-col items-center gap-0.5 mt-1">
@@ -801,11 +938,13 @@ export const HistoricoExpo = () => {
                               <span className="text-[10px] text-emerald-400 font-mono whitespace-nowrap mt-1">{record.entryUploadedAt}</span>
                             )}
                           </div>
-                        ) : (
+                        ) : !isCarrier ? (
                           <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 transition-colors cursor-pointer" title="Subir ENTRY" onClick={e => e.stopPropagation()}>
                             <UploadCloud size={18} />
                             <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(record.id!, 'entryUrl', f, record.trailer); e.target.value = ''; }} />
                           </label>
+                        ) : (
+                          <span className="text-slate-300 italic">—</span>
                         )}
                       </td>
 

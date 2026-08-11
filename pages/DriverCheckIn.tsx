@@ -15,6 +15,9 @@ export const DriverCheckIn = () => {
   const [step, setStep] = useState<'INITIAL' | 'MATCH' | 'SUCCESS' | 'ERROR_NO_MATCH' | 'MANUAL_FORM'>('INITIAL');
   const [asignacion, setAsignacion] = useState<AsignacionCajaModel | null>(null);
   const [tlNumber, setTlNumber] = useState('');
+  const [showPhonePopup, setShowPhonePopup] = useState(false);
+  const [celular, setCelular] = useState('');
+  const [pendingAction, setPendingAction] = useState<'CONFIRM' | 'MANUAL' | null>(null);
 
   const [transportLines, setTransportLines] = useState<TransportLineModel[]>([]);
   const [selectedTransportId, setSelectedTransportId] = useState('');
@@ -77,9 +80,10 @@ export const DriverCheckIn = () => {
     });
   };
 
-  const handleConfirm = async () => {
+  const executeConfirm = async () => {
     if (!asignacion || !asignacion.id) return;
     setLoading(true);
+    setShowPhonePopup(false);
     try {
       const checkInAt = nowMX();
       const checkInStatus = 'PUNTUAL / OK';
@@ -102,7 +106,8 @@ export const DriverCheckIn = () => {
         horaAgendada: asignacion.horaAsignacion || '',
         scac: scacName,
         transportista: lineaName,
-        processed: false
+        processed: false,
+        celular: celular.trim()
       });
 
       setTlNumber(extractTL(asignacion.numeroOperacion));
@@ -119,8 +124,7 @@ export const DriverCheckIn = () => {
     setStep('MANUAL_FORM');
   };
 
-  const handleManualSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeManualSubmit = async () => {
     if (!selectedTransportId) {
       alert('Por favor selecciona una línea de transporte válida de la lista desplegable.');
       return;
@@ -131,6 +135,7 @@ export const DriverCheckIn = () => {
     }
 
     setLoading(true);
+    setShowPhonePopup(false);
     try {
       const tl = transportLines.find(t => t.transportLineId === selectedTransportId);
       const scac = tl?.carrierCodigo || '';
@@ -152,10 +157,12 @@ export const DriverCheckIn = () => {
         windowAppointments = await asignacionCajaService.getAsignacionesByDateRange(startStr, endStr);
       }
       
-      // Intentar encontrar coincidencia fuerte primero (Caja o Placas)
+      // Intentar encontrar coincidencia fuerte primero (Caja o Placas), ignorando cancelados
       let partialMatch = windowAppointments.find(a => 
-        (a.numeroCaja?.toUpperCase() === numeroCaja.trim().toUpperCase()) ||
-        (placasTracto && a.placasTracto?.toUpperCase() === placasTracto.trim().toUpperCase())
+        a.dockArribo !== 'CANCELED' && a.dockArribo !== 'CANCELADO' && (
+          (a.numeroCaja?.toUpperCase() === numeroCaja.trim().toUpperCase()) ||
+          (placasTracto && a.placasTracto?.toUpperCase() === placasTracto.trim().toUpperCase())
+        )
       );
 
       const checkInAt = nowMX();
@@ -178,7 +185,8 @@ export const DriverCheckIn = () => {
           horaAgendada: partialMatch.horaAsignacion || '',
           scac: partialMatch.scac || partialMatch.carrierCodigo || tl?.carrierCodigo || '',
           transportista: tl?.nombreSubLinea || tl?.TransportLine || partialMatch.transportista || '',
-          processed: false
+          processed: false,
+          celular: celular.trim()
         });
         
         const isExactMatch = 
@@ -208,7 +216,8 @@ export const DriverCheckIn = () => {
           nombreDriver: nombreDriver.trim().toUpperCase() || '',
           scac: subLine || '',
           transportista: tl?.nombreSubLinea || tl?.TransportLine || '',
-          processed: false
+          processed: false,
+          celular: celular.trim()
         });
         alert('Sin cita. Solicita cita a linea transportista');
         window.location.reload();
@@ -278,7 +287,7 @@ export const DriverCheckIn = () => {
 
             <button 
               onClick={() => setStep('MANUAL_FORM')}
-              className="w-full text-center text-slate-500 mt-6 text-sm underline hover:text-slate-300"
+              className="w-full text-center text-slate-500 mt-6 text-lg underline hover:text-slate-300"
             >
               No tengo código de reservación
             </button>
@@ -373,7 +382,7 @@ export const DriverCheckIn = () => {
                 <XCircle size={20} /> NO
               </button>
               <button
-                onClick={handleConfirm}
+                onClick={() => { setPendingAction('CONFIRM'); setShowPhonePopup(true); }}
                 disabled={loading}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20"
               >
@@ -390,12 +399,22 @@ export const DriverCheckIn = () => {
             </div>
             <div>
               <h2 className="text-3xl font-bold text-white mb-2">Check-in Exitoso</h2>
-              <p className="text-slate-400 text-lg mb-8">Tu llegada ha sido registrada en el sistema. Por favor, toma asiento y espera indicaciones en rampa.</p>
+              <p className="text-slate-400 text-lg mb-8">Por favor muestre esta pantalla con el equipo de seguridad en ambas casetas.</p>
             </div>
             
-            <div className="bg-slate-800/80 p-8 rounded-2xl border border-slate-700">
-              <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-2">No. Operación</p>
-              <div className="text-5xl font-black text-white tracking-tight">{tlNumber}</div>
+            <div className="bg-slate-800/80 p-8 rounded-2xl border border-slate-700 space-y-6">
+              <div>
+                <p className="text-base font-semibold text-slate-400 uppercase tracking-widest mb-2">No. Operación</p>
+                <div className="text-6xl font-black text-emerald-400 tracking-tight">{tlNumber}</div>
+              </div>
+              <div className="pt-2 border-t border-slate-700/50">
+                <p className="text-base font-semibold text-slate-400 uppercase tracking-widest mb-2 mt-4">Carrier Reference</p>
+                <div className="text-4xl font-black text-white tracking-tight break-all">{carrierRef}</div>
+              </div>
+              <div className="pt-2 border-t border-slate-700/50">
+                <p className="text-base font-semibold text-slate-400 uppercase tracking-widest mb-2 mt-4">Celular</p>
+                <div className="text-4xl font-black text-white tracking-tight">{celular}</div>
+              </div>
             </div>
 
             <button
@@ -422,7 +441,7 @@ export const DriverCheckIn = () => {
               <p className="text-slate-400 text-sm mt-1">Buscaremos tu cita mediante tus datos de transporte.</p>
             </div>
 
-            <form onSubmit={handleManualSubmit} className="space-y-4 bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+            <form onSubmit={(e) => { e.preventDefault(); executeManualSubmit(); }} className="space-y-4 bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-2">Fecha de Cita (Opcional)</label>
                 <input
@@ -526,6 +545,18 @@ export const DriverCheckIn = () => {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Celular de Contacto (Obligatorio)</label>
+                <input
+                  type="text"
+                  value={celular}
+                  onChange={(e) => setCelular(e.target.value)}
+                  placeholder="Ej. +1 (555) 123-4567"
+                  className="w-full bg-slate-950 border-2 border-slate-700 rounded-xl px-4 py-3 text-white font-mono focus:outline-none focus:border-indigo-500 transition-colors"
+                  required
+                />
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
@@ -541,6 +572,43 @@ export const DriverCheckIn = () => {
             >
               Volver atrás
             </button>
+          </div>
+        )}
+
+        {showPhonePopup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200">
+              <h3 className="text-xl font-bold text-white mb-4">Número de contacto</h3>
+              <p className="text-slate-400 text-sm mb-4">
+                favor de ingresar tu numero de telefono para darte acceso
+              </p>
+              <input
+                type="text"
+                placeholder="Ej. +1 (555) 123-4567"
+                value={celular}
+                onChange={(e) => setCelular(e.target.value)}
+                className="w-full bg-slate-950 border-2 border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors mb-6"
+                autoFocus
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowPhonePopup(false)}
+                  className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  disabled={!celular.trim() || loading}
+                  onClick={() => {
+                    if (pendingAction === 'CONFIRM') executeConfirm();
+                    else if (pendingAction === 'MANUAL') executeManualSubmit();
+                  }}
+                  className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
+                >
+                  {loading ? '...' : 'Guardar'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

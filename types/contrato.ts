@@ -5,6 +5,7 @@ export interface ContratoRecord {
   selloAsignado: string;
   scac?: string;
   contrato: string;
+  contrato2?: string;
   fecha: string; // YYYY-MM-DD for easy filtering
   createdAt: string;
   usuario: string; // Email of the user who captured it

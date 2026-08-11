@@ -21,14 +21,16 @@ export const Embarques: React.FC = () => {
   const [startDate, setStartDate] = useState(todayMX());
   const [endDate, setEndDate] = useState(todayMX());
 
-  const [activeTab, setActiveTab] = useState<'TODOS' | 'CON_LAYOUT' | 'SIN_CIERREEMB' | 'CON_CCP' | 'CHECK_IN'>('TODOS');
+  const { user } = useAuth();
+  const isCarrier = user?.role === UserRole.CARRIER;
+
+  const [activeTab, setActiveTab] = useState<'TODOS' | 'CON_LAYOUT' | 'SIN_CIERREEMB' | 'CON_CCP' | 'CHECK_IN'>(isCarrier ? 'CHECK_IN' : 'TODOS');
   const [checkInsData, setCheckInsData] = useState<CheckInModel[]>([]);
   const [checkInFilter, setCheckInFilter] = useState<'ALL' | 'CON_CITA' | 'SIN_CITA' | 'CON_ERRORES'>('ALL');
   const [docks, setDocks] = useState<Record<string, string>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
-  const { user } = useAuth();
   const [isAssigning, setIsAssigning] = useState(false);
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
 
@@ -230,7 +232,17 @@ export const Embarques: React.FC = () => {
       
       const initialDocks: Record<string, string> = {};
       checkIns.forEach(c => {
-        if (c.id && c.dockAsignado) initialDocks[c.id] = c.dockAsignado;
+        let dock = c.dockAsignado;
+        if (!dock) {
+          const asig = asignaciones.find(a => 
+            (c.asignacionCajaId && a.id === c.asignacionCajaId) || 
+            (c.numeroOperacion && a.numeroOperacion === c.numeroOperacion)
+          );
+          if (asig && asig.dockArribo) {
+            dock = asig.dockArribo;
+          }
+        }
+        if (c.id && dock) initialDocks[c.id] = dock;
       });
       setDocks(initialDocks);
     } catch (error) {
@@ -478,7 +490,9 @@ export const Embarques: React.FC = () => {
         <div className="flex items-center gap-4">
           {/* Tabs */}
           <div className="flex bg-slate-100 p-1 rounded-lg">
-            <button
+            {!isCarrier && (
+              <>
+                <button
               onClick={() => setActiveTab('TODOS')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
                 activeTab === 'TODOS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
@@ -510,6 +524,8 @@ export const Embarques: React.FC = () => {
             >
               Sin CierreEmb <span className="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold">{data.filter(d => !d.cerrado).length}</span>
             </button>
+              </>
+            )}
             <button
               onClick={() => setActiveTab('CHECK_IN')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
@@ -579,7 +595,7 @@ export const Embarques: React.FC = () => {
           <div className="flex items-center bg-white border border-slate-300 rounded-lg overflow-hidden">
             <button
               onClick={() => {
-                const today = getMexicoDateString();
+                const today = todayMX();
                 setStartDate(today);
                 setEndDate(today);
               }}
@@ -645,6 +661,7 @@ export const Embarques: React.FC = () => {
                     <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Línea</th>
                     <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">SCAC</th>
                     <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Carrier Ref</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Celular</th>
                     <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Estatus</th>
                     <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right">Asignar Dock</th>
                   </tr>
@@ -652,14 +669,14 @@ export const Embarques: React.FC = () => {
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center">
+                      <td colSpan={10} className="py-12 text-center">
                         <Loader2 className="animate-spin text-indigo-500 mx-auto" size={32} />
                         <p className="text-slate-500 mt-2 text-sm">Cargando check-ins...</p>
                       </td>
                     </tr>
                   ) : filteredCheckIns.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-500">
+                      <td colSpan={10} className="py-12 text-center text-slate-500">
                         No hay check-ins registrados en estas fechas.
                       </td>
                     </tr>
@@ -701,6 +718,9 @@ export const Embarques: React.FC = () => {
                           <div className="text-sm text-slate-600">{a.carrierRef || 'S/N'}</div>
                         </td>
                         <td className="py-3 px-4">
+                          <div className="text-sm text-slate-600 font-medium">{a.celular || 'S/N'}</div>
+                        </td>
+                        <td className="py-3 px-4">
                           {a.checkInStatus === 'SIN CITA' ? (
                             <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-bold">SIN CITA</span>
                           ) : a.checkInStatus === 'CITA CON POSIBLE ERROR' ? (
@@ -713,7 +733,8 @@ export const Embarques: React.FC = () => {
                           <select
                             value={docks[a.id!] || ''}
                             onChange={(e) => setDocks({ ...docks, [a.id!]: e.target.value })}
-                            className="border border-slate-300 rounded px-2 py-1 text-sm bg-white"
+                            disabled={isCarrier}
+                            className={`border border-slate-300 rounded px-2 py-1 text-sm bg-white ${isCarrier ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             <option value="">Seleccionar Dock</option>
                             {Array.from({ length: 13 }, (_, i) => `DOCK ${i + 1}`).map(d => (
@@ -722,20 +743,22 @@ export const Embarques: React.FC = () => {
                           </select>
                           <button
                             onClick={() => handleAssignDock(a.id!)}
-                            disabled={!docks[a.id!]}
-                            className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+                            disabled={!docks[a.id!] || isCarrier}
+                            className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Guardar
                           </button>
                           <button
                             onClick={() => {
+                              if (isCarrier) return;
                               const dockStr = docks[a.id!] || '___';
                               const numDock = dockStr.replace('DOCK ', '');
                               const text = `Chofer: ${a.nombreDriver || 'N/A'}\nNo. Operación: ${a.numeroOperacion || 'S/N'}\nCaja: ${a.numeroCaja || 'S/N'}\nIngresar a Dock: ${numDock}\nPlanta: 5`;
                               window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                             }}
-                            title="Notificar por WhatsApp"
-                            className="p-1.5 bg-[#25D366] text-white rounded hover:bg-[#128C7E] transition-colors shadow-sm"
+                            title={isCarrier ? 'Sin acceso' : 'Notificar por WhatsApp'}
+                            disabled={isCarrier}
+                            className={`p-1.5 bg-[#25D366] text-white rounded transition-colors shadow-sm ${isCarrier ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#128C7E]'}`}
                           >
                             <MessageCircle size={18} />
                           </button>
@@ -750,12 +773,14 @@ export const Embarques: React.FC = () => {
                 <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th className="py-3 px-4 w-12 border-b border-slate-200">
-                    <input 
-                      type="checkbox" 
-                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                      checked={sortedData.length > 0 && selectedIds.size === sortedData.length}
-                      onChange={toggleSelectAll}
-                    />
+                    {!isCarrier && (
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        checked={sortedData.length > 0 && selectedIds.size === sortedData.length}
+                        onChange={toggleSelectAll}
+                      />
+                    )}
                   </th>
                   <SortableHeader label="No. Operación" sortKey="numeroOperacion" />
                   <SortableHeader label="Registro" sortKey="createdAt" />
@@ -792,12 +817,14 @@ export const Embarques: React.FC = () => {
                       className={`hover:bg-slate-50 transition-colors ${item.cerrado ? 'bg-emerald-50/60' : selectedIds.has(item.id!) ? 'bg-indigo-50/30' : ''}`}
                     >
                       <td className="py-3 px-4">
-                        <input 
-                          type="checkbox"
-                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                          checked={selectedIds.has(item.id!)}
-                          onChange={() => toggleSelect(item.id!)}
-                        />
+                        {!isCarrier && (
+                          <input 
+                            type="checkbox"
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                            checked={selectedIds.has(item.id!)}
+                            onChange={() => toggleSelect(item.id!)}
+                          />
+                        )}
                       </td>
                       <td className="py-3 px-4 text-sm font-medium text-slate-900">
                         {item.numeroOperacion || '-'}
@@ -832,13 +859,20 @@ export const Embarques: React.FC = () => {
                         {item.scac || '-'}
                       </td>
                       <td className="py-3 px-4 text-sm">
-                        {item.contrato ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-medium border border-emerald-100">
-                            {item.contrato}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 italic">Sin capturar</span>
-                        )}
+                        <div className="flex flex-col gap-1.5 items-start">
+                          {item.contrato ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-medium border border-emerald-100">
+                              {item.contrato}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic">Sin capturar</span>
+                          )}
+                          {item.contrato2 && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-medium border border-emerald-100">
+                              {item.contrato2}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       {/* LAYOUT */}
                       <td className="py-3 px-4 text-center bg-indigo-50/20 border-l border-indigo-100/50">
@@ -852,12 +886,14 @@ export const Embarques: React.FC = () => {
                                  title="Descargar LAYOUT">
                                 <FileText size={18} />
                               </a>
-                              <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer"
-                                     title="Reemplazar LAYOUT">
-                                <UploadCloud size={16} />
-                                <input type="file" accept=".xlsx,.xls,.csv" className="hidden"
-                                       onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadLayout(item.id!, item.numeroCaja, f); e.target.value = ''; }} />
-                              </label>
+                              {!isCarrier && (
+                                <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer"
+                                       title="Reemplazar LAYOUT">
+                                  <UploadCloud size={16} />
+                                  <input type="file" accept=".xlsx,.xls,.csv" className="hidden"
+                                         onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadLayout(item.id!, item.numeroCaja, f); e.target.value = ''; }} />
+                                </label>
+                              )}
                             </div>
                             {item.layoutUploadedAt && (
                               <span className="text-[10px] text-indigo-400 font-mono whitespace-nowrap">
@@ -865,13 +901,15 @@ export const Embarques: React.FC = () => {
                               </span>
                             )}
                           </div>
-                        ) : (
+                        ) : !isCarrier ? (
                           <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer"
                                  title="Subir LAYOUT (Excel)">
                             <FileText size={18} />
                             <input type="file" accept=".xlsx,.xls,.csv" className="hidden"
                                    onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadLayout(item.id!, item.numeroCaja, f); e.target.value = ''; }} />
                           </label>
+                        ) : (
+                          <span className="text-slate-300 italic">—</span>
                         )}
                       </td>
                       {/* CCP */}
@@ -886,12 +924,14 @@ export const Embarques: React.FC = () => {
                                  title="Descargar CCP">
                                 <FileText size={18} />
                               </a>
-                              <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
-                                     title="Reemplazar CCP">
-                                <UploadCloud size={16} />
-                                <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden"
-                                       onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadCCP(item.id!, item.numeroCaja, f); e.target.value = ''; }} />
-                              </label>
+                              {!isCarrier && (
+                                <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
+                                       title="Reemplazar CCP">
+                                  <UploadCloud size={16} />
+                                  <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden"
+                                         onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadCCP(item.id!, item.numeroCaja, f); e.target.value = ''; }} />
+                                </label>
+                              )}
                             </div>
                             {item.ccpUploadedAt && (
                               <span className="text-[10px] text-sky-500 font-mono whitespace-nowrap">
@@ -899,13 +939,15 @@ export const Embarques: React.FC = () => {
                               </span>
                             )}
                           </div>
-                        ) : (
+                        ) : !isCarrier ? (
                           <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-sky-500 hover:bg-sky-50 transition-colors cursor-pointer"
                                  title="Subir CCP">
                             <FileText size={18} />
                             <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden"
                                    onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadCCP(item.id!, item.numeroCaja, f); e.target.value = ''; }} />
                           </label>
+                        ) : (
+                          <span className="text-slate-300 italic">—</span>
                         )}
                       </td>
                       <td className="py-3 px-4 text-sm text-slate-500">

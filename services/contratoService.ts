@@ -87,6 +87,7 @@ export const contratoService = {
     if (contrato.numeroOperacion) contrato.numeroOperacion = contrato.numeroOperacion.trim().toUpperCase();
     if (contrato.selloAsignado) contrato.selloAsignado = contrato.selloAsignado.trim().toUpperCase();
     if (contrato.contrato) contrato.contrato = contrato.contrato.trim().toUpperCase();
+    if (contrato.contrato2) contrato.contrato2 = contrato.contrato2.trim().toUpperCase();
 
     try {
       const docId = contrato.id || doc(collection(db, COLLECTION_NAME)).id;
@@ -109,6 +110,7 @@ export const contratoService = {
     if (contrato.numeroOperacion) contrato.numeroOperacion = contrato.numeroOperacion.trim().toUpperCase();
     if (contrato.selloAsignado) contrato.selloAsignado = contrato.selloAsignado.trim().toUpperCase();
     if (contrato.contrato) contrato.contrato = contrato.contrato.trim().toUpperCase();
+    if (contrato.contrato2) contrato.contrato2 = contrato.contrato2.trim().toUpperCase();
 
     try {
       const docRef = doc(db, COLLECTION_NAME, id);

@@ -374,8 +374,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     : (asignacionesBadgeAdmin > 0 ? asignacionesBadgeAdmin : undefined)
                 }
               />
-              {user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && (
+              {user?.role !== UserRole.TRANSPORTISTA && (
                 <SidebarItem to="/embarques" icon={Package} label={sidebarOpen ? "Embarques" : ""} />
+              )}
+              {user?.role === UserRole.CARRIER && (
+                <SidebarItem to="/historico-expo" icon={History} label={sidebarOpen ? "Histórico Expo" : ""} />
               )}
               {/* TRUCK_TRACKING para Operational Transport (no EMBARQUES ni TRANSPORTISTA) */}
               {user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.TRANSPORTISTA && (

@@ -230,12 +230,11 @@ export const HandheldContrato: React.FC = () => {
           />
         </div>
 
-        <div className="p-4 space-y-4">
-          
-          <div className="bg-slate-900 rounded-2xl p-4 border border-slate-800 focus-within:border-indigo-500/50 transition-colors">
-            <div className="flex items-center gap-2 mb-2 text-indigo-400">
-              <Box size={16} />
-              <span className="text-xs font-bold uppercase tracking-widest">Número de Caja</span>
+        <div className="px-4 pt-4 pb-2 grid grid-cols-2 gap-3">
+          <div className="bg-slate-900 rounded-2xl p-3 border border-slate-800 focus-within:border-indigo-500/50 transition-colors flex flex-col justify-center">
+            <div className="flex items-center gap-1.5 mb-1.5 text-indigo-400">
+              <Box size={14} />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Número Caja</span>
             </div>
             <input
               autoFocus
@@ -243,26 +242,26 @@ export const HandheldContrato: React.FC = () => {
               type="text"
               value={cajaValue}
               onChange={e => setCajaValue(e.target.value)}
-              placeholder="Escanea o escribe la caja..."
-              className="w-full bg-transparent text-white font-black text-2xl font-mono outline-none"
+              placeholder="Ej. 1234"
+              className="w-full bg-transparent text-white font-black text-xl font-mono outline-none placeholder:text-slate-600"
               onKeyDown={e => {
                 if (e.key === 'Enter') selloInputRef.current?.focus();
               }}
             />
           </div>
 
-          <div className="bg-slate-900 rounded-2xl p-4 border border-slate-800 focus-within:border-blue-500/50 transition-colors">
-            <div className="flex items-center gap-2 mb-2 text-blue-400">
-              <Shield size={16} />
-              <span className="text-xs font-bold uppercase tracking-widest">Sello Asignado</span>
+          <div className="bg-slate-900 rounded-2xl p-3 border border-slate-800 focus-within:border-blue-500/50 transition-colors flex flex-col justify-center">
+            <div className="flex items-center gap-1.5 mb-1.5 text-blue-400">
+              <Shield size={14} />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Sello Asign.</span>
             </div>
             <input
               ref={selloInputRef}
               type="text"
               value={selloValue}
               onChange={e => setSelloValue(e.target.value)}
-              placeholder="Escanea o escribe el sello..."
-              className="w-full bg-transparent text-white font-black text-2xl font-mono outline-none"
+              placeholder="Ej. A-12"
+              className="w-full bg-transparent text-white font-black text-xl font-mono outline-none placeholder:text-slate-600"
               onKeyDown={e => {
                 if (e.key === 'Enter') contratoInputRef.current?.focus();
               }}
@@ -271,82 +270,87 @@ export const HandheldContrato: React.FC = () => {
         </div>
 
         {/* Zona del Contrato (Manual o IA) */}
-        <div className="bg-slate-800/50 rounded-3xl p-5 border border-slate-700/50">
-          <div className="flex flex-col md:flex-row items-center gap-4 border-b border-slate-700/50 pb-6 mb-6">
-            <div className="flex-1 w-full relative">
-              <div className="flex items-center gap-2 mb-2 text-emerald-400">
-                <FileText size={16} />
-                <span className="text-xs font-bold uppercase tracking-widest">Número de Contrato 1</span>
-              </div>
-              <input
-                ref={contratoInputRef}
-                type="text"
-                value={contratoValue}
-                onChange={e => setContratoValue(e.target.value)}
-                placeholder="Ingresa contrato..."
-                className="w-full bg-slate-900 border-2 border-slate-700 rounded-2xl px-4 py-4 text-white font-black text-xl font-mono outline-none focus:border-emerald-500 transition-colors"
-                onKeyDown={e => {
-                  if (e.key === 'Enter') contrato2InputRef.current?.focus();
-                }}
-              />
-              {isAiRunning && activeInputTarget === 'contrato1' && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-2">
-                  <Loader2 className="animate-spin text-emerald-400" size={24} />
+        <div className="px-4">
+          <div className="bg-slate-800/80 rounded-3xl p-4 border border-slate-700/50 shadow-sm">
+            
+            {/* Contrato 1 */}
+            <div className="flex items-stretch gap-3 border-b border-slate-700/50 pb-5 mb-5">
+              <div className="flex-1 relative">
+                <div className="flex items-center gap-1.5 mb-2 text-emerald-400">
+                  <FileText size={14} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Contrato 1</span>
                 </div>
-              )}
+                <input
+                  ref={contratoInputRef}
+                  type="text"
+                  value={contratoValue}
+                  onChange={e => setContratoValue(e.target.value)}
+                  placeholder="Ingresa contrato..."
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white font-black text-lg font-mono outline-none focus:border-emerald-500 transition-colors placeholder:text-slate-600"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') contrato2InputRef.current?.focus();
+                  }}
+                />
+                {isAiRunning && activeInputTarget === 'contrato1' && (
+                  <div className="absolute right-3 bottom-3">
+                    <Loader2 className="animate-spin text-emerald-400" size={20} />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col justify-end">
+                <button
+                  onClick={() => {
+                    if (isProcessingImage || isAiRunning) return;
+                    setActiveInputTarget('contrato1');
+                    setTimeout(() => fileInputRef.current?.click(), 0);
+                  }}
+                  className="w-[84px] h-[52px] bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-xl flex flex-col items-center justify-center gap-0.5 transition-transform active:scale-95 shadow-md shadow-indigo-900/40"
+                >
+                  <Camera size={20} />
+                  <span className="font-black text-sm tracking-tight leading-none">INICIO</span>
+                  <span className="text-[8px] text-indigo-200 font-bold uppercase leading-none">Foto 1</span>
+                </button>
+              </div>
             </div>
 
-            <div className="text-slate-500 font-bold text-xs uppercase my-2 md:my-0">Ó USA IA</div>
-
-            <button
-              onClick={() => {
-                if (isProcessingImage || isAiRunning) return;
-                setActiveInputTarget('contrato1');
-                setTimeout(() => fileInputRef.current?.click(), 0);
-              }}
-              className="w-full md:w-auto shrink-0 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-transform active:scale-95 shadow-lg shadow-indigo-900/40"
-            >
-              <Camera size={28} className="mb-1" />
-              <span className="font-black text-xl tracking-tight leading-none">INICIO</span>
-              <span className="text-[10px] text-indigo-200 font-bold uppercase">Tomar Foto</span>
-            </button>
-          </div>
-
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            <div className="flex-1 w-full relative">
-              <div className="flex items-center gap-2 mb-2 text-slate-400">
-                <FileText size={16} />
-                <span className="text-xs font-bold uppercase tracking-widest">Número de Contrato 2 (Opcional)</span>
-              </div>
-              <input
-                ref={contrato2InputRef}
-                type="text"
-                value={contrato2Value}
-                onChange={e => setContrato2Value(e.target.value)}
-                placeholder="Ingresa contrato 2 (Opcional)..."
-                className="w-full bg-slate-900 border-2 border-slate-700 rounded-2xl px-4 py-4 text-white font-black text-xl font-mono outline-none focus:border-indigo-500 transition-colors"
-              />
-              {isAiRunning && activeInputTarget === 'contrato2' && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-2">
-                  <Loader2 className="animate-spin text-indigo-400" size={24} />
+            {/* Contrato 2 */}
+            <div className="flex items-stretch gap-3">
+              <div className="flex-1 relative">
+                <div className="flex items-center gap-1.5 mb-2 text-slate-400">
+                  <FileText size={14} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Contrato 2 (Opcional)</span>
                 </div>
-              )}
+                <input
+                  ref={contrato2InputRef}
+                  type="text"
+                  value={contrato2Value}
+                  onChange={e => setContrato2Value(e.target.value)}
+                  placeholder="Opcional..."
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white font-black text-lg font-mono outline-none focus:border-indigo-500 transition-colors placeholder:text-slate-600"
+                />
+                {isAiRunning && activeInputTarget === 'contrato2' && (
+                  <div className="absolute right-3 bottom-3">
+                    <Loader2 className="animate-spin text-indigo-400" size={20} />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col justify-end">
+                <button
+                  onClick={() => {
+                    if (isProcessingImage || isAiRunning) return;
+                    setActiveInputTarget('contrato2');
+                    setTimeout(() => fileInputRef.current?.click(), 0);
+                  }}
+                  className="w-[84px] h-[52px] bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-xl flex flex-col items-center justify-center gap-0.5 transition-transform active:scale-95 shadow-md shadow-indigo-900/40"
+                >
+                  <Camera size={20} />
+                  <span className="font-black text-sm tracking-tight leading-none">INICIO</span>
+                  <span className="text-[8px] text-indigo-200 font-bold uppercase leading-none">Foto 2</span>
+                </button>
+              </div>
             </div>
-
-            <div className="text-slate-500 font-bold text-xs uppercase my-2 md:my-0">Ó USA IA</div>
-
-            <button
-              onClick={() => {
-                if (isProcessingImage || isAiRunning) return;
-                setActiveInputTarget('contrato2');
-                setTimeout(() => fileInputRef.current?.click(), 0);
-              }}
-              className="w-full md:w-auto shrink-0 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-transform active:scale-95 shadow-lg shadow-indigo-900/40"
-            >
-              <Camera size={28} className="mb-1" />
-              <span className="font-black text-xl tracking-tight leading-none">INICIO</span>
-              <span className="text-[10px] text-indigo-200 font-bold uppercase">Tomar Foto 2</span>
-            </button>
           </div>
           
           {/* AI Error */}
@@ -357,9 +361,8 @@ export const HandheldContrato: React.FC = () => {
             </div>
           )}
 
-          {/* Preview de la foto si hay una */}
           {localPreviewUrl && (
-            <div className="mt-4 relative rounded-xl overflow-hidden border border-slate-700 bg-slate-900">
+            <div className="mt-4 relative rounded-xl overflow-hidden border border-slate-700 bg-slate-900 mx-4">
               <img src={localPreviewUrl} alt="Contrato capturado" className="w-full h-32 object-cover opacity-60" />
               <div className="absolute inset-0 flex items-center justify-center">
                 {isProcessingImage ? (
@@ -377,9 +380,9 @@ export const HandheldContrato: React.FC = () => {
         </div>
 
         {/* Guardar Botón */}
-        <div className="pt-6">
+        <div className="pt-5 px-4">
           {saveSuccess ? (
-            <div className="w-full py-5 bg-emerald-600/20 text-emerald-400 font-black text-lg rounded-2xl flex items-center justify-center gap-3 border border-emerald-500/50">
+            <div className="w-full py-4 bg-emerald-600/20 text-emerald-400 font-black text-lg rounded-2xl flex items-center justify-center gap-3 border border-emerald-500/50">
               <CheckCircle size={24} />
               ¡CONTRATO GUARDADO!
             </div>
@@ -387,7 +390,7 @@ export const HandheldContrato: React.FC = () => {
             <button
               onClick={handleSave}
               disabled={!cajaValue || !contratoValue || isSaving}
-              className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 active:bg-emerald-700 text-white font-black text-lg rounded-2xl flex items-center justify-center gap-3 transition-colors shadow-lg shadow-emerald-900/30"
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 active:bg-emerald-700 text-white font-black text-lg rounded-2xl flex items-center justify-center gap-3 transition-colors shadow-lg shadow-emerald-900/30"
             >
               {isSaving ? <Loader2 className="animate-spin" size={24} /> : <CheckCircle size={24} />}
               {isSaving ? 'GUARDANDO...' : 'GUARDAR CONTRATO'}

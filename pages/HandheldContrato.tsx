@@ -188,7 +188,7 @@ export const HandheldContrato: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-950 flex flex-col font-sans sm:max-w-md sm:mx-auto sm:shadow-2xl sm:border-x sm:border-slate-800">
       <input
         ref={fileInputRef}
         type="file"

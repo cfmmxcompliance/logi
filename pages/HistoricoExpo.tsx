@@ -8,6 +8,7 @@ import { parseCSV } from '../utils/csvHelpers';
 import { collection, getDocs, getDocsFromCache } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import { useAuth } from '../context/useAuth';
+import { useLanguage } from '../context/LanguageContext';
 import { UserRole } from '../types.ts';
 
 const DODA_FOLDER_ID = '14qiNMFvgyUuR4Z-e9beQzNqWw__CyMQZ';
@@ -77,6 +78,7 @@ const formatMexicanDate = (dtStr: string | undefined | null) => {
 
 export const HistoricoExpo = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const isCarrier = user?.role === UserRole.CARRIER;
   const carrierScac = user?.scac?.trim().toUpperCase();
 
@@ -660,9 +662,9 @@ export const HistoricoExpo = () => {
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <History className="text-indigo-600" />
-            Histórico Expo
+            {t('he.title')}
           </h1>
-          <p className="text-slate-500 text-sm">Registro de Control de Operaciones</p>
+          <p className="text-slate-500 text-sm">{t('he.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           {editingId ? (
@@ -717,7 +719,7 @@ export const HistoricoExpo = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
               type="text"
-              placeholder="Buscar caja, CFM Ref..."
+              placeholder={t('he.search')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm w-64 focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -729,19 +731,19 @@ export const HistoricoExpo = () => {
               onClick={() => setCargadoFilter('ALL')}
               className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${cargadoFilter === 'ALL' ? 'bg-teal-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
             >
-              Todos ({counts.ALL})
+              {t('he.tab.todos')} ({counts.ALL})
             </button>
             <button
               onClick={() => setCargadoFilter('POR_CERRAR')}
               className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${cargadoFilter === 'POR_CERRAR' ? 'bg-teal-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
             >
-              POR CERRAR ({counts.POR_CERRAR})
+              {t('he.tab.por_cerrar')} ({counts.POR_CERRAR})
             </button>
             <button
               onClick={() => setCargadoFilter('CERRADO')}
               className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${cargadoFilter === 'CERRADO' ? 'bg-teal-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
             >
-              CERRADO ({counts.CERRADO})
+              {t('he.tab.cerrado')} ({counts.CERRADO})
             </button>
           </div>
 
@@ -749,7 +751,7 @@ export const HistoricoExpo = () => {
             <button 
               onClick={() => setDateRange({start: today, end: today})}
               className={`px-3 py-1 text-sm font-medium rounded ${dateRange.start === today && dateRange.end === today ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-200'}`}
-            >HOY</button>
+            >{t('he.hoy')}</button>
             <div className="flex items-center px-2 border-l border-slate-200">
               <Calendar size={16} className="text-slate-400 mr-2" />
               <input type="date" value={dateRange.start} onChange={e => {
@@ -772,7 +774,7 @@ export const HistoricoExpo = () => {
               ${activeMassQuery?.length ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}
           >
             <Filter size={16} className={activeMassQuery?.length ? "text-indigo-500" : "text-slate-400"} />
-            Filtros Masivos
+            {t('he.filtros')}
             {activeMassQuery?.length ? <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">{activeMassQuery.length}</span> : null}
           </button>
 
@@ -814,28 +816,28 @@ export const HistoricoExpo = () => {
                       <input type="checkbox" checked={filteredRecords.length > 0 && selectedIds.size === filteredRecords.length} onChange={toggleSelectAll} className="w-4 h-4 accent-indigo-600 cursor-pointer" />
                     )}
                   </th>
-                  <th className="px-3 py-2 whitespace-nowrap">TRAILER</th>
-                  <th className="px-3 py-2 whitespace-nowrap">IDNUMBER</th>
-                  <th className="px-3 py-2 whitespace-nowrap">SEAL</th>
-                  <th className="px-3 py-2 whitespace-nowrap text-slate-500 whitespace-nowrap">VEHICULOS</th>
-                  <th className="px-3 py-2 whitespace-nowrap">TEAM</th>
-                  <th className="px-3 py-2 whitespace-nowrap">LÍNEA TRANSPORTE</th>
-                  <th className="px-3 py-2 whitespace-nowrap">CFM REF</th>
-                  <th className="px-3 py-2 whitespace-nowrap">PICKUP DAY CFM</th>
-                  <th className="px-3 py-2 whitespace-nowrap">SCAC</th>
-                  <th className="px-3 py-2 whitespace-nowrap">CAAT</th>
-                  <th className="px-3 py-2 whitespace-nowrap text-center">DODA</th>
-                  <th className="px-3 py-2 whitespace-nowrap text-center">ENTRY</th>
-                  <th className="px-3 py-2 whitespace-nowrap">DODA APERTURE DATE</th>
-                  <th className="px-3 py-2 whitespace-nowrap">ENTRY APERTURE DATE</th>
-                  <th className="px-3 py-2 whitespace-nowrap">DATE REQUESTED</th>
-                  <th className="px-3 py-2 whitespace-nowrap">CROSSING DATE</th>
-                  <th className="px-3 py-2 whitespace-nowrap">Date Received</th>
-                  <th className="px-3 py-2 whitespace-nowrap">Days to Receive</th>
-                  <th className="px-3 py-2 whitespace-nowrap">EXP DODA</th>
-                  <th className="px-3 py-2 whitespace-nowrap">COMMENTS</th>
-                  <th className="px-3 py-2 whitespace-nowrap">DELIVERY DATE</th>
-                  <th className="px-3 py-2 whitespace-nowrap">ATA DESTINATION</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.trailer')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.idnumber')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.seal')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap text-slate-500 whitespace-nowrap">{t('he.col.vehiculos')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.team')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.linea')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.cfmref')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.pickup')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.scac')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.caat')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap text-center">{t('he.col.doda')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap text-center">{t('he.col.entry')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.doda_date')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.entry_date')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.req_date')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.cross_date')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.rec_date')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.days_rec')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.exp_doda')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.comments')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.deliv_date')}</th>
+                  <th className="px-3 py-2 whitespace-nowrap">{t('he.col.ata_dest')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -846,12 +848,13 @@ export const HistoricoExpo = () => {
                     <tr 
                       key={record.id} 
                       onClick={() => {
+                        if (isCarrier) return;
                         setEditingId(record.id!);
                         setEditForm(record);
                         // Optional: also select it visually
                         setSelectedIds(new Set([record.id!]));
                       }}
-                      className={`hover:bg-slate-50/50 transition-colors cursor-pointer ${selectedIds.has(record.id!) ? 'bg-indigo-50/40 ring-1 ring-inset ring-indigo-200' : ''}`}
+                      className={`${!isCarrier ? 'hover:bg-slate-50/50 cursor-pointer' : ''} transition-colors ${selectedIds.has(record.id!) ? 'bg-indigo-50/40 ring-1 ring-inset ring-indigo-200' : ''}`}
                     >
                       <td className="px-3 py-2 whitespace-nowrap text-center" onClick={e => e.stopPropagation()}>
                         {!isCarrier && (

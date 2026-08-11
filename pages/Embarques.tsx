@@ -10,6 +10,7 @@ import { UserRole } from '../types.ts';
 import { CheckInModel } from '../types/checkIn';
 import { uploadFileToDrive } from '../services/googleDriveService.ts';
 import * as XLSX from 'xlsx';
+import { useLanguage } from '../context/LanguageContext';
 
 import { nowMX, todayMX, toMXDate } from '../utils/mexTime';
 
@@ -22,6 +23,7 @@ export const Embarques: React.FC = () => {
   const [endDate, setEndDate] = useState(todayMX());
 
   const { user } = useAuth();
+  const { t } = useLanguage();
   const isCarrier = user?.role === UserRole.CARRIER;
 
   const [activeTab, setActiveTab] = useState<'TODOS' | 'CON_LAYOUT' | 'SIN_CIERREEMB' | 'CON_CCP' | 'CHECK_IN'>(isCarrier ? 'CHECK_IN' : 'TODOS');
@@ -476,9 +478,9 @@ export const Embarques: React.FC = () => {
             <Package size={24} />
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Embarques</h1>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">{t('emb.title')}</h1>
             <p className="text-slate-500 text-sm mt-1">
-              Revisión de Contratos y datos de Embarque.
+              {t('emb.subtitle')}
             </p>
           </div>
         </div>
@@ -498,7 +500,7 @@ export const Embarques: React.FC = () => {
                 activeTab === 'TODOS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
               }`}
             >
-              Todos <span className="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold">{data.length}</span>
+              {t('emb.tab.todos')} <span className="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold">{data.length}</span>
             </button>
             <button
               onClick={() => setActiveTab('CON_LAYOUT')}
@@ -506,7 +508,7 @@ export const Embarques: React.FC = () => {
                 activeTab === 'CON_LAYOUT' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
               }`}
             >
-              Con Layout <span className="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold">{data.filter(d => !!d.layoutUrl).length}</span>
+              {t('emb.tab.con_layout')} <span className="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold">{data.filter(d => !!d.layoutUrl).length}</span>
             </button>
             <button
               onClick={() => setActiveTab('CON_CCP')}
@@ -514,7 +516,7 @@ export const Embarques: React.FC = () => {
                 activeTab === 'CON_CCP' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
               }`}
             >
-              Con CCP <span className="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold">{data.filter(d => !!d.ccpUrl).length}</span>
+              {t('emb.tab.con_ccp')} <span className="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold">{data.filter(d => !!d.ccpUrl).length}</span>
             </button>
             <button
               onClick={() => setActiveTab('SIN_CIERREEMB')}
@@ -522,7 +524,7 @@ export const Embarques: React.FC = () => {
                 activeTab === 'SIN_CIERREEMB' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
               }`}
             >
-              Sin CierreEmb <span className="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold">{data.filter(d => !d.cerrado).length}</span>
+              {t('emb.tab.sin_cierre')} <span className="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold">{data.filter(d => !d.cerrado).length}</span>
             </button>
               </>
             )}
@@ -547,10 +549,10 @@ export const Embarques: React.FC = () => {
               onChange={(e) => setCheckInFilter(e.target.value as any)}
               className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-indigo-500"
             >
-              <option value="ALL">Todos los estatus</option>
-              <option value="CON_CITA">Con Cita</option>
-              <option value="SIN_CITA">Sin Cita</option>
-              <option value="CON_ERRORES">Con Errores</option>
+              <option value="ALL">{t('emb.filter.todos')}</option>
+              <option value="CON_CITA">{t('emb.filter.con_cita')}</option>
+              <option value="SIN_CITA">{t('emb.filter.sin_cita')}</option>
+              <option value="CON_ERRORES">{t('emb.filter.con_errores')}</option>
             </select>
           )}
 
@@ -655,15 +657,15 @@ export const Embarques: React.FC = () => {
                         onChange={toggleSelectAll}
                       />
                     </th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Arribo</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">No. Operación</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Caja / Placas</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Línea</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">SCAC</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Carrier Ref</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Celular</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Estatus</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right">Asignar Dock</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">{t('emb.col.arribo')}</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">{t('emb.col.operacion')}</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">{t('emb.col.caja')}</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">{t('emb.col.linea')}</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">{t('emb.col.scac')}</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">{t('emb.col.carrier_ref')}</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">{t('emb.col.celular')}</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">{t('emb.col.estatus')}</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right">{t('emb.col.asignar_dock')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -677,7 +679,7 @@ export const Embarques: React.FC = () => {
                   ) : filteredCheckIns.length === 0 ? (
                     <tr>
                       <td colSpan={10} className="py-12 text-center text-slate-500">
-                        No hay check-ins registrados en estas fechas.
+                        {t('emb.empty')}
                       </td>
                     </tr>
                   ) : (
@@ -736,32 +738,32 @@ export const Embarques: React.FC = () => {
                             disabled={isCarrier}
                             className={`border border-slate-300 rounded px-2 py-1 text-sm bg-white ${isCarrier ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
-                            <option value="">Seleccionar Dock</option>
+                            <option value="">{t('emb.dock.select')}</option>
                             {Array.from({ length: 13 }, (_, i) => `DOCK ${i + 1}`).map(d => (
                               <option key={d} value={d}>{d}</option>
                             ))}
                           </select>
-                          <button
-                            onClick={() => handleAssignDock(a.id!)}
-                            disabled={!docks[a.id!] || isCarrier}
-                            className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Guardar
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (isCarrier) return;
-                              const dockStr = docks[a.id!] || '___';
-                              const numDock = dockStr.replace('DOCK ', '');
-                              const text = `Chofer: ${a.nombreDriver || 'N/A'}\nNo. Operación: ${a.numeroOperacion || 'S/N'}\nCaja: ${a.numeroCaja || 'S/N'}\nIngresar a Dock: ${numDock}\nPlanta: 5`;
-                              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                            }}
-                            title={isCarrier ? 'Sin acceso' : 'Notificar por WhatsApp'}
-                            disabled={isCarrier}
-                            className={`p-1.5 bg-[#25D366] text-white rounded transition-colors shadow-sm ${isCarrier ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#128C7E]'}`}
-                          >
-                            <MessageCircle size={18} />
-                          </button>
+                            <button
+                              onClick={() => handleAssignDock(a.id!)}
+                              disabled={!docks[a.id!] || isCarrier}
+                              className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {t('emb.btn.guardar')}
+                            </button>
+                          {!isCarrier && (
+                            <button
+                              onClick={() => {
+                                const dockStr = docks[a.id!] || '___';
+                                const numDock = dockStr.replace('DOCK ', '');
+                                const text = `Chofer: ${a.nombreDriver || 'N/A'}\nNo. Operación: ${a.numeroOperacion || 'S/N'}\nCaja: ${a.numeroCaja || 'S/N'}\nIngresar a Dock: ${numDock}\nPlanta: 5`;
+                                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                              }}
+                              title="Notificar por WhatsApp"
+                              className="p-1.5 bg-[#25D366] text-white rounded transition-colors shadow-sm hover:bg-[#128C7E]"
+                            >
+                              <MessageCircle size={18} />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))

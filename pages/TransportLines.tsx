@@ -110,7 +110,7 @@ export const TransportLines: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("¿Seguro que deseas eliminar el proveedor de transporte?")) {
+    if (confirm(t('msg.confirm_delete_tl'))) {
       await transportLineService.deleteTransportLine(id);
       loadData();
     }
@@ -171,7 +171,7 @@ export const TransportLines: React.FC = () => {
       reader.onload = async (e) => {
           const text = e.target?.result as string;
           const rows = parseCSV(text);
-          if (rows.length < 2) return alert("El archivo está vacío o no tiene datos válidos.");
+          if (rows.length < 2) return alert(t('msg.empty_file'));
 
           const headers = rows[0].map(h => h.trim().toUpperCase());
           const lIdx = headers.findIndex(h => h.includes('LÍNEA ID') || h.includes('KEY'));
@@ -182,7 +182,7 @@ export const TransportLines: React.FC = () => {
           const mIdx = headers.findIndex(h => h.includes('LÍNEA MEXICANA') || h.includes('MEXICANA'));
 
           if (lIdx === -1 || cIdx === -1 || nIdx === -1) {
-              return alert("Estructura inválida. Asegúrate de usar la plantilla descargable.");
+              return alert(t('msg.invalid_structure'));
           }
 
           setLoading(true);
@@ -208,7 +208,7 @@ export const TransportLines: React.FC = () => {
               }
           }
           if (fileInputRef.current) fileInputRef.current.value = '';
-          alert(`Importación finalizada. ${imported} líneas registradas.`);
+          alert(`${t('msg.import_done')} ${imported} ${t('msg.records_registered')}`);
           loadData();
       };
       reader.readAsText(file);
@@ -334,8 +334,8 @@ export const TransportLines: React.FC = () => {
             <h2 className="text-xl font-bold mb-6 text-slate-800">{isEditing ? 'Editar Transport Line' : 'Nueva Línea'}</h2>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">ID Único (Ej. TL-001)</label>
-                <input required disabled={isEditing} value={formData.transportLineId || ''} onChange={e => setFormData({...formData, transportLineId: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-slate-100 placeholder:text-slate-400" placeholder="Ej. APL-001" />
+                <label className="block text-xs font-bold text-slate-500 mb-1">{t('tl.id')}</label>
+                <input required disabled={isEditing} value={formData.transportLineId || ''} onChange={e => setFormData({...formData, transportLineId: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-slate-100 placeholder:text-slate-400" placeholder={t('tl.form.id')} />
               </div>
               
               <div>
@@ -359,32 +359,32 @@ export const TransportLines: React.FC = () => {
                       sublabel: car.codigo
                     }));
                   })()}
-                  placeholder="Selecciona el Carrier matriz..."
+                  placeholder={t('tl.form.carrier')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nombre Comercial</label>
-                <input required value={formData.TransportLine || ''} onChange={e => setFormData({...formData, TransportLine: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-400" placeholder="Ej. APL Logistics" />
+                <label className="block text-xs font-bold text-slate-500 mb-1">{t('tl.comercial')}</label>
+                <input required value={formData.TransportLine || ''} onChange={e => setFormData({...formData, TransportLine: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-400" placeholder={t('tl.form.comercial')} />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nombre Sub-Línea</label>
-                <input value={formData.nombreSubLinea || ''} onChange={e => setFormData({...formData, nombreSubLinea: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-400 uppercase" placeholder="Ej. DIVISION REEFER" />
+                <label className="block text-xs font-bold text-slate-500 mb-1">{t('tl.sublinea')}</label>
+                <input value={formData.nombreSubLinea || ''} onChange={e => setFormData({...formData, nombreSubLinea: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-400 uppercase" placeholder={t('tl.form.sublinea')} />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Razón Social Legal</label>
-                <input required value={formData.razonSocial || ''} onChange={e => setFormData({...formData, razonSocial: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-400" placeholder="Ej. Logistics SA de CV" />
+                <label className="block text-xs font-bold text-slate-500 mb-1">{t('tl.razon')}</label>
+                <input required value={formData.razonSocial || ''} onChange={e => setFormData({...formData, razonSocial: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-400" placeholder={t('tl.form.razon')} />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Línea Mexicana</label>
-                <input value={formData.lineaMexicana || ''} onChange={e => setFormData({...formData, lineaMexicana: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-400" placeholder="Ej. Transportes Mexicanos SA" />
+                <label className="block text-xs font-bold text-slate-500 mb-1">{t('tl.mexicana')}</label>
+                <input value={formData.lineaMexicana || ''} onChange={e => setFormData({...formData, lineaMexicana: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-400" placeholder={t('tl.form.mexicana')} />
               </div>
               <div className="flex justify-end gap-3 mt-6">
-                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
-                <button type="submit" className="px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition-all">Guardar</button>
+                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">{t('btn.cancelar')}</button>
+                <button type="submit" className="px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition-all">{t('btn.guardar')}</button>
               </div>
             </form>
           </div>

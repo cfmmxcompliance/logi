@@ -415,7 +415,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
       window.dispatchEvent(new Event('reserva:changed'));
     } catch (e: any) {
-      alert(`Error subiendo archivo: ${e.message}`);
+      alert(t('msg.error_uploading').replace('{error}', e.message));
     } finally {
       setUploadingFor(null);
       window.dispatchEvent(new Event('reserva:changed'));
@@ -829,7 +829,7 @@ export const AsignacionesDiarias: React.FC = () => {
     e.preventDefault();
     try {
     if (!formData.carrierCodigo || !formData.transportLineId || !formData.numeroCaja || !formData.driverId) {
-      alert('Los campos CARRIER PADRE (SCAC), LÍNEA DE TRANSPORTE, EQUIPMENT y TRUCK TRACTOR son obligatorios.');
+      alert(t('msg.fields_required'));
       return;
     }
 
@@ -841,7 +841,7 @@ export const AsignacionesDiarias: React.FC = () => {
       const validSlots = allSlots.filter(s => s !== '11:00' || dayConfig['11:00'] !== undefined);
       
       if (!formData.horaAsignacion || !validSlots.includes(formData.horaAsignacion)) {
-        alert(`El horario "${formData.horaAsignacion || 'sin seleccionar'}" no es un slot aprobado. Por favor selecciona un horario de la lista.`);
+        alert(t('msg.slot_not_approved').replace('{hora}', formData.horaAsignacion || 'sin seleccionar'));
         return;
       }
       
@@ -853,7 +853,7 @@ export const AsignacionesDiarias: React.FC = () => {
       const isConfigured = dayConfig[formData.horaAsignacion] !== undefined;
       
       if (!isManualOverride18 && !isConfigured && formData.fecha === getMexicoDateString() && formData.horaAsignacion <= getMexicoNow()) {
-        alert(`La ventana de las ${formData.horaAsignacion} ya inició. Selecciona el siguiente horario disponible.`);
+        alert(t('msg.window_started').replace('{hora}', formData.horaAsignacion!));
         return;
       }
     }
@@ -870,7 +870,7 @@ export const AsignacionesDiarias: React.FC = () => {
            : 6);
            
       if (maxSlots === 0 || (formData.horaAsignacion === '11:00' && dayConfig['11:00'] === undefined)) {
-        alert('Horario no asignado seleccionar otra hora de ventana');
+        alert(t('msg.no_slot_assigned'));
         return;
       }
 
@@ -882,7 +882,7 @@ export const AsignacionesDiarias: React.FC = () => {
       const sameHourCount = waterfallOccupancy[formData.horaAsignacion] || 0;
       
       if (sameHourCount >= maxSlots) {
-        alert('Horario no asignado seleccionar otra hora de ventana');
+        alert(t('msg.no_slot_assigned'));
         return;
       }
     }
@@ -896,7 +896,7 @@ export const AsignacionesDiarias: React.FC = () => {
     );
 
     if (isDuplicate) {
-      alert(`ERROR: La caja "${formData.numeroCaja}" ya tiene una asignación registrada para el día ${formData.fecha}. No se permiten duplicados en la misma fecha operativa.`);
+      alert(t('msg.duplicate_box').replace('{caja}', formData.numeroCaja || '').replace('{fecha}', formData.fecha || ''));
       return;
     }
 
@@ -947,7 +947,7 @@ export const AsignacionesDiarias: React.FC = () => {
       setShowDuplicateTLModal(true);
     } else {
       console.error('Error guardando asignación:', error);
-      alert('Error al guardar. Intenta de nuevo.');
+      alert(t('msg.save_error'));
     }
   }
   };
@@ -971,7 +971,7 @@ export const AsignacionesDiarias: React.FC = () => {
           loadData();
         } catch (error: any) {
           console.error('Error eliminando asignación:', error);
-          alert(`Error al eliminar: ${error?.message || 'Verifica tu conexión e intenta de nuevo.'}`);
+          alert(t('msg.delete_error').replace('{error}', error?.message || 'Verifica tu conexión e intenta de nuevo.'));
           loadData();
         }
       } else {
@@ -989,7 +989,7 @@ export const AsignacionesDiarias: React.FC = () => {
     if (!cancelModal) return;
     const reason = cancelModal.reason.trim();
     if (!reason) {
-      alert('Por favor escribe el motivo de cancelación antes de continuar.');
+      alert(t('msg.cancel_reason_required'));
       return;
     }
     try {
@@ -1014,13 +1014,13 @@ export const AsignacionesDiarias: React.FC = () => {
       loadData();
     } catch (error: any) {
       console.error('Error cancelando asignación:', error);
-      alert(`Error al cancelar: ${error?.message || 'Verifica tu conexión e intenta de nuevo.'}`);
+      alert(t('msg.cancel_error').replace('{error}', error?.message || 'Verifica tu conexión e intenta de nuevo.'));
     }
   };
 
   const handleMassDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`¿Seguro que deseas eliminar/cancelar las ${selectedIds.size} asignaciones seleccionadas?`)) return;
+    if (!confirm(t('msg.confirm_delete_cancel').replace('{count}', selectedIds.size.toString()))) return;
     if (isAdmin) {
       // Admin: borrado real
       setLoading(true);
@@ -1035,7 +1035,7 @@ export const AsignacionesDiarias: React.FC = () => {
         loadData();
       } catch (error) {
         console.error('Error deleting items', error);
-        alert('Hubo un error borrando algunas asignaciones.');
+        alert(t('msg.delete_some_error'));
         loadData();
       }
     } else {
@@ -1139,10 +1139,10 @@ export const AsignacionesDiarias: React.FC = () => {
     });
 
     if (eligible.length === 0) {
-      alert('No hay operaciones elegibles para cierre manual en el rango actual.');
+      alert(t('msg.no_eligible_close'));
       return;
     }
-    if (!window.confirm(`¿Cerrar manualmente ${eligible.length} operación(es) pendiente(s)?\n\n• Fecha de cierre: hoy\n• Hora: 1 hora después del CCP (o tiempo actual si no hay CCP)\n• Observaciones: "Cierre manual por caída de API"\n\nEsta acción no se puede deshacer.`)) return;
+    if (!window.confirm(t('msg.confirm_manual_close').replace('{count}', eligible.length.toString()))) return;
 
     setIsBatchClosing(true);
     setBatchResult(null);
@@ -1264,7 +1264,7 @@ export const AsignacionesDiarias: React.FC = () => {
       reader.onload = async (e) => {
           const text = e.target?.result as string;
           const rows = parseCSV(text);
-          if (rows.length < 2) return alert("El archivo está vacío o no tiene datos válidos.");
+          if (rows.length < 2) return alert(t('msg.empty_file'));
 
           const headers = rows[0].map(h => h.trim().toUpperCase());
           const fIdx  = headers.findIndex(h => h.includes('FECHA'));
@@ -1277,7 +1277,7 @@ export const AsignacionesDiarias: React.FC = () => {
           const crIdx  = headers.findIndex(h => h.includes('CARRIER REF'));
 
           if (fIdx === -1 || cIdx === -1 || dIdx === -1) {
-              return alert("Estructura inválida. La cabecera debe contener al menos FECHA, NÚMERO CAJA y DRIVER ID.");
+              return alert(t('msg.invalid_structure_asignaciones'));
           }
 
           setLoading(true);
@@ -1427,7 +1427,7 @@ export const AsignacionesDiarias: React.FC = () => {
           if (errors.length > 0) {
               setImportErrors([`Se importaron ${imported} registros con éxito.`, ...errors]);
           } else {
-              alert(`Importación finalizada. ${imported} registros integrados relacionando maestras.`);
+              alert(t('msg.import_done_relations').replace('{imported}', imported.toString()));
           }
           loadData();
       };
@@ -1484,7 +1484,7 @@ export const AsignacionesDiarias: React.FC = () => {
               rows={4}
               value={cancelModal.reason}
               onChange={e => setCancelModal(prev => prev ? { ...prev, reason: e.target.value } : prev)}
-              placeholder="Escribe el motivo de cancelación..."
+              placeholder={t('asig.form.cancel_reason')}
               className="w-full border border-slate-300 rounded-xl p-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
             />
             <p className="text-xs text-slate-400 mt-1 mb-5">Este texto aparecerá en la columna <span className="font-semibold">COMENTARIOS ARRIBO</span>.</p>
@@ -1769,13 +1769,13 @@ export const AsignacionesDiarias: React.FC = () => {
               <th data-col="sellado" style={{ width: cw('sellado'), minWidth:70, position:'relative' }} className="p-2 font-medium text-teal-800 bg-teal-50/30">{renderColumnHeader(t('col.sellado_time'), 'fechaSellado')}{rh('sellado')}</th>
               <th data-col="obs" style={{ width: cw('obs'), minWidth:80, position:'relative' }} className="p-2 font-medium text-slate-800 bg-slate-100/50">{renderColumnHeader(t('col.observaciones'), 'observaciones')}{rh('obs')}</th>
               <th data-col="cfmRef" style={{ width: cw('cfmRef'), minWidth:80, position:'relative' }} className="p-2 font-medium text-indigo-800 bg-indigo-50/50 uppercase text-xs">
-                {renderColumnHeader(<>CFM REF <span className="ml-1 text-[9px] bg-indigo-100 text-indigo-500 rounded px-1 py-0.5 font-normal normal-case">auto</span></>, 'cfmRef')}{rh('cfmRef')}
+                {renderColumnHeader(<>{t('asig.form.cfm_ref')} <span className="ml-1 text-[9px] bg-indigo-100 text-indigo-500 rounded px-1 py-0.5 font-normal normal-case">{t('asig.form.auto')}</span></>, 'cfmRef')}{rh('cfmRef')}
               </th>
               <th data-col="docId" style={{ width: cw('docId'), minWidth:70, position:'relative' }} className="p-2 font-medium text-slate-500 bg-slate-50 text-xs">
-                {renderColumnHeader(<>ID <span className="ml-1 text-[9px] bg-slate-200 text-slate-400 rounded px-1 py-0.5 font-normal normal-case">auto</span></>, 'docId')}{rh('docId')}
+                {renderColumnHeader(<>{t('asig.form.id')} <span className="ml-1 text-[9px] bg-slate-200 text-slate-400 rounded px-1 py-0.5 font-normal normal-case">{t('asig.form.auto')}</span></>, 'docId')}{rh('docId')}
               </th>
               <th data-col="vehiculos" style={{ width: cw('vehiculos'), minWidth:70, position:'relative' }} className="p-2 font-medium text-emerald-800 bg-emerald-50/50 uppercase text-xs">
-                {renderColumnHeader(<>{t('col.vehiculos')} <span className="ml-1 text-[9px] bg-emerald-100 text-emerald-500 rounded px-1 py-0.5 font-normal normal-case">auto</span></>, 'vehiculosCount')}{rh('vehiculos')}
+                {renderColumnHeader(<>{t('col.vehiculos')} <span className="ml-1 text-[9px] bg-emerald-100 text-emerald-500 rounded px-1 py-0.5 font-normal normal-case">{t('asig.form.auto')}</span></>, 'vehiculosCount')}{rh('vehiculos')}
               </th>
               <th data-col="carrierRef" style={{ width: cw('carrierRef'), minWidth:70, position:'relative' }} className="p-2 font-medium text-indigo-700 bg-indigo-50/40 uppercase text-xs">
                 {renderColumnHeader("Carrier Ref", 'carrierRef')}{rh('carrierRef')}
@@ -2145,8 +2145,8 @@ export const AsignacionesDiarias: React.FC = () => {
                     {pendingDeleteId === a.id ? (
                       <>
                         <span className="text-xs text-red-600 font-semibold whitespace-nowrap">{isAdmin ? '¿Eliminar?' : '¿Cancelar?'}</span>
-                        <button onClick={() => handleDelete(a.id!)} className="px-2 py-0.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 font-medium">Sí</button>
-                        <button onClick={() => setPendingDeleteId(null)} className="px-2 py-0.5 text-xs bg-slate-200 text-slate-600 rounded hover:bg-slate-300 font-medium">No</button>
+                        <button onClick={() => handleDelete(a.id!)} className="px-2 py-0.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 font-medium">{t('btn.yes')}</button>
+                        <button onClick={() => setPendingDeleteId(null)} className="px-2 py-0.5 text-xs bg-slate-200 text-slate-600 rounded hover:bg-slate-300 font-medium">{t('btn.no')}</button>
                       </>
                     ) : (
                       <>
@@ -2318,7 +2318,7 @@ export const AsignacionesDiarias: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-1">No. Operación</label>
-                        <input disabled type="text" value={formData.numeroOperacion || ''} placeholder="Auto" className="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none font-mono uppercase bg-slate-100 text-slate-500 cursor-not-allowed" />
+                        <input disabled type="text" value={formData.numeroOperacion || ''} placeholder={t('asig.form.auto')} className="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none font-mono uppercase bg-slate-100 text-slate-500 cursor-not-allowed" />
                       </div>
                     </div>
 
@@ -2356,7 +2356,7 @@ export const AsignacionesDiarias: React.FC = () => {
                               } as any);
                             }}
                             options={carriers.map(c => ({ value: c.codigo, label: c.nombre, sublabel: c.codigo }))}
-                            placeholder="Seleccionar Carrier..."
+                            placeholder={t('asig.form.sel_carrier')}
                             disabled={isRestrictedRole || !!scacFilter || !!subLineaFilter}
                           />
                         </div>
@@ -2386,7 +2386,7 @@ export const AsignacionesDiarias: React.FC = () => {
                                   } as any);
                                 }}
                                 options={uniqueSubScacs.map(s => ({ value: s, label: s }))}
-                                placeholder="Seleccionar Sub-Line SCAC..."
+                                placeholder={t('asig.form.sel_subline')}
                                 disabled={isRestrictedRole || !formData.carrierCodigo || !!subLineaFilter}
                               />
                             </div>
@@ -2435,7 +2435,7 @@ export const AsignacionesDiarias: React.FC = () => {
                             maxLength={50}
                             value={formData.observaciones || ''}
                             onChange={e => setFormData({...formData, observaciones: e.target.value})}
-                            placeholder="Opcional... (máx. 50 caracteres)"
+                            placeholder={t('asig.form.optional_50')}
                             className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                           />
                         </div>
@@ -2447,7 +2447,7 @@ export const AsignacionesDiarias: React.FC = () => {
                             type="text"
                             value={formData.carrierRef || ''}
                             onChange={e => setFormData({...formData, ...({ carrierRef: e.target.value } as any)})}
-                            placeholder="Ej. CFM-26CFTTN-..."
+                            placeholder={t('asig.form.cfm_example')}
                             className="w-full border border-indigo-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none font-mono"
                           />
                         </div>
@@ -2488,11 +2488,11 @@ export const AsignacionesDiarias: React.FC = () => {
                           <div className="grid grid-cols-2 gap-2">
                             <div>
                               <label className="block text-xs text-emerald-700 mb-0.5">Sub-Línea</label>
-                              <input disabled value={formData.subLinea || ''} className="w-full bg-emerald-100/50 border-transparent rounded p-1.5 text-xs text-emerald-800 font-medium" placeholder="Auto" />
+                              <input disabled value={formData.subLinea || ''} className="w-full bg-emerald-100/50 border-transparent rounded p-1.5 text-xs text-emerald-800 font-medium" placeholder={t('asig.form.auto')} />
                             </div>
                             <div>
                               <label className="block text-xs text-emerald-700 mb-0.5">Placas Caja</label>
-                              <input disabled value={formData.placasCaja || ''} className="w-full bg-emerald-100/50 border-transparent rounded p-1.5 text-xs text-emerald-800 font-mono" placeholder="Auto" />
+                              <input disabled value={formData.placasCaja || ''} className="w-full bg-emerald-100/50 border-transparent rounded p-1.5 text-xs text-emerald-800 font-mono" placeholder={t('asig.form.auto')} />
                             </div>
                           </div>
                         </div>
@@ -2527,8 +2527,8 @@ export const AsignacionesDiarias: React.FC = () => {
                           />
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="block text-xs text-orange-700 mb-0.5">Nombre</label>
-                              <input disabled value={formData.nombreDriver || ''} className="w-full bg-orange-100/50 border-transparent rounded p-1.5 text-xs text-orange-800" placeholder="Auto" />
+                              <label className="block text-xs text-orange-700 mb-0.5">{t('asig.form.name')}</label>
+                              <input disabled value={formData.nombreDriver || ''} className="w-full bg-orange-100/50 border-transparent rounded p-1.5 text-xs text-orange-800" placeholder={t('asig.form.auto')} />
                             </div>
                             <div>
                               <label className="block text-xs text-orange-700 mb-0.5">Placas Tracto</label>
@@ -2537,7 +2537,7 @@ export const AsignacionesDiarias: React.FC = () => {
                                 value={formData.placasTracto || ''}
                                 onChange={e => setFormData({...formData, placasTracto: e.target.value.toUpperCase()})}
                                 className="w-full bg-white border border-orange-200 rounded p-1.5 text-xs text-orange-800 font-mono focus:ring-2 focus:ring-orange-400 outline-none disabled:bg-slate-100"
-                                placeholder="Ej. ABC-123"
+                                placeholder={t('asig.form.plate_example')}
                               />
                             </div>
                           </div>
@@ -2553,7 +2553,7 @@ export const AsignacionesDiarias: React.FC = () => {
                         options={modelosCaja.map((m: string) => ({ value: m, label: m }))}
                         value={formData.modeloAsignado ? formData.modeloAsignado.split(', ') : []}
                         onChange={values => setFormData({...formData, modeloAsignado: values.join(', ')})}
-                        placeholder="Seleccionar modelos de producto..."
+                        placeholder={t('asig.form.sel_models')}
                         disabled={isRestrictedRole}
                       />
                     </div>
@@ -2564,7 +2564,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
               {/* Footer */}
               <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 shrink-0 bg-slate-50 rounded-b-2xl">
-                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition-colors">Cancelar</button>
+                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition-colors">{t('btn.cancelar')}</button>
                 <button
                   type="submit"
                   disabled={!formData.carrierCodigo || !formData.transportLineId || !formData.numeroCaja || !formData.driverId}

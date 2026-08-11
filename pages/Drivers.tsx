@@ -127,7 +127,8 @@ export const Drivers: React.FC = () => {
     );
 
     if (isDuplicateName) {
-        if (!confirm(`Ya existe un chófer registrado con el nombre "${formData.nombre}". ¿Estás seguro de que deseas guardar este registro duplicado?`)) {
+        if (!confirm(t('msg.confirm_duplicate_driver').replace('{name}', formData.nombre || ''))) {
+            setLoading(false);
             return;
         }
     }
@@ -142,7 +143,7 @@ export const Drivers: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("¿Seguro que deseas eliminar a este chófer?")) {
+    if (confirm(t('msg.confirm_delete_driver'))) {
       await driverService.deleteDriver(id);
       loadData();
     }
@@ -209,7 +210,7 @@ export const Drivers: React.FC = () => {
       reader.onload = async (e) => {
           const text = e.target?.result as string;
           const rows = parseCSV(text);
-          if (rows.length < 2) return alert("El archivo está vacío o no tiene datos válidos.");
+          if (rows.length < 2) return alert(t('msg.empty_file'));
 
           const headers = rows[0].map(h => h.trim().toUpperCase());
           const dIdx = headers.findIndex(h => h.includes('DRIVER'));
@@ -219,10 +220,10 @@ export const Drivers: React.FC = () => {
           const lIdx = headers.findIndex(h => h.includes('LICENCIA') && !h.includes('TIPO'));
           const tlicIdx = headers.findIndex(h => h.includes('TIPO LICENCIA') || h.includes('TIPO_LICENCIA'));
           const tIdx = headers.findIndex(h => h.includes('TEL'));
-          const pIdx = headers.findIndex(h => h.includes('PLACAS'));
+          const placaIdx = headers.findIndex(h => h.includes('PLACAS') || h.includes('TRACTO'));
 
-          if (dIdx === -1 || cIdx === -1 || nIdx === -1) {
-              return alert("Estructura inválida. Asegúrate de usar la plantilla descargable.");
+          if (nIdx === -1 || cIdx === -1 || tlIdx === -1) {
+              return alert(t('msg.invalid_structure'));
           }
 
           setLoading(true);
@@ -239,7 +240,7 @@ export const Drivers: React.FC = () => {
                   licencia: r[lIdx]?.trim() || '',
                   tipoLicencia: tlicIdx !== -1 ? r[tlicIdx]?.trim().toUpperCase() || '' : '',
                   telefono: r[tIdx]?.trim() || '',
-                  placasTracto: r[pIdx]?.trim() || ''
+                  placasTracto: placaIdx !== -1 ? r[placaIdx]?.trim() || '' : ''
               };
 
               try {
@@ -250,7 +251,7 @@ export const Drivers: React.FC = () => {
               }
           }
           if (fileInputRef.current) fileInputRef.current.value = '';
-          alert(`Importación finalizada. ${imported} choferes registrados.`);
+          alert(`${t('msg.import_done')} ${imported} ${t('msg.drivers_registered')}`);
           loadData();
       };
       reader.readAsText(file);
@@ -428,8 +429,8 @@ export const Drivers: React.FC = () => {
                         disabled={isEditing}
                         value={formData.driverId || ''}
                         onChange={e => setFormData({...formData, driverId: e.target.value.toUpperCase()})}
-                        className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-teal-500 outline-none disabled:bg-slate-100 font-mono font-bold text-teal-700"
-                        placeholder="ARC-001"
+                        className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500 uppercase font-mono bg-slate-50 disabled:opacity-70"
+                        placeholder={t('driver.form.tractor_plates')}
                       />
                     </div>
                   </div>
@@ -440,7 +441,7 @@ export const Drivers: React.FC = () => {
                       value={formData.carrierCodigo || ''}
                       onChange={val => setFormData({...formData, carrierCodigo: val, transportLineId: ''})}
                       options={carrierOptions}
-                      placeholder="Seleccionar Carrier..."
+                      placeholder={t('driver.form.carrier')}
                     />
                   </div>
               </div>
@@ -464,33 +465,36 @@ export const Drivers: React.FC = () => {
 
               {/* Nombre */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nombre Completo</label>
-                <input required value={formData.nombre || ''} onChange={e => setFormData({...formData, nombre: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder="Ej. Juan Pérez" />
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t('driver.name')}</label>
+                <input required value={formData.nombre || ''} onChange={e => setFormData({...formData, nombre: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder={t('driver.form.name')} />
               </div>
 
               {/* Licencia, Teléfono, Placas */}
               <div className="grid grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Licencia</label>
-                    <input required value={formData.licencia || ''} onChange={e => setFormData({...formData, licencia: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder="No. de Licencia" />
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('driver.form.license')}</label>
+                    <input required value={formData.licencia || ''} onChange={e => setFormData({...formData, licencia: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder={t('driver.form.license')} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Tipo Licencia</label>
-                    <input value={formData.tipoLicencia || ''} onChange={e => setFormData({...formData, tipoLicencia: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder="Ej. FEDERAL, ESTATAL" />
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('cajas.tipo')}</label>
+                    <input value={formData.tipoLicencia || ''} onChange={e => setFormData({...formData, tipoLicencia: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder={t('driver.form.license_type')} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Teléfono</label>
-                    <input required value={formData.telefono || ''} onChange={e => setFormData({...formData, telefono: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder="Tel o Celular" />
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('driver.tel')}</label>
+                    <input required value={formData.telefono || ''} onChange={e => setFormData({...formData, telefono: e.target.value})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder={t('driver.form.phone')} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Placas Tracto</label>
-                    <input value={formData.placasTracto || ''} onChange={e => setFormData({...formData, placasTracto: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder="ABC-123" />
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('driver.placas')}</label>
+                    <input value={formData.placasTracto || ''} onChange={e => setFormData({...formData, placasTracto: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-teal-500" placeholder={t('driver.form.tractor_plates')} />
                   </div>
               </div>
 
               <div className="flex justify-end gap-3 mt-6">
-                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
-                <button type="submit" className="px-5 py-2.5 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 shadow-lg shadow-teal-500/30 transition-all">Guardar Datos</button>
+                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">{t('btn.cancelar')}</button>
+                <button type="submit" disabled={loading} className="px-6 py-2.5 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 shadow-lg shadow-teal-500/30 transition-all disabled:opacity-70 flex items-center gap-2">
+                  {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                  {t('btn.guardar')}
+                </button>
               </div>
             </form>
           </div>

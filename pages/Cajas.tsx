@@ -132,13 +132,12 @@ export const Cajas: React.FC = () => {
   };
 
   const handleDelete = async (numero: string) => {
-    if (confirm("¿Seguro que deseas eliminar esta Caja/Contenedor?")) {
+    if (confirm(t('msg.confirm_delete_caja'))) {
       await cajaService.deleteCaja(numero);
       loadCajas();
     }
   };
 
-  // HARDENED Relational DB Extraction to safely navigate residual data mismatches (spaces, arrays, case differences)
   const getSafeSubline = (record: any): string => {
     let sub = String(record.nombreSubLinea || '').trim();
     if (!sub && Array.isArray(record.subLineas)) {
@@ -171,7 +170,6 @@ export const Cajas: React.FC = () => {
     setShowModal(true);
   };
 
-  // --- CSV LOGIC ---
   const exportToCSV = () => {
     const headers = ["NÚMERO CAJA", "CARRIER (SCAC)", "LÍNEA TRANSPORTE", "NOMBRE SUB-LÍNEA", "APÉNDICE 10 (CLAVE)", "TIPO", "TIPO CAJA", "PLACAS"];
     const rows = filteredCajas.map(c => [
@@ -217,7 +215,7 @@ export const Cajas: React.FC = () => {
     reader.onload = async (evt) => {
       const text = evt.target?.result as string;
       const rows = parseCSV(text);
-      if (rows.length < 2) return alert("El archivo está vacío o no tiene datos válidos.");
+      if (rows.length < 2) return alert(t('msg.empty_file'));
 
       const headers = rows[0].map(h => h.trim().toUpperCase());
       const nIdx = headers.findIndex(h => h.includes('NÚMERO CAJA') || h.includes('NUMERO CAJA') || h.includes('NUMEROCAJA'));
@@ -230,7 +228,7 @@ export const Cajas: React.FC = () => {
       const pIdx = headers.findIndex(h => h.includes('PLACAS'));
 
       if (nIdx === -1 || cIdx === -1) {
-        return alert("Estructura inválida. Asegúrate de usar la plantilla descargable con NÚMERO CAJA y CARRIER (SCAC).");
+        return alert(t('msg.invalid_structure_cajas'));
       }
 
       setLoading(true);
@@ -253,13 +251,13 @@ export const Cajas: React.FC = () => {
       }
 
       if (records.length === 0) {
-        alert("No se encontraron registros válidos. Obligatorios: NÚMERO CAJA, CARRIER (SCAC).");
+        alert(t('msg.no_valid_records'));
         setLoading(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
         return;
       }
 
-      if (confirm(`Se procesarán ${records.length} cajas. ¿Proceder?`)) {
+      if (confirm(`${records.length} ${t('msg.records')} ${t('msg.confirm_process_cajas')}`)) {
         let successCount = 0;
         for (const rec of records) {
           try {
@@ -267,7 +265,7 @@ export const Cajas: React.FC = () => {
             successCount++;
           } catch (e) { console.error("Error importing", rec.NumeroCaja, e); }
         }
-        alert(`¡Carga exitosa! Se procesaron ${successCount} registros.`);
+        alert(`${t('msg.process_success')} ${successCount} ${t('msg.records')}`);
         loadCajas();
       } else {
         setLoading(false);
@@ -279,7 +277,6 @@ export const Cajas: React.FC = () => {
 
   return (
     <div className="h-[calc(100vh-4rem)] -mt-8 -mx-8 flex flex-col overflow-hidden animate-fade-in w-full mx-auto">
-      {/* ── FIXED HEADER / CONTROLS ── */}
       <div className="flex-shrink-0 p-6 pb-2 relative z-20">
         <div className="flex justify-between items-center mb-4">
           <div>
@@ -292,14 +289,13 @@ export const Cajas: React.FC = () => {
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Buscar Caja..."
+              placeholder={t('cajas.form.search')}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500 outline-none w-64 shadow-sm"
             />
           </div>
 
-          {/* CSV Controls */}
           <div className="flex items-center gap-1 bg-white border border-slate-300 rounded-lg p-1 shadow-sm">
             <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
             <button onClick={downloadTemplate} className="p-1.5 text-slate-500 hover:text-violet-600 hover:bg-violet-50 rounded transition-colors" title="Descargar Plantilla CSV">
@@ -328,7 +324,6 @@ export const Cajas: React.FC = () => {
         </div>
       </div>
 
-      {/* ── SCROLLABLE TABLE AREA ── */}
       <div className="flex-1 flex flex-col min-h-0 p-6 pt-2 relative z-10">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto flex-1 relative">
           <table className="w-full text-left">
@@ -374,14 +369,14 @@ export const Cajas: React.FC = () => {
               </tr>
             ))}
             {filteredCajas.length === 0 && !loading && (
-              <tr><td colSpan={7} className="p-12 text-center">
+              <tr><td colSpan={9} className="p-12 text-center">
                 {user?.role === UserRole.TRANSPORTISTA && !subLineaFilter
                   ? <span className="text-amber-600 font-medium">⚠️ Tu perfil no tiene Nombre Comercial asignado. Contacta al administrador para configurarlo.</span>
                   : <span className="text-slate-400">No hay cajas o contenedores registrados.</span>
                 }
               </td></tr>
             )}
-            {loading && <tr><td colSpan={7} className="p-12 text-center text-slate-400">Cargando flota...</td></tr>}
+            {loading && <tr><td colSpan={9} className="p-12 text-center text-slate-400">Cargando flota...</td></tr>}
           </tbody>
         </table>
         </div>
@@ -410,8 +405,8 @@ export const Cajas: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">Número de Caja / Placa</label>
-                <input required disabled={isEditing} value={formData.NumeroCaja || ''} onChange={e => setFormData({ ...formData, NumeroCaja: e.target.value.toUpperCase() })} className="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-violet-500 outline-none uppercase disabled:opacity-60 font-mono" placeholder="Ej. YM-4512" />
+                <label className="block text-xs font-bold text-slate-500 mb-1">{t('cajas.num')}</label>
+                <input required disabled={isEditing} value={formData.NumeroCaja || ''} onChange={e => setFormData({ ...formData, NumeroCaja: e.target.value.toUpperCase() })} className="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-violet-500 outline-none uppercase disabled:opacity-60 font-mono" placeholder={t('cajas.form.id')} />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">Código SCAC (Carrier Link)</label>
@@ -431,7 +426,7 @@ export const Cajas: React.FC = () => {
                     }
                     return allowedCarriers.map(c => ({ value: c.codigo, label: c.nombre, sublabel: c.codigo }));
                   })()}
-                  placeholder="Selecciona el SCAC (Carrier)..."
+                  placeholder={t('cajas.form.scac')}
                 />
               </div>
 
@@ -443,7 +438,6 @@ export const Cajas: React.FC = () => {
                   value={formData.TransportLine || ''}
                   onChange={val => {
                     const validSubs = getValidSublines(val);
-                    // Si el usuario tiene una sublinea asignada, forzar esa como default si es válida
                     let defSub = validSubs[0] || '';
                     if (user?.role === UserRole.TRANSPORTISTA && user?.subLinea && validSubs.some(s => s.toUpperCase() === user.subLinea?.trim().toUpperCase())) {
                       defSub = user.subLinea.trim().toUpperCase();
@@ -457,7 +451,7 @@ export const Cajas: React.FC = () => {
                     }
                     return Array.from(new Set(filteredTLs.map(l => l.TransportLine))).map(tl => ({ value: tl, label: tl }));
                   })()}
-                  placeholder="Selecciona la Transport Line..."
+                  placeholder={t('cajas.form.linea')}
                 />
               </div>
 
@@ -476,7 +470,7 @@ export const Cajas: React.FC = () => {
                     }
                     return allSubs.map(sl => ({ value: sl, label: sl }));
                   })()}
-                  placeholder="Selecciona la Sub-Línea..."
+                  placeholder={t('cajas.form.sublinea')}
                 />
               </div>
 
@@ -490,7 +484,7 @@ export const Cajas: React.FC = () => {
                     setFormData({ ...formData, claveApendice10: val, TipoCaja: tipoCajaVal });
                   }}
                   options={apendice10List.map(a => ({ value: a.clave, label: a.descripcion, sublabel: a.clave }))}
-                  placeholder="Selecciona código y llena el tipo..."
+                  placeholder={t('cajas.form.clave')}
                 />
               </div>
 
@@ -503,18 +497,18 @@ export const Cajas: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">Tipo de Caja (Seca, Plana Refr.)</label>
-                <input required value={formData.TipoCaja || ''} onChange={e => setFormData({ ...formData, TipoCaja: e.target.value })} className="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-violet-500 outline-none uppercase" placeholder="Ej. CONTENEDOR ESTÁNDAR 40'" />
+                <label className="block text-xs font-bold text-slate-500 mb-1">{t('cajas.tipo')}</label>
+                <input required value={formData.TipoCaja || ''} onChange={e => setFormData({ ...formData, TipoCaja: e.target.value })} className="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-violet-500 outline-none uppercase" placeholder={t('cajas.form.tipo_caja')} />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">Placas (Opcional)</label>
-                <input value={formData.placas || ''} onChange={e => setFormData({ ...formData, placas: e.target.value.toUpperCase() })} className="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-violet-500 outline-none uppercase font-mono" placeholder="Ej. 12-AB-3C" />
+                <label className="block text-xs font-bold text-slate-500 mb-1">{t('cajas.placas')}</label>
+                <input value={formData.placas || ''} onChange={e => setFormData({ ...formData, placas: e.target.value.toUpperCase() })} className="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-violet-500 outline-none uppercase font-mono" placeholder={t('cajas.form.placas')} />
               </div>
 
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">{t('btn.cancelar')}</button>
                 <button type="submit" className="bg-violet-600 text-white px-6 py-2 rounded-lg hover:bg-violet-700 shadow-md shadow-violet-500/30 transition-all font-bold">
-                  Guardar
+                  {t('btn.guardar')}
                 </button>
               </div>
             </form>

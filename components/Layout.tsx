@@ -84,7 +84,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [ccpAlerts, setCcpAlerts] = useState<any[]>([]);
   const previousAdminCcpIds = React.useRef<Set<string>>(new Set());
   const { user, logout } = useAuth();
-  const { toggleLanguage, language, t } = useLanguage();
+  const { toggleLanguage, language, setLanguage, t } = useLanguage();
   const location = useLocation();
 
   // useRef so the event listener always reads the latest values without stale closures

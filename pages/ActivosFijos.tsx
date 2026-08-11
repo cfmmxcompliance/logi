@@ -133,7 +133,7 @@ export const ActivosFijos: React.FC = () => {
       if (selectedIds.size === 0) return;
       if (!window.confirm(`¿Estás seguro de que deseas eliminar ${selectedIds.size} activo(s)? Esta acción no se puede deshacer.`)) return;
 
-      const toDelete = Array.from(selectedIds);
+      const toDelete = Array.from<string>(selectedIds);
       try {
           for (const id of toDelete) {
               await storageService.deleteFixedAsset(id);

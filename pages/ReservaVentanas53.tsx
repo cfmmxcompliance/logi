@@ -16,10 +16,8 @@ import { VentanaCarga53 } from '../types/ventanaCarga53';
 import { ReservaVentana53, ReservaEstatus } from '../types/reservaVentana53';
 import { useAuth } from '../context/useAuth';
 import { UserRole } from '../types';
-import {
-  Loader2, CalendarDays, Clock, Package, CheckCircle,
-  AlertCircle, XCircle, Plus, X, Truck, ChevronDown, ChevronUp, Bell
-} from 'lucide-react';
+import { CheckCircle, Truck, PackageCheck, AlertTriangle, AlertCircle, X, DownloadCloud, FileText, ChevronDown, Save, Search, RefreshCw, Filter, Trash2, Calendar, Loader2, Bell, Plus, ChevronUp, Package, Clock } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const RESERVA_COLORS: Record<ReservaEstatus, string> = {
   'Reservada': 'bg-amber-50 text-amber-700 border-amber-200',
@@ -31,6 +29,7 @@ const RESERVA_COLORS: Record<ReservaEstatus, string> = {
 
 export const ReservaVentanas53: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const isAdmin = user?.role === UserRole.ADMIN || user?.role === UserRole.CONTROLLER;
   const email = user?.email || user?.username || 'sistema';
   const carrierName = user?.name || email;
@@ -294,7 +293,7 @@ export const ReservaVentanas53: React.FC = () => {
   };
 
   const handleConfirmarReserva = async (r: ReservaVentana53) => {
-    if (!window.confirm('¿Confirmar esta reserva y generar/vincular registros en Asignación Diaria?')) return;
+    if (!window.confirm(t('msg.confirm_reserva_asig'))) return;
     setBridgeSaving(r.id!);
     try {
       await reservaVentana53Service.confirmarReserva(r.id!, email);
@@ -307,7 +306,7 @@ export const ReservaVentanas53: React.FC = () => {
           result.actualizados > 0 ? `${result.actualizados} registro(s) vinculado(s) desde asignación existente` : '',
           result.omitidos > 0 ? `${result.omitidos} ya sincronizado(s)` : '',
         ].filter(Boolean).join(' · ');
-        alert(`✅ Reserva confirmada.\n${partes || 'Sin cambios adicionales.'}\n\nVe al módulo "Asignación Diaria de Cajas Secas 53'" para verificar.`);
+        alert(t('msg.reserva_ok').replace('{partes}', partes || 'Sin cambios adicionales.'));
       }
       await load();
     } catch (e: any) { alert('Error: ' + e.message); }
@@ -315,7 +314,7 @@ export const ReservaVentanas53: React.FC = () => {
   };
 
   const handleCancelarReserva = async (r: ReservaVentana53) => {
-    if (!window.confirm('¿Cancelar esta reserva? Se liberará la capacidad en la ventana.')) return;
+    if (!window.confirm(t('msg.confirm_cancel_reserva'))) return;
     setLoading(true);
     try {
       await reservaVentana53Service.cancelarReserva(r.id!, email, r.ventanaId, r.cajasReservadas);
@@ -324,7 +323,7 @@ export const ReservaVentanas53: React.FC = () => {
   };
 
   const handleEliminarReserva = async (r: ReservaVentana53) => {
-    if (!window.confirm('¿Eliminar definitivamente esta reserva cancelada? Esta acción no se puede deshacer.')) return;
+    if (!window.confirm(t('msg.confirm_delete_reserva'))) return;
     setLoading(true);
     try {
       await reservaVentana53Service.deleteReserva(r.id!);
@@ -334,7 +333,7 @@ export const ReservaVentanas53: React.FC = () => {
 
   const handleBulkEliminarCanceladas = async () => {
     if (selectedCanceladas.size === 0) return;
-    if (!window.confirm(`¿Eliminar las ${selectedCanceladas.size} reservas canceladas seleccionadas?`)) return;
+    if (!window.confirm(t('msg.confirm_delete_multiple_reservas').replace('{count}', selectedCanceladas.size.toString()))) return;
     setLoading(true);
     try {
       for (const id of selectedCanceladas) {
@@ -466,7 +465,7 @@ export const ReservaVentanas53: React.FC = () => {
       <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm w-fit">
         <label className="text-sm font-bold text-slate-600">Rango de Fechas:</label>
         <input type="date" value={dateRange.start} onChange={e => setDateRange(r => ({ ...r, start: e.target.value }))} className="px-2 py-1 border border-slate-200 rounded-lg text-sm outline-none focus:border-teal-400" />
-        <span className="text-slate-400">a</span>
+        <span className="text-slate-400">{t('reserva.a')}</span>
         <input type="date" value={dateRange.end} onChange={e => setDateRange(r => ({ ...r, end: e.target.value }))} className="px-2 py-1 border border-slate-200 rounded-lg text-sm outline-none focus:border-teal-400" />
       </div>
 
@@ -481,7 +480,7 @@ export const ReservaVentanas53: React.FC = () => {
                 <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center space-y-2">
                   <p className="text-amber-700 font-bold">No hay demandas disponibles para reservar</p>
                   {isAdmin && <p className="text-amber-600 text-sm">Crea una demanda en el módulo "Demanda Cajas 53'" y confírmala para que aparezca aquí.</p>}
-                  {!isAdmin && <p className="text-amber-600 text-sm">Las demandas deben estar en estatus <strong>Confirmada</strong> o <strong>Enviada a carriers</strong> para poder reservar.</p>}
+                  {!isAdmin && <p className="text-amber-600 text-sm">{t('reserva.demand_status_req')}</p>}
                 </div>
               )}
               {demandas.map(d => {
@@ -506,11 +505,11 @@ export const ReservaVentanas53: React.FC = () => {
                           <p className="font-black text-slate-800">{d.totalCajasSolicitadas}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-slate-400">Reservadas</p>
+                          <p className="text-xs text-slate-400">{t('reserva.reservadas')}</p>
                           <p className="font-black text-amber-600">{reservadasActivas}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-slate-400">Pendientes</p>
+                          <p className="text-xs text-slate-400">{t('reserva.pendientes')}</p>
                           <p className={`font-black ${pendientes > 0 ? 'text-emerald-600' : 'text-slate-300'}`}>{pendientes}</p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -533,7 +532,7 @@ export const ReservaVentanas53: React.FC = () => {
                         {/* Items */}
                         {demandasItems[d.id] && (
                           <div>
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Productos</p>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">{t('reserva.productos')}</p>
                             <div className="flex flex-wrap gap-2">
                               {demandasItems[d.id].map(item => (
                                 <span key={item.id} className="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs">
@@ -548,7 +547,7 @@ export const ReservaVentanas53: React.FC = () => {
                         {/* Reservas de esta demanda */}
                         {demandasReservas[d.id] && demandasReservas[d.id].length > 0 && (
                           <div>
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Reservas</p>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">{t('reserva.reservas')}</p>
                             <div className="space-y-2">
                               {demandasReservas[d.id].map(r => (
                                 <div key={r.id} className="flex items-center gap-3 bg-white rounded-xl border border-slate-100 px-4 py-2.5 text-sm">
@@ -595,13 +594,13 @@ export const ReservaVentanas53: React.FC = () => {
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-widest">
                     <th className="px-5 py-3 text-left">Fecha Carga</th>
-                    <th className="px-5 py-3 text-left">Horario</th>
-                    <th className="px-5 py-3 text-left">Carrier</th>
-                    <th className="px-5 py-3 text-left">Nom. Comercial</th>
-                    <th className="px-5 py-3 text-left">Sub-Línea</th>
-                    <th className="px-5 py-3 text-center">Cajas</th>
-                    <th className="px-5 py-3 text-left">Unidad/Placas</th>
-                    <th className="px-5 py-3 text-center">Estatus</th>
+                    <th className="px-5 py-3 text-left">{t('reserva.col.horario')}</th>
+                    <th className="px-5 py-3 text-left">{t('reserva.col.carrier')}</th>
+                    <th className="px-5 py-3 text-left">CFM REF</th>
+                    <th className="px-5 py-3 text-left">MODELS</th>
+                    <th className="px-5 py-3 text-center">{t('reserva.col.cajas')}</th>
+                    <th className="px-5 py-3 text-left">OPERADOR & PLACAS</th>
+                    <th className="px-5 py-3 text-center">{t('reserva.col.estatus')}</th>
                     <th className="px-5 py-3"></th>
                   </tr>
                 </thead>
@@ -748,7 +747,7 @@ export const ReservaVentanas53: React.FC = () => {
                 </div>
               ) : (
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Carrier</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">{t('reserva.form.carrier')}</label>
                   <div className="mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700">
                     {formCarrierNombre || formCarrierCodigo || carrierName}
                   </div>
@@ -854,14 +853,14 @@ export const ReservaVentanas53: React.FC = () => {
                 </div>
                 {/* Placas — auto-filled from caja */}
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Placas</label>
-                  <input value={formPlacas} onChange={e => setFormPlacas(e.target.value)} placeholder="Auto desde caja"
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">{t('reserva.form.placas')}</label>
+                  <input value={formPlacas} onChange={e => setFormPlacas(e.target.value)} placeholder={t('reserva.form.placas_auto')}
                     className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none" />
                 </div>
               </div>
               {/* Operador — filtered by Nombre Comercial + Sub-Línea */}
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Operador</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">{t('reserva.form.operador')}</label>
                 <select value={formOperador}
                   onChange={e => {
                     setFormOperador(e.target.value);
@@ -883,13 +882,13 @@ export const ReservaVentanas53: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Comentarios</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">{t('reserva.form.comentarios')}</label>
                 <textarea value={formComentarios} onChange={e => setFormComentarios(e.target.value)} rows={2}
                   className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none resize-none" />
               </div>
             </div>
             <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium">Cancelar</button>
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium">{t('btn.cancelar')}</button>
               <button onClick={handleCrearReserva} disabled={saving}
                 className="inline-flex items-center gap-2 px-5 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-bold rounded-lg text-sm shadow-sm transition-colors">
                 {saving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}

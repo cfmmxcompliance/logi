@@ -884,12 +884,10 @@ export const HistoricoExpo = () => {
                               <a href={toDriveDownload(record.dodaUrl)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors" title="Descargar DODA" onClick={e => { e.stopPropagation(); handleDownloadDoda(record); }}>
                                 <FileText size={18} />
                               </a>
-                              {!isCarrier && (
-                                <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer" title="Reemplazar DODA" onClick={e => e.stopPropagation()}>
-                                  <UploadCloud size={16} />
-                                  <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(record.id!, 'dodaUrl', f, record.trailer); e.target.value = ''; }} />
-                                </label>
-                              )}
+                              <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer" title="Reemplazar DODA" onClick={e => e.stopPropagation()}>
+                                <UploadCloud size={16} />
+                                <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(record.id!, 'dodaUrl', f, record.trailer); e.target.value = ''; }} />
+                              </label>
                             </div>
                             {(record.dodaUploadHistory && record.dodaUploadHistory.length > 0) ? (
                               <div className="flex flex-col items-center gap-0.5 mt-1">
@@ -901,13 +899,11 @@ export const HistoricoExpo = () => {
                               <span className="text-[10px] text-indigo-400 font-mono whitespace-nowrap mt-1">{record.dodaUploadedAt}</span>
                             )}
                           </div>
-                        ) : !isCarrier ? (
+                        ) : (
                           <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer" title="Subir DODA" onClick={e => e.stopPropagation()}>
                             <UploadCloud size={18} />
                             <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(record.id!, 'dodaUrl', f, record.trailer); e.target.value = ''; }} />
                           </label>
-                        ) : (
-                          <span className="text-slate-300 italic">—</span>
                         )}
                       </td>
 
@@ -921,12 +917,10 @@ export const HistoricoExpo = () => {
                               <a href={toDriveDownload(record.entryUrl)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-100 transition-colors" title="Descargar ENTRY" onClick={e => { e.stopPropagation(); handleDownloadEntry(record); }}>
                                 <FileText size={18} />
                               </a>
-                              {!isCarrier && (
-                                <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer" title="Reemplazar ENTRY" onClick={e => e.stopPropagation()}>
-                                  <UploadCloud size={16} />
-                                  <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(record.id!, 'entryUrl', f, record.trailer); e.target.value = ''; }} />
-                                </label>
-                              )}
+                              <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer" title="Reemplazar ENTRY" onClick={e => e.stopPropagation()}>
+                                <UploadCloud size={16} />
+                                <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(record.id!, 'entryUrl', f, record.trailer); e.target.value = ''; }} />
+                              </label>
                             </div>
                             {(record.entryUploadHistory && record.entryUploadHistory.length > 0) ? (
                               <div className="flex flex-col items-center gap-0.5 mt-1">
@@ -938,13 +932,11 @@ export const HistoricoExpo = () => {
                               <span className="text-[10px] text-emerald-400 font-mono whitespace-nowrap mt-1">{record.entryUploadedAt}</span>
                             )}
                           </div>
-                        ) : !isCarrier ? (
+                        ) : (
                           <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 transition-colors cursor-pointer" title="Subir ENTRY" onClick={e => e.stopPropagation()}>
                             <UploadCloud size={18} />
                             <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDoc(record.id!, 'entryUrl', f, record.trailer); e.target.value = ''; }} />
                           </label>
-                        ) : (
-                          <span className="text-slate-300 italic">—</span>
                         )}
                       </td>
 

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && cd wms-pda && npm install && npm run build && cd ../af-pda && npm install && npm run build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare": "git config core.hooksPath .git-hooks"
   },
   "dependencies": {
     "@google/genai": "^1.33.0",

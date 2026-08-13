@@ -144,23 +144,34 @@ export const Embarques: React.FC = () => {
       const uploadedBy = user?.email || user?.name || 'Desconocido';
       const uploadedAt = nowMX();
 
-      // Sincronizar con Asignación Diaria de Cajas
+      // Sincronizar con Asignación Diaria de Cajas — dual-key fallback para mayor robustez
       const record = data.find(d => d.id === recordId);
-      let asigPromise: Promise<any> = Promise.resolve();
-      if (record && record.numeroOperacion) {
-        asigPromise = asignacionCajaService.getAsignacionByNumeroOperacion(record.numeroOperacion).then(asigDoc => {
-          if (asigDoc && asigDoc.id) {
-            const asigUpdates: any = {
-              ccpUrl: url,
-              ccpUploadedBy: uploadedBy,
-              ccpUploadedAt: uploadedAt,
-              ccpFileName: file.name,
-              ccpFileId: driveFileId,
-            };
-            return asignacionCajaService.updateAsignacion(asigDoc.id, asigUpdates);
-          }
-        });
-      }
+      const asigPromise: Promise<any> = (record?.numeroOperacion || record?.numeroCaja)
+        ? (async () => {
+            // Intento 1: buscar por numeroOperacion (más específico)
+            let asigDoc = record?.numeroOperacion
+              ? await asignacionCajaService.getAsignacionByNumeroOperacion(record.numeroOperacion)
+              : null;
+
+            // Intento 2: fallback por numeroCaja si el primer intento no encontró nada
+            if (!asigDoc && record?.numeroCaja) {
+              asigDoc = await asignacionCajaService.getAsignacionByNumeroCaja(record.numeroCaja);
+            }
+
+            if (asigDoc && asigDoc.id) {
+              const asigUpdates: any = {
+                ccpUrl: url,
+                ccpUploadedBy: uploadedBy,
+                ccpUploadedAt: uploadedAt,
+                ccpFileName: file.name,
+                ccpFileId: driveFileId,
+              };
+              return asignacionCajaService.updateAsignacion(asigDoc.id, asigUpdates);
+            } else {
+              console.warn('[CCP Embarques] No se encontró asignación para sincronizar. numeroOperacion:', record?.numeroOperacion, '| numeroCaja:', record?.numeroCaja);
+            }
+          })()
+        : Promise.resolve();
 
       await Promise.all([
         contratoService.updateContrato(recordId, {

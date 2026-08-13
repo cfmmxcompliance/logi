@@ -405,17 +405,26 @@ export const AsignacionesDiarias: React.FC = () => {
           const carrierDisplay = `${tlName} / ${subLineaName}`;
           await ccpNotificationService.addNotification(carrierDisplay, numeroCaja);
           
-          // Sincronizar con Embarques (contratos)
-          if (asigDoc.numeroOperacion) {
-            const contratoDoc = await contratoService.getContratoByNumeroOperacion(asigDoc.numeroOperacion, asigDoc.fecha);
-            if (contratoDoc && contratoDoc.id) {
-              await contratoService.updateContrato(contratoDoc.id, {
-                ccpUrl: url,
-                ccpUploadedBy: uploadedBy,
-                ccpUploadedAt: uploadedAt,
-                ccpFileName: file.name,
-              });
-            }
+          // Sincronizar con Embarques (contratos) — dual-key fallback para mayor robustez
+          // Intento 1: buscar por numeroOperacion (más específico)
+          let contratoCCP = asigDoc.numeroOperacion
+            ? await contratoService.getContratoByNumeroOperacion(asigDoc.numeroOperacion, asigDoc.fecha)
+            : null;
+
+          // Intento 2: fallback por numeroCaja si el primer intento no encontró nada
+          if (!contratoCCP && asigDoc.numeroCaja) {
+            contratoCCP = await contratoService.getContratoByNumeroCaja(asigDoc.numeroCaja);
+          }
+
+          if (contratoCCP && contratoCCP.id) {
+            await contratoService.updateContrato(contratoCCP.id, {
+              ccpUrl: url,
+              ccpUploadedBy: uploadedBy,
+              ccpUploadedAt: uploadedAt,
+              ccpFileName: file.name,
+            });
+          } else {
+            console.warn('[CCP Asignaciones] No se encontró contrato para sincronizar. numeroOperacion:', asigDoc.numeroOperacion, '| numeroCaja:', asigDoc.numeroCaja);
           }
         }
         setAsignaciones(prev => prev.map(a => a.id === recordId ? { ...a, ...ccpUpdates } : a));

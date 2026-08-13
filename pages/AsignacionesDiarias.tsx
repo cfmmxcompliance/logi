@@ -2589,6 +2589,20 @@ export const AsignacionesDiarias: React.FC = () => {
                             </div>
                           </div>
                         </div>
+                        
+                        {/* Dealers Checkbox */}
+                        <div className="pt-2">
+                          <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded-lg transition-colors border border-transparent hover:border-slate-100">
+                            <input
+                              type="checkbox"
+                              checked={!!formData.isDealer}
+                              onChange={(e) => setFormData({ ...formData, isDealer: e.target.checked } as any)}
+                              disabled={isRestrictedRole}
+                              className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 disabled:opacity-50"
+                            />
+                            <span className="text-sm font-semibold text-slate-700 select-none">Dealers</span>
+                          </label>
+                        </div>
 
                       </div>
                     </div>

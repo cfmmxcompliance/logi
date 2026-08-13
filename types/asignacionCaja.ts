@@ -42,4 +42,5 @@ export interface AsignacionCajaModel {
   anexo29UploadedBy?: string;
   anexo29UploadedAt?: string;
   workingWasAvailable?: boolean;  // set true permanently when barcode+no arribo+no dock+>1h
+  isDealer?: boolean;
 }

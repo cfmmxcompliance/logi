@@ -28,6 +28,7 @@ service cloud.firestore {
     match /training_submissions/{docId} { allow read, write: if true; }
     match /audit_subscriptions/{docId} { allow read, write: if true; }
     match /suppliers/{docId} { allow read, write: if true; }
+    match /dealers/{docId} { allow read, write: if true; }
     match /logistics/{docId} { allow read, write: if true; }
     match /users/{docId} { allow read, write: if true; }
     match /logs/{docId} { allow read, write: if true; }

@@ -18,6 +18,10 @@ export interface ContratoRecord {
   ccpUploadedBy?: string;
   ccpUploadedAt?: string;
   ccpFileName?: string;
+  anexo29Url?: string;
+  anexo29UploadedBy?: string;
+  anexo29UploadedAt?: string;
+  anexo29FileName?: string;
   cerrado?: boolean;
   carrierRef?: string;
   observaciones?: string;

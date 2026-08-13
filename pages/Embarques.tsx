@@ -191,6 +191,58 @@ export const Embarques: React.FC = () => {
     }
   };
 
+  const handleUploadAnexo29 = async (recordId: string, numeroCaja: string, file: File) => {
+    try {
+      setUploadingFor(recordId);
+      const ext = file.name.split('.').pop() || 'file';
+      const ts = nowMX().replace(/[:.-]/g, '');
+      const filename = `ANEXO29_${numeroCaja}_${ts}.${ext}`;
+      const result = await uploadFileToDrive(file, filename, EMBARQUES_FOLDER_ID);
+      const url = result?.webViewLink || '';
+      const uploadedBy = user?.email || user?.name || 'Desconocido';
+      const uploadedAt = nowMX();
+
+      // Sincronizar con Asignación Diaria de Cajas — dual-key fallback
+      const record = data.find(d => d.id === recordId);
+      const asigPromise: Promise<any> = (record?.numeroOperacion || record?.numeroCaja)
+        ? (async () => {
+            let asigDoc = record?.numeroOperacion
+              ? await asignacionCajaService.getAsignacionByNumeroOperacion(record.numeroOperacion)
+              : null;
+            if (!asigDoc && record?.numeroCaja) {
+              asigDoc = await asignacionCajaService.getAsignacionByNumeroCaja(record.numeroCaja);
+            }
+            if (asigDoc && asigDoc.id) {
+              return asignacionCajaService.updateAsignacion(asigDoc.id, {
+                anexo29Url: url,
+                anexo29UploadedBy: uploadedBy,
+                anexo29UploadedAt: uploadedAt,
+                anexo29FileName: file.name,
+              });
+            } else {
+              console.warn('[Anexo29 Embarques] No se encontró asignación. numeroOperacion:', record?.numeroOperacion, '| numeroCaja:', record?.numeroCaja);
+            }
+          })()
+        : Promise.resolve();
+
+      await Promise.all([
+        contratoService.updateContrato(recordId, {
+          anexo29Url: url,
+          anexo29UploadedBy: uploadedBy,
+          anexo29UploadedAt: uploadedAt,
+          anexo29FileName: file.name,
+        }),
+        asigPromise
+      ]);
+
+      setData(prev => prev.map(d => d.id === recordId ? { ...d, anexo29Url: url, anexo29UploadedBy: uploadedBy, anexo29UploadedAt: uploadedAt, anexo29FileName: file.name } : d));
+    } catch (e: any) {
+      alert(`Error subiendo Anexo29: ${e.message}`);
+    } finally {
+      setUploadingFor(null);
+    }
+  };
+
   const handleCierreRow = async (id: string) => {
     try {
       await contratoService.updateContrato(id, { cerrado: true });
@@ -817,6 +869,7 @@ export const Embarques: React.FC = () => {
                   <SortableHeader label="Contrato" sortKey="contrato" />
                   <SortableHeader label="LAYOUT" sortKey="layoutUrl" className="text-center bg-indigo-50/40" />
                   <SortableHeader label="CCP" sortKey="ccpUrl" className="text-center bg-sky-50/40" />
+                  <SortableHeader label="ANEXO 29" sortKey="anexo29Url" className="text-center bg-emerald-50/40" />
                   <SortableHeader label="Asignado" sortKey="asignadoA" />
                   <SortableHeader label="CIERREEMB" sortKey="cerrado" className="text-center" />
                 </tr>
@@ -824,14 +877,14 @@ export const Embarques: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={13} className="py-12 text-center">
+                    <td colSpan={14} className="py-12 text-center">
                       <Loader2 className="animate-spin text-indigo-500 mx-auto" size={32} />
                       <p className="text-slate-500 mt-2 text-sm">Cargando contratos...</p>
                     </td>
                   </tr>
                 ) : sortedData.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="py-12 text-center text-slate-500">
+                    <td colSpan={14} className="py-12 text-center text-slate-500">
                       No se encontraron registros en estas fechas.
                     </td>
                   </tr>
@@ -970,6 +1023,44 @@ export const Embarques: React.FC = () => {
                             <FileText size={18} />
                             <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden"
                                    onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadCCP(item.id!, item.numeroCaja, f); e.target.value = ''; }} />
+                          </label>
+                        ) : (
+                          <span className="text-slate-300 italic">—</span>
+                        )}
+                      </td>
+                      {/* ANEXO 29 */}
+                      <td className="py-3 px-4 text-center bg-emerald-50/20 border-l border-emerald-100/50">
+                        {uploadingFor === item.id ? (
+                          <Loader2 size={18} className="animate-spin text-emerald-400 mx-auto" />
+                        ) : item.anexo29Url ? (
+                          <div className="flex flex-col items-center gap-0.5">
+                            <div className="flex items-center justify-center gap-1">
+                              <a href={toDriveDownload(item.anexo29Url)} target="_blank" rel="noreferrer"
+                                 className="inline-flex items-center justify-center p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
+                                 title="Descargar Anexo29">
+                                <FileText size={18} />
+                              </a>
+                              {!isCarrier && (
+                                <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer"
+                                       title="Reemplazar Anexo29">
+                                  <UploadCloud size={16} />
+                                  <input type="file" accept="application/pdf" className="hidden"
+                                         onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadAnexo29(item.id!, item.numeroCaja, f); e.target.value = ''; }} />
+                                </label>
+                              )}
+                            </div>
+                            {item.anexo29UploadedAt && (
+                              <span className="text-[10px] text-emerald-500 font-mono whitespace-nowrap">
+                                {new Date(item.anexo29UploadedAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit' })} {new Date(item.anexo29UploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', hour12: false })}
+                              </span>
+                            )}
+                          </div>
+                        ) : !isCarrier ? (
+                          <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 transition-colors cursor-pointer"
+                                 title="Subir Anexo29 PDF">
+                            <FileText size={18} />
+                            <input type="file" accept="application/pdf" className="hidden"
+                                   onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadAnexo29(item.id!, item.numeroCaja, f); e.target.value = ''; }} />
                           </label>
                         ) : (
                           <span className="text-slate-300 italic">—</span>

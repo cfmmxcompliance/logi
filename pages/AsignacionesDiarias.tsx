@@ -429,8 +429,35 @@ export const AsignacionesDiarias: React.FC = () => {
         }
         setAsignaciones(prev => prev.map(a => a.id === recordId ? { ...a, ...ccpUpdates } : a));
       } else {
-        await asignacionCajaService.updateAsignacion(recordId, { anexo29Url: url, anexo29UploadedBy: uploadedBy, anexo29UploadedAt: uploadedAt });
-        setAsignaciones(prev => prev.map(a => a.id === recordId ? { ...a, anexo29Url: url, anexo29UploadedBy: uploadedBy, anexo29UploadedAt: uploadedAt } : a));
+        const anexo29Updates = {
+          anexo29Url: url,
+          anexo29UploadedBy: uploadedBy,
+          anexo29UploadedAt: uploadedAt,
+          anexo29FileName: file.name,
+        };
+        await asignacionCajaService.updateAsignacion(recordId, anexo29Updates);
+        setAsignaciones(prev => prev.map(a => a.id === recordId ? { ...a, ...anexo29Updates } : a));
+
+        // Sincronizar con Embarques (contratos) — dual-key fallback para mayor robustez
+        const asigRecord = asignaciones.find(a => a.id === recordId);
+        if (asigRecord) {
+          let contratoAnexo = asigRecord.numeroOperacion
+            ? await contratoService.getContratoByNumeroOperacion(asigRecord.numeroOperacion, asigRecord.fecha)
+            : null;
+          if (!contratoAnexo && asigRecord.numeroCaja) {
+            contratoAnexo = await contratoService.getContratoByNumeroCaja(asigRecord.numeroCaja);
+          }
+          if (contratoAnexo && contratoAnexo.id) {
+            await contratoService.updateContrato(contratoAnexo.id, {
+              anexo29Url: url,
+              anexo29UploadedBy: uploadedBy,
+              anexo29UploadedAt: uploadedAt,
+              anexo29FileName: file.name,
+            });
+          } else {
+            console.warn('[Anexo29 Asignaciones] No se encontró contrato para sincronizar. numeroOperacion:', asigRecord.numeroOperacion, '| numeroCaja:', asigRecord.numeroCaja);
+          }
+        }
       }
 
       window.dispatchEvent(new Event('reserva:changed'));

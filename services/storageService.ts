@@ -19,7 +19,8 @@ const COLS = {
   FIANZAS: 'fianzas',
   FIXED_ASSETS: 'fixed_assets',
   RULE_8THS: 'rule_8ths',
-  HISTORICO_EXPO: 'historico_expo'
+  HISTORICO_EXPO: 'historico_expo',
+  DEALERS: 'dealers'
 };
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
@@ -30,7 +31,7 @@ const PENDING_WRITES_KEY = 'logimaster_sync_queue';
 
 interface PendingWrite {
   id: string;
-  action: 'UPSERT_PARTS' | 'UPSERT_SHIPMENTS' | 'UPSERT_VESSEL' | 'UPDATE_VESSEL' | 'UPDATE_EQUIPMENT' | 'UPDATE_SPARE_PARTS' | 'UPDATE_CUSTOMS' | 'UPSERT_INVOICES' | 'DELETE_PARTS' | 'DELETE_INVOICES' | 'DELETE_SHIPMENTS' | 'DELETE_VESSEL' | 'DELETE_EQUIPMENT' | 'DELETE_SPARE_PARTS' | 'DELETE_CUSTOMS' | 'UPSERT_SUPPLIER' | 'DELETE_SUPPLIER' | 'UPSERT_LOGISTICS' | 'DELETE_LOGISTICS' | 'LOG_ACTION' | 'SAVE_REPORT' | 'UPSERT_USER' | 'DELETE_USER' | 'SAVE_ARCHIVE' | 'DELETE_ARCHIVE' | 'UPSERT_COSTS' | 'DELETE_COSTS' | 'UPSERT_PRE_ALERTS' | 'DELETE_PRE_ALERTS' | 'UPSERT_HISTORICO_EXPO' | 'DELETE_HISTORICO_EXPO';
+  action: 'UPSERT_PARTS' | 'UPSERT_SHIPMENTS' | 'UPSERT_VESSEL' | 'UPDATE_VESSEL' | 'UPDATE_EQUIPMENT' | 'UPDATE_SPARE_PARTS' | 'UPDATE_CUSTOMS' | 'UPSERT_INVOICES' | 'DELETE_PARTS' | 'DELETE_INVOICES' | 'DELETE_SHIPMENTS' | 'DELETE_VESSEL' | 'DELETE_EQUIPMENT' | 'DELETE_SPARE_PARTS' | 'DELETE_CUSTOMS' | 'UPSERT_SUPPLIER' | 'DELETE_SUPPLIER' | 'UPSERT_DEALER' | 'DELETE_DEALER' | 'UPSERT_LOGISTICS' | 'DELETE_LOGISTICS' | 'LOG_ACTION' | 'SAVE_REPORT' | 'UPSERT_USER' | 'DELETE_USER' | 'SAVE_ARCHIVE' | 'DELETE_ARCHIVE' | 'UPSERT_COSTS' | 'DELETE_COSTS' | 'UPSERT_PRE_ALERTS' | 'DELETE_PRE_ALERTS' | 'UPSERT_HISTORICO_EXPO' | 'DELETE_HISTORICO_EXPO';
   data: any;
   timestamp: string;
 }
@@ -42,7 +43,7 @@ let dbState: StorageState = {
   customsClearance: [], preAlerts: [], costs: [], logs: [], snapshots: [],
   logistics: [], suppliers: [], dataStageReports: [], trainingSubmissions: [], commercialInvoices: [],
   dailyChanges: [], dailyReports: [], users: [],
-  cfdiInvoices: [], xmlCI: [], fianzas: [], fixedAssets: [], rule8ths: [], historicoExpo: []
+  cfdiInvoices: [], xmlCI: [], fianzas: [], fixedAssets: [], rule8ths: [], historicoExpo: [], dealers: []
 };
 
 let listeners: (() => void)[] = [];
@@ -477,7 +478,7 @@ export const storageService = {
 
         // (C) Agent Role Optimization: Only sync Suppliers + Logistics + Daily Tools + Fianzas
         if (role === UserRole.AGENT) {
-          if (key !== 'SUPPLIERS' && key !== 'LOGISTICS' && key !== 'DAILY_CHANGES' && key !== 'DAILY_REPORTS' && key !== 'FIANZAS') return;
+          if (key !== 'SUPPLIERS' && key !== 'DEALERS' && key !== 'LOGISTICS' && key !== 'DAILY_CHANGES' && key !== 'DAILY_REPORTS' && key !== 'FIANZAS') return;
         }
 
         // (C.2) Global Performance Optimization: Skip heavy admin, finance, and analytics collections FOR EVERYONE
@@ -719,6 +720,64 @@ export const storageService = {
 
   getLogistics: () => dbState.logistics || [],
   getSuppliers: () => dbState.suppliers || [],
+  getDealers: () => dbState.dealers || [],
+
+  // --- DEALERS CRUD ---
+  updateDealer: async (record: any) => {
+    const updated = { ...record, updatedAt: new Date().toISOString() };
+    const id = record.id || generateId();
+
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await setDoc(doc(db, COLS.DEALERS, id), sanitizeForFirestore({ ...updated, id }));
+
+    // Update Local
+    if (!dbState.dealers) dbState.dealers = [];
+    const idx = dbState.dealers.findIndex((d: any) => d.id === id);
+    if (idx !== -1) dbState.dealers[idx] = { ...updated, id };
+    else dbState.dealers.push({ ...updated, id });
+    notifyListeners();
+  },
+
+  deleteDealer: async (id: string) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await deleteDoc(doc(db, COLS.DEALERS, id));
+    if (dbState.dealers) {
+      dbState.dealers = dbState.dealers.filter((d: any) => d.id !== id);
+      notifyListeners();
+    }
+  },
+
+  massImportDealers: async (dealersData: any[]) => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    if (!dealersData || dealersData.length === 0) return;
+
+    const batchSize = 400; // Firestore limit is 500
+    let batches = [];
+    let currentBatch = writeBatch(db);
+    let count = 0;
+
+    for (const dealer of dealersData) {
+      // Find existing by IdDealer to upsert, or create new id
+      const existing = (dbState.dealers || []).find((d: any) => d.idDealer === dealer.idDealer);
+      const id = existing?.id || generateId();
+      
+      const docRef = doc(db, COLS.DEALERS, id);
+      currentBatch.set(docRef, sanitizeForFirestore({ ...dealer, id, updatedAt: new Date().toISOString() }), { merge: true });
+      count++;
+
+      if (count >= batchSize) {
+        batches.push(currentBatch.commit());
+        currentBatch = writeBatch(db);
+        count = 0;
+      }
+    }
+
+    if (count > 0) batches.push(currentBatch.commit());
+    await Promise.all(batches);
+
+    // No need to manually update dbState if onSnapshot is listening, but good for immediate UI response
+    // Or just let onSnapshot handle it.
+  },
 
   // --- SUPPLIERS CRUD ---
   // --- SUPPLIERS CRUD ---

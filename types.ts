@@ -701,6 +701,19 @@ export interface HistoricoExpoRecord {
   createdAt?: number | string;
 }
 
+export interface Dealer {
+  id: string;       // Firestore Document ID
+  idDealer: string; // The IdDealer from the Excel
+  shipTo: string;   // Ship To / Name
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string | number;
+  phone?: string | number;
+  country?: string;
+  createdAt?: string;
+}
+
 export interface StorageState {
   parts: RawMaterialPart[];
   shipments: Shipment[];
@@ -714,6 +727,7 @@ export interface StorageState {
   snapshots: RestorePoint[];
   logistics: any[]; // Legacy/Undefined
   suppliers: Supplier[];
+  dealers?: Dealer[]; // New Dealers Collection
   dataStageReports: DataStageReport[];
   trainingSubmissions: any[];
   commercialInvoices: CommercialInvoiceItem[];

@@ -82,10 +82,20 @@ export const Embarques: React.FC = () => {
         console.warn('[Layout Embarques] Local parse error:', err);
       }
 
-      // Construir la cadena de sincronización con Asignación (secuencial internamente, paralela con el update del contrato)
+      // Construir la cadena de sincronización con Asignación — dual-key fallback para mayor robustez
       const record = data.find(d => d.id === recordId);
-      const asigChain: Promise<any> = record?.numeroOperacion
-        ? asignacionCajaService.getAsignacionByNumeroOperacion(record.numeroOperacion).then(async asigDoc => {
+      const asigChain: Promise<any> = (record?.numeroOperacion || record?.numeroCaja)
+        ? (async () => {
+            // Intento 1: buscar por numeroOperacion (más específico)
+            let asigDoc = record?.numeroOperacion
+              ? await asignacionCajaService.getAsignacionByNumeroOperacion(record.numeroOperacion)
+              : null;
+
+            // Intento 2: fallback por numeroCaja si el primer intento no encontró nada
+            if (!asigDoc && record?.numeroCaja) {
+              asigDoc = await asignacionCajaService.getAsignacionByNumeroCaja(record.numeroCaja);
+            }
+
             if (asigDoc && asigDoc.id) {
               const asigUpdates: any = {
                 layoutUrl: url,
@@ -101,8 +111,10 @@ export const Embarques: React.FC = () => {
                 const { storageService } = await import('../services/storageService');
                 await storageService.upsertHistoricoExpos([{ id: `exp_${asigDoc.id}`, cfmRef } as any]);
               }
+            } else {
+              console.warn('[Layout Embarques] No se encontró asignación para sincronizar. numeroOperacion:', record?.numeroOperacion, '| numeroCaja:', record?.numeroCaja);
             }
-          })
+          })()
         : Promise.resolve();
 
       // Correr en paralelo: update del contrato + toda la cadena de asignación

@@ -29,3 +29,5 @@
 12. **ANSWERS OVER CHANGES**: When the user asks a question or for clarification, provide a detailed textual response. Do not perform any code changes or planning unless specifically requested to do so after the answer is provided.
 13. **NO DISCULPARSE**: No te disculpes bajo ninguna circunstancia, ya que hace perder tiempo innecesario. Limítate a corregir el error y avanzar.
 14. **RESPALDO MANUAL EN FIREBASE**: Todo procedimiento, corrección o inserción que se ejecute de forma manual (mediante scripts en backend o inyección en frontend) debe ser respaldado y persistido correctamente en Firebase para no comprometer la integridad y sincronización de los datos.
+15. **NO REDUNDANT SERVICES**: Avoid deploying to Cloud Run or GCR unless explicitly asked for a specific backend microservice. The web interface MUST always reside on Firebase Hosting.
+16. **BUILD REQUIREMENT**: A successful `npm run build` must precede every deployment.

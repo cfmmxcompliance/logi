@@ -32,16 +32,21 @@ export const HandheldArribo = () => {
         ? await asignacionCajaService.getAsignacionesByDate(dateStart)
         : await asignacionCajaService.getAsignacionesByDateRange(dateStart, dateEnd);
       
-      cajas.sort((a, b) => {
+      const validCajas = cajas.filter(c => {
+        const dock = (c.dockArribo || '').trim().toUpperCase();
+        return dock !== 'CANCELED' && dock !== 'CANCELADO';
+      });
+
+      validCajas.sort((a, b) => {
         const tA = a.horaAsignacion || '00:00';
         const tB = b.horaAsignacion || '00:00';
         return tA < tB ? -1 : tA > tB ? 1 : 0;
       });
-      setCajasDelDia(cajas);
+      setCajasDelDia(validCajas);
 
       const initialComentarios: Record<string, string> = {};
       const initialDocks: Record<string, string> = {};
-      cajas.forEach(c => {
+      validCajas.forEach(c => {
         if (c.id && c.comentariosArribo) initialComentarios[c.id] = c.comentariosArribo;
         if (c.id && c.dockArribo) initialDocks[c.id] = c.dockArribo;
       });

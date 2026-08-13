@@ -87,7 +87,12 @@ export const HandheldLiberacion = () => {
       ]);
 
       if (cachedCajas.length > 0) {
-        cachedCajas.sort((a, b) => {
+        const validCachedCajas = cachedCajas.filter(c => {
+          const dock = (c.dockArribo || '').trim().toUpperCase();
+          return dock !== 'CANCELED' && dock !== 'CANCELADO';
+        });
+
+        validCachedCajas.sort((a, b) => {
           const tA = a.horaAsignacion || '00:00';
           const tB = b.horaAsignacion || '00:00';
           if (tA !== tB) return tA < tB ? -1 : 1;
@@ -98,7 +103,7 @@ export const HandheldLiberacion = () => {
           const crB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
           return crA - crB;
         });
-        setCajasDelDia(cachedCajas);
+        setCajasDelDia(validCachedCajas);
         setSellosDelDia(cachedSellos);
         setLiberacionesDelDia(cachedLiberaciones);
         setLoading(false); // Show immediately — don't wait for network
@@ -130,7 +135,12 @@ export const HandheldLiberacion = () => {
         );
       }
 
-      cajasParaFecha.sort((a, b) => {
+      const validCajasParaFecha = cajasParaFecha.filter(c => {
+        const dock = (c.dockArribo || '').trim().toUpperCase();
+        return dock !== 'CANCELED' && dock !== 'CANCELADO';
+      });
+
+      validCajasParaFecha.sort((a, b) => {
         const timeA = a.horaAsignacion || '00:00';
         const timeB = b.horaAsignacion || '00:00';
         if (timeA !== timeB) return timeA < timeB ? -1 : 1;
@@ -142,7 +152,7 @@ export const HandheldLiberacion = () => {
         return crA - crB;
       });
 
-      setCajasDelDia(cajasParaFecha);
+      setCajasDelDia(validCajasParaFecha);
       setSellosDelDia(sellosParaFecha);
       setLiberacionesDelDia(liberacionesParaFecha);
     } catch (e: any) {

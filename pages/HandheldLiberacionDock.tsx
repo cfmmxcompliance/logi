@@ -54,7 +54,11 @@ export const HandheldLiberacionDock = () => {
           ? liberacionDockService.getLiberacionesDockByDate(dateStart) 
           : liberacionDockService.getLiberacionesDockByDateRange(dateStart, dateEnd)
       ]);
-      setCajasAsignadas(dataCajas);
+      const validDataCajas = dataCajas.filter(c => {
+        const dock = (c.dockArribo || '').trim().toUpperCase();
+        return dock !== 'CANCELED' && dock !== 'CANCELADO';
+      });
+      setCajasAsignadas(validDataCajas);
       setLiberacionesDock(dataLibs);
     } catch (error) {
       console.error(error);

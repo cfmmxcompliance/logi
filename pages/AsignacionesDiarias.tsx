@@ -363,10 +363,19 @@ export const AsignacionesDiarias: React.FC = () => {
           await storageService.upsertHistoricoExpos([{ id: `exp_${recordId}`, cfmRef } as any]);
         }
 
-        // Sincronizar con Embarques (contratos)
+        // Sincronizar con Embarques (contratos) — dual-key fallback para mayor robustez
         const asigRecord = asignaciones.find(a => a.id === recordId);
-        if (asigRecord && asigRecord.numeroOperacion) {
-          const contratoDoc = await contratoService.getContratoByNumeroOperacion(asigRecord.numeroOperacion, asigRecord.fecha);
+        if (asigRecord) {
+          // Intento 1: buscar por numeroOperacion (más específico)
+          let contratoDoc = asigRecord.numeroOperacion
+            ? await contratoService.getContratoByNumeroOperacion(asigRecord.numeroOperacion, asigRecord.fecha)
+            : null;
+
+          // Intento 2: fallback por numeroCaja si el primer intento no encontró nada
+          if (!contratoDoc && asigRecord.numeroCaja) {
+            contratoDoc = await contratoService.getContratoByNumeroCaja(asigRecord.numeroCaja);
+          }
+
           if (contratoDoc && contratoDoc.id) {
             await contratoService.updateContrato(contratoDoc.id, {
               layoutUrl: url,
@@ -374,6 +383,8 @@ export const AsignacionesDiarias: React.FC = () => {
               layoutUploadedAt: uploadedAt,
               layoutFileName: file.name,
             });
+          } else {
+            console.warn('[Layout Asignaciones] No se encontró contrato para sincronizar. numeroOperacion:', asigRecord.numeroOperacion, '| numeroCaja:', asigRecord.numeroCaja);
           }
         }
 

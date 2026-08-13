@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { storageService } from '../services/storageService.ts';
 import { Supplier, Dealer, UserRole, Quotation } from '../types.ts';
 import { useAuth } from '../context/useAuth';
-import { Plus, Search, Edit2, Trash2, X, Save, Truck, Anchor, Briefcase, Globe, Shield, ShieldCheck, ShieldAlert, DollarSign, Database, RotateCcw, FileDown, FileSpreadsheet, Upload } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, Save, Truck, Anchor, Briefcase, Globe, ShieldCheck, ShieldAlert, DollarSign, Database, RotateCcw, FileDown, Upload } from 'lucide-react';
 import { cffService } from '../services/cffService.ts';
 
 const emptySupplier: Supplier = {
@@ -31,13 +31,12 @@ const emptyDealer: Dealer = {
     country: ''
 };
 
-// CSV parsing helper for simple comma separated without quotes
+// CSV parsing helper — handles BOM, quoted fields, CRLF
 const parseSimpleCSV = (text: string) => {
-    const lines = text.split('\n').filter(l => l.trim().length > 0);
+    // Strip UTF-8 BOM if present
+    const clean = text.replace(/^\uFEFF/, '');
+    const lines = clean.split(/\r?\n/).filter(l => l.trim().length > 0);
     if (lines.length === 0) return [];
-    
-    // Naive split (fails if commas are inside quotes, but fine for simple exact header test)
-    // A better approach is regex for quotes, but we'll use a standard one:
     const parseLine = (line: string) => {
         const result = [];
         let cur = '';
@@ -354,6 +353,18 @@ export const Suppliers = () => {
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
+    const handleDownloadBlankTemplate = () => {
+        const headers = ['IdDealer', 'Ship To', 'Address', 'City', 'State', 'ZIP', 'Phone', 'Country'];
+        const csvContent = headers.join(',') + '\n';
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Dealers_Template.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const handleDownloadTemplate = () => {
         const headers = ['IdDealer', 'Ship To', 'Address', 'City', 'State', 'ZIP', 'Phone', 'Country'];
         
@@ -393,6 +404,9 @@ export const Suppliers = () => {
                         />
                         <button onClick={() => fileInputRef.current?.click()} className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-all">
                             <Upload size={18} /> Bulk Upload (CSV)
+                        </button>
+                        <button onClick={handleDownloadBlankTemplate} className="bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-50 px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-all" title="Download blank CSV template with the exact required column headers">
+                            <FileDown size={18} /> Plantilla
                         </button>
                         <button onClick={handleDownloadTemplate} className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-all">
                             <FileDown size={18} /> Export (CSV)
@@ -528,7 +542,12 @@ export const Suppliers = () => {
                             />
                         </div>
                         <button
-                            onClick={() => setIsMassQueryOpen(true)}
+                            onClick={() => {
+                            if (massQueryConditions.length === 0) {
+                                setMassQueryConditions([{ id: Date.now().toString(), column: 'idDealer', operator: 'in', value: null, type: 'string', input: '' }]);
+                            }
+                            setIsMassQueryOpen(true);
+                        }}
                             className={`flex items-center gap-2 px-4 py-2 border rounded-lg shadow-sm transition-colors ${activeMassQuery && activeMassQuery.length > 0
                                 ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold'
                                 : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'

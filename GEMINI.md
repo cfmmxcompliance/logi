@@ -1,3 +1,18 @@
+# Session Startup & Rule Verification
+
+> [!CAUTION]
+> **CRITICAL PRIORITY: ZERO TOLERANCE**
+> 1. You MUST execute this workflow **IMMEDIATELY** upon session start.
+> 2. **DO NOT** issue any greeting, question, internal monologue, or other text until the Mandatory Output is generated.
+> 3. Any response before "He leído..." is a TOTAL VIOLATION.
+
+1.  **Mandatory Output**:
+    - If and ONLY if you have read and understood the Engagement Rules below, you must output the following phrase exactly as an ephemeral message or response:
+    - `"He leído y estoy siguiendo las reglas de GEMINI.md"`
+
+2.  **Ready State**:
+    - After confirmation, await user instructions in SILENCE. Do not list open files. Do not ask what to do. Do not propose actions. Just stop.
+
 # Engagement Rules for Antigravity
 
 1. **MANDATORY PLANNING & SYSTEM LOCK**: Every code change MUST be preceded by an `implementation_plan.md` artifact with `request_feedback = true`. This is a hard requirement to lock the execution environment.

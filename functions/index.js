@@ -993,3 +993,121 @@ exports.sendConfirmacionCitaEmail = onDocumentWritten(
     return null;
   }
 );
+
+/**
+ * CLOUD FUNCTION: API Endpoint for Brokers
+ * Receives JSON with dates and optional Base64 PDFs, updates Historico Expo and uploads to Drive.
+ */
+exports.updateBrokerDates = onRequest({
+    cors: true,
+    memory: "512MiB",
+    timeoutSeconds: 120
+}, async (req, res) => {
+    // 1. Verify Method & Auth
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method Not Allowed. Use POST.' });
+    }
+
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.replace('Bearer ', '').trim();
+    const VALID_TOKEN = process.env.BROKER_API_KEY || 'logimaster_broker_2026_xyz'; // Basic security
+
+    if (token !== VALID_TOKEN) {
+        return res.status(401).json({ error: 'Unauthorized. Invalid Token.' });
+    }
+
+    try {
+        const {
+            cfmRef,
+            dodaApertureDate,
+            crossingDate,
+            expDoda,
+            entryApertureDate,
+            dodaFileBase64,
+            dodaFileName,
+            entryFileBase64,
+            entryFileName
+        } = req.body;
+
+        if (!cfmRef) {
+            return res.status(400).json({ error: 'Missing required field: cfmRef' });
+        }
+
+        // 2. Find record in Firestore
+        const querySnapshot = await db.collection("historicoExpo").where("cfmRef", "==", cfmRef).limit(1).get();
+        if (querySnapshot.empty) {
+            return res.status(404).json({ error: `Record with cfmRef '${cfmRef}' not found.` });
+        }
+
+        const docRef = querySnapshot.docs[0].ref;
+        let updateData = {};
+
+        // Prepare dates
+        if (dodaApertureDate) updateData.dodaApertureDate = dodaApertureDate;
+        if (crossingDate) updateData.crossingDate = crossingDate;
+        if (expDoda) updateData.expDoda = expDoda;
+        if (entryApertureDate) updateData.entryApertureDate = entryApertureDate;
+
+        const drive = getDriveClient();
+        const { Readable } = require('stream');
+
+        const uploadBase64ToDrive = async (base64Str, filename, folderId) => {
+            // Strip data:application/pdf;base64, prefix if present
+            const cleanBase64 = base64Str.replace(/^data:.*?;base64,/, "");
+            const buffer = Buffer.from(cleanBase64, 'base64');
+            const stream = new Readable();
+            stream.push(buffer);
+            stream.push(null);
+
+            const fileMeta = { name: filename || `document_${Date.now()}.pdf`, parents: [folderId] };
+            const media = { mimeType: 'application/pdf', body: stream };
+
+            const response = await drive.files.create({
+                requestBody: fileMeta,
+                media: media,
+                fields: 'id, webViewLink'
+            });
+
+            const fileId = response.data.id;
+            // Set public read permission
+            await drive.permissions.create({
+                fileId: fileId,
+                requestBody: { role: 'reader', type: 'anyone' }
+            });
+
+            return response.data.webViewLink;
+        };
+
+        const DODA_FOLDER_ID = '14qiNMFvgyUuR4Z-e9beQzNqWw__CyMQZ';
+        const ENTRY_FOLDER_ID = '1BORtOzX23VOYtHBicGphlOf-CDp993oI';
+
+        // 3. Process DODA File
+        if (dodaFileBase64) {
+            console.log(`Uploading DODA for cfmRef: ${cfmRef}`);
+            const dodaUrl = await uploadBase64ToDrive(dodaFileBase64, dodaFileName || `DODA_${cfmRef}.pdf`, DODA_FOLDER_ID);
+            updateData.dodaUrl = dodaUrl;
+        }
+
+        // 4. Process ENTRY File
+        if (entryFileBase64) {
+            console.log(`Uploading ENTRY for cfmRef: ${cfmRef}`);
+            const entryUrl = await uploadBase64ToDrive(entryFileBase64, entryFileName || `ENTRY_${cfmRef}.pdf`, ENTRY_FOLDER_ID);
+            updateData.entryUrl = entryUrl;
+        }
+
+        // 5. Update Firestore
+        if (Object.keys(updateData).length > 0) {
+            await docRef.update(updateData);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `Record ${cfmRef} updated successfully.`,
+            updatedFields: Object.keys(updateData)
+        });
+
+    } catch (error) {
+        console.error("Broker API Error:", error);
+        return res.status(500).json({ error: 'Internal Server Error', details: error.message });
+    }
+});

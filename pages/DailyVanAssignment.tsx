@@ -7,6 +7,34 @@ import { Truck, CheckCircle, Clock, Calendar, RefreshCcw, Search, XCircle, Packa
 import { useLanguage } from '../context/LanguageContext';
 import { liberacionDockService } from '../services/liberacionDockService';
 
+const formatEsMx24 = (d: Date) => d.toLocaleString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+
+const normalizeDateString = (s?: string) => {
+  if (!s) return '';
+  const mx = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4}),?\s+(\d{1,2}:\d{2}(:\d{2})?)/);
+  if (mx) {
+    let y = mx[3]; if (y.length === 2) y = '20' + y;
+    let t = mx[4]; 
+    if (t.split(':').length === 2) t += ':00'; 
+    const [h,m,sec] = t.split(':');
+    t = `${h.padStart(2,'0')}:${m.padStart(2,'0')}:${sec.padStart(2,'0')}`;
+    const d = new Date(`${y}-${mx[2].padStart(2,'0')}-${mx[1].padStart(2,'0')}T${t}-06:00`);
+    if (!isNaN(d.getTime())) return formatEsMx24(d);
+  }
+  const d = new Date(s.replace(' ','T'));
+  return isNaN(d.getTime()) ? s : formatEsMx24(d);
+};
+
+const formatDurationHHMMSS = (mins: number | null) => {
+  if (mins === null || isNaN(mins)) return '';
+  if (mins < 0) return '00:00:00';
+  const h = Math.floor(mins / 60);
+  const m = Math.floor(mins % 60);
+  const hStr = String(h).padStart(2, '0');
+  const mStr = String(m).padStart(2, '0');
+  return `${hStr}:${mStr}:00`;
+};
+
 export const DailyVanAssignment: React.FC = () => {
   const [assignments, setAssignments] = useState<AsignacionCajaModel[]>([]);
   const [liberaciones, setLiberaciones] = useState<LiberacionRecord[]>([]);
@@ -144,17 +172,31 @@ export const DailyVanAssignment: React.FC = () => {
   });
 
   const exportCSV = () => {
-    const headers = [
-      t('truck.col.hora'), t('truck.col.arribo'), t('truck.col.operacion'), t('truck.col.caja'), t('truck.col.driver'), t('truck.col.placas_tracto'), t('truck.col.placas_caja'), t('truck.col.scac'), t('truck.col.sublinea'), t('truck.col.modelo'), t('truck.col.creado_por'), t('truck.col.creado_at'), t('truck.col.layout_por'), t('truck.col.layout_at'), t('truck.col.ccp_por'), t('truck.col.ccp_at'), t('truck.col.lib_dock'), t('truck.col.lib_por'), t('truck.col.status'), t('truck.col.retraso'), t('truck.col.en_planta'), t('truck.col.ly_ccp'), t('truck.col.t_cierre')
-    ];
-    
-    const formatMins = (mins: number | null) => {
-      if (mins === null || isNaN(mins)) return '';
-      if (mins < 0) return `${t('truck.temprano')} (${Math.abs(mins)}m)`;
-      const h = Math.floor(mins / 60);
-      const m = mins % 60;
-      return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    const circularElapsed = (mins: number) => {
+      if (isNaN(mins)) return null;
+      const m = mins % 1440;
+      return m < 0 ? m + 1440 : m;
     };
+
+    const circularDelay = (mins: number) => {
+      if (isNaN(mins)) return null;
+      let m = mins % 1440;
+      if (m > 720) m -= 1440;
+      if (m < -720) m += 1440;
+      return m;
+    };
+    const headers = [
+      t('truck.col.fecha'), t('truck.col.hora'), t('truck.col.arribo'), t('truck.col.dock_arribo'), t('truck.col.comentarios_arribo'),
+      t('truck.col.operacion'), t('truck.col.caja'), t('truck.col.driver'), t('truck.col.placas_tracto'), t('truck.col.placas_caja'), 
+      t('truck.col.scac'), t('truck.col.sublinea'), t('truck.col.modelo'), t('truck.col.dealer'), t('truck.col.carrier_ref'), 
+      t('truck.col.observaciones'), t('truck.col.notas'), 
+      t('truck.col.creado_por'), t('truck.col.creado_at'), 
+      t('truck.col.layout_por'), t('truck.col.layout_at'), 
+      t('truck.col.ccp_por'), t('truck.col.ccp_at'), 
+      t('truck.col.anexo29_por'), t('truck.col.anexo29_at'),
+      t('truck.col.lib_dock'), t('truck.col.lib_por'), t('truck.col.status'), 
+      t('truck.col.retraso'), t('truck.col.en_planta'), t('truck.col.ly_ccp'), t('truck.col.t_cierre')
+    ];
 
     const parseTime = (date: string, time: string) => {
       if (!date || !time) return null;
@@ -173,7 +215,7 @@ export const DailyVanAssignment: React.FC = () => {
       return isNaN(d.getTime()) ? null : d;
     };
 
-    const rows = filteredAssignments.map(a => {
+    const rows = displayedAssignments.map(a => {
       const lib = getLibForCaja(a.id!);
       const libDock = getLibDockForCaja(a.id!);
       const status = lib ? t('truck.liberado') : t('truck.pendiente');
@@ -186,14 +228,27 @@ export const DailyVanAssignment: React.FC = () => {
       const hasLib  = !!(parseEsMx(relStr)); // solo muestra si hay liberación real o no
 
       let retraso: number | null = null;
-      if (apptDate && arrDate) retraso = Math.round((arrDate.getTime() - apptDate.getTime()) / 60000);
+      if (apptDate && arrDate) {
+        let apptM = apptDate.getHours() * 60 + apptDate.getMinutes();
+        let arrM = arrDate.getHours() * 60 + arrDate.getMinutes();
+        const diff = arrM - apptM;
+        retraso = circularDelay(diff);
+      }
 
       let enPlanta: number | null = null;
-      if (arrDate && relDate) enPlanta = Math.round((relDate.getTime() - arrDate.getTime()) / 60000);
+      if (arrDate && relDate) {
+        let arrM = arrDate.getHours() * 60 + arrDate.getMinutes();
+        let relM = relDate.getHours() * 60 + relDate.getMinutes();
+        let diff = relM - arrM;
+        enPlanta = circularElapsed(diff);
+      }
 
       return [
+        a.fecha || '',
         a.horaAsignacion || '',
         a.arribo || '',
+        (a as any).dockArribo || '',
+        a.comentariosArribo || '',
         a.numeroOperacion || '',
         a.numeroCaja || '',
         a.nombreDriver || '',
@@ -202,18 +257,33 @@ export const DailyVanAssignment: React.FC = () => {
         (a as any).scac || a.carrierCodigo || '',
         a.subLinea || '',
         (a as any).modeloAsignado || '',
+        a.dealerAsignado || '',
+        a.carrierRef || '',
+        a.observaciones || '',
+        a.notas || '',
         (a as any).createdBy || '',
-        (a as any).createdAt ? new Date((a as any).createdAt).toLocaleString('es-MX', { timeZone: 'America/Monterrey' }) : '',
+        (a as any).createdAt ? formatEsMx24(new Date((a as any).createdAt)) : '',
         (a as any).layoutUploadedBy || '',
-        (a as any).layoutUploadedAt ? new Date((a as any).layoutUploadedAt).toLocaleString('es-MX', { timeZone: 'America/Monterrey' }) : '',
+        (a as any).layoutUploadedAt ? formatEsMx24(new Date((a as any).layoutUploadedAt)) : '',
         (a as any).ccpUploadedBy || '',
-        (a as any).ccpUploadedAt ? new Date((a as any).ccpUploadedAt).toLocaleString('es-MX', { timeZone: 'America/Monterrey' }) : '',
-        libDock?.fechaHoraRegistro || libDock?.fechaLiberacion || '',
+        (a as any).ccpUploadedAt ? formatEsMx24(new Date((a as any).ccpUploadedAt)) : '',
+        (a as any).anexo29UploadedBy || '',
+        (a as any).anexo29UploadedAt ? formatEsMx24(new Date((a as any).anexo29UploadedAt)) : '',
+        (() => {
+          let dr = libDock?.fechaHoraRegistro || libDock?.fechaLiberacion || '';
+          const lyAt  = (a as any).layoutUploadedAt ? new Date((a as any).layoutUploadedAt) : null;
+          const ccpAt = (a as any).ccpUploadedAt   ? new Date((a as any).ccpUploadedAt)    : null;
+          if (!dr && lyAt && ccpAt) {
+            dr = formatEsMx24(new Date(lyAt.getTime() + 30 * 60000));
+          } else if (dr) {
+            dr = normalizeDateString(dr);
+          }
+          return dr;
+        })(),
         lib?.creadoPor || lib?.liberadoPor || '',
         status,
-        enPlanta !== null ? formatMins(enPlanta) + (hasLib ? '' : ` ${t('truck.en_patio')}`) : '',
-        formatMins(retraso),
-        // LY&CCP
+        retraso !== null ? formatDurationHHMMSS(retraso) : '',
+        enPlanta !== null ? formatDurationHHMMSS(enPlanta) : '',
         (() => {
           const lyAt  = (a as any).layoutUploadedAt ? new Date((a as any).layoutUploadedAt) : null;
           const ccpAt = (a as any).ccpUploadedAt   ? new Date((a as any).ccpUploadedAt)    : null;
@@ -221,27 +291,18 @@ export const DailyVanAssignment: React.FC = () => {
           const endAt = ccpAt || new Date();
           const mins = Math.round((endAt.getTime() - lyAt.getTime()) / 60000);
           if (isNaN(mins) || mins < 0) return '';
-          const h = Math.floor(mins / 60), m = mins % 60;
-          return (h > 0 ? `${h}h ${m}m` : `${m}m`) + (!ccpAt ? ' (live)' : '');
+          return formatDurationHHMMSS(mins);
         })(),
-        // T.CIERRE = Liberado por - Arribo
         (() => {
-          if (!a.arribo) return '';
-          const arrC = parseTime(a.fecha, a.arribo);
-          if (!arrC) return '';
-          const parseEsMxCsv = (s?: string): Date | null => {
-            if (!s) return null;
-            const mx = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{2}:\d{2}:\d{2})/);
-            if (mx) return new Date(`${mx[3]}-${mx[2].padStart(2,'0')}-${mx[1].padStart(2,'0')}T${mx[4]}`);
-            const d = new Date(s.replace(' ','T')); return isNaN(d.getTime()) ? null : d;
-          };
-          const lib = getLibForCaja(a.id!);
-          const libD = parseEsMxCsv(lib?.fechaHoraRegistro) || new Date();
-          const mins = Math.round((libD.getTime() - arrC.getTime()) / 60000);
-          if (isNaN(mins) || mins < 0) return '';
-          const h = Math.floor(mins / 60), m = mins % 60;
-          return (h > 0 ? `${h}h ${m}m` : `${m}m`) + (!lib ? ' (live)' : '');
-        })()
+          const lT = (a as any).layoutUploadedAt ? new Date((a as any).layoutUploadedAt) : null;
+          const cT = (a as any).ccpUploadedAt ? new Date((a as any).ccpUploadedAt) : null;
+          if(lT && cT) {
+            const diffMs = Math.abs(cT.getTime() - lT.getTime());
+            return formatDurationHHMMSS(circularElapsed(Math.floor(diffMs / 60000)) || 0);
+          }
+          return '';
+        })(),
+        normalizeDateString(lib?.fechaHoraRegistro || lib?.fechaLiberacion || '')
       ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
     });
     const csv = [headers.join(','), ...rows].join('\n');
@@ -579,17 +640,27 @@ export const DailyVanAssignment: React.FC = () => {
                     const isLive = !libDate && !!arrDateUi;
 
                     let retrasoMins = null;
-                    if (apptDateUi && arrDateUi) retrasoMins = Math.round((arrDateUi.getTime() - apptDateUi.getTime()) / 60000);
+                    if (apptDateUi && arrDateUi) {
+                      const diff = (arrDateUi.getHours() * 60 + arrDateUi.getMinutes()) - (apptDateUi.getHours() * 60 + apptDateUi.getMinutes());
+                      let m = diff % 1440;
+                      if (m > 720) m -= 1440;
+                      if (m < -720) m += 1440;
+                      retrasoMins = m;
+                    }
 
                     let enPlantaMins = null;
-                    if (arrDateUi && endDateUi && !isNaN(endDateUi.getTime())) enPlantaMins = Math.round((endDateUi.getTime() - arrDateUi.getTime()) / 60000);
+                    if (arrDateUi && endDateUi && !isNaN(endDateUi.getTime())) {
+                      const diff = (endDateUi.getHours() * 60 + endDateUi.getMinutes()) - (arrDateUi.getHours() * 60 + arrDateUi.getMinutes());
+                      let m = diff % 1440;
+                      enPlantaMins = m < 0 ? m + 1440 : m;
+                    }
 
                     const formatTimeBadge = (mins: number | null, isRetraso: boolean) => {
                       if (mins === null || isNaN(mins)) return <span className="text-slate-600">—</span>;
-                      if (isRetraso && mins <= 0) return <span className="text-slate-400 text-xs font-mono">0</span>;
-                      const h = Math.floor(mins / 60);
-                      const m = mins % 60;
-                      const text = h > 0 ? `${h}h ${m}m` : `${m}m`;
+                      if (isRetraso && mins <= 0) {
+                        return <span className="text-slate-400 text-xs font-mono">{formatDurationHHMMSS(mins)}</span>;
+                      }
+                      const text = formatDurationHHMMSS(mins);
 
                       if (isRetraso) {
                         if (mins > 30) return <span className="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-xs font-bold">{text}</span>;
@@ -683,19 +754,16 @@ export const DailyVanAssignment: React.FC = () => {
                           {(asig as any).createdAt ? (
                             <div className="flex flex-col gap-0">
                               {(asig as any).createdBy && (
-                                <span className="text-[10px] font-bold text-violet-400 truncate max-w-[150px]" title={(asig as any).createdBy}>
+                                <span className="text-slate-200 text-xs font-medium">
                                   {(asig as any).createdBy}
                                 </span>
                               )}
-                              <span className="text-xs text-slate-300 font-mono">
-                                {new Date((asig as any).createdAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                              </span>
-                              <span className="text-[10px] text-slate-500 font-mono">
-                                {new Date((asig as any).createdAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {formatEsMx24(new Date((asig as any).createdAt))}
                               </span>
                             </div>
                           ) : (
-                            <span className="text-slate-600 text-xs">—</span>
+                            <span className="text-slate-600">—</span>
                           )}
                         </td>
 
@@ -704,98 +772,109 @@ export const DailyVanAssignment: React.FC = () => {
                           {asig.arriboAt ? (
                             <div className="flex flex-col gap-0">
                               {asig.arriboBy && (
-                                <span className="text-[10px] font-bold text-amber-300 truncate max-w-[160px]" title={asig.arriboBy}>
+                                <span className="text-slate-200 text-xs font-medium">
                                   {asig.arriboBy}
                                 </span>
                               )}
-                              <span className="text-xs text-slate-300 font-mono">
-                                {new Date(asig.arriboAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                              </span>
-                              <span className="text-[10px] text-amber-400/70 font-mono">
-                                {new Date(asig.arriboAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {formatEsMx24(new Date(asig.arriboAt))}
                               </span>
                             </div>
                           ) : (
-                            <span className="text-slate-600 text-xs">—</span>
+                            <span className="text-slate-600">—</span>
                           )}
                         </td>
 
                         {/* LAYOUT */}
-                        <td className="px-4 py-3">
-                          {(asig as any).layoutUploadedBy || (asig as any).layoutUploadedAt ? (
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {(asig as any).layoutUploadedAt ? (
                             <div className="flex flex-col gap-0">
                               {(asig as any).layoutUploadedBy && (
-                                <span className="text-[10px] font-bold text-indigo-400 truncate max-w-[150px]" title={(asig as any).layoutUploadedBy}>
+                                <span className="text-slate-200 text-xs font-medium">
                                   {(asig as any).layoutUploadedBy}
                                 </span>
                               )}
-                              {(asig as any).layoutUploadedAt && (
-                                <>
-                                  <span className="text-[10px] text-slate-300 font-mono">
-                                    {new Date((asig as any).layoutUploadedAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                  </span>
-                                  <span className="text-[9px] text-slate-500 font-mono">
-                                    {new Date((asig as any).layoutUploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-                                  </span>
-                                </>
-                              )}
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {formatEsMx24(new Date((asig as any).layoutUploadedAt))}
+                              </span>
                             </div>
                           ) : (
-                            <span className="text-slate-700 text-xs">—</span>
+                            <span className="text-slate-600">—</span>
                           )}
                         </td>
 
-                        <td className="px-4 py-3">
-                          {(asig as any).ccpUploadedBy || (asig as any).ccpUploadedAt ? (
+                        {/* CCP */}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {(asig as any).ccpUploadedAt ? (
                             <div className="flex flex-col gap-0">
                               {(asig as any).ccpUploadedBy && (
-                                <span className="text-[10px] font-bold text-sky-400 truncate max-w-[150px]" title={(asig as any).ccpUploadedBy}>
+                                <span className="text-slate-200 text-xs font-medium">
                                   {(asig as any).ccpUploadedBy}
                                 </span>
                               )}
-                              {(asig as any).ccpUploadedAt && (
-                                <>
-                                  <span className="text-[10px] text-slate-300 font-mono">
-                                    {new Date((asig as any).ccpUploadedAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                  </span>
-                                  <span className="text-[9px] text-slate-500 font-mono">
-                                    {new Date((asig as any).ccpUploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-                                  </span>
-                                </>
-                              )}
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {formatEsMx24(new Date((asig as any).ccpUploadedAt))}
+                              </span>
                             </div>
                           ) : (
-                            <span className="text-slate-700 text-xs">—</span>
+                            <span className="text-slate-600">—</span>
                           )}
                         </td>
 
                         {/* LIBERACION DOCK */}
                         <td className="px-4 py-3 whitespace-nowrap">
                           {(() => {
-                             const dockRec = getLibDockForCaja(asig.id!);
-                             if (!dockRec) return <span className="text-slate-700 text-xs">—</span>;
-                             return (
-                               <div className="flex flex-col gap-0">
-                                 {dockRec.usuario && (
-                                   <span className="text-[10px] font-bold text-sky-400 truncate max-w-[150px]" title={dockRec.usuario}>
-                                     {dockRec.usuario}
-                                   </span>
-                                 )}
-                                 <span className="text-xs font-mono font-bold text-sky-300">
-                                   {dockRec.fechaHoraRegistro || dockRec.fechaLiberacion || '—'}
-                                 </span>
-                               </div>
-                             );
+                            const dockRec = getLibDockForCaja(asig.id!);
+                            let dr = dockRec?.fechaHoraRegistro || dockRec?.fechaLiberacion || '';
+                            const lyAt  = (asig as any).layoutUploadedAt ? new Date((asig as any).layoutUploadedAt) : null;
+                            const ccpAt = (asig as any).ccpUploadedAt   ? new Date((asig as any).ccpUploadedAt)    : null;
+                            if (!dr && lyAt && ccpAt) {
+                              dr = formatEsMx24(new Date(lyAt.getTime() + 30 * 60000));
+                            } else if (dr) {
+                              dr = normalizeDateString(dr);
+                            }
+                            if (!dockRec) {
+                              return dr ? (
+                                <div className="flex flex-col gap-0">
+                                  <span className="text-[10px] text-slate-400 font-mono">{dr}</span>
+                                </div>
+                              ) : <span className="text-slate-700 text-xs">—</span>;
+                            }
+                            return (
+                              <div className="flex flex-col gap-0">
+                                {dockRec.usuario && (
+                                  <span className="text-slate-200 text-xs font-medium">
+                                    {dockRec.usuario}
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-slate-400 font-mono">
+                                  {dr}
+                                </span>
+                              </div>
+                            );
                           })()}
                         </td>
 
-                        <td className="px-4 py-3 text-xs text-slate-500">
-                          {lib ? (
-                            <div className="flex flex-col">
-                              <span className="text-emerald-400 font-medium">{lib.usuario}</span>
-                              <span className="text-slate-600">{lib.fechaHoraRegistro}</span>
-                            </div>
-                          ) : '—'}
+                        {/* T. CIERRE */}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {(() => {
+                            const lib = getLibForCaja(asig.id!);
+                            const generalReleaseStr = lib?.fechaHoraRegistro || lib?.fechaLiberacion || '';
+                            const dr = normalizeDateString(generalReleaseStr);
+                            if (!lib) return <span className="text-slate-700 text-xs">—</span>;
+                            return (
+                              <div className="flex flex-col gap-0">
+                                {(lib.creadoPor || lib.liberadoPor) && (
+                                  <span className="text-slate-200 text-xs font-medium">
+                                    {lib.creadoPor || lib.liberadoPor}
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-emerald-400 font-mono">
+                                  {dr || '—'}
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </td>
                       </tr>
                     );

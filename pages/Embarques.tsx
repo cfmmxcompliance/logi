@@ -6,8 +6,9 @@ import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { checkInService } from '../services/checkInService';
 import { selloService } from '../services/selloService';
 import { ContratoRecord } from '../types/contrato';
-import { UserRole } from '../types.ts';
+import { UserRole, Dealer } from '../types.ts';
 import { CheckInModel } from '../types/checkIn';
+import { storageService } from '../services/storageService';
 import { uploadFileToDrive } from '../services/googleDriveService.ts';
 import * as XLSX from 'xlsx';
 import { useLanguage } from '../context/LanguageContext';
@@ -27,6 +28,8 @@ export const Embarques: React.FC = () => {
   const isCarrier = user?.role === UserRole.CARRIER;
 
   const [activeTab, setActiveTab] = useState<'TODOS' | 'CON_LAYOUT' | 'SIN_CIERREEMB' | 'CON_CCP' | 'CHECK_IN'>(isCarrier ? 'CHECK_IN' : 'TODOS');
+  const [dealers, setDealers] = useState<Dealer[]>([]);
+  const [dealerFilter, setDealerFilter] = useState<string>('ALL');
   const [checkInsData, setCheckInsData] = useState<CheckInModel[]>([]);
   const [checkInFilter, setCheckInFilter] = useState<'ALL' | 'CON_CITA' | 'SIN_CITA' | 'CON_ERRORES'>('ALL');
   const [docks, setDocks] = useState<Record<string, string>>({});
@@ -139,8 +142,12 @@ export const Embarques: React.FC = () => {
   const handleUploadCCP = async (recordId: string, numeroCaja: string, file: File) => {
     try {
       setUploadingFor(recordId);
-      const uploadResult = await uploadFileToDrive(file, `CCP_${numeroCaja}`);
-      const { url, id: driveFileId } = uploadResult as any;
+      const ext = file.name.split('.').pop() || 'file';
+      const ts = nowMX().replace(/[:.-]/g, '');
+      const filename = `CCP_${numeroCaja}_${ts}.${ext}`;
+      const uploadResult = await uploadFileToDrive(file, filename, EMBARQUES_FOLDER_ID);
+      const url = uploadResult?.webViewLink || '';
+      const driveFileId = uploadResult?.id || '';
       const uploadedBy = user?.email || user?.name || 'Desconocido';
       const uploadedAt = nowMX();
 
@@ -163,7 +170,7 @@ export const Embarques: React.FC = () => {
                 ccpUrl: url,
                 ccpUploadedBy: uploadedBy,
                 ccpUploadedAt: uploadedAt,
-                ccpFileName: file.name,
+                ccpFileName: filename,
                 ccpFileId: driveFileId,
               };
               return asignacionCajaService.updateAsignacion(asigDoc.id, asigUpdates);
@@ -175,15 +182,15 @@ export const Embarques: React.FC = () => {
 
       await Promise.all([
         contratoService.updateContrato(recordId, {
-          ccpUrl: url || (uploadResult as any).webViewLink,
+          ccpUrl: url,
           ccpUploadedBy: uploadedBy,
           ccpUploadedAt: uploadedAt,
-          ccpFileName: file.name
+          ccpFileName: filename
         }),
         asigPromise
       ]);
 
-      setData(prev => prev.map(d => d.id === recordId ? { ...d, ccpUrl: url, ccpUploadedBy: uploadedBy, ccpUploadedAt: uploadedAt, ccpFileName: file.name } : d));
+      setData(prev => prev.map(d => d.id === recordId ? { ...d, ccpUrl: url, ccpUploadedBy: uploadedBy, ccpUploadedAt: uploadedAt, ccpFileName: filename } : d));
     } catch (e: any) {
       alert(`Error subiendo CCP: ${e.message}`);
     } finally {
@@ -276,12 +283,14 @@ export const Embarques: React.FC = () => {
     setLoading(true);
     setSelectedIds(new Set());
     try {
-      const [asigData, asignaciones, sellos, checkIns] = await Promise.all([
+      const [asigData, asignaciones, sellos, checkIns, dealersData] = await Promise.all([
         contratoService.getContratosByDateRange(startDate, endDate),
         asignacionCajaService.getAsignacionesByDateRange(startDate, endDate).catch(() => []),
         selloService.getSellosByDateRange(startDate, endDate).catch(() => []),
-        checkInService.getUnprocessedCheckIns().catch(() => [])
+        checkInService.getUnprocessedCheckIns().catch(() => []),
+        storageService.getAllDealers().catch(() => [])
       ]);
+      setDealers(dealersData || []);
       
       const mergedData = asigData.map(c => {
         const a = asignaciones.find(x => x.numeroOperacion === c.numeroOperacion);
@@ -297,7 +306,8 @@ export const Embarques: React.FC = () => {
           selloAsignado: selloFinal,
           scac: (a as any)?.scac || a?.carrierCodigo || '',
           carrierRef: a?.carrierRef || '',
-          observaciones: a?.observaciones || ''
+          observaciones: a?.observaciones || '',
+          dealerAsignado: a?.dealerAsignado || a?.modeloAsignado || ''
         };
       });
       
@@ -353,11 +363,19 @@ export const Embarques: React.FC = () => {
     };
   }, [startDate, endDate]);
 
+  const availableDealers = useMemo(() => {
+    return dealers.map(d => ({ 
+      id: d.idDealer, 
+      label: `${d.idDealer} - ${d.shipTo || d.idDealer}` 
+    })).sort((a, b) => a.label.localeCompare(b.label));
+  }, [dealers]);
+
   const filteredData = useMemo(() => {
     return data.filter(item => {
       if (activeTab === 'CON_LAYOUT' && !item.layoutUrl) return false;
       if (activeTab === 'CON_CCP' && !item.ccpUrl) return false;
       if (activeTab === 'SIN_CIERREEMB' && item.cerrado) return false;
+      if (dealerFilter !== 'ALL' && item.dealerAsignado !== dealerFilter) return false;
 
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
@@ -628,6 +646,19 @@ export const Embarques: React.FC = () => {
               <option value="CON_CITA">{t('emb.filter.con_cita')}</option>
               <option value="SIN_CITA">{t('emb.filter.sin_cita')}</option>
               <option value="CON_ERRORES">{t('emb.filter.con_errores')}</option>
+            </select>
+          )}
+
+          {activeTab !== 'CHECK_IN' && availableDealers.length > 0 && (
+            <select 
+              value={dealerFilter}
+              onChange={(e) => setDealerFilter(e.target.value)}
+              className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-indigo-500 font-medium shadow-sm w-48 truncate"
+            >
+              <option value="ALL">TODOS LOS DEALERS</option>
+              {availableDealers.map(d => (
+                <option key={d.id} value={d.id}>{d.label}</option>
+              ))}
             </select>
           )}
 

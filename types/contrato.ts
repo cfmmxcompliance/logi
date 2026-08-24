@@ -25,4 +25,5 @@ export interface ContratoRecord {
   cerrado?: boolean;
   carrierRef?: string;
   observaciones?: string;
+  dealerAsignado?: string;
 }

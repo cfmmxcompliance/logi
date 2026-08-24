@@ -19,6 +19,7 @@ export interface AsignacionCajaModel {
   nombreDriver: string;
   placasTracto: string;
   modeloAsignado?: string;
+  dealerAsignado?: string;
   observaciones?: string;
   carrierRef?: string;          // Referencia manual del carrier (ej. CFM-26CFTTN-...)
   notas?: string;

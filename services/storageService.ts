@@ -721,6 +721,15 @@ export const storageService = {
   getLogistics: () => dbState.logistics || [],
   getSuppliers: () => dbState.suppliers || [],
   getDealers: () => dbState.dealers || [],
+  getAllDealers: async () => {
+    if (!db) return [];
+    if (dbState.dealers && dbState.dealers.length > 0) return dbState.dealers;
+    const { getDocs, collection } = await import('firebase/firestore');
+    const snap = await getDocs(collection(db, COLS.DEALERS));
+    const list = snap.docs.map(d => ({ ...d.data(), id: d.id })) as any[];
+    dbState.dealers = list;
+    return list;
+  },
 
   // --- DEALERS CRUD ---
   updateDealer: async (record: any) => {

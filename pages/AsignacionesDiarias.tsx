@@ -9,12 +9,13 @@ import { liberacionService } from '../services/liberacionService';
 import { transportLineService } from '../services/transportLineService';
 import { vigilanciaService } from '../services/vigilanciaService';
 import { citasConfigService } from '../services/citasConfigService';
+import { storageService } from '../services/storageService';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
 import { CajaModel } from '../types/caja';
 import { DriverModel } from '../types/driver';
 import { CarrierModel } from '../types/carrier';
 import { TransportLineModel } from '../types/transportLine';
-import { LiberacionRecord, LiberacionDockRecord, SelloRecord } from '../types';
+import { LiberacionRecord, LiberacionDockRecord, SelloRecord, Dealer } from '../types';
 import { VigilanciaRecord } from '../types/vigilancia';
 import { Plus, Edit2, Trash2, Search, Filter, Calendar, Download, UploadCloud, FileSpreadsheet, Truck, Navigation, Container, Box, XCircle, CheckCircle, ChevronUp, ChevronDown, RefreshCw, FileText, Loader2, Shield, AlertTriangle, Clock } from 'lucide-react';
 import { liberacionDockService } from '../services/liberacionDockService';
@@ -217,6 +218,7 @@ export const AsignacionesDiarias: React.FC = () => {
   const [liberacionesDock, setLiberacionesDock] = useState<LiberacionDockRecord[]>([]);
   const [vigilancias, setVigilancias] = useState<VigilanciaRecord[]>([]);
   const [sellos, setSellos] = useState<SelloRecord[]>([]);
+  const [dealers, setDealers] = useState<Dealer[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [citasConfig, setCitasConfig] = useState<Record<string, Record<string, number>>>({});
   const [showCitasModal, setShowCitasModal] = useState(false);
@@ -256,6 +258,7 @@ export const AsignacionesDiarias: React.FC = () => {
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
   const [cargadoFilter, setCargadoFilter] = useState<'ALL' | 'PENDIENTES' | 'LLEGADOS' | 'CERRADO' | 'CANCELADO'>('ALL');
+  const [dealerFilter, setDealerFilter] = useState<string>('ALL');
   const today = getMexicoDateString();
   const savedRange = (() => { try { return JSON.parse(localStorage.getItem('asig_dateRange') || 'null'); } catch { return null; } })();
   const [dateRange, setDateRange] = useState({ 
@@ -520,7 +523,7 @@ export const AsignacionesDiarias: React.FC = () => {
 
   const loadData = async () => {
     try {
-        const [asigData, cajasData, driversData, carriersData, liberacionesData, liberacionesDockData, linesData, vigilanciasData, sellosData, citasConfigData] = await Promise.all([
+        const [asigData, cajasData, driversData, carriersData, liberacionesData, liberacionesDockData, linesData, vigilanciasData, sellosData, citasConfigData, dealersData] = await Promise.all([
             asignacionCajaService.getAsignacionesByDateRange(dateRange.start, dateRange.end).catch(() => []),
             cajaService.getAllCajas().catch(() => []),
             driverService.getAllDrivers().catch(() => []),
@@ -530,7 +533,8 @@ export const AsignacionesDiarias: React.FC = () => {
             transportLineService.getAllTransportLines().catch(() => []),
             vigilanciaService.getByDateRange(dateRange.start, dateRange.end).catch(() => []),
             selloService.getAllSellos().catch(() => []),
-            citasConfigService.getCitasConfigByDateRange(dateRange.start, dateRange.end).catch(() => ({}))
+            citasConfigService.getCitasConfigByDateRange(dateRange.start, dateRange.end).catch(() => ({})),
+            storageService.getAllDealers().catch(() => [])
         ]);
         setAsignaciones(asigData.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()));
         setCajas(cajasData);
@@ -542,6 +546,7 @@ export const AsignacionesDiarias: React.FC = () => {
         setVigilancias(vigilanciasData);
         setSellos(sellosData);
         setCitasConfig(citasConfigData);
+        setDealers(dealersData || []);
         // ── Auto-fill scac + customId for records missing them ──────────────
         // Runs silently in background after data loads, no await needed
         (async () => {
@@ -572,8 +577,19 @@ export const AsignacionesDiarias: React.FC = () => {
     }
   };
 
+  const availableDealers = useMemo(() => {
+    return dealers.map(d => ({ 
+      id: d.idDealer, 
+      label: `${d.idDealer} - ${d.shipTo || d.idDealer}` 
+    })).sort((a, b) => a.label.localeCompare(b.label));
+  }, [dealers]);
+
   const { filteredData, filterCounts } = useMemo(() => {
     let result = asignaciones;
+
+    if (dealerFilter !== 'ALL') {
+        result = result.filter(a => (a.dealerAsignado || a.modeloAsignado) === dealerFilter);
+    }
 
     // CARRIER role: only show assignments for their SCAC
     if (scacFilter) {
@@ -805,7 +821,7 @@ export const AsignacionesDiarias: React.FC = () => {
     }
 
     return { filteredData: result, filterCounts };
-  }, [asignaciones, searchTerm, cargadoFilter, dateRange, activeMassQuery, sortConfig, liberaciones, liberacionesDock, scacFilter, subLineaFilter, transportLines, user, cajas]);
+  }, [asignaciones, searchTerm, cargadoFilter, dateRange, activeMassQuery, sortConfig, liberaciones, liberacionesDock, scacFilter, subLineaFilter, transportLines, user, cajas, dealerFilter]);
 
 
   const handleApplyMassQuery = () => {
@@ -1619,6 +1635,21 @@ export const AsignacionesDiarias: React.FC = () => {
                 />
              </div>
 
+             {availableDealers.length > 0 && (
+               <div className="flex items-center bg-white border border-slate-300 rounded-lg shadow-sm">
+                 <select 
+                   value={dealerFilter}
+                   onChange={(e) => setDealerFilter(e.target.value)}
+                   className="py-2 px-3 bg-transparent text-sm font-medium text-slate-700 focus:outline-none focus:ring-0 cursor-pointer w-48 truncate"
+                 >
+                   <option value="ALL">TODOS LOS DEALERS</option>
+                   {availableDealers.map(d => (
+                     <option key={d.id} value={d.id}>{d.label}</option>
+                   ))}
+                 </select>
+               </div>
+             )}
+
              {/* ── Discrepancy alert badge ── */}
              {(() => {
                const discCount = filteredData.filter(a =>
@@ -1805,7 +1836,7 @@ export const AsignacionesDiarias: React.FC = () => {
               <th data-col="scac" style={{ width: cw('scac'), minWidth:60, position:'relative' }} className="p-2 font-medium text-orange-600 uppercase text-xs">{renderColumnHeader('SCAC', 'carrierCodigo')}{rh('scac')}</th>
               <th data-col="driver" style={{ width: cw('driver'), minWidth:70, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.driver'), 'nombreDriver')}{rh('driver')}</th>
               <th data-col="placasTracto" style={{ width: cw('placasTracto'), minWidth:60, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.placastracto'), 'placasTracto')}{rh('placasTracto')}</th>
-              <th data-col="modelo" style={{ width: cw('modelo'), minWidth:60, position:'relative' }} className="p-2 font-medium">{renderColumnHeader(t('col.modelo'), 'modeloAsignado')}{rh('modelo')}</th>
+              <th data-col="modelo" style={{ width: cw('modelo'), minWidth:60, position:'relative' }} className="p-2 font-medium">{renderColumnHeader('Dealer', 'dealerAsignado')}{rh('modelo')}</th>
               <th data-col="creado" style={{ width: cw('creado'), minWidth:80, position:'relative' }} className="p-2 font-medium text-violet-700 bg-violet-50/40">{renderColumnHeader(t('col.creado'), 'createdAt')}{rh('creado')}</th>
               <th data-col="liberacion" style={{ width: cw('liberacion'), minWidth:60, position:'relative' }} className="p-2 font-medium text-sky-700 bg-sky-50/30">{renderColumnHeader(t('col.liberacion'), 'liberacionDock')}{rh('liberacion')}</th>
               <th data-col="layout" style={{ width: cw('layout'), minWidth:60, position:'relative' }} className="p-2 font-medium text-center text-indigo-700 bg-indigo-50/30">{renderColumnHeader(t('col.layout'), 'layoutStatus')}{rh('layout')}</th>
@@ -1963,7 +1994,7 @@ export const AsignacionesDiarias: React.FC = () => {
                 <td className="p-4 font-mono text-orange-600 font-medium whitespace-nowrap">{transportLines.find(tl => tl.transportLineId === a.transportLineId)?.TransportLine || '-'}</td>
                 <td className="p-4 font-medium text-slate-800 whitespace-nowrap">{a.nombreDriver}</td>
                 <td className="p-4 font-mono text-slate-500 text-xs uppercase font-medium whitespace-nowrap">{a.placasTracto || '-'}</td>
-                <td className="p-4 font-medium text-slate-700 whitespace-nowrap">{a.modeloAsignado || '-'}</td>
+                <td className="p-4 font-medium text-slate-700 whitespace-nowrap">{(() => { const d = dealers.find((x:any) => x.idDealer === (a as any).dealerAsignado); return d?.shipTo || (a as any).dealerAsignado || a.modeloAsignado || '-'; })()}</td>
                 
                  <td className="p-4 bg-violet-50/20 border-l border-violet-100/50 whitespace-nowrap">
                      {(a as any).createdAt ? (
@@ -2596,7 +2627,18 @@ export const AsignacionesDiarias: React.FC = () => {
                             <input
                               type="checkbox"
                               checked={!!formData.isDealer}
-                              onChange={(e) => setFormData({ ...formData, isDealer: e.target.checked } as any)}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                let newObs = formData.observaciones || '';
+                                if (checked && !newObs.includes('DEALER')) {
+                                  newObs = newObs ? newObs + ' DEALER' : 'DEALER';
+                                }
+                                setFormData({ 
+                                  ...formData, 
+                                  isDealer: checked,
+                                  observaciones: newObs
+                                } as any)
+                              }}
                               disabled={isRestrictedRole}
                               className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 disabled:opacity-50"
                             />
@@ -2607,16 +2649,25 @@ export const AsignacionesDiarias: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Row 3: Producto (Modelo) — full width */}
+                    {/* Row 3: Dealers — full width */}
                     <div className="p-3 bg-purple-50 rounded-xl border border-purple-100 space-y-2">
-                      <h3 className="text-xs font-bold text-purple-800 uppercase flex items-center gap-1.5"><Box size={12}/> Producto (Modelo)</h3>
-                      <MultiSearchableComboBox
-                        options={modelosCaja.map((m: string) => ({ value: m, label: m }))}
-                        value={formData.modeloAsignado ? formData.modeloAsignado.split(', ') : []}
-                        onChange={values => setFormData({...formData, modeloAsignado: values.join(', ')})}
-                        placeholder={t('asig.form.sel_models')}
-                        disabled={isRestrictedRole}
-                      />
+                      <h3 className="text-xs font-bold text-purple-800 uppercase flex items-center gap-1.5"><Box size={12}/> Dealers</h3>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          list="dealers-list"
+                          value={formData.dealerAsignado || ''}
+                          onChange={(e) => setFormData({...formData, dealerAsignado: e.target.value})}
+                          placeholder="Buscar o seleccionar dealer..."
+                          disabled={!formData.isDealer || isRestrictedRole}
+                          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-400 bg-white"
+                        />
+                        <datalist id="dealers-list">
+                          {dealers.map(d => (
+                            <option key={d.id} value={d.idDealer}>{d.idDealer} - {d.shipTo}</option>
+                          ))}
+                        </datalist>
+                      </div>
                     </div>
 
                   </div>

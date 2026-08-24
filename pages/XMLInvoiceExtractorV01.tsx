@@ -254,9 +254,9 @@ export const XMLInvoiceExtractor: React.FC = () => {
             if (endDate && item.date > endDate) return false;
 
             if (searchTerm.trim()) {
-                // Split by comma OR newline to allow pasting a list of UUIDs
+                // Split by comma, newline, tab, or semicolon to allow pasting from Excel
                 const rawTerms = searchTerm
-                    .split(/[\n,]/)
+                    .split(/[\n,\t;\r]+/)
                     .map(v => v.trim())
                     .filter(v => v !== '');
 
@@ -318,28 +318,28 @@ export const XMLInvoiceExtractor: React.FC = () => {
                     const isUUID     = condition.column === 'uuid';
 
                     const filterValues = condition.values
-                        .split(/[\n,]/)
+                        .split(/[\n,\t;\r]+/)
                         .map(v => v.trim().toLowerCase())
                         .filter(v => v !== '');
 
                     if (filterValues.length === 0) return true;
 
                     return filterValues.some(val => {
-                        const valNorm  = isUUID ? norm(val).toLowerCase() : val;
+                        const valNorm  = norm(val).toLowerCase();
                         const valND    = stripDashes(val);
                         const valNormND = stripDashes(valNorm);
 
                         if (condition.operator === 'in list' || condition.operator === 'contains') {
                             if (colLow.includes(val)) return true;
-                            if (isUUID && colNorm.includes(valNorm)) return true;
-                            if (isUUID && colNoDash.includes(valND)) return true;
-                            if (isUUID && colNormND.includes(valNormND)) return true;
+                            if (colNorm.includes(valNorm)) return true;
+                            if (colNoDash.includes(valND)) return true;
+                            if (colNormND.includes(valNormND)) return true;
                         }
                         if (condition.operator === 'equals') {
                             if (colLow === val) return true;
-                            if (isUUID && colNorm === valNorm) return true;
-                            if (isUUID && colNoDash === valND) return true;
-                            if (isUUID && colNormND === valNormND) return true;
+                            if (colNorm === valNorm) return true;
+                            if (colNoDash === valND) return true;
+                            if (colNormND === valNormND) return true;
                         }
                         return false;
                     });
@@ -409,6 +409,19 @@ export const XMLInvoiceExtractor: React.FC = () => {
     const applyAdvancedQuery = () => {
         setAppliedConditions(queryConditions);
         setIsQueryBuilderOpen(false);
+
+        const fetchTerms: string[] = [];
+        queryConditions.forEach(c => {
+            if (['partNo', 'invoiceNo', 'uuid'].includes(c.column) && c.values.trim() !== '') {
+                fetchTerms.push(c.values);
+            }
+        });
+
+        if (fetchTerms.length > 0) {
+            const combined = fetchTerms.join('\n');
+            setSearchTerm(combined);
+            setActiveSearch(combined);
+        }
     };
 
     const resetQueryBuilder = () => {

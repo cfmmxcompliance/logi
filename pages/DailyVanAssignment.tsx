@@ -63,13 +63,24 @@ export const DailyVanAssignment: React.FC = () => {
         liberacionService.getLiberacionesByDateRange(start, end),
         liberacionDockService.getLiberacionesDockByDateRange(start, end),
       ]);
-      asigData.sort((a, b) => {
+      const todayStr = getLocalToday();
+      const processedAsigData = asigData.map(a => {
+        const hasLib = libData.some(l => l.asignacionCajaId === a.id);
+        const dockVal = String(a.dockArribo || '').trim().toUpperCase();
+        const isCanceled = ['RECHAZADO', 'DROP', 'NO SHOW', 'CANCELED', 'CANCELADO'].includes(dockVal);
+        if (!hasLib && !isCanceled && a.fecha < todayStr) {
+          return { ...a, dockArribo: 'NO SHOW', _autoNoShow: true };
+        }
+        return a;
+      });
+
+      processedAsigData.sort((a, b) => {
         if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
         const timeA = a.horaAsignacion || '00:00';
         const timeB = b.horaAsignacion || '00:00';
         return timeA < timeB ? -1 : 1;
       });
-      setAssignments(asigData);
+      setAssignments(processedAsigData);
       setLiberaciones(libData);
       setLiberacionesDock(libDockData);
     } catch (e) {
@@ -163,11 +174,11 @@ export const DailyVanAssignment: React.FC = () => {
 
   const released = assignments.filter(a => {
       const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
-      return dockVal === 'RECHAZADO' || dockVal === 'DROP' || dockVal === 'NO SHOW' || getLibForCaja(a.id!);
+      return ['RECHAZADO', 'DROP', 'NO SHOW', 'CANCELED', 'CANCELADO'].includes(dockVal) || getLibForCaja(a.id!);
   });
   const pending = assignments.filter(a => {
       const dockVal = String((a as any).dockArribo || '').trim().toUpperCase();
-      const isExcluded = dockVal === 'RECHAZADO' || dockVal === 'DROP' || dockVal === 'NO SHOW';
+      const isExcluded = ['RECHAZADO', 'DROP', 'NO SHOW', 'CANCELED', 'CANCELADO'].includes(dockVal);
       return !isExcluded && !getLibForCaja(a.id!);
   });
 
@@ -195,7 +206,7 @@ export const DailyVanAssignment: React.FC = () => {
       t('truck.col.ccp_por'), t('truck.col.ccp_at'), 
       t('truck.col.anexo29_por'), t('truck.col.anexo29_at'),
       t('truck.col.lib_dock'), t('truck.col.lib_por'), t('truck.col.status'), 
-      t('truck.col.retraso'), t('truck.col.en_planta'), t('truck.col.ly_ccp'), t('truck.col.t_cierre')
+      t('truck.col.retraso'), t('truck.col.en_planta'), t('truck.col.t_layout'), t('truck.col.ly_ccp'), t('truck.col.t_cierre')
     ];
 
     const parseTime = (date: string, time: string) => {
@@ -209,8 +220,8 @@ export const DailyVanAssignment: React.FC = () => {
     // Parser para el formato es-MX: "9/7/2026, 09:33:53" → Date válida
     const parseEsMx = (str: string | undefined): Date | null => {
       if (!str) return null;
-      const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{2}:\d{2}:\d{2})/);
-      if (m) return new Date(`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}T${m[4]}`);
+      const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2}):(\d{2})/);
+      if (m) return new Date(`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}T${m[4].padStart(2,'0')}:${m[5]}:${m[6]}`);
       const d = new Date(str.replace(' ', 'T'));
       return isNaN(d.getTime()) ? null : d;
     };
@@ -272,9 +283,8 @@ export const DailyVanAssignment: React.FC = () => {
         (() => {
           let dr = libDock?.fechaHoraRegistro || libDock?.fechaLiberacion || '';
           const lyAt  = (a as any).layoutUploadedAt ? new Date((a as any).layoutUploadedAt) : null;
-          const ccpAt = (a as any).ccpUploadedAt   ? new Date((a as any).ccpUploadedAt)    : null;
-          if (!dr && lyAt && ccpAt) {
-            dr = formatEsMx24(new Date(lyAt.getTime() + 30 * 60000));
+          if (!dr && lyAt) {
+            dr = formatEsMx24(new Date(lyAt.getTime() - 30 * 60000));
           } else if (dr) {
             dr = normalizeDateString(dr);
           }
@@ -285,6 +295,23 @@ export const DailyVanAssignment: React.FC = () => {
         retraso !== null ? formatDurationHHMMSS(retraso) : '',
         enPlanta !== null ? formatDurationHHMMSS(enPlanta) : '',
         (() => {
+          const hasUsdb1 = String(a.observaciones || '').toUpperCase().includes('USDB1');
+          if (hasUsdb1) return '';
+          const arrDateUi = parseEsMx(a.arriboAt) || parseEsMx(a.arribo) || parseTime(a.fecha, a.arribo || '');
+          const drStr = libDock?.fechaHoraRegistro || libDock?.fechaLiberacion;
+          const drDate = parseEsMx(drStr);
+          const baseDateLy = drDate || arrDateUi;
+          if (!baseDateLy) return '';
+          const lyAt = (a as any).layoutUploadedAt ? new Date((a as any).layoutUploadedAt) : null;
+          const endAt = lyAt || new Date();
+          let mins = Math.round((endAt.getTime() - baseDateLy.getTime()) / 60000);
+          if (isNaN(mins)) return '';
+          if (mins < 0) mins = 0;
+          return formatDurationHHMMSS(mins);
+        })(),
+        (() => {
+          const hasUsdb1 = String(a.observaciones || '').toUpperCase().includes('USDB1');
+          if (hasUsdb1) return '';
           const lyAt  = (a as any).layoutUploadedAt ? new Date((a as any).layoutUploadedAt) : null;
           const ccpAt = (a as any).ccpUploadedAt   ? new Date((a as any).ccpUploadedAt)    : null;
           if (!lyAt) return '';
@@ -294,6 +321,8 @@ export const DailyVanAssignment: React.FC = () => {
           return formatDurationHHMMSS(mins);
         })(),
         (() => {
+          const hasUsdb1 = String(a.observaciones || '').toUpperCase().includes('USDB1');
+          if (hasUsdb1) return '';
           const lT = (a as any).layoutUploadedAt ? new Date((a as any).layoutUploadedAt) : null;
           const cT = (a as any).ccpUploadedAt ? new Date((a as any).ccpUploadedAt) : null;
           if(lT && cT) {
@@ -512,8 +541,12 @@ export const DailyVanAssignment: React.FC = () => {
             if (!a.dockArribo) return;
             const key = a.dockArribo.trim().toUpperCase();
             if (!(key in dockStatus)) return;
+            const dockVal = key;
+            const isCanceled = ['RECHAZADO', 'DROP', 'NO SHOW', 'CANCELED', 'CANCELADO'].includes(dockVal);
             const hasLibDock = liberacionesDock.some(l => l.asignacionCajaId === a.id);
-            if (!hasLibDock) dockStatus[key] = a;
+            const hasLib = liberaciones.some(l => l.asignacionCajaId === a.id);
+            // Si no tiene liberación de dock, pero tampoco ha salido por caseta ni fue cancelado, entonces ocupa el dock
+            if (!hasLibDock && !hasLib && !isCanceled) dockStatus[key] = a;
           });
 
           const ocupados = Object.values(dockStatus).filter(Boolean).length;
@@ -582,7 +615,8 @@ export const DailyVanAssignment: React.FC = () => {
                     <th className="px-4 py-3">{t('truck.col.arribo')}</th>
                     <th className="px-4 py-3 text-red-400">{t('truck.col.retraso')}</th>
                     <th className="px-4 py-3 text-emerald-400">{t('truck.col.en_planta')}</th>
-                    <th className="px-4 py-3 text-cyan-400 whitespace-nowrap">{t('truck.col.ly_ccp')}</th>
+                    <th className="px-4 py-3 text-cyan-400 whitespace-nowrap">{t('truck.col.t_layout')}</th>
+                    <th className="px-4 py-3 text-sky-400 whitespace-nowrap">{t('truck.col.t_ccp')}</th>
                     <th className="px-4 py-3 text-violet-300 whitespace-nowrap">{t('truck.col.t_cierre')}</th>
                     <th className="px-4 py-3">{t('truck.col.operacion')}</th>
                     <th className="px-4 py-3">{t('truck.col.caja')}</th>
@@ -621,23 +655,29 @@ export const DailyVanAssignment: React.FC = () => {
                     };
 
                     const apptDateUi = parseTimeUi(asig.fecha, asig.horaAsignacion || '');
-                    const arrDateUi = parseTimeUi(asig.fecha, asig.arribo || '');
+                    const arrDateUi = asig.arriboAt ? new Date(asig.arriboAt) : parseTimeUi(asig.fecha, asig.arribo || '');
                     const dockRec = getLibDockForCaja(asig.id!);
 
-                    const relStrUi = dockRec?.fechaHoraRegistro || lib?.fechaHoraRegistro;
+                    const relStrUi = dockRec?.fechaHoraRegistro; // Option B: Strictly Dock Release
                     const parseEsMxUi = (s?: string): Date | null => {
                       if (!s) return null;
-                      const mx = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{2}:\d{2}:\d{2})/);
-                      if (mx) return new Date(`${mx[3]}-${mx[2].padStart(2,'0')}-${mx[1].padStart(2,'0')}T${mx[4]}`);
+                      const mx = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2}):(\d{2})/);
+                      if (mx) return new Date(`${mx[3]}-${mx[2].padStart(2,'0')}-${mx[1].padStart(2,'0')}T${mx[4].padStart(2,'0')}:${mx[5]}:${mx[6]}`);
                       const d = new Date(s.replace(' ','T')); return isNaN(d.getTime()) ? null : d;
                     };
                     let libDate = parseEsMxUi(relStrUi);
-                    if (!libDate && (isRechazado || isDrop || isNoShow) && (asig as any).updatedAt) {
+                    let isDockAuto = false;
+                    const lyAtGlobal = (asig as any).layoutUploadedAt ? new Date((asig as any).layoutUploadedAt) : null;
+                    if (!libDate && lyAtGlobal) {
+                        libDate = new Date(lyAtGlobal.getTime() - 30 * 60000);
+                        isDockAuto = true;
+                    } else if (!libDate && (isRechazado || isDrop || isNoShow) && (asig as any).updatedAt) {
                         const d = new Date((asig as any).updatedAt);
                         if (!isNaN(d.getTime())) libDate = d;
                     }
-                    const endDateUi = libDate || (arrDateUi ? new Date() : null);
-                    const isLive = !libDate && !!arrDateUi;
+                    const isClosedOut = !!lib?.fechaHoraRegistro;
+                    const isLive = !libDate && !isClosedOut && !!arrDateUi;
+                    const endDateUi = libDate || (isLive ? new Date() : null);
 
                     let retrasoMins = null;
                     if (apptDateUi && arrDateUi) {
@@ -650,9 +690,15 @@ export const DailyVanAssignment: React.FC = () => {
 
                     let enPlantaMins = null;
                     if (arrDateUi && endDateUi && !isNaN(endDateUi.getTime())) {
-                      const diff = (endDateUi.getHours() * 60 + endDateUi.getMinutes()) - (arrDateUi.getHours() * 60 + arrDateUi.getMinutes());
-                      let m = diff % 1440;
-                      enPlantaMins = m < 0 ? m + 1440 : m;
+                      const mins = Math.round((endDateUi.getTime() - arrDateUi.getTime()) / 60000);
+                      if (!isNaN(mins) && mins >= 0) {
+                        enPlantaMins = mins;
+                      } else if (!isNaN(mins) && mins < 0 && !asig.arriboAt) {
+                        // Fallback using modulo for legacy records without arriboAt
+                        const diff = (endDateUi.getHours() * 60 + endDateUi.getMinutes()) - (arrDateUi.getHours() * 60 + arrDateUi.getMinutes());
+                        let m = diff % 1440;
+                        enPlantaMins = m < 0 ? m + 1440 : m;
+                      }
                     }
 
                     const formatTimeBadge = (mins: number | null, isRetraso: boolean) => {
@@ -686,17 +732,19 @@ export const DailyVanAssignment: React.FC = () => {
                             </span>
                           ) : <span className="text-slate-600">—</span>}
                         </td>
+                        {/* T.LAYOUT */}
                         <td className="px-4 py-3">
                           {(() => {
-                            const lyAt  = (asig as any).layoutUploadedAt ? new Date((asig as any).layoutUploadedAt) : null;
-                            const ccpAt = (asig as any).ccpUploadedAt   ? new Date((asig as any).ccpUploadedAt)    : null;
-                            // Sin layout → nada que mostrar
-                            if (!lyAt) return <span className="text-slate-600">—</span>;
-                            // Con CCP: tiempo real entre layout y ccp
-                            const endAt = ccpAt || new Date();
-                            const isLiveLyCcp = !ccpAt;
-                            const mins = Math.round((endAt.getTime() - lyAt.getTime()) / 60000);
-                            if (isNaN(mins) || mins < 0) return <span className="text-slate-600">—</span>;
+                            const hasUsdb1 = String((asig as any).observaciones || '').toUpperCase().includes('USDB1');
+                            if (hasUsdb1) return <span className="text-slate-600">—</span>;
+                            let baseDateLy = libDate || arrDateUi;
+                            if (!baseDateLy) return <span className="text-slate-600">—</span>;
+                            const lyAt = (asig as any).layoutUploadedAt ? new Date((asig as any).layoutUploadedAt) : null;
+                            const endAt = lyAt || new Date();
+                            const isLiveLy = !lyAt;
+                            let mins = Math.round((endAt.getTime() - baseDateLy.getTime()) / 60000);
+                            if (isNaN(mins)) return <span className="text-slate-600">—</span>;
+                            if (mins < 0) mins = 0;
                             const h = Math.floor(mins / 60), m = mins % 60;
                             const text = h > 0 ? `${h}h ${m}m` : `${m}m`;
                             const badge = mins > 60
@@ -704,7 +752,32 @@ export const DailyVanAssignment: React.FC = () => {
                               : <span className="text-cyan-400 font-medium text-xs">{text}</span>;
                             return (
                               <span className="flex items-center gap-1">
-                                {isLiveLyCcp && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" title="Sin CCP - tiempo real" />}
+                                {isLiveLy && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" title="Sin Layout - tiempo real" />}
+                                {badge}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                        {/* T.CCP */}
+                        <td className="px-4 py-3">
+                          {(() => {
+                            const hasUsdb1 = String((asig as any).observaciones || '').toUpperCase().includes('USDB1');
+                            if (hasUsdb1) return <span className="text-slate-600">—</span>;
+                            const lyAt = (asig as any).layoutUploadedAt ? new Date((asig as any).layoutUploadedAt) : null;
+                            const ccpAt = (asig as any).ccpUploadedAt ? new Date((asig as any).ccpUploadedAt) : null;
+                            if (!lyAt) return <span className="text-slate-600">—</span>;
+                            const endAt = ccpAt || new Date();
+                            const isLiveCcp = !ccpAt;
+                            const mins = Math.round((endAt.getTime() - lyAt.getTime()) / 60000);
+                            if (isNaN(mins) || mins < 0) return <span className="text-slate-600">—</span>;
+                            const h = Math.floor(mins / 60), m = mins % 60;
+                            const text = h > 0 ? `${h}h ${m}m` : `${m}m`;
+                            const badge = mins > 60
+                              ? <span className="bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded text-xs font-bold">{text}</span>
+                              : <span className="text-sky-400 font-medium text-xs">{text}</span>;
+                            return (
+                              <span className="flex items-center gap-1">
+                                {isLiveCcp && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" title="Sin CCP - tiempo real" />}
                                 {badge}
                               </span>
                             );
@@ -714,11 +787,10 @@ export const DailyVanAssignment: React.FC = () => {
                          <td className="px-4 py-3">
                            {(() => {
                              // Reutiliza arrDateUi (ya validado, mismo que T.Planta)
-                             if (!arrDateUi) return <span className="text-slate-600">—</span>;
                              const parseEsMxC = (s?: string): Date | null => {
                                if (!s) return null;
-                               const mx = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{2}:\d{2}:\d{2})/);
-                               if (mx) return new Date(`${mx[3]}-${mx[2].padStart(2,'0')}-${mx[1].padStart(2,'0')}T${mx[4]}`);
+                               const mx = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2}):(\d{2})/);
+                               if (mx) return new Date(`${mx[3]}-${mx[2].padStart(2,'0')}-${mx[1].padStart(2,'0')}T${mx[4].padStart(2,'0')}:${mx[5]}:${mx[6]}`);
                                const d = new Date(s.replace(' ','T')); return isNaN(d.getTime()) ? null : d;
                              };
                              let libDate  = parseEsMxC(lib?.fechaHoraRegistro);
@@ -728,6 +800,7 @@ export const DailyVanAssignment: React.FC = () => {
                              }
                              const endDateC = libDate || new Date();
                              const isLiveC  = !libDate;
+                             if (!arrDateUi) return <span className="text-slate-600">—</span>;
                              const mins = Math.round((endDateC.getTime() - arrDateUi.getTime()) / 60000);
                              if (isNaN(mins) || mins < 0) return <span className="text-slate-600">—</span>;
                              const h = Math.floor(mins / 60), m = mins % 60;
@@ -826,23 +899,22 @@ export const DailyVanAssignment: React.FC = () => {
                           {(() => {
                             const dockRec = getLibDockForCaja(asig.id!);
                             let dr = dockRec?.fechaHoraRegistro || dockRec?.fechaLiberacion || '';
-                            const lyAt  = (asig as any).layoutUploadedAt ? new Date((asig as any).layoutUploadedAt) : null;
-                            const ccpAt = (asig as any).ccpUploadedAt   ? new Date((asig as any).ccpUploadedAt)    : null;
-                            if (!dr && lyAt && ccpAt) {
-                              dr = formatEsMx24(new Date(lyAt.getTime() + 30 * 60000));
+                            const lyAtLocal  = (asig as any).layoutUploadedAt ? new Date((asig as any).layoutUploadedAt) : null;
+                            let isAuto = false;
+                            
+                            if (!dr && lyAtLocal) {
+                              dr = formatEsMx24(new Date(lyAtLocal.getTime() - 30 * 60000));
+                              isAuto = true;
                             } else if (dr) {
                               dr = normalizeDateString(dr);
                             }
-                            if (!dockRec) {
-                              return dr ? (
-                                <div className="flex flex-col gap-0">
-                                  <span className="text-[10px] text-slate-400 font-mono">{dr}</span>
-                                </div>
-                              ) : <span className="text-slate-700 text-xs">—</span>;
+                            
+                            if (!dockRec && !isAuto) {
+                              return <span className="text-slate-700 text-xs">—</span>;
                             }
                             return (
                               <div className="flex flex-col gap-0">
-                                {dockRec.usuario && (
+                                {dockRec?.usuario && (
                                   <span className="text-slate-200 text-xs font-medium">
                                     {dockRec.usuario}
                                   </span>

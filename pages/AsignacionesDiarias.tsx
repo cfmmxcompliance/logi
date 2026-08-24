@@ -536,7 +536,18 @@ export const AsignacionesDiarias: React.FC = () => {
             citasConfigService.getCitasConfigByDateRange(dateRange.start, dateRange.end).catch(() => ({})),
             storageService.getAllDealers().catch(() => [])
         ]);
-        setAsignaciones(asigData.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()));
+        const todayStr = getMexicoDateString();
+        const processedAsigData = asigData.map(a => {
+            const hasLib = liberacionesData.some(l => l.asignacionCajaId === a.id);
+            const dockVal = String(a.dockArribo || '').trim().toUpperCase();
+            const isCanceled = ['RECHAZADO', 'DROP', 'NO SHOW', 'CANCELED', 'CANCELADO'].includes(dockVal);
+            if (!hasLib && !isCanceled && a.fecha < todayStr) {
+                return { ...a, dockArribo: 'NO SHOW', _autoNoShow: true };
+            }
+            return a;
+        });
+
+        setAsignaciones(processedAsigData.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()));
         setCajas(cajasData);
         setDrivers(driversData);
         setCarriers(carriersData);

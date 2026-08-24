@@ -166,8 +166,7 @@ export const XMLCI: React.FC = () => {
             }
 
             if (searchTerm.trim()) {
-                // Split by comma OR newline
-                const rawTerms = searchTerm.split(/[\n,]/).map(v => v.trim()).filter(v => v !== '');
+                const rawTerms = searchTerm.split(/[\n,\t;\r\s]+/).filter(t => t.length > 0);
                 if (rawTerms.length > 0) {
                     const norm = (s: string) =>
                         s.toUpperCase().replace(/O/g, '0').replace(/I/g, '1').replace(/G/g, '6');
@@ -203,24 +202,29 @@ export const XMLCI: React.FC = () => {
                         return rawVal !== null && rawVal !== undefined && String(rawVal).trim() !== '';
                     }
 
-                    const inputLines = (cond.input || '').split(/[\r\n,;\t]+/).map(t => t.trim()).filter(t => t.length > 0);
+                    const inputLines = (cond.input || '').split(/[\r\n,;\t\s]+/).map(t => t.trim()).filter(t => t.length > 0);
                     if (inputLines.length === 0) return true;
 
                     const normalizeStrict = (s: any) => String(s || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
                     const normUUID = (s: string) => s.toUpperCase().replace(/O/g, '0').replace(/I/g, '1').replace(/G/g, '6').toLowerCase();
+                    const stripDashes = (s: string) => s.replace(/-/g, '');
 
                     if (cond.operator === 'in') {
                         const colNorm = normalizeStrict(rawVal);
                         const colUUIDNorm = normUUID(String(rawVal || ''));
-                        // For uuid column: use substring + char normalization; for others: exact match
-                        if (cond.column === 'uuid') {
-                            return inputLines.some(l =>
-                                colNorm.includes(normalizeStrict(l)) ||
-                                colUUIDNorm.includes(normUUID(l))
-                            );
-                        }
-                        const set = new Set(inputLines.map(l => normalizeStrict(l)));
-                        return set.has(colNorm);
+                        const colNoDash = stripDashes(colNorm);
+                        const colUUIDNoDash = stripDashes(colUUIDNorm);
+                        
+                        return inputLines.some(l => {
+                            const lNorm = normalizeStrict(l);
+                            const lUUIDNorm = normUUID(l);
+                            const lNoDash = stripDashes(lNorm);
+                            const lUUIDNoDash = stripDashes(lUUIDNorm);
+                            return colNorm.includes(lNorm) || 
+                                   colUUIDNorm.includes(lUUIDNorm) ||
+                                   colNoDash.includes(lNoDash) ||
+                                   colUUIDNoDash.includes(lUUIDNoDash);
+                        });
                     }
 
                     const cast = (val: any) => {
@@ -305,6 +309,19 @@ export const XMLCI: React.FC = () => {
     const applyAdvancedQuery = () => {
         setAppliedConditions(queryConditions);
         setIsQueryBuilderOpen(false);
+
+        const fetchTerms: string[] = [];
+        queryConditions.forEach(c => {
+            if (['invoiceNo', 'uuid'].includes(c.column) && c.input && c.input.trim() !== '') {
+                fetchTerms.push(c.input);
+            }
+        });
+
+        if (fetchTerms.length > 0) {
+            const combined = fetchTerms.join('\n');
+            setSearchTerm(combined);
+            setActiveSearch(combined);
+        }
     };
 
     const resetQueryBuilder = () => {

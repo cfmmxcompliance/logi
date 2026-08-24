@@ -1111,3 +1111,55 @@ exports.updateBrokerDates = onRequest({
         return res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });
+
+/**
+ * CLOUD FUNCTION: Clean Abandoned Appointments (NO SHOW)
+ * Runs every day at 11:59 PM (America/Mexico_City)
+ */
+exports.cleanAbandonedAppointments = onSchedule({
+  schedule: "59 23 * * *",
+  timeZone: MX_TIMEZONE,
+  memory: "256MiB"
+}, async (event) => {
+  console.log("⏰ cleanAbandonedAppointments Triggered");
+  try {
+    const today = new Date().toLocaleString("en-US", { timeZone: MX_TIMEZONE });
+    const d = new Date(today);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const fechaLocal = `${yyyy}-${mm}-${dd}`;
+
+    const snapshot = await db.collection("asignacion_cajas")
+      .where("fecha", "==", fechaLocal)
+      .get();
+
+    let updatedCount = 0;
+    const batch = db.batch();
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const hasArribo = !!data.arribo && data.arribo.trim() !== "";
+      const dockVal = String(data.dockArribo || "").trim().toUpperCase();
+      const isCanceled = ["RECHAZADO", "DROP", "NO SHOW", "CANCELED", "CANCELADO"].includes(dockVal);
+      
+      if (!hasArribo && !isCanceled) {
+        batch.update(doc.ref, {
+          dockArribo: "NO SHOW",
+          updatedAt: new Date().toISOString(),
+          _auto_closed: true
+        });
+        updatedCount++;
+      }
+    });
+
+    if (updatedCount > 0) {
+      await batch.commit();
+      console.log(`✅ Marked ${updatedCount} abandoned appointments as NO SHOW for date ${fechaLocal}`);
+    } else {
+      console.log(`✅ No abandoned appointments found for date ${fechaLocal}`);
+    }
+  } catch (error) {
+    console.error("❌ Error in cleanAbandonedAppointments:", error);
+  }
+});

@@ -409,9 +409,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 badge={asignacionesBadgeAdmin > 0 ? asignacionesBadgeAdmin : undefined} 
               />
               <SidebarItem to="/embarques" icon={Package} label={sidebarOpen ? "Embarques" : ""} />
-              <SidebarItem to="/xml-invoices" icon={Database} label={sidebarOpen ? "XML Invoice Extractor" : ""} />
-              <SidebarItem to="/xml-ci" icon={FileText} label={sidebarOpen ? "XMLCI Consolidated" : ""} />
-              <SidebarItem to="/ccp-builder" icon={Truck} label={sidebarOpen ? "CCP Builder" : ""} />
               <SidebarItem to="/exposuit" icon={Package} label={sidebarOpen ? "ExpoSuit V.01" : ""} />
             </>
           )}

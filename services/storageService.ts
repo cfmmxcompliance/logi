@@ -1,7 +1,7 @@
-import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, SparePartsTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole, XMLCIRecord, FixedAsset, FianzaRecord, HistoricoExpoRecord } from '../types.ts';
+import { RawMaterialPart, Shipment, ShipmentStatus, AuditLog, DailyChange, MasterDataReport, CostRecord, RestorePoint, Supplier, VesselTrackingRecord, EquipmentTrackingRecord, SparePartsTrackingRecord, CustomsClearanceRecord, PreAlertRecord, DataStageReport, DataStageSession, CommercialInvoiceItem, StorageState, PedimentoRecord, UserRole, XMLCIRecord, FixedAsset, FianzaRecord, HistoricoExpoRecord, VendorInvoice, ExpenseAccount, StatusEvent } from '../types.ts';
 import { db } from './firebaseConfig.ts';
 import {
-  collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc, arrayUnion, increment, limit, startAfter, documentId, getCountFromServer
+  collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, orderBy, getDocs, where, getDoc, arrayUnion, increment, limit, startAfter, documentId, getCountFromServer, addDoc, updateDoc
 } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { indexedDbService } from './indexedDbService.ts';
@@ -20,7 +20,9 @@ const COLS = {
   FIXED_ASSETS: 'fixed_assets',
   RULE_8THS: 'rule_8ths',
   HISTORICO_EXPO: 'historico_expo',
-  DEALERS: 'dealers'
+  DEALERS: 'dealers',
+  VENDOR_INVOICES: 'vendor_invoices',
+  EXPENSE_ACCOUNTS: 'expense_accounts'
 };
 
 const LOCAL_STORAGE_KEY = 'logimaster_db';
@@ -4110,6 +4112,296 @@ export const storageService = {
       }
       await batch.commit();
     }
+  },
+
+  // ─── Portal de Proveedores: vendor_invoices ───────────────────────────────
+
+  submitVendorInvoice: async (invoice: Omit<VendorInvoice, 'id'>): Promise<string> => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const docRef = await addDoc(collection(db, COLS.VENDOR_INVOICES), invoice);
+    return docRef.id;
+  },
+
+  getVendorInvoicesByRFC: async (rfc: string): Promise<VendorInvoice[]> => {
+    if (!db) return [];
+    // Nota: Firebase requiere un index compuesto si filtramos por rfc y ordenamos por submittedAt
+    const q = query(
+      collection(db, COLS.VENDOR_INVOICES),
+      where('vendorRfc', '==', rfc),
+      orderBy('submittedAt', 'desc')
+    );
+    const snap = await getDocs(q);
+    
+    // Regla de historial: incluye documentos de los últimos 180 días o que tengan status != 'PAGADA'
+    const now = new Date();
+    const threshold = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+    
+    return snap.docs
+      .map(d => ({ ...d.data(), id: d.id }) as VendorInvoice)
+      .filter(inv => {
+        if (inv.status !== 'PAGADA') return true;
+        return new Date(inv.submittedAt) >= threshold;
+      });
+  },
+
+  getAllVendorInvoices: async (filters?: { rfc?: string; status?: string; startDate?: string; endDate?: string }): Promise<VendorInvoice[]> => {
+    if (!db) return [];
+    try {
+      console.log('getAllVendorInvoices called with filters:', filters);
+      let q = query(collection(db, COLS.VENDOR_INVOICES));
+      
+      if (filters?.rfc) q = query(q, where('vendorRfc', '==', filters.rfc));
+      if (filters?.status) q = query(q, where('status', '==', filters.status));
+      
+      console.log('Executing getDocs...');
+      const snap = await getDocs(q);
+      console.log('getDocs returned', snap.docs.length, 'docs');
+      
+      let results = snap.docs.map(d => ({ ...d.data(), id: d.id }) as VendorInvoice);
+      
+      if (filters?.startDate || filters?.endDate) {
+        results = results.filter(inv => {
+          let valid = true;
+          if (filters.startDate && new Date(inv.submittedAt) < new Date(filters.startDate)) valid = false;
+          if (filters.endDate && new Date(inv.submittedAt) > new Date(filters.endDate)) valid = false;
+          return valid;
+        });
+      }
+      
+      // Sort manually since we removed orderBy
+      results.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+      
+      return results;
+    } catch (error) {
+      console.error('Error in getAllVendorInvoices:', error);
+      throw error;
+    }
+  },
+
+  updateVendorInvoiceStatus: async (
+    id: string,
+    status: VendorInvoice['status'],
+    notes: string,
+    userEmail: string
+  ): Promise<void> => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const event: StatusEvent = { status, date: new Date().toISOString(), user: userEmail, notes };
+    const updates: any = { status, statusHistory: arrayUnion(event) };
+    if (status === 'EN_REVISION') {
+      updates.reviewedAt = new Date().toISOString();
+      updates.reviewedBy = userEmail;
+    }
+    await updateDoc(doc(db, COLS.VENDOR_INVOICES, id), updates);
+  },
+
+  updateVendorInvoicePaymentInfo: async (
+    id: string,
+    paidAt: string
+  ): Promise<void> => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    await updateDoc(doc(db, COLS.VENDOR_INVOICES, id), { paidAt, status: 'PAGADA' });
+  },
+
+  // ─── Portal de Proveedores: expense_accounts ─────────────────────────────
+
+  createExpenseAccount: async (account: Omit<ExpenseAccount, 'id'>): Promise<string> => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const year = new Date().getFullYear();
+    const countSnap = await getCountFromServer(collection(db, COLS.EXPENSE_ACCOUNTS));
+    const nextNum = (countSnap.data().count + 1).toString().padStart(4, '0');
+    
+    const dataToSave = {
+      ...account,
+      accountNo: account.accountNo || `CG-${year}-${nextNum}`,
+      createdAt: new Date().toISOString()
+    };
+    
+    const docRef = await addDoc(collection(db, COLS.EXPENSE_ACCOUNTS), dataToSave);
+    return docRef.id;
+  },
+
+  getExpenseAccounts: async (filters?: { status?: string; startDate?: string; endDate?: string }): Promise<ExpenseAccount[]> => {
+    if (!db) return [];
+    let q = query(collection(db, COLS.EXPENSE_ACCOUNTS), orderBy('createdAt', 'desc'));
+    
+    if (filters?.status) q = query(q, where('status', '==', filters.status));
+    
+    const snap = await getDocs(q);
+    let results = snap.docs.map(d => ({ ...d.data(), id: d.id }) as ExpenseAccount);
+    
+    if (filters?.startDate || filters?.endDate) {
+      results = results.filter(acc => {
+        let valid = true;
+        if (filters.startDate && new Date(acc.createdAt) < new Date(filters.startDate)) valid = false;
+        if (filters.endDate && new Date(acc.createdAt) > new Date(filters.endDate)) valid = false;
+        return valid;
+      });
+    }
+    
+    return results;
+  },
+
+  getExpenseAccountById: async (id: string): Promise<ExpenseAccount | null> => {
+    if (!db) return null;
+    const snap = await getDoc(doc(db, COLS.EXPENSE_ACCOUNTS, id));
+    return snap.exists() ? ({ ...snap.data(), id: snap.id } as ExpenseAccount) : null;
+  },
+
+  updateExpenseAccountStatus: async (
+    id: string,
+    status: ExpenseAccount['status'],
+    userEmail: string,
+    extraFields?: Partial<ExpenseAccount>
+  ): Promise<void> => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const event: StatusEvent = { status, date: new Date().toISOString(), user: userEmail };
+    const updates: any = { status, statusHistory: arrayUnion(event), ...extraFields };
+    await updateDoc(doc(db, COLS.EXPENSE_ACCOUNTS, id), updates);
+  },
+
+  promoteExpenseAccountToReview: async (
+    accountId: string,
+    userEmail: string,
+    invoiceIds: string[]
+  ): Promise<void> => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    const now = new Date().toISOString();
+    
+    const accEvent: StatusEvent = { status: 'EN_REVISION', date: now, user: userEmail };
+    batch.update(doc(db, COLS.EXPENSE_ACCOUNTS, accountId), {
+      status: 'EN_REVISION',
+      submittedAt: now,
+      submittedBy: userEmail,
+      statusHistory: arrayUnion(accEvent)
+    });
+    
+    for (const invId of invoiceIds) {
+      batch.update(doc(db, COLS.VENDOR_INVOICES, invId), {
+        status: 'EN_REVISION',
+        statusHistory: arrayUnion(accEvent)
+      });
+    }
+    
+    await batch.commit();
+  },
+
+  approveExpenseAccount: async (
+    accountId: string,
+    userEmail: string,
+    invoiceIds: string[]
+  ): Promise<void> => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    const now = new Date().toISOString();
+    
+    const accEvent: StatusEvent = { status: 'APROBADA', date: now, user: userEmail };
+    batch.update(doc(db, COLS.EXPENSE_ACCOUNTS, accountId), {
+      status: 'APROBADA',
+      approvedAt: now,
+      approvedBy: userEmail,
+      statusHistory: arrayUnion(accEvent)
+    });
+    
+    for (const invId of invoiceIds) {
+      batch.update(doc(db, COLS.VENDOR_INVOICES, invId), {
+        status: 'APROBADA',
+        statusHistory: arrayUnion(accEvent)
+      });
+    }
+    
+    await batch.commit();
+  },
+
+  rejectExpenseAccount: async (
+    accountId: string,
+    userEmail: string,
+    invoiceIds: string[],
+    reason: string
+  ): Promise<void> => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    const now = new Date().toISOString();
+    
+    const accEvent: StatusEvent = { status: 'BORRADOR', date: now, user: userEmail, notes: reason };
+    batch.update(doc(db, COLS.EXPENSE_ACCOUNTS, accountId), {
+      status: 'BORRADOR',
+      statusHistory: arrayUnion(accEvent)
+    });
+    
+    const invEvent: StatusEvent = { status: 'SUBIDA', date: now, user: userEmail, notes: reason };
+    for (const invId of invoiceIds) {
+      batch.update(doc(db, COLS.VENDOR_INVOICES, invId), {
+        status: 'SUBIDA',
+        expenseAccountId: null,
+        statusHistory: arrayUnion(invEvent)
+      });
+    }
+    
+    await batch.commit();
+  },
+
+  registerPaymentReceipt: async (
+    accountId: string,
+    receiptUrl: string,
+    receiptDriveId: string,
+    userEmail: string,
+    invoiceIds: string[]
+  ): Promise<void> => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    const now = new Date().toISOString();
+    
+    const accEvent: StatusEvent = { status: 'PAGADA', date: now, user: userEmail };
+    batch.update(doc(db, COLS.EXPENSE_ACCOUNTS, accountId), {
+      status: 'PAGADA',
+      paymentReceiptUrl: receiptUrl,
+      paymentReceiptDriveId: receiptDriveId,
+      paymentReceiptUploadedAt: now,
+      paymentReceiptUploadedBy: userEmail,
+      statusHistory: arrayUnion(accEvent)
+    });
+    
+    for (const invId of invoiceIds) {
+      batch.update(doc(db, COLS.VENDOR_INVOICES, invId), {
+        status: 'PAGADA',
+        paidAt: now,
+        statusHistory: arrayUnion(accEvent)
+      });
+    }
+    
+    await batch.commit();
+  },
+
+  updateExpenseAccountLinks: async (
+    accountId: string,
+    invoiceLinks: ExpenseAccount['invoiceLinks'],
+    vendorInvoiceIds: string[],
+    totals: { totalMXN: number; totalUSD: number }
+  ): Promise<void> => {
+    if (!db) throw new Error("Sin conexión a Internet.");
+    const batch = writeBatch(db);
+    
+    batch.update(doc(db, COLS.EXPENSE_ACCOUNTS, accountId), {
+      invoiceLinks,
+      vendorInvoiceIds,
+      totalMXN: totals.totalMXN,
+      totalUSD: totals.totalUSD
+    });
+    
+    for (const invId of vendorInvoiceIds) {
+      const linkData = invoiceLinks[invId];
+      if (linkData) {
+        batch.update(doc(db, COLS.VENDOR_INVOICES, invId), {
+          expenseAccountId: accountId,
+          blReference: linkData.blReference || null,
+          containersReferenced: linkData.containersReferenced || [],
+          guiaReference: linkData.guiaReference || null
+        });
+      }
+    }
+    
+    await batch.commit();
   }
 };
 

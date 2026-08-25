@@ -37,6 +37,7 @@ export enum UserRole {
   CLIENT = 'Cliente',    // Read-only access: Asignación Diaria de Cajas Secas 53' only
   FINANZAS = 'Finanzas', // Read-only access: Saldo Fianza module only
   ANALISTA_CUMPLIMIENTO = 'Analista Cumplimiento', // Solo acceso a módulos de cumplimiento
+  PROVEEDOR = 'Proveedor',   // Supplier self-service portal
 }
 
 export interface User {
@@ -832,4 +833,123 @@ export interface BPMRecord {
   fechaAprobacion?: string; // ISO date string
   fotoUrl?: string; // Legacy single Google drive link
   fotoUrls?: string[]; // Array of multiple Google Drive URLs
-}export * from './types/fianza';
+}
+
+// ─── Portal de Proveedores ───────────────────────────────────────────────────
+
+export interface StatusEvent {
+  status: string;
+  date: string;   // ISO string
+  user: string;   // email del usuario que hizo el cambio
+  notes?: string;
+}
+
+export interface VendorConcept {
+  description: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  amount: number;
+  claveProdServ?: string;
+  claveUnidad?: string;
+}
+
+export interface VendorInvoice {
+  id: string;
+
+  // Identidad fiscal del proveedor
+  vendorRfc: string;          // RFC — clave de filtrado (patrón = user.scac en CARRIER)
+  vendorName: string;
+
+  // Datos fiscales del CFDI
+  invoiceNo: string;          // Folio fiscal
+  uuid: string;               // UUID SAT timbrado
+  issueDate: string;          // Fecha de timbrado (YYYY-MM-DD)
+  currency: 'MXN' | 'USD';
+  subtotal: number;
+  totalIVA: number;
+  total: number;
+
+  // Conceptos (extraídos de XML → PDF → manual)
+  concepts: VendorConcept[];
+  sourceMethod: 'xml' | 'pdf' | 'manual'; // Método de extracción usado
+
+  // Archivos respaldados en Google Drive
+  xmlUrl?: string;
+  pdfUrl?: string;
+  xmlDriveId?: string;
+  pdfDriveId?: string;
+
+  // Referencia libre del proveedor al momento de subir (pista, no validada)
+  blHint?: string;
+
+  // Vinculación oficial — se llena en la Cuenta de Gastos, validada contra shipments/pre_alerts
+  expenseAccountId?: string;
+  blReference?: string;
+  containersReferenced?: string[];
+  guiaReference?: string;
+
+  // Flujo de aprobación — el estatus en cascada desde ExpenseAccount
+  // SUBIDA → EN_REVISION → APROBADA → PAGADA  (o RECHAZADA)
+  status: 'SUBIDA' | 'EN_REVISION' | 'APROBADA' | 'RECHAZADA' | 'PAGADA';
+  statusHistory: StatusEvent[];
+
+  internalNotes?: string;
+  rejectionReason?: string;
+  submittedAt: string;     // ISO — momento en que el proveedor envió
+  reviewedAt?: string;
+  reviewedBy?: string;
+  paidAt?: string;         // Derivado del comprobante de pago en ExpenseAccount
+}
+
+export interface ExpenseAccount {
+  id: string;
+  accountNo: string;          // Auto-generado: CG-2026-0042
+  description: string;
+
+  // IDs de las vendor_invoices incluidas en esta cuenta
+  vendorInvoiceIds: string[];
+
+  // Vinculación logística por factura: invoiceId → { BL, contenedores, guía }
+  invoiceLinks: {
+    [invoiceId: string]: {
+      blReference: string;
+      containersReferenced: string[];
+      guiaReference?: string;
+    };
+  };
+
+  // Totales calculados del conjunto seleccionado
+  totalMXN: number;
+  totalUSD: number;
+
+  // Flujo de la cuenta de gastos
+  // BORRADOR → EN_REVISION → APROBADA → PAGADA
+  // Transiciones de status propagan en cascada a todas las vendor_invoices vinculadas:
+  //   BORRADOR    → (sin cambio en facturas, aún editando)
+  //   EN_REVISION → vendor_invoices[vinculadas].status = 'EN_REVISION'
+  //   APROBADA    → vendor_invoices[vinculadas].status = 'APROBADA'
+  //   PAGADA      → SOLO se activa al subir el comprobante de pago PDF
+  //                 El upload dispara el timestamp (patrón T.LAYOUT en TRUCK_TRACKING)
+  //                 No existe botón "Marcar Pagada" — el archivo ES el evento
+  status: 'BORRADOR' | 'EN_REVISION' | 'APROBADA' | 'PAGADA';
+  statusHistory: StatusEvent[];
+
+  createdAt: string;
+  createdBy: string;
+  submittedAt?: string;       // Auto — cuando se promueve a EN_REVISION
+  submittedBy?: string;
+  approvedAt?: string;        // Auto — cuando se aprueba
+  approvedBy?: string;
+
+  // Comprobante de Pago — patrón idéntico a T.LAYOUT / T.CCP en TRUCK_TRACKING
+  // El upload del PDF es el único disparador del cambio a PAGADA
+  paymentReceiptUrl?: string;
+  paymentReceiptDriveId?: string;
+  paymentReceiptUploadedAt?: string;  // Timestamp auto al momento del upload
+  paymentReceiptUploadedBy?: string;  // Email del usuario que subió el comprobante
+
+  internalNotes?: string;
+}
+
+export * from './types/fianza';

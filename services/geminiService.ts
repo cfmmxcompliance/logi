@@ -1393,6 +1393,53 @@ export const geminiService = {
     }
   },
 
+  async extractFacturaNumber(base64Image: string): Promise<string> {
+    try {
+      console.log("Starting Factura Extraction (报关发票号) from Image...");
+      const ai = getClient();
+      const prompt = `
+        You are an expert in reading Chinese customs and logistics documents.
+        Your task is to extract the INVOICE NUMBER from this image.
+
+        Look for the Chinese column header "报关发票号" (which means "Customs Invoice Number").
+        The value you need to extract is the text in the CELL IMMEDIATELY BELOW that header.
+
+        Example: if the table shows:
+          | 报关发票号          | 备注            |
+          | CFM-26CFTTN-643362-4 | CF1000UZ-8A-EPS |
+        → Return: CFM-26CFTTN-643362-4
+
+        Rules:
+        1. Locate the column header "报关发票号" in the image.
+        2. Extract ONLY the value in the data cell below that header.
+        3. The value may span multiple lines in the cell — join them with no separator (e.g., "CFM-26CFTTN-\n643362-4" → "CFM-26CFTTN-643362-4").
+        4. Return ONLY the invoice number string. No labels, no extra text.
+        5. Do NOT include "报关发票号" in your answer.
+        6. Return exactly "NO_DETECTADO" ONLY if you cannot find the header or its value.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.6-flash',
+        contents: {
+          parts: [{ inlineData: { mimeType: 'image/jpeg', data: base64Image } }, { text: prompt }]
+        },
+        config: {
+          responseMimeType: 'text/plain',
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+          ] as any
+        }
+      });
+      return response.text?.trim() || "NO_DETECTADO";
+    } catch (e) {
+      console.error("Factura Extraction Error:", e);
+      return "NO_DETECTADO";
+    }
+  },
+
   async chatAssistant(messages: any[]): Promise<string> {
 
     const ai = getClient();

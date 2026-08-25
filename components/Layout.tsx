@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settings, Menu, X, LogOut, Users, Anchor, Container, ClipboardCheck, Bell, Scale, Truck, Globe, Activity, FolderOpen,
-  Navigation, Monitor,
+  Navigation, Monitor, Search,
   Box, DollarSign, BookOpen, PackageOpen, Cpu, Sparkles, CalendarCheck, History, Package, CalendarDays, ClipboardList, AlertTriangle, FileSearch } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { CcpNotificationListener } from './CcpNotificationListener';
@@ -47,9 +47,17 @@ const SyncIndicator = () => {
   );
 };
 
+const SidebarSearchContext = React.createContext('');
+
 const SidebarItem = ({ to, icon: Icon, label, badge }: { to: string; icon: any; label: string; badge?: number }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
+  const searchQuery = React.useContext(SidebarSearchContext);
+  
+  if (searchQuery && label && !label.toLowerCase().includes(searchQuery.toLowerCase())) {
+    return null;
+  }
+  
   return (
     <NavLink
       to={to}
@@ -77,6 +85,7 @@ const SidebarItem = ({ to, icon: Icon, label, badge }: { to: string; icon: any; 
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [moduleSearch, setModuleSearch] = useState('');
   const [ventanasBadge, setVentanasBadge] = useState(0);
   const [reservasBadge, setReservasBadge] = useState(0);
   const [asignacionesBadge, setAsignacionesBadge] = useState(0);       // Carrier/Transportista
@@ -234,7 +243,27 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-6 px-2 space-y-2 min-h-0">
+        {sidebarOpen && user?.role === UserRole.ADMIN && (
+          <div className="px-4 py-3 border-b border-slate-800/50">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
+              <input 
+                type="text" 
+                placeholder="Buscar módulo..."
+                value={moduleSearch}
+                onChange={e => setModuleSearch(e.target.value)}
+                className="w-full bg-slate-800 text-slate-200 text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 border border-slate-700 placeholder-slate-500 transition-colors"
+              />
+            </div>
+          </div>
+        )}
+
+        <SidebarSearchContext.Provider value={moduleSearch}>
+          <nav className="flex-1 overflow-y-auto py-6 px-2 space-y-2 min-h-0">
+          {user?.role === UserRole.PROVEEDOR && (
+            <SidebarItem to="/vendor-portal" icon={FileText} label={sidebarOpen ? "Portal de Facturas" : ""} />
+          )}
+
           {user?.role === UserRole.ADMIN && (
             <>
               <SidebarItem to="/" icon={LayoutDashboard} label={sidebarOpen ? "Dashboard" : ""} />
@@ -292,6 +321,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {(user?.role === UserRole.ADMIN || user?.role === UserRole.CONTROLLER) && (
             <>
               <SidebarItem to="/controller" icon={Settings} label={sidebarOpen ? "Payments" : ""} />
+              <SidebarItem to="/vendor-invoice-review" icon={FileCheck} label={sidebarOpen ? "Review Facturas" : ""} />
+              <SidebarItem to="/expense-accounts" icon={ClipboardList} label={sidebarOpen ? "Cuentas de Gastos" : ""} />
             </>
           )}
 
@@ -456,6 +487,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
         </nav>
+        </SidebarSearchContext.Provider>
 
         <div className="p-4 border-t border-slate-800">
           {sidebarOpen ? (

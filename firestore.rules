@@ -80,6 +80,14 @@ service cloud.firestore {
     match /system_metadata/{docId} { allow read, write: if true; }
     match /daily_changes/{docId} { allow read, write: if true; }
 
+    // 3. Vendor Invoices and Expense Accounts
+    match /vendor_invoices/{docId} { 
+      allow read, write: if true; 
+    }
+    match /expense_accounts/{docId} { 
+      allow read, write: if true; 
+    }
+
     // 4. Default Block (Catch-all)
     match /{document=**} {
       allow read, write: if false;

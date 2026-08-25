@@ -321,6 +321,7 @@ export const Settings = () => {
                                                                 [UserRole.CLIENT]: 'Cliente',
                                                                 [UserRole.FINANZAS]: 'Finanzas',
                                                                 [UserRole.ANALISTA_CUMPLIMIENTO]: 'Analista Cumplimiento',
+                                                                [UserRole.PROVEEDOR]: 'Proveedor',
                                                                 [UserRole.PENDING]: 'Pending',
                                                             };
                                                             const roleLabel = roleLabels[newRole] || newRole;
@@ -364,6 +365,7 @@ export const Settings = () => {
                                                         <option value={UserRole.CLIENT}>Cliente</option>
                                                         <option value={UserRole.FINANZAS}>Finanzas</option>
                                                         <option value={UserRole.ANALISTA_CUMPLIMIENTO}>Analista Cumplimiento</option>
+                                                        <option value={UserRole.PROVEEDOR}>Proveedor</option>
                                                         <option value={UserRole.PENDING}>Pending</option>
                                                     </select>
                                                     {u.role === UserRole.PENDING && (

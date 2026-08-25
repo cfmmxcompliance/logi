@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, FileText, ArrowLeft, Loader2, RefreshCw, AlertTriangle, Box, Shield, CheckCircle } from 'lucide-react';
+import { Camera, FileText, ArrowLeft, Loader2, RefreshCw, AlertTriangle, Box, Shield, CheckCircle, ReceiptText } from 'lucide-react';
 import { geminiService } from '../services/geminiService.ts';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
 import { contratoService } from '../services/contratoService.ts';
+import { uploadSelloPhoto } from '../services/sellosUploadService.ts';
+import { collection, doc } from 'firebase/firestore';
+import { db } from '../services/firebaseConfig';
 import { useAuth } from '../context/useAuth';
 import { nowMX } from '../utils/mexTime';
 
@@ -15,7 +18,8 @@ export const HandheldContrato: React.FC = () => {
   const [selloValue, setSelloValue] = useState('');
   const [contratoValue, setContratoValue] = useState('');
   const [contrato2Value, setContrato2Value] = useState('');
-  const [activeInputTarget, setActiveInputTarget] = useState<'contrato1' | 'contrato2'>('contrato1');
+  const [facturaValue, setFacturaValue] = useState('');
+  const [activeInputTarget, setActiveInputTarget] = useState<'contrato1' | 'contrato2' | 'factura'>('contrato1');
   
   // Date selector as requested: PDA MUST follow the date in the module
   // No assuming default dates. The user MUST explicitly select it.
@@ -23,7 +27,11 @@ export const HandheldContrato: React.FC = () => {
   
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  
+  const [photoFiles, setPhotoFiles] = useState<{
+    contrato1?: File;
+    contrato2?: File;
+    factura?: File;
+  }>({});
   const [currentImageFile, setCurrentImageFile] = useState<File | null>(null);
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
@@ -35,6 +43,7 @@ export const HandheldContrato: React.FC = () => {
   const selloInputRef = useRef<HTMLInputElement>(null);
   const contratoInputRef = useRef<HTMLInputElement>(null);
   const contrato2InputRef = useRef<HTMLInputElement>(null);
+  const facturaInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!currentImageFile) { setLocalPreviewUrl(null); return; }
@@ -88,17 +97,21 @@ export const HandheldContrato: React.FC = () => {
     setIsAiRunning(true);
     setAiError(null);
     if (activeInputTarget === 'contrato1') setContratoValue('');
-    else setContrato2Value('');
+    else if (activeInputTarget === 'contrato2') setContrato2Value('');
+    else setFacturaValue('');
     try {
       const base64Data = await fileToBase64Payload(file);
-      const text = await geminiService.extractContratoNumber(base64Data);
+      const text = activeInputTarget === 'factura' 
+        ? await geminiService.extractFacturaNumber(base64Data)
+        : await geminiService.extractContratoNumber(base64Data);
 
-      if (text === 'NO_ENCONTRADO' || !text) {
-        setAiError('No se detectó un número de contrato. Intenta tomar la foto más de cerca o sin reflejos.');
+      if (text === 'NO_ENCONTRADO' || !text || text === 'NO_DETECTADO') {
+        setAiError('No se detectó el valor. Intenta tomar la foto más de cerca o sin reflejos.');
       } else {
         const cleanedText = text.replace(/[^A-Za-z0-9_-]/g, '').toUpperCase();
         if (activeInputTarget === 'contrato1') setContratoValue(cleanedText);
-        else setContrato2Value(cleanedText);
+        else if (activeInputTarget === 'contrato2') setContrato2Value(cleanedText);
+        else setFacturaValue(cleanedText);
       }
     } catch (err: any) {
       setAiError(err.message || 'Error al comunicar con la IA.');
@@ -118,6 +131,7 @@ export const HandheldContrato: React.FC = () => {
       const res = await fetch(compressedBase64);
       const blob = await res.blob();
       const compressedFile = new File([blob], `compressed_${file.name}`, { type: 'image/jpeg' });
+      setPhotoFiles(prev => ({ ...prev, [activeInputTarget]: compressedFile }));
       setCurrentImageFile(compressedFile);
       setIsProcessingImage(false);
       runGeminiExtraction(compressedFile);
@@ -152,16 +166,90 @@ export const HandheldContrato: React.FC = () => {
         return;
       }
 
-      await contratoService.addContrato({
+      const existing = await contratoService.getContratosByDateRange(dateStart, dateStart);
+      const isDuplicate = existing.some(c => {
+        const matchesTL = (c.numeroOperacion || '').trim().toUpperCase() === (caja.numeroOperacion || '').trim().toUpperCase();
+        const matchesCaja = (c.numeroCaja || '').trim().toUpperCase() === (caja.numeroCaja || '').trim().toUpperCase();
+        const matchesSello = (c.selloAsignado || '').trim().toUpperCase() === selloValue.trim().toUpperCase();
+        const matchesFactura = (c.factura || '').trim().toUpperCase() === facturaValue.trim().toUpperCase();
+        
+        if (matchesTL && matchesCaja && matchesSello && matchesFactura) {
+          if (c.createdAt) {
+            const createdAtDate = new Date(c.createdAt);
+            const hour = createdAtDate.getHours();
+            if (hour >= 5) {
+              return true;
+            }
+          } else {
+             return true; // If no createdAt, assume it's duplicate
+          }
+        }
+        return false;
+      });
+
+      if (isDuplicate) {
+        window.alert("INFORMACION YA REGISTRADA FAVOR DE VERIFICAR");
+        setIsSaving(false);
+        return;
+      }
+
+      const newId = doc(collection(db, 'contratos')).id;
+
+      const payload: any = {
+        id: newId,
         numeroOperacion: caja.numeroOperacion || '',
         numeroCaja: caja.numeroCaja,
         selloAsignado: selloValue.trim(),
         contrato: contratoValue.trim(),
-        contrato2: contrato2Value.trim(),
         fecha: dateStart,
         createdAt: nowMX(),
         usuario: user?.email || 'Handheld Contrato'
-      });
+      };
+
+      if (contrato2Value.trim()) payload.contrato2 = contrato2Value.trim();
+      if (facturaValue.trim()) payload.factura = facturaValue.trim();
+      if (photoFiles.contrato1) payload.fotoUrlContrato1 = 'PENDING';
+      if (photoFiles.contrato2) payload.fotoUrlContrato2 = 'PENDING';
+      if (photoFiles.factura) payload.fotoUrlFactura = 'PENDING';
+
+      await contratoService.addContrato(payload);
+
+      // Background Uploads
+      const uploadPhotoBackground = async (
+        file: File,
+        filename: string,
+        field: 'fotoUrlContrato1' | 'fotoUrlContrato2' | 'fotoUrlFactura'
+      ) => {
+        const MAX_RETRIES = 3;
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+          try {
+            const result = await uploadSelloPhoto(file, filename);
+            const url = result?.webViewLink || '';
+            if (url) {
+              await contratoService.updateContrato(newId, { [field]: url });
+            }
+            return;
+          } catch (err: any) {
+            console.warn(`Drive upload intento ${attempt}/${MAX_RETRIES}:`, err.message);
+            if (attempt < MAX_RETRIES) {
+              await new Promise(r => setTimeout(r, 2000 * attempt));
+            }
+          }
+        }
+      };
+
+      if (photoFiles.contrato1) {
+        const safeName = `contrato1_${newId}.jpg`;
+        uploadPhotoBackground(photoFiles.contrato1, safeName, 'fotoUrlContrato1');
+      }
+      if (photoFiles.contrato2) {
+        const safeName = `contrato2_${newId}.jpg`;
+        uploadPhotoBackground(photoFiles.contrato2, safeName, 'fotoUrlContrato2');
+      }
+      if (photoFiles.factura) {
+        const safeName = `factura_${newId}.jpg`;
+        uploadPhotoBackground(photoFiles.factura, safeName, 'fotoUrlFactura');
+      }
       
       setSaveSuccess(true);
       setTimeout(() => {
@@ -181,6 +269,8 @@ export const HandheldContrato: React.FC = () => {
     setSelloValue('');
     setContratoValue('');
     setContrato2Value('');
+    setFacturaValue('');
+    setPhotoFiles({});
     setCurrentImageFile(null);
     setAiError(null);
     setActiveInputTarget('contrato1');
@@ -348,6 +438,44 @@ export const HandheldContrato: React.FC = () => {
                   <Camera size={20} />
                   <span className="font-black text-sm tracking-tight leading-none">INICIO</span>
                   <span className="text-[8px] text-indigo-200 font-bold uppercase leading-none">Foto 2</span>
+                </button>
+              </div>
+            </div>
+
+            {/* FACTURA (Opcional) */}
+            <div className="flex items-stretch gap-3 border-t border-slate-700/50 pt-5 mt-5">
+              <div className="flex-1 relative">
+                <div className="flex items-center gap-1.5 mb-2 text-amber-400">
+                  <ReceiptText size={14} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Factura (Opcional)</span>
+                </div>
+                <input
+                  ref={facturaInputRef}
+                  type="text"
+                  value={facturaValue}
+                  onChange={e => setFacturaValue(e.target.value)}
+                  placeholder="No. Factura..."
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white font-black text-lg font-mono outline-none focus:border-amber-500 transition-colors placeholder:text-slate-600"
+                />
+                {isAiRunning && activeInputTarget === 'factura' && (
+                  <div className="absolute right-3 bottom-3">
+                    <Loader2 className="animate-spin text-amber-400" size={20} />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col justify-end">
+                <button
+                  onClick={() => {
+                    if (isProcessingImage || isAiRunning) return;
+                    setActiveInputTarget('factura');
+                    setTimeout(() => fileInputRef.current?.click(), 0);
+                  }}
+                  className="w-[84px] h-[52px] bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white rounded-xl flex flex-col items-center justify-center gap-0.5 transition-transform active:scale-95 shadow-md shadow-amber-900/40"
+                >
+                  <Camera size={20} />
+                  <span className="font-black text-sm tracking-tight leading-none">INICIO</span>
+                  <span className="text-[8px] text-amber-200 font-bold uppercase leading-none">Foto 3</span>
                 </button>
               </div>
             </div>

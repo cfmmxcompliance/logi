@@ -6,6 +6,10 @@ export interface ContratoRecord {
   scac?: string;
   contrato: string;
   contrato2?: string;
+  factura?: string; // Número de factura aduanera (报关发票号) — opcional
+  fotoUrlContrato1?: string;
+  fotoUrlContrato2?: string;
+  fotoUrlFactura?: string;
   fecha: string; // YYYY-MM-DD for easy filtering
   createdAt: string;
   usuario: string; // Email of the user who captured it

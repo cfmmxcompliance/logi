@@ -898,6 +898,7 @@ export const Embarques: React.FC = () => {
                   <SortableHeader label="Observaciones" sortKey="observaciones" />
                   <SortableHeader label="SCAC" sortKey="scac" />
                   <SortableHeader label="Contrato" sortKey="contrato" />
+                  <SortableHeader label="FACTURA" sortKey="factura" />
                   <SortableHeader label="LAYOUT" sortKey="layoutUrl" className="text-center bg-indigo-50/40" />
                   <SortableHeader label="CCP" sortKey="ccpUrl" className="text-center bg-sky-50/40" />
                   <SortableHeader label="ANEXO 29" sortKey="anexo29Url" className="text-center bg-emerald-50/40" />
@@ -908,14 +909,14 @@ export const Embarques: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={14} className="py-12 text-center">
+                    <td colSpan={15} className="py-12 text-center">
                       <Loader2 className="animate-spin text-indigo-500 mx-auto" size={32} />
                       <p className="text-slate-500 mt-2 text-sm">Cargando contratos...</p>
                     </td>
                   </tr>
                 ) : sortedData.length === 0 ? (
                   <tr>
-                    <td colSpan={14} className="py-12 text-center text-slate-500">
+                    <td colSpan={15} className="py-12 text-center text-slate-500">
                       No se encontraron registros en estas fechas.
                     </td>
                   </tr>
@@ -971,17 +972,47 @@ export const Embarques: React.FC = () => {
                         <div className="flex flex-col gap-1.5 items-start">
                           {item.contrato ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-medium border border-emerald-100">
-                              {item.contrato}
+                              {item.fotoUrlContrato1 && item.fotoUrlContrato1 !== 'PENDING' ? (
+                                <a href={item.fotoUrlContrato1} target="_blank" rel="noreferrer" className="hover:underline">{item.contrato}</a>
+                              ) : (
+                                <>
+                                  {item.contrato}
+                                  {item.fotoUrlContrato1 === 'PENDING' && <Loader2 size={12} className="animate-spin text-emerald-400" />}
+                                </>
+                              )}
                             </span>
                           ) : (
                             <span className="text-slate-400 italic">Sin capturar</span>
                           )}
                           {item.contrato2 && (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-medium border border-emerald-100">
-                              {item.contrato2}
+                              {item.fotoUrlContrato2 && item.fotoUrlContrato2 !== 'PENDING' ? (
+                                <a href={item.fotoUrlContrato2} target="_blank" rel="noreferrer" className="hover:underline">{item.contrato2}</a>
+                              ) : (
+                                <>
+                                  {item.contrato2}
+                                  {item.fotoUrlContrato2 === 'PENDING' && <Loader2 size={12} className="animate-spin text-emerald-400" />}
+                                </>
+                              )}
                             </span>
                           )}
                         </div>
+                      </td>
+                      <td className="py-3 px-4 text-sm">
+                        {item.factura ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 font-medium border border-amber-200">
+                            {item.fotoUrlFactura && item.fotoUrlFactura !== 'PENDING' ? (
+                              <a href={item.fotoUrlFactura} target="_blank" rel="noreferrer" className="hover:underline">{item.factura}</a>
+                            ) : (
+                              <>
+                                {item.factura}
+                                {item.fotoUrlFactura === 'PENDING' && <Loader2 size={12} className="animate-spin text-amber-400" />}
+                              </>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 italic text-xs">—</span>
+                        )}
                       </td>
                       {/* LAYOUT */}
                       <td className="py-3 px-4 text-center bg-indigo-50/20 border-l border-indigo-100/50">

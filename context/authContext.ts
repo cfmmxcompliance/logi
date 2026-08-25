@@ -26,7 +26,9 @@ export const sanitizeRole = (roleStr: string): UserRole => {
     'EMBARQUES': UserRole.EMBARQUES,
     'CLIENT': UserRole.CLIENT,
     'CLIENTE': UserRole.CLIENT,
-    'FINANZAS': UserRole.FINANZAS
+    'FINANZAS': UserRole.FINANZAS,
+    'PROVEEDOR': UserRole.PROVEEDOR,
+    'proveedor': UserRole.PROVEEDOR
   };
   return map[normalized] || (roleStr as UserRole);
 };

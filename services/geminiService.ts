@@ -1404,16 +1404,11 @@ export const geminiService = {
         Look for the Chinese column header "报关发票号" (which means "Customs Invoice Number").
         The value you need to extract is the text in the CELL IMMEDIATELY BELOW that header.
 
-        Example: if the table shows:
-          | 报关发票号          | 备注            |
-          | CFM-26CFTTN-643362-4 | CF1000UZ-8A-EPS |
-        → Return: CFM-26CFTTN-643362-4
-
         Rules:
         1. Locate the column header "报关发票号" in the image.
-        2. Extract ONLY the value in the data cell below that header.
-        3. The value may span multiple lines in the cell — join them with no separator (e.g., "CFM-26CFTTN-\n643362-4" → "CFM-26CFTTN-643362-4").
-        4. Return ONLY the invoice number string. No labels, no extra text.
+        2. Extract ALL the text in the data cell below that header.
+        3. The value frequently spans multiple lines in the cell — you MUST join all lines with no separator. For example, if the cell contains "ABC-DEF-" on one line and "1234" on the next, return "ABC-DEF-1234".
+        4. Return ONLY the extracted invoice number string. No labels, no extra text, no spaces.
         5. Do NOT include "报关发票号" in your answer.
         6. Return exactly "NO_DETECTADO" ONLY if you cannot find the header or its value.
       `;

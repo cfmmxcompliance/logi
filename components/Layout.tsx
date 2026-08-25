@@ -286,7 +286,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </>
           )}
 
-          {user?.role !== UserRole.AGENT && user?.role !== UserRole.EXPO && user?.role !== UserRole.EXPO_ANALIST && user?.role !== UserRole.EXPO_COORDINATOR && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && user?.role !== UserRole.ANALISTA_CUMPLIMIENTO && (
+          {user?.role !== UserRole.AGENT && user?.role !== UserRole.EXPO && user?.role !== UserRole.EXPO_ANALIST && user?.role !== UserRole.EXPO_COORDINATOR && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && user?.role !== UserRole.ANALISTA_CUMPLIMIENTO && user?.role !== UserRole.PROVEEDOR && (
             <>
               <SidebarItem to="/historico-expo" icon={History} label={sidebarOpen ? "Histórico Expo" : ""} />
               <SidebarItem to="/operations" icon={Ship} label={sidebarOpen ? "Shipment Plan" : ""} />

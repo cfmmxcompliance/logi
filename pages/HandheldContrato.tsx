@@ -147,6 +147,11 @@ export const HandheldContrato: React.FC = () => {
       return;
     }
     
+    if (!facturaValue || facturaValue.trim() === '') {
+      alert("FALTO REGISTRAR EL NUMERO DE FACTURA");
+      return;
+    }
+    
     setIsSaving(true);
     setAiError(null);
     setSaveSuccess(false);
@@ -442,12 +447,12 @@ export const HandheldContrato: React.FC = () => {
               </div>
             </div>
 
-            {/* FACTURA (Opcional) */}
+            {/* FACTURA */}
             <div className="flex items-stretch gap-3 border-t border-slate-700/50 pt-5 mt-5">
               <div className="flex-1 relative">
                 <div className="flex items-center gap-1.5 mb-2 text-amber-400">
                   <ReceiptText size={14} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">Factura (Opcional)</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Factura</span>
                 </div>
                 <input
                   ref={facturaInputRef}

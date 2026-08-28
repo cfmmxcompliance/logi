@@ -7,8 +7,10 @@ import { CommercialInvoiceItem, RawMaterialPart, VesselTrackingRecord } from '..
 import { useAuth } from '../context/useAuth';
 import { useNotification } from '../context/NotificationContext.tsx';
 import { useLanguage } from '../context/LanguageContext.tsx';
+import { CartaTraduccion318 } from '../components/CartaTraduccion318.tsx';
 import { CatalogQueryBuilder, evaluateCondition, QueryCondition } from '../components/CatalogQueryBuilder.tsx';
 import { LOGO_BASE64 } from '../src/constants/logo.ts';
+import html2pdf from 'html2pdf.js';
 
 
 
@@ -346,6 +348,66 @@ export const Factura: React.FC = () => {
     const [loading, setLoading] = useState(false); // Default false for Factura (no initial load)
     const [searchTerm, setSearchTerm] = useState('');
     const [activeSearch, setActiveSearch] = useState(''); // Stores the actually submitted search
+
+    // State for Carta 3.1.8
+    const [showCartaModal, setShowCartaModal] = useState(false);
+    const [cartaPedimentos, setCartaPedimentos] = useState<Record<string, string>>({});
+    const [showCartaPrint, setShowCartaPrint] = useState(false);
+    const [availableRegimens, setAvailableRegimens] = useState<string[]>([]);
+
+    const handleOpenCartaModal = () => {
+        const regimens = Array.from(new Set(items.map(i => i.regimen || 'IN')));
+        setAvailableRegimens(regimens);
+        setCartaPedimentos(regimens.reduce((acc: Record<string, string>, r) => { acc[r as string] = ''; return acc; }, {} as Record<string, string>));
+        setShowCartaModal(true);
+    };
+
+    const handlePrintCarta = async () => {
+        setShowCartaModal(false);
+        setShowCartaPrint(true);
+        // Wait for the DOM to render the components correctly
+        await new Promise(r => setTimeout(r, 500));
+        
+        const element = document.getElementById('carta-pdf-container');
+        if (!element) {
+            setShowCartaPrint(false);
+            return;
+        }
+
+        const pages = Array.from(element.children) as HTMLElement[];
+        
+        for (let i = 0; i < pages.length; i++) {
+            const page = pages[i];
+            const regimen = page.getAttribute('data-regimen') || `Carta_${i+1}`;
+            
+            const opt = {
+                margin:       10,
+                filename:     `Carta_3_1_8_${regimen}.pdf`,
+                image:        { type: 'jpeg' as const, quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' as const }
+            };
+
+            await html2pdf()
+                .set(opt)
+                .from(page)
+                .toPdf()
+                .get('pdf')
+                .then((pdf: any) => {
+                    const totalPages = pdf.internal.getNumberOfPages();
+                    for (let j = 1; j <= totalPages; j++) {
+                        pdf.setPage(j);
+                        pdf.setFontSize(9);
+                        pdf.setTextColor(150);
+                        // width = 215.9mm, height = 279.4mm (letter size)
+                        pdf.text(`Pág. ${j} de ${totalPages} (Régimen: ${regimen})`, pdf.internal.pageSize.getWidth() - 15, pdf.internal.pageSize.getHeight() - 5, { align: 'right' });
+                    }
+                })
+                .save();
+        }
+
+        setShowCartaPrint(false);
+    };
     const deferredSearchTerm = useDeferredValue(searchTerm); // NON-BLOCKING UI PARA FILTRO LOCAL
 
     // NEW LOGIC FOR LOADING UI
@@ -1913,7 +1975,7 @@ export const Factura: React.FC = () => {
     }, [filteredItems]);
 
     return (
-        <div className="flex flex-col h-[calc(100vh-85px)] gap-2">
+        <div className="flex flex-col h-[calc(100vh-85px)] gap-2 print:hidden">
             {/* Rigid Layout Container */}
             {/* Header Area (Gray Background) */}
             {/* Actions Toolbar */}
@@ -2200,6 +2262,16 @@ export const Factura: React.FC = () => {
                         >
                             <FileSpreadsheet size={18} /> Split & Export
                         </button>
+                        <button
+                            onClick={handleOpenCartaModal}
+                            disabled={items.length === 0}
+                            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-bold shadow-sm ${items.length === 0
+                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                }`}
+                        >
+                            <FileText size={18} /> Carta
+                        </button>
 
 
                     </div>
@@ -2375,331 +2447,6 @@ export const Factura: React.FC = () => {
                                             blNo={(item as any).bl || invoiceToBLMap[item.invoiceNo]}
                                         />
                                     );
-                                    /*
-                                    <tr key={item.id} className={`hover:bg-slate-50 transition-colors group ${editingId === item.id ? 'bg-blue-50' : ''}`}>
-                                        <td className="p-4">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedIds.has(item.id)}
-                                                onChange={() => handleSelectRow(item.id)}
-                                                className="rounded border-slate-300"
-                                            />
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {editingId === item.id ? (
-                                                <div className="flex items-center gap-1 justify-center">
-                                                    <button onClick={() => handleSaveEdit(item.id)} className="text-emerald-600 hover:bg-emerald-50 p-1 rounded" title="Save">
-                                                        <Save size={16} />
-                                                    </button>
-                                                    <button onClick={handleCancelEdit} className="text-slate-400 hover:bg-slate-100 p-1 rounded" title="Cancel">
-                                                        <X size={16} />
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-1 justify-center">
-                                                    <button onClick={() => handleStartEdit(item)} className="text-slate-400 hover:text-blue-600 transition-colors p-1" title="Edit">
-                                                        <Edit2 size={16} />
-                                                    </button>
-                                                    <button onClick={() => handleDelete(item.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Delete">
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="p-4 font-mono font-bold text-slate-700">
-                                            {index + 1}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {(() => {
-                                                const partNo = String(item.partNo || '').trim();
-                                                const masterPart = masterDataMap[partNo];
-                                                // If Part not in DB -> Red X
-                                                if (!masterPart) {
-                                                    return (
-                                                        <button
-                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
-                                                            title="Part not in Master Data"
-                                                        >
-                                                            <X size={20} strokeWidth={3} />
-                                                        </button>
-                                                    );
-                                                }
-     
-                                                const r8Desc = masterPart?.DESCRIPCION_R8?.toString().trim().toUpperCase() || '';
-                                                const itemDesc = item.spanishDescription?.toString().trim().toUpperCase() || '';
-                                                const itemRb = item.rb?.toString().trim() || '';
-     
-                                                // 1. Description Match (Relaxed)
-                                                const isTextMatch = r8Desc && itemDesc && (r8Desc.includes(itemDesc) || itemDesc.includes(r8Desc));
-     
-                                                // 2. Both Empty Case (Not R8 in file AND Not R8 in Master Data)
-                                                const isBothEmpty = !itemRb && !r8Desc;
-     
-                                                const isMatch = isTextMatch || isBothEmpty;
-     
-                                                return isMatch ? (
-                                                    <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
-                                                ) : (
-                                                    <button
-                                                        onClick={() => handleOpenDiffModal(item)}
-                                                        className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
-                                                        title="View Mismatch & Resolve"
-                                                    >
-                                                        <X size={20} strokeWidth={3} />
-                                                    </button>
-                                                );
-                                            })()}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {(() => {
-                                                const partNo = String(item.partNo || '').trim();
-                                                const masterPart = masterDataMap[partNo];
-                                                // If Part not in DB -> Red X
-                                                if (!masterPart) {
-                                                    return (
-                                                        <button
-                                                            onClick={() => handleOpenEstModal(item)}
-                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
-                                                            title="Part Not Found (Click to Edit Price)"
-                                                        >
-                                                            <X size={20} strokeWidth={3} />
-                                                        </button>
-                                                    );
-                                                }
-     
-                                                const remarks = masterPart?.REMARKS?.toString().toLowerCase() || '';
-                                                const estimatedPrice = Number(masterPart?.ESTIMATED || 0);
-                                                const itemPrice = parseFloat(String(item.unitPrice || '0'));
-     
-                                                // Logic:
-                                                // Strictly Numeric:
-                                                // - Bad if Estimated > 0 AND Item Price < Estimated.
-                                                // - Otherwise Good (Green).
-     
-                                                const isPriceIssue = estimatedPrice > 0 && itemPrice < estimatedPrice;
-     
-                                                return isPriceIssue ? (
-                                                    <button
-                                                        onClick={() => handleOpenEstModal(item)}
-                                                        className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
-                                                        title={`Undervalued! Invoice: $${itemPrice} < Est: $${estimatedPrice}`}
-                                                    >
-                                                        <X size={20} strokeWidth={3} />
-                                                    </button>
-                                                ) : (
-                                                    <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
-                                                );
-                                            })()}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {(() => {
-                                                const masterPart = masterDataMap[String(item.partNo || '').trim()];
-                                                if (!masterPart) {
-                                                    return <X size={20} className="text-red-500 mx-auto" strokeWidth={3} title="Part Not Found" />;
-                                                }
-     
-                                                const strVal = masterPart?.SENSIBLE ? String(masterPart.SENSIBLE).trim().toUpperCase() : '';
-                                                // If "N" OR Empty -> Green Check (Assuming empty means not sensible if part exists)
-                                                // Else (e.g. "Y") -> Red X
-                                                const isNotSensible = strVal === 'N' || strVal === '';
-     
-                                                // If "N" (Not Sensible) -> Green Check
-                                                // Else -> Red X
-                                                return isNotSensible ? (
-                                                    <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
-                                                ) : (
-                                                    <X size={20} className="text-red-500 mx-auto" strokeWidth={3} />
-                                                );
-                                            })()}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {(() => {
-                                                const partNo = String(item.partNo || '').trim();
-                                                const exists = !!masterDataMap[partNo];
-                                                return exists ? (
-                                                    <Check size={20} className="text-emerald-500 mx-auto" strokeWidth={3} />
-                                                ) : (
-                                                    <X size={20} className="text-red-500 mx-auto" strokeWidth={3} />
-                                                );
-                                            })()}
-                                        </td>
-                                        <td className="p-4 font-medium text-slate-800">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={editValues.invoiceNo || ''}
-                                                    onChange={e => setEditValues({ ...editValues, invoiceNo: e.target.value })}
-                                                    className="w-full px-2 py-1 border rounded bg-white text-xs"
-                                                />
-                                            ) : item.invoiceNo}
-                                        </td>
-                                        <td className="p-4 text-slate-600 font-mono text-xs">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={editValues.containerNo || ''}
-                                                    onChange={e => setEditValues({ ...editValues, containerNo: e.target.value })}
-                                                    className="w-full px-2 py-1 border rounded bg-white text-xs"
-                                                    placeholder="Container"
-                                                />
-                                            ) : (item.containerNo || '-')}
-                                        </td>
-                                        <td className="p-4 text-slate-600 whitespace-nowrap">{item.date}</td>
-                                        <td className="p-4">
-                                            {item.regimen ? (
-                                                <span className={`px-2 py-1 rounded text-xs font-bold ${item.regimen === 'A1'
-                                                    ? 'bg-purple-100 text-purple-700'
-                                                    : 'bg-emerald-100 text-emerald-700'
-                                                    }`}>
-                                                    {item.regimen}
-                                                </span>
-                                            ) : (
-                                                <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
-                                                    MISSING
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-slate-600 font-mono text-xs">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={editValues.incoterm || ''}
-                                                    onChange={e => setEditValues({ ...editValues, incoterm: e.target.value })}
-                                                    className="w-full px-2 py-1 border rounded bg-white text-xs"
-                                                    placeholder="Incoterm"
-                                                />
-                                            ) : (item.incoterm || '').replace(/INCOTERM/i, '').replace(/:/g, '').trim().split(' ')[0]}
-                                        </td>
-                                        <td className="p-4 text-slate-600 font-mono text-xs">
-                                            {item.hts ? (
-                                                item.hts
-                                            ) : (
-                                                <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
-                                                    MISSING
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-slate-600 font-mono text-xs">
-                                            {(() => {
-                                                const masterPart = masterDataMap[String(item.partNo || '').trim()];
-                                                const clavesat = masterPart?.CLAVESAT;
-                                                const igi = masterPart?.IGI_DUTY;
-                                                const prosec = masterPart?.PROSEC ?? item.prosec;
-                                                const r8 = masterPart?.R8 ?? item.rb;
-                                                return (
-                                                    <>
-                                                        <span>{clavesat || <span className="text-slate-300">—</span>}</span>
-                                                    </>
-                                                );
-                                            })()}
-                                        </td>
-                                        <td className="p-4 text-slate-600 font-mono text-xs">
-                                            {(() => {
-                                                const masterPart = masterDataMap[String(item.partNo || '').trim()];
-                                                const v = masterPart?.IGI_DUTY;
-                                                return v !== undefined && v !== null && v !== '' ? String(v) : <span className="text-slate-300">—</span>;
-                                            })()}
-                                        </td>
-                                        <td className="p-4 text-slate-600 font-mono text-xs">
-                                            {(() => {
-                                                const masterPart = masterDataMap[String(item.partNo || '').trim()];
-                                                const v = masterPart?.PROSEC ?? item.prosec;
-                                                return v !== undefined && v !== null && v !== '' ? String(v) : <span className="text-slate-300">—</span>;
-                                            })()}
-                                        </td>
-                                        <td className="p-4 text-slate-600 font-mono text-xs">
-                                            {(() => {
-                                                const masterPart = masterDataMap[String(item.partNo || '').trim()];
-                                                const v = masterPart?.R8 ?? item.rb;
-                                                return v !== undefined && v !== null && v !== '' ? String(v) : <span className="text-slate-300">—</span>;
-                                            })()}
-                                        </td>
-                                        <td className="p-4 text-slate-600">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={editValues.partNo || ''}
-                                                    onChange={e => setEditValues({ ...editValues, partNo: e.target.value })}
-                                                    className="w-full px-2 py-1 border rounded bg-white text-xs font-mono"
-                                                />
-                                            ) : item.partNo}
-                                        </td>
-                                        <td className="p-4 text-slate-600">{item.model}</td>
-                                        <td className="p-4 text-slate-600 max-w-xs truncate" title={item.englishName}>{item.englishName}</td>
-                                        <td className="p-4 text-slate-600 max-w-xs truncate" title={item.spanishDescription || item.englishName}>
-                                            {item.spanishDescription ? (
-                                                <span className="uppercase">{item.spanishDescription}</span>
-                                            ) : (
-                                                <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
-                                                    MISSING
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-right font-mono">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="number"
-                                                    value={editValues.qty || 0}
-                                                    onChange={e => setEditValues({ ...editValues, qty: Number(e.target.value) })}
-                                                    className="w-20 px-2 py-1 border rounded bg-white text-right"
-                                                />
-                                            ) : item.qty}
-                                        </td>
-                                        <td className="p-4 font-mono text-xs">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={editValues.um || ''}
-                                                    onChange={e => setEditValues({ ...editValues, um: e.target.value })}
-                                                    className="w-16 px-2 py-1 border rounded bg-white uppercase"
-                                                />
-                                            ) : (
-                                                item.um ? item.um : (
-                                                    <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
-                                                        MISSING
-                                                    </span>
-                                                )
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-right font-mono">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="number"
-                                                    value={editValues.netWeight || 0}
-                                                    onChange={e => setEditValues({ ...editValues, netWeight: Number(e.target.value) })}
-                                                    className="w-20 px-2 py-1 border rounded bg-white text-right"
-                                                    step="0.01"
-                                                />
-                                            ) : (
-                                                item.netWeight ? item.netWeight.toFixed(3) : (
-                                                    <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse border border-red-200">
-                                                        MISSING
-                                                    </span>
-                                                )
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-right font-mono font-medium text-slate-600">
-                                            {editingId === item.id ? (
-                                                ((editValues.qty || 0) * (editValues.netWeight || 0)).toFixed(3)
-                                            ) : (
-                                                ((item.qty || 0) * (item.netWeight || 0)).toFixed(3)
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-right font-mono">
-                                            {editingId === item.id ? (
-                                                <input
-                                                    type="number"
-                                                    value={editValues.unitPrice || 0}
-                                                    onChange={e => setEditValues({ ...editValues, unitPrice: Number(e.target.value) })}
-                                                    className="w-24 px-2 py-1 border rounded bg-white text-right"
-                                                    step="0.01"
-                                                />
-                                            ) : `$${item.unitPrice.toFixed(2)}`}
-                                        </td>
-                                        <td className="p-4 text-right font-mono font-medium">${((item.qty || 0) * (item.unitPrice || 0)).toFixed(2)}</td>
-     
-                                    </tr>
-                                    */
                                 })
                             )}
                         </tbody>
@@ -3281,6 +3028,53 @@ export const Factura: React.FC = () => {
                     </div>
                 )
             }
+            {showCartaModal && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center print:hidden">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg font-bold text-slate-800">Generar Carta 3.1.8</h3>
+                            <button onClick={() => setShowCartaModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="mb-6 space-y-4">
+                            <p className="text-sm text-slate-600">Ingresa el número de pedimento para cada régimen encontrado en los resultados:</p>
+                            {availableRegimens.map(r => (
+                                <div key={r} className="flex flex-col gap-1">
+                                    <label className="text-xs font-bold text-slate-700">Pedimento ({r})</label>
+                                    <input 
+                                        type="text" 
+                                        value={cartaPedimentos[r] || ''}
+                                        onChange={e => setCartaPedimentos(prev => ({ ...prev, [r]: e.target.value }))}
+                                        className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                                        placeholder={`Ej: 26 47 3192 1234567`}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex justify-end gap-3">
+                            <button onClick={() => setShowCartaModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium">Cancelar</button>
+                            <button onClick={handlePrintCarta} className="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-sm font-bold flex items-center gap-2">
+                                <FileText size={16} /> Descargar PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showCartaPrint && (
+                <div className="fixed inset-0 bg-slate-100 z-[100] overflow-y-auto print:bg-white print:overflow-visible">
+                    <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex justify-between items-center print:hidden shadow-sm z-10">
+                        <div className="font-bold text-lg text-slate-800">Generando PDF...</div>
+                        <div className="flex gap-3">
+                            {/* Ocultamos los botones mientras se genera */}
+                        </div>
+                    </div>
+                    <div className="p-8 print:p-0">
+                        <CartaTraduccion318 items={items} pedimentos={cartaPedimentos} />
+                    </div>
+                </div>
+            )}
         </div >
     );
 };

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Package, Search, Download, RefreshCw, Loader2, Calendar, Trash2 , ChevronUp, ChevronDown, UserCheck, FileText, UploadCloud, MessageCircle } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Package, Search, Download, RefreshCw, Loader2, Calendar, Trash2 , ChevronUp, ChevronDown, UserCheck, FileText, UploadCloud, MessageCircle, Database } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { contratoService } from '../services/contratoService.ts';
 import { asignacionCajaService } from '../services/asignacionCajaService.ts';
@@ -9,16 +9,31 @@ import { ContratoRecord } from '../types/contrato';
 import { UserRole, Dealer } from '../types.ts';
 import { CheckInModel } from '../types/checkIn';
 import { storageService } from '../services/storageService';
+import { vinReportService } from '../services/vinReportService';
 import { uploadFileToDrive } from '../services/googleDriveService.ts';
+import { xmlciService } from '../services/xmlciService.ts';
 import * as XLSX from 'xlsx';
 import { useLanguage } from '../context/LanguageContext';
+import { VinReportRecord } from '../types';
+import { CatalogQueryBuilder } from '../components/CatalogQueryBuilder';
 
 import { nowMX, todayMX, toMXDate } from '../utils/mexTime';
+
+type FilterType = 'ALL' | 'CON_LAYOUT' | 'CON_CCP' | 'SIN_CIERREEMB';
+type CheckInFilterType = 'ALL' | 'CON_CITA' | 'SIN_CITA' | 'CON_ERRORES' | 'HOY' | 'ESTA_SEMANA';
+type CheckInStatusType = 'TODOS' | 'PENDIENTES' | 'ARRIBADOS';
+type ActiveTab = 'CON_LAYOUT' | 'CON_CCP' | 'SIN_CIERREEMB' | 'TODOS' | 'CHECK_IN' | 'REPORTEO_VINS';
 
 export const Embarques: React.FC = () => {
   const [data, setData] = useState<ContratoRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // VIN Reports States
+  const [vinReports, setVinReports] = useState<VinReportRecord[]>([]);
+  const [isSyncingVins, setIsSyncingVins] = useState(false);
+  const [queryBuilderOpen, setQueryBuilderOpen] = useState(false);
+  const [queryConditions, setQueryConditions] = useState<{id:string, column:string, operator:string, type:string, input:any}[]>([]);
   
   const [startDate, setStartDate] = useState(todayMX());
   const [endDate, setEndDate] = useState(todayMX());
@@ -27,7 +42,8 @@ export const Embarques: React.FC = () => {
   const { t } = useLanguage();
   const isCarrier = user?.role === UserRole.CARRIER;
 
-  const [activeTab, setActiveTab] = useState<'TODOS' | 'CON_LAYOUT' | 'SIN_CIERREEMB' | 'CON_CCP' | 'CHECK_IN'>(isCarrier ? 'CHECK_IN' : 'TODOS');
+  const [activeTab, setActiveTab] = useState<ActiveTab>(isCarrier ? 'CHECK_IN' : 'TODOS');
+  const dealersCache = useRef<Dealer[]>([]);
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [dealerFilter, setDealerFilter] = useState<string>('ALL');
   const [checkInsData, setCheckInsData] = useState<CheckInModel[]>([]);
@@ -44,6 +60,139 @@ export const Embarques: React.FC = () => {
   const toDriveDownload = (viewUrl: string) => {
     const match = viewUrl.match(/\/d\/([^/]+)\//);  
     return match ? `https://drive.google.com/uc?export=download&id=${match[1]}` : viewUrl;
+  };
+
+  const handleUploadXML = async (recordId: string, factura: string, file: File) => {
+    try {
+      setUploadingFor(recordId);
+      const text = await file.text();
+      const parser = new DOMParser();
+      
+      let cfdiDoc = parser.parseFromString(text, 'text/xml');
+      const rootTag = cfdiDoc.documentElement?.tagName;
+      if (rootTag === 'w:wordDocument') {
+        const isInsideDel = (node: Element): boolean => {
+            let parent = node.parentElement;
+            while (parent) {
+                if (parent.tagName === 'w:del') return true;
+                parent = parent.parentElement;
+            }
+            return false;
+        };
+        const embedded = Array.from(cfdiDoc.getElementsByTagName('w:t'))
+            .filter((n: Element) => !isInsideDel(n))
+            .map((n: Element) => n.textContent || '').join('');
+        if (!embedded.includes('cfdi:Comprobante')) {
+            throw new Error('El documento WordML no contiene un CFDI.');
+        }
+        const cfdiStart = embedded.indexOf('<cfdi:Comprobante');
+        const cfdiEnd = embedded.lastIndexOf('</cfdi:Comprobante>');
+        if (cfdiStart === -1 || cfdiEnd === -1) {
+             throw new Error('No se pudo aislar el bloque CFDI del WordML.');
+        }
+        const cfdiXml = embedded.substring(cfdiStart, cfdiEnd + '</cfdi:Comprobante>'.length);
+        cfdiDoc = parser.parseFromString(cfdiXml, 'text/xml');
+      }
+
+      const comp = cfdiDoc.getElementsByTagName('cfdi:Comprobante')[0] || cfdiDoc.getElementsByTagName('Comprobante')[0];
+      const emis = cfdiDoc.getElementsByTagName('cfdi:Emisor')[0] || cfdiDoc.getElementsByTagName('Emisor')[0];
+      const concs = cfdiDoc.getElementsByTagName('cfdi:Concepto');
+      
+      if (!comp || !emis || concs.length === 0) {
+        throw new Error('El archivo no parece ser un CFDI válido o no tiene conceptos.');
+      }
+      
+      const serie = comp.getAttribute('Serie') || '';
+      const folio = comp.getAttribute('Folio') || '';
+      const invoiceNo = (serie + folio).trim() || factura || 'S/F';
+      const dateRaw = comp.getAttribute('Fecha') || new Date().toISOString();
+      const date = dateRaw.split('T')[0];
+      const currency = comp.getAttribute('Moneda') || 'USD';
+      
+      const timbre = cfdiDoc.getElementsByTagName('tfd:TimbreFiscalDigital')[0] || cfdiDoc.getElementsByTagName('TimbreFiscalDigital')[0];
+      const uuid = timbre?.getAttribute('UUID') || '';
+      
+      if (!uuid) {
+        throw new Error('El CFDI no contiene un UUID fiscal (TimbreFiscalDigital).');
+      }
+
+      const existingUUIDs = await storageService.checkCFDIExistsByUUID([uuid]);
+      if (existingUUIDs.has(uuid)) {
+         console.warn('UUID ya existe en la base de datos, solo se vinculará al contrato.');
+      } else {
+         const fileItems: any[] = [];
+         for (let i = 0; i < concs.length; i++) {
+            const c = concs[i];
+            const partNoRaw = c.getAttribute('NoIdentificacion') || `ITEM-${i + 1}`;
+            const descripcion = c.getAttribute('Descripcion') || 'Sin descripción';
+            const qty = parseFloat(c.getAttribute('Cantidad') || '1');
+            const unitPrice = parseFloat(c.getAttribute('ValorUnitario') || '0');
+            const totalAmount = qty * unitPrice;
+
+            const vinMatch = descripcion.match(/VIN\s+([A-Z0-9]+)/i);
+            const engineMatch = descripcion.match(/ENGINE\s+([^/]+?)(?:\s*\/|\s*\)|\s*$)/i);
+            const modelMatch = descripcion.match(/MODELO\s+(.+?)(?:,|\s*$)/i);
+            const netWeightMatch = descripcion.match(/PESO NETO\s+([^/)]+)/i);
+            const grossWeightMatch = descripcion.match(/PESO BRUTO\s+([^/)]+)/i);
+            const addedValueMatch = descripcion.match(/Val\.\s*Agregado\s+(.+)/i);
+
+            const unidad = c.getAttribute('Unidad') || '';
+            const cleanDescription = descripcion.split(/[(]|VIN|MODELO|Val\./i)[0].trim();
+
+            fileItems.push({
+                id: (vinMatch ? vinMatch[1].trim() : '') || `${uuid}-${i}` || `${invoiceNo}-${partNoRaw}-${i}`,
+                invoiceNo, date, item: String(i + 1),
+                model: modelMatch ? modelMatch[1].trim() : 'N/A',
+                partNo: partNoRaw,
+                spanishDescription: cleanDescription,
+                englishDescription: 'N/A',
+                qty,
+                unit: unidad,
+                unitPrice,
+                totalAmount,
+                currency,
+                netWeight: netWeightMatch ? parseFloat(netWeightMatch[1]) : 0,
+                grossWeight: grossWeightMatch ? parseFloat(grossWeightMatch[1]) : 0,
+                addedValue: addedValueMatch ? parseFloat(addedValueMatch[1]) : 0,
+                hsCode: '',
+                chineseName: 'N/A',
+                vin: vinMatch ? vinMatch[1].trim() : '',
+                engine: engineMatch ? engineMatch[1].trim() : '',
+                rawDescripcion: descripcion,
+                uuid: uuid,
+                archivo: factura || file.name,
+                tipoCambioInfo: null,
+                mxnValues: null,
+                originalValues: null
+            });
+         }
+         
+         const record = xmlciService.extractRecord(cfdiDoc, invoiceNo, date, currency, uuid, factura || file.name);
+         if (record) {
+             await storageService.addXMLCIRecords([record]);
+         }
+         await storageService.addCFDIInvoices(fileItems);
+      }
+
+      const uploadedBy = user?.email || 'sistema';
+      const uploadedAt = nowMX();
+
+      await contratoService.updateContrato(recordId, {
+        xmlUrl: 'EXTRACTED', 
+        xmlUUID: uuid,
+        xmlUploadedBy: uploadedBy,
+        xmlUploadedAt: uploadedAt,
+        xmlFileName: file.name
+      });
+      
+      setData(prev => prev.map(d => d.id === recordId ? { ...d, xmlUrl: 'EXTRACTED', xmlUUID: uuid, xmlUploadedBy: uploadedBy, xmlUploadedAt: uploadedAt, xmlFileName: file.name } : d));
+      
+      alert(`XML de Factura ${factura} procesado correctamente. UUID: ${uuid}`);
+    } catch (e: any) {
+      alert(`Error subiendo XML: ${e.message}`);
+    } finally {
+      setUploadingFor(null);
+    }
   };
 
   const handleUploadLayout = async (recordId: string, numeroCaja: string, file: File) => {
@@ -283,14 +432,27 @@ export const Embarques: React.FC = () => {
     setLoading(true);
     setSelectedIds(new Set());
     try {
+      // FIX-B: dealers se cargan solo la primera vez (caché en ref)
+      const dealersPromise = dealersCache.current.length > 0
+        ? Promise.resolve(dealersCache.current)
+        : storageService.getAllDealers().catch(() => []);
+
+      // FIX-C: check-ins limitados a últimos 7 días — evita full scan histórico
+      const checkInCutoff = new Date();
+      checkInCutoff.setDate(checkInCutoff.getDate() - 7);
+      const checkInCutoffISO = checkInCutoff.toISOString();
+
       const [asigData, asignaciones, sellos, checkIns, dealersData] = await Promise.all([
         contratoService.getContratosByDateRange(startDate, endDate),
         asignacionCajaService.getAsignacionesByDateRange(startDate, endDate).catch(() => []),
         selloService.getSellosByDateRange(startDate, endDate).catch(() => []),
-        checkInService.getUnprocessedCheckIns().catch(() => []),
-        storageService.getAllDealers().catch(() => [])
+        checkInService.getUnprocessedCheckIns(checkInCutoffISO).catch(() => []),
+        dealersPromise
       ]);
-      setDealers(dealersData || []);
+      if (dealersData.length > 0) {
+        dealersCache.current = dealersData;
+        setDealers(dealersData);
+      }
       
       const mergedData = asigData.map(c => {
         const a = asignaciones.find(x => x.numeroOperacion === c.numeroOperacion);
@@ -338,6 +500,35 @@ export const Embarques: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const fetchVinReports = async () => {
+    try {
+      const reports = await vinReportService.getAllVinReports();
+      setVinReports(reports);
+    } catch (error) {
+      console.error("Error fetching VIN reports:", error);
+    }
+  };
+
+  const handleSyncVins = async () => {
+    setIsSyncingVins(true);
+    try {
+      await vinReportService.generateVinReports(startDate, endDate);
+      await fetchVinReports();
+      alert('Sincronización de VINs completada exitosamente.');
+    } catch (error: any) {
+      console.error(error);
+      alert('Error al sincronizar VINs: ' + error.message);
+    } finally {
+      setIsSyncingVins(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'REPORTEO_VINS' && vinReports.length === 0) {
+      fetchVinReports();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     let cancelled = false;
@@ -547,7 +738,66 @@ export const Embarques: React.FC = () => {
     }
   };
 
+  const filteredVinReports = useMemo(() => {
+    let result = vinReports;
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(item => 
+        item.containerNo.toLowerCase().includes(term) ||
+        item.sealNo.toLowerCase().includes(term) ||
+        item.vinNo.toLowerCase().includes(term) ||
+        item.model.toLowerCase().includes(term) ||
+        item.orderNo.toLowerCase().includes(term) ||
+        item.invoiceNo.toLowerCase().includes(term)
+      );
+    }
+    
+    if (queryConditions.length > 0) {
+      result = result.filter(item => {
+        return queryConditions.every(cond => {
+          if (!cond.input && cond.input !== 0) return true;
+          const val = (item[cond.column as keyof VinReportRecord] || '').toString().toLowerCase();
+          const target = cond.input.toString().toLowerCase();
+          
+          if (cond.operator === 'in') {
+            const list = target.split(/[\s,]+/).filter(Boolean);
+            return list.some((t: string) => val.includes(t));
+          }
+          if (cond.operator === '==') return val === target;
+          if (cond.operator === '!=') return val !== target;
+          if (cond.operator === 'contains') return val.includes(target);
+          return true;
+        });
+      });
+    }
+
+    return result;
+  }, [vinReports, searchTerm, queryConditions]);
+
   const exportToExcel = () => {
+    if (activeTab === 'REPORTEO_VINS') {
+      const exportData = filteredVinReports.map(item => ({
+        'CONTAINER NO': item.containerNo,
+        'SEAL No.': item.sealNo,
+        'MODEL': item.model,
+        'REF': item.ref,
+        'Product No.': item.productNo,
+        'VIN No.': item.vinNo,
+        'ENGINE No.': item.engineNo,
+        'Production Date': item.productionDate,
+        'COLOR': item.color,
+        'ORDER NO': item.orderNo,
+        'Invoice': item.invoiceNo,
+        'Shipping Date': item.shippingDate,
+        'Plataformas': item.plataformas
+      }));
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Reporteo Vins');
+      XLSX.writeFile(wb, `Reporteo_Vins_${startDate}_al_${endDate}.xlsx`);
+      return;
+    }
+
     const exportData = sortedData.map(item => ({
       'NO. OPERACIÓN': item.numeroOperacion || '',
       'NÚMERO CAJA': item.numeroCaja || '',
@@ -632,6 +882,17 @@ export const Embarques: React.FC = () => {
                   const d = toMXDate(a.checkInAt || '');
                   return !d || (d >= startDate && d <= endDate);
                 }).length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('REPORTEO_VINS')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+                activeTab === 'REPORTEO_VINS' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+              }`}
+            >
+              <Database size={16} className={activeTab === 'REPORTEO_VINS' ? 'text-indigo-200' : ''} />
+              Reporteo Vins <span className={`${activeTab === 'REPORTEO_VINS' ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-600'} px-1.5 py-0.5 rounded text-[10px] font-bold`}>
+                {vinReports.length}
               </span>
             </button>
           </div>
@@ -737,6 +998,26 @@ export const Embarques: React.FC = () => {
             <RefreshCw size={18} className={loading ? "animate-spin text-indigo-500" : ""} />
           </button>
           
+          {activeTab === 'REPORTEO_VINS' && (
+            <>
+              <button 
+                onClick={() => setQueryBuilderOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 rounded-lg text-sm font-medium transition-colors"
+              >
+                <Database size={18} />
+                Consultas Avanzadas
+              </button>
+              <button 
+                onClick={handleSyncVins}
+                disabled={isSyncingVins}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                <RefreshCw size={18} className={isSyncingVins ? "animate-spin" : ""} />
+                Sincronizar VINs
+              </button>
+            </>
+          )}
+
           <button 
             onClick={exportToExcel}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-sm font-medium transition-colors"
@@ -876,6 +1157,49 @@ export const Embarques: React.FC = () => {
                   )}
                 </tbody>
               </table>
+            ) : activeTab === 'REPORTEO_VINS' ? (
+              <table className="w-full text-left border-collapse min-w-max">
+                <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
+                  <tr>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Container No</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Seal No</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Model</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Ref</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">VIN No</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Color</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Order No</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Invoice</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Shipping Date</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Plataformas</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">UUID</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredVinReports.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="py-12 text-center text-slate-500">
+                        {searchTerm || (queryConditions.length > 0 && queryConditions[0].input !== '') ? 'No se encontraron resultados' : 'No hay VINs registrados o sincronizados.'}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredVinReports.map(vin => (
+                      <tr key={vin.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-3 px-4 border-b border-slate-100 text-sm">{vin.containerNo}</td>
+                        <td className="py-3 px-4 border-b border-slate-100 text-sm font-medium">{vin.sealNo}</td>
+                        <td className="py-3 px-4 border-b border-slate-100 text-sm text-slate-600">{vin.model}</td>
+                        <td className="py-3 px-4 border-b border-slate-100 text-sm">{vin.ref}</td>
+                        <td className="py-3 px-4 border-b border-slate-100 text-sm text-indigo-600 font-mono font-medium">{vin.vinNo}</td>
+                        <td className="py-3 px-4 border-b border-slate-100 text-sm">{vin.color}</td>
+                        <td className="py-3 px-4 border-b border-slate-100 text-sm">{vin.orderNo}</td>
+                        <td className="py-3 px-4 border-b border-slate-100 text-sm">{vin.invoiceNo}</td>
+                        <td className="py-3 px-4 border-b border-slate-100 text-sm">{vin.shippingDate}</td>
+                        <td className="py-3 px-4 border-b border-slate-100 text-sm text-slate-500 max-w-xs truncate" title={vin.plataformas}>{vin.plataformas}</td>
+                        <td className="py-3 px-4 border-b border-slate-100 text-xs font-mono text-slate-400 max-w-[120px] truncate" title={(vin as any).uuid || ''}>{(vin as any).uuid || 'N/A'}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             ) : (
               <table className="w-full text-left border-collapse min-w-max">
                 <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
@@ -899,6 +1223,7 @@ export const Embarques: React.FC = () => {
                   <SortableHeader label="SCAC" sortKey="scac" />
                   <SortableHeader label="Contrato" sortKey="contrato" />
                   <SortableHeader label="FACTURA" sortKey="factura" />
+                  <SortableHeader label="XML" sortKey="xmlUUID" className="text-center bg-amber-50/40" />
                   <SortableHeader label="LAYOUT" sortKey="layoutUrl" className="text-center bg-indigo-50/40" />
                   <SortableHeader label="CCP" sortKey="ccpUrl" className="text-center bg-sky-50/40" />
                   <SortableHeader label="ANEXO 29" sortKey="anexo29Url" className="text-center bg-emerald-50/40" />
@@ -1012,6 +1337,42 @@ export const Embarques: React.FC = () => {
                           </span>
                         ) : (
                           <span className="text-slate-300 italic text-xs">—</span>
+                        )}
+                      </td>
+                      {/* XML */}
+                      <td className="py-3 px-4 text-center bg-amber-50/20 border-l border-amber-100/50">
+                        {uploadingFor === item.id ? (
+                          <Loader2 size={18} className="animate-spin text-amber-400 mx-auto" />
+                        ) : item.xmlUUID ? (
+                          <div className="flex flex-col items-center gap-0.5">
+                            <div className="flex items-center justify-center gap-1" title={item.xmlUUID}>
+                              <span className="inline-flex items-center justify-center p-1.5 rounded-lg text-emerald-600 font-bold bg-emerald-100">
+                                XML OK
+                              </span>
+                              {!isCarrier && (
+                                <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
+                                       title="Reemplazar XML">
+                                  <UploadCloud size={16} />
+                                  <input type="file" accept=".xml" className="hidden"
+                                         onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadXML(item.id!, item.factura || '', f); e.target.value = ''; }} />
+                                </label>
+                              )}
+                            </div>
+                            {item.xmlUploadedAt && (
+                              <span className="text-[10px] text-amber-500 font-mono whitespace-nowrap">
+                                {new Date(item.xmlUploadedAt).toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit' })} {new Date(item.xmlUploadedAt).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute: '2-digit', hour12: false })}
+                              </span>
+                            )}
+                          </div>
+                        ) : !isCarrier ? (
+                          <label className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-300 hover:text-amber-500 hover:bg-amber-50 transition-colors cursor-pointer"
+                                 title="Subir XML">
+                            <FileText size={18} />
+                            <input type="file" accept=".xml" className="hidden"
+                                   onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadXML(item.id!, item.factura || '', f); e.target.value = ''; }} />
+                          </label>
+                        ) : (
+                          <span className="text-slate-300 italic">—</span>
                         )}
                       </td>
                       {/* LAYOUT */}
@@ -1156,6 +1517,19 @@ export const Embarques: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <CatalogQueryBuilder 
+        isOpen={queryBuilderOpen}
+        onClose={() => setQueryBuilderOpen(false)}
+        columns={['containerNo', 'sealNo', 'model', 'ref', 'productNo', 'vinNo', 'engineNo', 'color', 'orderNo', 'invoiceNo', 'shippingDate', 'plataformas']}
+        conditions={queryConditions}
+        setConditions={setQueryConditions}
+        onApply={() => setQueryBuilderOpen(false)}
+        onClear={() => {
+          setQueryConditions([{ id: '1', column: 'containerNo', operator: 'in', type: 'string', input: '' }]);
+          setQueryBuilderOpen(false);
+        }}
+      />
     </div>
   );
 };

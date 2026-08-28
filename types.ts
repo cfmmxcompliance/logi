@@ -953,3 +953,21 @@ export interface ExpenseAccount {
 }
 
 export * from './types/fianza';
+
+// ─── Reporteo VINs ───────────────────────────────────────────────────────────
+export interface VinReportRecord {
+  id?: string;
+  containerNo: string;
+  sealNo: string;
+  model: string;
+  ref: string;
+  productNo: string;
+  vinNo: string;
+  engineNo: string;
+  productionDate: string;
+  color: string;
+  orderNo: string;
+  invoiceNo: string;
+  shippingDate: string;
+  plataformas: string;
+}

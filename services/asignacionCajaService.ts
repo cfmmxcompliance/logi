@@ -153,9 +153,13 @@ export const asignacionCajaService = {
       }
     }
     // ── GUARDAR ──────────────────────────────────────────────────────────────
-    // Auto-generate custom ID: {numeroOperacion}{YYYYMMDD}{carrierCodigo}{scac}
+    // Auto-generate custom ID: {numeroOperacion}{YYYYMMDD}
+    // NOTA: No incluir carrierCodigo ni scac en el docId — si dos sesiones
+    // guardan el mismo TL en el mismo día con carrier distinto, el segundo
+    // setDoc sobreescribirá al primero (idempotente) en lugar de crear un
+    // documento nuevo con ID diferente, lo que causaba duplicados.
     const datePart = (asignacion.fecha || '').replace(/-/g, '');
-    const customId = `${asignacion.numeroOperacion || ''}${datePart}${asignacion.carrierCodigo || ''}${asignacion.scac || ''}`;
+    const customId = `${asignacion.numeroOperacion || ''}${datePart}`;
     const docId = asignacion.id || customId || doc(collection(db, COLLECTION_NAME)).id;
     const docRef = doc(db, COLLECTION_NAME, docId);
     await setDoc(docRef, {

@@ -165,10 +165,16 @@ export const asignacionCajaService = {
     await setDoc(docRef, {
       id: docId,
       customId: customId || docId,
-      createdAt: nowMX(),
-      updatedAt: nowMX(),
-      ...asignacion
+      ...asignacion,
+      createdAt: asignacion.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
+
+    // --- ALERTA EXPO ---
+    if (asignacion.numeroOperacion) {
+      const { expoNotificationService } = await import('./expoNotificationService');
+      await expoNotificationService.addNotification(asignacion.numeroOperacion, asignacion.numeroCaja || 'Por asignar');
+    }
   },
 
   async getNextOperationNumber(fecha: string): Promise<string> {

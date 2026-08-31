@@ -6,6 +6,7 @@ import { LayoutDashboard, Database, Ship, FileText, FileCheck, BarChart3, Settin
 import { useAuth } from '../context/useAuth';
 import { CcpNotificationListener } from './CcpNotificationListener';
 import { LiberacionNotificationListener } from './LiberacionNotificationListener';
+import { ExpoNotificationListener } from './ExpoNotificationListener';
 import { ConnectionStatus } from './ConnectionStatus.tsx';
 import { UserRole } from '../types.ts';
 import { storageService } from '../services/storageService.ts';
@@ -312,7 +313,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           )}
 
           {/* Saldo Fianza: Desktop Only */ }
-          {![UserRole.CLIENT, UserRole.CARRIER, UserRole.TRANSPORTISTA, UserRole.EMBARQUES, UserRole.EXPO, UserRole.EXPO_ANALIST, UserRole.EXPO_COORDINATOR].includes(user?.role as UserRole) && (
+          {![UserRole.CLIENT, UserRole.CARRIER, UserRole.TRANSPORTISTA, UserRole.EMBARQUES, UserRole.EXPO, UserRole.EXPO_ANALIST, UserRole.EXPO_COORDINATOR, UserRole.PROVEEDOR].includes(user?.role as UserRole) && (
              <div className="hidden lg:block">
                  <SidebarItem to="/saldo-fianza" icon={DollarSign} label={sidebarOpen ? "Saldo Fianza" : ""} />
              </div>
@@ -424,9 +425,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   <SidebarItem to="/demanda-cajas-53" icon={ClipboardList} label={sidebarOpen ? 'Demanda 53\'' : ''} />
                 </>
               )}
-              {/* Reserva: visible para Admin, Controller, Carrier y Transportista */}
-              <SidebarItem to="/reserva-ventanas-53" icon={Truck} label={sidebarOpen ? 'Reserva Ventanas 53\'' : ''}
-                badge={reservasBadge > 0 ? reservasBadge : undefined} />
+              {/* Reserva: visible solo para Admin */}
+              {user?.role === UserRole.ADMIN && (
+                <SidebarItem to="/reserva-ventanas-53" icon={Truck} label={sidebarOpen ? 'Reserva Ventanas 53\'' : ''}
+                  badge={reservasBadge > 0 ? reservasBadge : undefined} />
+              )}
             </>
           )}
 
@@ -468,8 +471,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <SidebarItem to="/asignaciones-diarias" icon={Navigation} label={sidebarOpen ? 'Asignaciones Diarias' : ''} />
           )}
 
-          {/* Daily Audit: Accessible to Everyone (except Pending, Carrier, Expo, Embarques, Client, Editor) */}
-          {user?.role !== UserRole.EDITOR && user?.role !== UserRole.PENDING && user?.role !== UserRole.EXPO && user?.role !== UserRole.EXPO_ANALIST && user?.role !== UserRole.EXPO_COORDINATOR && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && (
+          {/* Daily Audit: Accessible to Everyone (except Pending, Carrier, Expo, Embarques, Client, Editor, Proveedor) */}
+          {user?.role !== UserRole.EDITOR && user?.role !== UserRole.PENDING && user?.role !== UserRole.EXPO && user?.role !== UserRole.EXPO_ANALIST && user?.role !== UserRole.EXPO_COORDINATOR && user?.role !== UserRole.CARRIER && user?.role !== UserRole.TRANSPORTISTA && user?.role !== UserRole.EMBARQUES && user?.role !== UserRole.CLIENT && user?.role !== UserRole.FINANZAS && user?.role !== UserRole.PROVEEDOR && (
             <SidebarItem to="/daily-audit" icon={Activity} label={sidebarOpen ? "Control de Auditoría" : ""} />
           )}
 
@@ -519,6 +522,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       {/* Notificaciones Globales */}
       <CcpNotificationListener />
       <LiberacionNotificationListener />
+      <ExpoNotificationListener />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0">

@@ -1,35 +1,35 @@
 import React, { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import { useAuth } from '../context/useAuth';
 import { UserRole } from '../types';
-import { ccpNotificationService, CcpNotification } from '../services/ccpNotificationService';
-import { FileText, CheckCircle } from 'lucide-react';
+import { expoNotificationService, ExpoNotification } from '../services/expoNotificationService';
+import { Truck, CheckCircle } from 'lucide-react';
 
-export const CcpNotificationListener: React.FC = () => {
+export const ExpoNotificationListener: React.FC = () => {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<CcpNotification[]>([]);
+  const [notifications, setNotifications] = useState<ExpoNotification[]>([]);
   const isClosingAll = React.useRef(false);
 
   useEffect(() => {
-    // Solo mostramos a estos roles
-    const allowedRoles = [UserRole.ADMIN, UserRole.EXPO_ANALIST, UserRole.EXPO_COORDINATOR, UserRole.EMBARQUES];
+    // Solo mostramos EXCLUSIVAMENTE a este rol
+    const allowedRoles = [UserRole.EXPO];
     if (!user || !user.role || !allowedRoles.includes(user.role as any)) {
       return;
     }
 
     const q = query(
-      collection(db, 'notificaciones_ccp')
+      collection(db, 'notificaciones_expo')
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (isClosingAll.current) return;
 
-      const notifs: CcpNotification[] = [];
+      const notifs: ExpoNotification[] = [];
       const userEmail = user.email || '';
       
       snapshot.forEach(doc => {
-        const data = doc.data() as CcpNotification;
+        const data = doc.data() as ExpoNotification;
         // Solo mostramos notificaciones recientes (últimos 3 días para no saturar) 
         // Y que el usuario actual NO haya leído
         const isRecent = (new Date().getTime() - new Date(data.createdAt).getTime()) < 3 * 24 * 60 * 60 * 1000;
@@ -42,8 +42,6 @@ export const CcpNotificationListener: React.FC = () => {
       notifs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       
       setNotifications(notifs);
-      // Disparar evento para actualizar tablas de fondo (ej. Embarques)
-      window.dispatchEvent(new Event('data:refresh'));
     });
 
     return () => unsubscribe();
@@ -57,8 +55,7 @@ export const CcpNotificationListener: React.FC = () => {
     if (!activeNotif.id || !user?.email) return;
     // Ocultar optimisticamente
     setNotifications(prev => prev.filter(n => n.id !== activeNotif.id));
-    await ccpNotificationService.markAsRead(activeNotif.id, user.email);
-    window.dispatchEvent(new Event('data:refresh'));
+    await expoNotificationService.markAsRead(activeNotif.id, user.email);
   };
 
   const handleCerrarTodas = async () => {
@@ -66,28 +63,30 @@ export const CcpNotificationListener: React.FC = () => {
     isClosingAll.current = true;
     const notifIds = notifications.map(n => n.id!);
     setNotifications([]);
-    await Promise.all(notifIds.map(id => ccpNotificationService.markAsRead(id, user.email!)));
+    await Promise.all(notifIds.map(id => expoNotificationService.markAsRead(id, user.email!)));
     isClosingAll.current = false;
-    window.dispatchEvent(new Event('data:refresh'));
   };
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] animate-fade-in p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform animate-scale-up">
-        <div className="bg-emerald-600 p-6 flex flex-col items-center justify-center text-white">
+        <div className="bg-orange-500 p-6 flex flex-col items-center justify-center text-white">
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4">
-            <FileText size={32} />
+            <Truck size={32} />
           </div>
-          <h2 className="text-2xl font-bold text-center">¡Nuevo CCP Cargado!</h2>
+          <h2 className="text-2xl font-bold text-center">¡Nueva Asignación Creada!</h2>
         </div>
         
         <div className="p-6 flex flex-col gap-4">
           <p className="text-slate-600 text-center text-lg">
-            El proveedor de <span className="font-bold text-slate-800">{activeNotif.tl || 'Transporte'}</span> acaba de subir la Carta Porte (CCP) para la caja:
+            Se ha creado un nuevo registro de asignación (TL) para la operación:
           </p>
           
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
-            <span className="text-3xl font-black text-emerald-600 tracking-tight">{activeNotif.caja}</span>
+            <span className="text-3xl font-black text-orange-600 tracking-tight">{activeNotif.tl}</span>
+            {activeNotif.caja && activeNotif.caja !== 'Por asignar' && (
+              <p className="text-sm text-slate-500 mt-2 font-medium">Caja: {activeNotif.caja}</p>
+            )}
           </div>
           
           <p className="text-xs text-slate-400 text-center">
@@ -96,7 +95,7 @@ export const CcpNotificationListener: React.FC = () => {
 
           <button
             onClick={handleEnterado}
-            className="mt-2 w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 text-lg active:scale-95"
+            className="mt-2 w-full h-12 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center gap-2 text-lg active:scale-95"
           >
             <CheckCircle size={20} />
             Enterado
@@ -107,14 +106,12 @@ export const CcpNotificationListener: React.FC = () => {
               <p className="text-center text-sm text-slate-500">
                 (Tienes {notifications.length - 1} notificación(es) más pendiente(s))
               </p>
-              {user?.role !== UserRole.EXPO_COORDINATOR && user?.role !== UserRole.EMBARQUES && (
-                <button
-                  onClick={handleCerrarTodas}
-                  className="w-full h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl transition-all text-sm active:scale-95"
-                >
-                  Cerrar todas las notificaciones
-                </button>
-              )}
+              <button
+                onClick={handleCerrarTodas}
+                className="w-full h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl transition-all text-sm active:scale-95"
+              >
+                Cerrar todas las notificaciones
+              </button>
             </div>
           )}
         </div>

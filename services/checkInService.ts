@@ -21,7 +21,7 @@ export const checkInService = {
     }
     const snapshot = await getDocs(q);
     const docs = snapshot.docs
-      .map(doc => ({ id: doc.id, ...doc.data() } as CheckInModel))
+      .map(doc => ({ id: doc.id, ...(doc.data() as any) } as CheckInModel))
       .filter(d => cutoffDate ? !d.processed : true);
     docs.sort((a, b) => b.checkInAt.localeCompare(a.checkInAt));
     return docs;

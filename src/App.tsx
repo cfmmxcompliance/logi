@@ -144,13 +144,13 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
     // Carrier constraints
     if (user?.role === UserRole.CARRIER) {
-        const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/asignaciones-diarias', '/reserva-ventanas-53', '/daily-van-assignment', '/embarques', '/historico-expo'];
+        const allowed = ['/transport-lines', '/cajas', '/drivers', '/carriers', '/asignaciones-diarias', '/daily-van-assignment', '/embarques', '/historico-expo'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/transport-lines" replace />;
     }
 
     // Transportista constraints (same as Carrier but without /carriers)
     if (user?.role === UserRole.TRANSPORTISTA) {
-        const allowed = ['/transport-lines', '/cajas', '/drivers', '/asignaciones-diarias', '/reserva-ventanas-53'];
+        const allowed = ['/transport-lines', '/cajas', '/drivers', '/asignaciones-diarias'];
         if (!allowed.includes(location.pathname)) return <Navigate to="/asignaciones-diarias" replace />;
     }
 

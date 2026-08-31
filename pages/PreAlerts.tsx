@@ -54,6 +54,9 @@ export const PreAlerts = () => {
     const [filter, setFilter] = useState('');
     const [activeTab, setActiveTab] = useState<'ALL' | 'SEA' | 'AIR'>('ALL');
     const [isLoading, setIsLoading] = useState(false);
+    const [dateFilterType, setDateFilterType] = useState<'ETD' | 'ETA'>('ETD');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -170,7 +173,15 @@ export const PreAlerts = () => {
         // 1. Filter by Tab (Mode)
         if (activeTab !== 'ALL' && r.shippingMode !== activeTab) return false;
 
-        // 2. Filter by Search Text
+        // 2. Filter by Date Range
+        if (startDate || endDate) {
+            const recordDateStr = dateFilterType === 'ETD' ? r.etd : r.eta;
+            if (!recordDateStr) return false;
+            if (startDate && recordDateStr < startDate) return false;
+            if (endDate && recordDateStr > endDate) return false;
+        }
+
+        // 3. Filter by Search Text
         if (!filter) return true;
         const searchTerms = filter.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
         return searchTerms.some(term =>
@@ -1228,15 +1239,42 @@ export const PreAlerts = () => {
                     </button>
                 </div>
 
-                <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex-1">
-                    <div className="relative">
+                <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-wrap gap-2 items-center">
+                    <div className="relative flex-1 min-w-[200px]">
                         <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
                         <input
                             type="text"
                             placeholder="Search Booking, Model, Invoice..."
-                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
+                        />
+                    </div>
+                    
+                    {/* Date Range Filters */}
+                    <div className="flex items-center gap-2 border-l pl-2 ml-2 border-slate-200">
+                        <select
+                            value={dateFilterType}
+                            onChange={(e) => setDateFilterType(e.target.value as 'ETD' | 'ETA')}
+                            className="px-2 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium text-slate-700 bg-slate-50"
+                        >
+                            <option value="ETD">ETD</option>
+                            <option value="ETA">ETA</option>
+                        </select>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-600"
+                            title="Fecha Inicial"
+                        />
+                        <span className="text-slate-400 text-sm">-</span>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-600"
+                            title="Fecha Final"
                         />
                     </div>
                 </div>

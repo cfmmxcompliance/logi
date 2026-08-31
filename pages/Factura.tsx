@@ -403,6 +403,7 @@ export const Factura: React.FC = () => {
                         pdf.text(`Pág. ${j} de ${totalPages} (Régimen: ${regimen})`, pdf.internal.pageSize.getWidth() - 15, pdf.internal.pageSize.getHeight() - 5, { align: 'right' });
                     }
                 })
+                // @ts-ignore
                 .save();
         }
 

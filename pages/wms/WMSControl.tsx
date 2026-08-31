@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-    LayoutDashboard, Car, History, Map, FileBarChart, Database,
+    LayoutDashboard, Car, History, Map, FileBarChart, Database, CheckCircle,
     RotateCcw, AlertTriangle, Search, Filter, Download, X, Plus, RefreshCw, Trash2
 } from 'lucide-react';
 import { db } from '../../services/firebaseConfig';
@@ -56,6 +56,8 @@ function applyConditions(rows: any[], conditions: QueryCondition[]): any[] {
             switch (cond.operator) {
                 case '=':        return cell === val;
                 case '!=':       return cell !== val;
+                case '>=':       return cell >= val;
+                case '<=':       return cell <= val;
                 case 'contains': return cell.includes(val);
                 case 'in list': {
                     const list = cond.value.split(/[\n,]/).map(v => v.trim().toLowerCase()).filter(Boolean);
@@ -135,6 +137,8 @@ function WMSQueryBuilderModal({ columns, conditions, onChange, onApply, onClose,
                                     >
                                         <option value="=">(=) igual</option>
                                         <option value="!=">(!= ) distinto</option>
+                                        <option value=">=">(&gt;=) desde/mayor</option>
+                                        <option value="<=">(&lt;=) hasta/menor</option>
                                         <option value="contains">contains</option>
                                         <option value="in list">(in) in list</option>
                                     </select>
@@ -253,7 +257,7 @@ export function WMSControl() {
             if (!destination) throw new Error('No hay ubicación anterior para este vehículo.');
             const now = new Date().toISOString();
             await updateDoc(doc(db, 'wms_vehicles', reversalTarget.vin), {
-                current_location: destination, status: 'IN_PROCESS', qa_cleared: false,
+                current_location: destination, status: 'IN_PROCESS',
                 [`entered_${destination}_at`]: now,
             });
             await addDoc(collection(db, 'wms_transfers'), {
@@ -264,7 +268,7 @@ export function WMSControl() {
                 reversed_by: user?.email || user?.name || 'Admin',
                 reason: reversalReason.trim(),
             });
-            setReversalMsg({ type: 'ok', text: `Vehículo ${reversalTarget.vin} revertido → ${destination}. QA debe re-autorizar.` });
+            setReversalMsg({ type: 'ok', text: `Vehículo ${reversalTarget.vin} revertido → ${destination}.` });
             setTimeout(() => { setReversalTarget(null); setReversalReason(''); setReversalMsg(null); }, 2500);
         } catch (e: any) {
             setReversalMsg({ type: 'err', text: e.message || 'Error desconocido' });
@@ -327,7 +331,6 @@ export function WMSControl() {
                             {' → '}
                             <span className="font-bold text-green-400">{prevLoc[reversalTarget.current_location] ?? '?'}</span>
                         </p>
-                        <p className="text-slate-400 text-sm mb-4">QA deberá re-autorizar el vehículo en la nueva ubicación.</p>
                         <label className="block text-sm font-semibold text-slate-300 mb-2">Motivo <span className="text-red-400">*</span></label>
                         <textarea
                             className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm mb-4 resize-none focus:outline-none focus:border-amber-400"
@@ -366,6 +369,36 @@ export function WMSControl() {
                         </button>
                     ))}
                 </nav>
+                <button onClick={async () => {
+                    const { doc, setDoc } = await import('firebase/firestore');
+                    for (let locNum = 1; locNum <= 12; locNum++) {
+                        const loc = `L${locNum}`;
+                        for(let i=0; i<20; i++) {
+                            const vin = `${loc}SIMU` + Math.random().toString(36).substring(2, 10).toUpperCase();
+                            await setDoc(doc(db, 'wms_vehicles', vin), {
+                                vin, model: 'MOTO SIMULADA', current_location: loc, status: 'RECEIVED', [`entered_${loc}_at`]: new Date().toISOString()
+                            });
+                        }
+                    }
+                    alert('20 vehículos simulados agregados en TODAS las locaciones (L1 a L12)');
+                }} className="bg-purple-600 px-3 py-1 text-xs rounded text-white font-bold hover:bg-purple-500">
+                    Seed ALL Locations
+                </button>
+                <button onClick={async () => {
+                    const { collection, query, where, limit, getDocs, deleteDoc } = await import('firebase/firestore');
+                    const q = query(collection(db, 'wms_vehicles'), where('current_location', '==', 'L1'), limit(5));
+                    const snap = await getDocs(q);
+                    let count = 0;
+                    for (const d of snap.docs) {
+                        if (d.id.includes('SIMU')) {
+                            await deleteDoc(d.ref);
+                            count++;
+                        }
+                    }
+                    alert(`Se eliminaron ${count} vehículos simulados de L1`);
+                }} className="bg-red-600 px-3 py-1 text-xs rounded text-white font-bold hover:bg-red-500">
+                    Delete 5 L1
+                </button>
             </div>
 
             {/* Content */}
@@ -387,46 +420,70 @@ export function WMSControl() {
 
 /* ── Dashboard ──────────────────────────────────────────────────────────────── */
 function WMSDashboard({ vehicles, transfers }: any) {
-    const l1      = vehicles.filter((v:any) => v.current_location === 'L1' && v.status !== 'SHIPPED').length;
-    const l2      = vehicles.filter((v:any) => v.current_location === 'L2' && v.status !== 'SHIPPED').length;
-    const l3      = vehicles.filter((v:any) => v.current_location === 'L3' && v.status !== 'SHIPPED').length;
-    const blocked = vehicles.filter((v:any) => v.status === 'BLOCKED').length;
-    return (
-        <div className="space-y-6">
-            <h3 className="text-2xl font-bold">Real-time Overview</h3>
-            <div className="grid grid-cols-4 gap-4">
-                <StatCard title="L1 PREPARACIÓN" value={l1}      color="blue" />
-                <StatCard title="L2 FG"           value={l2}      color="indigo" />
-                <StatCard title="L3 EMBARQUE"     value={l3}      color="purple" />
-                <StatCard title="BLOCKED"          value={blocked} color="red" />
-            </div>
-        </div>
-    );
-}
+    const locations = Array.from({length: 12}, (_, i) => `L${i + 1}`);
 
-function StatCard({ title, value, color }: any) {
-    const colors: Record<string,string> = {
-        blue:   'bg-blue-500/20 text-blue-400 border-blue-500/30',
-        indigo: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
-        purple: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-        red:    'bg-red-500/20 text-red-400 border-red-500/30',
-    };
+    const locationStatus = locations.reduce((acc, loc) => {
+        acc[loc] = vehicles.filter((v:any) => v.current_location === loc && v.status !== 'SHIPPED');
+        return acc;
+    }, {} as Record<string, any[]>);
+
+    const ocupados = locations.filter(loc => locationStatus[loc].length > 0).length;
+    const libres = 12 - ocupados;
+
     return (
-        <div className={`p-6 rounded-2xl border ${colors[color]} flex flex-col items-center justify-center`}>
-            <span className="text-sm font-bold opacity-80 mb-2">{title}</span>
-            <span className="text-5xl font-black">{value}</span>
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">ESTADO DE LOCACIONES</span>
+                <div className="flex gap-3 text-xs">
+                    <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+                        <span className="text-emerald-400 font-semibold">{libres} libres</span>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
+                        <span className="text-red-400 font-semibold">{ocupados} ocupados</span>
+                    </span>
+                </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                {locations.map(loc => {
+                    const units = locationStatus[loc];
+                    const isOccupied = units.length > 0;
+                    return isOccupied ? (
+                        <div key={loc} 
+                            className="bg-red-500/10 border border-red-500/40 rounded-lg p-2 flex flex-col items-center gap-1 cursor-default justify-center h-20">
+                            <span className="text-[10px] font-bold text-red-400 uppercase leading-none">{loc}</span>
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            <span className="text-[9px] text-red-300/80 font-mono leading-none truncate w-full text-center">
+                                {units.length} {units.length === 1 ? 'unidad' : 'unidades'}
+                            </span>
+                        </div>
+                    ) : (
+                        <div key={loc}
+                            className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-2 flex flex-col items-center gap-1 cursor-default justify-center h-20">
+                            <span className="text-[10px] font-bold text-emerald-600 uppercase leading-none">{loc}</span>
+                            <span className="w-2 h-2 rounded-full bg-emerald-500/50" />
+                            <span className="text-[9px] text-emerald-700/60 leading-none">libre</span>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 }
 
 /* ── Vehicles Tab ───────────────────────────────────────────────────────────── */
 const VEHICLE_COLUMNS: ColumnDef[] = [
-    { label: 'VIN',        key: 'vin' },
-    { label: 'Ubicación',  key: 'current_location' },
-    { label: 'QA',         key: 'qa_cleared' },
-    { label: 'Status',     key: 'status' },
-    { label: 'Enriched',   key: 'enriched' },
-    { label: 'Product No', key: 'product_no' },
+    { label: 'Model',     key: 'model' },
+    { label: 'Ref',       key: 'ref' },
+    { label: 'Producto',  key: 'product_no' },
+    { label: 'VIN',       key: 'vin' },
+    { label: 'Fecha production', key: 'fecha_production' },
+    { label: 'Color',     key: 'color' },
+    { label: 'Order',     key: 'order' },
+    { label: 'Remarks',   key: 'remarks' },
+    { label: 'States',    key: 'states' },
+    { label: 'Status (WMS)', key: 'status' }
 ];
 
 function WMSVehicles({ vehicles, transfers, isAdmin, onReverse }: any) {
@@ -437,21 +494,25 @@ function WMSVehicles({ vehicles, transfers, isAdmin, onReverse }: any) {
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [conditions, setConditions]       = useState<QueryCondition[]>([defaultCondition()]);
     const [activeFilters, setActiveFilters] = useState<QueryCondition[]>([]);
+    const [startDate, setStartDate]         = useState('');
+    const [endDate, setEndDate]             = useState('');
 
     const canReverse = (v: any) => v.status !== 'SHIPPED' && v.current_location !== 'L1';
 
     // Filter pipeline
     const searchFiltered = vehicles.filter((v: any) => {
+        if (startDate && (!v.fecha_production || v.fecha_production < startDate)) return false;
+        if (endDate && (!v.fecha_production || v.fecha_production > endDate)) return false;
+
         if (!search.trim()) return true;
         const s = search.toLowerCase();
-        return [v.vin, v.current_location, v.status, v.product_no, v.engine_no]
+        return [v.vin, v.model, v.product_no, v.order, v.status, v.states]
             .some(f => String(f ?? '').toLowerCase().includes(s));
     });
 
     // Map to flat keys for query builder
     const mapped = searchFiltered.map((v: any) => ({
         ...v,
-        qa_cleared: v.qa_cleared ? 'true' : 'false',
         enriched:   v.enriched   ? 'true' : 'false',
     }));
     const filtered = activeFilters.length && activeFilters.some(c => c.column && c.value)
@@ -470,26 +531,33 @@ function WMSVehicles({ vehicles, transfers, isAdmin, onReverse }: any) {
     };
 
     const handleApply = () => { setActiveFilters([...conditions]); setShowQuery(false); };
-    const handleReset = () => { setConditions([defaultCondition()]); setActiveFilters([]); };
+    const handleReset = () => { 
+        setConditions([defaultCondition()]); 
+        setActiveFilters([]); 
+        setStartDate('');
+        setEndDate('');
+    };
 
     const handleCSV = () => {
         const toExport = selected.size > 0
             ? filtered.filter((v: any) => selected.has(v.id))
             : filtered;
         const rows = toExport.map((v: any) => ({
+            Model: v.model ?? '',
+            Ref: v.ref ?? '',
+            Producto: v.product_no ?? '',
             VIN: v.vin ?? '',
-            'Product No': v.product_no ?? '',
-            'Engine No': v.engine_no ?? '',
-            Ubicación: v.current_location ?? '',
-            QA: v.qa_cleared ? 'Autorizado' : 'Pendiente',
-            Status: v.status ?? '',
-            Enriched: v.enriched ? 'Sí' : 'No',
+            'Fecha production': v.fecha_production ?? '',
+            Color: v.color ?? '',
+            Order: v.order ?? '',
+            Remarks: v.remarks ?? '',
+            States: v.states ?? v.status ?? '',
         }));
         const date = new Date().toISOString().slice(0, 10);
         exportCSV(rows, `wms_vehicles_${date}.csv`);
     };
 
-    const hasFilters = search.trim() || (activeFilters.some(c => c.column && c.value));
+    const hasFilters = search.trim() || activeFilters.some(c => c.column && c.value) || startDate || endDate;
 
     const handleDeleteSelected = async () => {
         if (!selected.size || deleteLoading) return;
@@ -534,6 +602,15 @@ function WMSVehicles({ vehicles, transfers, isAdmin, onReverse }: any) {
                             <X size={14} />
                         </button>
                     )}
+                </div>
+
+                <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
+                    <span className="text-slate-400 text-xs font-semibold">Desde:</span>
+                    <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-white text-sm outline-none cursor-pointer" />
+                </div>
+                <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
+                    <span className="text-slate-400 text-xs font-semibold">Hasta:</span>
+                    <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-white text-sm outline-none cursor-pointer" />
                 </div>
 
                 {/* Query Builder */}
@@ -643,21 +720,25 @@ function WMSVehicles({ vehicles, transfers, isAdmin, onReverse }: any) {
                 <table className="w-full text-left text-sm">
                     <thead className="bg-slate-900 text-slate-400">
                         <tr>
-                            <th className="p-4 w-10">
+                            <th className="p-2 w-10">
                                 <input type="checkbox" checked={allSelected} onChange={toggleAll}
                                     className="w-4 h-4 rounded accent-indigo-500 cursor-pointer" />
                             </th>
-                            <th className="p-4">VIN</th>
-                            <th className="p-4">Enriched</th>
-                            <th className="p-4">Ubicación</th>
-                            <th className="p-4">QA</th>
-                            <th className="p-4">Status</th>
-                            {isAdmin && <th className="p-4">Admin</th>}
+                            <th className="p-2 text-xs">Model</th>
+                            <th className="p-2 text-xs">Ref</th>
+                            <th className="p-2 text-xs">Producto</th>
+                            <th className="p-2 text-xs">VIN</th>
+                            <th className="p-2 text-xs">Fecha production</th>
+                            <th className="p-2 text-xs">Color</th>
+                            <th className="p-2 text-xs">Order</th>
+                            <th className="p-2 text-xs">Remarks</th>
+                            <th className="p-2 text-xs">States</th>
+                            {isAdmin && <th className="p-2 text-xs">Admin</th>}
                         </tr>
                     </thead>
                     <tbody>
                         {filtered.length === 0 ? (
-                            <tr><td colSpan={isAdmin ? 7 : 6} className="p-8 text-center text-slate-500 italic">
+                            <tr><td colSpan={isAdmin ? 13 : 12} className="p-8 text-center text-slate-500 italic">
                                 Sin resultados para los filtros aplicados.
                             </td></tr>
                         ) : filtered.map((v: any) => (
@@ -666,36 +747,34 @@ function WMSVehicles({ vehicles, transfers, isAdmin, onReverse }: any) {
                                 className={`border-t border-slate-700 cursor-pointer transition ${
                                     selected.has(v.id) ? 'bg-indigo-600/10' : 'hover:bg-slate-700/50'
                                 }`}>
-                                <td className="p-4" onClick={e => e.stopPropagation()}>
+                                <td className="p-2" onClick={e => e.stopPropagation()}>
                                     <input type="checkbox" checked={selected.has(v.id)} onChange={() => toggleOne(v.id)}
                                         className="w-4 h-4 rounded accent-indigo-500 cursor-pointer" />
                                 </td>
-                                <td className="p-4 font-mono font-semibold">{v.vin}</td>
-                                <td className="p-4">
-                                    {v.enriched
-                                        ? <span className="text-green-400">✓ {v.product_no}</span>
-                                        : <span className="text-yellow-500">Pendiente</span>}
-                                </td>
-                                <td className="p-4 font-bold">{v.current_location}</td>
-                                <td className="p-4">
-                                    <span className={`px-2 py-1 rounded text-xs font-bold ${v.qa_cleared ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                        {v.qa_cleared ? 'Autorizado' : 'Pendiente'}
-                                    </span>
-                                </td>
-                                <td className="p-4">
-                                    <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                <td className="p-2 text-xs">{v.model || '-'}</td>
+                                <td className="p-2 text-xs truncate max-w-[120px]">{v.ref || '-'}</td>
+                                <td className="p-2 text-xs">{v.product_no || '-'}</td>
+                                <td className="p-2 font-mono font-bold text-xs text-blue-400">{v.vin}</td>
+                                <td className="p-2 text-xs">{v.fecha_production || '-'}</td>
+                                <td className="p-2 text-xs truncate max-w-[100px]">{v.color || '-'}</td>
+                                <td className="p-2 text-xs">{v.order || '-'}</td>
+                                <td className="p-2 text-xs truncate max-w-[120px]">{v.remarks || '-'}</td>
+                                <td className="p-2 text-xs">
+                                    <span className={`px-2 py-1 rounded font-bold ${
                                         v.status === 'SHIPPED'  ? 'bg-blue-500/20 text-blue-400'     :
                                         v.status === 'REJECTED' ? 'bg-red-500/20 text-red-400'       :
                                         v.status === 'BLOCKED'  ? 'bg-orange-500/20 text-orange-400' :
                                         'bg-green-500/20 text-green-400'
-                                    }`}>{v.status}</span>
+                                    }`}>
+                                        {v.states || v.status || '-'}
+                                    </span>
                                 </td>
                                 {isAdmin && (
-                                    <td className="p-4" onClick={e => e.stopPropagation()}>
+                                    <td className="p-2" onClick={e => e.stopPropagation()}>
                                         {canReverse(v) && (
                                             <button onClick={() => onReverse(v)}
-                                                className="flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/40 border border-amber-500/40 text-xs font-bold transition">
-                                                <RotateCcw size={12} /> Reversa
+                                                className="flex items-center gap-1 px-2 py-1 rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/40 border border-amber-500/40 text-[10px] font-bold transition">
+                                                <RotateCcw size={10} /> Reversa
                                             </button>
                                         )}
                                     </td>
@@ -735,8 +814,16 @@ function WMSTransactions({ transfers }: any) {
     const [showQuery, setShowQuery]         = useState(false);
     const [conditions, setConditions]       = useState<QueryCondition[]>([defaultCondition()]);
     const [activeFilters, setActiveFilters] = useState<QueryCondition[]>([]);
+    const [startDate, setStartDate]         = useState('');
+    const [endDate, setEndDate]             = useState('');
 
     const searchFiltered = transfers.filter((t: any) => {
+        if (startDate && (!t.timestamp || t.timestamp < startDate)) return false;
+        if (endDate) {
+            const endOfDay = `${endDate}T23:59:59.999Z`; 
+            if (!t.timestamp || t.timestamp > endOfDay) return false;
+        }
+
         if (!search.trim()) return true;
         const s = search.toLowerCase();
         return [t.vin, t.operator_id, t.from_location, t.to_location, t.type, t.observations]
@@ -748,7 +835,12 @@ function WMSTransactions({ transfers }: any) {
         : searchFiltered;
 
     const handleApply = () => { setActiveFilters([...conditions]); setShowQuery(false); };
-    const handleReset = () => { setConditions([defaultCondition()]); setActiveFilters([]); };
+    const handleReset = () => { 
+        setConditions([defaultCondition()]); 
+        setActiveFilters([]); 
+        setStartDate('');
+        setEndDate('');
+    };
 
     const handleCSV = () => {
         const rows = filtered.map((t: any) => ({
@@ -764,7 +856,7 @@ function WMSTransactions({ transfers }: any) {
         exportCSV(rows, `wms_transactions_${date}.csv`);
     };
 
-    const hasFilters = search.trim() || activeFilters.some(c => c.column && c.value);
+    const hasFilters = search.trim() || activeFilters.some(c => c.column && c.value) || startDate || endDate;
 
     return (
         <div className="space-y-4">
@@ -778,6 +870,15 @@ function WMSTransactions({ transfers }: any) {
                         className="bg-transparent text-white text-sm outline-none w-full placeholder-slate-500"
                     />
                     {search && <button onClick={() => setSearch('')} className="text-slate-400 hover:text-white"><X size={14} /></button>}
+                </div>
+
+                <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
+                    <span className="text-slate-400 text-xs font-semibold">Desde:</span>
+                    <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-white text-sm outline-none cursor-pointer" />
+                </div>
+                <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
+                    <span className="text-slate-400 text-xs font-semibold">Hasta:</span>
+                    <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-white text-sm outline-none cursor-pointer" />
                 </div>
 
                 <button onClick={() => setShowQuery(true)}
@@ -860,62 +961,229 @@ function WMSTransactions({ transfers }: any) {
 
 /* ── Locations Tab ──────────────────────────────────────────────────────────── */
 function WMSLocations({ vehicles }: any) {
+    const [selectedLocation, setSelectedLocation] = useState<string>('ALL');
+    const allLocations = Array.from({length: 12}, (_, i) => `L${i + 1}`);
+    
+    // Si es "ALL" mostramos todas, si no solo la seleccionada
+    const displayLocations = selectedLocation === 'ALL' ? allLocations : [selectedLocation];
+
     return (
-        <div className="space-y-8">
-            {['L1','L2','L3'].map(loc => {
-                const units = vehicles.filter((v:any) => v.current_location === loc && v.status !== 'SHIPPED');
-                return (
-                    <div key={loc} className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-                        <div className="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
-                            <h3 className="text-xl font-bold">{loc}</h3>
-                            <span className="bg-blue-600 px-3 py-1 rounded-full text-sm font-bold">{units.length} Units</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            {units.map((v:any) => (
-                                <div key={v.id} className="bg-slate-900 px-3 py-2 rounded-lg border border-slate-700 font-mono text-sm flex flex-col">
-                                    <span className={v.status === 'BLOCKED' ? 'text-red-400' : 'text-slate-300'}>{v.vin}</span>
-                                    <span className="text-[10px] text-slate-500 mt-1">
-                                        In since: {v[`entered_${loc}_at`] ? new Date(v[`entered_${loc}_at`]).toLocaleTimeString() : '-'}
+        <div className="flex flex-col h-full">
+            {/* Filter Dropdown */}
+            <div className="flex items-center gap-3 mb-4 bg-slate-800/40 p-3 rounded-xl border border-slate-700/50 w-max">
+                <span className="text-sm font-semibold text-slate-400">Locación:</span>
+                <select 
+                    value={selectedLocation} 
+                    onChange={e => setSelectedLocation(e.target.value)}
+                    className="bg-slate-900 border border-slate-600 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-blue-500 font-bold min-w-[150px] cursor-pointer"
+                >
+                    <option value="ALL">Todas (Vista General)</option>
+                    {allLocations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                </select>
+            </div>
+
+            <div className="flex gap-4 overflow-x-auto pb-4 flex-1 no-scrollbar min-h-0">
+                {displayLocations.map(loc => {
+                    const units = vehicles.filter((v:any) => v.current_location === loc && v.status !== 'SHIPPED');
+                    
+                    // Agrupar unidades en tarjetas (lotes de 5)
+                    const CHUNK_SIZE = 5;
+                    const chunks = [];
+                    for (let i = 0; i < units.length; i += CHUNK_SIZE) {
+                        chunks.push(units.slice(i, i + CHUNK_SIZE));
+                    }
+
+                    return (
+                        <div key={loc} className="flex-shrink-0 w-72 bg-slate-800/80 rounded-xl flex flex-col border border-slate-700/50 shadow-lg">
+                            {/* Header de la Columna */}
+                            <div className="flex justify-between items-center p-4 border-b border-slate-700/50 bg-slate-800/50 rounded-t-xl shrink-0">
+                                <h3 className="text-lg font-bold text-slate-200">{loc}</h3>
+                                <div className="flex items-center gap-2">
+                                    <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-bold">
+                                        {chunks.length} Tarjetas
+                                    </span>
+                                    <span className="bg-blue-600/20 text-blue-400 px-2.5 py-1 rounded-md text-xs font-bold">
+                                        {units.length} Units
                                     </span>
                                 </div>
-                            ))}
-                            {units.length === 0 && <span className="text-slate-500 italic">Empty</span>}
+                            </div>
+                            
+                            {/* Contenedor de Tarjetas */}
+                            <div className="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+                                {chunks.length > 0 ? (
+                                    chunks.map((chunk, idx) => (
+                                        <div key={idx} className="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50 hover:border-indigo-500/40 transition-colors shadow-sm">
+                                            <div className="text-[10px] text-indigo-400 font-bold mb-2 uppercase tracking-wider flex justify-between items-center border-b border-slate-700/50 pb-1.5">
+                                                <span>Grupo {idx + 1}</span>
+                                                <span className="text-slate-500">{chunk.length} VINs</span>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                {chunk.map((v:any) => (
+                                                    <div key={v.id} className="flex justify-between items-center text-xs group cursor-default">
+                                                        <span className={`font-mono font-semibold transition-colors ${v.status === 'BLOCKED' ? 'text-red-400' : 'text-slate-300 group-hover:text-white'}`}>
+                                                            {v.vin}
+                                                        </span>
+                                                        <span className="text-[9px] text-slate-500 truncate max-w-[80px]" title={v.product_no || v.model || ''}>
+                                                            {v.product_no || v.model || 'N/A'}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-slate-500 italic text-sm opacity-50 py-10">
+                                        <div className="w-8 h-8 rounded-full bg-slate-700/50 mb-2 flex items-center justify-center">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500/50" />
+                                        </div>
+                                        Locación Libre
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                );
-            })}
+                    );
+                })}
+            </div>
         </div>
     );
 }
 
 /* ── Enrichment Tab ─────────────────────────────────────────────────────────── */
 function WMSEnrichment({ vehicles }: any) {
-    const pending = vehicles.filter((v:any) => !v.enriched);
+    const [uploading, setUploading] = useState(false);
+    const [msg, setMsg] = useState<{type: 'ok'|'err', text: string} | null>(null);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setUploading(true);
+            setMsg(null);
+            const XLSX = await import('xlsx');
+            const reader = new FileReader();
+            
+            reader.onload = async (evt) => {
+                try {
+                    const bstr = evt.target?.result;
+                    const workbook = XLSX.read(bstr, { type: 'binary' });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const data = XLSX.utils.sheet_to_json(sheet) as any[];
+
+                    let updatedCount = 0;
+                    
+                    const promises = data.map(async (row) => {
+                        const vin = row['车架号'] || row['VIN'];
+                        if (!vin) return; 
+                        
+                        const payload = {
+                            vin,
+                            model: row['产品型号'] || '',
+                            ref: row['物料描述-西语'] || '',
+                            product_no: row['物料编号'] || '',
+                            fecha_production: row['入库日期'] || '',
+                            color: row['规格型号'] || '',
+                            order: row['合同编号'] || row['销售订单'] || '',
+                            remarks: row['特殊库存标识'] || '',
+                            states: row['仓位'] || '',
+                            enriched: true,
+                            updatedAt: new Date().toISOString()
+                        };
+                        
+                        await updateDoc(doc(db, 'wms_vehicles', vin), payload).catch(async () => {
+                             const { setDoc } = await import('firebase/firestore');
+                             await setDoc(doc(db, 'wms_vehicles', vin), payload);
+                        });
+                        updatedCount++;
+                    });
+                    
+                    await Promise.all(promises);
+                    
+                    setMsg({ type: 'ok', text: `Se procesaron y enriquecieron ${updatedCount} vehículos exitosamente.` });
+                } catch (error: any) {
+                    console.error("Error processing excel", error);
+                    setMsg({ type: 'err', text: error.message || 'Error procesando el archivo Excel.' });
+                } finally {
+                    setUploading(false);
+                }
+            };
+            reader.readAsBinaryString(file);
+        } catch (error: any) {
+            console.error("Error starting upload", error);
+            setMsg({ type: 'err', text: error.message || 'Error iniciando la carga.' });
+            setUploading(false);
+        }
+        
+        e.target.value = '';
+    };
+
+    const enrichedCount = vehicles.filter((v:any) => v.enriched).length;
+    const totalCount = vehicles.length;
+
     return (
         <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-            <h3 className="text-xl font-bold mb-4 text-yellow-400">Pending Enrichment ({pending.length})</h3>
-            <p className="text-slate-400 mb-6 text-sm">
-                En una implementación completa, puedes hacer doble clic en las celdas para editar en línea o pegar datos de Excel para actualización masiva.
-            </p>
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h3 className="text-xl font-bold text-yellow-400">Enriquecimiento Masivo (Excel)</h3>
+                    <p className="text-slate-400 text-sm mt-1">
+                        Sube el archivo <strong>"可发运车辆清单.xlsx"</strong> para actualizar automáticamente Model, Ref, Producto, Vin, Fecha production, Color, Order, Remarks y States.
+                    </p>
+                </div>
+                <div className="text-right">
+                    <p className="text-sm font-semibold text-slate-300">Progreso de Enriquecimiento</p>
+                    <p className="text-2xl font-black text-indigo-400">{enrichedCount} <span className="text-sm text-slate-500">/ {totalCount}</span></p>
+                </div>
+            </div>
+
+            <div className="mb-6 p-6 border-2 border-dashed border-slate-600 rounded-xl bg-slate-900/50 flex flex-col items-center justify-center relative hover:border-indigo-500 transition-colors">
+                <input 
+                    type="file" 
+                    accept=".xlsx, .xls, .csv" 
+                    onChange={handleFileUpload}
+                    disabled={uploading}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                />
+                <Database size={48} className={`mb-3 ${uploading ? 'text-indigo-500 animate-bounce' : 'text-slate-500'}`} />
+                <h4 className="text-lg font-bold text-slate-300">
+                    {uploading ? 'Procesando archivo...' : 'Haz clic o arrastra el archivo Excel aquí'}
+                </h4>
+                <p className="text-sm text-slate-500 mt-1">Formatos soportados: .xlsx, .xls</p>
+            </div>
+
+            {msg && (
+                <div className={`p-4 rounded-lg mb-6 flex items-center gap-3 ${msg.type === 'ok' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+                    {msg.type === 'ok' ? <CheckCircle size={20} /> : <AlertTriangle size={20} />}
+                    {msg.text}
+                </div>
+            )}
+            
             <div className="overflow-hidden border border-slate-700 rounded-lg">
                 <table className="w-full text-left text-sm">
                     <thead className="bg-slate-900 text-slate-400">
                         <tr>
-                            <th className="p-4">VIN</th><th className="p-4">Product No</th>
-                            <th className="p-4">Engine No</th><th className="p-4">Color</th>
-                            <th className="p-4">Acción</th>
+                            <th className="p-3">VIN</th>
+                            <th className="p-3">Model</th>
+                            <th className="p-3">Producto</th>
+                            <th className="p-3">Color</th>
+                            <th className="p-3">Order</th>
+                            <th className="p-3">States</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {pending.map((v:any) => (
+                        {vehicles.filter((v:any) => v.enriched).slice(0, 10).map((v:any) => (
                             <tr key={v.id} className="border-t border-slate-700 hover:bg-slate-700/50">
-                                <td className="p-4 font-mono">{v.vin}</td>
-                                <td className="p-4"><input className="bg-slate-900 border border-slate-600 rounded px-2 py-1 w-full" placeholder="Ingresar..." /></td>
-                                <td className="p-4"><input className="bg-slate-900 border border-slate-600 rounded px-2 py-1 w-full" placeholder="Ingresar..." /></td>
-                                <td className="p-4"><input className="bg-slate-900 border border-slate-600 rounded px-2 py-1 w-full" placeholder="Ingresar..." /></td>
-                                <td className="p-4"><button className="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded font-bold">Guardar</button></td>
+                                <td className="p-3 font-mono text-xs">{v.vin}</td>
+                                <td className="p-3 text-xs">{v.model || '-'}</td>
+                                <td className="p-3 text-xs">{v.product_no || '-'}</td>
+                                <td className="p-3 text-xs truncate max-w-[150px]">{v.color || '-'}</td>
+                                <td className="p-3 text-xs">{v.order || '-'}</td>
+                                <td className="p-3 text-xs">{v.states || v.status || '-'}</td>
                             </tr>
                         ))}
+                        {vehicles.filter((v:any) => v.enriched).length === 0 && (
+                            <tr><td colSpan={6} className="p-6 text-center text-slate-500 italic">No hay vehículos enriquecidos aún.</td></tr>
+                        )}
                     </tbody>
                 </table>
             </div>

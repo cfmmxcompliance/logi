@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { asignacionCajaService } from '../services/asignacionCajaService';
 import { liberacionService } from '../services/liberacionService';
+import { liberacionDockService } from '../services/liberacionDockService';
+import { checkInService } from '../services/checkInService';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
 import { LiberacionRecord, LiberacionDockRecord } from '../types';
 import { Truck, CheckCircle, Clock, Calendar, RefreshCcw, Search, XCircle, Package2, Download } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
-import { liberacionDockService } from '../services/liberacionDockService';
 
 const formatEsMx24 = (d: Date) => d.toLocaleString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
@@ -58,16 +59,27 @@ export const DailyVanAssignment: React.FC = () => {
   const fetchData = async (start: string, end: string) => {
     setLoading(true);
     try {
-      const [asigData, libData, libDockData] = await Promise.all([
+      // Obtenemos check-ins 7 días atrás para evitar perder check-ins nocturnos
+      const cutoff = new Date(start);
+      cutoff.setDate(cutoff.getDate() - 7);
+      const [asigData, libData, libDockData, checkInsData] = await Promise.all([
         asignacionCajaService.getAsignacionesByDateRange(start, end),
         liberacionService.getLiberacionesByDateRange(start, end),
         liberacionDockService.getLiberacionesDockByDateRange(start, end),
+        checkInService.getCheckIns(cutoff.toISOString())
       ]);
       const todayStr = getLocalToday();
       const processedAsigData = asigData.map(a => {
         const hasLib = libData.some(l => l.asignacionCajaId === a.id);
         const dockVal = String(a.dockArribo || '').trim().toUpperCase();
         const isCanceled = ['RECHAZADO', 'DROP', 'NO SHOW', 'CANCELED', 'CANCELADO'].includes(dockVal);
+        
+        // Find matching checkIn to extract DRIVER ARRIVAL info directly from Check Ins module
+        const linkedCheckIn = checkInsData.find(c => c.asignacionCajaId === a.id);
+        if (linkedCheckIn && !a.checkInAt) {
+          a.checkInAt = linkedCheckIn.checkInAt;
+        }
+
         if (!hasLib && !isCanceled && a.fecha < todayStr) {
           return { ...a, dockArribo: 'NO SHOW', _autoNoShow: true };
         }
@@ -96,13 +108,17 @@ export const DailyVanAssignment: React.FC = () => {
 
   const filteredAssignments = useMemo(() => {
     if (!searchQuery.trim()) return assignments;
-    const q = searchQuery.toLowerCase();
-    return assignments.filter(a =>
-      a.numeroCaja?.toLowerCase().includes(q) ||
-      a.nombreDriver?.toLowerCase().includes(q) ||
-      a.placasTracto?.toLowerCase().includes(q) ||
-      a.numeroOperacion?.toLowerCase().includes(q)
-    );
+    
+    const terms = searchQuery.toLowerCase().split(',').map(t => t.trim()).filter(Boolean);
+
+    return assignments.filter(a => {
+      return terms.some(term => 
+        a.numeroCaja?.toLowerCase().includes(term) ||
+        a.nombreDriver?.toLowerCase().includes(term) ||
+        a.placasTracto?.toLowerCase().includes(term) ||
+        a.numeroOperacion?.toLowerCase().includes(term)
+      );
+    });
   }, [assignments, searchQuery]);
 
   // Counts para el filtro (siempre sobre el resultado de búsqueda, antes de aplicar cargadoFilter)
@@ -197,7 +213,7 @@ export const DailyVanAssignment: React.FC = () => {
       return m;
     };
     const headers = [
-      t('truck.col.fecha'), t('truck.col.hora'), t('truck.col.arribo'), t('truck.col.dock_arribo'), t('truck.col.comentarios_arribo'),
+      t('truck.col.fecha'), t('truck.col.hora'), t('truck.col.driver_arrival'), t('truck.col.arribo'), t('truck.col.dock_arribo'), t('truck.col.comentarios_arribo'),
       t('truck.col.operacion'), t('truck.col.caja'), t('truck.col.driver'), t('truck.col.placas_tracto'), t('truck.col.placas_caja'), 
       t('truck.col.scac'), t('truck.col.sublinea'), t('truck.col.modelo'), t('truck.col.dealer'), t('truck.col.carrier_ref'), 
       t('truck.col.observaciones'), t('truck.col.notas'), 
@@ -206,7 +222,8 @@ export const DailyVanAssignment: React.FC = () => {
       t('truck.col.ccp_por'), t('truck.col.ccp_at'), 
       t('truck.col.anexo29_por'), t('truck.col.anexo29_at'),
       t('truck.col.lib_dock'), t('truck.col.lib_por'), t('truck.col.status'), 
-      t('truck.col.retraso'), t('truck.col.en_planta'), t('truck.col.t_layout'), t('truck.col.ly_ccp'), t('truck.col.t_cierre')
+      t('truck.col.retraso'), t('truck.col.en_planta'), t('truck.col.t_layout'), t('truck.col.ly_ccp'), t('truck.col.t_cierre'),
+      t('truck.col.lib_fecha')
     ];
 
     const parseTime = (date: string, time: string) => {
@@ -224,6 +241,23 @@ export const DailyVanAssignment: React.FC = () => {
       if (m) return new Date(`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}T${m[4].padStart(2,'0')}:${m[5]}:${m[6]}`);
       const d = new Date(str.replace(' ', 'T'));
       return isNaN(d.getTime()) ? null : d;
+    };
+
+    const formatCsvDateTime = (isoStr: string | null | undefined) => {
+      if (!isoStr) return '';
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return isoStr.replace(', ', ' ');
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    };
+
+    const formatCsvDateOnly = (ymdStr: string | null | undefined) => {
+      if (!ymdStr) return '';
+      if (ymdStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [y, m, d] = ymdStr.split('-');
+        return `${d}/${m}/${y}`;
+      }
+      return ymdStr;
     };
 
     const rows = displayedAssignments.map(a => {
@@ -255,8 +289,9 @@ export const DailyVanAssignment: React.FC = () => {
       }
 
       return [
-        a.fecha || '',
+        formatCsvDateOnly(a.fecha),
         a.horaAsignacion || '',
+        formatCsvDateTime(a.checkInAt),
         a.arribo || '',
         (a as any).dockArribo || '',
         a.comentariosArribo || '',
@@ -273,20 +308,20 @@ export const DailyVanAssignment: React.FC = () => {
         a.observaciones || '',
         a.notas || '',
         (a as any).createdBy || '',
-        (a as any).createdAt ? formatEsMx24(new Date((a as any).createdAt)) : '',
+        formatCsvDateTime((a as any).createdAt),
         (a as any).layoutUploadedBy || '',
-        (a as any).layoutUploadedAt ? formatEsMx24(new Date((a as any).layoutUploadedAt)) : '',
+        formatCsvDateTime((a as any).layoutUploadedAt),
         (a as any).ccpUploadedBy || '',
-        (a as any).ccpUploadedAt ? formatEsMx24(new Date((a as any).ccpUploadedAt)) : '',
+        formatCsvDateTime((a as any).ccpUploadedAt),
         (a as any).anexo29UploadedBy || '',
-        (a as any).anexo29UploadedAt ? formatEsMx24(new Date((a as any).anexo29UploadedAt)) : '',
+        formatCsvDateTime((a as any).anexo29UploadedAt),
         (() => {
           let dr = libDock?.fechaHoraRegistro || libDock?.fechaLiberacion || '';
           const lyAt  = (a as any).layoutUploadedAt ? new Date((a as any).layoutUploadedAt) : null;
           if (!dr && lyAt) {
-            dr = formatEsMx24(new Date(lyAt.getTime() - 30 * 60000));
+            return formatCsvDateTime(new Date(lyAt.getTime() - 30 * 60000).toISOString());
           } else if (dr) {
-            dr = normalizeDateString(dr);
+            return dr.replace(', ', ' '); // Clean format
           }
           return dr;
         })(),
@@ -331,7 +366,7 @@ export const DailyVanAssignment: React.FC = () => {
           }
           return '';
         })(),
-        normalizeDateString(lib?.fechaHoraRegistro || lib?.fechaLiberacion || '')
+        formatCsvDateTime(lib?.fechaHoraRegistro || lib?.fechaLiberacion || '')
       ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
     });
     const csv = [headers.join(','), ...rows].join('\n');
@@ -612,6 +647,7 @@ export const DailyVanAssignment: React.FC = () => {
                   <tr>
                     <th className="px-4 py-3">#</th>
                     <th className="px-4 py-3">{t('truck.col.hora')}</th>
+                    <th className="px-4 py-3 text-cyan-300">{t('truck.col.driver_arrival')}</th>
                     <th className="px-4 py-3">{t('truck.col.arribo')}</th>
                     <th className="px-4 py-3 text-red-400">{t('truck.col.retraso')}</th>
                     <th className="px-4 py-3 text-emerald-400">{t('truck.col.en_planta')}</th>
@@ -625,10 +661,10 @@ export const DailyVanAssignment: React.FC = () => {
                     <th className="px-4 py-3">{t('truck.col.placas_caja')}</th>
                     <th className="px-4 py-3 text-violet-400 whitespace-nowrap">{t('truck.col.creado_at')}</th>
                     <th className="px-4 py-3 text-amber-300 whitespace-nowrap">{t('truck.col.arribo')} AT</th>
-                    <th className="px-4 py-3 text-indigo-400 text-center whitespace-nowrap">LAYOUT</th>
-                    <th className="px-4 py-3 text-sky-400 text-center whitespace-nowrap">CCP</th>
                     <th className="px-4 py-3 text-sky-300 whitespace-nowrap">{t('truck.col.lib_dock')}</th>
                     <th className="px-4 py-3">{t('truck.col.lib_por')}</th>
+                    <th className="px-4 py-3 text-indigo-400 text-center whitespace-nowrap">LAYOUT</th>
+                    <th className="px-4 py-3 text-sky-400 text-center whitespace-nowrap">CCP</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700/50">
@@ -722,6 +758,20 @@ export const DailyVanAssignment: React.FC = () => {
                       <tr key={asig.id} className={`${rowBg} hover:bg-slate-700/50 transition-colors`}>
                         <td className="px-4 py-3 text-slate-500 text-xs">{idx + 1}</td>
                         <td className="px-4 py-3 font-mono font-bold text-blue-400">{asig.horaAsignacion || '—'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {asig.checkInAt ? (
+                            <div className="flex flex-col gap-0">
+                              <span className="font-semibold text-cyan-400">
+                                {new Date(asig.checkInAt).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit'})}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {new Date(asig.checkInAt).toLocaleDateString('es-MX')}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-600">—</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 font-mono text-amber-300 font-semibold">{asig.arribo || '—'}</td>
                         <td className="px-4 py-3">{formatTimeBadge(retrasoMins, true)}</td>
                         <td className="px-4 py-3">
@@ -858,42 +908,6 @@ export const DailyVanAssignment: React.FC = () => {
                           )}
                         </td>
 
-                        {/* LAYOUT */}
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          {(asig as any).layoutUploadedAt ? (
-                            <div className="flex flex-col gap-0">
-                              {(asig as any).layoutUploadedBy && (
-                                <span className="text-slate-200 text-xs font-medium">
-                                  {(asig as any).layoutUploadedBy}
-                                </span>
-                              )}
-                              <span className="text-[10px] text-slate-400 font-mono">
-                                {formatEsMx24(new Date((asig as any).layoutUploadedAt))}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-slate-600">—</span>
-                          )}
-                        </td>
-
-                        {/* CCP */}
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          {(asig as any).ccpUploadedAt ? (
-                            <div className="flex flex-col gap-0">
-                              {(asig as any).ccpUploadedBy && (
-                                <span className="text-slate-200 text-xs font-medium">
-                                  {(asig as any).ccpUploadedBy}
-                                </span>
-                              )}
-                              <span className="text-[10px] text-slate-400 font-mono">
-                                {formatEsMx24(new Date((asig as any).ccpUploadedAt))}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-slate-600">—</span>
-                          )}
-                        </td>
-
                         {/* LIBERACION DOCK */}
                         <td className="px-4 py-3 whitespace-nowrap">
                           {(() => {
@@ -947,6 +961,42 @@ export const DailyVanAssignment: React.FC = () => {
                               </div>
                             );
                           })()}
+                        </td>
+
+                        {/* LAYOUT */}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {(asig as any).layoutUploadedAt ? (
+                            <div className="flex flex-col gap-0">
+                              {(asig as any).layoutUploadedBy && (
+                                <span className="text-slate-200 text-xs font-medium">
+                                  {(asig as any).layoutUploadedBy}
+                                </span>
+                              )}
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {formatEsMx24(new Date((asig as any).layoutUploadedAt))}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-600">—</span>
+                          )}
+                        </td>
+
+                        {/* CCP */}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {(asig as any).ccpUploadedAt ? (
+                            <div className="flex flex-col gap-0">
+                              {(asig as any).ccpUploadedBy && (
+                                <span className="text-slate-200 text-xs font-medium">
+                                  {(asig as any).ccpUploadedBy}
+                                </span>
+                              )}
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {formatEsMx24(new Date((asig as any).ccpUploadedAt))}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-600">—</span>
+                          )}
                         </td>
                       </tr>
                     );

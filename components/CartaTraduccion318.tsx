@@ -1,6 +1,7 @@
 import React from 'react';
 import { CommercialInvoiceItem } from '../types';
 import { LOGO_BASE64 } from '../src/constants/logo';
+import { FIRMA_BASE64 } from '../src/constants/firma';
 
 interface CartaTraduccion318Props {
   items: CommercialInvoiceItem[];
@@ -172,10 +173,16 @@ export const CartaTraduccion318: React.FC<CartaTraduccion318Props> = ({ items, p
 
             {/* Footer Signatures */}
             <div className="mt-12 text-center break-inside-avoid">
-              <div className="mb-20 font-bold tracking-[0.3em]">
+              <div className="mb-4 font-bold tracking-[0.3em]">
                 A t e n t a m e n t e
               </div>
-              <div className="w-72 mx-auto border-t border-black pt-2">
+              
+              {/* Signature Image */}
+              <div className="w-72 mx-auto flex justify-center">
+                <img src={`data:image/png;base64,${FIRMA_BASE64}`} alt="Firma" className="h-24 object-contain opacity-90" />
+              </div>
+
+              <div className="w-72 mx-auto border-t border-black pt-2 relative z-10 -mt-4">
                 <div className="font-bold text-xs mb-1">FIRMA</div>
                 <div className="text-xs mb-1 uppercase">RAUL SERGIO MEDINA TOSCANO</div>
                 <div className="text-xs mb-8 uppercase">REPRESENTANTE LEGAL</div>

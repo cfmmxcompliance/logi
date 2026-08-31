@@ -110,6 +110,10 @@ export const DriverCheckIn = () => {
         celular: celular.trim()
       });
 
+      if (asignacion.id) {
+        await asignacionCajaService.updateAsignacion(asignacion.id, { checkInAt } as any).catch(console.error);
+      }
+
       setTlNumber(extractTL(asignacion.numeroOperacion));
       setStep('SUCCESS');
     } catch (error) {
@@ -188,6 +192,10 @@ export const DriverCheckIn = () => {
           processed: false,
           celular: celular.trim()
         });
+        
+        if (partialMatch.id) {
+          await asignacionCajaService.updateAsignacion(partialMatch.id, { checkInAt } as any).catch(console.error);
+        }
         
         const isExactMatch = 
           partialMatch.carrierCodigo === scac &&

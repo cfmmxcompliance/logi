@@ -45,4 +45,5 @@ export interface AsignacionCajaModel {
   anexo29FileName?: string;
   workingWasAvailable?: boolean;  // set true permanently when barcode+no arribo+no dock+>1h
   isDealer?: boolean;
+  checkInAt?: string;             // ISO timestamp del momento del Driver Check In
 }

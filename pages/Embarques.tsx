@@ -662,7 +662,8 @@ export const Embarques: React.FC = () => {
            arriboAt: nowMX(),
            arriboBy: user?.email || 'Embarques',
            dockArribo: dock,
-           checkInStatus: checkIn.checkInStatus
+           checkInStatus: checkIn.checkInStatus,
+           checkInAt: checkIn.checkInAt
         } as any);
       }
       

@@ -6,6 +6,19 @@ import { v4 as uuidv4 } from 'uuid';
 const COLLECTION_NAME = 'driver_check_ins';
 
 export const checkInService = {
+  async getCheckIns(cutoffDate?: string): Promise<CheckInModel[]> {
+    let q;
+    if (cutoffDate) {
+      q = query(collection(db, COLLECTION_NAME), where('checkInAt', '>=', cutoffDate));
+    } else {
+      q = query(collection(db, COLLECTION_NAME));
+    }
+    const snapshot = await getDocs(q);
+    const docs = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as CheckInModel));
+    docs.sort((a, b) => b.checkInAt.localeCompare(a.checkInAt));
+    return docs;
+  },
+
   // cutoffDate (ISO string opcional): si se pasa, solo trae check-ins desde esa fecha.
   // El filtro processed==false se aplica en memoria para evitar índice compuesto nuevo.
   async getUnprocessedCheckIns(cutoffDate?: string): Promise<CheckInModel[]> {

@@ -66,6 +66,7 @@ const HandheldArribo       = React.lazy(() => import('../pages/HandheldArribo.ts
 const HandheldVigilancia   = React.lazy(() => import('../pages/HandheldVigilancia.tsx').then(m => ({ default: m.HandheldVigilancia })));
 const HandheldAsignaciones = React.lazy(() => import('../pages/HandheldAsignaciones.tsx').then(m => ({ default: m.HandheldAsignaciones })));
 const HandheldContrato     = React.lazy(() => import('../pages/HandheldContrato.tsx').then(m => ({ default: m.HandheldContrato })));
+const HandheldWMS          = React.lazy(() => import('../pages/HandheldWMS.tsx').then(m => ({ default: m.HandheldWMS })));
 const BPMClasificacion     = React.lazy(() => import('../pages/BPMClasificacion.tsx').then(m => ({ default: m.BPMClasificacion })));
 const DailyVanAssignment   = React.lazy(() => import('../pages/DailyVanAssignment.tsx').then(m => ({ default: m.DailyVanAssignment })));
 const AdminProductos53     = React.lazy(() => import('../pages/AdminProductos53.tsx').then(m => ({ default: m.AdminProductos53 })));
@@ -460,6 +461,7 @@ const AppContent = () => {
             <Route path="/m/vigilancia" element={<ProtectedRoute><HandheldVigilancia /></ProtectedRoute>} />
             <Route path="/m/asignaciones" element={<ProtectedRoute><HandheldAsignaciones /></ProtectedRoute>} />
             <Route path="/m/contrato" element={<ProtectedRoute><HandheldContrato /></ProtectedRoute>} />
+            <Route path="/m/wms" element={<ProtectedRoute><HandheldWMS /></ProtectedRoute>} />
             <Route path="/vendor-portal" element={<ProtectedRoute allowedRoles={[UserRole.PROVEEDOR]}><VendorPortal /></ProtectedRoute>} />
             <Route path="/vendor-invoice-review" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER]}><VendorInvoiceReview /></ProtectedRoute>} />
             <Route path="/expense-accounts" element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.CONTROLLER]}><ExpenseAccounts /></ProtectedRoute>} />

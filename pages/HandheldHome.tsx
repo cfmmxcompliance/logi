@@ -141,6 +141,22 @@ export const HandheldHome = () => {
                            </div>
                         </button>
                     )}
+                    
+                    {/* WMS */}
+                    {user?.role !== UserRole.HANDHELD_USER2 && user?.role !== UserRole.HANDHELD_AF && (
+                        <button
+                           onClick={() => navigate('/m/wms')}
+                           className="bg-slate-800 hover:bg-slate-700 border border-slate-700 p-6 rounded-[24px] shadow-lg flex items-center gap-5 transition-transform active:scale-95 text-left group"
+                        >
+                           <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(147,51,234,0.3)] group-hover:scale-105 transition-transform">
+                              <Box size={32} />
+                           </div>
+                           <div>
+                               <h2 className="text-lg font-bold text-white tracking-tight">WMS</h2>
+                               <p className="text-slate-400 text-sm mt-1 font-medium">Operaciones de almacén e IA</p>
+                           </div>
+                        </button>
+                    )}
 
                 </div>
 

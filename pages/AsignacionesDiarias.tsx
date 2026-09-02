@@ -215,6 +215,8 @@ export const AsignacionesDiarias: React.FC = () => {
   const [carriers, setCarriers] = useState<CarrierModel[]>([]);
   const [transportLines, setTransportLines] = useState<TransportLineModel[]>([]);
   const [liberaciones, setLiberaciones] = useState<LiberacionRecord[]>([]);
+  const liberacionesRef = useRef<LiberacionRecord[]>([]);
+  const asigDataRef = useRef<AsignacionCajaModel[]>([]);
   const [liberacionesDock, setLiberacionesDock] = useState<LiberacionDockRecord[]>([]);
   const [vigilancias, setVigilancias] = useState<VigilanciaRecord[]>([]);
   const [sellos, setSellos] = useState<SelloRecord[]>([]);
@@ -477,6 +479,21 @@ export const AsignacionesDiarias: React.FC = () => {
   useEffect(() => {
     loadData();
 
+    const unsub = asignacionCajaService.subscribeAsignacionesByDateRange(dateRange.start, dateRange.end, (asigData) => {
+      asigDataRef.current = asigData;
+      const todayStr = getMexicoDateString();
+      const processedAsigData = asigData.map(a => {
+          const hasLib = liberacionesRef.current.some(l => l.asignacionCajaId === a.id);
+          const dockVal = String(a.dockArribo || '').trim().toUpperCase();
+          const isCanceled = ['RECHAZADO', 'DROP', 'NO SHOW', 'CANCELED', 'CANCELADO'].includes(dockVal);
+          if (!hasLib && !isCanceled && a.fecha < todayStr) {
+              return { ...a, dockArribo: 'NO SHOW', _autoNoShow: true };
+          }
+          return a;
+      });
+      setAsignaciones(processedAsigData.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()));
+    });
+
     const handleRefresh = () => {
       loadData();
     };
@@ -484,6 +501,7 @@ export const AsignacionesDiarias: React.FC = () => {
     window.addEventListener('reserva:changed', handleRefresh);
 
     return () => {
+      unsub();
       window.removeEventListener('data:refresh', handleRefresh);
       window.removeEventListener('reserva:changed', handleRefresh);
     };
@@ -537,27 +555,30 @@ export const AsignacionesDiarias: React.FC = () => {
             storageService.getAllDealers().catch(() => [])
         ]);
         const todayStr = getMexicoDateString();
-        const processedAsigData = asigData.map(a => {
-            const hasLib = liberacionesData.some(l => l.asignacionCajaId === a.id);
-            const dockVal = String(a.dockArribo || '').trim().toUpperCase();
-            const isCanceled = ['RECHAZADO', 'DROP', 'NO SHOW', 'CANCELED', 'CANCELADO'].includes(dockVal);
-            if (!hasLib && !isCanceled && a.fecha < todayStr) {
-                return { ...a, dockArribo: 'NO SHOW', _autoNoShow: true };
-            }
-            return a;
-        });
-
-        setAsignaciones(processedAsigData.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()));
         setCajas(cajasData);
         setDrivers(driversData);
         setCarriers(carriersData);
         setLiberaciones(liberacionesData);
+        liberacionesRef.current = liberacionesData;
         setLiberacionesDock(liberacionesDockData);
         setTransportLines(linesData);
         setVigilancias(vigilanciasData);
         setSellos(sellosData);
         setCitasConfig(citasConfigData);
         setDealers(dealersData || []);
+
+        if (asigDataRef.current.length > 0) {
+            const processedAsigData = asigDataRef.current.map(a => {
+                const hasLib = liberacionesData.some(l => l.asignacionCajaId === a.id);
+                const dockVal = String(a.dockArribo || '').trim().toUpperCase();
+                const isCanceled = ['RECHAZADO', 'DROP', 'NO SHOW', 'CANCELED', 'CANCELADO'].includes(dockVal);
+                if (!hasLib && !isCanceled && a.fecha < todayStr) {
+                    return { ...a, dockArribo: 'NO SHOW', _autoNoShow: true };
+                }
+                return a;
+            });
+            setAsignaciones(processedAsigData.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()));
+        }
         // ── Auto-fill scac + customId for records missing them ──────────────
         // Runs silently in background after data loads, no await needed
         (async () => {

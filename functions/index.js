@@ -164,20 +164,24 @@ async function runFullReportProcess(targetDateString = null) {
                 }
             });
 
-            const mailOptions = {
-                from: `"Logimaster Compliance" <${CONFIG.SENDER_EMAIL}>`,
-                to: CONFIG.SENDER_EMAIL,
-                bcc: recipients.join(", "),
-                subject: `${CONFIG.EMAIL_SUBJECT} (${reportDateStr})`,
-                text: `Reporte automatizado de Master Data.\n\nResumen:\n- Partes en sistema: ${allParts.length}\n- Cambios detectados hoy: ${dailyChanges.length}\n- Nota: Los respaldos CSV están adjuntos a este correo.\n\nEste correo fue generado y enviado automáticamente por el servidor.`,
-                attachments: [
-                    { filename: `MasterData_Full_${reportDateStr}.csv`, content: fullCsv },
-                    { filename: `MasterData_Changes_${reportDateStr}.csv`, content: changesCsv }
-                ]
-            };
+            const chunkSize = 15;
+            for (let i = 0; i < recipients.length; i += chunkSize) {
+                const chunk = recipients.slice(i, i + chunkSize);
+                const mailOptions = {
+                    from: `"Logimaster Compliance" <${CONFIG.SENDER_EMAIL}>`,
+                    to: CONFIG.SENDER_EMAIL,
+                    bcc: chunk.join(", "),
+                    subject: `${CONFIG.EMAIL_SUBJECT} (${reportDateStr})`,
+                    text: `Reporte automatizado de Master Data.\n\nResumen:\n- Partes en sistema: ${allParts.length}\n- Cambios detectados hoy: ${dailyChanges.length}\n- Nota: Los respaldos CSV están adjuntos a este correo.\n\nEste correo fue generado y enviado automáticamente por el servidor.`,
+                    attachments: [
+                        { filename: `MasterData_Full_${reportDateStr}.csv`, content: fullCsv },
+                        { filename: `MasterData_Changes_${reportDateStr}.csv`, content: changesCsv }
+                    ]
+                };
+                await transporter.sendMail(mailOptions);
+            }
 
-            await transporter.sendMail(mailOptions);
-            diagnostics.email = `OK (Sent to ${recipients.length} addresses)`;
+            diagnostics.email = `OK (Sent to ${recipients.length} addresses in batches of 15)`;
 
             // 3. Save official completion record for this DATE (Used by UI to show status)
             await db.collection("daily_reports").doc(reportDateStr).set({
@@ -602,16 +606,20 @@ exports.sendPublicationEmail = onCall({
             }
         });
 
-        const mailOptions = {
-            from: `"Logimaster Database" <${CONFIG.SENDER_EMAIL}>`,
-            to: combinedRecipients.join(', '),
-            cc: CONFIG.SENDER_EMAIL,
-            subject: `Alerta: Nuevos items agregados a la Base de Datos - HTS Ref: ${htsRef}`,
-            html: htmlBody
-        };
+        const chunkSize = 15;
+        for (let i = 0; i < combinedRecipients.length; i += chunkSize) {
+            const chunk = combinedRecipients.slice(i, i + chunkSize);
+            const mailOptions = {
+                from: `"Logimaster Database" <${CONFIG.SENDER_EMAIL}>`,
+                to: CONFIG.SENDER_EMAIL,
+                bcc: chunk.join(', '),
+                subject: `Alerta: Nuevos items agregados a la Base de Datos - HTS Ref: ${htsRef}`,
+                html: htmlBody
+            };
+            await transporter.sendMail(mailOptions);
+        }
 
-        await transporter.sendMail(mailOptions);
-        console.log(`✅ Publication email sent manually via UI for ${items.length} items.`);
+        console.log(`✅ Publication email sent manually via UI for ${items.length} items (batched).`);
 
         return { success: true };
     } catch (err) {

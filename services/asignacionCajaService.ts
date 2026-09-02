@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, getDocsFromCache, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, getDocsFromCache, deleteDoc, updateDoc, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
 import { nowMX } from '../utils/mexTime';
@@ -130,6 +130,23 @@ export const asignacionCajaService = {
       console.error('Error fetching by date range:', error);
       return [];
     }
+  },
+
+  subscribeAsignacionesByDateRange(
+    start: string,
+    end: string,
+    callback: (data: AsignacionCajaModel[]) => void
+  ): () => void {
+    if (!db) return () => {};
+    const q = query(
+      collection(db, COLLECTION_NAME),
+      where('fecha', '>=', start),
+      where('fecha', '<=', end)
+    );
+    return onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AsignacionCajaModel));
+      callback(docs);
+    });
   },
 
   async addAsignacion(asignacion: AsignacionCajaModel): Promise<void> {

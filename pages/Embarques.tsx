@@ -53,6 +53,9 @@ export const Embarques: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [reassignConflicts, setReassignConflicts] = useState<{ id: string; numeroCaja: string; asignadoA: string }[]>([]);
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [pendingForceIds, setPendingForceIds] = useState<string[]>([]);
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
 
   const EMBARQUES_FOLDER_ID = '1ETyhI2Zddsw_btLBMIQGcYfhkrsmIEQj'; // mismo folder que Asignaciones
@@ -414,14 +417,64 @@ export const Embarques: React.FC = () => {
     setIsAssigning(true);
     const assigneeName = user?.email || user?.name || 'Desconocido';
     try {
-      for (const id of selectedIds) {
+      const selectedRecords = data.filter(d => selectedIds.has(d.id!));
+      const libres = selectedRecords.filter(d => !d.asignadoA);
+      const conflictos = selectedRecords.filter(d => !!d.asignadoA);
+
+      // Asignar los libres directamente
+      for (const record of libres) {
+        await contratoService.updateContrato(record.id!, { asignadoA: assigneeName });
+      }
+
+      if (conflictos.length > 0) {
+        setReassignConflicts(conflictos.map(c => ({
+          id: c.id!,
+          numeroCaja: c.numeroCaja || c.numeroOperacion || 'N/A',
+          asignadoA: c.asignadoA!
+        })));
+        
+        if (user?.role === UserRole.ADMIN) {
+          setPendingForceIds(conflictos.map(c => c.id!));
+          setShowReassignModal(true);
+        } else {
+          setShowReassignModal(true);
+        }
+      } else {
+        await fetchData();
+        setSelectedIds(new Set());
+      }
+      
+      if (libres.length > 0 && conflictos.length > 0) {
+        // Limpiar los libres de los selectedIds, dejar los conflictos seleccionados para visualizarlos
+        const newSelected = new Set(selectedIds);
+        libres.forEach(l => newSelected.delete(l.id!));
+        setSelectedIds(newSelected);
+        await fetchData(); // refresca para ver los que sí se asignaron
+      }
+    } catch (error) {
+      console.error("Error assigning records:", error);
+      alert("Hubo un error al asignar los registros.");
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const handleForceAssign = async () => {
+    if (pendingForceIds.length === 0) return;
+    setIsAssigning(true);
+    const assigneeName = user?.email || user?.name || 'Desconocido';
+    try {
+      for (const id of pendingForceIds) {
         await contratoService.updateContrato(id, { asignadoA: assigneeName });
       }
       await fetchData();
       setSelectedIds(new Set());
+      setShowReassignModal(false);
+      setPendingForceIds([]);
+      setReassignConflicts([]);
     } catch (error) {
-      console.error("Error assigning records:", error);
-      alert("Hubo un error al asignar los registros.");
+      console.error("Error force assigning records:", error);
+      alert("Hubo un error al forzar la asignación de registros.");
     } finally {
       setIsAssigning(false);
     }
@@ -1250,7 +1303,7 @@ export const Embarques: React.FC = () => {
                   sortedData.map((item) => (
                     <tr 
                       key={item.id} 
-                      className={`hover:bg-slate-50 transition-colors ${item.cerrado ? 'bg-emerald-50/60' : selectedIds.has(item.id!) ? 'bg-indigo-50/30' : ''}`}
+                      className={`hover:bg-slate-50 transition-colors ${item.cerrado ? 'bg-emerald-200/60' : item.asignadoA ? 'bg-amber-50' : selectedIds.has(item.id!) ? 'bg-indigo-50/30' : ''}`}
                     >
                       <td className="py-3 px-4">
                         {!isCarrier && (
@@ -1492,7 +1545,14 @@ export const Embarques: React.FC = () => {
                       </td>
                       <td className="py-3 px-4 text-sm text-slate-500">
                         {item.asignadoA ? (
-                          <span className="flex items-center gap-1"><UserCheck size={14} className="text-indigo-400" /> {item.asignadoA}</span>
+                          <div className="flex flex-col gap-0.5 items-start">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 border border-amber-300 rounded-full text-[10px] font-bold tracking-wide uppercase">
+                              ASIGNADO
+                            </span>
+                            <span className="text-xs text-slate-500 flex items-center gap-1">
+                              <UserCheck size={11} className="text-amber-500" /> {item.asignadoA}
+                            </span>
+                          </div>
                         ) : (
                           <span className="text-slate-300 italic">—</span>
                         )}
@@ -1531,6 +1591,55 @@ export const Embarques: React.FC = () => {
           setQueryBuilderOpen(false);
         }}
       />
+      
+      {/* Modal de Reasignación */}
+      {showReassignModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-scale-up border-t-4 border-amber-500">
+            <h3 className="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+              <span className="text-amber-500">⚠️</span> Registros ya asignados
+            </h3>
+            <p className="text-slate-600 mb-4 text-sm">
+              Los siguientes registros ya tienen una asignación y no pueden ser reasignados automáticamente:
+            </p>
+            <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 mb-6 max-h-48 overflow-y-auto">
+              <ul className="space-y-2 text-sm text-slate-700">
+                {reassignConflicts.map(c => (
+                  <li key={c.id} className="flex items-center justify-between border-b border-slate-100 pb-1 last:border-0 last:pb-0">
+                    <span className="font-semibold text-slate-900">{c.numeroCaja}</span>
+                    <span className="text-indigo-600 font-medium flex items-center gap-1">
+                      <UserCheck size={12} /> {c.asignadoA}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowReassignModal(false);
+                  setPendingForceIds([]);
+                  setReassignConflicts([]);
+                }}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors"
+              >
+                {user?.role === UserRole.ADMIN ? 'Cancelar' : 'Entendido'}
+              </button>
+              
+              {user?.role === UserRole.ADMIN && (
+                <button
+                  onClick={handleForceAssign}
+                  disabled={isAssigning}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isAssigning ? <Loader2 size={16} className="animate-spin" /> : 'Forzar Reasignación'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

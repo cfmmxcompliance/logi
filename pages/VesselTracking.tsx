@@ -44,6 +44,10 @@ export const VesselTracking = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(() => storageService.getVesselTracking().length > 0);
 
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [dateFilterType, setDateFilterType] = useState<'etd' | 'etaPort' | 'preAlertDate' | 'atd' | 'ataPort'>('etd');
+
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentRecord, setCurrentRecord] = useState<VesselTrackingRecord>(vesselEmptyState);
@@ -94,7 +98,15 @@ export const VesselTracking = () => {
         if (activeTab === 'AIR' && !isAir(r)) return false;
         if (activeTab === 'SEA' && isAir(r)) return false;
 
-        // 2. Search Filter
+        // 2. Date Range Filter
+        if (startDate || endDate) {
+            const recordDateStr = r[dateFilterType];
+            if (!recordDateStr) return false;
+            if (startDate && recordDateStr < startDate) return false;
+            if (endDate && recordDateStr > endDate) return false;
+        }
+
+        // 3. Search Filter
         if (!filter) return true;
         const searchTerms = filter.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
         return searchTerms.some(term =>
@@ -443,15 +455,45 @@ export const VesselTracking = () => {
                     </button>
                 </div>
 
-                <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex-1">
-                    <div className="relative">
+                <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-wrap gap-2 items-center">
+                    <div className="relative flex-1 min-w-[200px]">
                         <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
                         <input
                             type="text"
                             placeholder="Search BL, Container, Invoice, or Vessel..."
-                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
+                        />
+                    </div>
+                    
+                    {/* Date Range Filters */}
+                    <div className="flex items-center gap-2 border-l pl-2 ml-2 border-slate-200">
+                        <select
+                            value={dateFilterType}
+                            onChange={(e) => setDateFilterType(e.target.value as any)}
+                            className="px-2 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium text-slate-700 bg-slate-50"
+                        >
+                            <option value="etd">ETD</option>
+                            <option value="etaPort">ETA</option>
+                            <option value="atd">ATD</option>
+                            <option value="ataPort">ATA</option>
+                            <option value="preAlertDate">PRE-ALERT</option>
+                        </select>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-600"
+                            title="Fecha Inicial"
+                        />
+                        <span className="text-slate-400 text-sm">-</span>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-600"
+                            title="Fecha Final"
                         />
                     </div>
                 </div>

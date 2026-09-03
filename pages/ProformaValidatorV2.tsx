@@ -67,7 +67,8 @@ interface ValidationRow {
     fraccion: string;
     cantUmc: string;
     precioPedimento: number;
-    precioFactura: number | null;
+    precioFacturaUSD: number | null;
+    precioFacturaMXN: number | null;
     diferencia: number | null;
     permisoR8: string | null;
     estado: ValidationStatus;
@@ -196,13 +197,14 @@ export const ProformaValidatorV2 = () => {
         setLoadingMessage(`Buscando ítems para ${targetInvoices.length} factura(s)...`);
         try {
             const allItems = storageService.getInvoiceItems();
-            const normalize = (s: string) => s.trim().toUpperCase();
+            const normalize = (s: string) => s.replace(/\s+/g, '').toUpperCase();
             
             const facturasObjetivo = targetInvoices.map(t => normalize(t.label)).filter(Boolean);
             const filtered = allItems.filter(item => facturasObjetivo.includes(normalize(item.invoiceNo)));
             
             if (filtered.length === 0) {
-                throw new Error(`No se encontraron ítems para las facturas especificadas: ${facturasObjetivo.join(', ')}`);
+                const dbInvoices = Array.from(new Set(allItems.map(i => normalize(i.invoiceNo)))).join(', ');
+                throw new Error(`No se encontraron ítems para las facturas especificadas: ${facturasObjetivo.join(', ')}.\n\nFacturas encontradas en memoria: ${dbInvoices || 'NINGUNA (Tu memoria local está vacía en esta URL)'}`);
             }
             
             // Fetch related Pre-Alert / Tracking for header cross-validation
@@ -214,16 +216,27 @@ export const ProformaValidatorV2 = () => {
             
             setRelatedPreAlert(matchingPreAlert || null);
             
+            // Collect containers from matched invoices to link with tracking
+            const invoiceContainers = Array.from(new Set(filtered.map(i => i.containerNo).filter(Boolean).map(c => normalize(c!))));
+
             const allTracking = storageService.getVesselTracking();
-            const matchingTrackings = allTracking.filter(t => 
-                (t.invoiceNo && facturasObjetivo.some(inv => normalize(t.invoiceNo).includes(normalize(inv)))) ||
-                (extractedData?.cabecera?.guia && t.blNo && normalize(t.blNo).includes(normalize(extractedData.cabecera.guia))) ||
-                (matchingPreAlert && matchingPreAlert.bookingAbw && t.blNo && normalize(t.blNo).includes(normalize(matchingPreAlert.bookingAbw)))
-            );
+            const matchingTrackings = allTracking.filter(t => {
+                const normInvoice = t.invoiceNo ? normalize(t.invoiceNo) : '';
+                const normBl = t.blNo ? normalize(t.blNo) : '';
+                const normContainer = t.containerNo ? normalize(t.containerNo) : '';
+                
+                return (
+                    (normInvoice && facturasObjetivo.some(inv => normInvoice.includes(normalize(inv)))) ||
+                    (extractedData?.cabecera?.guia && normBl && normBl.includes(normalize(extractedData.cabecera.guia))) ||
+                    (matchingPreAlert && matchingPreAlert.bookingAbw && normBl && normBl.includes(normalize(matchingPreAlert.bookingAbw))) ||
+                    (extractedData?.cabecera?.contenedores && normContainer && extractedData.cabecera.contenedores.some((c:any) => normContainer.includes(normalize(typeof c === 'string' ? c : c.numero)))) ||
+                    (normContainer && invoiceContainers.some(ic => normContainer.includes(ic)))
+                );
+            });
             setRelatedTracking(matchingTrackings.length > 0 ? matchingTrackings : null);
             
             setInvoiceItems(filtered);
-            runValidation(extractedData!.partidas, filtered);
+            runValidation(extractedData!.partidas, filtered, extractedData?.cabecera?.tipo_cambio || 1);
             setStep(3);
             setActiveTab('CABECERA');
         } catch (err: any) {
@@ -238,7 +251,7 @@ export const ProformaValidatorV2 = () => {
         return String(p).toUpperCase().replace(/[^A-Z0-9]/g, '');
     };
 
-    const runValidation = (pedimento: PythonPartida[], factura: CommercialInvoiceItem[]) => {
+    const runValidation = (pedimento: PythonPartida[], factura: CommercialInvoiceItem[], tc: number = 1) => {
         const rows: ValidationRow[] = [];
         const usedFacturaIds = new Set<string>();
 
@@ -252,15 +265,17 @@ export const ProformaValidatorV2 = () => {
             
             let estado: ValidationStatus = 'NO_EN_FACTURA';
             let diff: number | null = null;
-            let precioFactura: number | null = null;
+            let precioFacturaUSD: number | null = null;
+            let precioFacturaMXN: number | null = null;
             let facturaOrigen: string = '';
 
             if (match) {
                 usedFacturaIds.add(match.id);
-                precioFactura = match.unitPrice;
+                precioFacturaUSD = match.unitPrice;
+                precioFacturaMXN = match.unitPrice * tc;
                 facturaOrigen = match.invoiceNo;
-                diff = precioPedimento - precioFactura;
-                estado = Math.abs(diff) <= 0.01 ? 'OK' : 'DIFERENCIA';
+                diff = precioPedimento - precioFacturaMXN;
+                estado = Math.abs(diff) <= 1.0 ? 'OK' : 'DIFERENCIA'; // Increased tolerance for rounding issues
             }
 
             rows.push({
@@ -269,7 +284,8 @@ export const ProformaValidatorV2 = () => {
                 fraccion: p.fraccion || '',
                 cantUmc: p.cantidad_umc || '0',
                 precioPedimento,
-                precioFactura,
+                precioFacturaUSD,
+                precioFacturaMXN,
                 diferencia: diff,
                 permisoR8: p.permiso_r8 || null,
                 estado,
@@ -289,7 +305,8 @@ export const ProformaValidatorV2 = () => {
                     fraccion: f.hts || '',
                     cantUmc: f.qty.toString(),
                     precioPedimento: 0,
-                    precioFactura: f.unitPrice,
+                    precioFacturaUSD: f.unitPrice,
+                    precioFacturaMXN: f.unitPrice * tc,
                     diferencia: null,
                     permisoR8: null,
                     estado: 'NO_EN_PEDIMENTO'
@@ -324,9 +341,10 @@ export const ProformaValidatorV2 = () => {
             'Fracción': r.fraccion,
             'Cant UMC': r.cantUmc,
             'Permiso R8': r.permisoR8 || 'N/A',
-            'Precio Pedimento (USD)': r.precioPedimento,
-            'Precio Factura (USD)': r.precioFactura !== null ? r.precioFactura : 'N/A',
-            'Diferencia': r.diferencia !== null ? r.diferencia.toFixed(4) : 'N/A',
+            'Precio Pedimento (MXN)': r.precioPedimento,
+            'Precio Factura (USD)': r.precioFacturaUSD !== null ? r.precioFacturaUSD : 'N/A',
+            'Precio Factura (MXN)': r.precioFacturaMXN !== null ? r.precioFacturaMXN : 'N/A',
+            'Diferencia (MXN)': r.diferencia !== null ? r.diferencia.toFixed(4) : 'N/A',
             'Estado': r.estado
         })));
         const workbook = XLSX.utils.book_new();
@@ -557,14 +575,20 @@ export const ProformaValidatorV2 = () => {
                                                     const facturasLogi = targetInvoices.map(t => normalize(t.label));
                                                     const isValidName = facturasLogi.includes(normalize(f.factura));
                                                     
-                                                    // Calculate DB total value for this invoice
+                                                    // Calculate DB total value for this invoice (Global, A1, and IN)
                                                     const dbInvoiceItems = invoiceItems.filter(item => normalize(item.invoiceNo) === normalize(f.factura));
                                                     const dbInvoiceTotal = dbInvoiceItems.reduce((sum, item) => sum + (item.totalAmount || (item.qty * item.unitPrice) || 0), 0);
+                                                    const dbInvoiceTotalIN = dbInvoiceItems.filter(i => i.regimen !== 'A1').reduce((sum, item) => sum + (item.totalAmount || (item.qty * item.unitPrice) || 0), 0);
+                                                    const dbInvoiceTotalA1 = dbInvoiceItems.filter(i => i.regimen === 'A1').reduce((sum, item) => sum + (item.totalAmount || (item.qty * item.unitPrice) || 0), 0);
+                                                    
                                                     const pdfValue = f.valor_moneda || f.valor_dolares || 0;
                                                     
-                                                    // Valid if diff is small (rounding tolerance) and we actually have items
-                                                    const diff = Math.abs(dbInvoiceTotal - pdfValue);
-                                                    const isValueValid = dbInvoiceItems.length > 0 && diff < 0.5;
+                                                    // Valid if diff is small against Global, IN, or A1 total
+                                                    const diffTotal = Math.abs(dbInvoiceTotal - pdfValue);
+                                                    const diffIN = Math.abs(dbInvoiceTotalIN - pdfValue);
+                                                    const diffA1 = Math.abs(dbInvoiceTotalA1 - pdfValue);
+                                                    
+                                                    const isValueValid = dbInvoiceItems.length > 0 && (diffTotal < 0.5 || diffIN < 0.5 || diffA1 < 0.5);
                                                     
                                                     return (
                                                         <div key={i} className="mb-2 last:mb-0 p-2 bg-slate-50 rounded border border-slate-100">
@@ -690,11 +714,15 @@ export const ProformaValidatorV2 = () => {
                                                             relatedTracking.map((t: any, idx: number) => {
                                                                 const dbContainer = t.containerNo || 'S/N';
                                                                 const pdfContainers = extractedData.cabecera.contenedores?.map((c:any) => typeof c === 'string' ? c.toUpperCase() : c.numero?.toUpperCase()) || [];
-                                                                const isValidContainer = pdfContainers.includes(dbContainer.toUpperCase());
+                                                                const invoiceContainers = invoiceItems.map(i => i.containerNo?.trim().toUpperCase()).filter(Boolean) as string[];
+                                                                const isValidContainer = pdfContainers.includes(dbContainer.toUpperCase()) || invoiceContainers.some(ic => dbContainer.toUpperCase().includes(ic));
                                                                 
-                                                                // Validate Invoices linked to this container in Tracking
-                                                                const normalize = (s: string) => s.trim().toUpperCase();
-                                                                const dbInvoices = t.invoiceNo ? t.invoiceNo.split(',').map((i: string) => normalize(i)) : [];
+                                                                // Validate Invoices linked to this container in the Facturas DB (not Tracking DB)
+                                                                const normalize = (s: string) => s.replace(/\s+/g, '').toUpperCase();
+                                                                const dbInvoices = Array.from(new Set(invoiceItems
+                                                                    .filter(i => normalize(i.containerNo || '') === normalize(dbContainer))
+                                                                    .map(i => normalize(i.invoiceNo))
+                                                                ));
                                                                 const pdfInvoices = extractedData.cabecera.facturas?.map((f:any) => normalize(f.factura)) || [];
                                                                 
                                                                 // Check if AT LEAST ONE invoice linked to this container matches the pedimento invoices
@@ -952,8 +980,9 @@ export const ProformaValidatorV2 = () => {
                                     <th className="px-4 py-3">Fracción / NOM</th>
                                     <th className="px-4 py-3 text-center">Regla 8</th>
                                     <th className="px-4 py-3 text-right">Cant UMC</th>
-                                    <th className="px-4 py-3 text-right">Precio Pedimento</th>
-                                    <th className="px-4 py-3 text-right">Precio Factura</th>
+                                    <th className="px-4 py-3 text-right">Precio Ped. (MXN)</th>
+                                    <th className="px-4 py-3 text-right">Precio Fact. (USD)</th>
+                                    <th className="px-4 py-3 text-right">Precio Fact. (MXN)</th>
                                     <th className="px-4 py-3 text-right">Diferencia</th>
                                     <th className="px-4 py-3 text-right">Importe</th>
                                     <th className="px-4 py-3">Estado</th>
@@ -978,9 +1007,12 @@ export const ProformaValidatorV2 = () => {
                                         <td className="px-4 py-3 text-right font-medium">{row.cantUmc}</td>
                                         <td className="px-4 py-3 text-right text-blue-600">${row.precioPedimento.toFixed(5)}</td>
                                         <td className="px-4 py-3 text-right text-slate-600">
-                                            {row.precioFactura !== null ? `$${row.precioFactura.toFixed(4)}` : '—'}
+                                            {row.precioFacturaUSD !== null ? `$${row.precioFacturaUSD.toFixed(4)}` : '—'}
                                         </td>
-                                        <td className={`px-4 py-3 text-right font-bold ${row.diferencia && Math.abs(row.diferencia) > 0.01 ? 'text-red-500' : 'text-slate-400'}`}>
+                                        <td className="px-4 py-3 text-right text-indigo-600 font-medium">
+                                            {row.precioFacturaMXN !== null ? `$${row.precioFacturaMXN.toFixed(4)}` : '—'}
+                                        </td>
+                                        <td className={`px-4 py-3 text-right font-bold ${row.diferencia && Math.abs(row.diferencia) > 1.0 ? 'text-red-500' : 'text-slate-400'}`}>
                                             {row.diferencia !== null ? `$${row.diferencia.toFixed(4)}` : '—'}
                                         </td>
                                         <td className="px-4 py-3 text-right font-medium text-slate-700">

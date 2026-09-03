@@ -1971,7 +1971,9 @@ export const Factura: React.FC = () => {
             a1Count: a1Items.length,
             totalQty: filteredItems.reduce((sum, i) => sum + (i.qty || 0), 0),
             totalQtyA1: a1Items.reduce((sum, i) => sum + (i.qty || 0), 0),
-            totalQtyIN: inItems.reduce((sum, i) => sum + (i.qty || 0), 0)
+            totalQtyIN: inItems.reduce((sum, i) => sum + (i.qty || 0), 0),
+            totalValueA1: a1Items.reduce((sum, i) => sum + ((i.qty || 0) * (i.unitPrice || 0)), 0),
+            totalValueIN: inItems.reduce((sum, i) => sum + ((i.qty || 0) * (i.unitPrice || 0)), 0)
         };
     }, [filteredItems]);
 
@@ -2507,6 +2509,10 @@ export const Factura: React.FC = () => {
                     <span className="text-slate-500 font-bold">Cant A1: <span className="text-purple-600">{stats.totalQtyA1.toLocaleString()}</span></span>
                     <span className="w-px h-3 bg-slate-300"></span>
                     <span className="text-slate-500 font-bold">Cant IN: <span className="text-emerald-600">{stats.totalQtyIN.toLocaleString()}</span></span>
+                    <span className="w-px h-3 bg-slate-300"></span>
+                    <span className="text-slate-500 font-bold">Valor A1: <span className="text-purple-600">${stats.totalValueA1.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></span>
+                    <span className="w-px h-3 bg-slate-300"></span>
+                    <span className="text-slate-500 font-bold">Valor IN: <span className="text-emerald-600">${stats.totalValueIN.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></span>
                 </div>
 
                 {/* Right: Controls (Selector + Buttons) */}

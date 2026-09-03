@@ -42,6 +42,7 @@ service cloud.firestore {
     match /carriers/{docId} { allow read, write: if true; }
     match /drivers/{docId} { allow read, write: if true; }
     match /cajas/{docId} { allow read, write: if true; }
+    match /notificaciones_expo/{docId} { allow read, write: if true; }
     match /notificaciones_ccp/{docId} { allow read, write: if true; }
     match /notificaciones_liberacion/{docId} { allow read, write: if true; }
     match /transport_lines/{docId} { allow read, write: if true; }

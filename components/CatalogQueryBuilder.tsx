@@ -169,7 +169,7 @@ export const CatalogQueryBuilder: React.FC<Props> = ({ isOpen, onClose, columns,
 };
 
 export function evaluateCondition(val: any, cond: QueryCondition): boolean {
-    const sVal = String(val || '');
+    const sVal = String(val || '').trim();
     const numVal = Number(val);
     const target = cond.input;
     const sTarget = String(target);
@@ -178,7 +178,7 @@ export function evaluateCondition(val: any, cond: QueryCondition): boolean {
     if (cond.operator === 'empty') return sVal.trim() === '' || val == null;
     if (cond.operator === 'not_empty') return sVal.trim() !== '' && val != null;
 
-    const inputLines = target.split(/[\r\n,;\\t]+/).map(t => t.trim()).filter(t => t);
+    const inputLines = target.split(/[\r\n,;\t]+/).map(t => t.trim()).filter(t => t);
     if (inputLines.length === 0) return true;
 
     if (cond.operator === 'in') {

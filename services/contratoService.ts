@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, getDocsFromCache, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, getDocsFromCache, deleteDoc, updateDoc, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { ContratoRecord } from '../types/contrato';
 import { nowMX } from '../utils/mexTime';
@@ -132,5 +132,28 @@ export const contratoService = {
       console.error('Error deleting Contrato:', error);
       return false;
     }
+  },
+
+  /**
+   * Suscripción en tiempo real a contratos dentro de un rango de fechas.
+   * Devuelve la función de cancelación (unsubscribe) para limpiar en useEffect.
+   */
+  subscribeContratosByDateRange(
+    start: string,
+    end: string,
+    callback: (data: ContratoRecord[]) => void
+  ): () => void {
+    if (!db) return () => {};
+    const q = query(
+      collection(db, COLLECTION_NAME),
+      where('fecha', '>=', start),
+      where('fecha', '<=', end)
+    );
+    return onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ContratoRecord));
+      callback(docs);
+    }, (error) => {
+      console.error('[contratoService] onSnapshot error:', error);
+    });
   }
 };

@@ -12,8 +12,8 @@ export const ExpoNotificationListener: React.FC = () => {
   const isClosingAll = React.useRef(false);
 
   useEffect(() => {
-    // Solo mostramos EXCLUSIVAMENTE a este rol
-    const allowedRoles = [UserRole.EXPO];
+    // Solo mostramos EXCLUSIVAMENTE a estos roles
+    const allowedRoles = [UserRole.EXPO, UserRole.ADMIN];
     if (!user || !user.role || !allowedRoles.includes(user.role as any)) {
       return;
     }

@@ -166,19 +166,11 @@ export const XMLInvoiceExtractor: React.FC = () => {
 
             try {
                 const html = await Promise.any([
-                    makeProxyPromise('allorigins', async () => {
-                        const r = await fetch(
-                            `https://api.allorigins.win/get?url=${encodeURIComponent(sourceUrl)}`,
-                            { signal: AbortSignal.timeout(7000), cache: 'no-store' }
-                        );
-                        const j = await r.json();
-                        return j.contents || '';
-                    }),
-                    makeProxyPromise('corsproxy.io', async () => {
-                        const r = await fetch(
-                            `https://corsproxy.io/?${encodeURIComponent(sourceUrl)}`,
-                            { signal: AbortSignal.timeout(7000), cache: 'no-store' }
-                        );
+                    makeProxyPromise('proxy.cors.sh', async () => {
+                        const r = await fetch(`https://proxy.cors.sh/${sourceUrl}`, {
+                            signal: AbortSignal.timeout(7000),
+                            cache: 'no-store'
+                        });
                         return r.text();
                     }),
                     makeProxyPromise('cors.sh', async () => {
@@ -188,6 +180,21 @@ export const XMLInvoiceExtractor: React.FC = () => {
                             headers: { 'x-cors-api-key': 'temp_7aa1b24a-3e5d-4f8a-a7b1-c2e9d8f0123b' }
                         });
                         return r.text();
+                    }),
+                    makeProxyPromise('corsproxy.io', async () => {
+                        const r = await fetch(
+                            `https://corsproxy.io/?${encodeURIComponent(sourceUrl)}`,
+                            { signal: AbortSignal.timeout(7000), cache: 'no-store' }
+                        );
+                        return r.text();
+                    }),
+                    makeProxyPromise('allorigins', async () => {
+                        const r = await fetch(
+                            `https://api.allorigins.win/get?url=${encodeURIComponent(sourceUrl)}`,
+                            { signal: AbortSignal.timeout(7000), cache: 'no-store' }
+                        );
+                        const j = await r.json();
+                        return j.contents || '';
                     }),
                     makeProxyPromise('thingproxy', async () => {
                         const r = await fetch(
@@ -517,7 +524,7 @@ export const XMLInvoiceExtractor: React.FC = () => {
         try {
             const wordDoc = parser.parseFromString(text, 'text/xml');
             const rootTag = wordDoc.documentElement?.tagName;
-            if (rootTag !== 'w:wordDocument') return null;
+            if (rootTag !== 'w:wordDocument' && rootTag !== 'pkg:package') return null;
 
             // Concatenate <w:t> text nodes — but EXCLUDE nodes inside <w:del>
             // (Word revision tracking stores deleted text in <w:del><w:t>...</w:t></w:del>;

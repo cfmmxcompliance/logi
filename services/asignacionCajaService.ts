@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, getDocsFromCache, deleteDoc, updateDoc, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, getDocsFromCache, deleteDoc, updateDoc, query, where, onSnapshot, runTransaction, getDocsFromServer } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { AsignacionCajaModel } from '../types/asignacionCaja';
 import { nowMX } from '../utils/mexTime';
@@ -154,37 +154,36 @@ export const asignacionCajaService = {
     if (asignacion.numeroOperacion) asignacion.numeroOperacion = asignacion.numeroOperacion.trim().toUpperCase();
     if (asignacion.scac) asignacion.scac = asignacion.scac.trim().toUpperCase();
     
-    // ── DUPLICATE TL GUARD: query fresca (no cache) ──────────────────────────
-    if (asignacion.numeroOperacion && asignacion.fecha) {
-      const dupQ = query(
-        collection(db, COLLECTION_NAME),
-        where('fecha', '==', asignacion.fecha),
-        where('numeroOperacion', '==', asignacion.numeroOperacion)
-      );
-      const { getDocs: getDocsNet } = await import('firebase/firestore');
-      const dupSnap = await getDocsNet(dupQ);
-      if (!dupSnap.empty) {
-        const err = new Error('DUPLICATE_TL');
-        (err as any).code = 'DUPLICATE_TL';
-        throw err;
-      }
-    }
-    // ── GUARDAR ──────────────────────────────────────────────────────────────
+    // ── DUPLICATE TL GUARD & GUARDAR (ATÓMICO) ──────────────────────────────
     // Auto-generate custom ID: {numeroOperacion}{YYYYMMDD}
-    // NOTA: No incluir carrierCodigo ni scac en el docId — si dos sesiones
-    // guardan el mismo TL en el mismo día con carrier distinto, el segundo
-    // setDoc sobreescribirá al primero (idempotente) en lugar de crear un
-    // documento nuevo con ID diferente, lo que causaba duplicados.
     const datePart = (asignacion.fecha || '').replace(/-/g, '');
     const customId = `${asignacion.numeroOperacion || ''}${datePart}`;
     const docId = asignacion.id || customId || doc(collection(db, COLLECTION_NAME)).id;
     const docRef = doc(db, COLLECTION_NAME, docId);
-    await setDoc(docRef, {
-      id: docId,
-      customId: customId || docId,
-      ...asignacion,
-      createdAt: asignacion.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+
+    await runTransaction(db, async (transaction) => {
+      // 1. Verificar si el documento ya existe
+      const existingDoc = await transaction.get(docRef);
+      // Si estamos creando uno nuevo y ya existe en la base de datos, abortar.
+      // (Si es una edición que pasa por addAsignacion en el futuro, esto lo bloquea,
+      // pero actualmente AsignacionesDiarias usa updateAsignacion para editar).
+      if (existingDoc.exists()) {
+        const err = new Error('DUPLICATE_TL');
+        (err as any).code = 'DUPLICATE_TL';
+        throw err;
+      }
+      
+      // Opcional: Podríamos también verificar la query de duplicados por fecha+operacion 
+      // si el customId no garantizara unicidad, pero como docId = TLXXX20260903, es suficiente.
+
+      // 2. Escribir el nuevo documento
+      transaction.set(docRef, {
+        id: docId,
+        customId: customId || docId,
+        ...asignacion,
+        createdAt: asignacion.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
     });
 
     // --- ALERTA EXPO ---
@@ -195,21 +194,23 @@ export const asignacionCajaService = {
   },
 
   async getNextOperationNumber(fecha: string): Promise<string> {
-    try {
-      const asigs = await this.getAsignacionesByDate(fecha);
-      let maxNum = 0;
-      asigs.forEach(a => {
-        const match = (a.numeroOperacion || '').match(/^TL(\d+)$/);
-        if (match) {
-          const n = parseInt(match[1], 10);
-          if (n > maxNum) maxNum = n;
-        }
-      });
-      const next = maxNum + 1;
-      return `TL${String(next).padStart(3, '0')}`;
-    } catch {
-      return 'TL001';
-    }
+    // IMPORTANTE: siempre ir a la red — nunca al caché — para evitar
+    // que dos sesiones simultáneas calculen el mismo folio TL.
+    const q = query(
+      collection(db, COLLECTION_NAME),
+      where('fecha', '==', fecha)
+    );
+    const snapshot = await getDocsFromServer(q); // nunca usa caché
+    let maxNum = 0;
+    snapshot.docs.forEach(d => {
+      const match = (d.data().numeroOperacion || '').match(/^TL(\d+)$/);
+      if (match) {
+        const n = parseInt(match[1], 10);
+        if (n > maxNum) maxNum = n;
+      }
+    });
+    const next = maxNum + 1;
+    return `TL${String(next).padStart(3, '0')}`;
   },
 
   async updateAsignacion(id: string, asignacion: Partial<AsignacionCajaModel>): Promise<void> {

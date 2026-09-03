@@ -1040,6 +1040,8 @@ export const AsignacionesDiarias: React.FC = () => {
     if (error?.code === 'DUPLICATE_TL' || error?.message === 'DUPLICATE_TL') {
       setShowModal(false);
       setShowDuplicateTLModal(true);
+    } else if (error?.message?.includes('network') || error?.code === 'unavailable') {
+      alert('No fue posible verificar el folio de operación. Por favor verifica tu conexión e intenta de nuevo.');
     } else {
       console.error('Error guardando asignación:', error);
       alert(t('msg.save_error'));

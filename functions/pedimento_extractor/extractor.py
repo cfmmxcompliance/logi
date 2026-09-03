@@ -71,12 +71,33 @@ def bandas_de_columna(filas):
             for w in fila:
                 if w["text"] == "SUBD/":
                     b["SUBD"] = (w["x0"], w["x1"])
+                elif w["text"] in ("VINC.", "VINC"):
+                    b["VINC"] = (w["x0"], w["x1"])
+                elif w["text"] in ("MET.", "MET.VAL", "MET. VAL"):
+                    b["MET_VAL"] = (w["x0"], w["x1"])
+                elif w["text"] == "UMC":
+                    b["UMC_CLAVE"] = (w["x0"], w["x1"])
+                elif w["text"] == "UMT":
+                    b["UMT_CLAVE"] = (w["x0"], w["x1"])
                 elif w["text"] == "P.V/C":
                     b["PVC"] = (w["x0"], w["x1"])
                 elif w["text"] == "P.O/D":
                     b["POD"] = (w["x0"], w["x1"])
 
         unido = " ".join(textos)
+        if "DESCRIPCIÓN" in unido and "RENGLONES" in unido:
+            for w in fila:
+                if w["text"] in ("CON.", "CON"):
+                    b["CON"] = (w["x0"], w["x1"])
+                elif w["text"] == "TASA":
+                    b["TASA"] = (w["x0"], w["x1"])
+                elif w["text"] in ("T.T.", "T.T"):
+                    b["TT"] = (w["x0"], w["x1"])
+                elif w["text"] in ("F.P.", "F.P"):
+                    b["FP"] = (w["x0"], w["x1"])
+                elif w["text"] == "IMPORTE":
+                    b["IMPORTE_COL"] = (w["x0"], w["x1"])
+
         if "ADU/USD" in unido:
             for w in fila:
                 if w["text"] in ("VAL.ADU/USD", "ADU/USD"):
@@ -85,8 +106,12 @@ def bandas_de_columna(filas):
                     b["PRECIO_PAG"] = (w["x0"], w["x1"])
                 elif w["text"] == "PRECIO":
                     b.setdefault("PRECIO_UNIT", (w["x0"], w["x1"]))
+                elif w["text"] == "VAL." and "AGREG." in unido:
+                    b["VAL_AGREG"] = (w["x0"], w["x1"])
+                elif w["text"] == "AGREG.":
+                    b["VAL_AGREG"] = (w["x0"], w["x1"])
 
-        if "FRACCION" in b and "VAL_ADU" in b:
+        if "FRACCION" in b and "VAL_ADU" in b and "CON" in b:
             break
     return b
 
@@ -143,6 +168,17 @@ def extraer(path):
     return partidas
 
 
+APENDICE_7 = {
+    "1": "KILO", "2": "GRAMO", "3": "METRO LINEAL", "4": "METRO CUADRADO",
+    "5": "METRO CUBICO", "6": "PIEZA", "7": "CABEZA", "8": "LITRO",
+    "9": "PAR", "10": "KILOWATT", "11": "MILLAR", "12": "JUEGO",
+    "13": "KILOWATT/HORA", "14": "TONELADA", "15": "BARRIL", "16": "GRAMO NETO",
+    "17": "DECENAS", "18": "CIENTOS", "19": "DOCENAS", "20": "CAJA",
+    "21": "BOTELLA", "22": "CARGA"
+}
+
+CONTRIBUCIONES_VALIDAS = {"IGI", "IGE", "IVA", "IEPS", "DTA", "PRV", "CNT", "ECI", "ISAN", "ITV", "IGIE"}
+
 def _completar(p, b, fx0):
     filas = p["_filas"]
     tokens = [w["text"] for fila in filas for w in fila]
@@ -164,6 +200,24 @@ def _completar(p, b, fx0):
     p["subdivision"] = next(
         (w["text"] for w in ancla if en_banda(w, b.get("SUBD"), 12)), None
     )
+    p["vinc"] = next(
+        (w["text"] for w in ancla if en_banda(w, b.get("VINC"), 8)), None
+    )
+    p["metodo_val"] = next(
+        (w["text"] for w in ancla if en_banda(w, b.get("MET_VAL"), 8)), None
+    )
+    
+    clave_umc_raw = next(
+        (w["text"] for w in ancla if en_banda(w, b.get("UMC_CLAVE"), 8) and re.match(r"^\d{1,2}$", w["text"])), None
+    )
+    p["clave_umc"] = clave_umc_raw
+    p["umc_desc"] = APENDICE_7.get(clave_umc_raw) if clave_umc_raw else None
+    
+    clave_umt_raw = next(
+        (w["text"] for w in ancla if en_banda(w, b.get("UMT_CLAVE"), 8) and re.match(r"^\d{1,2}$", w["text"])), None
+    )
+    p["clave_umt"] = clave_umt_raw
+    p["umt_desc"] = APENDICE_7.get(clave_umt_raw) if clave_umt_raw else None
     p["cantidad_umc"] = next(
         (w["text"] for w in ancla if DEC_3.match(w["text"])), None
     )
@@ -179,7 +233,7 @@ def _completar(p, b, fx0):
 
     # Linea de valores: enteramente numerica y con un precio unitario (5 dec).
     # Se excluye la linea ancla, que tambien puede ser toda numerica.
-    p["val_adu_usd"] = p["precio_pagado"] = p["precio_unitario"] = None
+    p["val_adu_usd"] = p["precio_pagado"] = p["precio_unitario"] = p["val_agregado"] = None
     linea_valores = next(
         (fila for fila in filas[1:]
          if any(DEC_5.match(w["text"]) for w in fila)
@@ -193,74 +247,124 @@ def _completar(p, b, fx0):
                 p["val_adu_usd"] = w["text"]
             elif en_banda(w, b.get("PRECIO_PAG")):
                 p["precio_pagado"] = w["text"]
+            elif en_banda(w, b.get("VAL_AGREG"), 15) and DEC_5.match(w["text"]):
+                p["val_agregado"] = w["text"]
             elif DEC_5.match(w["text"]):
-                p["precio_unitario"] = w["text"]
+                # If we already got PRECIO_UNIT, and we get another one, it's probably VAL_AGREG 
+                if b.get("PRECIO_UNIT") and en_banda(w, b.get("PRECIO_UNIT")):
+                    p["precio_unitario"] = w["text"]
+                elif not b.get("PRECIO_UNIT"):
+                    p["precio_unitario"] = w["text"]
 
-    # Numero de parte y factura viven en el bloque OBSERVACIONES A NIVEL PARTIDA
-    candidatos = [
-        t for t in tokens
-        if len(t) >= 8 and "-" in t
-        and not t.startswith(("NOM", "REF:"))
-        and not FACTURA.match(t)
-        and not re.match(r"^\d{3}-\d", t)
-    ]
-    p["numero_parte"] = candidatos[0] if candidatos else None
-    
-    # Descripcion
+    p["contribuciones"] = []
+    for fila in filas:
+        con_tok = next((w["text"] for w in fila if w["text"] in CONTRIBUCIONES_VALIDAS), None)
+        if con_tok:
+            importe = next((w["text"] for w in fila if en_banda(w, b.get("IMPORTE_COL"), 15) and NUMERICO.match(w["text"])), None)
+            p["contribuciones"].append({
+                "con": con_tok,
+                "tasa": next((w["text"] for w in fila if en_banda(w, b.get("TASA"), 10)), None),
+                "tipo_tasa": next((w["text"] for w in fila if en_banda(w, b.get("TT"), 8)), None),
+                "forma_pago": next((w["text"] for w in fila if en_banda(w, b.get("FP"), 8)), None),
+                "importe": importe,
+            })
+            
+    p["importe"] = None
+    if p["contribuciones"]:
+        p["importe"] = str(sum(float(c["importe"].replace(",","")) for c in p["contribuciones"] if c["importe"]))
+
+    # OBSERVACIONES estructuradas
+    p["numero_parte"] = None
+    p["factura"] = None
+
+    obs_idx = None
+    for i, fila in enumerate(filas):
+        if any(w["text"] == "OBSERVACIONES" for w in fila):
+            obs_idx = i
+            break
+
+    if obs_idx is not None:
+        lineas_obs = filas[obs_idx + 1:]  # filas DESPUÉS de la cabecera OBSERVACIONES
+        for fila_obs in lineas_obs:
+            tokens_obs = [w["text"] for w in fila_obs]
+            if not tokens_obs:
+                continue
+            tok = " ".join(tokens_obs)
+            if re.match(r"^F[\.\s]?A[\.\s:]+ORIGINAL", tok, re.IGNORECASE) or "C1" in tokens_obs or "IDENTIF." in tokens_obs:
+                continue
+            elif FACTURA.match(tokens_obs[0]) or re.match(r"^\d{2}CFTT", tokens_obs[0]) or tokens_obs[0].startswith("COVE"):
+                p["factura"] = tokens_obs[0]
+            elif p["numero_parte"] is None:
+                p["numero_parte"] = tokens_obs[0]
+
+    # Descripcion multi-linea
     p["descripcion"] = None
-    # Buscamos en todas las filas (menos la ancla) una que tenga palabras a la izquierda de la fraccion
+    desc_lines = []
     for fila in filas:
         if fila == ancla: continue
         desc_tokens = [w["text"] for w in fila if not NUMERICO.match(w["text"]) and w["x0"] < fx0]
-        if desc_tokens and "IDENTIF." not in desc_tokens:
-            p["descripcion"] = " ".join(desc_tokens)
-            break
+        if desc_tokens:
+            if "IDENTIF." in desc_tokens or "OBSERVACIONES" in desc_tokens:
+                break
+            desc_lines.append(" ".join(desc_tokens))
+    if desc_lines:
+        p["descripcion"] = " ".join(desc_lines)
             
     # NOM
-    p["nom_aplicable"] = None
+    noms = []
     for i, t in enumerate(tokens):
-        if t.startswith("NOM-"):
-            p["nom_aplicable"] = t
-            break
-        if t == "EN" and i + 2 < len(tokens) and tokens[i+2].startswith("NOM"):
-            p["nom_aplicable"] = tokens[i+2]
-            break
-
-    # Importe (IMPORTE)
-    p["importe"] = None
-    linea_valores = next(
-        (fila for fila in filas[1:]
-         if any(DEC_5.match(w["text"]) for w in fila)
-         and len(fila) >= 2
-         and all(NUMERICO.match(w["text"]) for w in fila)),
-        None,
-    )
-    if linea_valores:
-        # El importe suele ser el ultimo valor
-        p["importe"] = linea_valores[-1]["text"]
-        for w in linea_valores:
-            if en_banda(w, b.get("VAL_ADU")):
-                p["val_adu_usd"] = w["text"]
-            elif en_banda(w, b.get("PRECIO_PAG")):
-                p["precio_pagado"] = w["text"]
-            elif DEC_5.match(w["text"]):
-                p["precio_unitario"] = w["text"]
-    facturas = [t for t in tokens if FACTURA.match(t)]
-    p["factura"] = facturas[0] if facturas else None
+        if t.startswith("NOM-") and t not in noms:
+            noms.append(t)
+        elif t == "EN" and i + 2 < len(tokens) and tokens[i+2].startswith("NOM") and tokens[i+2] not in noms:
+            noms.append(tokens[i+2])
+    p["nom_aplicable"] = ", ".join(noms) if noms else None
 
     # Regla 8: la fraccion real va en el campo F.A. ORIGINAL
     fa = re.search(r"F\.?A:?\s*(?:ORIGINAL\s*)?(\d{8,10})", " ".join(tokens))
     p["fa_original"] = fa.group(1) if fa else None
     
     # Permiso de Regla Octava (C1)
+    p["c1"] = None
     p["permiso_r8"] = None
-    for i, t in enumerate(tokens):
-        if t == "C1" and i + 1 < len(tokens) and len(tokens[i+1]) > 5:
-            p["permiso_r8"] = tokens[i+1]
+    for i, fila in enumerate(filas):
+        tokens_fila = [w["text"] for w in fila]
+        if "C1" in tokens_fila:
+            idx_c1 = tokens_fila.index("C1")
+            permiso = tokens_fila[idx_c1 + 1] if idx_c1 + 1 < len(tokens_fila) else None
+            val_com = next((w["text"] for w in fila if NUMERICO.match(w["text"]) and "." in w["text"] and w["text"] != permiso), None)
+            cant_c = next((w["text"] for w in fila if DEC_5.match(w["text"])), None)
+            p["c1"] = {
+                "permiso": permiso,
+                "val_com_dls": val_com,
+                "cantidad_umt_c": cant_c
+            }
+            p["permiso_r8"] = permiso
             break
-        elif t.startswith("C1") and len(t) > 6:
-            p["permiso_r8"] = t.replace("C1", "", 1).strip()
-            break
+
+    IDENTIF_VALIDOS = {
+        "EC","IN","A1","TS","EU","CA","VA","CT","OM","SC","EP","PR","PP",
+        "DS","RG","MX","CN","IM","CR","PO","EN","IA","MA","RO","SP","TE","TL"
+    }
+
+    p["identificadores"] = []
+    capturando_identif = False
+    for fila in filas:
+        textos_fila = [w["text"] for w in fila]
+        if "IDENTIF." in textos_fila:
+            capturando_identif = True
+            continue
+        if capturando_identif:
+            clave = next((t for t in textos_fila if t in IDENTIF_VALIDOS), None)
+            if clave:
+                complementos = [t for t in textos_fila if t != clave]
+                p["identificadores"].append({
+                    "clave": clave,
+                    "complemento1": complementos[0] if len(complementos) > 0 else None,
+                    "complemento2": complementos[1] if len(complementos) > 1 else None,
+                    "complemento3": complementos[2] if len(complementos) > 2 else None,
+                })
+            else:
+                capturando_identif = False
 
 
 # --------------------------------------------------------------------------
@@ -294,11 +398,19 @@ def encabezado(path):
     m_adu = re.search(r"ADUANA E/S:\s+(\d+)", texto)
     if m_adu: cab["aduana_es"] = m_adu.group(1)
         
-    m_ref = re.search(r"REF:\s+([\w\-]+)", texto)
+    m_ref = re.search(r"(?:REF|Referencia):\s+([\w\-]+)", texto)
     if m_ref: cab["referencia"] = m_ref.group(1)
         
-    m_dest = re.search(r"DESTINO/ORIGEN:\s+(\d+)", texto)
-    if m_dest: cab["destino_origen"] = m_dest.group(1)
+    if cab.get("tipo_operacion") == "IMP":
+        m_dest = re.search(r"DESTINO:\s+(\d+)", texto)
+        if m_dest:
+            cab["destino_origen"] = m_dest.group(1)
+            cab["destino_origen_tipo"] = "destino"
+    else:
+        m_orig = re.search(r"ORIGEN:\s+(\d+)", texto)
+        if m_orig:
+            cab["destino_origen"] = m_orig.group(1)
+            cab["destino_origen_tipo"] = "origen"
         
     m_tc = re.search(r"TIPO CAMBIO:\s*([\d\.]+)", texto)
     if m_tc: cab["tipo_cambio"] = float(m_tc.group(1))
@@ -358,22 +470,12 @@ def encabezado(path):
     if m_prov:
         cab["proveedor_id_fiscal"] = m_prov.group(1)
         cab["proveedor_vinculacion"] = m_prov.group(3)
-        raw_name_dom = m_prov.group(2).strip()
+        cab["proveedor_nombre"] = m_prov.group(2).strip()
         
-        # Hardcoded cleanup for known CFMoto provider to separate name from address accurately
-        if "ZHEJIANG CFMOTO POWER" in raw_name_dom:
-            cab["proveedor_nombre"] = "ZHEJIANG CFMOTO POWER CO.,LTD"
-            cab["proveedor_id_fiscal"] = "91330100757206158J"
-            
-            m_dom_full = re.search(r"WUZHOU ROAD No.*?REPUBLICA POPULAR\)", texto, re.DOTALL)
-            if m_dom_full:
-                cab["proveedor_domicilio"] = re.sub(r"\s+", " ", m_dom_full.group(0))
-        else:
-            cab["proveedor_nombre"] = raw_name_dom
-            # Extract Domicilio via regex between the provider name/vinculacion and the next section
-            m_dom = re.search(r"DOMICILIO:?\s*VINCULACION.*?\n(.*?)\n(?:NUM\. FACTURA|NUMERO DE ACUSE)", texto, re.DOTALL)
-            if m_dom:
-                cab["proveedor_domicilio"] = re.sub(r"\s+", " ", m_dom.group(1).strip())
+        # Extract Domicilio via regex between the provider name/vinculacion and the next section
+        m_dom = re.search(r"DOMICILIO:?\s*VINCULACION.*?\n(.*?)\n(?:NUM\. FACTURA|NUMERO DE ACUSE|DATOS DEL PROVEEDOR)", texto, re.DOTALL)
+        if m_dom:
+            cab["proveedor_domicilio"] = re.sub(r"\s+", " ", m_dom.group(1).strip())
 
     # D. Documentos Equivalentes
     cab["facturas"] = []
@@ -414,19 +516,38 @@ def encabezado(path):
             })
 
 
-    # E. Guia / Contenedores
-    m_guia = re.search(r"NO\.\s*\(GUIA/ORDEN EMBARQUE\)/ID:\s*([A-Z0-9\-]+)", texto)
-    if not m_guia:
-        m_guia = re.search(r"NUMERO\s*\(GUIA/ORDEN EMBARQUE\)/ID:\s*([A-Z0-9\-]+)", texto)
-    if m_guia: cab["guia"] = m_guia.group(1)
-        
-    # Extract all occurrences of XXXX1234567 format
-    contenedores_matches = re.findall(r"([A-Z]{4}\d{7})", texto)
-    unique_conts = []
-    for c in contenedores_matches:
-        if c not in unique_conts:
-            unique_conts.append(c)
-    cab["contenedores"] = [{"numero": c, "tipo": "0"} for c in unique_conts]
+    # E. Guia M/H
+    m_guia = re.search(r"(?:NO\.|NUMERO)\s*\(GUIA/ORDEN EMBARQUE\)/ID:\s*([A-Z0-9\-]+)", texto)
+    if m_guia:
+        guia_raw = m_guia.group(1)
+        if guia_raw.endswith("M"):
+            cab["guia"] = guia_raw[:-1]
+            cab["tipo_guia"] = "Master"
+        elif guia_raw.endswith("H"):
+            cab["guia"] = guia_raw[:-1]
+            cab["tipo_guia"] = "House"
+        else:
+            cab["guia"] = guia_raw
+            cab["tipo_guia"] = "Directa"
+
+    # Contenedores estructurados desde bloque
+    cab["contenedores"] = []
+    m_conts_bloque = re.search(r"NUMERO/TIPO/CLASE/EQUIPAMIENTO(.*?)(?:MARCAS, NUMEROS|DATOS DEL PROVEEDOR|IDENTIFICADORES)", texto, re.DOTALL)
+    if m_conts_bloque:
+        cont_matches = re.finditer(r"([A-Z]{4}\d{7})\s+(\d+)\s+(\d+)\s+(\d+)", m_conts_bloque.group(1))
+        for m in cont_matches:
+            cab["contenedores"].append({
+                "numero": m.group(1),
+                "tipo": m.group(2),
+                "clase": m.group(3),
+                "equipamiento": m.group(4)
+            })
+            
+    # Formas de Pago Virtuales (FPV)
+    m_fpv = re.search(r"IVA\s+F\.?P\.?\s+(21|22)\s+([\d,]+)", texto)
+    if m_fpv:
+        cab["fp_virtual"] = m_fpv.group(1)
+        cab["iva_fpv"] = float(m_fpv.group(2).replace(",", ""))
     # F. Identificadores Complementarios
     cab["identificadores"] = []
     id_matches = re.finditer(r"\b(CR|IM|PP|EN|PO)\s+(\d{1,10})\b", texto)

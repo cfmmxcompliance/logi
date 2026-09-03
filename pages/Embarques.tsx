@@ -73,7 +73,7 @@ export const Embarques: React.FC = () => {
       
       let cfdiDoc = parser.parseFromString(text, 'text/xml');
       const rootTag = cfdiDoc.documentElement?.tagName;
-      if (rootTag === 'w:wordDocument') {
+      if (rootTag === 'w:wordDocument' || rootTag === 'pkg:package') {
         const isInsideDel = (node: Element): boolean => {
             let parent = node.parentElement;
             while (parent) {
@@ -440,7 +440,6 @@ export const Embarques: React.FC = () => {
           setShowReassignModal(true);
         }
       } else {
-        await fetchData();
         setSelectedIds(new Set());
       }
       
@@ -449,7 +448,7 @@ export const Embarques: React.FC = () => {
         const newSelected = new Set(selectedIds);
         libres.forEach(l => newSelected.delete(l.id!));
         setSelectedIds(newSelected);
-        await fetchData(); // refresca para ver los que sí se asignaron
+        // refresca para ver los que sí se asignaron (ya manejado por onSnapshot)
       }
     } catch (error) {
       console.error("Error assigning records:", error);
@@ -467,7 +466,6 @@ export const Embarques: React.FC = () => {
       for (const id of pendingForceIds) {
         await contratoService.updateContrato(id, { asignadoA: assigneeName });
       }
-      await fetchData();
       setSelectedIds(new Set());
       setShowReassignModal(false);
       setPendingForceIds([]);
@@ -604,6 +602,30 @@ export const Embarques: React.FC = () => {
     return () => {
       cancelled = true;
       window.removeEventListener('data:refresh', handleRefresh);
+    };
+  }, [startDate, endDate]);
+
+  useEffect(() => {
+    // Suscripción silenciosa para actualizaciones en tiempo real de 'asignadoA' y 'cerrado'
+    const unsubscribe = contratoService.subscribeContratosByDateRange(startDate, endDate, (updatedContratos) => {
+      setData(prev => {
+        let hasChanges = false;
+        const newData = prev.map(item => {
+          const updatedMatch = updatedContratos.find(u => u.id === item.id);
+          if (updatedMatch) {
+            if (item.asignadoA !== updatedMatch.asignadoA || item.cerrado !== updatedMatch.cerrado) {
+              hasChanges = true;
+              return { ...item, asignadoA: updatedMatch.asignadoA, cerrado: updatedMatch.cerrado };
+            }
+          }
+          return item;
+        });
+        return hasChanges ? newData : prev;
+      });
+    });
+
+    return () => {
+      unsubscribe();
     };
   }, [startDate, endDate]);
 
